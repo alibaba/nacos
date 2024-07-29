@@ -17,20 +17,24 @@
 package com.alibaba.nacos.naming.push.v2.executor;
 
 import com.alibaba.nacos.naming.pojo.Subscriber;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.util.Optional;
 import java.util.Set;
 
-@RunWith(MockitoJUnitRunner.class)
-public class SpiImplPushExecutorHolderTest {
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+@ExtendWith(MockitoExtension.class)
+class SpiImplPushExecutorHolderTest {
+    
+    private static final String CLIENT_ID = "CLIENT_ID";
     
     @Mock
     private Subscriber subscriber;
@@ -40,10 +44,8 @@ public class SpiImplPushExecutorHolderTest {
     
     private SpiImplPushExecutorHolder spiImplPushExecutorHolder;
     
-    private static final String CLIENT_ID = "CLIENT_ID";
-    
-    @Before
-    public void setUp() throws NoSuchFieldException, IllegalAccessException {
+    @BeforeEach
+    void setUp() throws NoSuchFieldException, IllegalAccessException {
         spiImplPushExecutorHolder = SpiImplPushExecutorHolder.getInstance();
         Class<SpiImplPushExecutorHolder> spiImplPushExecutorHolderClass = SpiImplPushExecutorHolder.class;
         Field pushExecutors = spiImplPushExecutorHolderClass.getDeclaredField("pushExecutors");
@@ -53,18 +55,17 @@ public class SpiImplPushExecutorHolderTest {
     }
     
     @Test
-    public void testGetInstance() {
+    void testGetInstance() {
         SpiImplPushExecutorHolder instance = SpiImplPushExecutorHolder.getInstance();
         
-        Assert.assertNotNull(instance);
+        assertNotNull(instance);
     }
     
     @Test
-    public void testFindPushExecutorSpiImpl() {
+    void testFindPushExecutorSpiImpl() {
         Mockito.when(spiPushExecutor.isInterest(CLIENT_ID, subscriber)).thenReturn(true);
-        Optional<SpiPushExecutor> pushExecutorSpiImpl = spiImplPushExecutorHolder
-                .findPushExecutorSpiImpl(CLIENT_ID, subscriber);
+        Optional<SpiPushExecutor> pushExecutorSpiImpl = spiImplPushExecutorHolder.findPushExecutorSpiImpl(CLIENT_ID, subscriber);
         
-        Assert.assertTrue(pushExecutorSpiImpl.isPresent());
+        assertTrue(pushExecutorSpiImpl.isPresent());
     }
 }

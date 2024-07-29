@@ -22,6 +22,8 @@ import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import com.alibaba.nacos.core.context.RequestContext;
+import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
@@ -120,11 +122,16 @@ public class AuthFilter implements Filter {
                 Resource resource = protocolAuthService.parseResource(req, secured);
                 IdentityContext identityContext = protocolAuthService.parseIdentity(req);
                 boolean result = protocolAuthService.validateIdentity(identityContext, resource);
+                RequestContext requestContext = RequestContextHolder.getContext();
+                requestContext.getAuthContext().setIdentityContext(identityContext);
+                requestContext.getAuthContext().setResource(resource);
+                if (null == requestContext.getAuthContext().getAuthResult()) {
+                    requestContext.getAuthContext().setAuthResult(result);
+                }
                 if (!result) {
                     // TODO Get reason of failure
                     throw new AccessException("Validate Identity failed.");
                 }
-                injectIdentityId(req, identityContext);
                 String action = secured.action().toString();
                 result = protocolAuthService.validateAuthority(identityContext, new Permission(resource, action));
                 if (!result) {
@@ -145,22 +152,5 @@ public class AuthFilter implements Filter {
             Loggers.AUTH.warn("[AUTH-FILTER] Server failed: ", e);
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Server failed, " + e.getMessage());
         }
-    }
-    
-    /**
-     * Set identity id to request session, make sure some actual logic can get identity information.
-     *
-     * <p>May be replaced with whole identityContext.
-     *
-     * @param request         http request
-     * @param identityContext identity context
-     */
-    private void injectIdentityId(HttpServletRequest request, IdentityContext identityContext) {
-        String identityId = identityContext.getParameter(
-                com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID, StringUtils.EMPTY);
-        request.getSession()
-                .setAttribute(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID, identityId);
-        request.getSession().setAttribute(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_CONTEXT,
-                identityContext);
     }
 }

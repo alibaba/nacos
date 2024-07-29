@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.client.naming.utils;
 
-import com.alibaba.nacos.common.utils.ThreadUtils;
-
 /**
  * Util and constants.
  *
@@ -43,12 +41,11 @@ public class UtilAndComs {
     
     public static final int REQUEST_DOMAIN_RETRY_COUNT = 3;
     
+    @Deprecated
     public static final String NACOS_NAMING_LOG_NAME = "com.alibaba.nacos.naming.log.filename";
     
+    @Deprecated
     public static final String NACOS_NAMING_LOG_LEVEL = "com.alibaba.nacos.naming.log.level";
-    
-    public static final int DEFAULT_POLLING_THREAD_COUNT =
-            ThreadUtils.getSuitableThreadCount(1) > 1 ? ThreadUtils.getSuitableThreadCount(1) / 2 : 1;
     
     public static final String ENV_CONFIGS = "00-00---000-ENV_CONFIGS-000---00-00";
     

@@ -30,14 +30,15 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -45,8 +46,10 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.when;
 
 /**
@@ -55,8 +58,10 @@ import static org.mockito.Mockito.when;
  * @author chenglu
  * @date 2021-07-08 13:22
  */
-@RunWith(MockitoJUnitRunner.class)
-public class ClusterRpcClientProxyTest {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class ClusterRpcClientProxyTest {
     
     @InjectMocks
     private ClusterRpcClientProxy clusterRpcClientProxy;
@@ -69,8 +74,14 @@ public class ClusterRpcClientProxyTest {
     
     private Member member;
     
-    @Before
-    public void setUp() throws NacosException {
+    @AfterAll
+    static void tearDown() throws NacosException {
+        Map<String, RpcClient> clientMap = (Map<String, RpcClient>) ReflectionTestUtils.getField(RpcClientFactory.class, "CLIENT_MAP");
+        clientMap.remove("Cluster-1.1.1.1:-1").shutdown();
+    }
+    
+    @BeforeEach
+    void setUp() throws NacosException {
         EnvUtil.setEnvironment(new MockEnvironment());
         member = new Member();
         member.setIp("1.1.1.1");
@@ -81,34 +92,26 @@ public class ClusterRpcClientProxyTest {
         member.setAbilities(serverAbilities);
         when(serverMemberManager.allMembersWithoutSelf()).thenReturn(Collections.singletonList(member));
         clusterRpcClientProxy.init();
-        Map<String, RpcClient> clientMap = (Map<String, RpcClient>) ReflectionTestUtils
-                .getField(RpcClientFactory.class, "CLIENT_MAP");
+        Map<String, RpcClient> clientMap = (Map<String, RpcClient>) ReflectionTestUtils.getField(RpcClientFactory.class, "CLIENT_MAP");
         clientMap.remove("Cluster-" + member.getAddress()).shutdown();
         clientMap.put("Cluster-" + member.getAddress(), client);
         when(client.getConnectionType()).thenReturn(ConnectionType.GRPC);
     }
     
-    @AfterClass
-    public static void tearDown() throws NacosException {
-        Map<String, RpcClient> clientMap = (Map<String, RpcClient>) ReflectionTestUtils
-                .getField(RpcClientFactory.class, "CLIENT_MAP");
-        clientMap.remove("Cluster-1.1.1.1:-1").shutdown();
-    }
-    
     @Test
-    public void testSendRequest() {
+    void testSendRequest() {
         try {
             Response response = clusterRpcClientProxy.sendRequest(member, new HealthCheckRequest());
         } catch (NacosException e) {
-            Assert.assertEquals(-401, e.getErrCode());
+            assertEquals(-401, e.getErrCode());
         } catch (Exception e) {
             e.printStackTrace();
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
     }
     
     @Test
-    public void testAsyncRequest() {
+    void testAsyncRequest() {
         RequestCallBack requestCallBack = new RequestCallBack() {
             @Override
             public Executor getExecutor() {
@@ -127,49 +130,49 @@ public class ClusterRpcClientProxyTest {
             
             @Override
             public void onException(Throwable e) {
-                Assert.assertTrue(e instanceof NacosException);
+                assertTrue(e instanceof NacosException);
             }
         };
         
         try {
             clusterRpcClientProxy.asyncRequest(member, new HealthCheckRequest(), requestCallBack);
         } catch (NacosException e) {
-            Assert.assertEquals(500, e.getErrCode());
+            assertEquals(500, e.getErrCode());
         }
     }
     
     @Test
-    public void testSendRequestToAllMembers() {
+    void testSendRequestToAllMembers() {
         try {
             clusterRpcClientProxy.sendRequestToAllMembers(new HealthCheckRequest());
         } catch (NacosException e) {
-            Assert.assertEquals(-401, e.getErrCode());
+            assertEquals(-401, e.getErrCode());
         }
     }
     
     @Test
-    public void testOnEvent() {
+    void testOnEvent() {
         try {
             clusterRpcClientProxy.onEvent(MembersChangeEvent.builder().build());
         } catch (Exception e) {
             e.printStackTrace();
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
     }
     
     @Test
-    public void testIsRunningForClientConnected() {
+    void testIsRunningForClientConnected() {
         when(client.isRunning()).thenReturn(true);
         assertTrue(clusterRpcClientProxy.isRunning(member));
     }
     
     @Test
-    public void testIsRunningForClientNotConnected() {
+    void testIsRunningForClientNotConnected() {
         assertFalse(clusterRpcClientProxy.isRunning(member));
     }
     
     @Test
-    public void testIsRunningForNonExist() {
+    void testIsRunningForNonExist() {
         Member member = new Member();
         member.setIp("11.11.11.11");
         assertFalse(clusterRpcClientProxy.isRunning(member));

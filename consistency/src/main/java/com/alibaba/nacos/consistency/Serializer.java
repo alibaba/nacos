@@ -68,15 +68,13 @@ public interface Serializer {
      */
     default <T> T deserialize(byte[] data, String classFullName) {
         try {
-            Class<?> cls;
-            CLASS_CACHE.computeIfAbsent(classFullName, name -> {
+            Class<?> cls = CLASS_CACHE.computeIfAbsent(classFullName, name -> {
                 try {
                     return Class.forName(classFullName);
                 } catch (ClassNotFoundException e) {
                     throw new RuntimeException(e);
                 }
             });
-            cls = CLASS_CACHE.get(classFullName);
             return (T) deserialize(data, cls);
         } catch (Exception ignore) {
             return null;

@@ -67,7 +67,7 @@ public class ConfigGrpcResourceParser extends AbstractGrpcResourceParser {
             dataId = ((AbstractConfigRequest) request).getDataId();
         } else {
             dataId = (String) ReflectUtils
-                    .getFieldValue(request, com.alibaba.nacos.api.common.Constants.DATAID, StringUtils.EMPTY);
+                    .getFieldValue(request, com.alibaba.nacos.api.common.Constants.DATA_ID, StringUtils.EMPTY);
         }
         return StringUtils.isBlank(dataId) ? StringUtils.EMPTY : dataId;
     }

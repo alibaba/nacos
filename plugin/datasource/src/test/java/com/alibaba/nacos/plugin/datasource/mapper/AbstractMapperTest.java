@@ -16,67 +16,85 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
-import com.alibaba.nacos.plugin.datasource.impl.mysql.TenantInfoMapperByMySql;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
+import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.enums.mysql.TrustedMysqlFunctionEnum;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-public class AbstractMapperTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class AbstractMapperTest {
     
     private AbstractMapper abstractMapper;
     
-    @Before
-    public void setUp() throws Exception {
-        abstractMapper = new TenantInfoMapperByMySql();
+    @BeforeEach
+    void setUp() throws Exception {
+        abstractMapper = new AbstractMapper() {
+            @Override
+            public String getTableName() {
+                return TableConstant.TENANT_INFO;
+            }
+
+            @Override
+            public String getDataSource() {
+                return DataSourceConstant.MYSQL;
+            }
+
+            @Override
+            public String getFunction(String functionName) {
+                return TrustedMysqlFunctionEnum.getFunctionByName(functionName);
+            }
+        };
     }
     
     @Test
-    public void testSelect() {
+    void testSelect() {
         String sql = abstractMapper.select(Arrays.asList("id", "name"), Arrays.asList("id"));
-        Assert.assertEquals(sql, "SELECT id,name FROM tenant_info WHERE id = ?");
+        assertEquals("SELECT id,name FROM tenant_info WHERE id = ?", sql);
     }
     
     @Test
-    public void testInsert() {
+    void testInsert() {
         String sql = abstractMapper.insert(Arrays.asList("id", "name"));
-        Assert.assertEquals(sql, "INSERT INTO tenant_info(id, name) VALUES(?,?)");
+        assertEquals("INSERT INTO tenant_info(id, name) VALUES(?,?)", sql);
     }
     
     @Test
-    public void testUpdate() {
+    void testUpdate() {
         String sql = abstractMapper.update(Arrays.asList("id", "name"), Arrays.asList("id"));
-        Assert.assertEquals(sql, "UPDATE tenant_info SET id = ?,name = ? WHERE id = ?");
+        assertEquals("UPDATE tenant_info SET id = ?,name = ? WHERE id = ?", sql);
     }
     
     @Test
-    public void testDelete() {
+    void testDelete() {
         String sql = abstractMapper.delete(Arrays.asList("id"));
-        Assert.assertEquals(sql, "DELETE FROM tenant_info WHERE id = ? ");
+        assertEquals("DELETE FROM tenant_info WHERE id = ? ", sql);
     }
     
     @Test
-    public void testCount() {
+    void testCount() {
         String sql = abstractMapper.count(Arrays.asList("id"));
-        Assert.assertEquals(sql, "SELECT COUNT(*) FROM tenant_info WHERE id = ?");
+        assertEquals("SELECT COUNT(*) FROM tenant_info WHERE id = ?", sql);
     }
     
     @Test
-    public void testGetPrimaryKeyGeneratedKeys() {
+    void testGetPrimaryKeyGeneratedKeys() {
         String[] keys = abstractMapper.getPrimaryKeyGeneratedKeys();
-        Assert.assertEquals(keys[0], "id");
+        assertEquals("id", keys[0]);
     }
     
     @Test
-    public void testSelectAll() {
+    void testSelectAll() {
         String sql = abstractMapper.select(Arrays.asList("id", "name"), null);
-        Assert.assertEquals(sql, "SELECT id,name FROM tenant_info ");
+        assertEquals("SELECT id,name FROM tenant_info ", sql);
     }
     
     @Test
-    public void testCountAll() {
+    void testCountAll() {
         String sql = abstractMapper.count(null);
-        Assert.assertEquals(sql, "SELECT COUNT(*) FROM tenant_info ");
+        assertEquals("SELECT COUNT(*) FROM tenant_info ", sql);
     }
 }

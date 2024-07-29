@@ -16,18 +16,18 @@
 
 package com.alibaba.nacos.common.tls;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.SSLContext;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class TlsHelperTest {
+class TlsHelperTest {
     
     @Test
-    public void testBuildSslContext() throws KeyManagementException, NoSuchAlgorithmException {
+    void testBuildSslContext() throws KeyManagementException, NoSuchAlgorithmException {
         SSLContext actual = TlsHelper.buildSslContext(true);
         assertNotNull(actual);
     }

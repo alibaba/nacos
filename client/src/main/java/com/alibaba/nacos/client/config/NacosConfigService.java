@@ -76,6 +76,7 @@ public class NacosConfigService implements ConfigService {
     public NacosConfigService(Properties properties) throws NacosException {
         PreInitUtils.asyncPreLoadCostComponent();
         final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        LOGGER.info(ParamUtil.getInputParameters(clientProperties.asProperties()));
         ValidatorUtils.checkInitParam(clientProperties);
         
         initNamespace(clientProperties);

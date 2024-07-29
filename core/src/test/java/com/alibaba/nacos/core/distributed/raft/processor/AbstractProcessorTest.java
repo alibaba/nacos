@@ -27,24 +27,26 @@ import com.alipay.sofa.jraft.error.RaftError;
 import com.alipay.sofa.jraft.rpc.Connection;
 import com.alipay.sofa.jraft.rpc.RpcContext;
 import com.google.protobuf.Message;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-public class AbstractProcessorTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+class AbstractProcessorTest {
     
     private JRaftServer server = new JRaftServer() {
         @Override
         public void applyOperation(Node node, Message data, FailoverClosure closure) {
-            closure.setResponse(
-                    Response.newBuilder().setSuccess(false).setErrMsg("Error message transmission").build());
+            closure.setResponse(Response.newBuilder().setSuccess(false).setErrMsg("Error message transmission").build());
             closure.run(new Status(RaftError.UNKNOWN, "Error message transmission"));
         }
     };
     
     @Test
-    public void testErrorThroughRpc() {
+    void testErrorThroughRpc() {
         final AtomicReference<Response> reference = new AtomicReference<>();
         
         RpcContext context = new RpcContext() {
@@ -67,10 +69,10 @@ public class AbstractProcessorTest {
         processor.execute(server, context, WriteRequest.newBuilder().build(), new JRaftServer.RaftGroupTuple());
         
         Response response = reference.get();
-        Assert.assertNotNull(response);
+        assertNotNull(response);
         
-        Assert.assertEquals("Error message transmission", response.getErrMsg());
-        Assert.assertFalse(response.getSuccess());
+        assertEquals("Error message transmission", response.getErrMsg());
+        assertFalse(response.getSuccess());
     }
     
 }

@@ -16,16 +16,17 @@
 
 package com.alibaba.nacos.core.model.request;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class LookupUpdateRequestTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class LookupUpdateRequestTest {
     
     @Test
-    public void test() {
+    void test() {
         LookupUpdateRequest request = new LookupUpdateRequest();
         request.setType("type");
-    
-        Assert.assertEquals(request.getType(), "type");
+        
+        assertEquals("type", request.getType());
     }
 }

@@ -21,24 +21,31 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.springframework.core.env.StandardEnvironment;
 
 import javax.servlet.http.HttpServletRequest;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class HttpRequestInstanceBuilderTest {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class HttpRequestInstanceBuilderTest {
     
     private static final String SERVICE = "service";
     
@@ -51,13 +58,14 @@ public class HttpRequestInstanceBuilderTest {
     
     private HttpRequestInstanceBuilder builder;
     
-    @BeforeClass
-    public static void setUpBeforeClass() {
+    @BeforeAll
+    static void setUpBeforeClass() {
         NacosServiceLoader.load(InstanceExtensionHandler.class);
+        EnvUtil.setEnvironment(new StandardEnvironment());
     }
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         builder = HttpRequestInstanceBuilder.newBuilder();
         when(request.getParameter(CommonParams.SERVICE_NAME)).thenReturn("service");
         when(request.getParameter("ip")).thenReturn(IP);
@@ -66,7 +74,7 @@ public class HttpRequestInstanceBuilderTest {
     }
     
     @Test
-    public void testBuildSimple() throws NacosException {
+    void testBuildSimple() throws NacosException {
         Instance actual = builder.setRequest(request).build();
         assertThat(actual.getServiceName(), is(SERVICE));
         assertThat(actual.getIp(), is(IP));
@@ -76,15 +84,14 @@ public class HttpRequestInstanceBuilderTest {
         assertTrue(actual.isEphemeral());
         assertTrue(actual.isEnabled());
         assertTrue(actual.isHealthy());
-        assertThat(actual.getInstanceId(),
-                is(IP + "#" + PORT + "#" + UtilsAndCommons.DEFAULT_CLUSTER_NAME + "#" + SERVICE));
+        assertThat(actual.getInstanceId(), is(IP + "#" + PORT + "#" + UtilsAndCommons.DEFAULT_CLUSTER_NAME + "#" + SERVICE));
         assertThat(actual.getMetadata().size(), is(1));
         assertThat(actual.getMetadata().get("mock"), is("mock"));
         verify(request).getParameter("mock");
     }
     
     @Test
-    public void testBuildFull() throws NacosException {
+    void testBuildFull() throws NacosException {
         when(request.getParameter("weight")).thenReturn("2");
         when(request.getParameter("healthy")).thenReturn("false");
         when(request.getParameter("enabled")).thenReturn("false");
@@ -107,9 +114,11 @@ public class HttpRequestInstanceBuilderTest {
         verify(request).getParameter("mock");
     }
     
-    @Test(expected = NacosException.class)
-    public void testBuildWithIllegalWeight() throws NacosException {
-        when(request.getParameter("weight")).thenReturn("10001");
-        Instance actual = builder.setRequest(request).build();
+    @Test
+    void testBuildWithIllegalWeight() throws NacosException {
+        assertThrows(NacosException.class, () -> {
+            when(request.getParameter("weight")).thenReturn("10001");
+            Instance actual = builder.setRequest(request).build();
+        });
     }
 }

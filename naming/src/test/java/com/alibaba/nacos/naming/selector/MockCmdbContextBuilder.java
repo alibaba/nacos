@@ -44,22 +44,19 @@ public class MockCmdbContextBuilder implements SelectorContextBuilder<CmdbContex
         CmdbContext cmdbContext = new CmdbContext();
         cmdbContext.setConsumer(con);
         
-        List<CmdbContext.CmdbInstance> providers = provider
-                .stream()
-                .map(p -> {
-                    Entity entity = new Entity();
-                    entity.setType("mockType");
-                    entity.setName("mockName");
-                    Map<String, String> labels = new HashMap<>();
-                    labels.put("key", "value");
-                    entity.setLabels(labels);
-                    
-                    CmdbContext.CmdbInstance<Instance> pro = new CmdbContext.CmdbInstance<>();
-                    pro.setInstance(p);
-                    pro.setEntity(entity);
-                    return pro;
-                })
-                .collect(Collectors.toList());
+        List<CmdbContext.CmdbInstance> providers = provider.stream().map(p -> {
+            Entity entity = new Entity();
+            entity.setType("mockType");
+            entity.setName("mockName");
+            Map<String, String> labels = new HashMap<>();
+            labels.put("key", "value");
+            entity.setLabels(labels);
+            
+            CmdbContext.CmdbInstance<Instance> pro = new CmdbContext.CmdbInstance<>();
+            pro.setInstance(p);
+            pro.setEntity(entity);
+            return pro;
+        }).collect(Collectors.toList());
         cmdbContext.setProviders(providers);
         return cmdbContext;
     }

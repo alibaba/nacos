@@ -16,36 +16,39 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class TimeoutUtilsTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class TimeoutUtilsTest {
     
     @Test
-    public void testAddTotalTime() {
+    void testAddTotalTime() {
         TimeoutUtils timeoutUtils = new TimeoutUtils(10, 1);
         timeoutUtils.initLastResetTime();
         timeoutUtils.addTotalTime(1);
-        Assert.assertEquals(1L, timeoutUtils.getTotalTime().get());
+        assertEquals(1L, timeoutUtils.getTotalTime().get());
     }
     
     @Test
-    public void testIsTimeout() {
+    void testIsTimeout() {
         TimeoutUtils timeoutUtils = new TimeoutUtils(10, 1);
         timeoutUtils.initLastResetTime();
         timeoutUtils.addTotalTime(1);
-        Assert.assertFalse(timeoutUtils.isTimeout());
+        assertFalse(timeoutUtils.isTimeout());
         timeoutUtils.addTotalTime(10);
-        Assert.assertTrue(timeoutUtils.isTimeout());
+        assertTrue(timeoutUtils.isTimeout());
     }
     
     @Test
-    public void testResetTotalTime() {
+    void testResetTotalTime() {
         TimeoutUtils timeoutUtils = new TimeoutUtils(10, -1);
         timeoutUtils.initLastResetTime();
         timeoutUtils.addTotalTime(1);
-        Assert.assertEquals(1L, timeoutUtils.getTotalTime().get());
+        assertEquals(1L, timeoutUtils.getTotalTime().get());
         timeoutUtils.resetTotalTime();
-        Assert.assertEquals(0L, timeoutUtils.getTotalTime().get());
+        assertEquals(0L, timeoutUtils.getTotalTime().get());
     }
 }

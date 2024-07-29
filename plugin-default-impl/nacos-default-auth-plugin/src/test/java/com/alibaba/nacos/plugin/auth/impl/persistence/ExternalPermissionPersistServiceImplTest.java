@@ -20,24 +20,28 @@ import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.model.Page;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.lang.reflect.Field;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ExternalPermissionPersistServiceImplTest {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class ExternalPermissionPersistServiceImplTest {
     
     @Mock
     private JdbcTemplate jdbcTemplate;
@@ -51,8 +55,8 @@ public class ExternalPermissionPersistServiceImplTest {
     
     private ExternalPermissionPersistServiceImpl externalPermissionPersistService;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         externalPermissionPersistService = new ExternalPermissionPersistServiceImpl();
         when(jdbcTemplate.queryForObject(any(), any(), eq(Integer.class))).thenReturn(0);
         when(dataSourceService.getJdbcTemplate()).thenReturn(jdbcTemplate);
@@ -65,8 +69,8 @@ public class ExternalPermissionPersistServiceImplTest {
         externalPermissionPersistService.init();
     }
     
-    @After
-    public void tearDown() throws NoSuchFieldException, IllegalAccessException {
+    @AfterEach
+    void tearDown() throws NoSuchFieldException, IllegalAccessException {
         DatasourceConfiguration.setEmbeddedStorage(embeddedStorageCache);
         Field datasourceField = DynamicDataSource.class.getDeclaredField("basicDataSourceService");
         datasourceField.setAccessible(true);
@@ -74,13 +78,13 @@ public class ExternalPermissionPersistServiceImplTest {
     }
     
     @Test
-    public void testGetPermissions() {
+    void testGetPermissions() {
         Page<PermissionInfo> role = externalPermissionPersistService.getPermissions("role", 1, 10);
-        Assert.assertNotNull(role);
+        assertNotNull(role);
     }
     
     @Test
-    public void testAddPermission() {
+    void testAddPermission() {
         String sql = "INSERT INTO permissions (role, resource, action) VALUES (?, ?, ?)";
         externalPermissionPersistService.addPermission("role", "resource", "action");
         
@@ -88,7 +92,7 @@ public class ExternalPermissionPersistServiceImplTest {
     }
     
     @Test
-    public void testDeletePermission() {
+    void testDeletePermission() {
         String sql = "DELETE FROM permissions WHERE role=? AND resource=? AND action=?";
         externalPermissionPersistService.deletePermission("role", "resource", "action");
         

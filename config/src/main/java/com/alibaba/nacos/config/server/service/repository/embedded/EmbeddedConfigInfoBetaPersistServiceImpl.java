@@ -73,7 +73,7 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     /**
      * The constructor sets the dependency injection order.
      *
-     * @param databaseOperate {@link EmbeddedStoragePersistServiceImpl}
+     * @param databaseOperate databaseOperate.
      */
     public EmbeddedConfigInfoBetaPersistServiceImpl(DatabaseOperate databaseOperate) {
         this.databaseOperate = databaseOperate;
@@ -125,20 +125,20 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
             ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_BETA);
-            Timestamp time = new Timestamp(System.currentTimeMillis());
-            
+
             final String sql = configInfoBetaMapper.insert(
                     Arrays.asList("data_id", "group_id", "tenant_id", "app_name", "content", "md5", "beta_ips",
-                            "src_ip", "src_user", "gmt_create", "gmt_modified", "encrypted_data_key"));
-            final Object[] args = new Object[] {configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp,
-                    configInfo.getContent(), md5, betaIps, srcIp, srcUser, time, time, encryptedDataKey};
-            
+                            "src_ip", "src_user", "gmt_create@NOW()", "gmt_modified@NOW()", "encrypted_data_key"));
+            final Object[] args = new Object[]{configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp,
+                    configInfo.getContent(), md5, betaIps, srcIp, srcUser, encryptedDataKey};
+
+            Timestamp time = new Timestamp(System.currentTimeMillis());
             EmbeddedStorageContextUtils.onModifyConfigBetaInfo(configInfo, betaIps, srcIp, time);
             EmbeddedStorageContextHolder.addSqlContext(sql, args);
-            
+
             databaseOperate.blockUpdate();
             return getBetaOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
-            
+
         } finally {
             EmbeddedStorageContextHolder.cleanAllContext();
         }
@@ -147,17 +147,17 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     @Override
     public ConfigOperateResult insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps, final String srcIp,
             final String srcUser) {
-        if (findConfigInfo4Beta(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant()) == null) {
-            return addConfigInfo4Beta(configInfo, betaIps, srcIp, null);
+        if (findConfigInfo4BetaState(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant()) == null) {
+            return addConfigInfo4Beta(configInfo, betaIps, srcIp, srcUser);
         } else {
-            return updateConfigInfo4Beta(configInfo, betaIps, srcIp, null);
+            return updateConfigInfo4Beta(configInfo, betaIps, srcIp, srcUser);
         }
     }
     
     @Override
     public ConfigOperateResult insertOrUpdateBetaCas(final ConfigInfo configInfo, final String betaIps,
             final String srcIp, final String srcUser) {
-        if (findConfigInfo4Beta(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant()) == null) {
+        if (findConfigInfo4BetaState(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant()) == null) {
             return addConfigInfo4Beta(configInfo, betaIps, srcIp, srcUser);
         } else {
             return updateConfigInfo4BetaCas(configInfo, betaIps, srcIp, srcUser);
@@ -168,7 +168,7 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     @Override
     public void removeConfigInfo4Beta(final String dataId, final String group, final String tenant) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        ConfigInfo configInfo = findConfigInfo4Beta(dataId, group, tenant);
+        ConfigInfoStateWrapper configInfo = findConfigInfo4BetaState(dataId, group, tenant);
         if (configInfo != null) {
             try {
                 ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(
@@ -203,20 +203,20 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
             ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_BETA);
-            Timestamp time = new Timestamp(System.currentTimeMillis());
             final String sql = configInfoBetaMapper.update(
-                    Arrays.asList("content", "md5", "beta_ips", "src_ip", "src_user", "gmt_modified", "app_name",
-                            "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id"));
-            
-            final Object[] args = new Object[] {configInfo.getContent(), md5, betaIps, srcIp, srcUser, time, appNameTmp,
+                    Arrays.asList("content", "md5", "beta_ips", "src_ip", "src_user", "gmt_modified@NOW()",
+                            "app_name", "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id"));
+
+            final Object[] args = new Object[]{configInfo.getContent(), md5, betaIps, srcIp, srcUser, appNameTmp,
                     encryptedDataKey, configInfo.getDataId(), configInfo.getGroup(), tenantTmp};
-            
+
+            Timestamp time = new Timestamp(System.currentTimeMillis());
             EmbeddedStorageContextUtils.onModifyConfigBetaInfo(configInfo, betaIps, srcIp, time);
             EmbeddedStorageContextHolder.addSqlContext(sql, args);
-            
+
             databaseOperate.blockUpdate();
             return getBetaOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
-            
+
         } finally {
             EmbeddedStorageContextHolder.cleanAllContext();
         }
@@ -227,36 +227,35 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
             String srcUser) {
         String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
         String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
-
+        
         configInfo.setTenant(tenantTmp);
         try {
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
             
             ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_BETA);
-            Timestamp time = new Timestamp(System.currentTimeMillis());
             MapperContext context = new MapperContext();
             context.putUpdateParameter(FieldConstant.CONTENT, configInfo.getContent());
             context.putUpdateParameter(FieldConstant.MD5, md5);
             context.putUpdateParameter(FieldConstant.BETA_IPS, betaIps);
             context.putUpdateParameter(FieldConstant.SRC_IP, srcIp);
             context.putUpdateParameter(FieldConstant.SRC_USER, srcUser);
-            context.putUpdateParameter(FieldConstant.GMT_MODIFIED, time);
             context.putUpdateParameter(FieldConstant.APP_NAME, appNameTmp);
-            
+
             context.putWhereParameter(FieldConstant.DATA_ID, configInfo.getDataId());
             context.putWhereParameter(FieldConstant.GROUP_ID, configInfo.getGroup());
             context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
             context.putWhereParameter(FieldConstant.MD5, configInfo.getMd5());
             MapperResult mapperResult = configInfoBetaMapper.updateConfigInfo4BetaCas(context);
-            
+
             final String sql = mapperResult.getSql();
             List<Object> paramList = mapperResult.getParamList();
             final Object[] args = paramList.toArray();
-            
+
+            Timestamp time = new Timestamp(System.currentTimeMillis());
             EmbeddedStorageContextUtils.onModifyConfigBetaInfo(configInfo, betaIps, srcIp, time);
             EmbeddedStorageContextHolder.addSqlContext(sql, args);
-            
+
             boolean success = databaseOperate.blockUpdate();
             if (success) {
                 return getBetaOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp);

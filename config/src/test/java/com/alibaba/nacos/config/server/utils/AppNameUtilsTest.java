@@ -16,12 +16,13 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 
-public class AppNameUtilsTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class AppNameUtilsTest {
     
     private static final String PARAM_MARKING_PROJECT = "project.name";
     
@@ -44,25 +45,25 @@ public class AppNameUtilsTest {
     private static final String DEFAULT_APP_NAME = "unknown";
     
     @Test
-    public void testGetAppName() {
+    void testGetAppName() {
         
         System.setProperty(PARAM_MARKING_PROJECT, SERVER_UNKNOWN);
-        Assert.assertEquals(SERVER_UNKNOWN, AppNameUtils.getAppName());
+        assertEquals(SERVER_UNKNOWN, AppNameUtils.getAppName());
         System.clearProperty(PARAM_MARKING_PROJECT);
         
         System.setProperty(PARAM_MARKING_JBOSS, LINUX_ADMIN_HOME + SERVER_JBOSS + File.separator);
-        Assert.assertEquals(SERVER_JBOSS, AppNameUtils.getAppName());
+        assertEquals(SERVER_JBOSS, AppNameUtils.getAppName());
         System.clearProperty(PARAM_MARKING_JBOSS);
         
         System.setProperty(PARAM_MARKING_JETTY, LINUX_ADMIN_HOME + SERVER_JETTY + File.separator);
-        Assert.assertEquals(SERVER_JETTY, AppNameUtils.getAppName());
+        assertEquals(SERVER_JETTY, AppNameUtils.getAppName());
         System.clearProperty(PARAM_MARKING_JETTY);
         
         System.setProperty(PARAM_MARKING_TOMCAT, LINUX_ADMIN_HOME + SERVER_TOMCAT + File.separator);
-        Assert.assertEquals(SERVER_TOMCAT, AppNameUtils.getAppName());
+        assertEquals(SERVER_TOMCAT, AppNameUtils.getAppName());
         System.clearProperty(PARAM_MARKING_TOMCAT);
-    
-        Assert.assertEquals(DEFAULT_APP_NAME, AppNameUtils.getAppName());
+        
+        assertEquals(DEFAULT_APP_NAME, AppNameUtils.getAppName());
         
     }
 }

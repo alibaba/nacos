@@ -17,26 +17,32 @@
 package com.alibaba.nacos.persistence.datasource;
 
 import com.zaxxer.hikari.HikariDataSource;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.UncategorizedSQLException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ExternalDataSourceServiceImplTest {
+@ExtendWith(MockitoExtension.class)
+class ExternalDataSourceServiceImplTest {
     
     @InjectMocks
     private ExternalDataSourceServiceImpl service;
@@ -56,43 +62,46 @@ public class ExternalDataSourceServiceImplTest {
     @Mock
     private JdbcTemplate testMasterWritableJT;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         service = new ExternalDataSourceServiceImpl();
         ReflectionTestUtils.setField(service, "jt", jt);
         ReflectionTestUtils.setField(service, "tm", tm);
         ReflectionTestUtils.setField(service, "tjt", tjt);
         ReflectionTestUtils.setField(service, "testMasterJT", testMasterJT);
         ReflectionTestUtils.setField(service, "testMasterWritableJT", testMasterWritableJT);
+        List<HikariDataSource> dataSourceList = new ArrayList<>();
+        dataSourceList.add(new HikariDataSource());
+        ReflectionTestUtils.setField(service, "dataSourceList", dataSourceList);
     }
     
     @Test
-    public void testCheckMasterWritable() {
+    void testCheckMasterWritable() {
         
         when(testMasterWritableJT.queryForObject(eq(" SELECT @@read_only "), eq(Integer.class))).thenReturn(0);
-        Assert.assertTrue(service.checkMasterWritable());
+        assertTrue(service.checkMasterWritable());
     }
     
     @Test
-    public void testGetCurrentDbUrl() {
+    void testGetCurrentDbUrl() {
         
         HikariDataSource bds = new HikariDataSource();
         bds.setJdbcUrl("test.jdbc.url");
         when(jt.getDataSource()).thenReturn(bds);
         
-        Assert.assertEquals("test.jdbc.url", service.getCurrentDbUrl());
+        assertEquals("test.jdbc.url", service.getCurrentDbUrl());
     }
     
     @Test
-    public void testGetHealth() {
+    void testGetHealth() {
         
         List<Boolean> isHealthList = new ArrayList<>();
         ReflectionTestUtils.setField(service, "isHealthList", isHealthList);
-        Assert.assertEquals("UP", service.getHealth());
+        assertEquals("UP", service.getHealth());
     }
     
     @Test
-    public void testCheckDbHealthTaskRun() {
+    void testCheckDbHealthTaskRun() {
         
         List<JdbcTemplate> testJtList = new ArrayList<>();
         testJtList.add(jt);
@@ -103,8 +112,40 @@ public class ExternalDataSourceServiceImplTest {
         ReflectionTestUtils.setField(service, "isHealthList", isHealthList);
         
         service.new CheckDbHealthTask().run();
-        Assert.assertEquals(1, isHealthList.size());
-        Assert.assertTrue(isHealthList.get(0));
+        assertEquals(1, isHealthList.size());
+        assertTrue(isHealthList.get(0));
+    }
+    
+    @Test
+    void testCheckDbHealthTaskRunWhenEmptyResult() {
+        List<JdbcTemplate> testJtList = new ArrayList<>();
+        testJtList.add(jt);
+        ReflectionTestUtils.setField(service, "testJtList", testJtList);
+        
+        List<Boolean> isHealthList = new ArrayList<>();
+        isHealthList.add(Boolean.FALSE);
+        ReflectionTestUtils.setField(service, "isHealthList", isHealthList);
+        
+        when(jt.queryForMap(anyString())).thenThrow(new EmptyResultDataAccessException("Expected exception", 1));
+        service.new CheckDbHealthTask().run();
+        assertEquals(1, isHealthList.size());
+        assertTrue(isHealthList.get(0));
+    }
+    
+    @Test
+    void testCheckDbHealthTaskRunWhenSqlException() {
+        List<JdbcTemplate> testJtList = new ArrayList<>();
+        testJtList.add(jt);
+        ReflectionTestUtils.setField(service, "testJtList", testJtList);
+        
+        List<Boolean> isHealthList = new ArrayList<>();
+        isHealthList.add(Boolean.FALSE);
+        ReflectionTestUtils.setField(service, "isHealthList", isHealthList);
+        
+        when(jt.queryForMap(anyString())).thenThrow(new UncategorizedSQLException("Expected exception", "", new SQLException()));
+        service.new CheckDbHealthTask().run();
+        assertEquals(1, isHealthList.size());
+        assertFalse(isHealthList.get(0));
     }
     
 }

@@ -74,20 +74,25 @@ public class ConfigRowMapperInjector {
     public static final ConfigHistoryRowMapper HISTORY_LIST_ROW_MAPPER = new ConfigHistoryRowMapper();
     
     public static final ConfigHistoryDetailRowMapper HISTORY_DETAIL_ROW_MAPPER = new ConfigHistoryDetailRowMapper();
-
+    
     static {
         injectConfigRowMapper();
     }
     
     public ConfigRowMapperInjector() {
     }
-
+    
     private static void injectConfigRowMapper() {
         // CONFIG_INFO_WRAPPER_ROW_MAPPER
         
-        RowMapperManager
-                .registerRowMapper(ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER.getClass().getCanonicalName(),
-                        ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER);
+        RowMapperManager.registerRowMapper(
+                ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER.getClass().getCanonicalName(),
+                ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER);
+        
+        // CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER
+        RowMapperManager.registerRowMapper(
+                ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER.getClass().getCanonicalName(),
+                ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER);
         
         // CONFIG_KEY_ROW_MAPPER
         
@@ -113,57 +118,57 @@ public class ConfigRowMapperInjector {
         
         // CONFIG_ADVANCE_INFO_ROW_MAPPER
         
-        RowMapperManager
-                .registerRowMapper(ConfigRowMapperInjector.CONFIG_ADVANCE_INFO_ROW_MAPPER.getClass().getCanonicalName(),
-                        ConfigRowMapperInjector.CONFIG_ADVANCE_INFO_ROW_MAPPER);
+        RowMapperManager.registerRowMapper(
+                ConfigRowMapperInjector.CONFIG_ADVANCE_INFO_ROW_MAPPER.getClass().getCanonicalName(),
+                ConfigRowMapperInjector.CONFIG_ADVANCE_INFO_ROW_MAPPER);
         
         // CONFIG_ALL_INFO_ROW_MAPPER
         
-        RowMapperManager
-                .registerRowMapper(ConfigRowMapperInjector.CONFIG_ALL_INFO_ROW_MAPPER.getClass().getCanonicalName(),
-                        ConfigRowMapperInjector.CONFIG_ALL_INFO_ROW_MAPPER);
+        RowMapperManager.registerRowMapper(
+                ConfigRowMapperInjector.CONFIG_ALL_INFO_ROW_MAPPER.getClass().getCanonicalName(),
+                ConfigRowMapperInjector.CONFIG_ALL_INFO_ROW_MAPPER);
         
         // CONFIG_INFO4BETA_ROW_MAPPER
         
-        RowMapperManager
-                .registerRowMapper(ConfigRowMapperInjector.CONFIG_INFO4BETA_ROW_MAPPER.getClass().getCanonicalName(),
-                        ConfigRowMapperInjector.CONFIG_INFO4BETA_ROW_MAPPER);
+        RowMapperManager.registerRowMapper(
+                ConfigRowMapperInjector.CONFIG_INFO4BETA_ROW_MAPPER.getClass().getCanonicalName(),
+                ConfigRowMapperInjector.CONFIG_INFO4BETA_ROW_MAPPER);
         
         // CONFIG_INFO4TAG_ROW_MAPPER
         
-        RowMapperManager
-                .registerRowMapper(ConfigRowMapperInjector.CONFIG_INFO4TAG_ROW_MAPPER.getClass().getCanonicalName(),
-                        ConfigRowMapperInjector.CONFIG_INFO4TAG_ROW_MAPPER);
+        RowMapperManager.registerRowMapper(
+                ConfigRowMapperInjector.CONFIG_INFO4TAG_ROW_MAPPER.getClass().getCanonicalName(),
+                ConfigRowMapperInjector.CONFIG_INFO4TAG_ROW_MAPPER);
         
         // CONFIG_INFO_BASE_ROW_MAPPER
         
-        RowMapperManager
-                .registerRowMapper(ConfigRowMapperInjector.CONFIG_INFO_BASE_ROW_MAPPER.getClass().getCanonicalName(),
-                        ConfigRowMapperInjector.CONFIG_INFO_BASE_ROW_MAPPER);
+        RowMapperManager.registerRowMapper(
+                ConfigRowMapperInjector.CONFIG_INFO_BASE_ROW_MAPPER.getClass().getCanonicalName(),
+                ConfigRowMapperInjector.CONFIG_INFO_BASE_ROW_MAPPER);
         
         // CONFIG_INFO_AGGR_ROW_MAPPER
         
-        RowMapperManager
-                .registerRowMapper(ConfigRowMapperInjector.CONFIG_INFO_AGGR_ROW_MAPPER.getClass().getCanonicalName(),
-                        ConfigRowMapperInjector.CONFIG_INFO_AGGR_ROW_MAPPER);
+        RowMapperManager.registerRowMapper(
+                ConfigRowMapperInjector.CONFIG_INFO_AGGR_ROW_MAPPER.getClass().getCanonicalName(),
+                ConfigRowMapperInjector.CONFIG_INFO_AGGR_ROW_MAPPER);
         
         // CONFIG_INFO_CHANGED_ROW_MAPPER
         
-        RowMapperManager
-                .registerRowMapper(ConfigRowMapperInjector.CONFIG_INFO_CHANGED_ROW_MAPPER.getClass().getCanonicalName(),
-                        ConfigRowMapperInjector.CONFIG_INFO_CHANGED_ROW_MAPPER);
+        RowMapperManager.registerRowMapper(
+                ConfigRowMapperInjector.CONFIG_INFO_CHANGED_ROW_MAPPER.getClass().getCanonicalName(),
+                ConfigRowMapperInjector.CONFIG_INFO_CHANGED_ROW_MAPPER);
         
         // HISTORY_LIST_ROW_MAPPER
         
-        RowMapperManager
-                .registerRowMapper(ConfigRowMapperInjector.HISTORY_LIST_ROW_MAPPER.getClass().getCanonicalName(),
-                        ConfigRowMapperInjector.HISTORY_LIST_ROW_MAPPER);
+        RowMapperManager.registerRowMapper(
+                ConfigRowMapperInjector.HISTORY_LIST_ROW_MAPPER.getClass().getCanonicalName(),
+                ConfigRowMapperInjector.HISTORY_LIST_ROW_MAPPER);
         
         // HISTORY_DETAIL_ROW_MAPPER
         
-        RowMapperManager
-                .registerRowMapper(ConfigRowMapperInjector.HISTORY_DETAIL_ROW_MAPPER.getClass().getCanonicalName(),
-                        ConfigRowMapperInjector.HISTORY_DETAIL_ROW_MAPPER);
+        RowMapperManager.registerRowMapper(
+                ConfigRowMapperInjector.HISTORY_DETAIL_ROW_MAPPER.getClass().getCanonicalName(),
+                ConfigRowMapperInjector.HISTORY_DETAIL_ROW_MAPPER);
     }
     
     public static final class ConfigInfoWrapperRowMapper implements RowMapper<ConfigInfoWrapper> {
@@ -176,7 +181,11 @@ public class ConfigRowMapperInjector {
             info.setGroup(rs.getString("group_id"));
             info.setTenant(rs.getString("tenant_id"));
             info.setAppName(rs.getString("app_name"));
-            info.setType(rs.getString("type"));
+    
+            try {
+                info.setType(rs.getString("type"));
+            } catch (SQLException ignore) {
+            }
             
             try {
                 info.setContent(rs.getString("content"));
@@ -213,7 +222,11 @@ public class ConfigRowMapperInjector {
             info.setGroup(rs.getString("group_id"));
             info.setTenant(rs.getString("tenant_id"));
             info.setLastModified(rs.getTimestamp("gmt_modified").getTime());
-            
+            try {
+                info.setMd5(rs.getString("md5"));
+            } catch (SQLException e) {
+                // ignore
+            }
             try {
                 info.setId(rs.getLong("id"));
             } catch (SQLException e) {

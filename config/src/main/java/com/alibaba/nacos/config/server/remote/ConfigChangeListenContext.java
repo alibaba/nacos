@@ -54,21 +54,9 @@ public class ConfigChangeListenContext {
      */
     public synchronized void addListen(String groupKey, String md5, String connectionId) {
         // 1.add groupKeyContext
-        Set<String> listenClients = groupKeyContext.get(groupKey);
-        if (listenClients == null) {
-            groupKeyContext.putIfAbsent(groupKey, new HashSet<>());
-            listenClients = groupKeyContext.get(groupKey);
-        }
-        listenClients.add(connectionId);
-        
+        groupKeyContext.computeIfAbsent(groupKey, k -> new HashSet<>()).add(connectionId);
         // 2.add connectionIdContext
-        HashMap<String, String> groupKeys = connectionIdContext.get(connectionId);
-        if (groupKeys == null) {
-            connectionIdContext.putIfAbsent(connectionId, new HashMap<>(16));
-            groupKeys = connectionIdContext.get(connectionId);
-        }
-        groupKeys.put(groupKey, md5);
-        
+        connectionIdContext.computeIfAbsent(connectionId, k -> new HashMap<>(16)).put(groupKey, md5);
     }
     
     /**

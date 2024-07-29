@@ -21,11 +21,13 @@ import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -33,8 +35,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class HealthCheckCommonV2Test {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class HealthCheckCommonV2Test {
     
     @Mock
     private SwitchDomain.HealthParams healthParams;
@@ -53,8 +57,8 @@ public class HealthCheckCommonV2Test {
     
     private HealthCheckCommonV2 healthCheckCommonV2;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         healthCheckCommonV2 = new HealthCheckCommonV2();
         when(healthCheckTaskV2.getClient()).thenReturn(ipPortBasedClient);
         when(ipPortBasedClient.getInstancePublishInfo(service)).thenReturn(healthCheckInstancePublishInfo);
@@ -62,7 +66,7 @@ public class HealthCheckCommonV2Test {
     }
     
     @Test
-    public void testReEvaluateCheckRT() {
+    void testReEvaluateCheckRT() {
         healthCheckCommonV2.reEvaluateCheckRT(1, healthCheckTaskV2, healthParams);
         
         verify(healthParams, times(2)).getMax();
@@ -75,7 +79,7 @@ public class HealthCheckCommonV2Test {
     }
     
     @Test
-    public void testCheckOk() {
+    void testCheckOk() {
         healthCheckCommonV2.checkOk(healthCheckTaskV2, service, "test checkOk");
         
         verify(healthCheckTaskV2).getClient();
@@ -89,7 +93,7 @@ public class HealthCheckCommonV2Test {
     }
     
     @Test
-    public void testCheckFail() {
+    void testCheckFail() {
         when(healthCheckInstancePublishInfo.isHealthy()).thenReturn(true);
         healthCheckCommonV2.checkFail(healthCheckTaskV2, service, "test checkFail");
         
@@ -103,7 +107,7 @@ public class HealthCheckCommonV2Test {
     }
     
     @Test
-    public void testCheckFailNow() {
+    void testCheckFailNow() {
         when(healthCheckInstancePublishInfo.isHealthy()).thenReturn(true);
         healthCheckCommonV2.checkFailNow(healthCheckTaskV2, service, "test checkFailNow");
         

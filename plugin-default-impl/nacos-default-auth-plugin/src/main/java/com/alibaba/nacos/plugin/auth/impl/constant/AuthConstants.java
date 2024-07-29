@@ -35,6 +35,8 @@ public class AuthConstants {
     
     public static final String TOKEN_PREFIX = "Bearer ";
     
+    public static final String DEFAULT_USER = "nacos";
+    
     public static final String PARAM_USERNAME = "username";
     
     public static final String PARAM_PASSWORD = "password";
@@ -71,11 +73,8 @@ public class AuthConstants {
      * LDAP Ignore partial result exception.
      */
     public static final String NACOS_CORE_AUTH_IGNORE_PARTIAL_RESULT_EXCEPTION = "nacos.core.auth.ldap.ignore.partial.result.exception";
-    
-    @Deprecated
-    public static final String LDAP_DEFAULT_PASSWORD = "nacos";
-    
-    public static final String LDAP_DEFAULT_ENCODED_PASSWORD = PasswordEncoderUtil.encode(LDAP_DEFAULT_PASSWORD);
+
+    public static final String LDAP_DEFAULT_ENCODED_PASSWORD = PasswordEncoderUtil.encode(System.getProperty("ldap.default.password", "nacos"));
     
     public static final String LDAP_PREFIX = "LDAP_";
 }

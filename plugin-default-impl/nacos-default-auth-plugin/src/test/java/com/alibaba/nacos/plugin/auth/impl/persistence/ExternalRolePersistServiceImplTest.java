@@ -20,25 +20,30 @@ import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.model.Page;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.lang.reflect.Field;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ExternalRolePersistServiceImplTest {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class ExternalRolePersistServiceImplTest {
     
     @Mock
     private JdbcTemplate jdbcTemplate;
@@ -52,8 +57,8 @@ public class ExternalRolePersistServiceImplTest {
     
     private ExternalRolePersistServiceImpl externalRolePersistService;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         externalRolePersistService = new ExternalRolePersistServiceImpl();
         when(jdbcTemplate.queryForObject(any(), any(), eq(Integer.class))).thenReturn(0);
         when(dataSourceService.getJdbcTemplate()).thenReturn(jdbcTemplate);
@@ -66,8 +71,8 @@ public class ExternalRolePersistServiceImplTest {
         externalRolePersistService.init();
     }
     
-    @After
-    public void tearDown() throws NoSuchFieldException, IllegalAccessException {
+    @AfterEach
+    void tearDown() throws NoSuchFieldException, IllegalAccessException {
         DatasourceConfiguration.setEmbeddedStorage(embeddedStorageCache);
         Field datasourceField = DynamicDataSource.class.getDeclaredField("basicDataSourceService");
         datasourceField.setAccessible(true);
@@ -75,21 +80,20 @@ public class ExternalRolePersistServiceImplTest {
     }
     
     @Test
-    public void testGetRoles() {
+    void testGetRoles() {
         Page<RoleInfo> roles = externalRolePersistService.getRoles(1, 10);
         
-        Assert.assertNotNull(roles);
+        assertNotNull(roles);
     }
     
     @Test
-    public void testGetRolesByUserName() {
-        Page<RoleInfo> userName = externalRolePersistService
-                .getRolesByUserNameAndRoleName("userName", "roleName", 1, 10);
-        Assert.assertNotNull(userName);
+    void testGetRolesByUserName() {
+        Page<RoleInfo> userName = externalRolePersistService.getRolesByUserNameAndRoleName("userName", "roleName", 1, 10);
+        assertNotNull(userName);
     }
     
     @Test
-    public void testAddRole() {
+    void testAddRole() {
         externalRolePersistService.addRole("role", "userName");
         
         String sql = "INSERT INTO roles (role, username) VALUES (?, ?)";
@@ -97,7 +101,7 @@ public class ExternalRolePersistServiceImplTest {
     }
     
     @Test
-    public void testDeleteRole() {
+    void testDeleteRole() {
         
         externalRolePersistService.deleteRole("role");
         String sql = "DELETE FROM roles WHERE role=?";
@@ -110,9 +114,9 @@ public class ExternalRolePersistServiceImplTest {
     }
     
     @Test
-    public void testFindRolesLikeRoleName() {
+    void testFindRolesLikeRoleName() {
         List<String> role = externalRolePersistService.findRolesLikeRoleName("role");
         
-        Assert.assertEquals(role.size(), 0);
+        assertEquals(0, role.size());
     }
 }

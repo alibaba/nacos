@@ -17,18 +17,18 @@
 package com.alibaba.nacos.common.trace.event.naming;
 
 import com.alibaba.nacos.common.trace.DeregisterInstanceReason;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class InstanceTraceEventTest extends NamingTraceEventTest {
+class InstanceTraceEventTest extends NamingTraceEventTest {
     
     @Test
-    public void testRegisterInstanceTraceEvent() {
+    void testRegisterInstanceTraceEvent() {
         RegisterInstanceTraceEvent registerInstanceTraceEvent = new RegisterInstanceTraceEvent(TIME, CLIENT_IP, true,
                 NAMESPACE_ID, GROUP_NAME, SERVICE_NAME, IP, PORT);
         assertBasicInfo(registerInstanceTraceEvent);
@@ -41,9 +41,9 @@ public class InstanceTraceEventTest extends NamingTraceEventTest {
     }
     
     @Test
-    public void testDeregisterInstanceTraceEvent() {
-        DeregisterInstanceTraceEvent deregisterInstanceTraceEvent = new DeregisterInstanceTraceEvent(TIME, CLIENT_IP,
-                true, DeregisterInstanceReason.NATIVE_DISCONNECTED, NAMESPACE_ID, GROUP_NAME, SERVICE_NAME, IP, PORT);
+    void testDeregisterInstanceTraceEvent() {
+        DeregisterInstanceTraceEvent deregisterInstanceTraceEvent = new DeregisterInstanceTraceEvent(TIME, CLIENT_IP, true,
+                DeregisterInstanceReason.NATIVE_DISCONNECTED, NAMESPACE_ID, GROUP_NAME, SERVICE_NAME, IP, PORT);
         assertBasicInfo(deregisterInstanceTraceEvent);
         assertEquals("DEREGISTER_INSTANCE_TRACE_EVENT", deregisterInstanceTraceEvent.getType());
         assertEquals(CLIENT_IP, deregisterInstanceTraceEvent.getClientIp());
@@ -55,7 +55,7 @@ public class InstanceTraceEventTest extends NamingTraceEventTest {
     }
     
     @Test
-    public void testUpdateInstanceTraceEvent() {
+    void testUpdateInstanceTraceEvent() {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("test1", "testValue");
         UpdateInstanceTraceEvent updateInstanceTraceEvent = new UpdateInstanceTraceEvent(TIME, CLIENT_IP, NAMESPACE_ID,

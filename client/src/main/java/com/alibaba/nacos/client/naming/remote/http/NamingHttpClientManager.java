@@ -59,10 +59,7 @@ public class NamingHttpClientManager implements Closeable {
     }
     
     public String getPrefix() {
-        if (ENABLE_HTTPS) {
-            return HTTPS_PREFIX;
-        }
-        return HTTP_PREFIX;
+        return ENABLE_HTTPS ? HTTPS_PREFIX : HTTP_PREFIX;
     }
     
     public NacosRestTemplate getNacosRestTemplate() {

@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 /**
  * connection control manager.
  *
- * @author shiyiyue
+ * @author shiyiyu
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class ConnectionControlManager {
@@ -64,7 +64,7 @@ public abstract class ConnectionControlManager {
     /**
      * get manager name.
      *
-     * @return
+     * @return name
      */
     public abstract String getName();
     
@@ -93,8 +93,8 @@ public abstract class ConnectionControlManager {
                 && ruleStorageProxy.getExternalStorage().getConnectionRule() != null) {
             localRuleContent = ruleStorageProxy.getExternalStorage().getConnectionRule();
             if (StringUtils.isNotBlank(localRuleContent)) {
-                Loggers.CONTROL
-                        .info("Found persist disk connection rule content on start up ,value  ={}", localRuleContent);
+                Loggers.CONTROL.info("Found persist disk connection rule content on start up ,value  ={}",
+                        localRuleContent);
             }
         }
         
@@ -104,7 +104,7 @@ public abstract class ConnectionControlManager {
             
         } else {
             Loggers.CONTROL.info("No connection rule content found ,use default empty rule ");
-            connectionControlRule = new ConnectionControlRule();
+            connectionControlRule = connectionControlRuleParser.parseRule("");
         }
     }
     
@@ -127,7 +127,7 @@ public abstract class ConnectionControlManager {
      * check connection allowed.
      *
      * @param connectionCheckRequest connectionCheckRequest.
-     * @return
+     * @return connection check response
      */
     public abstract ConnectionCheckResponse check(ConnectionCheckRequest connectionCheckRequest);
     
@@ -139,9 +139,7 @@ public abstract class ConnectionControlManager {
                     Collectors.toMap(ConnectionMetricsCollector::getName, ConnectionMetricsCollector::getTotalCount));
             int totalCount = metricsTotalCount.values().stream().mapToInt(Integer::intValue).sum();
             
-            Loggers.CONNECTION.info(String.format("ConnectionMetrics, totalCount = %s, detail = %s", totalCount,
-                    metricsTotalCount.toString()));
-            
+            Loggers.CONNECTION.info("ConnectionMetrics, totalCount = {}, detail = {}", totalCount, metricsTotalCount);
         }
     }
 }

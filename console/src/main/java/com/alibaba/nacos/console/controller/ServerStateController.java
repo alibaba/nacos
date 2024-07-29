@@ -27,11 +27,16 @@ import com.alibaba.nacos.sys.utils.DiskUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.alibaba.nacos.common.utils.StringUtils.FOLDER_SEPARATOR;
+import static com.alibaba.nacos.common.utils.StringUtils.TOP_PATH;
+import static com.alibaba.nacos.common.utils.StringUtils.WINDOWS_FOLDER_SEPARATOR;
 
 /**
  * Server state controller.
@@ -62,8 +67,13 @@ public class ServerStateController {
     }
     
     @GetMapping("/announcement")
-    public RestResult<String> getAnnouncement() {
-        File announcementFile = new File(EnvUtil.getConfPath(), ANNOUNCEMENT_FILE);
+    public RestResult<String> getAnnouncement(
+            @RequestParam(required = false, name = "language", defaultValue = "zh-CN") String language) {
+        String file = ANNOUNCEMENT_FILE.substring(0, ANNOUNCEMENT_FILE.length() - 5) + "_" + language + ".conf";
+        if (file.contains(TOP_PATH) || file.contains(FOLDER_SEPARATOR) || file.contains(WINDOWS_FOLDER_SEPARATOR)) {
+            throw new IllegalArgumentException("Invalid filename");
+        }
+        File announcementFile = new File(EnvUtil.getConfPath(), file);
         String announcement = null;
         if (announcementFile.exists() && announcementFile.isFile()) {
             announcement = DiskUtils.readFile(announcementFile);

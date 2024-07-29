@@ -20,26 +20,26 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class EntityTest {
+class EntityTest {
     
     ObjectMapper mapper = new ObjectMapper();
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
     
     @Test
-    public void testSerialization() throws JsonProcessingException {
+    void testSerialization() throws JsonProcessingException {
         Entity entity = new Entity();
         entity.setName("test-entity");
         entity.setType(PreservedEntityTypes.ip.name());
@@ -51,7 +51,7 @@ public class EntityTest {
     }
     
     @Test
-    public void testDeserialization() throws JsonProcessingException {
+    void testDeserialization() throws JsonProcessingException {
         String json = "{\"type\":\"service\",\"name\":\"test-entity\",\"labels\":{\"test-label-key\":\"test-label-value\"}}";
         Entity entity = mapper.readValue(json, Entity.class);
         assertEquals("test-entity", entity.getName());

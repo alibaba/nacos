@@ -40,14 +40,12 @@ import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.context.annotation.Conditional;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.List;
 
@@ -90,18 +88,17 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     public ConfigOperateResult addConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser) {
         String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
         String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
-        String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
+        String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.PERSIST_ENCODE);
         String encryptedDataKey = StringUtils.defaultEmptyIfBlank(configInfo.getEncryptedDataKey());
         try {
             ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_BETA);
-            Timestamp time = new Timestamp(System.currentTimeMillis());
             
             jt.update(configInfoBetaMapper.insert(
                             Arrays.asList("data_id", "group_id", "tenant_id", "app_name", "content", "md5", "beta_ips",
-                                    "src_ip", "src_user", "gmt_create", "gmt_modified", "encrypted_data_key")),
+                                    "src_ip", "src_user", "gmt_create@NOW()", "gmt_modified@NOW()", "encrypted_data_key")),
                     configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp, configInfo.getContent(), md5,
-                    betaIps, srcIp, srcUser, time, time, encryptedDataKey);
+                    betaIps, srcIp, srcUser, encryptedDataKey);
             return getBetaOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
             
         } catch (CannotGetJdbcConnectionException e) {
@@ -113,9 +110,13 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     @Override
     public ConfigOperateResult insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps, final String srcIp,
             final String srcUser) {
-        try {
+        
+        ConfigInfoStateWrapper configInfo4BetaState = this.findConfigInfo4BetaState(configInfo.getDataId(),
+                configInfo.getGroup(), configInfo.getTenant());
+        if (configInfo4BetaState == null) {
             return addConfigInfo4Beta(configInfo, betaIps, srcIp, srcUser);
-        } catch (DataIntegrityViolationException ive) { // Unique constraint conflict
+            
+        } else {
             return updateConfigInfo4Beta(configInfo, betaIps, srcIp, srcUser);
         }
     }
@@ -123,9 +124,11 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     @Override
     public ConfigOperateResult insertOrUpdateBetaCas(final ConfigInfo configInfo, final String betaIps,
             final String srcIp, final String srcUser) {
-        try {
+        ConfigInfoStateWrapper configInfo4BetaState = this.findConfigInfo4BetaState(configInfo.getDataId(),
+                configInfo.getGroup(), configInfo.getTenant());
+        if (configInfo4BetaState == null) {
             return addConfigInfo4Beta(configInfo, betaIps, srcIp, srcUser);
-        } catch (DataIntegrityViolationException ive) { // Unique constraint conflict
+        } else {
             return updateConfigInfo4BetaCas(configInfo, betaIps, srcIp, srcUser);
         }
     }
@@ -135,7 +138,7 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         tjt.execute(status -> {
             try {
-                ConfigInfo configInfo = findConfigInfo4Beta(dataId, group, tenant);
+                ConfigInfoStateWrapper configInfo = findConfigInfo4BetaState(dataId, group, tenant);
                 if (configInfo != null) {
                     ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(
                             dataSourceService.getDataSourceType(), TableConstant.CONFIG_INFO_BETA);
@@ -160,12 +163,11 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
         try {
             ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_BETA);
-            Timestamp time = new Timestamp(System.currentTimeMillis());
-            
+
             jt.update(configInfoBetaMapper.update(
-                            Arrays.asList("content", "md5", "beta_ips", "src_ip", "src_user", "gmt_modified", "app_name",
-                                    "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id")),
-                    configInfo.getContent(), md5, betaIps, srcIp, srcUser, time, appNameTmp, encryptedDataKey,
+                            Arrays.asList("content", "md5", "beta_ips", "src_ip", "src_user", "gmt_modified@NOW()",
+                                    "app_name", "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id")),
+                    configInfo.getContent(), md5, betaIps, srcIp, srcUser, appNameTmp, encryptedDataKey,
                     configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
             return getBetaOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
             
@@ -209,15 +211,13 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
         try {
             ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_BETA);
-            Timestamp time = new Timestamp(System.currentTimeMillis());
-            
+
             MapperContext context = new MapperContext();
             context.putUpdateParameter(FieldConstant.CONTENT, configInfo.getContent());
             context.putUpdateParameter(FieldConstant.MD5, md5);
             context.putUpdateParameter(FieldConstant.BETA_IPS, betaIps);
             context.putUpdateParameter(FieldConstant.SRC_IP, srcIp);
             context.putUpdateParameter(FieldConstant.SRC_USER, srcUser);
-            context.putUpdateParameter(FieldConstant.GMT_MODIFIED, time);
             context.putUpdateParameter(FieldConstant.APP_NAME, appNameTmp);
             
             context.putWhereParameter(FieldConstant.DATA_ID, configInfo.getDataId());
@@ -265,10 +265,8 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
                 TableConstant.CONFIG_INFO_BETA);
         String sql = configInfoBetaMapper.count(null);
         Integer result = jt.queryForObject(sql, Integer.class);
-        if (result == null) {
-            throw new IllegalArgumentException("configInfoBetaCount error");
-        }
-        return result;
+        
+        return result.intValue();
     }
     
     @Override

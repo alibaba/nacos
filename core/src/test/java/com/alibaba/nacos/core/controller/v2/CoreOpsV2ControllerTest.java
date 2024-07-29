@@ -28,22 +28,26 @@ import com.alibaba.nacos.core.model.request.LogUpdateRequest;
 import com.alibaba.nacos.core.model.vo.IdGeneratorVO;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@RunWith(MockitoJUnitRunner.class)
-public class CoreOpsV2ControllerTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+@ExtendWith(MockitoExtension.class)
+class CoreOpsV2ControllerTest {
+    
+    private final MockEnvironment mockEnvironment = new MockEnvironment();
     
     @InjectMocks
     private CoreOpsV2Controller coreOpsV2Controller;
@@ -54,15 +58,13 @@ public class CoreOpsV2ControllerTest {
     @Mock
     private IdGeneratorManager idGeneratorManager;
     
-    private final MockEnvironment mockEnvironment = new MockEnvironment();
-    
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         EnvUtil.setEnvironment(mockEnvironment);
     }
     
     @Test
-    public void testRaftOps() {
+    void testRaftOps() {
         Mockito.when(protocolManager.getCpProtocol()).thenAnswer(invocationOnMock -> {
             CPProtocol cpProtocol = Mockito.mock(CPProtocol.class);
             Mockito.when(cpProtocol.execute(Mockito.anyMap())).thenReturn(RestResultUtils.success("res"));
@@ -70,33 +72,33 @@ public class CoreOpsV2ControllerTest {
         });
         
         RestResult<String> result = coreOpsV2Controller.raftOps(new HashMap<>());
-        Assert.assertEquals("res", result.getData());
+        assertEquals("res", result.getData());
     }
     
     @Test
-    public void testIdInfo() {
+    void testIdInfo() {
         mockEnvironment.setProperty("nacos.core.snowflake.worker-id", "1");
         
         Map<String, IdGenerator> idGeneratorMap = new HashMap<>();
         idGeneratorMap.put("resource", new SnowFlowerIdGenerator());
         Mockito.when(idGeneratorManager.getGeneratorMap()).thenReturn(idGeneratorMap);
         RestResult<List<IdGeneratorVO>> res = coreOpsV2Controller.ids();
-    
-        Assert.assertTrue(res.ok());
-        Assert.assertEquals(1, res.getData().size());
-        Assert.assertEquals("resource", res.getData().get(0).getResource());
-        Assert.assertEquals(1L, res.getData().get(0).getInfo().getWorkerId().longValue());
-        Assert.assertEquals(0L, res.getData().get(0).getInfo().getCurrentId().longValue());
+        
+        assertTrue(res.ok());
+        assertEquals(1, res.getData().size());
+        assertEquals("resource", res.getData().get(0).getResource());
+        assertEquals(1L, res.getData().get(0).getInfo().getWorkerId().longValue());
+        assertEquals(0L, res.getData().get(0).getInfo().getCurrentId().longValue());
     }
     
     @Test
-    public void testSetLogLevel() {
+    void testSetLogLevel() {
         LogUpdateRequest request = new LogUpdateRequest();
         request.setLogName("core");
         request.setLogLevel("debug");
         RestResult<?> res = coreOpsV2Controller.updateLog(request);
-    
-        Assert.assertTrue(res.ok());
-        Assert.assertTrue(Loggers.CORE.isDebugEnabled());
+        
+        assertTrue(res.ok());
+        assertTrue(Loggers.CORE.isDebugEnabled());
     }
 }

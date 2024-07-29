@@ -17,28 +17,28 @@
 package com.alibaba.nacos.plugin.auth.exception;
 
 import com.alibaba.nacos.api.common.Constants;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class AccessExceptionTest {
+class AccessExceptionTest {
     
     @Test
-    public void testNewAccessExceptionWithCode() {
+    void testNewAccessExceptionWithCode() {
         AccessException actual = new AccessException(403);
         assertEquals(403, actual.getErrCode());
         assertEquals(Constants.NULL, actual.getErrMsg());
     }
     
     @Test
-    public void testNewAccessExceptionWithMsg() {
+    void testNewAccessExceptionWithMsg() {
         AccessException actual = new AccessException("Test");
         assertEquals("Test", actual.getErrMsg());
         assertEquals(0, actual.getErrCode());
     }
     
     @Test
-    public void testNewAccessExceptionWithNoArgs() {
+    void testNewAccessExceptionWithNoArgs() {
         AccessException actual = new AccessException();
         assertEquals(Constants.NULL, actual.getErrMsg());
         assertEquals(0, actual.getErrCode());

@@ -16,44 +16,46 @@
 
 package com.alibaba.nacos.common.ability.discover;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@RunWith(MockitoJUnitRunner.class)
-public class NacosAbilityManagerHolderTest {
+@ExtendWith(MockitoExtension.class)
+class NacosAbilityManagerHolderTest {
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         NacosAbilityManagerHolder.getInstance();
     }
     
-    @After
-    public void tearDown() throws Exception {
-        Field abilityControlManagerField = NacosAbilityManagerHolder.class
-                .getDeclaredField("abstractAbilityControlManager");
+    @AfterEach
+    void tearDown() throws Exception {
+        Field abilityControlManagerField = NacosAbilityManagerHolder.class.getDeclaredField("abstractAbilityControlManager");
         abilityControlManagerField.setAccessible(true);
         abilityControlManagerField.set(null, null);
     }
     
     @Test
-    public void testGetInstance() {
+    void testGetInstance() {
         assertNotNull(NacosAbilityManagerHolder.getInstance());
     }
     
     @Test
-    public void testGetInstanceByType() {
+    void testGetInstanceByType() {
         assertNotNull(NacosAbilityManagerHolder.getInstance(HigherMockAbilityManager.class));
     }
     
-    @Test(expected = ClassCastException.class)
-    public void testGetInstanceByWrongType() {
-        assertNotNull(NacosAbilityManagerHolder.getInstance(LowerMockAbilityManager.class));
+    @Test
+    void testGetInstanceByWrongType() {
+        assertThrows(ClassCastException.class, () -> {
+            assertNotNull(NacosAbilityManagerHolder.getInstance(LowerMockAbilityManager.class));
+        });
     }
 }

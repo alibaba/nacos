@@ -24,14 +24,16 @@ import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.core.ability.TestServerAbilityControlManager;
 import com.alibaba.nacos.core.ability.control.ServerAbilityControlManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /**
  * test for ability in config.
@@ -49,8 +51,8 @@ public class AbilityConfigsTest {
     
     private Map<AbilityKey, Boolean> currentAbilities;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         abilityConfigs = new TestAbilityConfig();
@@ -68,7 +70,7 @@ public class AbilityConfigsTest {
         abilityConfigs.setAbilityHandlerRegistry(serverAbilityControlManager);
         this.serverAbilityControlManager = serverAbilityControlManager;
     }
-
+    
     /**
      * fill field.
      *
@@ -86,49 +88,49 @@ public class AbilityConfigsTest {
     }
     
     @Test
-    public void testLoadAbilities() throws Exception {
+    void testLoadAbilities() throws Exception {
         environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_1.getName(), Boolean.TRUE.toString());
         environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_2.getName(), Boolean.FALSE.toString());
         // test load
         fill();
         ServerAbilityControlManager manager = new ServerAbilityControlManager();
         // config has higher priority
-        Assert.assertEquals(manager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1), AbilityStatus.SUPPORTED);
-        Assert.assertNotEquals(manager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2), AbilityStatus.SUPPORTED);
+        assertEquals(AbilityStatus.SUPPORTED, manager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
+        assertNotEquals(AbilityStatus.SUPPORTED, manager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2));
         // clear
         currentAbilities.clear();
     }
     
     @Test
-    public void testInit() {
-        Assert.assertEquals(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1), AbilityStatus.SUPPORTED);
-        Assert.assertEquals(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2), AbilityStatus.SUPPORTED);
+    void testInit() {
+        assertEquals(AbilityStatus.SUPPORTED, serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
+        assertEquals(AbilityStatus.SUPPORTED, serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2));
     }
     
     @Test
-    public void testConfigChange() throws InterruptedException {
+    void testConfigChange() throws InterruptedException {
         // test no change
         environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_1.getName(), Boolean.TRUE.toString());
         environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_2.getName(), Boolean.TRUE.toString());
         abilityConfigs.onEvent(new ServerConfigChangeEvent());
-        Assert.assertEquals(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1), AbilityStatus.SUPPORTED);
-        Assert.assertEquals(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2), AbilityStatus.SUPPORTED);
+        assertEquals(AbilityStatus.SUPPORTED, serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
+        assertEquals(AbilityStatus.SUPPORTED, serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2));
         
         // test change
         environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_1.getName(), Boolean.FALSE.toString());
         abilityConfigs.onEvent(new ServerConfigChangeEvent());
-        Assert.assertNotEquals(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1), AbilityStatus.SUPPORTED);
-        Assert.assertEquals(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2), AbilityStatus.SUPPORTED);
-    
+        assertNotEquals(AbilityStatus.SUPPORTED, serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
+        assertEquals(AbilityStatus.SUPPORTED, serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2));
+        
         environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_1.getName(), Boolean.TRUE.toString());
         abilityConfigs.onEvent(new ServerConfigChangeEvent());
-        Assert.assertEquals(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1), AbilityStatus.SUPPORTED);
-    
+        assertEquals(AbilityStatus.SUPPORTED, serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
+        
         environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_1.getName(), Boolean.FALSE.toString());
         environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_2.getName(), Boolean.FALSE.toString());
         abilityConfigs.onEvent(new ServerConfigChangeEvent());
-        Assert.assertNotEquals(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1), AbilityStatus.SUPPORTED);
-        Assert.assertNotEquals(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2), AbilityStatus.SUPPORTED);
+        assertNotEquals(AbilityStatus.SUPPORTED, serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
+        assertNotEquals(AbilityStatus.SUPPORTED, serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2));
     }
     
 }

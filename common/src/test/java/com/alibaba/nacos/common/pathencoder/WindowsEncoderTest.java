@@ -17,106 +17,112 @@
 package com.alibaba.nacos.common.pathencoder;
 
 import com.alibaba.nacos.common.pathencoder.impl.WindowsEncoder;
-import junit.framework.TestCase;
-import org.junit.Assert;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.Charset;
 
-public class WindowsEncoderTest extends TestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+class WindowsEncoderTest {
+    
     WindowsEncoder windowsEncoder = new WindowsEncoder();
-
+    
     /**
      * test encode.
      */
-    public void testEncode() {
+    @Test
+    void testEncode() {
         String charset = Charset.defaultCharset().name();
         String case1 = "aaaadsaknkf";
-        Assert.assertEquals(windowsEncoder.encode(case1, charset), case1);
+        assertEquals(windowsEncoder.encode(case1, charset), case1);
         // matches one
         String case2 = "aaaa\\dsaknkf";
-        Assert.assertEquals(windowsEncoder.encode(case2, charset), "aaaa%A1%dsaknkf");
+        assertEquals("aaaa%A1%dsaknkf", windowsEncoder.encode(case2, charset));
         String case3 = "aaaa/dsaknkf";
-        Assert.assertEquals(windowsEncoder.encode(case3, charset), "aaaa%A2%dsaknkf");
+        assertEquals("aaaa%A2%dsaknkf", windowsEncoder.encode(case3, charset));
         String case4 = "aaaa:dsaknkf";
-        Assert.assertEquals(windowsEncoder.encode(case4, charset), "aaaa%A3%dsaknkf");
+        assertEquals("aaaa%A3%dsaknkf", windowsEncoder.encode(case4, charset));
         String case5 = "aaaa*dsaknkf";
-        Assert.assertEquals(windowsEncoder.encode(case5, charset), "aaaa%A4%dsaknkf");
+        assertEquals("aaaa%A4%dsaknkf", windowsEncoder.encode(case5, charset));
         String case6 = "aaaa?dsaknkf";
-        Assert.assertEquals(windowsEncoder.encode(case6, charset), "aaaa%A5%dsaknkf");
+        assertEquals("aaaa%A5%dsaknkf", windowsEncoder.encode(case6, charset));
         String case7 = "aaaa\"dsaknkf";
-        Assert.assertEquals(windowsEncoder.encode(case7, charset), "aaaa%A6%dsaknkf");
+        assertEquals("aaaa%A6%dsaknkf", windowsEncoder.encode(case7, charset));
         String case8 = "aaaa<dsaknkf";
-        Assert.assertEquals(windowsEncoder.encode(case8, charset), "aaaa%A7%dsaknkf");
+        assertEquals("aaaa%A7%dsaknkf", windowsEncoder.encode(case8, charset));
         String case9 = "aaaa>dsaknkf";
-        Assert.assertEquals(windowsEncoder.encode(case9, charset), "aaaa%A8%dsaknkf");
+        assertEquals("aaaa%A8%dsaknkf", windowsEncoder.encode(case9, charset));
         String case10 = "aaaa|dsaknkf";
-        Assert.assertEquals(windowsEncoder.encode(case10, charset), "aaaa%A9%dsaknkf");
-
+        assertEquals("aaaa%A9%dsaknkf", windowsEncoder.encode(case10, charset));
+        
         // matches more
         String case11 = "aaaa<dsa<>>knkf";
-        Assert.assertEquals(windowsEncoder.encode(case11, charset), "aaaa%A7%dsa%A7%%A8%%A8%knkf");
+        assertEquals("aaaa%A7%dsa%A7%%A8%%A8%knkf", windowsEncoder.encode(case11, charset));
         String case12 = "aaaa\"dsa\"\\\\knkf";
-        Assert.assertEquals(windowsEncoder.encode(case12, charset), "aaaa%A6%dsa%A6%%A1%%A1%knkf");
+        assertEquals("aaaa%A6%dsa%A6%%A1%%A1%knkf", windowsEncoder.encode(case12, charset));
     }
-
+    
     /**
      * test decode.
      */
-    public void testDecode() {
+    @Test
+    void testDecode() {
         String charset = Charset.defaultCharset().name();
         String case1 = "aaaadsaknkf";
-        Assert.assertEquals(windowsEncoder.decode(case1, charset), case1);
+        assertEquals(windowsEncoder.decode(case1, charset), case1);
         // matches one
         String case2 = "aaaa%A1%dsaknkf";
-        Assert.assertEquals(windowsEncoder.decode(case2, charset), "aaaa\\dsaknkf");
+        assertEquals("aaaa\\dsaknkf", windowsEncoder.decode(case2, charset));
         String case3 = "aaaa%A2%dsaknkf";
-        Assert.assertEquals(windowsEncoder.decode(case3, charset), "aaaa/dsaknkf");
+        assertEquals("aaaa/dsaknkf", windowsEncoder.decode(case3, charset));
         String case4 = "aaaa%A3%dsaknkf";
-        Assert.assertEquals(windowsEncoder.decode(case4, charset), "aaaa:dsaknkf");
+        assertEquals("aaaa:dsaknkf", windowsEncoder.decode(case4, charset));
         String case5 = "aaaa%A4%dsaknkf";
-        Assert.assertEquals(windowsEncoder.decode(case5, charset), "aaaa*dsaknkf");
+        assertEquals("aaaa*dsaknkf", windowsEncoder.decode(case5, charset));
         String case6 = "aaaa%A5%dsaknkf";
-        Assert.assertEquals(windowsEncoder.decode(case6, charset), "aaaa?dsaknkf");
+        assertEquals("aaaa?dsaknkf", windowsEncoder.decode(case6, charset));
         String case7 = "aaaa%A6%dsaknkf";
-        Assert.assertEquals(windowsEncoder.decode(case7, charset), "aaaa\"dsaknkf");
+        assertEquals("aaaa\"dsaknkf", windowsEncoder.decode(case7, charset));
         String case8 = "aaaa%A7%dsaknkf";
-        Assert.assertEquals(windowsEncoder.decode(case8, charset), "aaaa<dsaknkf");
+        assertEquals("aaaa<dsaknkf", windowsEncoder.decode(case8, charset));
         String case9 = "aaaa%A8%dsaknkf";
-        Assert.assertEquals(windowsEncoder.decode(case9, charset), "aaaa>dsaknkf");
+        assertEquals("aaaa>dsaknkf", windowsEncoder.decode(case9, charset));
         String case10 = "aaaa%A9%dsaknkf";
-        Assert.assertEquals(windowsEncoder.decode(case10, charset), "aaaa|dsaknkf");
-
+        assertEquals("aaaa|dsaknkf", windowsEncoder.decode(case10, charset));
+        
         // matches more
         String case11 = "aaaa%A7%dsa%A7%%A8%%A8%knkf";
-        Assert.assertEquals(windowsEncoder.decode(case11, charset), "aaaa<dsa<>>knkf");
+        assertEquals("aaaa<dsa<>>knkf", windowsEncoder.decode(case11, charset));
         String case12 = "aaaa%A6%dsa%A6%%A1%%A1%knkf";
-        Assert.assertEquals(windowsEncoder.decode(case12, charset), "aaaa\"dsa\"\\\\knkf");
+        assertEquals("aaaa\"dsa\"\\\\knkf", windowsEncoder.decode(case12, charset));
     }
-
+    
     /**
      * test needEncode.
      */
-    public void testNeedEncode() {
-        String case1 = "aaaadsaknkf";
+    @Test
+    void testNeedEncode() {
         // / : ? " < > | \
+        assertFalse(windowsEncoder.needEncode(null));
+        String case1 = "aaaadsaknkf";
+        assertFalse(windowsEncoder.needEncode(case1));
         String case2 = "?asda";
+        assertTrue(windowsEncoder.needEncode(case2));
         String case3 = "/asdasd";
+        assertTrue(windowsEncoder.needEncode(case3));
         String case4 = "as\\dasda";
+        assertTrue(windowsEncoder.needEncode(case4));
         String case5 = "asd::as";
+        assertTrue(windowsEncoder.needEncode(case5));
         String case6 = "sda\"sda";
+        assertTrue(windowsEncoder.needEncode(case6));
         String case7 = "asdas<da";
+        assertTrue(windowsEncoder.needEncode(case7));
         String case8 = "sdasas>a";
+        assertTrue(windowsEncoder.needEncode(case8));
         String case9 = "das1|2e";
-        Assert.assertFalse(windowsEncoder.needEncode(null));
-        Assert.assertFalse(windowsEncoder.needEncode(case1));
-        Assert.assertTrue(windowsEncoder.needEncode(case2));
-        Assert.assertTrue(windowsEncoder.needEncode(case3));
-        Assert.assertTrue(windowsEncoder.needEncode(case4));
-        Assert.assertTrue(windowsEncoder.needEncode(case5));
-        Assert.assertTrue(windowsEncoder.needEncode(case6));
-        Assert.assertTrue(windowsEncoder.needEncode(case7));
-        Assert.assertTrue(windowsEncoder.needEncode(case8));
-        Assert.assertTrue(windowsEncoder.needEncode(case9));
+        assertTrue(windowsEncoder.needEncode(case9));
     }
 }

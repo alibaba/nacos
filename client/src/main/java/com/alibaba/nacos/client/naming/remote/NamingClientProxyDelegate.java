@@ -35,6 +35,7 @@ import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
 import com.alibaba.nacos.client.security.SecurityProxy;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 
@@ -84,12 +85,8 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     }
     
     private void initSecurityProxy(NacosClientProperties properties) {
-        this.executorService = new ScheduledThreadPoolExecutor(1, r -> {
-            Thread t = new Thread(r);
-            t.setName("com.alibaba.nacos.client.naming.security");
-            t.setDaemon(true);
-            return t;
-        });
+        this.executorService = new ScheduledThreadPoolExecutor(1,
+                new NameThreadFactory("com.alibaba.nacos.client.naming.security"));
         final Properties nacosClientPropertiesView = properties.asProperties();
         this.securityProxy.login(nacosClientPropertiesView);
         this.executorService.scheduleWithFixedDelay(() -> securityProxy.login(nacosClientPropertiesView), 0,
