@@ -155,6 +155,9 @@
         <spring.version>6.1.10</spring.version>
         <spring-security.version>6.3.1</spring-security.version>
         <tomcat.version>9.0.93</tomcat.version>
+        
+        <!-- native -->
+        <native-maven-plugin.version>0.10.2</native-maven-plugin.version>
     </properties>
     <!-- == -->
     <!-- =========================================================Build plugins================================================ -->
