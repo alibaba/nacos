@@ -88,7 +88,7 @@
     </issueManagement>
     
     <properties>
-        <revision>2.4.0-SNAPSHOT</revision>
+        <revision>2.4.0</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Compiler settings properties -->
@@ -361,6 +361,7 @@
                         <exclude>**/filter-config.json</exclude>
                         <exclude>**/disk_cache_test/**</exclude>
                         <exclude>**/failover_test/**</exclude>
+                        <exclude>lefthook.yml</exclude>
                     </excludes>
                 </configuration>
                 <executions>

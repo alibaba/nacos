@@ -22,6 +22,7 @@ import com.alibaba.nacos.client.auth.ram.identify.StsConfig;
 import com.alibaba.nacos.client.auth.ram.injector.AbstractResourceInjector;
 import com.alibaba.nacos.client.auth.ram.injector.ConfigResourceInjector;
 import com.alibaba.nacos.client.auth.ram.injector.NamingResourceInjector;
+import com.alibaba.nacos.client.auth.ram.utils.RamUtil;
 import com.alibaba.nacos.client.auth.ram.utils.SpasAdapter;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
@@ -76,13 +77,11 @@ public class RamClientAuthServiceImpl extends AbstractClientAuthService {
     }
     
     private void loadAccessKey(Properties properties) {
-        String accessKey = properties.getProperty(PropertyKeyConst.ACCESS_KEY);
-        ramContext.setAccessKey(StringUtils.isBlank(accessKey) ? SpasAdapter.getAk() : accessKey);
+        ramContext.setAccessKey(RamUtil.getAccessKey(properties));
     }
     
     private void loadSecretKey(Properties properties) {
-        String secretKey = properties.getProperty(PropertyKeyConst.SECRET_KEY);
-        ramContext.setSecretKey(StringUtils.isBlank(secretKey) ? SpasAdapter.getSk() : secretKey);
+        ramContext.setSecretKey(RamUtil.getSecretKey(properties));
     }
     
     private void loadRegionId(Properties properties) {

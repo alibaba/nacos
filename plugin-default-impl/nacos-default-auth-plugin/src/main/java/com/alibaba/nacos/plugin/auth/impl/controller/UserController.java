@@ -23,6 +23,7 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
@@ -102,7 +103,11 @@ public class UserController {
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
     @PostMapping
     public Object createUser(@RequestParam String username, @RequestParam String password) {
-        
+        if (AuthConstants.DEFAULT_USER.equals(username)) {
+            return RestResultUtils.failed(HttpStatus.CONFLICT.value(),
+                    "User `nacos` is default admin user. Please use `/nacos/v1/auth/users/admin` API to init `nacos` users. "
+                            + "Detail see `https://nacos.io/docs/latest/manual/admin/auth/#31-%E8%AE%BE%E7%BD%AE%E7%AE%A1%E7%90%86%E5%91%98%E5%AF%86%E7%A0%81`");
+        }
         User user = userDetailsService.getUserFromDatabase(username);
         if (user != null) {
             throw new IllegalArgumentException("user '" + username + "' already exist!");
@@ -202,8 +207,7 @@ public class UserController {
         if (!authConfigs.isAuthEnabled()) {
             return true;
         }
-        IdentityContext identityContext = (IdentityContext) request.getSession()
-                .getAttribute(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_CONTEXT);
+        IdentityContext identityContext = RequestContextHolder.getContext().getAuthContext().getIdentityContext();
         if (identityContext == null) {
             throw new HttpSessionRequiredException("session expired!");
         }
@@ -323,7 +327,6 @@ public class UserController {
             return RestResultUtils.failed(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Update userpassword failed");
         }
     }
-    
     
     /**
      * Fuzzy matching username.
