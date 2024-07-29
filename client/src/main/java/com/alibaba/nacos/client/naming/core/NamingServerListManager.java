@@ -19,8 +19,12 @@ package com.alibaba.nacos.client.naming.core;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosLoadException;
 import com.alibaba.nacos.client.address.AbstractServerListManager;
+import com.alibaba.nacos.client.address.AddressServerListProvider;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 
+import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -34,6 +38,10 @@ public class NamingServerListManager extends AbstractServerListManager {
     
     private final AtomicInteger currentIndex = new AtomicInteger();
     
+    private String nacosDomain;
+    
+    private boolean isDomain;
+    
     public NamingServerListManager(Properties properties) throws NacosException {
         this(NacosClientProperties.PROTOTYPE.derive(properties));
     }
@@ -44,11 +52,44 @@ public class NamingServerListManager extends AbstractServerListManager {
     
     public NamingServerListManager(NacosClientProperties properties, String namespace) throws NacosException {
         super(properties, namespace);
-        if (getServerList().isEmpty()) {
+        List<String> serverList = getServerList();
+        if (serverList.isEmpty()) {
             throw new NacosLoadException("serverList is empty,please check configuration");
         } else {
-            currentIndex.set(new Random().nextInt(getServerList().size()));
+            currentIndex.set(new Random().nextInt(serverList.size()));
         }
+        if (serverListProvider instanceof AddressServerListProvider) {
+            if (serverList.size() == 1) {
+                isDomain = true;
+                nacosDomain = serverList.get(0);
+            }
+        }
+    }
+    
+    public String getNacosDomain() {
+        return nacosDomain;
+    }
+    
+    public void setNacosDomain(final String nacosDomain) {
+        this.nacosDomain = nacosDomain;
+    }
+    
+    public boolean isDomain() {
+        return isDomain;
+    }
+    
+    public void setDomain(final boolean domain) {
+        isDomain = domain;
+    }
+    
+    @Override
+    public String getModuleName() {
+        return "Naming";
+    }
+    
+    @Override
+    public NacosRestTemplate getNacosRestTemplate() {
+        return NamingHttpClientManager.getInstance().getNacosRestTemplate();
     }
     
     @Override

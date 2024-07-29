@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.address.AbstractServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 
@@ -59,7 +60,17 @@ public class ConfigServerListManager extends AbstractServerListManager {
         }
     }
     
-    public void start() throws NacosException {
+    @Override
+    public String getModuleName() {
+        return "Config";
+    }
+    
+    @Override
+    public NacosRestTemplate getNacosRestTemplate() {
+        return ConfigHttpClientManager.getInstance().getNacosRestTemplate();
+    }
+    
+    public void start() {
         iterator = iterator();
         currentServerAddr = iterator.next();
     }
@@ -70,7 +81,7 @@ public class ConfigServerListManager extends AbstractServerListManager {
         if (properties != null && properties.containsKey(PropertyKeyConst.SERVER_NAME)) {
             serverName = properties.getProperty(PropertyKeyConst.SERVER_NAME);
         } else {
-            serverName = serverListProvider.getServerName();
+            serverName = getServerName();
         }
         serverName = serverName.replaceAll("\\/", "_");
         serverName = serverName.replaceAll("\\:", "_");

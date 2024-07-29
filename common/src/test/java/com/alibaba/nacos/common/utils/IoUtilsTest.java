@@ -18,7 +18,6 @@ package com.alibaba.nacos.common.utils;
 
 import org.apache.commons.io.Charsets;
 import org.junit.jupiter.api.Test;
-import sun.security.action.GetPropertyAction;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -29,7 +28,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
-import java.security.AccessController;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -129,7 +127,7 @@ class IoUtilsTest {
     void testDeleteForDirectory() throws IOException {
         File file = null;
         try {
-            String tmpDir = AccessController.doPrivileged(new GetPropertyAction("java.io.tmpdir"));
+            String tmpDir = System.getProperty("java.io.tmpdir");
             File tmpDirFile = new File(tmpDir, "IoUtilsTest");
             tmpDirFile.mkdirs();
             file = File.createTempFile("test_deleteForDirectory", ".txt", tmpDirFile);

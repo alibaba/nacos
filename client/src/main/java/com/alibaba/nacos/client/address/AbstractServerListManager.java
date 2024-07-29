@@ -20,10 +20,10 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
-import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 
@@ -41,22 +41,32 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
     
     protected ServerListProvider serverListProvider;
     
+    private final NacosClientProperties properties;
+    
     public AbstractServerListManager(NacosClientProperties properties) throws NacosException {
         this(properties, null);
     }
     
     public AbstractServerListManager(NacosClientProperties properties, String namespace) throws NacosException {
+        if (null == properties) {
+            throw new NacosException(NacosException.INVALID_PARAM, "properties is null");
+        }
         if (StringUtils.isNotBlank(namespace)) {
             properties.setProperty(PropertyKeyConst.NAMESPACE, namespace);
         }
+        properties.setProperty(PropertyKeyConst.CLIENT_MODULE_TYPE, getModuleName());
+        this.properties = properties;
         Collection<ServerListProvider> serverListProviders = NacosServiceLoader.load(ServerListProvider.class);
         for (ServerListProvider each : serverListProviders) {
-            each.init(properties);
-            serverListProvider = each;
-            if (CollectionUtils.isNotEmpty(getServerList())) {
+            if (each.match(properties)) {
+                this.serverListProvider = each;
                 break;
             }
         }
+        if (null == serverListProvider) {
+            throw new NacosException(NacosException.SERVER_ERROR, "no server list provider found");
+        }
+        this.serverListProvider.init(properties, getNacosRestTemplate());
     }
     
     @Override
@@ -68,11 +78,34 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
     public void shutdown() throws NacosException {
         String className = this.getClass().getName();
         LOGGER.info("{} do shutdown begin", className);
-        ServerListHttpClientManager.getInstance().shutdown();
+        if (null != serverListProvider) {
+            serverListProvider.shutdown();
+        }
+        serverListProvider = null;
         LOGGER.info("{} do shutdown stop", className);
     }
     
     public ServerListProvider getServerListProvider() {
         return serverListProvider;
     }
+    
+    public NacosClientProperties getProperties() {
+        return properties;
+    }
+    
+    public String getServerName() {
+        return getModuleName() + "-" + serverListProvider.getServerName();
+    }
+    
+    /**
+     * get module name.
+     * @return module name
+     */
+    public abstract String getModuleName();
+    
+    /**
+     * get nacos rest template.
+     * @return nacos rest template
+     */
+    public abstract NacosRestTemplate getNacosRestTemplate();
 }

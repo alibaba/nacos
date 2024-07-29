@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.List;
@@ -36,7 +37,10 @@ public abstract class AbstractServerListProvider implements ServerListProvider {
     protected String namespace = "";
     
     @Override
-    public void init(final NacosClientProperties properties) throws NacosException {
+    public void init(final NacosClientProperties properties, final NacosRestTemplate nacosRestTemplate) throws NacosException {
+        if (null == properties) {
+            throw new NacosException(NacosException.INVALID_PARAM, "properties is null");
+        }
         initContextPath(properties);
         initNameSpace(properties);
     }

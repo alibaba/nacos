@@ -18,6 +18,9 @@ package com.alibaba.nacos.client.address;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.lifecycle.Closeable;
 
 import java.util.List;
 
@@ -26,14 +29,15 @@ import java.util.List;
  * 
  * @author totalo 
  */
-public interface ServerListProvider {
+public interface ServerListProvider extends Closeable {
     
     /**
      * Init.
      * @param properties nacos client properties
+     * @param nacosRestTemplate nacos rest template
      * @throws NacosException nacos exception
      */
-    void init(NacosClientProperties properties) throws NacosException;
+    void init(final NacosClientProperties properties, final NacosRestTemplate nacosRestTemplate) throws NacosException;
     
     /**
      * Get server list.
@@ -58,9 +62,40 @@ public interface ServerListProvider {
     }
     
     /**
+     * Get context path.
+     * @return context path
+     */
+    default String getContextPath() {
+        return ParamUtil.getDefaultContextPath();
+    }
+    
+    /**
      * Get order.
      * @return order
      */
     int getOrder();
+    
+    /**
+     * Match.
+     * @param properties nacos client properties
+     * @return match
+     */
+    boolean match(final NacosClientProperties properties);
+    
+    /**
+     * check the server list is fixed or not.
+     * @return true if the server list is fixed
+     */
+    default boolean isFixed() {
+        return false;
+    }
+    
+    /**
+     * Get address source.
+     * @return address source
+     */
+    default String getAddressSource() {
+        return "";
+    }
     
 }

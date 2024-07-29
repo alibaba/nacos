@@ -17,7 +17,6 @@
 package com.alibaba.nacos.client.config.http;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.address.AbstractServerListProvider;
 import com.alibaba.nacos.client.config.impl.ConfigHttpClientManager;
 import com.alibaba.nacos.client.config.impl.ConfigServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
@@ -220,10 +219,7 @@ public class ServerHttpAgent implements HttpAgent {
     }
     
     private String getUrl(String serverAddr, String relativePath) {
-        String contextPath = "";
-        if (serverListMgr.getServerListProvider() instanceof AbstractServerListProvider) {
-            contextPath = ((AbstractServerListProvider) serverListMgr.getServerListProvider()).getContextPath();
-        }
+        String contextPath = serverListMgr.getServerListProvider().getContextPath();
         return serverAddr + ContextPathUtil.normalizeContextPath(contextPath) + relativePath;
     }
     

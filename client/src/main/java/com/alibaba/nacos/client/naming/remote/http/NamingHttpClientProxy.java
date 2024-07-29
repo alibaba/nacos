@@ -353,26 +353,39 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         
         params.put(CommonParams.NAMESPACE_ID, getNamespaceId());
         
-        if (CollectionUtils.isEmpty(servers)) {
+        if (CollectionUtils.isEmpty(servers) && !serverListManager.isDomain()) {
             throw new NacosException(NacosException.INVALID_PARAM, "no server available");
         }
         
         NacosException exception = new NacosException();
-        
-        Random random = new Random();
-        int index = random.nextInt(servers.size());
-        
-        for (int i = 0; i < servers.size(); i++) {
-            String server = servers.get(index);
-            try {
-                return callServer(api, params, body, server, method);
-            } catch (NacosException e) {
-                exception = e;
-                if (NAMING_LOGGER.isDebugEnabled()) {
-                    NAMING_LOGGER.debug("request {} failed.", server, e);
+        if (serverListManager.isDomain()) {
+            String nacosDomain = serverListManager.getNacosDomain();
+            for (int i = 0; i < maxRetry; i++) {
+                try {
+                    return callServer(api, params, body, nacosDomain, method);
+                } catch (NacosException e) {
+                    exception = e;
+                    if (NAMING_LOGGER.isDebugEnabled()) {
+                        NAMING_LOGGER.debug("request {} failed.", nacosDomain, e);
+                    }
                 }
             }
-            index = (index + 1) % servers.size();
+        } else {
+            Random random = new Random();
+            int index = random.nextInt(servers.size());
+            
+            for (int i = 0; i < servers.size(); i++) {
+                String server = servers.get(index);
+                try {
+                    return callServer(api, params, body, server, method);
+                } catch (NacosException e) {
+                    exception = e;
+                    if (NAMING_LOGGER.isDebugEnabled()) {
+                        NAMING_LOGGER.debug("request {} failed.", server, e);
+                    }
+                }
+                index = (index + 1) % servers.size();
+            }
         }
         
         NAMING_LOGGER.error("request: {} failed, servers: {}, code: {}, msg: {}", api, servers, exception.getErrCode(),

@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 
@@ -42,13 +43,10 @@ public class AddressServerListProvider extends AbstractServerListProvider {
     private List<String> serverList;
     
     @Override
-    public void init(final NacosClientProperties properties) throws NacosException {
-        super.init(properties);
+    public void init(final NacosClientProperties properties, final NacosRestTemplate nacosRestTemplate) throws NacosException {
+        super.init(properties, nacosRestTemplate);
         serverList = new ArrayList<>();
         String serverAddrsStr = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
-        if (StringUtils.isBlank(serverAddrsStr)) {
-            return;
-        }
         StringTokenizer serverAddrsTokens = new StringTokenizer(serverAddrsStr, ",;");
         while (serverAddrsTokens.hasMoreTokens()) {
             String serverAddr = serverAddrsTokens.nextToken().trim();
@@ -92,5 +90,19 @@ public class AddressServerListProvider extends AbstractServerListProvider {
     @Override
     public int getOrder() {
         return ServerListProviderOrder.ORDER - 1;
+    }
+    
+    @Override
+    public boolean match(final NacosClientProperties properties) {
+        return StringUtils.isNotBlank(properties.getProperty(PropertyKeyConst.SERVER_ADDR));
+    }
+    
+    @Override
+    public boolean isFixed() {
+        return true;
+    }
+    
+    @Override
+    public void shutdown() throws NacosException {
     }
 }

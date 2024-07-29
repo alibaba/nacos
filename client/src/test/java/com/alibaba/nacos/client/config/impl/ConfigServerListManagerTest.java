@@ -46,7 +46,6 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.mock;
@@ -69,8 +68,8 @@ class ConfigServerListManagerTest {
         restMapField.setAccessible(true);
         Map<String, NacosRestTemplate> restMap = (Map<String, NacosRestTemplate>) restMapField.get(null);
         cachedNacosRestTemplate = restMap.get(
-                "com.alibaba.nacos.client.address.ServerListHttpClientManager$ServerListHttpClientFactory");
-        restMap.put("com.alibaba.nacos.client.address.ServerListHttpClientManager$ServerListHttpClientFactory", nacosRestTemplate);
+                "com.alibaba.nacos.client.config.impl.ConfigHttpClientManager$ConfigHttpClientFactory");
+        restMap.put("com.alibaba.nacos.client.config.impl.ConfigHttpClientManager$ConfigHttpClientFactory", nacosRestTemplate);
         httpRestResult = new HttpRestResult<>();
         httpRestResult.setData("127.0.0.1:8848");
         httpRestResult.setCode(200);
@@ -83,7 +82,7 @@ class ConfigServerListManagerTest {
             Field restMapField = HttpClientBeanHolder.class.getDeclaredField("SINGLETON_REST");
             restMapField.setAccessible(true);
             Map<String, NacosRestTemplate> restMap = (Map<String, NacosRestTemplate>) restMapField.get(null);
-            restMap.put("com.alibaba.nacos.client.address.ServerListHttpClientManager$ServerListHttpClientFactory",
+            restMap.put("com.alibaba.nacos.client.config.impl.ConfigHttpClientManager$ConfigHttpClientFactory",
                     cachedNacosRestTemplate);
         }
     }
@@ -94,14 +93,7 @@ class ConfigServerListManagerTest {
         when(mockedProperties.getProperty(PropertyKeyConst.ENDPOINT)).thenReturn("1.1.1.1");
         when(mockedProperties.getProperty(PropertyKeyConst.ENDPOINT_PORT)).thenReturn("9090");
         final ConfigServerListManager mgr = new ConfigServerListManager(mockedProperties);
-        try {
-            mgr.start();
-            fail();
-        } catch (NacosException e) {
-            assertEquals(
-                    "fail to get NACOS-server serverlist! not connnect url:http://localhost:0/nacos/serverlist",
-                    e.getErrMsg());
-        }
+        mgr.start();
         mgr.shutdown();
     }
     
@@ -111,11 +103,10 @@ class ConfigServerListManagerTest {
             NacosClientProperties mockedProperties = mock(NacosClientProperties.class);
             when(mockedProperties.getProperty(PropertyKeyConst.SERVER_ADDR)).thenReturn("1.1.1.1");
             final ConfigServerListManager mgr = new ConfigServerListManager(mockedProperties);
-            final ConfigServerListManager mgr2 = new ConfigServerListManager(mockedProperties);
             assertInstanceOf(AddressServerListProvider.class, mgr.getServerListProvider());
             AddressServerListProvider provider = (AddressServerListProvider) mgr.getServerListProvider();
             assertEquals("nacos", provider.getContextPath());
-            assertEquals("fixed-1.1.1.1_8848", mgr.getName());
+            assertEquals("Config-fixed-1.1.1.1_8848", mgr.getName());
             assertEquals("", mgr.getTenant());
             assertEquals("", provider.getNamespace());
             assertEquals("1.1.1.1-2.2.2.2_8848", provider.getFixedNameSuffix("http://1.1.1.1", "2.2.2.2:8848"));
@@ -158,7 +149,7 @@ class ConfigServerListManagerTest {
             assertEquals("1.1.1.1:8848", mgr3.getServerList().get(0));
             assertEquals("[1.1.1.1:8848]", mgr3.getUrlString());
             assertTrue(mgr3.contain("1.1.1.1:8848"));
-            assertEquals("ServerManager-fixed-1.1.1.1_8848-[1.1.1.1:8848]", mgr3.toString());
+            assertEquals("ServerManager-Config-fixed-1.1.1.1_8848-[1.1.1.1:8848]", mgr3.toString());
         }
         
         {
@@ -172,7 +163,7 @@ class ConfigServerListManagerTest {
             assertEquals("1.1.1.1:8848", mgr4.getServerList().get(0));
             assertEquals("2.2.2.2:8848", mgr4.getServerList().get(1));
             assertTrue(mgr4.contain("1.1.1.1:8848"));
-            assertEquals("ServerManager-fixed-1.1.1.1_8848-2.2.2.2_8848-[1.1.1.1:8848, 2.2.2.2:8848]",
+            assertEquals("ServerManager-Config-fixed-1.1.1.1_8848-2.2.2.2_8848-[1.1.1.1:8848, 2.2.2.2:8848]",
                     mgr4.toString());
         }
         
@@ -187,7 +178,7 @@ class ConfigServerListManagerTest {
             assertEquals("1.1.1.1:8848", mgr5.getServerList().get(0));
             assertEquals("2.2.2.2:8848", mgr5.getServerList().get(1));
             assertTrue(mgr5.contain("1.1.1.1:8848"));
-            assertEquals("ServerManager-fixed-1.1.1.1_8848-2.2.2.2_8848-[1.1.1.1:8848, 2.2.2.2:8848]",
+            assertEquals("ServerManager-Config-fixed-1.1.1.1_8848-2.2.2.2_8848-[1.1.1.1:8848, 2.2.2.2:8848]",
                     mgr5.toString());
         }
         
@@ -245,8 +236,7 @@ class ConfigServerListManagerTest {
         final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         ConfigServerListManager serverListManager = new ConfigServerListManager(clientProperties);
         assertInstanceOf(EndpointServerListProvider.class, serverListManager.getServerListProvider());
-        EndpointServerListProvider provider = (EndpointServerListProvider) serverListManager.getServerListProvider();
-        assertTrue(provider.getAddressServerUrl().startsWith(
+        assertTrue(serverListManager.getServerListProvider().getAddressSource().startsWith(
                 HTTP_PREFIX + endpoint + ":" + endpointPort + endpointContextPath));
     }
     
@@ -300,8 +290,7 @@ class ConfigServerListManagerTest {
         final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         ConfigServerListManager serverListManager = new ConfigServerListManager(clientProperties);
         assertInstanceOf(EndpointServerListProvider.class, serverListManager.getServerListProvider());
-        EndpointServerListProvider provider = (EndpointServerListProvider) serverListManager.getServerListProvider();
-        assertTrue(provider.getAddressServerUrl().contains(endpointContextPath));
+        assertTrue(serverListManager.getServerListProvider().getAddressSource().contains(endpointContextPath));
         assertTrue(serverListManager.getName().contains("endpointContextPath"));
     }
     
@@ -323,14 +312,14 @@ class ConfigServerListManagerTest {
         final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         ConfigServerListManager serverListManager = new ConfigServerListManager(clientProperties);
         assertInstanceOf(EndpointServerListProvider.class, serverListManager.getServerListProvider());
-        EndpointServerListProvider provider = (EndpointServerListProvider) serverListManager.getServerListProvider();
-        assertTrue(provider.getAddressServerUrl().contains(endpointContextPath));
+        String addressSource = serverListManager.getServerListProvider().getAddressSource();
+        assertTrue(addressSource.contains(endpointContextPath));
         assertTrue(serverListManager.getName().contains("endpointContextPath"));
         
-        assertTrue(provider.getAddressServerUrl().contains(testEndpointClusterName));
+        assertTrue(addressSource.contains(testEndpointClusterName));
         assertTrue(serverListManager.getName().contains(testEndpointClusterName));
     
-        assertFalse(provider.getAddressServerUrl().contains(testClusterName));
+        assertFalse(addressSource.contains(testClusterName));
         assertFalse(serverListManager.getName().contains(testClusterName));
     
     }
@@ -348,9 +337,9 @@ class ConfigServerListManagerTest {
         ConfigServerListManager serverListManager = new ConfigServerListManager(clientProperties);
         String endpointContextPath = "/endpointContextPath";
         assertInstanceOf(EndpointServerListProvider.class, serverListManager.getServerListProvider());
-        EndpointServerListProvider provider = (EndpointServerListProvider) serverListManager.getServerListProvider();
-        assertFalse(provider.getAddressServerUrl().contains(endpointContextPath));
-        assertTrue(provider.getAddressServerUrl().contains(contextPath));
+        
+        assertFalse(serverListManager.getServerListProvider().getAddressSource().contains(endpointContextPath));
+        assertTrue(serverListManager.getServerListProvider().getAddressSource().contains(contextPath));
         assertFalse(serverListManager.getName().contains("endpointContextPath"));
         assertTrue(serverListManager.getName().contains("contextPath"));
     }
@@ -365,8 +354,7 @@ class ConfigServerListManagerTest {
         final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         ConfigServerListManager serverListManager = new ConfigServerListManager(clientProperties);
         assertInstanceOf(EndpointServerListProvider.class, serverListManager.getServerListProvider());
-        EndpointServerListProvider provider = (EndpointServerListProvider) serverListManager.getServerListProvider();
-        String addressServerUrl = provider.getAddressServerUrl();
+        String addressServerUrl = serverListManager.getServerListProvider().getAddressSource();
         assertTrue(addressServerUrl.startsWith("http://1.1.1.1"));
     }
 }

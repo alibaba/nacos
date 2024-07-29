@@ -95,6 +95,8 @@ public class PropertyKeyConst {
     
     public static final String LOG_ALL_PROPERTIES = "logAllProperties";
     
+    public static final String CLIENT_MODULE_TYPE = "clientModuleType";
+    
     /**
      * Get the key value of some variable value from the system property.
      */
