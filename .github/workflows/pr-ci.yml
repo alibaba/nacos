@@ -34,3 +34,80 @@ jobs:
         with:
           name: pr
           path: pr/
+saltar al contenido
+Menú de Navegación
+Alibaba
+/
+nacos
+
+Código
+Asuntos
+227
+Solicitudes de extracción
+19
+Comportamiento
+Proyectos
+1
+Wiki
+Seguridad
+Perspectivas
+PR-CI
+[PROBLEMA #12221] Token de acceso a la interfaz de usuario de la consola en la URL n. ° 1132
+Trabajos
+Detalles de la ejecución
+Compilar distribución tar
+tuvo éxito hace 2 semanasen 2m 6s
+Registros de búsqueda
+2s
+2s
+7s
+1 minuto 29 segundos
+Años 20
+Run actions/upload-artifact@v3
+  with:
+    name: nacos
+    path: distribution/target/nacos-server-*.tar.gz
+    if-no-files-found: warn
+  env:
+    JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/8.0.412-8/x64
+    JAVA_HOME_8_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/8.0.412-8/x64
+With the provided path, there will be 1 file uploaded
+Starting artifact upload
+For more detailed logs during the artifact upload process, enable step-debugging: https://docs.github.com/actions/monitoring-and-troubleshooting-workflows/enabling-debug-logging#enabling-step-debug-logging
+Artifact name is valid!
+Container for artifact "nacos" successfully created. Starting upload of file(s)
+Uploaded /home/runner/work/nacos/nacos/distribution/target/nacos-server-2.4.0-SNAPSHOT.tar.gz (5.4%) bytes 0:8388607
+Uploaded /home/runner/work/nacos/nacos/distribution/target/nacos-server-2.4.0-SNAPSHOT.tar.gz (10.9%) bytes 8388608:16777215
+Uploaded /home/runner/work/nacos/nacos/distribution/target/nacos-server-2.4.0-SNAPSHOT.tar.gz (16.4%) bytes 16777216:25165823
+Uploaded /home/runner/work/nacos/nacos/distribution/target/nacos-server-2.4.0-SNAPSHOT.tar.gz (21.9%) bytes 25165824:33554431
+Uploaded /home/runner/work/nacos/nacos/distribution/target/nacos-server-2.4.0-SNAPSHOT.tar.gz (27.4%) bytes 33554432:41943039
+Uploaded /home/runner/work/nacos/nacos/distribution/target/nacos-server-2.4.0-SNAPSHOT.tar.gz (32.9%) bytes 41943040:50331647
+Uploaded /home/runner/work/nacos/nacos/distribution/target/nacos-server-2.4.0-SNAPSHOT.tar.gz (38.4%) bytes 50331648:58720255
+Uploaded /home/runner/work/nacos/nacos/distribution/target/nacos-server-2.4.0-SNAPSHOT.tar.gz (43.9%) bytes 58720256:67108863
+Total file count: 1 ---- Processed file #0 (0.0%)
+Uploaded /home/runner/work/nacos/nacos/distribution/target/nacos-server-2.4.0-SNAPSHOT.tar.gz (49.4%) bytes 67108864:75497471
+Uploaded /home/runner/work/nacos/nacos/distribution/target/nacos-server-2.4.0-SNAPSHOT.tar.gz (54.9%) bytes 75497472:83886079
+Uploaded /home/runner/work/nacos/nacos/distribution/target/nacos-server-2.4.0-SNAPSHOT.tar.gz (60.4%) bytes 83886080:92274687
+Uploaded /home/runner/work/nacos/nacos/distribution/target/nacos-server-2.4.0-SNAPSHOT.tar.gz (65.9%) bytes 92274688:100663295
+Uploaded /home/runner/work/nacos/nacos/distribution/target/nacos-server-2.4.0-SNAPSHOT.tar.gz (71.4%) bytes 100663296:109051903
+Uploaded /home/runner/work/nacos/nacos/distribution/target/nacos-server-2.4.0-SNAPSHOT.tar.gz (76.9%) bytes 109051904:117440511
+Uploaded /home/runner/work/nacos/nacos/distribution/target/nacos-server-2.4.0-SNAPSHOT.tar.gz (82.4%) bytes 117440512:125829119
+Uploaded /home/runner/work/nacos/nacos/distribution/target/nacos-server-2.4.0-SNAPSHOT.tar.gz (87.9%) bytes 125829120:134217727
+Uploaded /home/runner/work/nacos/nacos/distribution/target/nacos-server-2.4.0-SNAPSHOT.tar.gz (93.4%) bytes 134217728:142606335
+Uploaded /home/runner/work/nacos/nacos/distribution/target/nacos-server-2.4.0-SNAPSHOT.tar.gz (98.9%) bytes 142606336:150994943
+Uploaded /home/runner/work/nacos/nacos/distribution/target/nacos-server-2.4.0-SNAPSHOT.tar.gz (100.0%) bytes 150994944:152651708
+Total size of all the files uploaded is 152651709 bytes
+File upload process has finished. Finalizing the artifact upload
+Artifact has been finalized. All files have been successfully uploaded!
+
+The raw size of all the files that were specified for upload is 152651709 bytes
+The size of all the files that were uploaded is 152651709 bytes. This takes into account any gzip compression used to reduce the upload size, time and storage
+
+Note: The size of downloaded zips can differ significantly from the reported size. For more information see: https://github.com/actions/upload-artifact#zipped-artifact-downloads 
+
+Artifact nacos has been successfully uploaded!
+0s
+1s
+0s
+0s
+0s
