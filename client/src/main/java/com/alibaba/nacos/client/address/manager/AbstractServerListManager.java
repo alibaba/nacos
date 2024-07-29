@@ -14,29 +14,33 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.address.base;
+package com.alibaba.nacos.client.address.manager;
 
-import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.address.impl.ServerListUpdatedEvent;
+import com.alibaba.nacos.client.address.common.ModuleType;
+import com.alibaba.nacos.client.address.common.ServerListChangedEvent;
+import com.alibaba.nacos.client.address.provider.ServerListProvider;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.client.utils.TemplateUtils;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
+import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
-import com.alibaba.nacos.common.utils.IoUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTPS_PREFIX;
@@ -48,77 +52,82 @@ import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
  * @author misakacoder
  */
 public abstract class AbstractServerListManager implements ServerListFactory, Closeable {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractServerListManager.class);
-
-    protected final String name;
-
-    protected final String tenant;
-
-    protected final String namespace;
-
-    private final NacosClientProperties properties;
-
+    
     private volatile List<String> serverList = new ArrayList<>();
-
+    
     private final AtomicInteger index = new AtomicInteger();
-
-    public AbstractServerListManager(NacosClientProperties properties) throws NacosException {
-        String namespace = initNamespace(properties);
-        this.tenant = namespace;
-        this.namespace = namespace;
-        this.name = initName(properties);
-        this.properties = properties;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getNamespace() {
-        return namespace;
-    }
-
-    public NacosClientProperties getProperties() {
-        return properties;
-    }
-
+    
+    protected ServerListProvider serverListProvider;
+    
+    private ScheduledExecutorService scheduledExecutorService;
+    
+    /**
+     * Get the type of the module.
+     *
+     * @return the type of the module
+     */
+    public abstract ModuleType getModuleType();
+    
     @Override
     public String getNextServer() {
         return getServer(index.incrementAndGet());
     }
-
+    
     @Override
     public String getCurrentServer() {
         return getServer(index.get());
     }
-
+    
     @Override
     public List<String> getServerList() {
         return serverList;
     }
-
+    
     @Override
     public void shutdown() throws NacosException {
-
+        if (serverListProvider != null) {
+            serverListProvider.shutdown();
+        }
+        if (scheduledExecutorService != null) {
+            ThreadUtils.shutdownThreadPool(scheduledExecutorService, LOGGER);
+        }
     }
-
-    /**
-     * Initialize the server name.
-     *
-     * @param properties Nacos client properties.
-     * @return The initialized server name.
-     */
-    protected abstract String initServerName(NacosClientProperties properties);
-
-    protected List<String> readServerList(Reader reader) throws IOException {
-        return IoUtils.readLines(reader)
-                .stream()
-                .filter(StringUtils::isNotBlank)
+    
+    public ServerListProvider getServerListProvider() {
+        return serverListProvider;
+    }
+    
+    protected void initServerList(NacosClientProperties properties, String namespace) throws NacosException {
+        Collection<ServerListProvider> providers = NacosServiceLoader.load(ServerListProvider.class);
+        providers = providers.stream().sorted(Comparator.comparingInt(ServerListProvider::getOrder))
                 .collect(Collectors.toList());
+        for (ServerListProvider provider : providers) {
+            String providerName = provider.getClass().getSimpleName();
+            provider.startup(properties, namespace, getModuleType());
+            List<String> serverList = provider.getServerList();
+            if (CollectionUtils.isNotEmpty(serverList)) {
+                updateServerList(serverList);
+                if (provider.supportRefresh()) {
+                    scheduledExecutorService = new ScheduledThreadPoolExecutor(1,
+                            new NameThreadFactory(this.getClass().getName()));
+                    Runnable refreshTask = createUpdateServerListTask(provider::getServerList);
+                    scheduledExecutorService.scheduleWithFixedDelay(refreshTask, 0L, 30L, TimeUnit.SECONDS);
+                }
+                serverListProvider = provider;
+                LOGGER.info("successfully init server list from {}", providerName);
+                break;
+            } else {
+                provider.shutdown();
+            }
+        }
+        if (CollectionUtils.isEmpty(serverList)) {
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "no server address is available");
+        }
     }
-
-    protected String repairServerAddr(String serverAddr) {
+    
+    private String repairServerAddr(String serverAddr) {
         serverAddr = serverAddr.trim();
         String prefix = HTTP_PREFIX;
         if (serverAddr.startsWith(HTTP_PREFIX) || serverAddr.startsWith(HTTPS_PREFIX)) {
@@ -134,23 +143,21 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
         serverAddr = prefix + serverAddr;
         return serverAddr;
     }
-
-    protected void updateServerList(List<String> serverList) {
+    
+    private void updateServerList(List<String> serverList) {
         if (serverList == null || serverList.isEmpty() || serverList.equals(this.serverList)) {
             return;
         }
-        serverList = serverList.stream()
-                .map(this::repairServerAddr)
-                .collect(Collectors.toList());
+        serverList = serverList.stream().map(this::repairServerAddr).collect(Collectors.toList());
         if (serverList.equals(this.serverList)) {
             return;
         }
         this.serverList = serverList;
-        NotifyCenter.publishEvent(new ServerListUpdatedEvent());
+        NotifyCenter.publishEvent(new ServerListChangedEvent());
         LOGGER.info("the server list has been updated to {}", serverList);
     }
-
-    protected Runnable createUpdateServerListTask(Supplier<List<String>> supplier) {
+    
+    private Runnable createUpdateServerListTask(Supplier<List<String>> supplier) {
         return () -> {
             try {
                 updateServerList(supplier.get());
@@ -159,25 +166,20 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
             }
         };
     }
-
-    private String initNamespace(NacosClientProperties properties) {
-        String namespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
-        return StringUtils.isNotBlank(namespace) ? namespace : "";
-    }
-
-    private String initName(NacosClientProperties properties) throws NacosException {
-        String serverName = TemplateUtils.stringBlankAndThenExecute(
-                properties.getProperty(PropertyKeyConst.SERVER_NAME),
-                () -> initServerName(properties));
-        if (StringUtils.isBlank(serverName)) {
-            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "serverName is blank");
-        }
-        serverName = serverName + (StringUtils.isNotBlank(namespace) ? "-" + namespace : "");
-        return serverName.replaceAll("[/\\\\:]", "-");
-    }
-
+    
     private String getServer(int index) {
         index = index % serverList.size();
         return serverList.get(index);
+    }
+    
+    protected interface Supplier<T> {
+        
+        /**
+         * Gets a result.
+         *
+         * @return a result
+         * @throws Exception Exception
+         */
+        T get() throws Exception;
     }
 }

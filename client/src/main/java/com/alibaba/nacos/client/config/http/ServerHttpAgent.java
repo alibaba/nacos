@@ -16,15 +16,13 @@
 
 package com.alibaba.nacos.client.config.http;
 
-import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.address.base.AbstractServerListManager;
-import com.alibaba.nacos.client.address.factory.ServerListManagerFactory;
+import com.alibaba.nacos.client.address.manager.ConfigServerListManager;
 import com.alibaba.nacos.client.config.impl.ConfigHttpClientManager;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
@@ -49,28 +47,28 @@ import java.util.function.Function;
  * @author water.lyl
  */
 public class ServerHttpAgent implements HttpAgent {
-
+    
     private static final Logger LOGGER = LogUtils.logger(ServerHttpAgent.class);
-
+    
     private NacosRestTemplate nacosRestTemplate = ConfigHttpClientManager.getInstance().getNacosRestTemplate();
-
+    
     private String encode;
-
+    
     private int maxRetry = 3;
-
-    final AbstractServerListManager serverListManager;
-
+    
+    final ConfigServerListManager serverListManager;
+    
     @Override
     public HttpRestResult<String> httpGet(String path, Map<String, String> headers, Map<String, String> paramValues,
-                                          String encode, long readTimeoutMs) throws Exception {
-        Function<HttpClientConfig, RequestHttpEntity> requestEntityCreator = config ->
-                new RequestHttpEntity(config, createHeader(headers), createQuery(paramValues));
+            String encode, long readTimeoutMs) throws Exception {
+        Function<HttpClientConfig, RequestHttpEntity> requestEntityCreator = config -> new RequestHttpEntity(config,
+                createHeader(headers), createQuery(paramValues));
         return request(HttpMethod.GET, path, requestEntityCreator, readTimeoutMs);
     }
-
+    
     @Override
     public HttpRestResult<String> httpPost(String path, Map<String, String> headers, Map<String, String> paramValues,
-                                           String encode, long readTimeoutMs) throws Exception {
+            String encode, long readTimeoutMs) throws Exception {
         Function<HttpClientConfig, RequestHttpEntity> requestEntityCreator = config -> {
             Header header = createHeader(headers);
             header.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -78,19 +76,17 @@ public class ServerHttpAgent implements HttpAgent {
         };
         return request(HttpMethod.POST, path, requestEntityCreator, readTimeoutMs);
     }
-
+    
     @Override
     public HttpRestResult<String> httpDelete(String path, Map<String, String> headers, Map<String, String> paramValues,
-                                             String encode, long readTimeoutMs) throws Exception {
-        Function<HttpClientConfig, RequestHttpEntity> requestEntityCreator = config ->
-                new RequestHttpEntity(config, createHeader(headers), createQuery(paramValues));
+            String encode, long readTimeoutMs) throws Exception {
+        Function<HttpClientConfig, RequestHttpEntity> requestEntityCreator = config -> new RequestHttpEntity(config,
+                createHeader(headers), createQuery(paramValues));
         return request(HttpMethod.DELETE, path, requestEntityCreator, readTimeoutMs);
     }
-
-    private HttpRestResult<String> request(String method,
-                                           String path,
-                                           Function<HttpClientConfig, RequestHttpEntity> requestEntityCreator,
-                                           long readTimeoutMs) throws Exception {
+    
+    private HttpRestResult<String> request(String method, String path,
+            Function<HttpClientConfig, RequestHttpEntity> requestEntityCreator, long readTimeoutMs) throws Exception {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
         String currentServer = serverListManager.getCurrentServer();
         int maxRetry = this.maxRetry;
@@ -100,23 +96,25 @@ public class ServerHttpAgent implements HttpAgent {
         do {
             try {
                 RequestHttpEntity requestEntity = requestEntityCreator.apply(config);
-                HttpRestResult<String> result = nacosRestTemplate.execute(getUrl(currentServer, path), method, requestEntity, String.class);
+                HttpRestResult<String> result = nacosRestTemplate.execute(getUrl(currentServer, path), method,
+                        requestEntity, String.class);
                 if (isFail(result)) {
-                    LOGGER.error("[NACOS ConnectException {}] currentServerAddr: {}, httpCode: {}",
-                            currentServer, method, result.getCode());
+                    LOGGER.error("[NACOS ConnectException {}] currentServerAddr: {}, httpCode: {}", currentServer,
+                            method, result.getCode());
                 } else {
                     return result;
                 }
             } catch (ConnectException | SocketTimeoutException e) {
-                LOGGER.error("[NACOS {} {}] currentServerAddr: {}, err : {}",
-                        method, e.getClass().getSimpleName(), currentServer, ExceptionUtil.getStackTrace(e));
+                LOGGER.error("[NACOS {} {}] currentServerAddr: {}, err : {}", method, e.getClass().getSimpleName(),
+                        currentServer, ExceptionUtil.getStackTrace(e));
             } catch (Exception e) {
                 LOGGER.error("[NACOS {} Exception] currentServerAddr: {}", currentServer, method, e);
                 throw e;
             }
             maxRetry--;
             if (maxRetry < 0) {
-                String message = String.format("[NACOS HTTP-%s] The maximum number of tolerable server reconnection errors has been reached",
+                String message = String.format(
+                        "[NACOS HTTP-%s] The maximum number of tolerable server reconnection errors has been reached",
                         method);
                 throw new ConnectException(message);
             }
@@ -126,73 +124,69 @@ public class ServerHttpAgent implements HttpAgent {
         LOGGER.error(message);
         throw new ConnectException(message);
     }
-
+    
     private String getUrl(String serverAddr, String relativePath) {
-        String contextPath = TemplateUtils.stringBlankAndThenExecute(
-                serverListManager.getProperties().getProperty(PropertyKeyConst.CONTEXT_PATH),
-                ParamUtil::getDefaultContextPath
-        );
-        return serverAddr + ContextPathUtil.normalizeContextPath(contextPath) + relativePath;
+        return serverAddr + ContextPathUtil.normalizeContextPath(serverListManager.getContentPath()) + relativePath;
     }
-
+    
     private Header createHeader(Map<String, String> headers) {
         Header header = Header.newInstance();
         header.addAll(headers);
         return header;
     }
-
+    
     private Query createQuery(Map<String, String> paramValues) {
         return Query.newInstance().initParams(paramValues);
     }
-
+    
     private boolean isFail(HttpRestResult<String> result) {
         return result.getCode() == HttpURLConnection.HTTP_INTERNAL_ERROR
                 || result.getCode() == HttpURLConnection.HTTP_BAD_GATEWAY
                 || result.getCode() == HttpURLConnection.HTTP_UNAVAILABLE
                 || result.getCode() == HttpURLConnection.HTTP_NOT_FOUND;
     }
-
+    
     public static String getAppname() {
         return ParamUtil.getAppName();
     }
-
-    public ServerHttpAgent(AbstractServerListManager serverListManager) {
+    
+    public ServerHttpAgent(ConfigServerListManager serverListManager) {
         this.serverListManager = serverListManager;
     }
-
-    public ServerHttpAgent(AbstractServerListManager serverListManager, Properties properties) {
+    
+    public ServerHttpAgent(ConfigServerListManager serverListManager, Properties properties) {
         this.serverListManager = serverListManager;
     }
-
+    
     public ServerHttpAgent(Properties properties) throws NacosException {
-        this.serverListManager = ServerListManagerFactory.create(properties);
+        this.serverListManager = new ConfigServerListManager(NacosClientProperties.PROTOTYPE.derive(properties));
     }
-
+    
     @Override
     public void start() throws NacosException {
-
+    
     }
-
+    
     @Override
     public String getName() {
         return serverListManager.getName();
     }
-
+    
     @Override
     public String getNamespace() {
         return serverListManager.getNamespace();
     }
-
+    
     @Override
     public String getTenant() {
         return serverListManager.getNamespace();
     }
-
+    
     @Override
     public String getEncode() {
         return encode;
     }
-
+    
     @Override
     public void shutdown() throws NacosException {
         String className = this.getClass().getName();

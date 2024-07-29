@@ -31,7 +31,7 @@ import com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenRespo
 import com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.address.base.AbstractServerListManager;
+import com.alibaba.nacos.client.address.manager.ConfigServerListManager;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
@@ -109,7 +109,7 @@ class ClientWorkerTest {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.NAMESPACE, TEST_NAMESPACE);
         ConfigFilterChainManager filter = new ConfigFilterChainManager(properties);
-        AbstractServerListManager serverListManager = Mockito.mock(AbstractServerListManager.class);
+        ConfigServerListManager serverListManager = Mockito.mock(ConfigServerListManager.class);
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         try {
             clientWorker = new ClientWorker(filter, serverListManager, nacosClientProperties);
@@ -129,7 +129,7 @@ class ClientWorkerTest {
     void testConstruct() throws NacosException {
         Properties prop = new Properties();
         ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
-        AbstractServerListManager agent = Mockito.mock(AbstractServerListManager.class);
+        ConfigServerListManager agent = Mockito.mock(ConfigServerListManager.class);
         
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         ClientWorker clientWorker = new ClientWorker(filter, agent, nacosClientProperties);
@@ -140,7 +140,7 @@ class ClientWorkerTest {
     void testAddListenerWithoutTenant() throws NacosException {
         Properties prop = new Properties();
         ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
-        AbstractServerListManager agent = Mockito.mock(AbstractServerListManager.class);
+        ConfigServerListManager agent = Mockito.mock(ConfigServerListManager.class);
         
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         ClientWorker clientWorker = new ClientWorker(filter, agent, nacosClientProperties);
@@ -170,7 +170,7 @@ class ClientWorkerTest {
     void testListenerWithTenant() throws NacosException {
         Properties prop = new Properties();
         ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
-        AbstractServerListManager agent = Mockito.mock(AbstractServerListManager.class);
+        ConfigServerListManager agent = Mockito.mock(ConfigServerListManager.class);
         
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         ClientWorker clientWorker = new ClientWorker(filter, agent, nacosClientProperties);
@@ -216,7 +216,7 @@ class ClientWorkerTest {
     void testPublishConfigSuccess() throws NacosException {
         Properties prop = new Properties();
         ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
-        AbstractServerListManager agent = Mockito.mock(AbstractServerListManager.class);
+        ConfigServerListManager agent = Mockito.mock(ConfigServerListManager.class);
         
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         ClientWorker clientWorker = new ClientWorker(filter, agent, nacosClientProperties);
@@ -245,7 +245,7 @@ class ClientWorkerTest {
     void testPublishConfigFail() throws NacosException {
         Properties prop = new Properties();
         ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
-        AbstractServerListManager agent = Mockito.mock(AbstractServerListManager.class);
+        ConfigServerListManager agent = Mockito.mock(ConfigServerListManager.class);
         
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         ClientWorker clientWorker = new ClientWorker(filter, agent, nacosClientProperties);
@@ -274,7 +274,7 @@ class ClientWorkerTest {
     void testPublishConfigException() throws NacosException {
         Properties prop = new Properties();
         ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
-        AbstractServerListManager agent = Mockito.mock(AbstractServerListManager.class);
+        ConfigServerListManager agent = Mockito.mock(ConfigServerListManager.class);
         
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         ClientWorker clientWorker = new ClientWorker(filter, agent, nacosClientProperties);
@@ -303,7 +303,7 @@ class ClientWorkerTest {
         
         Properties prop = new Properties();
         ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
-        AbstractServerListManager agent = Mockito.mock(AbstractServerListManager.class);
+        ConfigServerListManager agent = Mockito.mock(ConfigServerListManager.class);
         
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         ClientWorker clientWorker = new ClientWorker(filter, agent, nacosClientProperties);
@@ -330,7 +330,7 @@ class ClientWorkerTest {
     void testGeConfigConfigSuccess() throws NacosException {
         
         Properties prop = new Properties();
-        AbstractServerListManager agent = Mockito.mock(AbstractServerListManager.class);
+        ConfigServerListManager agent = Mockito.mock(ConfigServerListManager.class);
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         ClientWorker clientWorker = new ClientWorker(null, agent, nacosClientProperties);
         
@@ -356,7 +356,7 @@ class ClientWorkerTest {
         String tenant = "c";
         
         prop.put(NAMESPACE, tenant);
-        AbstractServerListManager agent = Mockito.mock(AbstractServerListManager.class);
+        ConfigServerListManager agent = Mockito.mock(ConfigServerListManager.class);
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         ClientWorker clientWorker = new ClientWorker(null, agent, nacosClientProperties);
         
@@ -386,7 +386,7 @@ class ClientWorkerTest {
         String tenant = "c";
         
         prop.put(NAMESPACE, tenant);
-        AbstractServerListManager agent = Mockito.mock(AbstractServerListManager.class);
+        ConfigServerListManager agent = Mockito.mock(ConfigServerListManager.class);
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         ClientWorker clientWorker = new ClientWorker(null, agent, nacosClientProperties);
         
@@ -432,7 +432,7 @@ class ClientWorkerTest {
     void testGeConfigConfigNotFound() throws NacosException {
         
         Properties prop = new Properties();
-        AbstractServerListManager agent = Mockito.mock(AbstractServerListManager.class);
+        ConfigServerListManager agent = Mockito.mock(ConfigServerListManager.class);
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         ClientWorker clientWorker = new ClientWorker(null, agent, nacosClientProperties);
         
@@ -455,7 +455,7 @@ class ClientWorkerTest {
     void testGeConfigConfigConflict() throws NacosException {
         
         Properties prop = new Properties();
-        AbstractServerListManager agent = Mockito.mock(AbstractServerListManager.class);
+        ConfigServerListManager agent = Mockito.mock(ConfigServerListManager.class);
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         ClientWorker clientWorker = new ClientWorker(null, agent, nacosClientProperties);
         
@@ -478,7 +478,7 @@ class ClientWorkerTest {
     void testShutdown() throws NacosException, NoSuchFieldException, IllegalAccessException {
         Properties prop = new Properties();
         ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
-        AbstractServerListManager agent = Mockito.mock(AbstractServerListManager.class);
+        ConfigServerListManager agent = Mockito.mock(ConfigServerListManager.class);
         
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         ClientWorker clientWorker = new ClientWorker(filter, agent, nacosClientProperties);
@@ -496,7 +496,7 @@ class ClientWorkerTest {
     void testExecuteConfigListen() throws Exception {
         Properties prop = new Properties();
         ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
-        AbstractServerListManager agent = Mockito.mock(AbstractServerListManager.class);
+        ConfigServerListManager agent = Mockito.mock(ConfigServerListManager.class);
         Mockito.when(agent.getName()).thenReturn("mocktest");
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         ClientWorker clientWorker = new ClientWorker(filter, agent, nacosClientProperties);
@@ -622,7 +622,7 @@ class ClientWorkerTest {
     void testIsHealthServer() throws NacosException, NoSuchFieldException, IllegalAccessException {
         Properties prop = new Properties();
         ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
-        AbstractServerListManager agent = Mockito.mock(AbstractServerListManager.class);
+        ConfigServerListManager agent = Mockito.mock(ConfigServerListManager.class);
         
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         ClientWorker clientWorker = new ClientWorker(filter, agent, nacosClientProperties);
@@ -646,7 +646,7 @@ class ClientWorkerTest {
         putCacheMethod.setAccessible(true);
         Properties prop = new Properties();
         ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
-        AbstractServerListManager agent = Mockito.mock(AbstractServerListManager.class);
+        ConfigServerListManager agent = Mockito.mock(ConfigServerListManager.class);
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         ClientWorker clientWorker = new ClientWorker(filter, agent, nacosClientProperties);
         String key = "testKey";

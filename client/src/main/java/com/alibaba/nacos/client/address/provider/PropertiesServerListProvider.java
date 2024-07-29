@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.address.impl;
+package com.alibaba.nacos.client.address.provider;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.address.base.AbstractServerListManager;
-import com.alibaba.nacos.client.address.base.Order;
+import com.alibaba.nacos.client.address.common.ModuleType;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.utils.StringUtils;
 
@@ -29,27 +28,50 @@ import java.util.StringJoiner;
 import java.util.StringTokenizer;
 
 /**
- * Properties Server List Manager.
+ * Properties Server List Provider.
  *
  * @author misakacoder
  */
-@Order(100)
-public class PropertiesServerListManager extends AbstractServerListManager {
-
-    private static final String NAME_PREFIX = "prop";
-
-    public PropertiesServerListManager(NacosClientProperties properties) throws NacosException {
-        super(properties);
-    }
-
+public class PropertiesServerListProvider implements ServerListProvider {
+    
+    public static final String NAME_PREFIX = "fixed";
+    
+    private String name;
+    
+    private List<String> serverList;
+    
     @Override
-    protected String initServerName(NacosClientProperties properties) {
-        List<String> serverList = initServerList(properties);
-        updateServerList(serverList);
-        return NAME_PREFIX + "-" + getServerName();
+    public void startup(NacosClientProperties properties, String namespace, ModuleType moduleType)
+            throws NacosException {
+        initServerList(properties);
+        initName(namespace);
     }
-
-    private List<String> initServerList(NacosClientProperties properties) {
+    
+    @Override
+    public List<String> getServerList() throws NacosException {
+        return serverList;
+    }
+    
+    @Override
+    public String getName() {
+        return name;
+    }
+    
+    @Override
+    public int getOrder() {
+        return 100;
+    }
+    
+    @Override
+    public boolean supportRefresh() {
+        return false;
+    }
+    
+    private void initName(String namespace) {
+        this.name = String.join("-", NAME_PREFIX, namespace, getNameSuffix());
+    }
+    
+    private void initServerList(NacosClientProperties properties) {
         List<String> serverList = new ArrayList<>();
         String serverAddress = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
         if (StringUtils.isNotBlank(serverAddress)) {
@@ -58,12 +80,12 @@ public class PropertiesServerListManager extends AbstractServerListManager {
                 serverList.add(tokenizer.nextToken());
             }
         }
-        return serverList;
+        this.serverList = serverList;
     }
-
-    private String getServerName() {
+    
+    private String getNameSuffix() {
         StringJoiner joiner = new StringJoiner("-");
-        for (String server : getServerList()) {
+        for (String server : serverList) {
             server = server.replaceAll("http(s)?://", "");
             joiner.add(server.replaceAll(":", "_"));
         }

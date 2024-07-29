@@ -19,15 +19,15 @@ package com.alibaba.nacos.client.config.impl;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.address.base.AbstractServerListManager;
-import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.plugin.auth.api.RequestResource;
+import com.alibaba.nacos.client.address.manager.ConfigServerListManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.security.SecurityProxy;
+import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -54,7 +54,7 @@ public abstract class ConfigTransportClient {
     
     ScheduledExecutorService executor;
     
-    final AbstractServerListManager serverListManager;
+    final ConfigServerListManager serverListManager;
     
     final Properties properties;
     
@@ -68,7 +68,7 @@ public abstract class ConfigTransportClient {
         securityProxy.shutdown();
     }
     
-    public ConfigTransportClient(NacosClientProperties properties, AbstractServerListManager serverListManager) {
+    public ConfigTransportClient(NacosClientProperties properties, ConfigServerListManager serverListManager) {
         
         String encodeTmp = properties.getProperty(PropertyKeyConst.ENCODE);
         if (StringUtils.isBlank(encodeTmp)) {

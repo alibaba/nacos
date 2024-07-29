@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.client.naming.remote;
 
-import com.alibaba.nacos.plugin.auth.api.RequestResource;
-import com.alibaba.nacos.client.address.impl.ServerListUpdatedEvent;
+import com.alibaba.nacos.client.address.common.ServerListChangedEvent;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,7 +30,7 @@ import java.util.Map;
  *
  * @author xiweng.yy
  */
-public abstract class AbstractNamingClientProxy extends Subscriber<ServerListUpdatedEvent>
+public abstract class AbstractNamingClientProxy extends Subscriber<ServerListChangedEvent>
         implements NamingClientProxy {
     
     private static final String APP_FILED = "app";

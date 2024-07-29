@@ -43,8 +43,8 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
-import com.alibaba.nacos.client.address.base.AbstractServerListManager;
-import com.alibaba.nacos.client.address.impl.ServerListUpdatedEvent;
+import com.alibaba.nacos.client.address.common.ServerListChangedEvent;
+import com.alibaba.nacos.client.address.manager.AbstractServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
@@ -120,13 +120,13 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     }
     
     @Override
-    public void onEvent(ServerListUpdatedEvent event) {
+    public void onEvent(ServerListChangedEvent event) {
         rpcClient.onServerListChange();
     }
     
     @Override
     public Class<? extends Event> subscribeType() {
-        return ServerListUpdatedEvent.class;
+        return ServerListChangedEvent.class;
     }
     
     @Override

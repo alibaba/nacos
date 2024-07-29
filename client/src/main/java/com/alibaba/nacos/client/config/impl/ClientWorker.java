@@ -36,10 +36,12 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.client.address.base.AbstractServerListManager;
-import com.alibaba.nacos.client.address.impl.AddressServerListManager;
-import com.alibaba.nacos.client.address.impl.PropertiesServerListManager;
-import com.alibaba.nacos.client.address.impl.ServerListUpdatedEvent;
+import com.alibaba.nacos.client.address.common.ServerListChangedEvent;
+import com.alibaba.nacos.client.address.manager.AbstractServerListManager;
+import com.alibaba.nacos.client.address.manager.ConfigServerListManager;
+import com.alibaba.nacos.client.address.provider.AddressServerListProvider;
+import com.alibaba.nacos.client.address.provider.PropertiesServerListProvider;
+import com.alibaba.nacos.client.address.provider.ServerListProvider;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
@@ -484,7 +486,7 @@ public class ClientWorker implements Closeable {
     }
     
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    public ClientWorker(final ConfigFilterChainManager configFilterChainManager, AbstractServerListManager serverListManager,
+    public ClientWorker(final ConfigFilterChainManager configFilterChainManager, ConfigServerListManager serverListManager,
             final NacosClientProperties properties) throws NacosException {
         this.configFilterChainManager = configFilterChainManager;
         
@@ -532,10 +534,11 @@ public class ClientWorker implements Closeable {
         metric.put("clientVersion", VersionUtils.getFullClientVersion());
         metric.put("snapshotDir", LocalConfigInfoProcessor.LOCAL_SNAPSHOT_PATH);
         AbstractServerListManager serverListManager = agent.serverListManager;
-        boolean isFixServer = serverListManager instanceof PropertiesServerListManager;
+        ServerListProvider serverListProvider = serverListManager.getServerListProvider();
+        boolean isFixServer = serverListProvider instanceof PropertiesServerListProvider;
         metric.put("isFixedServer", isFixServer);
-        if (serverListManager instanceof AddressServerListManager) {
-            metric.put("addressUrl", ReflectUtils.getFieldValue(serverListManager, "addressServerUrl"));
+        if (serverListProvider instanceof AddressServerListProvider) {
+            metric.put("addressUrl", ReflectUtils.getFieldValue(serverListProvider, "addressServerUrl"));
         }
         metric.put("serverUrls", serverListManager.getServerList().toString());
         
@@ -606,7 +609,7 @@ public class ClientWorker implements Closeable {
          */
         private static final long ALL_SYNC_INTERNAL = 3 * 60 * 1000L;
         
-        public ConfigRpcTransportClient(NacosClientProperties properties, AbstractServerListManager serverListManager) {
+        public ConfigRpcTransportClient(NacosClientProperties properties, ConfigServerListManager serverListManager) {
             super(properties, serverListManager);
         }
         
@@ -751,7 +754,7 @@ public class ClientWorker implements Closeable {
                 
                 @Override
                 public Class<? extends Event> subscribeType() {
-                    return ServerListUpdatedEvent.class;
+                    return ServerListChangedEvent.class;
                 }
             };
             NotifyCenter.registerSubscriber(subscriber);

@@ -14,31 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.address.base;
+package com.alibaba.nacos.client.address.manager;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.address.common.ModuleType;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 
 /**
- * Used to customize the priority of the server list manager.
+ * Naming Server List Manager.
  *
  * @author misakacoder
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface Order {
-
-    int HIGHEST_PRECEDENCE = Integer.MIN_VALUE;
-
-    int LOWEST_PRECEDENCE = Integer.MAX_VALUE;
-
-    /**
-     * Specifies the precedence value for the server list manager.
-     *
-     * @return The precedence value as an integer.
-     */
-    int value() default HIGHEST_PRECEDENCE;
-
+public class NamingServerListManager extends AbstractServerListManager {
+    
+    public NamingServerListManager(NacosClientProperties properties, String namespace) throws NacosException {
+        initServerList(properties, namespace);
+    }
+    
+    @Override
+    public ModuleType getModuleType() {
+        return ModuleType.NAMING;
+    }
 }

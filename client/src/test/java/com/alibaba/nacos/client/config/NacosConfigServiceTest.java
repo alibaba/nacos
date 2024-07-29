@@ -16,10 +16,11 @@
 
 package com.alibaba.nacos.client.config;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.address.base.AbstractServerListManager;
+import com.alibaba.nacos.client.address.manager.ConfigServerListManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
 import com.alibaba.nacos.client.config.impl.ConfigTransportClient;
@@ -181,14 +182,11 @@ class NacosConfigServiceTest {
             }
         };
         
-        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive(new Properties());
-        AbstractServerListManager serverListManager = new AbstractServerListManager(properties) {
-            @Override
-            protected String initServerName(NacosClientProperties properties) {
-                return "unknown";
-            }
-        };
-        Mockito.when(mockWoker.getAgent()).thenReturn(new ConfigTransportClient(properties, serverListManager) {
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1");
+        final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        ConfigServerListManager serverListManager = new ConfigServerListManager(clientProperties);
+        Mockito.when(mockWoker.getAgent()).thenReturn(new ConfigTransportClient(clientProperties, serverListManager) {
             @Override
             public void startInternal() throws NacosException {
                 // NOOP

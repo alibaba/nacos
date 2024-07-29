@@ -25,8 +25,8 @@ import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.selector.AbstractSelector;
+import com.alibaba.nacos.client.address.common.ServerListChangedEvent;
 import com.alibaba.nacos.client.auth.ram.utils.SignUtil;
-import com.alibaba.nacos.client.address.impl.ServerListUpdatedEvent;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.common.notify.Event;
@@ -185,7 +185,7 @@ class AbstractNamingClientProxyTest {
         }
         
         @Override
-        public void onEvent(ServerListUpdatedEvent event) {
+        public void onEvent(ServerListChangedEvent event) {
         
         }
         

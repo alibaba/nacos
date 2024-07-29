@@ -18,11 +18,8 @@ package com.alibaba.nacos.client.config.http;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.address.base.AbstractServerListManager;
-import com.alibaba.nacos.client.address.impl.AddressServerListManager;
-import com.alibaba.nacos.client.address.impl.PropertiesServerListManager;
+import com.alibaba.nacos.client.address.manager.ConfigServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
@@ -63,7 +60,7 @@ class ServerHttpAgentTest {
     private static final String SERVER_ADDRESS_2 = "http://2.2.2.2:8848";
 
     @Mock
-    AbstractServerListManager serverListManager;
+    ConfigServerListManager serverListManager;
 
     @Mock
     HttpRestResult<String> mockResult;
@@ -79,7 +76,6 @@ class ServerHttpAgentTest {
         properties.setProperty(PropertyKeyConst.CONTEXT_PATH, "/");
         serverHttpAgent = new ServerHttpAgent(serverListManager, properties);
         injectRestTemplate();
-        when(serverListManager.getProperties()).thenReturn(NacosClientProperties.PROTOTYPE.derive(properties));
         when(serverListManager.getCurrentServer()).thenReturn(SERVER_ADDRESS_1);
         when(serverListManager.getNextServer()).thenReturn(SERVER_ADDRESS_1);
     }
@@ -112,13 +108,11 @@ class ServerHttpAgentTest {
 
     @Test
     void testGetterAndSetter() throws NacosException {
-        ParamUtil.setDefaultContextPath("nacos");
         Properties properties = new Properties();
-        properties.setProperty(PropertyKeyConst.ENDPOINT, "aaa");
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1");
         properties.setProperty(PropertyKeyConst.NAMESPACE, "namespace1");
-        properties.setProperty("initServerListRetryTime", "0");
         NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
-        AddressServerListManager serverListManager = new AddressServerListManager(clientProperties);
+        ConfigServerListManager serverListManager = new ConfigServerListManager(clientProperties);
         final ServerHttpAgent serverHttpAgent = new ServerHttpAgent(serverListManager, new Properties());
 
         final String appname = ServerHttpAgent.getAppname();
@@ -132,7 +126,7 @@ class ServerHttpAgentTest {
         assertNull(encode);
         assertEquals("namespace1", namespace);
         assertEquals("namespace1", tenant);
-        assertEquals("address-server-aaa_8080_nacos_serverlist-namespace1", name);
+        assertEquals("fixed-namespace1-127.0.0.1", name);
 
     }
 
@@ -140,7 +134,7 @@ class ServerHttpAgentTest {
     void testLifCycle() throws NacosException {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "aaa");
-        PropertiesServerListManager server = Mockito.mock(PropertiesServerListManager.class);
+        ConfigServerListManager server = Mockito.mock(ConfigServerListManager.class);
         final ServerHttpAgent serverHttpAgent = new ServerHttpAgent(server, properties);
 
         serverHttpAgent.start();

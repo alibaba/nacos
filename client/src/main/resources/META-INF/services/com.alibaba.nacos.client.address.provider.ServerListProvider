@@ -14,6 +14,5 @@
 # limitations under the License.
 #
 
-com.alibaba.nacos.client.address.impl.AddressServerListManager
-com.alibaba.nacos.client.address.impl.PropertiesServerListManager
-com.alibaba.nacos.client.address.impl.FileServerListManager
+com.alibaba.nacos.client.address.provider.AddressServerListProvider
+com.alibaba.nacos.client.address.provider.PropertiesServerListProvider

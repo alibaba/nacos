@@ -14,15 +14,22 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.address.impl;
-
-import com.alibaba.nacos.common.notify.SlowEvent;
+package com.alibaba.nacos.client.address.common;
 
 /**
- * Server List Updated Event.
+ * Module Type.
  *
  * @author misakacoder
  */
-public class ServerListUpdatedEvent extends SlowEvent {
-
+public enum ModuleType {
+    
+    /**
+     * config.
+     */
+    CONFIG,
+    
+    /**
+     * naming.
+     */
+    NAMING
 }
