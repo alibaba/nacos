@@ -23,8 +23,8 @@ import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
 import com.alibaba.nacos.client.config.impl.ConfigTransportClient;
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
-import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.serverlist.ServerListManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -182,7 +182,7 @@ class NacosConfigServiceTest {
         };
         
         final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive(new Properties());
-        Mockito.when(mockWoker.getAgent()).thenReturn(new ConfigTransportClient(properties, new ServerListManager()) {
+        Mockito.when(mockWoker.getAgent()).thenReturn(new ConfigTransportClient(properties, new ServerListManager(properties, null)) {
             @Override
             public void startInternal() throws NacosException {
                 // NOOP

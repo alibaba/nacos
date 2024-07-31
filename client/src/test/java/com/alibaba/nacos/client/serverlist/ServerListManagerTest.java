@@ -14,7 +14,7 @@
  *   limitations under the License.
  */
 
-package com.alibaba.nacos.client.naming.core;
+package com.alibaba.nacos.client.serverlist;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.runtime.NacosLoadException;

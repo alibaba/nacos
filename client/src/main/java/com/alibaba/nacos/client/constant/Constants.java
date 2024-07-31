@@ -24,10 +24,6 @@ import java.util.concurrent.TimeUnit;
  * @author onew
  */
 public class Constants {
-    public static final String ENDPOINT_NAME = "endpoint";
-
-    public static final String FIXED_NAME = "fixed";
-
     public static class SysEnv {
         
         public static final String USER_HOME = "user.home";

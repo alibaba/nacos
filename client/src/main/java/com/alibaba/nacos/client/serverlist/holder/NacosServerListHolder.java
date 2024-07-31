@@ -35,12 +35,12 @@ public interface NacosServerListHolder {
     List<String> getServerList();
 
     /**
-     * init server list.
+     * is server list holder.
      *
-     * @param properties init properties
-     * @return server list
+     * @param properties nacos client properties
+     * @return true or false
      */
-    List<String> initServerList(NacosClientProperties properties);
+    boolean canApply(NacosClientProperties properties);
 
     /**
      * get holder name.

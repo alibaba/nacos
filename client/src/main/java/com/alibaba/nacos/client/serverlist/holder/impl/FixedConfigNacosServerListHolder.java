@@ -1,7 +1,6 @@
 package com.alibaba.nacos.client.serverlist.holder.impl;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.client.constant.Constants;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.serverlist.holder.NacosServerListHolder;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -17,6 +16,7 @@ import java.util.List;
  * @since 2024/7/24 16:28
  */
 public class FixedConfigNacosServerListHolder implements NacosServerListHolder {
+    public static final String NAME = "fixed";
 
     private List<String> fixedServerList = new ArrayList<>();
 
@@ -26,18 +26,18 @@ public class FixedConfigNacosServerListHolder implements NacosServerListHolder {
     }
 
     @Override
-    public List<String> initServerList(NacosClientProperties properties) {
+    public boolean canApply(NacosClientProperties properties) {
         String serverListFromProps = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
         if (StringUtils.isNotEmpty(serverListFromProps)) {
             this.fixedServerList = Arrays.asList(serverListFromProps.split(","));
-            return fixedServerList;
+            return true;
         }
-        return new ArrayList<>();
+        return false;
     }
 
     @Override
     public String getName() {
-        return Constants.FIXED_NAME;
+        return NAME;
     }
 
     @Override

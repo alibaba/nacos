@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.naming.event;
+package com.alibaba.nacos.client.serverlist.event;
 
 import com.alibaba.nacos.common.notify.SlowEvent;
 
@@ -25,4 +25,18 @@ import com.alibaba.nacos.common.notify.SlowEvent;
  * on 2021/6/7
  */
 public class ServerListChangedEvent extends SlowEvent {
+    private final String moduleName;
+
+    public ServerListChangedEvent(String moduleName) {
+        this.moduleName = moduleName;
+    }
+
+    /**
+     * Get module name.
+     *
+     * @return module name
+     */
+    public String getModule() {
+        return moduleName;
+    }
 }

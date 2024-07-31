@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.serverlist.holder.impl;
+package com.alibaba.nacos.client.serverlist.holder;
 
+import com.alibaba.nacos.api.exception.runtime.NacosLoadException;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.serverlist.holder.NacosServerListHolder;
+import com.alibaba.nacos.client.serverlist.holder.impl.EndpointNacosServerListHolder;
+import com.alibaba.nacos.client.serverlist.holder.impl.FixedConfigNacosServerListHolder;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 
@@ -32,7 +34,10 @@ import java.util.Objects;
  * @author xz
  * @since 2024/7/24 17:17
  */
-public class CompositeNacosServerListHolder implements NacosServerListHolder {
+public class NacosServerListHolders {
+
+    private NacosClientProperties nacosClientProperties;
+
     private final List<NacosServerListHolder> delegates;
 
     private NacosServerListHolder owner;
@@ -41,7 +46,9 @@ public class CompositeNacosServerListHolder implements NacosServerListHolder {
 
     private static final int ORDER = 0;
 
-    public CompositeNacosServerListHolder() {
+    public NacosServerListHolders(NacosClientProperties clientProperties) {
+        this.nacosClientProperties = clientProperties;
+
         delegates = new ArrayList<>();
         delegates.add(new FixedConfigNacosServerListHolder());
         delegates.add(new EndpointNacosServerListHolder());
@@ -50,33 +57,31 @@ public class CompositeNacosServerListHolder implements NacosServerListHolder {
         delegates.sort(Comparator.comparing(NacosServerListHolder::getOrder));
     }
 
-    @Override
     public List<String> getServerList() {
         return Objects.isNull(owner) ? new ArrayList<>() : owner.getServerList();
     }
 
-    @Override
-    public List<String> initServerList(NacosClientProperties properties) {
+    /**
+     * load server list.
+     *
+     * @return
+     */
+    public List<String> loadServerList() {
         for (NacosServerListHolder delegate : delegates) {
-            if (delegate.getClass().equals(this.getClass())) {
-                continue;
-            }
-            List<String> serverList = delegate.initServerList(properties);
-            if (CollectionUtils.isNotEmpty(serverList)) {
-                owner = delegate;
-                return serverList;
+            if (delegate.canApply(nacosClientProperties)) {
+                List<String> serverList = delegate.getServerList();
+                if (CollectionUtils.isNotEmpty(serverList)) {
+                    owner = delegate;
+                    return serverList;
+                }
+                throw new NacosLoadException("serverList is empty,please check configuration");
             }
         }
 
-        return new ArrayList<>();
+        throw new NacosLoadException("can not found serverList,please check configuration");
     }
 
     public String getName() {
         return Objects.isNull(owner) ? NAME : owner.getName();
-    }
-
-    @Override
-    public int getOrder() {
-        return ORDER;
     }
 }

@@ -1,13 +1,15 @@
-package com.alibaba.nacos.client.serverlist;
+package com.alibaba.nacos.client.serverlist.holer;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.serverlist.holder.impl.FixedConfigNacosServerListHolder;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Properties;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * fixed config get nacos server list.
@@ -22,8 +24,7 @@ public class FixedConfigNacosServerListHolderTest {
         FixedConfigNacosServerListHolder holder = new FixedConfigNacosServerListHolder();
         List<String> serverList = holder.getServerList();
 
-        Assert.assertTrue(serverList.isEmpty());
-
+        assertTrue(serverList.isEmpty());
     }
 
     @Test
@@ -32,15 +33,18 @@ public class FixedConfigNacosServerListHolderTest {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
 
-        List<String> serverList = holder.initServerList(NacosClientProperties.PROTOTYPE.derive(properties));
-        Assert.assertEquals(1, serverList.size());
-        Assert.assertEquals("127.0.0.1:8848", serverList.get(0));
+        boolean canApply = holder.canApply(NacosClientProperties.PROTOTYPE.derive(properties));
+        assertTrue(canApply);
+
+        List<String> serverList = holder.getServerList();
+        assertEquals(1, serverList.size());
+        assertEquals("127.0.0.1:8848", serverList.get(0));
     }
 
     @Test
     public void testTestGetName() {
         FixedConfigNacosServerListHolder holder = new FixedConfigNacosServerListHolder();
 
-        Assert.assertEquals(holder.getName(), "fixed");
+        assertEquals(holder.getName(), "fixed");
     }
 }

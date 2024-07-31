@@ -105,7 +105,7 @@ public class NacosNamingService implements NamingService {
         InitUtils.initSerialization();
         InitUtils.initWebRootContext(nacosClientProperties);
         initLogName(nacosClientProperties);
-        
+        initModuleName(nacosClientProperties);
         this.notifierEventScope = UUID.randomUUID().toString();
         this.changeNotifier = new InstancesChangeNotifier(this.notifierEventScope);
         NotifyCenter.registerToPublisher(InstancesChangeEvent.class, 16384);
@@ -118,6 +118,10 @@ public class NacosNamingService implements NamingService {
     @Deprecated
     private void initLogName(NacosClientProperties properties) {
         logName = properties.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME, DEFAULT_NAMING_LOG_FILE_PATH);
+    }
+
+    private void initModuleName(NacosClientProperties properties) {
+        properties.setProperty(PropertyKeyConst.MODULE_NAME, Constants.Naming.NAMING_MODULE);
     }
     
     @Override

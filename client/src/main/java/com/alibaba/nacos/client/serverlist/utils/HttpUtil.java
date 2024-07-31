@@ -14,12 +14,14 @@ import com.alibaba.nacos.common.utils.VersionUtils;
  */
 public class HttpUtil {
 
-    public static Header builderNamingHeader() {
-        return builderHeaderByModule(Constants.Naming.NAMING_MODULE);
+    private static final String OLD_NAMING_MODULE_HEADER = "Naming";
+
+    public static Header buildNamingHeader() {
+        return buildHeaderByModule(OLD_NAMING_MODULE_HEADER);
     }
 
-    public static Header builderConfigHeader() {
-        return builderHeaderByModule(Constants.Config.CONFIG_MODULE);
+    public static Header buildConfigHeader() {
+        return buildHeaderByModule(Constants.Config.CONFIG_MODULE);
     }
 
     /**
@@ -28,7 +30,7 @@ public class HttpUtil {
      * @param module client module name
      * @return header
      */
-    public static Header builderHeaderByModule(String module) {
+    public static Header buildHeaderByModule(String module) {
         Header header = Header.newInstance();
         header.addParam(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.version);
         header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, VersionUtils.getFullClientVersion());

@@ -14,21 +14,22 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.serverlist;
+package com.alibaba.nacos.client.serverlist.holer;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.serverlist.holder.impl.EndpointNacosServerListHolder;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Properties;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 
 /**
@@ -44,7 +45,7 @@ public class EndpointNacosServerListHolderTest {
         EndpointNacosServerListHolder holder = new EndpointNacosServerListHolder();
         List<String> serverList = holder.getServerList();
 
-        Assert.assertTrue(serverList.isEmpty());
+        assertTrue(serverList.isEmpty());
     }
 
     @Test
@@ -61,16 +62,18 @@ public class EndpointNacosServerListHolderTest {
         final Field nacosRestTemplate = EndpointNacosServerListHolder.class.getDeclaredField("nacosRestTemplate");
         nacosRestTemplate.setAccessible(true);
         nacosRestTemplate.set(holder, mock);
-        List<String> serverList = holder.initServerList(NacosClientProperties.PROTOTYPE.derive(properties));
+        boolean canApply = holder.canApply(NacosClientProperties.PROTOTYPE.derive(properties));
+        assertTrue(canApply);
+        List<String> serverList = holder.getServerList();
 
-        Assert.assertEquals(1, serverList.size());
-        Assert.assertEquals("127.0.0.1:8848", serverList.get(0));
+        assertEquals(1, serverList.size());
+        assertEquals("127.0.0.1:8848", serverList.get(0));
     }
 
     @Test
     public void testTestGetName() {
         EndpointNacosServerListHolder holder = new EndpointNacosServerListHolder();
 
-        Assert.assertEquals(holder.getName(), "endpoint");
+        assertEquals(holder.getName(), "endpoint");
     }
 }

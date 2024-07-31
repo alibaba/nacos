@@ -18,13 +18,12 @@ package com.alibaba.nacos.client.serverlist;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.runtime.NacosLoadException;
-import com.alibaba.nacos.client.serverlist.holder.impl.CompositeNacosServerListHolder;
+import com.alibaba.nacos.client.naming.utils.InitUtils;
+import com.alibaba.nacos.client.serverlist.holder.NacosServerListHolders;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
+import com.alibaba.nacos.client.serverlist.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
-import com.alibaba.nacos.client.serverlist.holder.NacosServerListHolder;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.lifecycle.Closeable;
@@ -50,7 +49,7 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  * @author xiweng.yy
  */
 public class ServerListManager implements ServerListFactory, Closeable {
-    private final NacosServerListHolder serverListHolder;
+    private final NacosServerListHolders serverListHolders;
 
     private final long refreshServerListInternal = TimeUnit.SECONDS.toMillis(30);
     
@@ -62,7 +61,7 @@ public class ServerListManager implements ServerListFactory, Closeable {
 
     private long lastServerListRefreshTime = 0L;
 
-    private String contentPath = ParamUtil.getDefaultContextPath();
+    private String contextPath = ParamUtil.getDefaultContextPath();
 
     private String serverListName = ParamUtil.getDefaultNodesPath();
 
@@ -72,16 +71,18 @@ public class ServerListManager implements ServerListFactory, Closeable {
 
     private String moduleName = "default";
 
+    private String nacosDomain;
+
     public ServerListManager(Properties properties) {
         this(NacosClientProperties.PROTOTYPE.derive(properties), null);
     }
     
     public ServerListManager(NacosClientProperties properties, String namespace) {
         this.namespace = namespace;
-        this.serverListHolder = new CompositeNacosServerListHolder();
-        this.serverList = serverListHolder.initServerList(properties);
-        if (getServerList().isEmpty()) {
-            throw new NacosLoadException("serverList is empty, please check configuration");
+        this.serverListHolders = new NacosServerListHolders(properties);
+        this.serverList = serverListHolders.loadServerList();
+        if (serverList.size() == 1) {
+            this.nacosDomain = serverList.get(0);
         }
         initParam(properties);
         refreshServerListExecutor = new ScheduledThreadPoolExecutor(1,
@@ -93,17 +94,11 @@ public class ServerListManager implements ServerListFactory, Closeable {
     }
 
     private void initParam(NacosClientProperties properties) {
-        String contentPathTmp = properties.getProperty(PropertyKeyConst.CONTEXT_PATH);
-        if (!StringUtils.isBlank(contentPathTmp)) {
-            this.contentPath = contentPathTmp;
-        }
-        String serverListNameTmp = properties.getProperty(PropertyKeyConst.CLUSTER_NAME);
+        this.contextPath = InitUtils.initContextPath(properties);
+
+        String serverListNameTmp = properties.getProperty(PropertyKeyConst.ENDPOINT_CLUSTER_NAME);
         if (!StringUtils.isBlank(serverListNameTmp)) {
             this.serverListName = serverListNameTmp;
-        }
-        String moduleNameTmp = properties.getProperty(PropertyKeyConst.MODULE_NAME);
-        if (!StringUtils.isBlank(moduleNameTmp)) {
-            this.moduleName = moduleNameTmp;
         }
 
         this.name = initServerName();
@@ -112,7 +107,7 @@ public class ServerListManager implements ServerListFactory, Closeable {
     private String initServerName() {
         String serverName;
         serverName = moduleName + "-" + String
-                .join("_", serverListHolder.getName(), contentPath, serverListName)
+                .join("_", serverListHolders.getName(), contextPath, serverListName)
                 + (StringUtils.isNotBlank(namespace) ? ("_" + StringUtils.trim(namespace)) : "");
         serverName = serverName.replaceAll("\\/", "_");
         serverName = serverName.replaceAll("\\:", "_");
@@ -125,7 +120,7 @@ public class ServerListManager implements ServerListFactory, Closeable {
             if (System.currentTimeMillis() - lastServerListRefreshTime < refreshServerListInternal) {
                 return;
             }
-            List<String> list = serverListHolder.getServerList();
+            List<String> list = serverListHolders.getServerList();
             if (CollectionUtils.isEmpty(list)) {
                 throw new Exception("Can not acquire Nacos list");
             }
@@ -134,7 +129,7 @@ public class ServerListManager implements ServerListFactory, Closeable {
                 NAMING_LOGGER.info("[SERVER-LIST] server list is updated: " + list);
                 serverList = list;
                 lastServerListRefreshTime = System.currentTimeMillis();
-                NotifyCenter.publishEvent(new ServerListChangedEvent());
+                NotifyCenter.publishEvent(new ServerListChangedEvent(moduleName));
             }
         } catch (Throwable e) {
             NAMING_LOGGER.warn("failed to update server list", e);
@@ -185,14 +180,22 @@ public class ServerListManager implements ServerListFactory, Closeable {
     }
 
     public String getServerListHolderStrategy() {
-        return serverListHolder.getName();
+        return serverListHolders.getName();
     }
 
-    public String getContentPath() {
-        return this.contentPath;
+    public String getContextPath() {
+        return this.contextPath;
     }
 
     public boolean hasNext() {
         return currentIndex.get() + 1 < serverList.size();
+    }
+
+    public boolean isDomain() {
+        return StringUtils.isNotBlank(nacosDomain);
+    }
+
+    public String getNacosDomain() {
+        return nacosDomain;
     }
 }

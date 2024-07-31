@@ -45,6 +45,7 @@ import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.env.SourceType;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
+import com.alibaba.nacos.client.serverlist.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.EnvUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -754,12 +755,15 @@ public class ClientWorker implements Closeable {
             subscriber = new Subscriber() {
                 @Override
                 public void onEvent(Event event) {
-                    rpcClientInner.onServerListChange();
+                    ServerListChangedEvent env = (ServerListChangedEvent) event;
+                    if (Constants.Config.CONFIG_MODULE.equals(env.getModule())) {
+                        rpcClientInner.onServerListChange();
+                    }
                 }
                 
                 @Override
                 public Class<? extends Event> subscribeType() {
-                    return ServerListChangeEvent.class;
+                    return ServerListChangedEvent.class;
                 }
             };
             NotifyCenter.registerSubscriber(subscriber);

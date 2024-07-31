@@ -200,7 +200,7 @@ public class ServerHttpAgent implements HttpAgent {
     }
     
     private String getUrl(String serverAddr, String relativePath) {
-        return serverAddr + ContextPathUtil.normalizeContextPath(serverListMgr.getContentPath()) + relativePath;
+        return serverAddr + ContextPathUtil.normalizeContextPath(serverListMgr.getContextPath()) + relativePath;
     }
     
     private boolean isFail(HttpRestResult<String> result) {

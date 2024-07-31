@@ -32,7 +32,7 @@ import com.alibaba.nacos.client.serverlist.utils.HttpUtil;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.serverlist.ServerListManager;
-import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
+import com.alibaba.nacos.client.serverlist.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
@@ -354,30 +354,43 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         if (CollectionUtils.isEmpty(servers)) {
             throw new NacosException(NacosException.INVALID_PARAM, "no server available");
         }
-        
         NacosException exception = new NacosException();
-        Random random = new Random();
-        int index = random.nextInt(servers.size());
 
-        for (int i = 0; i < servers.size(); i++) {
-            String server = servers.get(index);
-            try {
-                return callServer(api, params, body, server, method);
-            } catch (NacosException e) {
-                exception = e;
-                if (NAMING_LOGGER.isDebugEnabled()) {
-                    NAMING_LOGGER.debug("request {} failed.", server, e);
+        if (serverListManager.isDomain()) {
+            String nacosDomain = serverListManager.getNacosDomain();
+            for (int i = 0; i < maxRetry; i++) {
+                try {
+                    return callServer(api, params, body, nacosDomain, method);
+                } catch (NacosException e) {
+                    exception = e;
+                    if (NAMING_LOGGER.isDebugEnabled()) {
+                        NAMING_LOGGER.debug("request {} failed.", nacosDomain, e);
+                    }
                 }
             }
-            index = (index + 1) % servers.size();
+        } else {
+            Random random = new Random();
+            int index = random.nextInt(servers.size());
+
+            for (int i = 0; i < servers.size(); i++) {
+                String server = servers.get(index);
+                try {
+                    return callServer(api, params, body, server, method);
+                } catch (NacosException e) {
+                    exception = e;
+                    if (NAMING_LOGGER.isDebugEnabled()) {
+                        NAMING_LOGGER.debug("request {} failed.", server, e);
+                    }
+                }
+                index = (index + 1) % servers.size();
+            }
         }
 
         NAMING_LOGGER.error("request: {} failed, servers: {}, code: {}, msg: {}", api, servers, exception.getErrCode(),
                 exception.getErrMsg());
-        
+
         throw new NacosException(exception.getErrCode(),
                 "failed to req API:" + api + " after all servers(" + servers + ") tried: " + exception.getMessage());
-        
     }
     
     /**
@@ -399,7 +412,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         String group = params.get(CommonParams.GROUP_NAME);
         String serviceName = params.get(CommonParams.SERVICE_NAME);
         params.putAll(getSecurityHeaders(namespace, group, serviceName));
-        Header header = HttpUtil.builderNamingHeader();
+        Header header = HttpUtil.buildNamingHeader();
         
         String url;
         if (curServer.startsWith(HTTPS_PREFIX) || curServer.startsWith(HTTP_PREFIX)) {

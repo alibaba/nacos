@@ -26,8 +26,8 @@ public class TestNacosServerListHolderSpi implements NacosServerListHolder {
     }
 
     @Override
-    public List<String> initServerList(NacosClientProperties properties) {
-        return this.testServerList;
+    public boolean canApply(NacosClientProperties properties) {
+        return true;
     }
 
     @Override
