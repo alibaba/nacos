@@ -151,6 +151,7 @@
         <SnakeYaml.version>2.0</SnakeYaml.version>
         <spring.version>6.1.10</spring.version>
         <spring-security.version>6.3.1</spring-security.version>
+        <micrometer.version>1.12.8</micrometer.version>
         <junit5.version>5.10.2</junit5.version>
         
         <!-- native -->
@@ -1026,6 +1027,28 @@
                 <version>${protobuf-java.version}</version>
             </dependency>
             
+            <!-- Micrometer -->
+            
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-core</artifactId>
+                <version>${micrometer.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-registry-prometheus</artifactId>
+                <version>${micrometer.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-registry-influx</artifactId>
+                <version>${micrometer.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-registry-elastic</artifactId>
+                <version>${micrometer.version}</version>
+            </dependency>
             
             <dependency>
                 <groupId>com.google.code.gson</groupId>
