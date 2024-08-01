@@ -37,7 +37,6 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -124,10 +123,9 @@ class EmbeddedConfigInfoBetaPersistServiceImplTest {
         assertEquals(mockedConfigInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
         //verify update to be invoked
         embeddedStorageContextHolderMockedStatic.verify(
-                () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(configInfo.getContent()), eq(configInfo.getMd5()),
-                        eq(betaIps), eq(srcIp), eq(srcUser), any(Timestamp.class), eq(configInfo.getAppName()),
+                () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(configInfo.getContent()),
+                        eq(configInfo.getMd5()), eq(betaIps), eq(srcIp), eq(srcUser), eq(configInfo.getAppName()),
                         eq(configInfo.getEncryptedDataKey()), eq(dataId), eq(group), eq(tenant)), times(1));
-        
     }
     
     @Test
@@ -162,8 +160,8 @@ class EmbeddedConfigInfoBetaPersistServiceImplTest {
         //verify add to be invoked
         embeddedStorageContextHolderMockedStatic.verify(
                 () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(dataId), eq(group), eq(tenant),
-                        eq(configInfo.getAppName()), eq(configInfo.getContent()), eq(configInfo.getMd5()), eq(betaIps), eq(srcIp),
-                        eq(srcUser), any(Timestamp.class), any(Timestamp.class), eq(configInfo.getEncryptedDataKey())), times(1));
+                        eq(configInfo.getAppName()), eq(configInfo.getContent()), eq(configInfo.getMd5()),
+                        eq(betaIps), eq(srcIp), eq(srcUser), eq(configInfo.getEncryptedDataKey())), times(1));
     }
     
     @Test
@@ -202,7 +200,7 @@ class EmbeddedConfigInfoBetaPersistServiceImplTest {
         //verify cas update to be invoked
         embeddedStorageContextHolderMockedStatic.verify(
                 () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(configInfo.getContent()),
-                        eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(betaIps), eq(srcIp), eq(srcUser), any(Timestamp.class),
+                        eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(betaIps), eq(srcIp), eq(srcUser),
                         eq(appName), eq(dataId), eq(group), eq(tenant), eq(configInfo.getMd5())), times(1));
         
     }
@@ -239,8 +237,8 @@ class EmbeddedConfigInfoBetaPersistServiceImplTest {
         //verify add to be invoked
         embeddedStorageContextHolderMockedStatic.verify(
                 () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(dataId), eq(group), eq(tenant),
-                        eq(configInfo.getAppName()), eq(configInfo.getContent()), eq(configInfo.getMd5()), eq(betaIps), eq(srcIp),
-                        eq(srcUser), any(Timestamp.class), any(Timestamp.class), eq(configInfo.getEncryptedDataKey())), times(1));
+                        eq(configInfo.getAppName()), eq(configInfo.getContent()), eq(configInfo.getMd5()),
+                        eq(betaIps), eq(srcIp), eq(srcUser), eq(configInfo.getEncryptedDataKey())), times(1));
         
     }
     

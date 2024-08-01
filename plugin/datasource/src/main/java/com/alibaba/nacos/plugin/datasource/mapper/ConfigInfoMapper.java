@@ -73,7 +73,7 @@ public interface ConfigInfoMapper extends Mapper {
     
     /**
      * Query configuration information based on group. <br/>The default sql: SELECT
-     * id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE tenant_id LIKE ? AND app_name=?
+     * id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE tenant_id LIKE ? AND app_name=? LIMIT startRow, pageSize
      *
      * @param context The context of startRow, pageSize
      * @return The sql of querying configration information based on group.
@@ -114,7 +114,7 @@ public interface ConfigInfoMapper extends Mapper {
     /**
      * Query all configuration information by page. The default sql: SELECT data_id,group_id,app_name  FROM ( SELECT id
      * FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT startRow, pageSize ) g, config_info t WHERE g.id = t.id
-     * "
+     *
      *
      * @param context The context of startRow, pageSize
      * @return The sql of querying all configuration information.
@@ -131,9 +131,9 @@ public interface ConfigInfoMapper extends Mapper {
     MapperResult findAllConfigInfoBaseFetchRows(MapperContext context);
     
     /**
-     * Query all config info. The default sql: SELECT
-     * id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type,encrypted_data_key FROM config_info WHERE id
-     * > ? ORDER BY id ASC LIMIT startRow,pageSize
+     * Query all config info. The default sql: "SELECT
+     * id,data_id,group_id,tenant_id,app_name,"+ (needContent ? "content," : "") + "md5,gmt_modified,type,encrypted_data_key FROM config_info WHERE id
+     * > ? ORDER BY id ASC LIMIT startRow,pageSize"
      *
      * @param context     The context of startRow, pageSize
      * @return The sql of querying all config info.
@@ -141,8 +141,8 @@ public interface ConfigInfoMapper extends Mapper {
     MapperResult findAllConfigInfoFragment(MapperContext context);
     
     /**
-     * Query change config. <br/>The default sql: SELECT data_id, group_id, tenant_id, app_name, content,
-     * gmt_modified,encrypted_data_key FROM config_info WHERE gmt_modified >=? AND gmt_modified <= ?
+     * Query change config. <br/>The default sql: SELECT id, data_id, group_id, tenant_id, app_name, md5,
+     * gmt_modified,encrypted_data_key FROM config_info WHERE gmt_modified >=? AND id > ? ORDER BY id LIMIT pageSize
      *
      * @param context sql paramMap
      * @return The sql of querying change config.
@@ -207,7 +207,7 @@ public interface ConfigInfoMapper extends Mapper {
     
     /**
      * According to the time period and configuration conditions to query the eligible configuration. The default sql:
-     * SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified FROM config_info WHERE ...
+     * SELECT id,data_id,group_id,tenant_id,app_name,type,md5,gmt_modified FROM config_info WHERE ...
      *
      * @param context The map of params, the key is the parameter name(dataId, groupId, tenantId, appName, startTime,
      *                endTime, content, startTime, endTime), the value is the key's value.
@@ -365,7 +365,7 @@ public interface ConfigInfoMapper extends Mapper {
     
     /**
      * Query configuration information based on group. The default sql: SELECT id,data_id,group_id,content FROM
-     * config_info WHERE group_id=? AND tenant_id=?
+     * config_info WHERE group_id=? AND tenant_id=? LIMIT startRow, pageSize
      *
      * @param context The context of startRow, pageSize
      * @return Query configuration information based on group.
@@ -492,7 +492,6 @@ public interface ConfigInfoMapper extends Mapper {
         paramList.add(context.getUpdateParameter(FieldConstant.MD5));
         paramList.add(context.getUpdateParameter(FieldConstant.SRC_IP));
         paramList.add(context.getUpdateParameter(FieldConstant.SRC_USER));
-        paramList.add(context.getUpdateParameter(FieldConstant.GMT_MODIFIED));
         paramList.add(context.getUpdateParameter(FieldConstant.APP_NAME));
         paramList.add(context.getUpdateParameter(FieldConstant.C_DESC));
         paramList.add(context.getUpdateParameter(FieldConstant.C_USE));
@@ -504,8 +503,9 @@ public interface ConfigInfoMapper extends Mapper {
         paramList.add(context.getWhereParameter(FieldConstant.GROUP_ID));
         paramList.add(context.getWhereParameter(FieldConstant.TENANT_ID));
         paramList.add(context.getWhereParameter(FieldConstant.MD5));
-        String sql = "UPDATE config_info SET " + "content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?,"
-                + " app_name=?,c_desc=?,c_use=?,effect=?,type=?,c_schema=?,encrypted_data_key=? "
+        String sql = "UPDATE config_info SET " + "content=?, md5=?, src_ip=?, src_user=?, gmt_modified="
+                + getFunction("NOW()")
+                + ", app_name=?, c_desc=?, c_use=?, effect=?, type=?, c_schema=?, encrypted_data_key=? "
                 + "WHERE data_id=? AND group_id=? AND tenant_id=? AND (md5=? OR md5 IS NULL OR md5='')";
         return new MapperResult(sql, paramList);
     }

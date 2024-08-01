@@ -75,7 +75,7 @@ public interface Mapper {
      * @return The name of datasource.
      */
     String getDataSource();
-    
+
     /**
      * Get config_info table primary keys name.
      * The old default value: Statement.RETURN_GENERATED_KEYS
@@ -83,4 +83,12 @@ public interface Mapper {
      * @return an array of column names indicating the columns
      */
     String[] getPrimaryKeyGeneratedKeys();
+
+    /**
+     * Get function by functionName.
+     *
+     * @param functionName functionName
+     * @return function
+     */
+    String getFunction(String functionName);
 }
