@@ -43,7 +43,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.yaml.snakeyaml.scanner.Constant;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;

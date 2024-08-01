@@ -14,6 +14,8 @@ import java.util.List;
  */
 public class TestNacosServerListHolderSpi implements NacosServerListHolder {
 
+    private static boolean testEnable = false;
+
     private List<String> testServerList = new ArrayList<>();
 
     public TestNacosServerListHolderSpi() {
@@ -26,8 +28,8 @@ public class TestNacosServerListHolderSpi implements NacosServerListHolder {
     }
 
     @Override
-    public boolean canApply(NacosClientProperties properties) {
-        return true;
+    public boolean canApply(NacosClientProperties properties, String moduleName) {
+        return testEnable;
     }
 
     @Override

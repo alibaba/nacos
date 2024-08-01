@@ -79,7 +79,7 @@ class ServerHttpAgentTest {
         serverHttpAgent = new ServerHttpAgent(serverListManager, new Properties());
         injectRestTemplate();
         when(serverListManager.getCurrentServer()).thenReturn(SERVER_ADDRESS_1);
-        when(mockIterator.next()).thenReturn(SERVER_ADDRESS_2);
+        when(serverListManager.genNextServer()).thenReturn(SERVER_ADDRESS_2);
     }
     
     private void injectRestTemplate() throws NoSuchFieldException, IllegalAccessException {
@@ -95,7 +95,7 @@ class ServerHttpAgentTest {
     
     @Test
     void testConstruct() throws NacosException {
-        ServerListManager server = new ServerListManager(new Properties());
+        ServerListManager server = Mockito.mock(ServerListManager.class);
         final ServerHttpAgent serverHttpAgent1 = new ServerHttpAgent(server);
         assertNotNull(serverHttpAgent1);
         
@@ -161,6 +161,7 @@ class ServerHttpAgentTest {
         when(nacosRestTemplate.<String>get(eq(SERVER_ADDRESS_2 + "/test"), any(HttpClientConfig.class),
                 any(Header.class), any(Query.class), eq(String.class))).thenReturn(mockResult);
         when(mockResult.getCode()).thenReturn(HttpURLConnection.HTTP_OK);
+        when(serverListManager.hasNext()).thenReturn(true);
         HttpRestResult<String> actual = serverHttpAgent.httpGet("/test", Collections.emptyMap(), Collections.emptyMap(),
                 "UTF-8", 1000);
         assertEquals(mockResult, actual);
@@ -213,6 +214,7 @@ class ServerHttpAgentTest {
         when(nacosRestTemplate.<String>postForm(eq(SERVER_ADDRESS_2 + "/test"), any(HttpClientConfig.class),
                 any(Header.class), anyMap(), eq(String.class))).thenReturn(mockResult);
         when(mockResult.getCode()).thenReturn(HttpURLConnection.HTTP_OK);
+        when(serverListManager.hasNext()).thenReturn(true);
         HttpRestResult<String> actual = serverHttpAgent.httpPost("/test", Collections.emptyMap(),
                 Collections.emptyMap(), "UTF-8", 1000);
         assertEquals(mockResult, actual);
@@ -265,6 +267,7 @@ class ServerHttpAgentTest {
         when(nacosRestTemplate.<String>delete(eq(SERVER_ADDRESS_2 + "/test"), any(HttpClientConfig.class),
                 any(Header.class), any(Query.class), eq(String.class))).thenReturn(mockResult);
         when(mockResult.getCode()).thenReturn(HttpURLConnection.HTTP_OK);
+        when(serverListManager.hasNext()).thenReturn(true);
         HttpRestResult<String> actual = serverHttpAgent.httpDelete("/test", Collections.emptyMap(),
                 Collections.emptyMap(), "UTF-8", 1000);
         assertEquals(mockResult, actual);

@@ -19,9 +19,9 @@ package com.alibaba.nacos.client.serverlist.holder.impl;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.serverlist.holder.NacosServerListHolder;
+import com.alibaba.nacos.client.serverlist.http.ServerListHttpClientManager;
 import com.alibaba.nacos.client.serverlist.utils.HttpUtil;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.common.http.HttpRestResult;
@@ -36,7 +36,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
+import static com.alibaba.nacos.client.utils.LogUtils.SERVER_LIST_LOGGER;
 
 /**
  * by endpoint get nacos server list.
@@ -47,8 +47,9 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 public class EndpointNacosServerListHolder implements NacosServerListHolder {
     public static final String NAME = "endpoint";
 
-    private final NacosRestTemplate nacosRestTemplate = NamingHttpClientManager.getInstance().getNacosRestTemplate();
+    private final NacosRestTemplate nacosRestTemplate = ServerListHttpClientManager.getInstance().getNacosRestTemplate();
 
+    private String moduleName;
 
     private String endpoint;
 
@@ -62,10 +63,11 @@ public class EndpointNacosServerListHolder implements NacosServerListHolder {
     }
 
     @Override
-    public boolean canApply(NacosClientProperties properties) {
+    public boolean canApply(NacosClientProperties properties, String moduleName) {
         String endpoint = InitUtils.initEndpoint(properties);
         if (StringUtils.isNotEmpty(endpoint)) {
             this.endpoint = endpoint;
+            this.moduleName = moduleName;
             initRequestInfo(properties);
             return true;
         }
@@ -76,7 +78,6 @@ public class EndpointNacosServerListHolder implements NacosServerListHolder {
         final String namespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         final String contextPath = InitUtils.initContextPath(properties);
 
-        final String moduleName = properties.getProperty(PropertyKeyConst.MODULE_NAME);
         String serverListName = ParamUtil.getDefaultNodesPath();
 
         String serverListNameTmp = properties.getProperty(PropertyKeyConst.ENDPOINT_CLUSTER_NAME,
@@ -125,7 +126,7 @@ public class EndpointNacosServerListHolder implements NacosServerListHolder {
 
             return list;
         } catch (Exception e) {
-            NAMING_LOGGER.error("[SERVER-LIST] failed to get server list.", e);
+            SERVER_LIST_LOGGER.error("[SERVER-LIST] failed to get server list.", e);
         }
 
         return new ArrayList<>();

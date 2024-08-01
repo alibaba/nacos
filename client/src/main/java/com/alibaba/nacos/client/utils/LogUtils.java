@@ -30,10 +30,13 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class LogUtils {
     
     public static final Logger NAMING_LOGGER;
-    
+
+    public static final Logger SERVER_LIST_LOGGER;
+
     static {
         NacosLogging.getInstance().loadConfiguration();
         NAMING_LOGGER = getLogger("com.alibaba.nacos.client.naming");
+        SERVER_LIST_LOGGER = getLogger("com.alibaba.nacos.client.serverlist");
     }
     
     public static Logger logger(Class<?> clazz) {

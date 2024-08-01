@@ -355,7 +355,6 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
             throw new NacosException(NacosException.INVALID_PARAM, "no server available");
         }
         NacosException exception = new NacosException();
-
         if (serverListManager.isDomain()) {
             String nacosDomain = serverListManager.getNacosDomain();
             for (int i = 0; i < maxRetry; i++) {

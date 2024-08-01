@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-#com.alibaba.nacos.client.spi.TestNacosServerListHolderSpi
+com.alibaba.nacos.client.spi.TestNacosServerListHolderSpi

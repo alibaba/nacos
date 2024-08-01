@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.config.http;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.ConfigHttpClientManager;
 import com.alibaba.nacos.client.serverlist.ServerListManager;
@@ -46,7 +47,7 @@ public class ServerHttpAgent implements HttpAgent {
     
     private static final Logger LOGGER = LogUtils.logger(ServerHttpAgent.class);
     
-    private NacosRestTemplate nacosRestTemplate = ConfigHttpClientManager.getInstance().getNacosRestTemplate();
+    private final NacosRestTemplate nacosRestTemplate = ConfigHttpClientManager.getInstance().getNacosRestTemplate();
     
     private String encode;
     
@@ -74,9 +75,10 @@ public class ServerHttpAgent implements HttpAgent {
                         newHeaders, query, String.class);
                 if (isFail(result)) {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
-                            serverListMgr.getCurrentServer(), result.getCode());
+                            currentServerAddr, result.getCode());
+                } else {
+                    return result;
                 }
-                return result;
             } catch (ConnectException connectException) {
                 LOGGER.error("[NACOS ConnectException httpGet] currentServerAddr:{}, err : {}",
                         currentServerAddr, connectException.getMessage());
@@ -119,8 +121,9 @@ public class ServerHttpAgent implements HttpAgent {
                 if (isFail(result)) {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}", currentServerAddr,
                             result.getCode());
+                } else {
+                    return result;
                 }
-                return result;
             } catch (ConnectException connectException) {
                 LOGGER.error("[NACOS ConnectException httpPost] currentServerAddr: {}, err : {}", currentServerAddr,
                         connectException.getMessage());
@@ -162,8 +165,9 @@ public class ServerHttpAgent implements HttpAgent {
                 if (isFail(result)) {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
                             serverListMgr.getCurrentServer(), result.getCode());
+                } else {
+                    return result;
                 }
-                return result;
             } catch (ConnectException connectException) {
                 LOGGER.error("[NACOS ConnectException httpDelete] currentServerAddr:{}, err : {}",
                         currentServerAddr, ExceptionUtil.getStackTrace(connectException));
@@ -223,7 +227,7 @@ public class ServerHttpAgent implements HttpAgent {
     }
     
     public ServerHttpAgent(Properties properties) throws NacosException {
-        this.serverListMgr = new ServerListManager(properties);
+        this.serverListMgr = new ServerListManager(properties, Constants.Config.CONFIG_MODULE);
     }
     
     @Override

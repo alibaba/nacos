@@ -38,8 +38,6 @@ public class PropertyKeyConst {
     public static final String ENDPOINT_CLUSTER_NAME = "endpointClusterName";
     
     public static final String SERVER_NAME = "serverName";
-
-    public static final String MODULE_NAME = "moduleName";
     
     public static final String NAMESPACE = "namespace";
     

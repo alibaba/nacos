@@ -62,7 +62,7 @@ public class EndpointNacosServerListHolderTest {
         final Field nacosRestTemplate = EndpointNacosServerListHolder.class.getDeclaredField("nacosRestTemplate");
         nacosRestTemplate.setAccessible(true);
         nacosRestTemplate.set(holder, mock);
-        boolean canApply = holder.canApply(NacosClientProperties.PROTOTYPE.derive(properties));
+        boolean canApply = holder.canApply(NacosClientProperties.PROTOTYPE.derive(properties), "");
         assertTrue(canApply);
         List<String> serverList = holder.getServerList();
 

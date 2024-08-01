@@ -22,8 +22,8 @@ import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.serverlist.holder.NacosServerListHolders;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.serverlist.event.ServerListChangedEvent;
-import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
+import com.alibaba.nacos.client.serverlist.http.ServerListHttpClientManager;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.lifecycle.Closeable;
@@ -41,7 +41,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
+import static com.alibaba.nacos.client.utils.LogUtils.SERVER_LIST_LOGGER;
 
 /**
  * Server list manager.
@@ -49,6 +49,7 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  * @author xiweng.yy
  */
 public class ServerListManager implements ServerListFactory, Closeable {
+
     private final NacosServerListHolders serverListHolders;
 
     private final long refreshServerListInternal = TimeUnit.SECONDS.toMillis(30);
@@ -69,17 +70,22 @@ public class ServerListManager implements ServerListFactory, Closeable {
 
     private final String namespace;
 
-    private String moduleName = "default";
-
     private String nacosDomain;
 
-    public ServerListManager(Properties properties) {
-        this(NacosClientProperties.PROTOTYPE.derive(properties), null);
+    private static final String DEFAULT_MODULE_NAME = "default.module";
+
+    private String moduleName = DEFAULT_MODULE_NAME;
+
+    public ServerListManager(Properties properties, String moduleName) {
+        this(NacosClientProperties.PROTOTYPE.derive(properties), null, moduleName);
     }
     
-    public ServerListManager(NacosClientProperties properties, String namespace) {
+    public ServerListManager(NacosClientProperties properties, String namespace, String moduleName) {
         this.namespace = namespace;
-        this.serverListHolders = new NacosServerListHolders(properties);
+        if (StringUtils.isNotBlank(moduleName)) {
+            this.moduleName = moduleName;
+        }
+        this.serverListHolders = new NacosServerListHolders(properties, moduleName);
         this.serverList = serverListHolders.loadServerList();
         if (serverList.size() == 1) {
             this.nacosDomain = serverList.get(0);
@@ -90,7 +96,6 @@ public class ServerListManager implements ServerListFactory, Closeable {
         refreshServerListExecutor
                 .scheduleWithFixedDelay(this::refreshServerListIfNeed, 500L, refreshServerListInternal,
                         TimeUnit.MILLISECONDS);
-        currentIndex.set(new Random().nextInt(getServerList().size()));
     }
 
     private void initParam(NacosClientProperties properties) {
@@ -126,13 +131,13 @@ public class ServerListManager implements ServerListFactory, Closeable {
             }
 
             if (!CollectionUtils.isEqualCollection(list, serverList)) {
-                NAMING_LOGGER.info("[SERVER-LIST] server list is updated: " + list);
+                SERVER_LIST_LOGGER.info("[SERVER-LIST] server list is updated: " + list);
                 serverList = list;
                 lastServerListRefreshTime = System.currentTimeMillis();
                 NotifyCenter.publishEvent(new ServerListChangedEvent(moduleName));
             }
         } catch (Throwable e) {
-            NAMING_LOGGER.warn("failed to update server list", e);
+            SERVER_LIST_LOGGER.warn("failed to update server list", e);
         }
     }
     
@@ -156,15 +161,19 @@ public class ServerListManager implements ServerListFactory, Closeable {
         currentIndex.set(0);
     }
 
+    public void randomRefreshCurrentServerAddr() {
+        currentIndex.set(new Random().nextInt(getServerList().size()));
+    }
+
     @Override
     public void shutdown() throws NacosException {
         String className = this.getClass().getName();
-        NAMING_LOGGER.info("{} do shutdown begin", className);
+        SERVER_LIST_LOGGER.info("{} do shutdown begin", className);
         if (null != refreshServerListExecutor) {
-            ThreadUtils.shutdownThreadPool(refreshServerListExecutor, NAMING_LOGGER);
+            ThreadUtils.shutdownThreadPool(refreshServerListExecutor, SERVER_LIST_LOGGER);
         }
-        NamingHttpClientManager.getInstance().shutdown();
-        NAMING_LOGGER.info("{} do shutdown stop", className);
+        ServerListHttpClientManager.getInstance().shutdown();
+        SERVER_LIST_LOGGER.info("{} do shutdown stop", className);
     }
 
     public String getName() {

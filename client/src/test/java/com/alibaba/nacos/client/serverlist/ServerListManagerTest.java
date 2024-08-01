@@ -72,8 +72,8 @@ class ServerListManagerTest {
         restMapField.setAccessible(true);
         Map<String, NacosRestTemplate> restMap = (Map<String, NacosRestTemplate>) restMapField.get(null);
         cachedNacosRestTemplate = restMap.get(
-                "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager$NamingHttpClientFactory");
-        restMap.put("com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager$NamingHttpClientFactory",
+                "com.alibaba.nacos.client.serverlist.http.ServerListHttpClientManager$ServerListHttpClientFactory");
+        restMap.put("com.alibaba.nacos.client.serverlist.http.ServerListHttpClientManager$ServerListHttpClientFactory",
                 nacosRestTemplate);
         httpRestResult = new HttpRestResult<>();
         httpRestResult.setData("127.0.0.1:8848");
@@ -98,7 +98,7 @@ class ServerListManagerTest {
     @Test
     void testConstructError() {
         assertThrows(NacosLoadException.class, () -> {
-            serverListManager = new ServerListManager(new Properties());
+            serverListManager = new ServerListManager(new Properties(), "test");
         });
     }
     
@@ -106,7 +106,7 @@ class ServerListManagerTest {
     void testConstructWithAddr() {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848,127.0.0.1:8849");
-        serverListManager = new ServerListManager(properties);
+        serverListManager = new ServerListManager(properties, "test");
         final List<String> serverList = serverListManager.getServerList();
         assertEquals(2, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
@@ -118,7 +118,7 @@ class ServerListManagerTest {
             throws InvocationTargetException, NoSuchMethodException, IllegalAccessException, NoSuchFieldException {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848,127.0.0.1:8849");
-        serverListManager = new ServerListManager(properties);
+        serverListManager = new ServerListManager(properties, "test");
         List<String> serverList = serverListManager.getServerList();
         assertEquals(2, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
@@ -134,7 +134,7 @@ class ServerListManagerTest {
     void testConstructWithEndpointAndRefresh() throws Exception {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.ENDPOINT, "127.0.0.1");
-        serverListManager = new ServerListManager(properties);
+        serverListManager = new ServerListManager(properties, "test");
         List<String> serverList = serverListManager.getServerList();
         assertEquals(1, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
@@ -151,7 +151,7 @@ class ServerListManagerTest {
     void testConstructWithEndpointAndTimedNotNeedRefresh() throws Exception {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.ENDPOINT, "127.0.0.1");
-        serverListManager = new ServerListManager(properties);
+        serverListManager = new ServerListManager(properties, "test");
         List<String> serverList = serverListManager.getServerList();
         assertEquals(1, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
@@ -167,7 +167,7 @@ class ServerListManagerTest {
     void testConstructWithEndpointAndRefreshEmpty() throws Exception {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.ENDPOINT, "127.0.0.1");
-        serverListManager = new ServerListManager(properties);
+        serverListManager = new ServerListManager(properties, "test");
         List<String> serverList = serverListManager.getServerList();
         assertEquals(1, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
@@ -184,7 +184,7 @@ class ServerListManagerTest {
             throws InvocationTargetException, NoSuchMethodException, IllegalAccessException, NoSuchFieldException {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.ENDPOINT, "127.0.0.1");
-        serverListManager = new ServerListManager(properties);
+        serverListManager = new ServerListManager(properties, "test");
         List<String> serverList = serverListManager.getServerList();
         assertEquals(1, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
@@ -204,7 +204,7 @@ class ServerListManagerTest {
         Mockito.reset(nacosRestTemplate);
         Mockito.when(nacosRestTemplate.get(eq("http://127.0.0.1:8080/aaa/bbb"), any(), any(), any()))
                 .thenReturn(httpRestResult);
-        serverListManager = new ServerListManager(clientProperties, "test");
+        serverListManager = new ServerListManager(clientProperties, "test", "test");
         List<String> serverList = serverListManager.getServerList();
         assertEquals(1, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
@@ -218,7 +218,7 @@ class ServerListManagerTest {
         Mockito.reset(nacosRestTemplate);
         Mockito.when(nacosRestTemplate.get(eq("http://127.0.0.1:8080/aaa/bbb"), any(), any(), any()))
                 .thenReturn(httpRestResult);
-        serverListManager = new ServerListManager(clientProperties, "test");
+        serverListManager = new ServerListManager(clientProperties, "test", "test");
         List<String> serverList = serverListManager.getServerList();
         assertEquals(1, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
@@ -233,7 +233,7 @@ class ServerListManagerTest {
         Mockito.reset(nacosRestTemplate);
         Mockito.when(nacosRestTemplate.get(eq("http://127.0.0.1:8080/aaa/ccc"), any(), any(), any()))
                 .thenReturn(httpRestResult);
-        serverListManager = new ServerListManager(clientProperties, "test");
+        serverListManager = new ServerListManager(clientProperties, "test", "test");
         List<String> serverList = serverListManager.getServerList();
         assertEquals(1, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
@@ -248,7 +248,7 @@ class ServerListManagerTest {
         Mockito.reset(nacosRestTemplate);
         Mockito.when(nacosRestTemplate.get(eq("http://127.0.0.1:8080/bbb/ccc"), any(), any(), any()))
                 .thenReturn(httpRestResult);
-        serverListManager = new ServerListManager(clientProperties, "test");
+        serverListManager = new ServerListManager(clientProperties, "test", "test");
         List<String> serverList = serverListManager.getServerList();
         assertEquals(1, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
@@ -258,7 +258,7 @@ class ServerListManagerTest {
     void testIsDomain() throws IOException {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
-        serverListManager = new ServerListManager(properties);
+        serverListManager = new ServerListManager(properties, "test");
         assertTrue(serverListManager.isDomain());
         assertEquals("127.0.0.1:8848", serverListManager.getNacosDomain());
     }
@@ -267,7 +267,7 @@ class ServerListManagerTest {
     void testGetCurrentServer() {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
-        final ServerListManager serverListManager = new ServerListManager(properties);
+        final ServerListManager serverListManager = new ServerListManager(properties, "test");
         assertEquals("127.0.0.1:8848", serverListManager.getCurrentServer());
         assertEquals("127.0.0.1:8848", serverListManager.genNextServer());
     }
@@ -276,7 +276,7 @@ class ServerListManagerTest {
     void testShutdown() {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
-        final ServerListManager serverListManager = new ServerListManager(properties);
+        final ServerListManager serverListManager = new ServerListManager(properties, "test");
         Assertions.assertDoesNotThrow(() -> {
             serverListManager.shutdown();
         });

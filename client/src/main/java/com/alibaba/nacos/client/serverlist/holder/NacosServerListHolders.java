@@ -29,26 +29,26 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * composite nacos server discovery.
+ * nacos server list holders.
  *
  * @author xz
  * @since 2024/7/24 17:17
  */
 public class NacosServerListHolders {
 
-    private NacosClientProperties nacosClientProperties;
+    private final NacosClientProperties nacosClientProperties;
 
     private final List<NacosServerListHolder> delegates;
 
     private NacosServerListHolder owner;
 
-    private static final String NAME = "composite";
+    private static final String NAME = "serverListHolders";
 
-    private static final int ORDER = 0;
+    private final String moduleName;
 
-    public NacosServerListHolders(NacosClientProperties clientProperties) {
+    public NacosServerListHolders(NacosClientProperties clientProperties, String moduleName) {
         this.nacosClientProperties = clientProperties;
-
+        this.moduleName = moduleName;
         delegates = new ArrayList<>();
         delegates.add(new FixedConfigNacosServerListHolder());
         delegates.add(new EndpointNacosServerListHolder());
@@ -68,13 +68,15 @@ public class NacosServerListHolders {
      */
     public List<String> loadServerList() {
         for (NacosServerListHolder delegate : delegates) {
-            if (delegate.canApply(nacosClientProperties)) {
+            if (delegate.canApply(nacosClientProperties, moduleName)) {
                 List<String> serverList = delegate.getServerList();
                 if (CollectionUtils.isNotEmpty(serverList)) {
                     owner = delegate;
                     return serverList;
                 }
-                throw new NacosLoadException("serverList is empty,please check configuration");
+                String exceptionMsg = String.format(
+                        "use %s not found serverList,please check configuration", delegate.getClass().getName());
+                throw new NacosLoadException(exceptionMsg);
             }
         }
 

@@ -38,9 +38,10 @@ public interface NacosServerListHolder {
      * is server list holder.
      *
      * @param properties nacos client properties
+     * @param moduleName nacos use module name,current have naming or config.
      * @return true or false
      */
-    boolean canApply(NacosClientProperties properties);
+    boolean canApply(NacosClientProperties properties, String moduleName);
 
     /**
      * get holder name.

@@ -26,7 +26,7 @@ public class FixedConfigNacosServerListHolder implements NacosServerListHolder {
     }
 
     @Override
-    public boolean canApply(NacosClientProperties properties) {
+    public boolean canApply(NacosClientProperties properties, String moduleName) {
         String serverListFromProps = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
         if (StringUtils.isNotEmpty(serverListFromProps)) {
             this.fixedServerList = Arrays.asList(serverListFromProps.split(","));

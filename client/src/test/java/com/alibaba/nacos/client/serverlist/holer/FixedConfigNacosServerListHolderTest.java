@@ -33,7 +33,7 @@ public class FixedConfigNacosServerListHolderTest {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
 
-        boolean canApply = holder.canApply(NacosClientProperties.PROTOTYPE.derive(properties));
+        boolean canApply = holder.canApply(NacosClientProperties.PROTOTYPE.derive(properties), "");
         assertTrue(canApply);
 
         List<String> serverList = holder.getServerList();
