@@ -61,27 +61,27 @@ public final class MetricsMonitor {
         List<Tag> tags = new ArrayList<>();
         tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "raft_read_index_failed"));
-        RAFT_READ_INDEX_FAILED = NacosMeterRegistryCenter.summary(METER_REGISTRY, "nacos_monitor", tags);
+        RAFT_READ_INDEX_FAILED = NacosMeterRegistryCenter.summary(METER_REGISTRY, "nacos_monitor_summary", tags);
     
         tags = new ArrayList<>();
         tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "raft_read_from_leader"));
-        RAFT_FROM_LEADER = NacosMeterRegistryCenter.summary(METER_REGISTRY, "nacos_monitor", tags);
+        RAFT_FROM_LEADER = NacosMeterRegistryCenter.summary(METER_REGISTRY, "nacos_monitor_summary", tags);
     
         tags = new ArrayList<>();
         tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "raft_apply_log_timer"));
-        RAFT_APPLY_LOG_TIMER = NacosMeterRegistryCenter.timer(METER_REGISTRY, "nacos_monitor", tags);
+        RAFT_APPLY_LOG_TIMER = NacosMeterRegistryCenter.timer(METER_REGISTRY, "nacos_monitor_summary", tags);
     
         tags = new ArrayList<>();
         tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "raft_apply_read_timer"));
-        RAFT_APPLY_READ_TIMER = NacosMeterRegistryCenter.timer(METER_REGISTRY, "nacos_monitor", tags);
+        RAFT_APPLY_READ_TIMER = NacosMeterRegistryCenter.timer(METER_REGISTRY, "nacos_monitor_summary", tags);
         
         tags = new ArrayList<>();
         tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "longConnection"));
-        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor_gauge", tags, longConnection);
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor", tags, longConnection);
 
         tags = new ArrayList<>();
         tags.add(immutableTag);
@@ -259,7 +259,7 @@ public final class MetricsMonitor {
                 // new module comes
                 AtomicInteger newModuleConnCnt = new AtomicInteger(cnt);
                 moduleConnectionCnt.put(module, newModuleConnCnt);
-                NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor_gauge",
+                NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor",
                         Arrays.asList(
                                 new ImmutableTag("module", module),
                                 new ImmutableTag("name", "longConnection")
