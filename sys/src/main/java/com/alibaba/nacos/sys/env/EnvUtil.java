@@ -328,7 +328,7 @@ public class EnvUtil {
     
     public static float getMem() {
         return (float) (1
-                - OperatingSystemBeanManager.getFreePhysicalMem() / OperatingSystemBeanManager.getTotalPhysicalMem());
+                - (double) OperatingSystemBeanManager.getFreePhysicalMem() / (double) OperatingSystemBeanManager.getTotalPhysicalMem());
     }
     
     public static String getConfPath() {
