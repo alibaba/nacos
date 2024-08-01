@@ -155,6 +155,7 @@
         <spring.version>6.1.10</spring.version>
         <spring-security.version>6.3.1</spring-security.version>
         <tomcat.version>9.0.93</tomcat.version>
+        <micrometer.version>1.12.8</micrometer.version>
         
         <!-- native -->
         <native-maven-plugin.version>0.10.2</native-maven-plugin.version>
@@ -1064,6 +1065,28 @@
                 <version>${protobuf-java.version}</version>
             </dependency>
             
+            <!-- Micrometer -->
+            
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-core</artifactId>
+                <version>${micrometer.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-registry-prometheus</artifactId>
+                <version>${micrometer.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-registry-influx</artifactId>
+                <version>${micrometer.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-registry-elastic</artifactId>
+                <version>${micrometer.version}</version>
+            </dependency>
             
             <dependency>
                 <groupId>com.google.code.gson</groupId>
