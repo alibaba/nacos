@@ -81,7 +81,7 @@ public final class MetricsMonitor {
         tags = new ArrayList<>();
         tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "longConnection"));
-        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor_gauge", tags, longConnection);
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor", tags, longConnection);
 
         tags = new ArrayList<>();
         tags.add(immutableTag);
@@ -259,7 +259,7 @@ public final class MetricsMonitor {
                 // new module comes
                 AtomicInteger newModuleConnCnt = new AtomicInteger(cnt);
                 moduleConnectionCnt.put(module, newModuleConnCnt);
-                NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor_gauge",
+                NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor",
                         Arrays.asList(
                                 new ImmutableTag("module", module),
                                 new ImmutableTag("name", "longConnection")
