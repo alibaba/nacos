@@ -75,7 +75,7 @@ public class ServerListHttpClientManager implements Closeable {
             SERVER_LIST_LOGGER.error("[ServerListHttpClientManager] An exception occurred when the HTTP client was closed : {}",
                     ExceptionUtil.getStackTrace(ex));
         }
-        SERVER_LIST_LOGGER.warn("[NamingHttpClientManager] Destruction of the end");
+        SERVER_LIST_LOGGER.warn("[ServerListHttpClientManager] Destruction of the end");
     }
 
     private static class ServerListHttpClientFactory extends AbstractHttpClientFactory {
