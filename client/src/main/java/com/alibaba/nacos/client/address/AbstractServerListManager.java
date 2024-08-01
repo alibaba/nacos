@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Server list Manager.
@@ -57,7 +58,9 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
         properties.setProperty(PropertyKeyConst.CLIENT_MODULE_TYPE, getModuleName());
         this.properties = properties;
         Collection<ServerListProvider> serverListProviders = NacosServiceLoader.load(ServerListProvider.class);
-        for (ServerListProvider each : serverListProviders) {
+        Collection<ServerListProvider> sorted = serverListProviders.stream()
+                .sorted((a, b) -> b.getOrder() - a.getOrder()).collect(Collectors.toList());
+        for (ServerListProvider each : sorted) {
             if (each.match(properties)) {
                 this.serverListProvider = each;
                 break;

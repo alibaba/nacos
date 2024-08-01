@@ -39,6 +39,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.List;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
@@ -97,7 +98,10 @@ public class ConfigHttpClientManager implements Closeable {
      */
     public NacosRestTemplate getNacosRestTemplate() {
         NacosRestTemplate nacosRestTemplate = HttpClientBeanHolder.getNacosRestTemplate(HTTP_CLIENT_FACTORY);
-        nacosRestTemplate.getInterceptors().add(limiterHttpClientRequestInterceptor);
+        List<HttpClientRequestInterceptor> interceptors = nacosRestTemplate.getInterceptors();
+        if (!interceptors.contains(limiterHttpClientRequestInterceptor)) {
+            interceptors.add(limiterHttpClientRequestInterceptor);
+        }
         return nacosRestTemplate;
     }
     
