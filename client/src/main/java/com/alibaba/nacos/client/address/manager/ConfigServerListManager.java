@@ -19,9 +19,11 @@ package com.alibaba.nacos.client.address.manager;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.address.common.ModuleType;
+import com.alibaba.nacos.client.address.provider.AddressServerListProvider;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TemplateUtils;
+import com.alibaba.nacos.common.utils.ReflectUtils;
 
 /**
  * Config Server List Manager.
@@ -64,6 +66,18 @@ public class ConfigServerListManager extends AbstractServerListManager {
     
     public String getContentPath() {
         return contentPath;
+    }
+    
+    public boolean isFixedServer() {
+        return serverListProvider != null && !serverListProvider.supportRefresh();
+    }
+    
+    public String getAddressServerUrl() {
+        String addressServerUrl = null;
+        if (serverListProvider instanceof AddressServerListProvider) {
+            addressServerUrl = ReflectUtils.getFieldValue(serverListProvider, "addressServerUrl").toString();
+        }
+        return addressServerUrl;
     }
     
     private void initNamespace(NacosClientProperties properties) {

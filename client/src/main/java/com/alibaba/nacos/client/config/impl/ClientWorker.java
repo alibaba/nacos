@@ -37,11 +37,7 @@ import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.address.common.ServerListChangedEvent;
-import com.alibaba.nacos.client.address.manager.AbstractServerListManager;
 import com.alibaba.nacos.client.address.manager.ConfigServerListManager;
-import com.alibaba.nacos.client.address.provider.AddressServerListProvider;
-import com.alibaba.nacos.client.address.provider.PropertiesServerListProvider;
-import com.alibaba.nacos.client.address.provider.ServerListProvider;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
@@ -72,7 +68,6 @@ import com.alibaba.nacos.common.utils.ConnLabelsUtils;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
-import com.alibaba.nacos.common.utils.ReflectUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
@@ -533,13 +528,9 @@ public class ClientWorker implements Closeable {
         metric.put("listenConfigSize", String.valueOf(this.cacheMap.get().size()));
         metric.put("clientVersion", VersionUtils.getFullClientVersion());
         metric.put("snapshotDir", LocalConfigInfoProcessor.LOCAL_SNAPSHOT_PATH);
-        AbstractServerListManager serverListManager = agent.serverListManager;
-        ServerListProvider serverListProvider = serverListManager.getServerListProvider();
-        boolean isFixServer = serverListProvider instanceof PropertiesServerListProvider;
-        metric.put("isFixedServer", isFixServer);
-        if (serverListProvider instanceof AddressServerListProvider) {
-            metric.put("addressUrl", ReflectUtils.getFieldValue(serverListProvider, "addressServerUrl"));
-        }
+        ConfigServerListManager serverListManager = agent.serverListManager;
+        metric.put("isFixedServer", serverListManager.isFixedServer());
+        metric.put("addressUrl", serverListManager.getAddressServerUrl());
         metric.put("serverUrls", serverListManager.getServerList().toString());
         
         Map<ClientConfigMetricRequest.MetricsKey, Object> metricValues = getMetricsValue(metricsKeys);

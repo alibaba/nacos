@@ -52,7 +52,7 @@ public class PropertyKeyConst {
     public static final String RAM_ROLE_NAME = "ramRoleName";
     
     public static final String SERVER_ADDR = "serverAddr";
-
+    
     public static final String CONTEXT_PATH = "contextPath";
     
     public static final String CLUSTER_NAME = "clusterName";

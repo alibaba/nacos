@@ -29,6 +29,7 @@ import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,35 +96,36 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
         }
     }
     
-    public ServerListProvider getServerListProvider() {
-        return serverListProvider;
-    }
-    
     protected void initServerList(NacosClientProperties properties, String namespace) throws NacosException {
         Collection<ServerListProvider> providers = NacosServiceLoader.load(ServerListProvider.class);
         providers = providers.stream().sorted(Comparator.comparingInt(ServerListProvider::getOrder))
                 .collect(Collectors.toList());
         for (ServerListProvider provider : providers) {
-            String providerName = provider.getClass().getSimpleName();
-            provider.startup(properties, namespace, getModuleType());
-            List<String> serverList = provider.getServerList();
-            if (CollectionUtils.isNotEmpty(serverList)) {
-                updateServerList(serverList);
-                if (provider.supportRefresh()) {
-                    scheduledExecutorService = new ScheduledThreadPoolExecutor(1,
-                            new NameThreadFactory(this.getClass().getName()));
-                    Runnable refreshTask = createUpdateServerListTask(provider::getServerList);
-                    scheduledExecutorService.scheduleWithFixedDelay(refreshTask, 0L, 30L, TimeUnit.SECONDS);
+            if (provider.isValid()) {
+                String providerName = provider.getClass().getSimpleName();
+                provider.startup(properties, namespace, getModuleType());
+                List<String> serverList = provider.getServerList();
+                if (CollectionUtils.isNotEmpty(serverList)) {
+                    updateServerList(serverList);
+                    if (provider.supportRefresh()) {
+                        scheduledExecutorService = new ScheduledThreadPoolExecutor(1,
+                                new NameThreadFactory(this.getClass().getName()));
+                        Runnable refreshTask = createUpdateServerListTask(provider::getServerList);
+                        scheduledExecutorService.scheduleWithFixedDelay(refreshTask, 0L, 30L, TimeUnit.SECONDS);
+                    }
+                    serverListProvider = provider;
+                    LOGGER.info("successfully init server list from {}", providerName);
+                    break;
+                } else {
+                    throw new NacosException(NacosException.CLIENT_INVALID_PARAM,
+                            String.format("the provider '%s' is valid, but the server list is empty", providerName));
                 }
-                serverListProvider = provider;
-                LOGGER.info("successfully init server list from {}", providerName);
-                break;
             } else {
                 provider.shutdown();
             }
         }
         if (CollectionUtils.isEmpty(serverList)) {
-            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "no server address is available");
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "no server available");
         }
     }
     
@@ -145,10 +147,15 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
     }
     
     private void updateServerList(List<String> serverList) {
-        if (serverList == null || serverList.isEmpty() || serverList.equals(this.serverList)) {
+        if (serverList == null) {
             return;
         }
-        serverList = serverList.stream().map(this::repairServerAddr).collect(Collectors.toList());
+        serverList = serverList.stream().filter(StringUtils::isNotBlank).map(this::repairServerAddr)
+                .collect(Collectors.toList());
+        if (serverList.isEmpty()) {
+            return;
+        }
+        serverList.sort(String::compareTo);
         if (serverList.equals(this.serverList)) {
             return;
         }

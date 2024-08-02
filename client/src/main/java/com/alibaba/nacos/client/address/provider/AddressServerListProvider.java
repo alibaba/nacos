@@ -31,7 +31,6 @@ import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.NumberUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -41,7 +40,6 @@ import org.slf4j.LoggerFactory;
 import java.io.StringReader;
 import java.util.List;
 import java.util.StringJoiner;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -79,8 +77,6 @@ public class AddressServerListProvider implements ServerListProvider {
     
     private Query query = Query.EMPTY;
     
-    private volatile boolean validated = false;
-    
     private NacosRestTemplate nacosRestTemplate;
     
     @Override
@@ -104,12 +100,25 @@ public class AddressServerListProvider implements ServerListProvider {
     }
     
     @Override
+    public boolean isValid() {
+        return StringUtils.isNotBlank(endpoint);
+    }
+    
+    @Override
     public List<String> getServerList() throws NacosException {
-        if (!validated) {
-            validated = true;
-            return validateAndReadServerList();
+        List<String> serverList = null;
+        try {
+            HttpRestResult<String> result = nacosRestTemplate.get(addressServerUrl, header, query, String.class);
+            if (result.ok()) {
+                serverList = IoUtils.readLines(new StringReader(result.getData())).stream()
+                        .filter(StringUtils::isNotBlank).collect(Collectors.toList());
+            } else {
+                LOGGER.error("read remote server list error, url: {}, code: {}", addressServerUrl, result.getCode());
+            }
+        } catch (Exception e) {
+            LOGGER.error("read remote server list exception, url: {}", addressServerUrl, e);
         }
-        return readServerList();
+        return serverList;
     }
     
     @Override
@@ -198,43 +207,5 @@ public class AddressServerListProvider implements ServerListProvider {
             }
             this.addressServerUrl = StringUtils.isNotBlank(params) ? url + "?" + params : url;
         }
-    }
-    
-    private List<String> validateAndReadServerList() throws NacosException {
-        List<String> serverList = null;
-        if (StringUtils.isNotBlank(endpoint)) {
-            for (int i = 0; i < endpointRetryTime; ++i) {
-                serverList = readServerList();
-                if (CollectionUtils.isNotEmpty(serverList)) {
-                    break;
-                }
-                try {
-                    TimeUnit.SECONDS.sleep(1L);
-                } catch (InterruptedException ignored) {
-                
-                }
-            }
-            if (CollectionUtils.isEmpty(serverList)) {
-                throw new NacosException(NacosException.SERVER_ERROR,
-                        String.format("the server list read from the remote server is empty, url: %s", addressServerUrl));
-            }
-        }
-        return serverList;
-    }
-    
-    private List<String> readServerList() {
-        List<String> serverList = null;
-        try {
-            HttpRestResult<String> result = nacosRestTemplate.get(addressServerUrl, header, query, String.class);
-            if (result.ok()) {
-                serverList = IoUtils.readLines(new StringReader(result.getData())).stream()
-                        .filter(StringUtils::isNotBlank).collect(Collectors.toList());
-            } else {
-                LOGGER.error("read remote server list error, url: {}, code: {}", addressServerUrl, result.getCode());
-            }
-        } catch (Exception e) {
-            LOGGER.error("read remote server list exception, url: {}", addressServerUrl, e);
-        }
-        return serverList;
     }
 }

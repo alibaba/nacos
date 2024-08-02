@@ -61,32 +61,36 @@ public class ServerHttpAgent implements HttpAgent {
     @Override
     public HttpRestResult<String> httpGet(String path, Map<String, String> headers, Map<String, String> paramValues,
             String encode, long readTimeoutMs) throws Exception {
-        Function<HttpClientConfig, RequestHttpEntity> requestEntityCreator = config -> new RequestHttpEntity(config,
+        Function<HttpClientConfig, RequestHttpEntity> requestEntityInitializer = config -> new RequestHttpEntity(config,
                 createHeader(headers), createQuery(paramValues));
-        return request(HttpMethod.GET, path, requestEntityCreator, readTimeoutMs);
+        return request(HttpMethod.GET, path, requestEntityInitializer, readTimeoutMs);
     }
     
     @Override
     public HttpRestResult<String> httpPost(String path, Map<String, String> headers, Map<String, String> paramValues,
             String encode, long readTimeoutMs) throws Exception {
-        Function<HttpClientConfig, RequestHttpEntity> requestEntityCreator = config -> {
+        Function<HttpClientConfig, RequestHttpEntity> requestEntityInitializer = config -> {
             Header header = createHeader(headers);
             header.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
             return new RequestHttpEntity(config, header, paramValues);
         };
-        return request(HttpMethod.POST, path, requestEntityCreator, readTimeoutMs);
+        return request(HttpMethod.POST, path, requestEntityInitializer, readTimeoutMs);
     }
     
     @Override
     public HttpRestResult<String> httpDelete(String path, Map<String, String> headers, Map<String, String> paramValues,
             String encode, long readTimeoutMs) throws Exception {
-        Function<HttpClientConfig, RequestHttpEntity> requestEntityCreator = config -> new RequestHttpEntity(config,
+        Function<HttpClientConfig, RequestHttpEntity> requestEntityInitializer = config -> new RequestHttpEntity(config,
                 createHeader(headers), createQuery(paramValues));
-        return request(HttpMethod.DELETE, path, requestEntityCreator, readTimeoutMs);
+        return request(HttpMethod.DELETE, path, requestEntityInitializer, readTimeoutMs);
     }
     
     private HttpRestResult<String> request(String method, String path,
-            Function<HttpClientConfig, RequestHttpEntity> requestEntityCreator, long readTimeoutMs) throws Exception {
+            Function<HttpClientConfig, RequestHttpEntity> requestEntityInitializer, long readTimeoutMs)
+            throws Exception {
+        if (requestEntityInitializer == null) {
+            throw new IllegalArgumentException("request entity initializer is null");
+        }
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
         String currentServer = serverListManager.getCurrentServer();
         int maxRetry = this.maxRetry;
@@ -95,7 +99,7 @@ public class ServerHttpAgent implements HttpAgent {
                 .setConTimeOutMillis(ConfigHttpClientManager.getInstance().getConnectTimeoutOrDefault(1000)).build();
         do {
             try {
-                RequestHttpEntity requestEntity = requestEntityCreator.apply(config);
+                RequestHttpEntity requestEntity = requestEntityInitializer.apply(config);
                 HttpRestResult<String> result = nacosRestTemplate.execute(getUrl(currentServer, path), method,
                         requestEntity, String.class);
                 if (isFail(result)) {

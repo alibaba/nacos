@@ -40,6 +40,13 @@ public interface ServerListProvider {
     void startup(NacosClientProperties properties, String namespace, ModuleType moduleType) throws NacosException;
     
     /**
+     * Checks if the server list provider is valid.
+     *
+     * @return true if the server list provider is valid, otherwise returns false
+     */
+    boolean isValid();
+    
+    /**
      * Get server list from server list provider.
      *
      * @return server list

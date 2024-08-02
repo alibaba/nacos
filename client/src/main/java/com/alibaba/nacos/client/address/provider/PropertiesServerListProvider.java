@@ -48,6 +48,11 @@ public class PropertiesServerListProvider implements ServerListProvider {
     }
     
     @Override
+    public boolean isValid() {
+        return StringUtils.isNotBlank(PropertyKeyConst.SERVER_ADDR);
+    }
+    
+    @Override
     public List<String> getServerList() throws NacosException {
         return serverList;
     }
@@ -74,11 +79,9 @@ public class PropertiesServerListProvider implements ServerListProvider {
     private void initServerList(NacosClientProperties properties) {
         List<String> serverList = new ArrayList<>();
         String serverAddress = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
-        if (StringUtils.isNotBlank(serverAddress)) {
-            StringTokenizer tokenizer = new StringTokenizer(serverAddress, ",;");
-            while (tokenizer.hasMoreTokens()) {
-                serverList.add(tokenizer.nextToken());
-            }
+        StringTokenizer tokenizer = new StringTokenizer(serverAddress, ",;");
+        while (tokenizer.hasMoreTokens()) {
+            serverList.add(tokenizer.nextToken());
         }
         this.serverList = serverList;
     }

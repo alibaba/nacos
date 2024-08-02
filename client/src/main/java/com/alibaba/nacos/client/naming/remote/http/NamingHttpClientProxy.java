@@ -358,9 +358,11 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         NacosException exception = new NacosException();
 
         Random random = new Random();
-        int index = random.nextInt(servers.size());
-
-        for (int i = 0; i < servers.size(); i++) {
+        int serversSize = servers.size();
+        int retry = serversSize == 1 ? maxRetry : serversSize;
+        int index = random.nextInt(serversSize);
+        
+        for (int i = 0; i < retry; i++) {
             String server = servers.get(index);
             try {
                 return callServer(api, params, body, server, method);
@@ -370,7 +372,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                     NAMING_LOGGER.debug("request {} failed.", server, e);
                 }
             }
-            index = (index + 1) % servers.size();
+            index = (index + 1) % serversSize;
         }
         
         NAMING_LOGGER.error("request: {} failed, servers: {}, code: {}, msg: {}", api, servers, exception.getErrCode(),
