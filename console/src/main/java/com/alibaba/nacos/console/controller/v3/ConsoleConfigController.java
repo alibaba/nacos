@@ -18,13 +18,15 @@
 package com.alibaba.nacos.console.controller.v3;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
 import com.alibaba.nacos.console.proxy.ConfigProxy;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -43,9 +45,11 @@ import java.io.IOException;
  * @author zhangyukun
  */
 @RestController
-@RequestMapping("/v3/console/cs/configs")
+@RequestMapping("/v3/console/cs/config")
 @ExtractorManager.Extractor(httpExtractor = ConsoleDefaultHttpParamExtractor.class)
 public class ConsoleConfigController {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConsoleConfigController.class);
     
     private final ConfigProxy configProxy;
     
@@ -76,7 +80,7 @@ public class ConsoleConfigController {
      * @throws NacosException NacosException.
      */
     @PostMapping
-    public ResponseEntity<?> publishConfig(HttpServletRequest request, HttpServletResponse response,
+    public RestResult<Boolean> publishConfig(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = "") String tenant,
             @RequestParam("content") String content, @RequestParam(value = "tag", required = false) String tag,
@@ -89,12 +93,14 @@ public class ConsoleConfigController {
             @RequestParam(value = "type", required = false) String type,
             @RequestParam(value = "schema", required = false) String schema,
             @RequestParam(required = false) String encryptedDataKey) {
+        boolean result = false;
         try {
-            boolean result = configProxy.publishConfig(request, response, dataId, group, tenant, content, tag, appName,
-                    srcUser, configTags, desc, use, effect, type, schema, encryptedDataKey);
-            return ResponseEntity.ok(result);
-        } catch (NacosException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getErrMsg());
+            result = configProxy.publishConfig(request, response, dataId, group, tenant, content, tag, appName, srcUser,
+                    configTags, desc, use, effect, type, schema, encryptedDataKey);
+            return RestResultUtils.success(result);
+        } catch (Throwable e) {
+            LOGGER.error("publish configuration information fail", e);
+            return RestResultUtils.failed(500, result, "publish configuration information fail");
         }
     }
     
@@ -104,15 +110,17 @@ public class ConsoleConfigController {
      * @throws NacosException NacosException.
      */
     @DeleteMapping
-    public ResponseEntity<?> deleteConfig(HttpServletRequest request, HttpServletResponse response,
+    public RestResult<Boolean> deleteConfig(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = "") String tenant,
             @RequestParam(value = "tag", required = false) String tag) {
+        boolean result = false;
         try {
-            boolean result = configProxy.deleteConfig(request, response, dataId, group, tenant, tag);
-            return ResponseEntity.ok(result);
-        } catch (NacosException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getErrMsg());
+            result = configProxy.deleteConfig(request, response, dataId, group, tenant, tag);
+            return RestResultUtils.success(result);
+        } catch (Throwable e) {
+            LOGGER.error("delete configuration information fail", e);
+            return RestResultUtils.failed(500, result, "delete configuration information fail");
         }
     }
     
@@ -122,14 +130,16 @@ public class ConsoleConfigController {
      * @throws NacosException NacosException.
      */
     @GetMapping("/detail")
-    public ResponseEntity<?> detailConfigInfo(@RequestParam("dataId") String dataId,
+    public RestResult<ConfigAllInfo> detailConfigInfo(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = "") String tenant) {
+        ConfigAllInfo configAllInfo = null;
         try {
-            ConfigAllInfo configAllInfo = configProxy.detailConfigInfo(dataId, group, tenant);
-            return ResponseEntity.ok(configAllInfo);
-        } catch (NacosException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getErrMsg());
+            configAllInfo = configProxy.detailConfigInfo(dataId, group, tenant);
+            return RestResultUtils.success(configAllInfo);
+        } catch (Throwable e) {
+            LOGGER.error("get detail config info error", e);
+            return RestResultUtils.failed(500, configAllInfo, "get detail config info error");
         }
     }
 }
