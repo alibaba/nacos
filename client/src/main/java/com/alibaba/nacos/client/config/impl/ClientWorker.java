@@ -46,6 +46,7 @@ import com.alibaba.nacos.client.env.SourceType;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.serverlist.event.ServerListChangedEvent;
+import com.alibaba.nacos.client.serverlist.holder.impl.FixedConfigNacosServerListHolder;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.EnvUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -529,8 +530,12 @@ public class ClientWorker implements Closeable {
         metric.put("listenConfigSize", String.valueOf(this.cacheMap.get().size()));
         metric.put("clientVersion", VersionUtils.getFullClientVersion());
         metric.put("snapshotDir", LocalConfigInfoProcessor.LOCAL_SNAPSHOT_PATH);
-        metric.put("serverList", agent.serverListManager.getUrlString());
-        metric.put("serverListHolderStrategy", agent.serverListManager.getServerListHolderStrategy());
+        metric.put("addressUrl", agent.serverListManager.getUrlString());
+        metric.put("serverUrls", agent.serverListManager.getUrlString());
+        String serverListHolderName = agent.serverListManager.getServerListHolderName();
+
+        metric.put("isFixedServer", FixedConfigNacosServerListHolder.NAME.equals(serverListHolderName));
+        metric.put("serverListHolder", agent.serverListManager.getServerListHolderName());
 
         Map<ClientConfigMetricRequest.MetricsKey, Object> metricValues = getMetricsValue(metricsKeys);
         metric.put("metricValues", metricValues);

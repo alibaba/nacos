@@ -188,7 +188,7 @@ public class ServerListManager implements ServerListFactory, Closeable {
         return serverList.toString();
     }
 
-    public String getServerListHolderStrategy() {
+    public String getServerListHolderName() {
         return serverListHolders.getName();
     }
 
