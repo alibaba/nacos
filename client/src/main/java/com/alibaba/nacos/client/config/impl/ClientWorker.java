@@ -533,9 +533,8 @@ public class ClientWorker implements Closeable {
         metric.put("addressUrl", agent.serverListManager.getUrlString());
         metric.put("serverUrls", agent.serverListManager.getUrlString());
         String serverListHolderName = agent.serverListManager.getServerListHolderName();
-
         metric.put("isFixedServer", FixedConfigNacosServerListHolder.NAME.equals(serverListHolderName));
-        metric.put("serverListHolder", agent.serverListManager.getServerListHolderName());
+        metric.put("serverListHolder", serverListHolderName);
 
         Map<ClientConfigMetricRequest.MetricsKey, Object> metricValues = getMetricsValue(metricsKeys);
         metric.put("metricValues", metricValues);
