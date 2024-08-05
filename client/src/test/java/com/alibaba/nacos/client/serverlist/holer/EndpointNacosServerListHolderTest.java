@@ -39,15 +39,15 @@ import static org.mockito.ArgumentMatchers.any;
  * @since 2024/7/25 15:23
  */
 public class EndpointNacosServerListHolderTest {
-
+    
     @Test
     public void testGetServerList() {
         EndpointNacosServerListHolder holder = new EndpointNacosServerListHolder();
         List<String> serverList = holder.getServerList();
-
+        
         assertTrue(serverList.isEmpty());
     }
-
+    
     @Test
     public void testInitServerList() throws Exception {
         final EndpointNacosServerListHolder holder = new EndpointNacosServerListHolder();
@@ -58,22 +58,22 @@ public class EndpointNacosServerListHolderTest {
         a.setData("127.0.0.1:8848");
         a.setCode(200);
         Mockito.when(mock.get(any(), any(), any(), any())).thenReturn(a);
-
+        
         final Field nacosRestTemplate = EndpointNacosServerListHolder.class.getDeclaredField("nacosRestTemplate");
         nacosRestTemplate.setAccessible(true);
         nacosRestTemplate.set(holder, mock);
         boolean canApply = holder.canApply(NacosClientProperties.PROTOTYPE.derive(properties), "");
         assertTrue(canApply);
         List<String> serverList = holder.getServerList();
-
+        
         assertEquals(1, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
     }
-
+    
     @Test
     public void testTestGetName() {
         EndpointNacosServerListHolder holder = new EndpointNacosServerListHolder();
-
+        
         assertEquals(holder.getName(), "endpoint");
     }
 }

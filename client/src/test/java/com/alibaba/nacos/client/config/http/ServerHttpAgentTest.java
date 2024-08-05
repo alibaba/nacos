@@ -117,7 +117,6 @@ class ServerHttpAgentTest {
         final ServerHttpAgent serverHttpAgent = new ServerHttpAgent(server, properties);
         
         serverHttpAgent.start();
-
         Assertions.assertDoesNotThrow(() -> {
             serverHttpAgent.shutdown();
         });

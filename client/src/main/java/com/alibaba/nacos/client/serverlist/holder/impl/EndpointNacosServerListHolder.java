@@ -76,16 +76,14 @@ public class EndpointNacosServerListHolder implements NacosServerListHolder {
 
     private void initRequestInfo(NacosClientProperties properties) {
         final String namespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
-        final String contextPath = InitUtils.initContextPath(properties);
+        final String contextPath = InitUtils.initEndpointContextPath(properties);
 
         String serverListName = ParamUtil.getDefaultNodesPath();
-
         String serverListNameTmp = properties.getProperty(PropertyKeyConst.ENDPOINT_CLUSTER_NAME,
                 properties.getProperty(PropertyKeyConst.CLUSTER_NAME));
         if (!StringUtils.isBlank(serverListNameTmp)) {
             serverListName = serverListNameTmp;
         }
-
         StringBuilder urlString = new StringBuilder(
                 String.format("http://%s%s/%s", this.endpoint, contextPath, serverListName));
         boolean hasQueryString = false;
@@ -102,7 +100,6 @@ public class EndpointNacosServerListHolder implements NacosServerListHolder {
         } else {
             this.queryHeader = HttpUtil.buildHeaderByModule(moduleName);
         }
-
         this.endpointUrlString = urlString.toString();
     }
 
@@ -123,7 +120,6 @@ public class EndpointNacosServerListHolder implements NacosServerListHolder {
                     list.add(line.trim());
                 }
             }
-
             return list;
         } catch (Exception e) {
             SERVER_LIST_LOGGER.error("[SERVER-LIST] failed to get server list.", e);

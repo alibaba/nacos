@@ -33,7 +33,7 @@ public interface NacosServerListHolder {
      * @return init server list or new list
      */
     List<String> getServerList();
-
+    
     /**
      * is server list holder.
      *
@@ -42,14 +42,14 @@ public interface NacosServerListHolder {
      * @return true or false
      */
     boolean canApply(NacosClientProperties properties, String moduleName);
-
+    
     /**
      * get holder name.
      *
      * @return holder name
      */
     String getName();
-
+    
     /**
      * get order number.
      *

@@ -13,17 +13,17 @@ import com.alibaba.nacos.common.utils.VersionUtils;
  * @since 2024/7/25 13:50
  */
 public class HttpUtil {
-
+    
     private static final String OLD_NAMING_MODULE_HEADER = "Naming";
-
+    
     public static Header buildNamingHeader() {
         return buildHeaderByModule(OLD_NAMING_MODULE_HEADER);
     }
-
+    
     public static Header buildConfigHeader() {
         return buildHeaderByModule(Constants.Config.CONFIG_MODULE);
     }
-
+    
     /**
      * Build header by module.
      *

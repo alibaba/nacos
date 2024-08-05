@@ -35,17 +35,17 @@ import java.util.Objects;
  * @since 2024/7/24 17:17
  */
 public class NacosServerListHolders {
-
+    
     private final NacosClientProperties nacosClientProperties;
-
+    
     private final List<NacosServerListHolder> delegates;
-
+    
     private NacosServerListHolder owner;
-
+    
     private static final String NAME = "serverListHolders";
-
+    
     private final String moduleName;
-
+    
     public NacosServerListHolders(NacosClientProperties clientProperties, String moduleName) {
         this.nacosClientProperties = clientProperties;
         this.moduleName = moduleName;
@@ -53,14 +53,14 @@ public class NacosServerListHolders {
         delegates.add(new FixedConfigNacosServerListHolder());
         delegates.add(new EndpointNacosServerListHolder());
         delegates.addAll(NacosServiceLoader.load(NacosServerListHolder.class));
-
+        
         delegates.sort(Comparator.comparing(NacosServerListHolder::getOrder));
     }
-
+    
     public List<String> getServerList() {
         return Objects.isNull(owner) ? new ArrayList<>() : owner.getServerList();
     }
-
+    
     /**
      * load server list.
      *
@@ -79,10 +79,10 @@ public class NacosServerListHolders {
                 throw new NacosLoadException(exceptionMsg);
             }
         }
-
+        
         throw new NacosLoadException("can not found serverList,please check configuration");
     }
-
+    
     public String getName() {
         return Objects.isNull(owner) ? NAME : owner.getName();
     }

@@ -37,35 +37,35 @@ import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
  * @author mai.jh
  */
 public class ServerListHttpClientManager implements Closeable {
-
+    
     private static final int READ_TIME_OUT_MILLIS = Integer
             .getInteger("com.alibaba.nacos.client.serverlist.rtimeout", 50000);
-
+    
     private static final int CON_TIME_OUT_MILLIS = Integer.getInteger("com.alibaba.nacos.client.serverlist.ctimeout", 3000);
-
+    
     private static final boolean ENABLE_HTTPS = Boolean.getBoolean(TlsSystemConfig.TLS_ENABLE);
-
+    
     private static final int MAX_REDIRECTS = 5;
-
+    
     private static final HttpClientFactory HTTP_CLIENT_FACTORY = new ServerListHttpClientFactory();
-
+    
     private static class ServerListHttpClientManagerInstance {
-
+        
         private static final ServerListHttpClientManager INSTANCE = new ServerListHttpClientManager();
     }
-
+    
     public static ServerListHttpClientManager getInstance() {
         return ServerListHttpClientManagerInstance.INSTANCE;
     }
-
+    
     public String getPrefix() {
         return ENABLE_HTTPS ? HTTPS_PREFIX : HTTP_PREFIX;
     }
-
+    
     public NacosRestTemplate getNacosRestTemplate() {
         return HttpClientBeanHolder.getNacosRestTemplate(HTTP_CLIENT_FACTORY);
     }
-
+    
     @Override
     public void shutdown() throws NacosException {
         SERVER_LIST_LOGGER.warn("[ServerListHttpClientManager] Start destroying NacosRestTemplate");
@@ -77,15 +77,15 @@ public class ServerListHttpClientManager implements Closeable {
         }
         SERVER_LIST_LOGGER.warn("[ServerListHttpClientManager] Destruction of the end");
     }
-
+    
     private static class ServerListHttpClientFactory extends AbstractHttpClientFactory {
-
+        
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
             return HttpClientConfig.builder().setConTimeOutMillis(CON_TIME_OUT_MILLIS)
                     .setReadTimeOutMillis(READ_TIME_OUT_MILLIS).setMaxRedirects(MAX_REDIRECTS).build();
         }
-
+        
         @Override
         protected Logger assignLogger() {
             return SERVER_LIST_LOGGER;

@@ -13,30 +13,30 @@ import java.util.List;
  * @since 2024/7/25 16:35
  */
 public class TestNacosServerListHolderSpi implements NacosServerListHolder {
-
+    
     private static boolean testEnable = false;
-
+    
     private List<String> testServerList = new ArrayList<>();
-
+    
     public TestNacosServerListHolderSpi() {
         testServerList.add("127.0.0.1:8848");
     }
-
+    
     @Override
     public List<String> getServerList() {
         return this.testServerList;
     }
-
+    
     @Override
     public boolean canApply(NacosClientProperties properties, String moduleName) {
         return testEnable;
     }
-
+    
     @Override
     public String getName() {
         return "test";
     }
-
+    
     @Override
     public int getOrder() {
         return Integer.MIN_VALUE;

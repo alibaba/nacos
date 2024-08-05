@@ -44,5 +44,4 @@ public class FixedConfigNacosServerListHolder implements NacosServerListHolder {
     public int getOrder() {
         return Integer.MAX_VALUE;
     }
-
 }

@@ -28,7 +28,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  * @since 0.9.0
  */
 public class LogUtils {
-    
+
     public static final Logger NAMING_LOGGER;
 
     public static final Logger SERVER_LIST_LOGGER;
@@ -38,9 +38,9 @@ public class LogUtils {
         NAMING_LOGGER = getLogger("com.alibaba.nacos.client.naming");
         SERVER_LIST_LOGGER = getLogger("com.alibaba.nacos.client.serverlist");
     }
-    
+
     public static Logger logger(Class<?> clazz) {
         return getLogger(clazz);
     }
-    
+
 }

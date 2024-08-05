@@ -57,7 +57,7 @@ public class ServerHttpAgent implements HttpAgent {
     
     @Override
     public HttpRestResult<String> httpGet(String path, Map<String, String> headers, Map<String, String> paramValues,
-            String encode, long readTimeoutMs) throws Exception {
+                                          String encode, long readTimeoutMs) throws Exception {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
         String currentServerAddr = serverListMgr.getCurrentServer();
         int maxRetry = this.maxRetry;
@@ -90,10 +90,10 @@ public class ServerHttpAgent implements HttpAgent {
                         ex);
                 throw ex;
             }
-
+            
             currentServerAddr = acquireNextServer(HttpMethod.GET, maxRetry);
             maxRetry--;
-
+            
         } while (System.currentTimeMillis() <= endTime);
         
         LOGGER.error("no available server");
@@ -102,7 +102,7 @@ public class ServerHttpAgent implements HttpAgent {
     
     @Override
     public HttpRestResult<String> httpPost(String path, Map<String, String> headers, Map<String, String> paramValues,
-            String encode, long readTimeoutMs) throws Exception {
+                                           String encode, long readTimeoutMs) throws Exception {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
         String currentServerAddr = serverListMgr.getCurrentServer();
         int maxRetry = this.maxRetry;
@@ -137,7 +137,7 @@ public class ServerHttpAgent implements HttpAgent {
             
             currentServerAddr = acquireNextServer(HttpMethod.POST, maxRetry);
             maxRetry--;
-
+            
         } while (System.currentTimeMillis() <= endTime);
         
         LOGGER.error("no available server, currentServerAddr : {}", currentServerAddr);
@@ -146,7 +146,7 @@ public class ServerHttpAgent implements HttpAgent {
     
     @Override
     public HttpRestResult<String> httpDelete(String path, Map<String, String> headers, Map<String, String> paramValues,
-            String encode, long readTimeoutMs) throws Exception {
+                                             String encode, long readTimeoutMs) throws Exception {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
         String currentServerAddr = serverListMgr.getCurrentServer();
         int maxRetry = this.maxRetry;
@@ -182,13 +182,13 @@ public class ServerHttpAgent implements HttpAgent {
             
             currentServerAddr = acquireNextServer(HttpMethod.DELETE, maxRetry);
             maxRetry--;
-
+            
         } while (System.currentTimeMillis() <= endTime);
         
         LOGGER.error("no available server");
         throw new ConnectException("no available server");
     }
-
+    
     private String acquireNextServer(String acquireMethod, int maxRetry) throws ConnectException {
         if (serverListMgr.hasNext()) {
             return serverListMgr.genNextServer();
@@ -232,7 +232,7 @@ public class ServerHttpAgent implements HttpAgent {
     
     @Override
     public void start() throws NacosException {
-
+    
     }
     
     @Override

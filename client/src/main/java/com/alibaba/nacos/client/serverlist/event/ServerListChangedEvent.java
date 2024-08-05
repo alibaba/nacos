@@ -20,17 +20,18 @@ import com.alibaba.nacos.common.notify.SlowEvent;
 
 /**
  * Event of server list changed for naming.
- * 
+ *
  * @author gengtuo.ygt
  * on 2021/6/7
  */
 public class ServerListChangedEvent extends SlowEvent {
+    
     private final String moduleName;
-
+    
     public ServerListChangedEvent(String moduleName) {
         this.moduleName = moduleName;
     }
-
+    
     /**
      * Get module name.
      *

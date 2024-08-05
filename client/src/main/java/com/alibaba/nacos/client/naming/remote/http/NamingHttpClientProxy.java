@@ -370,7 +370,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         } else {
             Random random = new Random();
             int index = random.nextInt(servers.size());
-
+            
             for (int i = 0; i < servers.size(); i++) {
                 String server = servers.get(index);
                 try {
@@ -384,7 +384,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                 index = (index + 1) % servers.size();
             }
         }
-
+        
         NAMING_LOGGER.error("request: {} failed, servers: {}, code: {}, msg: {}", api, servers, exception.getErrCode(),
                 exception.getErrMsg());
 

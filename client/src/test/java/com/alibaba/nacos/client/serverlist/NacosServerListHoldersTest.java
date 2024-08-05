@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @since 2024/7/25 16:21
  */
 public class NacosServerListHoldersTest {
-
+    
     @Test
     public void testLoadSpiServerListHolder() {
         Properties properties = new Properties();
@@ -29,38 +29,36 @@ public class NacosServerListHoldersTest {
         } catch (Exception e) {
             e.getMessage();
         }
-
+        
         NacosServerListHolders holder = new NacosServerListHolders(NacosClientProperties.PROTOTYPE.derive(properties), "test");
         List<String> serverList = holder.loadServerList();
         assertEquals(serverList.size(), 1);
         assertEquals(serverList.get(0), "127.0.0.1:8848");
-
         assertEquals(holder.getName(), "test");
     }
-
+    
     @Test
     public void testGetServerList() {
         NacosServerListHolders holder = new NacosServerListHolders(NacosClientProperties.PROTOTYPE.derive(new Properties()), "test");
-
+        
         List<String> serverList = holder.getServerList();
         assertEquals(serverList.size(), 0);
     }
-
+    
     @Test
     public void testInitServerList() {
         Properties properties = new Properties();
-
         NacosServerListHolders holder = new NacosServerListHolders(NacosClientProperties.PROTOTYPE.derive(properties), "test");
-
+        
         List<String> serverList = holder.getServerList();
-
+        
         assertEquals(serverList.size(), 0);
     }
-
+    
     @Test
     public void testGetName() {
         NacosServerListHolders holder = new NacosServerListHolders(NacosClientProperties.PROTOTYPE.derive(new Properties()), "test");
-
+        
         assertEquals(holder.getName(), "serverListHolders");
     }
 }
