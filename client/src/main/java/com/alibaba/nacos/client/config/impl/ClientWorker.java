@@ -46,7 +46,6 @@ import com.alibaba.nacos.client.env.SourceType;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.serverlist.event.ServerListChangedEvent;
-import com.alibaba.nacos.client.serverlist.holder.impl.FixedConfigNacosServerListHolder;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.EnvUtil;
 import com.alibaba.nacos.client.utils.LogUtils;

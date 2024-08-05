@@ -217,7 +217,7 @@ public class ServerListManager implements ServerListFactory, Closeable {
     public String getAddressUrl() {
         NacosServerListHolder holder = serverListHolders.getOwner();
         if (holder instanceof EndpointNacosServerListHolder) {
-            return ((EndpointNacosServerListHolder)holder).getEndpointUrlString();
+            return ((EndpointNacosServerListHolder) holder).getEndpointUrlString();
         }
         return "";
     }
