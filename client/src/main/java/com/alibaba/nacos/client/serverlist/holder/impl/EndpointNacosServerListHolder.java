@@ -137,4 +137,8 @@ public class EndpointNacosServerListHolder implements NacosServerListHolder {
     public int getOrder() {
         return Integer.MAX_VALUE - 1;
     }
+    
+    public String getEndpointUrlString() {
+        return this.endpointUrlString;
+    }
 }

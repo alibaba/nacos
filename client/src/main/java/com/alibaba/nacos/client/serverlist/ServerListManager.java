@@ -19,10 +19,13 @@ package com.alibaba.nacos.client.serverlist;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
+import com.alibaba.nacos.client.serverlist.holder.NacosServerListHolder;
 import com.alibaba.nacos.client.serverlist.holder.NacosServerListHolders;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.serverlist.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
+import com.alibaba.nacos.client.serverlist.holder.impl.EndpointNacosServerListHolder;
+import com.alibaba.nacos.client.serverlist.holder.impl.FixedConfigNacosServerListHolder;
 import com.alibaba.nacos.client.serverlist.http.ServerListHttpClientManager;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
@@ -99,7 +102,7 @@ public class ServerListManager implements ServerListFactory, Closeable {
     }
 
     private void initParam(NacosClientProperties properties) {
-        this.contextPath = InitUtils.initContextPath(properties);
+        this.contextPath = InitUtils.initEndpointContextPath(properties);
 
         String serverListNameTmp = properties.getProperty(PropertyKeyConst.ENDPOINT_CLUSTER_NAME);
         if (!StringUtils.isBlank(serverListNameTmp)) {
@@ -129,7 +132,6 @@ public class ServerListManager implements ServerListFactory, Closeable {
             if (CollectionUtils.isEmpty(list)) {
                 throw new Exception("Can not acquire Nacos list");
             }
-
             if (!CollectionUtils.isEqualCollection(list, serverList)) {
                 SERVER_LIST_LOGGER.info("[SERVER-LIST] server list is updated: " + list);
                 serverList = list;
@@ -206,5 +208,17 @@ public class ServerListManager implements ServerListFactory, Closeable {
 
     public String getNacosDomain() {
         return nacosDomain;
+    }
+
+    public boolean isFixedServer() {
+        return FixedConfigNacosServerListHolder.NAME.equals(serverListHolders.getName());
+    }
+    
+    public String getAddressUrl() {
+        NacosServerListHolder holder = serverListHolders.getOwner();
+        if (holder instanceof EndpointNacosServerListHolder) {
+            return ((EndpointNacosServerListHolder)holder).getEndpointUrlString();
+        }
+        return "";
     }
 }

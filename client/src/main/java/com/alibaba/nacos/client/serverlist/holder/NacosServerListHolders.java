@@ -86,4 +86,8 @@ public class NacosServerListHolders {
     public String getName() {
         return Objects.isNull(owner) ? NAME : owner.getName();
     }
+    
+    public NacosServerListHolder getOwner() {
+        return this.owner;
+    }
 }
