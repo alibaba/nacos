@@ -69,6 +69,17 @@ public interface ServerListProvider {
     int getOrder();
     
     /**
+     * Get the URL of the address server (Only for AddressServerListProvider).
+     *
+     * @return address server url.
+     */
+    default String getAddressServerUrl() {
+        return "";
+    }
+    
+    ;
+    
+    /**
      * Check if refresh operation is supported.
      *
      * @return true if refresh operation is supported, otherwise returns false

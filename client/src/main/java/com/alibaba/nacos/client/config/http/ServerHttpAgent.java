@@ -27,11 +27,8 @@ import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.model.RequestHttpEntity;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
-import com.alibaba.nacos.common.utils.HttpMethod;
 import org.slf4j.Logger;
 
 import java.net.ConnectException;
@@ -39,7 +36,6 @@ import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.util.Map;
 import java.util.Properties;
-import java.util.function.Function;
 
 /**
  * Server Agent.
@@ -56,91 +52,172 @@ public class ServerHttpAgent implements HttpAgent {
     
     private int maxRetry = 3;
     
-    final ConfigServerListManager serverListManager;
+    final ConfigServerListManager serverListMgr;
     
     @Override
     public HttpRestResult<String> httpGet(String path, Map<String, String> headers, Map<String, String> paramValues,
             String encode, long readTimeoutMs) throws Exception {
-        Function<HttpClientConfig, RequestHttpEntity> requestEntityInitializer = config -> new RequestHttpEntity(config,
-                createHeader(headers), createQuery(paramValues));
-        return request(HttpMethod.GET, path, requestEntityInitializer, readTimeoutMs);
+        final long endTime = System.currentTimeMillis() + readTimeoutMs;
+        String currentServerAddr = serverListMgr.getCurrentServer();
+        int maxRetry = this.maxRetry;
+        HttpClientConfig httpConfig = HttpClientConfig.builder()
+                .setReadTimeOutMillis(Long.valueOf(readTimeoutMs).intValue())
+                .setConTimeOutMillis(ConfigHttpClientManager.getInstance().getConnectTimeoutOrDefault(100)).build();
+        do {
+            try {
+                Header newHeaders = Header.newInstance();
+                if (headers != null) {
+                    newHeaders.addAll(headers);
+                }
+                Query query = Query.newInstance().initParams(paramValues);
+                HttpRestResult<String> result = nacosRestTemplate.get(getUrl(currentServerAddr, path), httpConfig,
+                        newHeaders, query, String.class);
+                if (isFail(result)) {
+                    LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
+                            serverListMgr.getCurrentServer(), result.getCode());
+                } else {
+                    // Update the currently available server addr
+                    serverListMgr.updateCurrentServer(currentServerAddr);
+                    return result;
+                }
+            } catch (ConnectException connectException) {
+                LOGGER.error("[NACOS ConnectException httpGet] currentServerAddr:{}, err : {}",
+                        serverListMgr.getCurrentServer(), connectException.getMessage());
+            } catch (SocketTimeoutException socketTimeoutException) {
+                LOGGER.error("[NACOS SocketTimeoutException httpGet] currentServerAddr:{}， err : {}",
+                        serverListMgr.getCurrentServer(), socketTimeoutException.getMessage());
+            } catch (Exception ex) {
+                LOGGER.error("[NACOS Exception httpGet] currentServerAddr: " + serverListMgr.getCurrentServer(), ex);
+                throw ex;
+            }
+            
+            if (serverListMgr.getIterator().hasNext()) {
+                currentServerAddr = serverListMgr.getIterator().next();
+            } else {
+                maxRetry--;
+                if (maxRetry < 0) {
+                    throw new ConnectException(
+                            "[NACOS HTTP-GET] The maximum number of tolerable server reconnection errors has been reached");
+                }
+                serverListMgr.refreshCurrentServer();
+            }
+            
+        } while (System.currentTimeMillis() <= endTime);
+        
+        LOGGER.error("no available server");
+        throw new ConnectException("no available server");
     }
     
     @Override
     public HttpRestResult<String> httpPost(String path, Map<String, String> headers, Map<String, String> paramValues,
             String encode, long readTimeoutMs) throws Exception {
-        Function<HttpClientConfig, RequestHttpEntity> requestEntityInitializer = config -> {
-            Header header = createHeader(headers);
-            header.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-            return new RequestHttpEntity(config, header, paramValues);
-        };
-        return request(HttpMethod.POST, path, requestEntityInitializer, readTimeoutMs);
+        final long endTime = System.currentTimeMillis() + readTimeoutMs;
+        String currentServerAddr = serverListMgr.getCurrentServer();
+        int maxRetry = this.maxRetry;
+        HttpClientConfig httpConfig = HttpClientConfig.builder()
+                .setReadTimeOutMillis(Long.valueOf(readTimeoutMs).intValue())
+                .setConTimeOutMillis(ConfigHttpClientManager.getInstance().getConnectTimeoutOrDefault(3000)).build();
+        do {
+            try {
+                Header newHeaders = Header.newInstance();
+                if (headers != null) {
+                    newHeaders.addAll(headers);
+                }
+                HttpRestResult<String> result = nacosRestTemplate.postForm(getUrl(currentServerAddr, path), httpConfig,
+                        newHeaders, paramValues, String.class);
+                
+                if (isFail(result)) {
+                    LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}", currentServerAddr,
+                            result.getCode());
+                } else {
+                    // Update the currently available server addr
+                    serverListMgr.updateCurrentServer(currentServerAddr);
+                    return result;
+                }
+            } catch (ConnectException connectException) {
+                LOGGER.error("[NACOS ConnectException httpPost] currentServerAddr: {}, err : {}", currentServerAddr,
+                        connectException.getMessage());
+            } catch (SocketTimeoutException socketTimeoutException) {
+                LOGGER.error("[NACOS SocketTimeoutException httpPost] currentServerAddr: {}， err : {}",
+                        currentServerAddr, socketTimeoutException.getMessage());
+            } catch (Exception ex) {
+                LOGGER.error("[NACOS Exception httpPost] currentServerAddr: " + currentServerAddr, ex);
+                throw ex;
+            }
+            
+            if (serverListMgr.getIterator().hasNext()) {
+                currentServerAddr = serverListMgr.getIterator().next();
+            } else {
+                maxRetry--;
+                if (maxRetry < 0) {
+                    throw new ConnectException(
+                            "[NACOS HTTP-POST] The maximum number of tolerable server reconnection errors has been reached");
+                }
+                serverListMgr.refreshCurrentServer();
+            }
+            
+        } while (System.currentTimeMillis() <= endTime);
+        
+        LOGGER.error("no available server, currentServerAddr : {}", currentServerAddr);
+        throw new ConnectException("no available server, currentServerAddr : " + currentServerAddr);
     }
     
     @Override
     public HttpRestResult<String> httpDelete(String path, Map<String, String> headers, Map<String, String> paramValues,
             String encode, long readTimeoutMs) throws Exception {
-        Function<HttpClientConfig, RequestHttpEntity> requestEntityInitializer = config -> new RequestHttpEntity(config,
-                createHeader(headers), createQuery(paramValues));
-        return request(HttpMethod.DELETE, path, requestEntityInitializer, readTimeoutMs);
-    }
-    
-    private HttpRestResult<String> request(String method, String path,
-            Function<HttpClientConfig, RequestHttpEntity> requestEntityInitializer, long readTimeoutMs)
-            throws Exception {
-        if (requestEntityInitializer == null) {
-            throw new IllegalArgumentException("request entity initializer is null");
-        }
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
-        String currentServer = serverListManager.getCurrentServer();
+        String currentServerAddr = serverListMgr.getCurrentServer();
         int maxRetry = this.maxRetry;
-        HttpClientConfig config = HttpClientConfig.builder()
-                .setReadTimeOutMillis(Long.valueOf(readTimeoutMs / maxRetry).intValue())
-                .setConTimeOutMillis(ConfigHttpClientManager.getInstance().getConnectTimeoutOrDefault(1000)).build();
+        HttpClientConfig httpConfig = HttpClientConfig.builder()
+                .setReadTimeOutMillis(Long.valueOf(readTimeoutMs).intValue())
+                .setConTimeOutMillis(ConfigHttpClientManager.getInstance().getConnectTimeoutOrDefault(100)).build();
         do {
             try {
-                RequestHttpEntity requestEntity = requestEntityInitializer.apply(config);
-                HttpRestResult<String> result = nacosRestTemplate.execute(getUrl(currentServer, path), method,
-                        requestEntity, String.class);
+                Header newHeaders = Header.newInstance();
+                if (headers != null) {
+                    newHeaders.addAll(headers);
+                }
+                Query query = Query.newInstance().initParams(paramValues);
+                HttpRestResult<String> result = nacosRestTemplate.delete(getUrl(currentServerAddr, path), httpConfig,
+                        newHeaders, query, String.class);
                 if (isFail(result)) {
-                    LOGGER.error("[NACOS ConnectException {}] currentServerAddr: {}, httpCode: {}", currentServer,
-                            method, result.getCode());
+                    LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
+                            serverListMgr.getCurrentServer(), result.getCode());
                 } else {
+                    // Update the currently available server addr
+                    serverListMgr.updateCurrentServer(currentServerAddr);
                     return result;
                 }
-            } catch (ConnectException | SocketTimeoutException e) {
-                LOGGER.error("[NACOS {} {}] currentServerAddr: {}, err : {}", method, e.getClass().getSimpleName(),
-                        currentServer, ExceptionUtil.getStackTrace(e));
-            } catch (Exception e) {
-                LOGGER.error("[NACOS {} Exception] currentServerAddr: {}", currentServer, method, e);
-                throw e;
+            } catch (ConnectException connectException) {
+                LOGGER.error("[NACOS ConnectException httpDelete] currentServerAddr:{}, err : {}",
+                        serverListMgr.getCurrentServer(), ExceptionUtil.getStackTrace(connectException));
+            } catch (SocketTimeoutException stoe) {
+                LOGGER.error("[NACOS SocketTimeoutException httpDelete] currentServerAddr:{}， err : {}",
+                        serverListMgr.getCurrentServer(), ExceptionUtil.getStackTrace(stoe));
+            } catch (Exception ex) {
+                LOGGER.error("[NACOS Exception httpDelete] currentServerAddr: " + serverListMgr.getCurrentServer(), ex);
+                throw ex;
             }
-            maxRetry--;
-            if (maxRetry < 0) {
-                String message = String.format(
-                        "[NACOS HTTP-%s] The maximum number of tolerable server reconnection errors has been reached",
-                        method);
-                throw new ConnectException(message);
+            
+            if (serverListMgr.getIterator().hasNext()) {
+                currentServerAddr = serverListMgr.getIterator().next();
+            } else {
+                maxRetry--;
+                if (maxRetry < 0) {
+                    throw new ConnectException(
+                            "[NACOS HTTP-DELETE] The maximum number of tolerable server reconnection errors has been reached");
+                }
+                serverListMgr.refreshCurrentServer();
             }
-            currentServer = serverListManager.getNextServer();
+            
         } while (System.currentTimeMillis() <= endTime);
-        String message = String.format("no available server, currentServerAddr: %s", currentServer);
-        LOGGER.error(message);
-        throw new ConnectException(message);
+        
+        LOGGER.error("no available server");
+        throw new ConnectException("no available server");
     }
     
     private String getUrl(String serverAddr, String relativePath) {
-        return serverAddr + ContextPathUtil.normalizeContextPath(serverListManager.getContentPath()) + relativePath;
-    }
-    
-    private Header createHeader(Map<String, String> headers) {
-        Header header = Header.newInstance();
-        header.addAll(headers);
-        return header;
-    }
-    
-    private Query createQuery(Map<String, String> paramValues) {
-        return Query.newInstance().initParams(paramValues);
+        return serverAddr + ContextPathUtil.normalizeContextPath(serverListMgr.getContentPath()) + relativePath;
     }
     
     private boolean isFail(HttpRestResult<String> result) {
@@ -154,16 +231,16 @@ public class ServerHttpAgent implements HttpAgent {
         return ParamUtil.getAppName();
     }
     
-    public ServerHttpAgent(ConfigServerListManager serverListManager) {
-        this.serverListManager = serverListManager;
+    public ServerHttpAgent(ConfigServerListManager mgr) {
+        this.serverListMgr = mgr;
     }
     
-    public ServerHttpAgent(ConfigServerListManager serverListManager, Properties properties) {
-        this.serverListManager = serverListManager;
+    public ServerHttpAgent(ConfigServerListManager mgr, Properties properties) {
+        this.serverListMgr = mgr;
     }
     
     public ServerHttpAgent(Properties properties) throws NacosException {
-        this.serverListManager = new ConfigServerListManager(NacosClientProperties.PROTOTYPE.derive(properties));
+        this.serverListMgr = new ConfigServerListManager(NacosClientProperties.PROTOTYPE.derive(properties));
     }
     
     @Override
@@ -173,17 +250,17 @@ public class ServerHttpAgent implements HttpAgent {
     
     @Override
     public String getName() {
-        return serverListManager.getName();
+        return serverListMgr.getName();
     }
     
     @Override
     public String getNamespace() {
-        return serverListManager.getNamespace();
+        return serverListMgr.getNamespace();
     }
     
     @Override
     public String getTenant() {
-        return serverListManager.getNamespace();
+        return serverListMgr.getTenant();
     }
     
     @Override
@@ -196,7 +273,7 @@ public class ServerHttpAgent implements HttpAgent {
         String className = this.getClass().getName();
         LOGGER.info("{} do shutdown begin", className);
         ConfigHttpClientManager.getInstance().shutdown();
-        serverListManager.shutdown();
+        serverListMgr.shutdown();
         LOGGER.info("{} do shutdown stop", className);
     }
 }

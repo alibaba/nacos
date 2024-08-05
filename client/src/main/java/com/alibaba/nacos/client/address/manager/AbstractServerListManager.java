@@ -96,6 +96,10 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
         }
     }
     
+    public void afterUpdateServerList() {
+    
+    }
+    
     protected void initServerList(NacosClientProperties properties, String namespace) throws NacosException {
         Collection<ServerListProvider> providers = NacosServiceLoader.load(ServerListProvider.class);
         providers = providers.stream().sorted(Comparator.comparingInt(ServerListProvider::getOrder))
@@ -162,6 +166,7 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
         this.serverList = serverList;
         NotifyCenter.publishEvent(new ServerListChangedEvent());
         LOGGER.info("the server list has been updated to {}", serverList);
+        afterUpdateServerList();
     }
     
     private Runnable createUpdateServerListTask(Supplier<List<String>> supplier) {

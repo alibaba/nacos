@@ -132,6 +132,11 @@ public class AddressServerListProvider implements ServerListProvider {
     }
     
     @Override
+    public String getAddressServerUrl() {
+        return addressServerUrl;
+    }
+    
+    @Override
     public boolean supportRefresh() {
         return true;
     }
