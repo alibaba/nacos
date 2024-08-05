@@ -83,7 +83,6 @@ public class AddressServerListProvider implements ServerListProvider {
     public void startup(NacosClientProperties properties, String namespace, ModuleType moduleType)
             throws NacosException {
         this.namespace = namespace;
-        initEndpoint(properties);
         initEndpointPort(properties);
         initEndpointRetryTime(properties);
         initEndpointContextPath(properties);
@@ -100,7 +99,8 @@ public class AddressServerListProvider implements ServerListProvider {
     }
     
     @Override
-    public boolean isValid() {
+    public boolean isValid(NacosClientProperties properties) {
+        initEndpoint(properties);
         return StringUtils.isNotBlank(endpoint);
     }
     

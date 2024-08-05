@@ -42,9 +42,10 @@ public interface ServerListProvider {
     /**
      * Checks if the server list provider is valid.
      *
+     * @param properties init params
      * @return true if the server list provider is valid, otherwise returns false
      */
-    boolean isValid();
+    boolean isValid(NacosClientProperties properties);
     
     /**
      * Get server list from server list provider.

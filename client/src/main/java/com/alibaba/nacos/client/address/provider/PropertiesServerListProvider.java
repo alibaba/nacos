@@ -45,12 +45,13 @@ public class PropertiesServerListProvider implements ServerListProvider {
     @Override
     public void startup(NacosClientProperties properties, String namespace, ModuleType moduleType)
             throws NacosException {
-        initServerList(properties);
+        initServerList();
         initName(namespace);
     }
     
     @Override
-    public boolean isValid() {
+    public boolean isValid(NacosClientProperties properties) {
+        this.serverAddr = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
         return StringUtils.isNotBlank(serverAddr);
     }
     
@@ -78,12 +79,10 @@ public class PropertiesServerListProvider implements ServerListProvider {
         this.name = String.join("-", NAME_PREFIX, namespace, getNameSuffix());
     }
     
-    private void initServerList(NacosClientProperties properties) {
+    private void initServerList() {
         List<String> serverList = new ArrayList<>();
-        String serverAddress = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
-        this.serverAddr = serverAddress;
-        if (StringUtils.isNotBlank(serverAddress)) {
-            StringTokenizer tokenizer = new StringTokenizer(serverAddress, ",;");
+        if (StringUtils.isNotBlank(serverAddr)) {
+            StringTokenizer tokenizer = new StringTokenizer(serverAddr, ",;");
             while (tokenizer.hasMoreTokens()) {
                 serverList.add(tokenizer.nextToken());
             }

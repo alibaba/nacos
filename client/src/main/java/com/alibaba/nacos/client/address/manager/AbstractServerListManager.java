@@ -106,8 +106,8 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
                 .collect(Collectors.toList());
         for (ServerListProvider provider : providers) {
             String providerName = provider.getClass().getSimpleName();
-            provider.startup(properties, namespace, getModuleType());
-            if (provider.isValid()) {
+            if (provider.isValid(properties)) {
+                provider.startup(properties, namespace, getModuleType());
                 List<String> serverList = provider.getServerList();
                 if (CollectionUtils.isNotEmpty(serverList)) {
                     updateServerList(serverList);
