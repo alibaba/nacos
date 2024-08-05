@@ -78,8 +78,6 @@ public interface ServerListProvider {
         return "";
     }
     
-    ;
-    
     /**
      * Check if refresh operation is supported.
      *
