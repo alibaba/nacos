@@ -21,13 +21,15 @@ jobs:
     steps:
       - name: write issue comment
         run: |
+          echo ${GITHUB_REPOSITORY}
           number=''
           count=10
           while [[ "${number}" == "" && ${count} -gt 0 ]]
           do
             sleep 3
             let "count--"
-            number=`curl -L ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables | jq -r '.variables[] | select(.name == "VAR_${{ github.event.workflow_run.id }}") | .value'`
+            echo `curl -L ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables`
+            number=`curl -L ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables | jq -r '.variables[]? | select(.name == "VAR_${{ github.event.workflow_run.id }}") | .value'`
             echo "number=${number}"
           done 
           curl -L -X POST ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/issues/${number}/comments -d "{\"body\":\"The URL of CI ( pr-e2e-test ) is : https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }}\"}"
