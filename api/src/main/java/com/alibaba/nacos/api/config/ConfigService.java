@@ -94,6 +94,19 @@ public interface ConfigService {
     boolean publishConfig(String dataId, String group, String content, String type) throws NacosException;
     
     /**
+     * Publish config boolean.
+     *
+     * @param dataId  the data id
+     * @param group   the group
+     * @param content the content
+     * @param type    the type
+     * @param srcUser the src user
+     * @return the boolean
+     * @throws NacosException the nacos exception
+     */
+    boolean publishConfig(String dataId, String group, String content, String type, String srcUser) throws NacosException;
+    
+    /**
      * Cas Publish config.
      *
      * @param dataId  dataId
@@ -120,6 +133,21 @@ public interface ConfigService {
             throws NacosException;
     
     /**
+     * Publish config cas boolean.
+     *
+     * @param dataId  the data id
+     * @param group   the group
+     * @param content the content
+     * @param casMd5  the cas md 5
+     * @param type    the type
+     * @param srcUser the src user
+     * @return the boolean
+     * @throws NacosException the nacos exception
+     */
+    boolean publishConfigCas(String dataId, String group, String content, String casMd5, String type, String srcUser)
+            throws NacosException;
+    
+    /**
      * Remove config.
      *
      * @param dataId dataId
@@ -128,6 +156,17 @@ public interface ConfigService {
      * @throws NacosException NacosException
      */
     boolean removeConfig(String dataId, String group) throws NacosException;
+    
+    /**
+     * Remove config boolean.
+     *
+     * @param dataId  the data id
+     * @param group   the group
+     * @param srcUser the src user
+     * @return the boolean
+     * @throws NacosException the nacos exception
+     */
+    boolean removeConfig(String dataId, String group, String srcUser) throws NacosException;
     
     /**
      * Remove listener.

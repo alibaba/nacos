@@ -232,10 +232,12 @@ class ClientWorkerTest {
         String casMd5 = "1111";
         
         String type = "properties";
+        String srcUser = "testSrcUser";
+        
         Mockito.when(rpcClient.request(any(ConfigPublishRequest.class), anyLong()))
                 .thenReturn(new ConfigPublishResponse());
         boolean b = clientWorker.publishConfig(dataId, group, tenant, appName, tag, betaIps, content, null, casMd5,
-                type);
+                type, srcUser);
         assertTrue(b);
         
     }
@@ -261,10 +263,11 @@ class ClientWorkerTest {
         String casMd5 = "1111";
         
         String type = "properties";
+        String srcUser = "testSrcUser";
         Mockito.when(rpcClient.request(any(ConfigPublishRequest.class), anyLong()))
                 .thenReturn(ConfigPublishResponse.buildFailResponse(503, "over limit"));
         boolean b = clientWorker.publishConfig(dataId, group, tenant, appName, tag, betaIps, content, null, casMd5,
-                type);
+                type, srcUser);
         assertFalse(b);
         
     }
@@ -290,9 +293,11 @@ class ClientWorkerTest {
         String casMd5 = "1111";
         
         String type = "properties";
+        String srcUser = "testSrcUser";
+        
         Mockito.when(rpcClient.request(any(ConfigPublishRequest.class), anyLong())).thenThrow(new NacosException());
         boolean b = clientWorker.publishConfig(dataId, group, tenant, appName, tag, betaIps, content, null, casMd5,
-                type);
+                type, srcUser);
         assertFalse(b);
         
     }
@@ -310,13 +315,14 @@ class ClientWorkerTest {
         String dataId = "a";
         String group = "b";
         String tenant = "c";
+        String srcUser = "testSrcUser";
         
         String tag = "tag";
         try {
             Mockito.when(rpcClient.request(any(ConfigRemoveRequest.class), anyLong()))
                     .thenThrow(new NacosException(503, "overlimit"));
             
-            clientWorker.removeConfig(dataId, group, tenant, tag);
+            clientWorker.removeConfig(dataId, group, tenant, tag, srcUser);
             fail();
         } catch (NacosException e) {
             assertEquals("overlimit", e.getErrMsg());
