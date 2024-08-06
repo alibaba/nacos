@@ -107,20 +107,21 @@ class ExternalHistoryConfigInfoPersistServiceImplTest {
         String srcUser = "user12345";
         String srcIp = "ip1234";
         String ops = "D";
+        String extraInfo = "type\":\"properties";
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
         configInfo.setEncryptedDataKey("key23456");
         //expect insert success,verify insert invoked
-        externalHistoryConfigInfoPersistService.insertConfigHistoryAtomic(id, configInfo, srcIp, srcUser, timestamp, ops);
+        externalHistoryConfigInfoPersistService.insertConfigHistoryAtomic(id, configInfo, srcIp, srcUser, timestamp, ops, "formal", extraInfo);
         Mockito.verify(jdbcTemplate, times(1))
                 .update(anyString(), eq(id), eq(dataId), eq(group), eq(tenant), eq(appName), eq(content), eq(configInfo.getMd5()),
-                        eq(srcIp), eq(srcUser), eq(timestamp), eq(ops), eq(configInfo.getEncryptedDataKey()));
+                        eq(srcIp), eq(srcUser), eq(timestamp), eq(ops), eq("formal"), eq(extraInfo), eq(configInfo.getEncryptedDataKey()));
         
-        Mockito.when(jdbcTemplate.update(anyString(), eq(id), eq(dataId), eq(group), eq(tenant), eq(appName), eq(content),
-                        eq(configInfo.getMd5()), eq(srcIp), eq(srcUser), eq(timestamp), eq(ops), eq(configInfo.getEncryptedDataKey())))
+        Mockito.when(jdbcTemplate.update(anyString(), eq(id), eq(dataId), eq(group), eq(tenant), eq(appName), eq(content), eq(configInfo.getMd5()),
+                        eq(srcIp), eq(srcUser), eq(timestamp), eq(ops), eq("formal"), eq(extraInfo), eq(configInfo.getEncryptedDataKey())))
                 .thenThrow(new CannotGetJdbcConnectionException("mock ex..."));
         try {
-            externalHistoryConfigInfoPersistService.insertConfigHistoryAtomic(id, configInfo, srcIp, srcUser, timestamp, ops);
+            externalHistoryConfigInfoPersistService.insertConfigHistoryAtomic(id, configInfo, srcIp, srcUser, timestamp, ops, "formal", extraInfo);
             assertTrue(false);
         } catch (Exception e) {
             assertEquals("mock ex...", e.getMessage());
