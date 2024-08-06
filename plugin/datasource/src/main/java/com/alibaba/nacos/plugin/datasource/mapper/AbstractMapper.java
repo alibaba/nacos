@@ -121,13 +121,8 @@ public abstract class AbstractMapper implements Mapper {
     public String delete(List<String> params) {
         StringBuilder sql = new StringBuilder();
         String method = "DELETE ";
-        sql.append(method).append("FROM ").append(getTableName()).append(" ").append("WHERE ");
-        for (int i = 0; i < params.size(); i++) {
-            sql.append(params.get(i)).append(" ").append("=").append(" ? ");
-            if (i != params.size() - 1) {
-                sql.append("AND ");
-            }
-        }
+        sql.append(method).append("FROM ").append(getTableName()).append(" ");
+        appendWhereClause(params, sql);
 
         return sql.toString();
     }
@@ -155,7 +150,7 @@ public abstract class AbstractMapper implements Mapper {
         return new String[]{"id"};
     }
 
-    private void appendWhereClause(List<String> where, StringBuilder sql) {
+    protected void appendWhereClause(List<String> where, StringBuilder sql) {
         sql.append("WHERE ");
         for (int i = 0; i < where.size(); i++) {
             sql.append(where.get(i)).append(" = ").append("?");
