@@ -19,6 +19,8 @@ package com.alibaba.nacos.console.handler;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
+import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
+import com.alibaba.nacos.config.server.model.form.ConfigForm;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -51,28 +53,10 @@ public interface ConfigHandler {
     /**
      * Publish a configuration.
      *
-     * @param request          the HttpServletRequest object
-     * @param response         the HttpServletResponse object
-     * @param dataId           the data ID
-     * @param group            the group
-     * @param tenant           the tenant
-     * @param content          the content
-     * @param tag              the tag
-     * @param appName          the app name
-     * @param srcUser          the source user
-     * @param configTags       the config tags
-     * @param desc             the description
-     * @param use              the use
-     * @param effect           the effect
-     * @param type             the type
-     * @param schema           the schema
-     * @param encryptedDataKey the encrypted data key
      * @return true if the configuration is published successfully, false otherwise
      * @throws NacosException in case of any errors
      */
-    boolean publishConfig(HttpServletRequest request, HttpServletResponse response, String dataId, String group,
-            String tenant, String content, String tag, String appName, String srcUser, String configTags, String desc,
-            String use, String effect, String type, String schema, String encryptedDataKey) throws NacosException;
+    boolean publishConfig(ConfigForm configForm, ConfigRequestInfo configRequestInfo, String encryptedDataKey) throws NacosException;
     
     /**
      * Delete a configuration.

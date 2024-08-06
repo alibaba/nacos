@@ -19,6 +19,8 @@ package com.alibaba.nacos.console.proxy;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
+import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
+import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.console.config.ConsoleConfig;
 import com.alibaba.nacos.console.handler.ConfigHandler;
 import com.alibaba.nacos.console.handler.inner.ConfigInnerHandler;
@@ -71,15 +73,13 @@ public class ConfigProxy {
      *
      * @throws NacosException if a Nacos error occurs
      */
-    public boolean publishConfig(HttpServletRequest request, HttpServletResponse response, String dataId, String group,
-            String tenant, String content, String tag, String appName, String srcUser, String configTags, String desc,
-            String use, String effect, String type, String schema, String encryptedDataKey) throws NacosException {
+    public boolean publishConfig(ConfigForm configForm, ConfigRequestInfo configRequestInfo, String encryptedDataKey)
+            throws NacosException {
         ConfigHandler configHandler = configHandlerMap.get(consoleConfig.getType());
         if (configHandler == null) {
             throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
         }
-        return configHandler.publishConfig(request, response, dataId, group, tenant, content, tag, appName, srcUser,
-                configTags, desc, use, effect, type, schema, encryptedDataKey);
+        return configHandler.publishConfig(configForm, configRequestInfo, encryptedDataKey);
     }
     
     /**

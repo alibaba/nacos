@@ -17,11 +17,9 @@
 
 package com.alibaba.nacos.console.handler.inner;
 
-import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.Pair;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.controller.ConfigServletInner;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
@@ -78,51 +76,9 @@ public class ConfigInnerHandler implements ConfigHandler {
     }
     
     @Override
-    public boolean publishConfig(HttpServletRequest request, HttpServletResponse response, String dataId, String group,
-            String tenant, String content, String tag, String appName, String srcUser, String configTags, String desc,
-            String use, String effect, String type, String schema, String encryptedDataKey) throws NacosException {
-        String encryptedDataKeyFinal = null;
-        if (StringUtils.isNotBlank(encryptedDataKey)) {
-            encryptedDataKeyFinal = encryptedDataKey;
-        } else {
-            Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
-            content = pair.getSecond();
-            encryptedDataKeyFinal = pair.getFirst();
-        }
-        
-        ParamUtils.checkTenant(tenant);
-        ParamUtils.checkParam(dataId, group, "datumId", content);
-        ParamUtils.checkParam(tag);
-        
-        ConfigForm configForm = new ConfigForm();
-        configForm.setDataId(dataId);
-        configForm.setGroup(group);
-        configForm.setNamespaceId(tenant);
-        configForm.setContent(content);
-        configForm.setTag(tag);
-        configForm.setAppName(appName);
-        configForm.setSrcUser(srcUser);
-        configForm.setConfigTags(configTags);
-        configForm.setDesc(desc);
-        configForm.setUse(use);
-        configForm.setEffect(effect);
-        configForm.setType(type);
-        configForm.setSchema(schema);
-        
-        if (StringUtils.isBlank(srcUser)) {
-            configForm.setSrcUser(RequestUtil.getSrcUserName(request));
-        }
-        if (!ConfigType.isValidType(type)) {
-            configForm.setType(ConfigType.getDefaultType().getType());
-        }
-        
-        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
-        configRequestInfo.setSrcIp(RequestUtil.getRemoteIp(request));
-        configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
-        configRequestInfo.setBetaIps(request.getHeader("betaIps"));
-        configRequestInfo.setCasMd5(request.getHeader("casMd5"));
-        
-        return configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal);
+    public boolean publishConfig(ConfigForm configForm, ConfigRequestInfo configRequestInfo, String encryptedDataKey)
+            throws NacosException {
+        return configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKey);
     }
     
     @Override

@@ -17,13 +17,22 @@
 
 package com.alibaba.nacos.console.controller.v3;
 
+import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
+import com.alibaba.nacos.common.utils.Pair;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
+import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
+import com.alibaba.nacos.config.server.model.form.ConfigForm;
+import com.alibaba.nacos.config.server.utils.ParamUtils;
+import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
 import com.alibaba.nacos.console.proxy.ConfigProxy;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,14 +84,14 @@ public class ConsoleConfigController {
     }
     
     /**
-     * Adds or updates non-aggregated data.
+     * Publish configuration information.
      *
      * @throws NacosException NacosException.
      */
     @PostMapping
-    public RestResult<Boolean> publishConfig(HttpServletRequest request, HttpServletResponse response,
+    public Result<Boolean> publishConfig(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("dataId") String dataId, @RequestParam("group") String group,
-            @RequestParam(value = "tenant", required = false, defaultValue = "") String tenant,
+            @RequestParam(value = "namespaceId", required = false, defaultValue = "") String namespaceId,
             @RequestParam("content") String content, @RequestParam(value = "tag", required = false) String tag,
             @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "src_user", required = false) String srcUser,
@@ -92,16 +101,51 @@ public class ConsoleConfigController {
             @RequestParam(value = "effect", required = false) String effect,
             @RequestParam(value = "type", required = false) String type,
             @RequestParam(value = "schema", required = false) String schema,
-            @RequestParam(required = false) String encryptedDataKey) {
-        boolean result = false;
-        try {
-            result = configProxy.publishConfig(request, response, dataId, group, tenant, content, tag, appName, srcUser,
-                    configTags, desc, use, effect, type, schema, encryptedDataKey);
-            return RestResultUtils.success(result);
-        } catch (Throwable e) {
-            LOGGER.error("publish configuration information fail", e);
-            return RestResultUtils.failed(500, result, "publish configuration information fail");
+            @RequestParam(required = false) String encryptedDataKey) throws NacosException {
+        // Validate parameters and convert the parameter type
+        String encryptedDataKeyFinal = null;
+        if (StringUtils.isNotBlank(encryptedDataKey)) {
+            encryptedDataKeyFinal = encryptedDataKey;
+        } else {
+            Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
+            content = pair.getSecond();
+            encryptedDataKeyFinal = pair.getFirst();
         }
+        
+        ParamUtils.checkTenant(namespaceId);
+        ParamUtils.checkParam(dataId, group, "datumId", content);
+        ParamUtils.checkParam(tag);
+        
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId(dataId);
+        configForm.setGroup(group);
+        configForm.setNamespaceId(namespaceId);
+        configForm.setContent(content);
+        configForm.setTag(tag);
+        configForm.setAppName(appName);
+        configForm.setSrcUser(srcUser);
+        configForm.setConfigTags(configTags);
+        configForm.setDesc(desc);
+        configForm.setUse(use);
+        configForm.setEffect(effect);
+        configForm.setType(type);
+        configForm.setSchema(schema);
+        
+        if (StringUtils.isBlank(srcUser)) {
+            configForm.setSrcUser(RequestUtil.getSrcUserName(request));
+        }
+        if (!ConfigType.isValidType(type)) {
+            configForm.setType(ConfigType.getDefaultType().getType());
+        }
+        
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        configRequestInfo.setSrcIp(RequestUtil.getRemoteIp(request));
+        configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
+        configRequestInfo.setBetaIps(request.getHeader("betaIps"));
+        configRequestInfo.setCasMd5(request.getHeader("casMd5"));
+        
+        boolean result = configProxy.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal);
+        return Result.success(result);
     }
     
     /**
