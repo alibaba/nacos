@@ -133,13 +133,21 @@ class HistoryRollback extends React.Component {
 
   renderCol(value, index, record) {
     const { locale = {} } = this.props;
+    const isBeta = record.configType === 'gray';
     return (
       <div>
         <a onClick={this.goDetail.bind(this, record)} style={{ marginRight: 5 }}>
           {locale.details}
         </a>
         <span style={{ marginRight: 5 }}>|</span>
-        <a style={{ marginRight: 5 }} onClick={this.goRollBack.bind(this, record)}>
+        <a
+          style={{
+            marginRight: 5,
+            color: isBeta ? 'grey' : '#06C',
+            pointerEvents: isBeta ? 'none' : 'auto',
+          }}
+          onClick={isBeta ? null : this.goRollBack.bind(this, record)} // 如果是 beta，则不绑定事件
+        >
           {locale.rollback}
         </a>
         <span style={{ marginRight: 5 }}>|</span>
@@ -431,6 +439,23 @@ class HistoryRollback extends React.Component {
             <Table dataSource={this.state.dataSource} locale={{ empty: locale.pubNoData }}>
               <Table.Column title="Data ID" dataIndex="dataId" />
               <Table.Column title="Group" dataIndex="group" />
+              <Table.Column
+                title={locale.configType}
+                dataIndex="configType"
+                cell={(value, index, record) => {
+                  if (value === 'formal') {
+                    return locale.formal;
+                  } else if (value === 'gray') {
+                    const extraInfo = record.extraInfo ? JSON.parse(record.extraInfo) : {};
+                    if (extraInfo.grayName) {
+                      return `${locale.gray}(${extraInfo.grayName})`;
+                    } else {
+                      return locale.gray;
+                    }
+                  }
+                  return value;
+                }}
+              />
               <Table.Column title={locale.operator} dataIndex="srcUser" />
               <Table.Column
                 title={locale.lastUpdateTime}

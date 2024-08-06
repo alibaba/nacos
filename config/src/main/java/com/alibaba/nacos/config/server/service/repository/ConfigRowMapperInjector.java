@@ -564,6 +564,8 @@ public class ConfigRowMapperInjector {
             configHistoryInfo.setSrcIp(rs.getString("src_ip"));
             configHistoryInfo.setSrcUser(rs.getString("src_user"));
             configHistoryInfo.setOpType(rs.getString("op_type"));
+            configHistoryInfo.setConfigType(rs.getString("config_type"));
+            configHistoryInfo.setExtraInfo(rs.getString("ext_info"));
             configHistoryInfo.setCreatedTime(rs.getTimestamp("gmt_create"));
             configHistoryInfo.setLastModifiedTime(rs.getTimestamp("gmt_modified"));
             return configHistoryInfo;
@@ -585,6 +587,8 @@ public class ConfigRowMapperInjector {
             configHistoryInfo.setSrcUser(rs.getString("src_user"));
             configHistoryInfo.setSrcIp(rs.getString("src_ip"));
             configHistoryInfo.setOpType(rs.getString("op_type"));
+            configHistoryInfo.setConfigType(rs.getString("config_type"));
+            configHistoryInfo.setExtraInfo(rs.getString("ext_info"));
             configHistoryInfo.setCreatedTime(rs.getTimestamp("gmt_create"));
             configHistoryInfo.setLastModifiedTime(rs.getTimestamp("gmt_modified"));
             try {

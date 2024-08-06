@@ -45,15 +45,17 @@ public interface HistoryConfigInfoPersistService {
     /**
      * Update change records; database atomic operations, minimal sql actions, no business encapsulation.
      *
-     * @param id         id
-     * @param configInfo config info
-     * @param srcIp      ip
-     * @param srcUser    user
-     * @param time       time
-     * @param ops        ops type
+     * @param id              id
+     * @param configInfo      config info
+     * @param srcIp           ip
+     * @param srcUser         user
+     * @param time            time
+     * @param ops             ops type
+     * @param configType      config type
+     * @param extraInfo       extra config info
      */
     void insertConfigHistoryAtomic(long id, ConfigInfo configInfo, String srcIp, String srcUser, final Timestamp time,
-            String ops);
+            String ops, String configType, String extraInfo);
     //------------------------------------------delete---------------------------------------------//
     
     /**

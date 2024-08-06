@@ -110,7 +110,7 @@ public class ConfigOperationService {
         configInfo.setEncryptedDataKey(encryptedDataKey);
         ConfigOperateResult configOperateResult;
         
-        //beta public
+        //beta publish
         if (StringUtils.isNotBlank(configRequestInfo.getBetaIps())) {
             configForm.setGrayName(BetaGrayRule.TYPE_BETA);
             configForm.setGrayRuleExp(configRequestInfo.getBetaIps());
