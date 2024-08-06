@@ -22,8 +22,9 @@ public class NacosServerListHoldersTest {
     @Test
     public void testLoadSpiServerListHolder() {
         Properties properties = new Properties();
+        Field field = null;
         try {
-            Field field = TestNacosServerListHolderSpi.class.getDeclaredField("testEnable");
+            field = TestNacosServerListHolderSpi.class.getDeclaredField("testEnable");
             field.setAccessible(true);
             field.set(null, true);
         } catch (Exception e) {
@@ -35,6 +36,13 @@ public class NacosServerListHoldersTest {
         assertEquals(serverList.size(), 1);
         assertEquals(serverList.get(0), "127.0.0.1:8848");
         assertEquals(holder.getName(), "test");
+        if (field != null) {
+            try {
+                field.set(null, false);
+            } catch (IllegalAccessException e) {
+                e.getMessage();
+            }
+        }
     }
     
     @Test
