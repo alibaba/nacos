@@ -12,9 +12,11 @@ env:
   DOCKER_REPO_B: wuyfeehub/nacos-ci
   TEST_REPO_NAME: nacos-group/nacos-e2e
   ACTIONS_ALLOW_UNSECURE_COMMANDS: true
-  HEADER_PARAMS: "-H \"Accept: application/vnd.github+json\" -H \"Authorization: Bearer ${{ secrets.ACTION_TOKEN }}\" -H \"X-GitHub-Api-Version: 2022-11-28\""
+  # HEADER_PARAMS: "-H \"Accept: application/vnd.github+json\" -H \"Authorization: Bearer ${{ secrets.ACTION_TOKEN }}\" -H \"X-GitHub-Api-Version: 2022-11-28\""
+  HEADER_PARAMS: "-H \"Accept: application/vnd.github+json\" -H \"Authorization: Bearer ${{ secrets.ACTION_TOKEN_OTHER }}\" -H \"X-GitHub-Api-Version: 2022-11-28\""
   HEADER_PARAMS_WRITE_COMMENT: "-H \"Accept: application/vnd.github+json\" -H \"Authorization: Bearer ${{ secrets.ACTION_TOKEN_OTHER }}\" -H \"X-GitHub-Api-Version: 2022-11-28\""
-  BASE_URL: https://api.github.com/repos/${GITHUB_REPOSITORY}
+  # BASE_URL: https://api.github.com/repos/${GITHUB_REPOSITORY}
+  BASE_URL: https://api.github.com/repos/wuyfee/nacos
 
 jobs:
   write-issue:
@@ -29,10 +31,13 @@ jobs:
           do
             sleep 3
             let "count--"
+#            echo `curl -L ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables`
+#            number=`curl -L ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables | jq -r '.variables[]? | select(.name == "VAR_${{ github.event.workflow_run.id }}") | .value'`
             echo `curl -L ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables`
             number=`curl -L ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables | jq -r '.variables[]? | select(.name == "VAR_${{ github.event.workflow_run.id }}") | .value'`
+          
             echo "number=${number}"
-          done 
+          done
           curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL }}/issues/${number}/comments -d "{\"body\":\"The URL of CI ( pr-e2e-test ) is : https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }}\"}"
           curl -L -X DELETE ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables/VAR_${{ github.event.workflow_run.id }}
   docker:
