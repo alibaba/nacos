@@ -24,7 +24,7 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.test.base.HttpClient4Test;
-import org.apache.http.HttpStatus;
+import org.apache.hc.core5.http.HttpStatus;
 
 import java.util.HashMap;
 import java.util.List;
@@ -137,7 +137,7 @@ public class NamingBase extends HttpClient4Test {
         //    cluster1.getDefaultPort() != cluster2.getDefaultPort() ||
         //    !cluster1.getServiceName().equals(cluster2.getServiceName()) ||
         //    !cluster1.getMetadata().equals(cluster2.getMetadata())||
-        //    cluster1.isUseIPPort4Check() != cluster2.isUseIPPort4Check()) {
+        //    cluster1.isUseIpPort4Check() != cluster2.isUseIpPort4Check()) {
         //    return false;
         //}
         //

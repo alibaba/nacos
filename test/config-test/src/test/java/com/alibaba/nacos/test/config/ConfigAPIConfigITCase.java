@@ -25,16 +25,19 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 /**
+ * Integration tests for Config API Config.
+ *
  * @author xiaochun.xxc
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-class ConfigAPI_CITCase extends AbstractConfigAPI_CITCase {
+class ConfigAPIConfigITCase extends AbstractConfigAPIConfigITCase {
     
     @BeforeAll
     static void beforeClass() {
-        ConfigCleanUtils.changeToNewTestNacosHome(ConfigAPI_CITCase.class.getSimpleName());
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigAPIConfigITCase.class.getSimpleName());
     }
     
     @BeforeAll

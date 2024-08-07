@@ -26,7 +26,6 @@ import com.alibaba.nacos.common.remote.client.RpcConstants;
 import com.alibaba.nacos.test.base.ConfigCleanUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer.MethodName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -44,22 +43,24 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * use  configPublishRequest for  communication verification between client and server.
+ * Use configPublishRequest for communication verification between client and server.
  *
  * @author githubcheng2978.
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 @ExtendWith(SpringExtension.class)
 @TestMethodOrder(MethodName.class)
-@SpringBootTest(classes = {Nacos.class}, properties = {"nacos.standalone=true", RpcConstants.NACOS_SERVER_RPC + ".enableTls=true",
-        RpcConstants.NACOS_SERVER_RPC + ".compatibility=true", RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem",
-        RpcConstants.NACOS_SERVER_RPC + ".certPrivateKey=test-server-key.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-public class NacosConfigServiceComTlsGrpcClient_CITCase {
+@SpringBootTest(classes = {Nacos.class}, properties = {"nacos.standalone=true",
+        RpcConstants.NACOS_SERVER_RPC + ".enableTls=true", RpcConstants.NACOS_SERVER_RPC + ".compatibility=true",
+        RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem", RpcConstants.NACOS_SERVER_RPC
+        + ".certPrivateKey=test-server-key.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+public class NacosConfigServiceComTlsGrpcClientConfigITCase {
     
     public static AtomicInteger increment = new AtomicInteger(100);
     
     @BeforeAll
     static void beforeClass() throws IOException {
-        ConfigCleanUtils.changeToNewTestNacosHome(NacosConfigServiceComTlsGrpcClient_CITCase.class.getSimpleName());
+        ConfigCleanUtils.changeToNewTestNacosHome(NacosConfigServiceComTlsGrpcClientConfigITCase.class.getSimpleName());
     }
     
     @BeforeAll
@@ -69,7 +70,7 @@ public class NacosConfigServiceComTlsGrpcClient_CITCase {
     }
     
     @Test
-    void test_e_TlsServerAndPlainClient() throws Exception {
+    void testTlsServerAndPlainClient() throws Exception {
         Properties propertiesfalse = new Properties();
         propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_ENABLE, "false");
         propertiesfalse.put("serverAddr", "127.0.0.1");

@@ -59,8 +59,8 @@ public class BaseClusterTest extends HttpClient4Test {
     
     protected static final String CONFIG_INFO_ID = "config-info-id";
     
-    protected static final AtomicBoolean[] FINISHED = new AtomicBoolean[] {new AtomicBoolean(false), new AtomicBoolean(false),
-            new AtomicBoolean(false)};
+    protected static final AtomicBoolean[] FINISHED = new AtomicBoolean[] {new AtomicBoolean(false),
+            new AtomicBoolean(false), new AtomicBoolean(false)};
     
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseClusterTest.class);
     
@@ -180,14 +180,15 @@ public class BaseClusterTest extends HttpClient4Test {
                 Map<String, Object> properties = new HashMap<>();
                 properties.put("server.port", "884" + (7 + index));
                 properties.put("nacos.home", path);
-                properties.put("nacos.logs.path", Paths.get(System.getProperty("user.home"), "nacos-" + index, "/logs/").toString());
+                properties.put("nacos.logs.path",
+                        Paths.get(System.getProperty("user.home"), "nacos-" + index, "/logs/").toString());
                 properties.put("spring.jmx.enabled", false);
                 properties.put("nacos.core.snowflake.worker-id", index + 1);
                 MapPropertySource propertySource = new MapPropertySource("nacos_cluster_test", properties);
                 ConfigurableEnvironment environment = new StandardServletEnvironment();
                 environment.getPropertySources().addFirst(propertySource);
-                SpringApplication cluster = new SpringApplicationBuilder(cls).web(WebApplicationType.SERVLET).environment(environment)
-                        .properties(clusterInfo).properties("embeddedStorage=true").build();
+                SpringApplication cluster = new SpringApplicationBuilder(cls).web(WebApplicationType.SERVLET)
+                        .environment(environment).properties(clusterInfo).properties("embeddedStorage=true").build();
                 
                 ConfigurableApplicationContext context = cluster.run();
                 

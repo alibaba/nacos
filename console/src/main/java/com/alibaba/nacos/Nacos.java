@@ -25,7 +25,6 @@ import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.FilterType;
-import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Nacos starter.
@@ -41,7 +40,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         @Filter(type = FilterType.CUSTOM, classes = {TypeExcludeFilter.class}),
         @Filter(type = FilterType.CUSTOM, classes = {AutoConfigurationExcludeFilter.class})})
 @ServletComponentScan
-@EnableScheduling
 public class Nacos {
     
     public static void main(String[] args) {

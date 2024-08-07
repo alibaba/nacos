@@ -244,12 +244,14 @@ class ConfigEditor extends React.Component {
   }
 
   _publishConfig(beta = false) {
-    const { betaIps, isNewConfig } = this.state;
+    const { betaIps, isNewConfig, isBeta } = this.state;
     const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
     if (beta) {
       headers.betaIps = betaIps;
     }
-    headers.casMd5 = this.state.casMd5;
+    if (!isBeta) {
+      headers.casMd5 = this.state.casMd5;
+    }
     const form = { ...this.state.form, content: this.getCodeVal(), betaIps };
     const payload = {};
     Object.keys(form).forEach(key => {

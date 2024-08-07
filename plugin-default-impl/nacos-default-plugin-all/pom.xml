@@ -30,12 +30,12 @@
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>default-auth-plugin</artifactId>
-            <version>${revision}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>default-control-plugin</artifactId>
-            <version>${revision}</version>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 

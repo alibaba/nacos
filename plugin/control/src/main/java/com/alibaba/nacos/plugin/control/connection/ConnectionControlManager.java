@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 /**
  * connection control manager.
  *
- * @author shiyiyue
+ * @author shiyiyu
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class ConnectionControlManager {
@@ -64,7 +64,7 @@ public abstract class ConnectionControlManager {
     /**
      * get manager name.
      *
-     * @return
+     * @return name
      */
     public abstract String getName();
     
@@ -104,7 +104,7 @@ public abstract class ConnectionControlManager {
             
         } else {
             Loggers.CONTROL.info("No connection rule content found ,use default empty rule ");
-            connectionControlRule = new ConnectionControlRule();
+            connectionControlRule = connectionControlRuleParser.parseRule("");
         }
     }
     
@@ -127,7 +127,7 @@ public abstract class ConnectionControlManager {
      * check connection allowed.
      *
      * @param connectionCheckRequest connectionCheckRequest.
-     * @return
+     * @return connection check response
      */
     public abstract ConnectionCheckResponse check(ConnectionCheckRequest connectionCheckRequest);
     
