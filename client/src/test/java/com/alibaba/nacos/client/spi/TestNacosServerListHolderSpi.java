@@ -14,7 +14,7 @@ import java.util.List;
  */
 public class TestNacosServerListHolderSpi implements NacosServerListHolder {
     
-    private static boolean testEnable = false;
+    public static boolean testEnable = false;
     
     private List<String> testServerList = new ArrayList<>();
     

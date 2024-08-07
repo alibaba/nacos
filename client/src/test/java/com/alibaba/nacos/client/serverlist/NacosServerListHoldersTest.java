@@ -5,7 +5,6 @@ import com.alibaba.nacos.client.serverlist.holder.NacosServerListHolders;
 import com.alibaba.nacos.client.spi.TestNacosServerListHolderSpi;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Properties;
 
@@ -22,27 +21,13 @@ public class NacosServerListHoldersTest {
     @Test
     public void testLoadSpiServerListHolder() {
         Properties properties = new Properties();
-        Field field = null;
-        try {
-            field = TestNacosServerListHolderSpi.class.getDeclaredField("testEnable");
-            field.setAccessible(true);
-            field.set(null, true);
-        } catch (Exception e) {
-            e.getMessage();
-        }
-        
+        TestNacosServerListHolderSpi.testEnable = true;
         NacosServerListHolders holder = new NacosServerListHolders(NacosClientProperties.PROTOTYPE.derive(properties), "test");
         List<String> serverList = holder.loadServerList();
+        TestNacosServerListHolderSpi.testEnable = false;
         assertEquals(serverList.size(), 1);
         assertEquals(serverList.get(0), "127.0.0.1:8848");
         assertEquals(holder.getName(), "test");
-        if (field != null) {
-            try {
-                field.set(null, false);
-            } catch (IllegalAccessException e) {
-                e.getMessage();
-            }
-        }
     }
     
     @Test
