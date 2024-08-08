@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.paramcheck;
 
+import com.alibaba.nacos.common.utils.RandomUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -31,9 +32,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class DefaultParamCheckerTest {
     
     DefaultParamChecker paramChecker;
+
+    int maxMetadataLength = RandomUtils.nextInt(1024, 10240);
     
     @BeforeEach
     void setUp() throws Exception {
+        System.setProperty("nacos.naming.service.metadata.length", String.valueOf(maxMetadataLength));
         paramChecker = new DefaultParamChecker();
     }
     
@@ -273,12 +277,12 @@ class DefaultParamCheckerTest {
         paramInfo.setMetadata(metadata);
         // Max length
         metadata.put("key1", "");
-        metadata.put("key2", buildStringLength(1024));
+        metadata.put("key2", buildStringLength(maxMetadataLength));
         ParamCheckResponse actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'Metadata' is illegal, the param length should not exceed 1024.", actual.getMessage());
+        assertEquals(String.format("Param 'Metadata' is illegal, the param length should not exceed %d.", maxMetadataLength), actual.getMessage());
         // Success
-        metadata.put("key2", "Any key and value, only require length sum not more than 1024.");
+        metadata.put("key2", String.format("Any key and value, only require length sum not more than %d.", maxMetadataLength));
         actual = paramChecker.checkParamInfoList(paramInfos);
         assertTrue(actual.isSuccess());
     }

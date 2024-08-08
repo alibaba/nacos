@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.common.paramcheck;
 
+import com.alibaba.nacos.common.utils.NumberUtils;
+import com.alibaba.nacos.common.utils.PropertyUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.List;
@@ -28,28 +30,32 @@ import java.util.regex.Pattern;
  * @author zhuoguang
  */
 public class DefaultParamChecker extends AbstractParamChecker {
-    
+
     private Pattern namespaceShowNamePattern;
-    
+
     private Pattern namespaceIdPattern;
-    
+
     private Pattern dataIdPattern;
-    
+
     private Pattern serviceNamePattern;
-    
+
     private Pattern groupPattern;
-    
+
     private Pattern clusterPattern;
-    
+
     private Pattern ipPattern;
-    
+
     private static final String CHECKER_TYPE = "default";
-    
+
+    private static final String MAX_METADATA_LENGTH_PROP_NAME = "nacos.naming.service.metadata.length";
+
+    private static final String MAX_METADATA_LENGTH_ENV_NAME = "NACOS_NAMING_SERVICE_METADATA_LENGTH";
+
     @Override
     public String getCheckerType() {
         return CHECKER_TYPE;
     }
-    
+
     @Override
     public ParamCheckResponse checkParamInfoList(List<ParamInfo> paramInfos) {
         ParamCheckResponse paramCheckResponse = new ParamCheckResponse();
@@ -66,13 +72,14 @@ public class DefaultParamChecker extends AbstractParamChecker {
         paramCheckResponse.setSuccess(true);
         return paramCheckResponse;
     }
-    
+
     @Override
     public void initParamCheckRule() {
         this.paramCheckRule = new ParamCheckRule();
         initFormatPattern();
+        replaceParamCheckRuleByEnv();
     }
-    
+
     private void initFormatPattern() {
         this.namespaceShowNamePattern = Pattern.compile(this.paramCheckRule.namespaceShowNamePatternString);
         this.namespaceIdPattern = Pattern.compile(this.paramCheckRule.namespaceIdPatternString);
@@ -82,7 +89,17 @@ public class DefaultParamChecker extends AbstractParamChecker {
         this.clusterPattern = Pattern.compile(this.paramCheckRule.clusterPatternString);
         this.ipPattern = Pattern.compile(this.paramCheckRule.ipPatternString);
     }
-    
+
+    /**
+     * if environment variables exists, it will be replaced.
+     */
+    private void replaceParamCheckRuleByEnv() {
+        String maxMetadataLength = PropertyUtils.getProperty(MAX_METADATA_LENGTH_PROP_NAME, MAX_METADATA_LENGTH_ENV_NAME);
+        if (StringUtils.isNotBlank(maxMetadataLength)) {
+            this.paramCheckRule.maxMetadataLength = NumberUtils.toInt(maxMetadataLength);
+        }
+    }
+
     /**
      * Check param info format.
      *
@@ -138,7 +155,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         paramCheckResponse.setSuccess(true);
         return paramCheckResponse;
     }
-    
+
     /**
      * Check namespace show name format.
      *
@@ -165,7 +182,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         paramCheckResponse.setSuccess(true);
         return paramCheckResponse;
     }
-    
+
     /**
      * Check namespace id format.
      *
@@ -192,7 +209,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         paramCheckResponse.setSuccess(true);
         return paramCheckResponse;
     }
-    
+
     /**
      * Check data id format.
      *
@@ -219,7 +236,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         paramCheckResponse.setSuccess(true);
         return paramCheckResponse;
     }
-    
+
     /**
      * Check service name format.
      *
@@ -246,7 +263,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         paramCheckResponse.setSuccess(true);
         return paramCheckResponse;
     }
-    
+
     /**
      * Check group format.
      *
@@ -273,7 +290,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         paramCheckResponse.setSuccess(true);
         return paramCheckResponse;
     }
-    
+
     /**
      * Check cluster format.
      *
@@ -296,7 +313,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         paramCheckResponse.setSuccess(true);
         return paramCheckResponse;
     }
-    
+
     /**
      * Check single cluster format.
      *
@@ -309,7 +326,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
             paramCheckResponse.setSuccess(true);
             return paramCheckResponse;
         }
-        
+
         if (cluster.length() > paramCheckRule.maxClusterLength) {
             paramCheckResponse.setSuccess(false);
             paramCheckResponse.setMessage(String.format("Param 'cluster' is illegal, the param length should not exceed %d.",
@@ -324,7 +341,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         paramCheckResponse.setSuccess(true);
         return paramCheckResponse;
     }
-    
+
     /**
      * Check ip format.
      *
@@ -351,7 +368,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         paramCheckResponse.setSuccess(true);
         return paramCheckResponse;
     }
-    
+
     /**
      * Check port format.
      *
@@ -382,7 +399,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         paramCheckResponse.setSuccess(true);
         return paramCheckResponse;
     }
-    
+
     /**
      * Check metadata format.
      *
