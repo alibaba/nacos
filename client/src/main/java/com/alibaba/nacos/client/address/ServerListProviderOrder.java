@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2024 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.config.impl;
-
-import com.alibaba.nacos.common.notify.SlowEvent;
+package com.alibaba.nacos.client.address;
 
 /**
- * Server List Change Event.
- *
- * @author zongtanghu
+ * Server list provider order.
+ * 
+ * @author totalo
  */
-public class ServerListChangeEvent extends SlowEvent {
+public class ServerListProviderOrder {
+    
+    /**
+     *  order.
+     */
+    public static final int ORDER = 500;
 }
