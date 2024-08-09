@@ -467,9 +467,20 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
     public List<HttpClientRequestInterceptor> getInterceptors() {
         return interceptors;
     }
-    
+
+    /**
+     * Executes an HTTP request and returns the processed result.
+     *
+     * @param url The target URL for the request.
+     * @param httpMethod The HTTP method to use, e.g., GET, POST, etc.
+     * @param requestEntity The HTTP request entity containing the request body and query parameters.
+     * @param responseType The type of the response which dictates how the response body should be parsed.
+     * @param <T> The generic type of the response result.
+     * @return The processed result of the HTTP request.
+     * @throws Exception If an error occurs during request execution or response handling.
+     */
     @SuppressWarnings("unchecked")
-    private <T> HttpRestResult<T> execute(String url, String httpMethod, RequestHttpEntity requestEntity,
+    public <T> HttpRestResult<T> execute(String url, String httpMethod, RequestHttpEntity requestEntity,
             Type responseType) throws Exception {
         URI uri = HttpUtils.buildUri(url, requestEntity.getQuery());
         if (logger.isDebugEnabled()) {

@@ -28,10 +28,10 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
+import com.alibaba.nacos.client.address.common.ServerListChangedEvent;
+import com.alibaba.nacos.client.address.manager.NamingServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
-import com.alibaba.nacos.client.naming.core.ServerListManager;
-import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.NamingHttpUtil;
@@ -100,13 +100,13 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     private final String namespaceId;
     
-    private final ServerListManager serverListManager;
+    private final NamingServerListManager serverListManager;
     
     private final int maxRetry;
     
     private int serverPort = DEFAULT_SERVER_PORT;
     
-    public NamingHttpClientProxy(String namespaceId, SecurityProxy securityProxy, ServerListManager serverListManager,
+    public NamingHttpClientProxy(String namespaceId, SecurityProxy securityProxy, NamingServerListManager serverListManager,
             NacosClientProperties properties) {
         super(securityProxy);
         this.serverListManager = serverListManager;
@@ -351,40 +351,28 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         
         params.put(CommonParams.NAMESPACE_ID, getNamespaceId());
         
-        if (CollectionUtils.isEmpty(servers) && !serverListManager.isDomain()) {
+        if (CollectionUtils.isEmpty(servers)) {
             throw new NacosException(NacosException.INVALID_PARAM, "no server available");
         }
         
         NacosException exception = new NacosException();
+
+        Random random = new Random();
+        int serversSize = servers.size();
+        int retry = serversSize == 1 ? maxRetry : serversSize;
+        int index = random.nextInt(serversSize);
         
-        if (serverListManager.isDomain()) {
-            String nacosDomain = serverListManager.getNacosDomain();
-            for (int i = 0; i < maxRetry; i++) {
-                try {
-                    return callServer(api, params, body, nacosDomain, method);
-                } catch (NacosException e) {
-                    exception = e;
-                    if (NAMING_LOGGER.isDebugEnabled()) {
-                        NAMING_LOGGER.debug("request {} failed.", nacosDomain, e);
-                    }
+        for (int i = 0; i < retry; i++) {
+            String server = servers.get(index);
+            try {
+                return callServer(api, params, body, server, method);
+            } catch (NacosException e) {
+                exception = e;
+                if (NAMING_LOGGER.isDebugEnabled()) {
+                    NAMING_LOGGER.debug("request {} failed.", server, e);
                 }
             }
-        } else {
-            Random random = new Random();
-            int index = random.nextInt(servers.size());
-            
-            for (int i = 0; i < servers.size(); i++) {
-                String server = servers.get(index);
-                try {
-                    return callServer(api, params, body, server, method);
-                } catch (NacosException e) {
-                    exception = e;
-                    if (NAMING_LOGGER.isDebugEnabled()) {
-                        NAMING_LOGGER.debug("request {} failed.", server, e);
-                    }
-                }
-                index = (index + 1) % servers.size();
-            }
+            index = (index + 1) % serversSize;
         }
         
         NAMING_LOGGER.error("request: {} failed, servers: {}, code: {}, msg: {}", api, servers, exception.getErrCode(),

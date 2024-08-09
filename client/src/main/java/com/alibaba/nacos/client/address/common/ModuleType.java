@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999-2021 Alibaba Group Holding Ltd.
+ * Copyright 1999-2024 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,22 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.naming.event;
-
-import com.alibaba.nacos.common.notify.SlowEvent;
+package com.alibaba.nacos.client.address.common;
 
 /**
- * Event of server list changed for naming.
- * 
- * @author gengtuo.ygt
- * on 2021/6/7
+ * Module Type.
+ *
+ * @author misakacoder
  */
-public class ServerListChangedEvent extends SlowEvent {
+public enum ModuleType {
+    
+    /**
+     * config.
+     */
+    CONFIG,
+    
+    /**
+     * naming.
+     */
+    NAMING
 }

@@ -144,7 +144,7 @@ class AbilityDiscovery {
         client = RpcClientFactory.createClient(UUID.randomUUID().toString(), ConnectionType.GRPC, new HashMap<>());
         client.serverListFactory(new ServerListFactory() {
             @Override
-            public String genNextServer() {
+            public String getNextServer() {
                 return "127.0.0.1:" + port;
             }
             
@@ -164,7 +164,7 @@ class AbilityDiscovery {
         clusterClient = RpcClientFactory.createClusterClient(UUID.randomUUID().toString(), ConnectionType.GRPC, new HashMap<>());
         clusterClient.serverListFactory(new ServerListFactory() {
             @Override
-            public String genNextServer() {
+            public String getNextServer() {
                 return "127.0.0.1:" + port;
             }
             

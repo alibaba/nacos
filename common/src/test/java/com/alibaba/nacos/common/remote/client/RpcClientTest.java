@@ -593,7 +593,7 @@ class RpcClientTest {
     void testNextRpcServerForIpv4WithPort() {
         RpcClient rpcClient = buildTestNextRpcServerClient();
         rpcClient.serverListFactory(serverListFactory);
-        when(serverListFactory.genNextServer()).thenReturn("127.0.0.1:7777");
+        when(serverListFactory.getNextServer()).thenReturn("127.0.0.1:7777");
         RpcClient.ServerInfo actual = rpcClient.nextRpcServer();
         assertEquals("127.0.0.1:7777", actual.getAddress());
         assertEquals("127.0.0.1", actual.getServerIp());
@@ -604,7 +604,7 @@ class RpcClientTest {
     void testNextRpcServerForIpv4WithoutPort() {
         RpcClient rpcClient = buildTestNextRpcServerClient();
         rpcClient.serverListFactory(serverListFactory);
-        when(serverListFactory.genNextServer()).thenReturn("127.0.0.1");
+        when(serverListFactory.getNextServer()).thenReturn("127.0.0.1");
         RpcClient.ServerInfo actual = rpcClient.nextRpcServer();
         assertEquals("127.0.0.1:8848", actual.getAddress());
         assertEquals("127.0.0.1", actual.getServerIp());
@@ -615,7 +615,7 @@ class RpcClientTest {
     void testNextRpcServerForIpv6WithPort() {
         RpcClient rpcClient = buildTestNextRpcServerClient();
         rpcClient.serverListFactory(serverListFactory);
-        when(serverListFactory.genNextServer()).thenReturn("[fe80::35ba:6827:c5ff:d161%11]:7777");
+        when(serverListFactory.getNextServer()).thenReturn("[fe80::35ba:6827:c5ff:d161%11]:7777");
         RpcClient.ServerInfo actual = rpcClient.nextRpcServer();
         assertEquals("[fe80::35ba:6827:c5ff:d161%11]:7777", actual.getAddress());
         assertEquals("[fe80::35ba:6827:c5ff:d161%11]", actual.getServerIp());
@@ -626,7 +626,7 @@ class RpcClientTest {
     void testNextRpcServerForIpv6WithoutPort() {
         RpcClient rpcClient = buildTestNextRpcServerClient();
         rpcClient.serverListFactory(serverListFactory);
-        when(serverListFactory.genNextServer()).thenReturn("[fe80::35ba:6827:c5ff:d161%11]");
+        when(serverListFactory.getNextServer()).thenReturn("[fe80::35ba:6827:c5ff:d161%11]");
         RpcClient.ServerInfo actual = rpcClient.nextRpcServer();
         assertEquals("[fe80::35ba:6827:c5ff:d161%11]:8848", actual.getAddress());
         assertEquals("[fe80::35ba:6827:c5ff:d161%11]", actual.getServerIp());
@@ -637,7 +637,7 @@ class RpcClientTest {
     void testNextRpcServerForDomainWithPort() {
         RpcClient rpcClient = buildTestNextRpcServerClient();
         rpcClient.serverListFactory(serverListFactory);
-        when(serverListFactory.genNextServer()).thenReturn("nacos.io:7777");
+        when(serverListFactory.getNextServer()).thenReturn("nacos.io:7777");
         RpcClient.ServerInfo actual = rpcClient.nextRpcServer();
         assertEquals("nacos.io:7777", actual.getAddress());
         assertEquals("nacos.io", actual.getServerIp());
@@ -648,7 +648,7 @@ class RpcClientTest {
     void testNextRpcServerForDomainWithoutPort() {
         RpcClient rpcClient = buildTestNextRpcServerClient();
         rpcClient.serverListFactory(serverListFactory);
-        when(serverListFactory.genNextServer()).thenReturn("nacos.io");
+        when(serverListFactory.getNextServer()).thenReturn("nacos.io");
         RpcClient.ServerInfo actual = rpcClient.nextRpcServer();
         assertEquals("nacos.io:8848", actual.getAddress());
         assertEquals("nacos.io", actual.getServerIp());
@@ -659,7 +659,7 @@ class RpcClientTest {
     void testNextRpcServerForLocalhostWithPort() {
         RpcClient rpcClient = buildTestNextRpcServerClient();
         rpcClient.serverListFactory(serverListFactory);
-        when(serverListFactory.genNextServer()).thenReturn("localhost:7777");
+        when(serverListFactory.getNextServer()).thenReturn("localhost:7777");
         RpcClient.ServerInfo actual = rpcClient.nextRpcServer();
         assertEquals("localhost:7777", actual.getAddress());
         assertEquals("localhost", actual.getServerIp());
@@ -670,7 +670,7 @@ class RpcClientTest {
     void testNextRpcServerForLocalhostWithoutPort() {
         RpcClient rpcClient = buildTestNextRpcServerClient();
         rpcClient.serverListFactory(serverListFactory);
-        when(serverListFactory.genNextServer()).thenReturn("localhost");
+        when(serverListFactory.getNextServer()).thenReturn("localhost");
         RpcClient.ServerInfo actual = rpcClient.nextRpcServer();
         assertEquals("localhost:8848", actual.getAddress());
         assertEquals("localhost", actual.getServerIp());
@@ -682,7 +682,7 @@ class RpcClientTest {
         assertThrows(IllegalArgumentException.class, () -> {
             RpcClient rpcClient = buildTestNextRpcServerClient();
             rpcClient.serverListFactory(serverListFactory);
-            when(serverListFactory.genNextServer()).thenReturn("");
+            when(serverListFactory.getNextServer()).thenReturn("");
             rpcClient.nextRpcServer();
         });
     }
@@ -778,7 +778,7 @@ class RpcClientTest {
     
     @Test
     void testStartClient() throws NacosException {
-        when(serverListFactory.genNextServer()).thenReturn("127.0.0.1:8848");
+        when(serverListFactory.getNextServer()).thenReturn("127.0.0.1:8848");
         connection.serverInfo = new RpcClient.ServerInfo("127.0.0.1", 8848);
         RpcClient rpcClient = buildTestStartClient(new Function<RpcClient.ServerInfo, Connection>() {
             
@@ -823,7 +823,7 @@ class RpcClientTest {
     
     @Test
     void testDisConnectionEventAfterStart() throws NacosException, InterruptedException {
-        when(serverListFactory.genNextServer()).thenReturn("127.0.0.1:8848");
+        when(serverListFactory.getNextServer()).thenReturn("127.0.0.1:8848");
         connection.serverInfo = new RpcClient.ServerInfo("127.0.0.1", 8848);
         RpcClient rpcClient = buildTestStartClient(serverInfo -> connection);
         ConnectionEventListener listener = mock(ConnectionEventListener.class);
@@ -854,7 +854,7 @@ class RpcClientTest {
     
     @Test
     void testReconnectContextAfterStartWithConnectionHealthCheckFail() throws NacosException, InterruptedException {
-        when(serverListFactory.genNextServer()).thenReturn("127.0.0.1:8848");
+        when(serverListFactory.getNextServer()).thenReturn("127.0.0.1:8848");
         connection.serverInfo = new RpcClient.ServerInfo("127.0.0.1", 8848);
         RpcClient rpcClient = buildTestStartClient(new Function<RpcClient.ServerInfo, Connection>() {
             
@@ -882,7 +882,7 @@ class RpcClientTest {
     @Test
     void testReconnectContextAfterStartWithConnectionHealthCheckSuccess()
             throws NacosException, InterruptedException, NoSuchFieldException, IllegalAccessException {
-        when(serverListFactory.genNextServer()).thenReturn("127.0.0.1:8848");
+        when(serverListFactory.getNextServer()).thenReturn("127.0.0.1:8848");
         connection.serverInfo = new RpcClient.ServerInfo("127.0.0.1", 8848);
         RpcClient rpcClient = buildTestStartClient(serverInfo -> connection);
         when(connection.request(any(Request.class), anyLong())).thenReturn(new HealthCheckResponse());
@@ -904,7 +904,7 @@ class RpcClientTest {
     @Test
     void testReconnectContextAfterStartWithActiveTimeIsNew()
             throws NacosException, InterruptedException, NoSuchFieldException, IllegalAccessException {
-        when(serverListFactory.genNextServer()).thenReturn("127.0.0.1:8848");
+        when(serverListFactory.getNextServer()).thenReturn("127.0.0.1:8848");
         connection.serverInfo = new RpcClient.ServerInfo("127.0.0.1", 8848);
         RpcClient rpcClient = buildTestStartClient(serverInfo -> connection);
         try {
@@ -925,7 +925,7 @@ class RpcClientTest {
     
     @Test
     void testReconnectContextAfterStartWithOldServiceInfo() throws NacosException, InterruptedException, IllegalAccessException {
-        when(serverListFactory.genNextServer()).thenReturn("127.0.0.1:8848");
+        when(serverListFactory.getNextServer()).thenReturn("127.0.0.1:8848");
         when(serverListFactory.getServerList()).thenReturn(Collections.singletonList("127.0.0.1:8848"));
         connection.serverInfo = new RpcClient.ServerInfo("127.0.0.1", 8848);
         RpcClient rpcClient = buildTestStartClient(serverInfo -> connection);
@@ -944,7 +944,7 @@ class RpcClientTest {
     
     @Test
     void testReconnectContextAfterStartWithNewServiceInfo() throws NacosException, InterruptedException, IllegalAccessException {
-        when(serverListFactory.genNextServer()).thenReturn("127.0.0.1:8848");
+        when(serverListFactory.getNextServer()).thenReturn("127.0.0.1:8848");
         when(serverListFactory.getServerList()).thenReturn(Collections.singletonList("1.1.1.1:8848"));
         connection.serverInfo = new RpcClient.ServerInfo("127.0.0.1", 8848);
         RpcClient rpcClient = buildTestStartClient(serverInfo -> connection);
@@ -963,7 +963,7 @@ class RpcClientTest {
     
     @Test
     void testHandleConnectionResetRequestWithoutServer() throws NacosException, InterruptedException {
-        when(serverListFactory.genNextServer()).thenReturn("127.0.0.1:8848", "1.1.1.1:8848");
+        when(serverListFactory.getNextServer()).thenReturn("127.0.0.1:8848", "1.1.1.1:8848");
         connection.serverInfo = new RpcClient.ServerInfo("127.0.0.1", 8848);
         RpcClient rpcClient = buildTestStartClient(serverInfo -> {
             connection.serverInfo = serverInfo;
@@ -982,7 +982,7 @@ class RpcClientTest {
     
     @Test
     void testHandleConnectionResetRequestWithServer() throws NacosException, InterruptedException {
-        when(serverListFactory.genNextServer()).thenReturn("127.0.0.1:8848", "1.1.1.1:8848");
+        when(serverListFactory.getNextServer()).thenReturn("127.0.0.1:8848", "1.1.1.1:8848");
         List<String> serverList = new LinkedList<>();
         serverList.add("127.0.0.1:8848");
         serverList.add("1.1.1.1:8848");
@@ -1009,7 +1009,7 @@ class RpcClientTest {
     
     @Test
     void testHandleConnectionResetRequestWithException() throws NacosException, InterruptedException {
-        when(serverListFactory.genNextServer()).thenReturn("127.0.0.1:8848", "1.1.1.1:8848");
+        when(serverListFactory.getNextServer()).thenReturn("127.0.0.1:8848", "1.1.1.1:8848");
         connection.serverInfo = new RpcClient.ServerInfo("127.0.0.1", 8848);
         RpcClient rpcClient = buildTestStartClient(serverInfo -> {
             connection.serverInfo = serverInfo;
@@ -1065,7 +1065,7 @@ class RpcClientTest {
     
     @Test
     void testReconnectFailTimes() throws NacosException {
-        when(serverListFactory.genNextServer()).thenReturn("127.0.0.1:8848");
+        when(serverListFactory.getNextServer()).thenReturn("127.0.0.1:8848");
         when(serverListFactory.getServerList()).thenReturn(Collections.singletonList("127.0.0.1:8848"));
         final AtomicInteger count = new AtomicInteger(0);
         RpcClient rpcClient = buildTestStartClient(serverInfo -> {

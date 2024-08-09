@@ -137,7 +137,7 @@ class AbilityTest {
         rpcClient.serverListFactory(new ServerListFactory() {
             
             @Override
-            public String genNextServer() {
+            public String getNextServer() {
                 return "localhost:8848";
             }
             
