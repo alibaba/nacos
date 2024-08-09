@@ -18,7 +18,7 @@ package com.alibaba.nacos.client.config.http;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.config.impl.ServerListManager;
+import com.alibaba.nacos.client.serverlist.ServerListManager;
 import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
@@ -45,7 +45,6 @@ import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
@@ -79,9 +78,8 @@ class ServerHttpAgentTest {
     void setUp() throws NoSuchFieldException, IllegalAccessException {
         serverHttpAgent = new ServerHttpAgent(serverListManager, new Properties());
         injectRestTemplate();
-        when(serverListManager.getCurrentServerAddr()).thenReturn(SERVER_ADDRESS_1);
-        when(serverListManager.getIterator()).thenReturn(mockIterator);
-        when(mockIterator.next()).thenReturn(SERVER_ADDRESS_2);
+        when(serverListManager.getCurrentServer()).thenReturn(SERVER_ADDRESS_1);
+        when(serverListManager.genNextServer()).thenReturn(SERVER_ADDRESS_2);
     }
     
     private void injectRestTemplate() throws NoSuchFieldException, IllegalAccessException {
@@ -97,7 +95,7 @@ class ServerHttpAgentTest {
     
     @Test
     void testConstruct() throws NacosException {
-        ServerListManager server = new ServerListManager();
+        ServerListManager server = Mockito.mock(ServerListManager.class);
         final ServerHttpAgent serverHttpAgent1 = new ServerHttpAgent(server);
         assertNotNull(serverHttpAgent1);
         
@@ -112,26 +110,6 @@ class ServerHttpAgentTest {
     }
     
     @Test
-    void testGetterAndSetter() throws NacosException {
-        ServerListManager server = new ServerListManager("aaa", "namespace1");
-        final ServerHttpAgent serverHttpAgent = new ServerHttpAgent(server, new Properties());
-        
-        final String appname = ServerHttpAgent.getAppname();
-        //set by AppNameUtils, init in ParamUtils static block
-        assertEquals("unknown", appname);
-        
-        final String encode = serverHttpAgent.getEncode();
-        final String namespace = serverHttpAgent.getNamespace();
-        final String tenant = serverHttpAgent.getTenant();
-        final String name = serverHttpAgent.getName();
-        assertNull(encode);
-        assertEquals("namespace1", namespace);
-        assertEquals("namespace1", tenant);
-        assertEquals("custom-aaa_8080_nacos_serverlist_namespace1", name);
-        
-    }
-    
-    @Test
     void testLifCycle() throws NacosException {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "aaa");
@@ -139,8 +117,6 @@ class ServerHttpAgentTest {
         final ServerHttpAgent serverHttpAgent = new ServerHttpAgent(server, properties);
         
         serverHttpAgent.start();
-        Mockito.verify(server).start();
-        
         Assertions.assertDoesNotThrow(() -> {
             serverHttpAgent.shutdown();
         });
@@ -184,6 +160,7 @@ class ServerHttpAgentTest {
         when(nacosRestTemplate.<String>get(eq(SERVER_ADDRESS_2 + "/test"), any(HttpClientConfig.class),
                 any(Header.class), any(Query.class), eq(String.class))).thenReturn(mockResult);
         when(mockResult.getCode()).thenReturn(HttpURLConnection.HTTP_OK);
+        when(serverListManager.hasNext()).thenReturn(true);
         HttpRestResult<String> actual = serverHttpAgent.httpGet("/test", Collections.emptyMap(), Collections.emptyMap(),
                 "UTF-8", 1000);
         assertEquals(mockResult, actual);
@@ -236,6 +213,7 @@ class ServerHttpAgentTest {
         when(nacosRestTemplate.<String>postForm(eq(SERVER_ADDRESS_2 + "/test"), any(HttpClientConfig.class),
                 any(Header.class), anyMap(), eq(String.class))).thenReturn(mockResult);
         when(mockResult.getCode()).thenReturn(HttpURLConnection.HTTP_OK);
+        when(serverListManager.hasNext()).thenReturn(true);
         HttpRestResult<String> actual = serverHttpAgent.httpPost("/test", Collections.emptyMap(),
                 Collections.emptyMap(), "UTF-8", 1000);
         assertEquals(mockResult, actual);
@@ -288,6 +266,7 @@ class ServerHttpAgentTest {
         when(nacosRestTemplate.<String>delete(eq(SERVER_ADDRESS_2 + "/test"), any(HttpClientConfig.class),
                 any(Header.class), any(Query.class), eq(String.class))).thenReturn(mockResult);
         when(mockResult.getCode()).thenReturn(HttpURLConnection.HTTP_OK);
+        when(serverListManager.hasNext()).thenReturn(true);
         HttpRestResult<String> actual = serverHttpAgent.httpDelete("/test", Collections.emptyMap(),
                 Collections.emptyMap(), "UTF-8", 1000);
         assertEquals(mockResult, actual);

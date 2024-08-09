@@ -14,7 +14,7 @@
  *   limitations under the License.
  */
 
-package com.alibaba.nacos.client.naming.utils;
+package com.alibaba.nacos.client.serverlist.utils;
 
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.param.Header;
@@ -24,11 +24,11 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-class NamingHttpUtilTest {
+class HttpUtilTest {
     
     @Test
     void testBuilderHeader() {
-        Header header = NamingHttpUtil.builderHeader();
+        Header header = HttpUtil.buildNamingHeader();
         assertNotNull(header);
         assertEquals(header.getValue(HttpHeaderConsts.CLIENT_VERSION_HEADER), VersionUtils.version);
         assertEquals(header.getValue(HttpHeaderConsts.USER_AGENT_HEADER), VersionUtils.getFullClientVersion());
