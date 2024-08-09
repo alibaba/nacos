@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.common.paramcheck;
 
+import com.alibaba.nacos.common.utils.NumberUtils;
+import com.alibaba.nacos.common.utils.PropertyUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.List;
@@ -45,6 +47,10 @@ public class DefaultParamChecker extends AbstractParamChecker {
     
     private static final String CHECKER_TYPE = "default";
     
+    private static final String MAX_METADATA_LENGTH_PROP_NAME = "nacos.naming.service.metadata.length";
+    
+    private static final String MAX_METADATA_LENGTH_ENV_NAME = "NACOS_NAMING_SERVICE_METADATA_LENGTH";
+    
     @Override
     public String getCheckerType() {
         return CHECKER_TYPE;
@@ -71,6 +77,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
     public void initParamCheckRule() {
         this.paramCheckRule = new ParamCheckRule();
         initFormatPattern();
+        replaceParamCheckRuleByEnv();
     }
     
     private void initFormatPattern() {
@@ -81,6 +88,16 @@ public class DefaultParamChecker extends AbstractParamChecker {
         this.groupPattern = Pattern.compile(this.paramCheckRule.groupPatternString);
         this.clusterPattern = Pattern.compile(this.paramCheckRule.clusterPatternString);
         this.ipPattern = Pattern.compile(this.paramCheckRule.ipPatternString);
+    }
+    
+    /**
+     * if environment variables exists, it will be replaced.
+     */
+    private void replaceParamCheckRuleByEnv() {
+        String maxMetadataLength = PropertyUtils.getProperty(MAX_METADATA_LENGTH_PROP_NAME, MAX_METADATA_LENGTH_ENV_NAME);
+        if (StringUtils.isNotBlank(maxMetadataLength)) {
+            this.paramCheckRule.maxMetadataLength = NumberUtils.toInt(maxMetadataLength);
+        }
     }
     
     /**
@@ -207,8 +224,8 @@ public class DefaultParamChecker extends AbstractParamChecker {
         }
         if (dataId.length() > paramCheckRule.maxDataIdLength) {
             paramCheckResponse.setSuccess(false);
-            paramCheckResponse.setMessage(String.format("Param 'dataId' is illegal, the param length should not exceed %d.",
-                    paramCheckRule.maxDataIdLength));
+            paramCheckResponse.setMessage(
+                    String.format("Param 'dataId' is illegal, the param length should not exceed %d.", paramCheckRule.maxDataIdLength));
             return paramCheckResponse;
         }
         if (!dataIdPattern.matcher(dataId).matches()) {
@@ -234,8 +251,8 @@ public class DefaultParamChecker extends AbstractParamChecker {
         }
         if (serviceName.length() > paramCheckRule.maxServiceNameLength) {
             paramCheckResponse.setSuccess(false);
-            paramCheckResponse.setMessage(String.format("Param 'serviceName' is illegal, the param length should not exceed %d.",
-                    paramCheckRule.maxServiceNameLength));
+            paramCheckResponse.setMessage(
+                    String.format("Param 'serviceName' is illegal, the param length should not exceed %d.", paramCheckRule.maxServiceNameLength));
             return paramCheckResponse;
         }
         if (!serviceNamePattern.matcher(serviceName).matches()) {
@@ -261,8 +278,8 @@ public class DefaultParamChecker extends AbstractParamChecker {
         }
         if (group.length() > paramCheckRule.maxGroupLength) {
             paramCheckResponse.setSuccess(false);
-            paramCheckResponse.setMessage(String.format("Param 'group' is illegal, the param length should not exceed %d.",
-                    paramCheckRule.maxGroupLength));
+            paramCheckResponse.setMessage(
+                    String.format("Param 'group' is illegal, the param length should not exceed %d.", paramCheckRule.maxGroupLength));
             return paramCheckResponse;
         }
         if (!groupPattern.matcher(group).matches()) {
@@ -312,8 +329,8 @@ public class DefaultParamChecker extends AbstractParamChecker {
         
         if (cluster.length() > paramCheckRule.maxClusterLength) {
             paramCheckResponse.setSuccess(false);
-            paramCheckResponse.setMessage(String.format("Param 'cluster' is illegal, the param length should not exceed %d.",
-                    paramCheckRule.maxClusterLength));
+            paramCheckResponse.setMessage(
+                    String.format("Param 'cluster' is illegal, the param length should not exceed %d.", paramCheckRule.maxClusterLength));
             return paramCheckResponse;
         }
         if (!clusterPattern.matcher(cluster).matches()) {
@@ -339,8 +356,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         }
         if (ip.length() > paramCheckRule.maxIpLength) {
             paramCheckResponse.setSuccess(false);
-            paramCheckResponse.setMessage(String.format("Param 'ip' is illegal, the param length should not exceed %d.",
-                    paramCheckRule.maxIpLength));
+            paramCheckResponse.setMessage(String.format("Param 'ip' is illegal, the param length should not exceed %d.", paramCheckRule.maxIpLength));
             return paramCheckResponse;
         }
         if (!ipPattern.matcher(ip).matches()) {
@@ -369,14 +385,14 @@ public class DefaultParamChecker extends AbstractParamChecker {
             portInt = Integer.parseInt(port);
         } catch (Exception e) {
             paramCheckResponse.setSuccess(false);
-            paramCheckResponse.setMessage(String.format("Param 'port' is illegal, the value should be between %d and %d.",
-                    paramCheckRule.minPort, paramCheckRule.maxPort));
+            paramCheckResponse.setMessage(
+                    String.format("Param 'port' is illegal, the value should be between %d and %d.", paramCheckRule.minPort, paramCheckRule.maxPort));
             return paramCheckResponse;
         }
         if (portInt > paramCheckRule.maxPort || portInt < paramCheckRule.minPort) {
             paramCheckResponse.setSuccess(false);
-            paramCheckResponse.setMessage(String.format("Param 'port' is illegal, the value should be between %d and %d.",
-                    paramCheckRule.minPort, paramCheckRule.maxPort));
+            paramCheckResponse.setMessage(
+                    String.format("Param 'port' is illegal, the value should be between %d and %d.", paramCheckRule.minPort, paramCheckRule.maxPort));
             return paramCheckResponse;
         }
         paramCheckResponse.setSuccess(true);
@@ -406,8 +422,8 @@ public class DefaultParamChecker extends AbstractParamChecker {
         }
         if (totalLength > paramCheckRule.maxMetadataLength) {
             paramCheckResponse.setSuccess(false);
-            paramCheckResponse.setMessage(String.format("Param 'Metadata' is illegal, the param length should not exceed %d.",
-                    paramCheckRule.maxMetadataLength));
+            paramCheckResponse.setMessage(
+                    String.format("Param 'Metadata' is illegal, the param length should not exceed %d.", paramCheckRule.maxMetadataLength));
             return paramCheckResponse;
         }
         paramCheckResponse.setSuccess(true);
