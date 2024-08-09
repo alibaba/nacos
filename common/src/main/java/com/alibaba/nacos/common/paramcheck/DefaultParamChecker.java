@@ -30,32 +30,32 @@ import java.util.regex.Pattern;
  * @author zhuoguang
  */
 public class DefaultParamChecker extends AbstractParamChecker {
-
+    
     private Pattern namespaceShowNamePattern;
-
+    
     private Pattern namespaceIdPattern;
-
+    
     private Pattern dataIdPattern;
-
+    
     private Pattern serviceNamePattern;
-
+    
     private Pattern groupPattern;
-
+    
     private Pattern clusterPattern;
-
+    
     private Pattern ipPattern;
-
+    
     private static final String CHECKER_TYPE = "default";
-
+    
     private static final String MAX_METADATA_LENGTH_PROP_NAME = "nacos.naming.service.metadata.length";
-
+    
     private static final String MAX_METADATA_LENGTH_ENV_NAME = "NACOS_NAMING_SERVICE_METADATA_LENGTH";
-
+    
     @Override
     public String getCheckerType() {
         return CHECKER_TYPE;
     }
-
+    
     @Override
     public ParamCheckResponse checkParamInfoList(List<ParamInfo> paramInfos) {
         ParamCheckResponse paramCheckResponse = new ParamCheckResponse();
@@ -72,14 +72,14 @@ public class DefaultParamChecker extends AbstractParamChecker {
         paramCheckResponse.setSuccess(true);
         return paramCheckResponse;
     }
-
+    
     @Override
     public void initParamCheckRule() {
         this.paramCheckRule = new ParamCheckRule();
         initFormatPattern();
         replaceParamCheckRuleByEnv();
     }
-
+    
     private void initFormatPattern() {
         this.namespaceShowNamePattern = Pattern.compile(this.paramCheckRule.namespaceShowNamePatternString);
         this.namespaceIdPattern = Pattern.compile(this.paramCheckRule.namespaceIdPatternString);
@@ -89,7 +89,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         this.clusterPattern = Pattern.compile(this.paramCheckRule.clusterPatternString);
         this.ipPattern = Pattern.compile(this.paramCheckRule.ipPatternString);
     }
-
+    
     /**
      * if environment variables exists, it will be replaced.
      */
@@ -99,7 +99,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
             this.paramCheckRule.maxMetadataLength = NumberUtils.toInt(maxMetadataLength);
         }
     }
-
+    
     /**
      * Check param info format.
      *
@@ -155,7 +155,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         paramCheckResponse.setSuccess(true);
         return paramCheckResponse;
     }
-
+    
     /**
      * Check namespace show name format.
      *
@@ -182,7 +182,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         paramCheckResponse.setSuccess(true);
         return paramCheckResponse;
     }
-
+    
     /**
      * Check namespace id format.
      *
@@ -209,7 +209,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         paramCheckResponse.setSuccess(true);
         return paramCheckResponse;
     }
-
+    
     /**
      * Check data id format.
      *
@@ -224,8 +224,8 @@ public class DefaultParamChecker extends AbstractParamChecker {
         }
         if (dataId.length() > paramCheckRule.maxDataIdLength) {
             paramCheckResponse.setSuccess(false);
-            paramCheckResponse.setMessage(String.format("Param 'dataId' is illegal, the param length should not exceed %d.",
-                    paramCheckRule.maxDataIdLength));
+            paramCheckResponse.setMessage(
+                    String.format("Param 'dataId' is illegal, the param length should not exceed %d.", paramCheckRule.maxDataIdLength));
             return paramCheckResponse;
         }
         if (!dataIdPattern.matcher(dataId).matches()) {
@@ -236,7 +236,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         paramCheckResponse.setSuccess(true);
         return paramCheckResponse;
     }
-
+    
     /**
      * Check service name format.
      *
@@ -251,8 +251,8 @@ public class DefaultParamChecker extends AbstractParamChecker {
         }
         if (serviceName.length() > paramCheckRule.maxServiceNameLength) {
             paramCheckResponse.setSuccess(false);
-            paramCheckResponse.setMessage(String.format("Param 'serviceName' is illegal, the param length should not exceed %d.",
-                    paramCheckRule.maxServiceNameLength));
+            paramCheckResponse.setMessage(
+                    String.format("Param 'serviceName' is illegal, the param length should not exceed %d.", paramCheckRule.maxServiceNameLength));
             return paramCheckResponse;
         }
         if (!serviceNamePattern.matcher(serviceName).matches()) {
@@ -263,7 +263,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         paramCheckResponse.setSuccess(true);
         return paramCheckResponse;
     }
-
+    
     /**
      * Check group format.
      *
@@ -278,8 +278,8 @@ public class DefaultParamChecker extends AbstractParamChecker {
         }
         if (group.length() > paramCheckRule.maxGroupLength) {
             paramCheckResponse.setSuccess(false);
-            paramCheckResponse.setMessage(String.format("Param 'group' is illegal, the param length should not exceed %d.",
-                    paramCheckRule.maxGroupLength));
+            paramCheckResponse.setMessage(
+                    String.format("Param 'group' is illegal, the param length should not exceed %d.", paramCheckRule.maxGroupLength));
             return paramCheckResponse;
         }
         if (!groupPattern.matcher(group).matches()) {
@@ -290,7 +290,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         paramCheckResponse.setSuccess(true);
         return paramCheckResponse;
     }
-
+    
     /**
      * Check cluster format.
      *
@@ -313,7 +313,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         paramCheckResponse.setSuccess(true);
         return paramCheckResponse;
     }
-
+    
     /**
      * Check single cluster format.
      *
@@ -326,11 +326,11 @@ public class DefaultParamChecker extends AbstractParamChecker {
             paramCheckResponse.setSuccess(true);
             return paramCheckResponse;
         }
-
+        
         if (cluster.length() > paramCheckRule.maxClusterLength) {
             paramCheckResponse.setSuccess(false);
-            paramCheckResponse.setMessage(String.format("Param 'cluster' is illegal, the param length should not exceed %d.",
-                    paramCheckRule.maxClusterLength));
+            paramCheckResponse.setMessage(
+                    String.format("Param 'cluster' is illegal, the param length should not exceed %d.", paramCheckRule.maxClusterLength));
             return paramCheckResponse;
         }
         if (!clusterPattern.matcher(cluster).matches()) {
@@ -341,7 +341,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         paramCheckResponse.setSuccess(true);
         return paramCheckResponse;
     }
-
+    
     /**
      * Check ip format.
      *
@@ -356,8 +356,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         }
         if (ip.length() > paramCheckRule.maxIpLength) {
             paramCheckResponse.setSuccess(false);
-            paramCheckResponse.setMessage(String.format("Param 'ip' is illegal, the param length should not exceed %d.",
-                    paramCheckRule.maxIpLength));
+            paramCheckResponse.setMessage(String.format("Param 'ip' is illegal, the param length should not exceed %d.", paramCheckRule.maxIpLength));
             return paramCheckResponse;
         }
         if (!ipPattern.matcher(ip).matches()) {
@@ -368,7 +367,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         paramCheckResponse.setSuccess(true);
         return paramCheckResponse;
     }
-
+    
     /**
      * Check port format.
      *
@@ -386,20 +385,20 @@ public class DefaultParamChecker extends AbstractParamChecker {
             portInt = Integer.parseInt(port);
         } catch (Exception e) {
             paramCheckResponse.setSuccess(false);
-            paramCheckResponse.setMessage(String.format("Param 'port' is illegal, the value should be between %d and %d.",
-                    paramCheckRule.minPort, paramCheckRule.maxPort));
+            paramCheckResponse.setMessage(
+                    String.format("Param 'port' is illegal, the value should be between %d and %d.", paramCheckRule.minPort, paramCheckRule.maxPort));
             return paramCheckResponse;
         }
         if (portInt > paramCheckRule.maxPort || portInt < paramCheckRule.minPort) {
             paramCheckResponse.setSuccess(false);
-            paramCheckResponse.setMessage(String.format("Param 'port' is illegal, the value should be between %d and %d.",
-                    paramCheckRule.minPort, paramCheckRule.maxPort));
+            paramCheckResponse.setMessage(
+                    String.format("Param 'port' is illegal, the value should be between %d and %d.", paramCheckRule.minPort, paramCheckRule.maxPort));
             return paramCheckResponse;
         }
         paramCheckResponse.setSuccess(true);
         return paramCheckResponse;
     }
-
+    
     /**
      * Check metadata format.
      *
@@ -423,8 +422,8 @@ public class DefaultParamChecker extends AbstractParamChecker {
         }
         if (totalLength > paramCheckRule.maxMetadataLength) {
             paramCheckResponse.setSuccess(false);
-            paramCheckResponse.setMessage(String.format("Param 'Metadata' is illegal, the param length should not exceed %d.",
-                    paramCheckRule.maxMetadataLength));
+            paramCheckResponse.setMessage(
+                    String.format("Param 'Metadata' is illegal, the param length should not exceed %d.", paramCheckRule.maxMetadataLength));
             return paramCheckResponse;
         }
         paramCheckResponse.setSuccess(true);

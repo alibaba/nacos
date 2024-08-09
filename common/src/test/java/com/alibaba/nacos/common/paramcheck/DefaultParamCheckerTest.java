@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class DefaultParamCheckerTest {
     
     DefaultParamChecker paramChecker;
-
+    
     int maxMetadataLength = RandomUtils.nextInt(1024, 10240);
     
     @BeforeEach
@@ -79,8 +79,7 @@ class DefaultParamCheckerTest {
         paramInfo.setNamespaceShowName("hsbfkj@$!#khdkad");
         actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'namespaceShowName' is illegal, illegal characters should not appear in the param.",
-                actual.getMessage());
+        assertEquals("Param 'namespaceShowName' is illegal, illegal characters should not appear in the param.", actual.getMessage());
         // Success
         paramInfo.setNamespaceShowName("测试");
         actual = paramChecker.checkParamInfoList(paramInfos);
@@ -102,8 +101,7 @@ class DefaultParamCheckerTest {
         paramInfo.setNamespaceId("hsbfkj@$!#khdkad");
         actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'namespaceId/tenant' is illegal, illegal characters should not appear in the param.",
-                actual.getMessage());
+        assertEquals("Param 'namespaceId/tenant' is illegal, illegal characters should not appear in the param.", actual.getMessage());
         // Success
         paramInfo.setNamespaceId("123-ashdal");
         actual = paramChecker.checkParamInfoList(paramInfos);
