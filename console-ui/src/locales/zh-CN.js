@@ -250,7 +250,7 @@ const I18N_CONF = {
     articleMeetRequirements: '条满足要求的配置。',
     lastUpdateTime: '最后更新时间',
     operator: '操作人',
-    configType: '配置类型',
+    publishType: '发布类型',
     formal: '正式版本',
     gray: '灰度版本',
     operation: '操作',

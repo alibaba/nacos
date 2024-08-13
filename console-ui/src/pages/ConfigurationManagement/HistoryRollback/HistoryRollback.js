@@ -133,7 +133,7 @@ class HistoryRollback extends React.Component {
 
   renderCol(value, index, record) {
     const { locale = {} } = this.props;
-    const isBeta = record.configType === 'gray';
+    const isBeta = record.publishType === 'gray';
     return (
       <div>
         <a onClick={this.goDetail.bind(this, record)} style={{ marginRight: 5 }}>
@@ -440,8 +440,8 @@ class HistoryRollback extends React.Component {
               <Table.Column title="Data ID" dataIndex="dataId" />
               <Table.Column title="Group" dataIndex="group" />
               <Table.Column
-                title={locale.configType}
-                dataIndex="configType"
+                title={locale.publishType}
+                dataIndex="publishType"
                 cell={(value, index, record) => {
                   if (value === 'formal') {
                     return locale.formal;

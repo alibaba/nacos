@@ -88,21 +88,21 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     
     @Override
     public void insertConfigHistoryAtomic(long id, ConfigInfo configInfo, String srcIp, String srcUser,
-            final Timestamp time, String ops, String configType, String extraInfo) {
+            final Timestamp time, String ops, String publishType, String extraInfo) {
         String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
         String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
         String encryptedDataKey = StringUtils.defaultEmptyIfBlank(configInfo.getEncryptedDataKey());
-        String configTypeTmp = StringUtils.defaultEmptyIfBlank(configType);
+        String publishTypeTmp = StringUtils.defaultEmptyIfBlank(publishType);
         
         try {
             HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
                     dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
             jt.update(historyConfigInfoMapper.insert(
                             Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "src_ip",
-                                    "src_user", "gmt_modified", "op_type", "config_type", "ext_info", "encrypted_data_key")),
+                                    "src_user", "gmt_modified", "op_type", "publish_type", "ext_info", "encrypted_data_key")),
                     id, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp, configInfo.getContent(),
-                    md5Tmp, srcIp, srcUser, time, ops, configTypeTmp, extraInfo, encryptedDataKey);
+                    md5Tmp, srcIp, srcUser, time, ops, publishTypeTmp, extraInfo, encryptedDataKey);
         } catch (DataAccessException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;
@@ -175,7 +175,7 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
                 dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
         String sqlFetchRows = historyConfigInfoMapper.select(
                 Arrays.asList("nid", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "src_user",
-                        "src_ip", "op_type", "gmt_create", "gmt_modified", "config_type", "ext_info", "encrypted_data_key"),
+                        "src_ip", "op_type", "gmt_create", "gmt_modified", "publish_type", "ext_info", "encrypted_data_key"),
                 Collections.singletonList("nid"));
         try {
             ConfigHistoryInfo historyInfo = jt.queryForObject(sqlFetchRows, new Object[] {nid},

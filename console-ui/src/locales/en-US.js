@@ -253,7 +253,7 @@ const I18N_CONF = {
     lastUpdateTime: 'Last Modified At',
     operator: 'Operator',
     operation: 'Operation',
-    configType: 'Config Type',
+    publishType: 'Publish Type',
     formal: 'Formal Version',
     gray: 'Gray Version',
     compare: 'Compare',

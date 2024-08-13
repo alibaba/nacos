@@ -58,7 +58,7 @@ public class ConfigHistoryInfo implements Serializable {
      */
     private String opType;
     
-    private String configType;
+    private String publishType;
     
     private String extraInfo;
     
@@ -140,12 +140,12 @@ public class ConfigHistoryInfo implements Serializable {
         this.opType = opType;
     }
     
-    public String getConfigType() {
-        return configType;
+    public String getPublishType() {
+        return publishType;
     }
     
-    public void setConfigType(String configType) {
-        this.configType = configType;
+    public void setPublishType(String publishType) {
+        this.publishType = publishType;
     }
     
     public String getExtraInfo() {
