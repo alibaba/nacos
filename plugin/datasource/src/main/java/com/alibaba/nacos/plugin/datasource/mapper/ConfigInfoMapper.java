@@ -28,6 +28,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * The mapper of config info.
@@ -384,6 +385,7 @@ public interface ConfigInfoMapper extends Mapper {
         final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
         final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
         final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
+        final String[] types = (String[]) context.getWhereParameter(FieldConstant.TYPE);
         
         final List<Object> paramList = new ArrayList<>();
         
@@ -406,6 +408,17 @@ public interface ConfigInfoMapper extends Mapper {
         if (!StringUtils.isBlank(content)) {
             where.append(" AND content LIKE ? ");
             paramList.add(content);
+        }
+        if (Objects.nonNull(types)) {
+            where.append(" AND type IN (");
+            for (int i = 0; i < types.length; i++) {
+                if (i != 0) {
+                    where.append(", ");
+                }
+                where.append('?');
+                paramList.add(types[i]);
+            }
+            where.append(") ");
         }
         return new MapperResult(sqlCountRows + where, paramList);
     }

@@ -30,6 +30,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * The mysql implementation of ConfigInfoMapper.
@@ -228,10 +229,11 @@ public class ConfigInfoMapperByMySql extends AbstractMapperByMysql implements Co
         final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
         final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
         final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
+        final String[] types = (String[]) context.getWhereParameter(FieldConstant.TYPE);
         
         List<Object> paramList = new ArrayList<>();
         
-        final String sqlFetchRows = "SELECT id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key FROM config_info";
+        final String sqlFetchRows = "SELECT id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key,type FROM config_info";
         StringBuilder where = new StringBuilder(" WHERE ");
         where.append(" tenant_id LIKE ? ");
         paramList.add(tenant);
@@ -252,6 +254,17 @@ public class ConfigInfoMapperByMySql extends AbstractMapperByMysql implements Co
         if (!StringUtils.isBlank(content)) {
             where.append(" AND content LIKE ? ");
             paramList.add(content);
+        }
+        if (Objects.nonNull(types)) {
+            where.append(" AND type IN (");
+            for (int i = 0; i < types.length; i++) {
+                if (i != 0) {
+                    where.append(", ");
+                }
+                where.append('?');
+                paramList.add(types[i]);
+            }
+            where.append(") ");
         }
         return new MapperResult(sqlFetchRows + where + " LIMIT " + context.getStartRow() + "," + context.getPageSize(),
                 paramList);

@@ -801,6 +801,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
         final String content = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("content");
         final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
+        final String configTypes = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_types");
         MapperResult sqlCountRows;
         MapperResult sqlFetchRows;
         
@@ -818,6 +819,9 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         }
         if (!StringUtils.isBlank(content)) {
             context.putWhereParameter(FieldConstant.CONTENT, generateLikeArgument(content));
+        }
+        if (!StringUtils.isBlank(configTypes)){
+            context.putWhereParameter(FieldConstant.TYPE, configTypes.split(","));
         }
         
         if (StringUtils.isNotBlank(configTags)) {

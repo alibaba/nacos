@@ -56,6 +56,16 @@ import TotalRender from '../../../components/Page/TotalRender';
 const { Item } = MenuButton;
 const { Panel } = Collapse;
 const configsTableSelected = new Map();
+const list = [
+  { value: 'text', label: 'TEXT' },
+  { value: 'json', label: 'JSON' },
+  { value: 'xml', label: 'XML' },
+  { value: 'yaml', label: 'YAML' },
+  { value: 'html', label: 'HTML' },
+  { value: 'properties', label: 'Properties' },
+  { value: 'toml', label: 'TOML' },
+];
+
 @connect(
   state => ({
     configurations: state.configuration.configurations,
@@ -102,6 +112,7 @@ class ConfigurationManagement extends React.Component {
       appName: this.appName,
       config_detail: getParams('configDetail') || '',
       config_tags: getParams('configTags') ? getParams('configTags').split(',') : [],
+      config_types: getParams('configTypes') ? getParams('config_types').split(',') : [],
       tagLst: getParams('tagList') ? getParams('tagList').split(',') : [],
       selectValue: [],
       loading: false,
@@ -280,6 +291,7 @@ class ConfigurationManagement extends React.Component {
       pageNo: prePageNo ? prePageNo : pageNo,
       pageSize: prePageSize ? prePageSize : this.state.pageSize,
       tenant: this.tenant,
+      config_types: this.state.config_types.join(','),
     };
     setParams('pageSize', null);
     setParams('pageNo', null);
@@ -483,6 +495,17 @@ class ConfigurationManagement extends React.Component {
     }
   }
 
+  setConfigTypes(value) {
+    this.setState({
+      config_types: value || [],
+    });
+    if (!value) {
+      setParams('config_types', '');
+    } else {
+      setParams('config_types', value.join(','));
+    }
+  }
+
   /**
    * groupId赋值
    */
@@ -553,6 +576,7 @@ class ConfigurationManagement extends React.Component {
     this.setAppName('');
     this.setConfigTags([]);
     this.setConfigDetail('');
+    this.setConfigTypes([]);
   };
 
   changeAdvancedQuery = () => {
@@ -1304,6 +1328,22 @@ class ConfigurationManagement extends React.Component {
                 </Form.Item>
                 <Form.Item
                   style={this.state.isAdvancedQuery ? {} : { display: 'none' }}
+                  label={locale.configType}
+                >
+                  <Select
+                    style={{ width: 200 }}
+                    size="medium"
+                    hasArrow
+                    mode="tag"
+                    placeholder={locale.pleaseChooseConfigType}
+                    dataSource={list}
+                    value={this.state.config_types}
+                    onChange={this.setConfigTypes.bind(this)}
+                    hasClear
+                  />
+                </Form.Item>
+                <Form.Item
+                  style={this.state.isAdvancedQuery ? {} : { display: 'none' }}
                   label={locale.configDetailLabel}
                 >
                   <Input
@@ -1329,6 +1369,7 @@ class ConfigurationManagement extends React.Component {
             >
               <Table.Column sortable={true} title={'Data Id'} dataIndex={'dataId'} />
               <Table.Column sortable={true} title={'Group'} dataIndex={'group'} />
+              <Table.Column sortable={true} title={locale.configType} dataIndex={'type'} />
               {!this.inApp && (
                 <Table.Column sortable={true} title={locale.application} dataIndex="appName" />
               )}

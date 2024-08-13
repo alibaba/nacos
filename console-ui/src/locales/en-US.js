@@ -312,6 +312,8 @@ const I18N_CONF = {
     app1: 'Enter App Name\n',
     tags: 'Tags',
     pleaseEnterTag: 'Enter Tag',
+    configType: 'Config Type',
+    pleaseChooseConfigType: 'Choose Config Type',
     configDetailLabel: 'DetailSearch',
     configDetailH: 'search config detail',
     application: 'Application',

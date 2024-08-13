@@ -309,6 +309,8 @@ const I18N_CONF = {
     app1: '请输入应用名',
     tags: '标签',
     pleaseEnterTag: '请输入标签',
+    configType: '配置格式',
+    pleaseChooseConfigType: '请选择配置类型',
     configDetailLabel: '配置项搜索',
     configDetailH: '搜索具体配置项',
     application: '归属应用',
