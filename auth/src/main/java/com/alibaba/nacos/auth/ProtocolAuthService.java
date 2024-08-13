@@ -50,6 +50,14 @@ public interface ProtocolAuthService<R> {
     boolean enableAuth(Secured secured);
     
     /**
+     * Determine whether to enable authentication according to secured information.
+     *
+     * @param secured secured information
+     * @return {@code true} if auth is open, otherwise {@code false}
+     */
+    boolean authEnabled(Secured secured);
+    
+    /**
      * Parse resource from protocol request and secured annotation.
      *
      * @param request protocol request

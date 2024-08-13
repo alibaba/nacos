@@ -115,6 +115,10 @@ public class AuthFilter implements Filter {
                 }
                 
                 Secured secured = method.getAnnotation(Secured.class);
+                if (!protocolAuthService.authEnabled(secured)) {
+                    chain.doFilter(request, response);
+                    return;
+                }
                 if (!protocolAuthService.enableAuth(secured)) {
                     chain.doFilter(request, response);
                     return;

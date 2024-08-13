@@ -58,10 +58,16 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     private static Boolean cachingEnabled = null;
     
     /**
-     * Whether auth enabled.
+     * Whether server auth enabled.
      */
     @Value("${" + Constants.Auth.NACOS_CORE_AUTH_ENABLED + ":false}")
     private boolean authEnabled;
+    
+    /**
+     * Whether console auth enabled.
+     */
+    @Value("${" + Constants.Auth.NACOS_CORE_AUTH_CONSOLE_ENABLED + ":true}")
+    private boolean consoleAuthEnabled;
     
     /**
      * Which auth system is in use.
@@ -157,9 +163,27 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
      * @return auth function is open
      */
     public boolean isAuthEnabled() {
-        return authEnabled;
+        return consoleAuthEnabled || authEnabled;
     }
     
+    /**
+     * console auth function is open.
+     *
+     * @return console auth function is open
+     */
+    public boolean isConsoleAuthEnabled() {
+        return consoleAuthEnabled;
+    }
+    
+    /**
+     * server auth function is open.
+     *
+     * @return server auth function is open
+     */
+    public boolean isServerAuthEnabled() {
+        return authEnabled;
+    }
+
     /**
      * Whether permission information can be cached.
      *
@@ -189,6 +213,7 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     public void onEvent(ServerConfigChangeEvent event) {
         try {
             authEnabled = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLED, Boolean.class, false);
+            consoleAuthEnabled = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_CONSOLE_ENABLED, Boolean.class, true);
             cachingEnabled = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_CACHING_ENABLED, Boolean.class, true);
             serverIdentityKey = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "");
             serverIdentityValue = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "");

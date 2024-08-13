@@ -69,6 +69,9 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
                 }
                 
                 Secured secured = method.getAnnotation(Secured.class);
+                if (!protocolAuthService.authEnabled(secured)) {
+                    return null;
+                }
                 if (!protocolAuthService.enableAuth(secured)) {
                     return null;
                 }
