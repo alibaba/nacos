@@ -146,4 +146,8 @@ public class KeyBuilder {
     public static boolean isDatumCacheFile(String key) {
         return key.startsWith(RAFT_CACHE_FILE_PREFIX);
     }
+    
+    public static boolean isValidKey(String key) {
+        return matchSwitchKey(key) || matchServiceMetaKey(key) || matchEphemeralInstanceListKey(key) || matchInstanceListKey(key);
+    }
 }
