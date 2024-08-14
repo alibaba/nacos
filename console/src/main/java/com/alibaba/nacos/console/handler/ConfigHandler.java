@@ -18,14 +18,23 @@
 package com.alibaba.nacos.console.handler;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
+import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
+import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
+import com.alibaba.nacos.persistence.model.Page;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Interface for handling configuration operations.
@@ -34,53 +43,28 @@ import java.io.IOException;
  */
 public interface ConfigHandler {
     
-    /**
-     * Fetches the configuration.
-     *
-     * @param request  the HttpServletRequest object
-     * @param response the HttpServletResponse object
-     * @param dataId   the data ID
-     * @param group    the group
-     * @param tenant   the tenant
-     * @param tag      the tag
-     * @throws IOException      if an I/O error occurs
-     * @throws ServletException if a servlet error occurs
-     * @throws NacosException   if a Nacos error occurs
-     */
-    void getConfig(HttpServletRequest request, HttpServletResponse response, String dataId, String group, String tenant,
-            String tag) throws IOException, ServletException, NacosException;
+    void getConfig(HttpServletRequest request, HttpServletResponse response, String dataId, String group,
+            String namespaceId, String tag, String isNotify, String clientIp, boolean isV2)
+            throws IOException, ServletException, NacosException;
     
-    /**
-     * Publish a configuration.
-     *
-     * @return true if the configuration is published successfully, false otherwise
-     * @throws NacosException in case of any errors
-     */
-    boolean publishConfig(ConfigForm configForm, ConfigRequestInfo configRequestInfo, String encryptedDataKey) throws NacosException;
+    ConfigAllInfo detailConfigInfo(String dataId, String group, String namespaceId) throws NacosException;
     
-    /**
-     * Delete a configuration.
-     *
-     * @param request  the HttpServletRequest object
-     * @param response the HttpServletResponse object
-     * @param dataId   the data ID
-     * @param group    the group
-     * @param tenant   the tenant
-     * @param tag      the tag
-     * @return true if the configuration is deleted successfully, false otherwise
-     * @throws NacosException in case of any errors
-     */
-    boolean deleteConfig(HttpServletRequest request, HttpServletResponse response, String dataId, String group,
-            String tenant, String tag) throws NacosException;
+    Boolean publishConfig(ConfigForm configForm, ConfigRequestInfo configRequestInfo) throws NacosException;
     
-    /**
-     * Fetch detailed configuration information.
-     *
-     * @param dataId the data ID
-     * @param group  the group
-     * @param tenant the tenant
-     * @return the detailed configuration information
-     * @throws NacosException in case of any errors
-     */
-    ConfigAllInfo detailConfigInfo(String dataId, String group, String tenant) throws NacosException;
+    Boolean deleteConfig(String dataId, String group, String namespaceId, String tag, String clientIp,
+            String srcUser) throws NacosException;
+    
+    Boolean deleteConfigs(List<Long> ids, String clientIp, String srcUser);
+    
+    Page<ConfigInfo> searchConfigByDetails(String search, int pageNo, int pageSize, String dataId, String group,
+            String namespaceId, Map<String, Object> configAdvanceInfo) throws NacosException;
+    
+    GroupkeyListenserStatus getListeners(String dataId, String group, String namespaceId, int sampleTime)
+            throws Exception;
+    
+    RestResult<Map<String, Object>> importAndPublishConfig(String srcUser, String namespaceId, SameConfigPolicy policy,
+            MultipartFile file, String srcIp, String requestIpApp) throws NacosException;
+    
+    RestResult<Map<String, Object>> cloneConfig(String srcUser, String namespaceId,
+            List<SameNamespaceCloneConfigBean> configBeansList, SameConfigPolicy policy, String srcIp, String requestIpApp) throws NacosException;
 }
