@@ -18,23 +18,43 @@ package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.naming.consistency.ConsistencyService;
+import com.alibaba.nacos.common.utils.TypeUtils;
+import com.alibaba.nacos.consistency.SerializeFactory;
+import com.alibaba.nacos.consistency.Serializer;
+import com.alibaba.nacos.consistency.cp.RequestProcessor4CP;
+import com.alibaba.nacos.consistency.entity.ReadRequest;
+import com.alibaba.nacos.consistency.entity.Response;
+import com.alibaba.nacos.consistency.entity.WriteRequest;
+import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
+import com.alibaba.nacos.core.distributed.ProtocolManager;
+import com.alibaba.nacos.core.exception.ErrorCode;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
-import com.alibaba.nacos.naming.consistency.RecordListener;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.alibaba.nacos.naming.consistency.persistent.impl.BatchReadResponse;
+import com.alibaba.nacos.naming.consistency.persistent.impl.BatchWriteRequest;
+import com.alibaba.nacos.naming.consistency.persistent.impl.OldDataOperation;
+import com.alibaba.nacos.naming.pojo.Record;
+import com.alibaba.nacos.sys.utils.DiskUtils;
+import com.google.protobuf.ByteString;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Switch manager.
@@ -43,27 +63,36 @@ import java.util.concurrent.locks.ReentrantLock;
  * @since 1.0.0
  */
 @Component
-public class SwitchManager implements RecordListener<SwitchDomain> {
+public class SwitchManager extends RequestProcessor4CP {
     
-    @Autowired
-    private SwitchDomain switchDomain;
+    private final SwitchDomain switchDomain;
     
-    @Resource(name = "persistentConsistencyServiceDelegate")
-    private ConsistencyService consistencyService;
+    private final ProtocolManager protocolManager;
     
-    ReentrantLock lock = new ReentrantLock();
+    private final ReentrantReadWriteLock raftLock;
     
-    /**
-     * Init switch manager.
-     */
-    @PostConstruct
-    public void init() {
-        
+    private final ReentrantLock requestLock;
+    
+    private final Serializer serializer;
+    
+    private final SwitchDomainSnapshotOperation snapshotOperation;
+    
+    private final File dataFile;
+    
+    public SwitchManager(SwitchDomain switchDomain, ProtocolManager protocolManager) {
+        this.switchDomain = switchDomain;
+        this.protocolManager = protocolManager;
+        this.raftLock = new ReentrantReadWriteLock();
+        this.requestLock = new ReentrantLock();
+        this.serializer = SerializeFactory.getSerializer("JSON");
+        this.snapshotOperation = new SwitchDomainSnapshotOperation(this.raftLock, this, this.serializer);
+        this.dataFile = Paths.get(UtilsAndCommons.DATA_BASE_DIR, "data", KeyBuilder.getSwitchDomainKey()).toFile();
         try {
-            consistencyService.listen(KeyBuilder.getSwitchDomainKey(), this);
-        } catch (NacosException e) {
-            Loggers.SRV_LOG.error("listen switch service failed.", e);
+            DiskUtils.forceMkdir(this.dataFile.getParent());
+        } catch (IOException e) {
+            Loggers.RAFT.error("Init Switch Domain directory failed: ", e);
         }
+        protocolManager.getCpProtocol().addRequestProcessors(Collections.singletonList(this));
     }
     
     /**
@@ -76,22 +105,15 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
      */
     public void update(String entry, String value, boolean debug) throws Exception {
         
-        lock.lock();
+        this.requestLock.lock();
         try {
             
-            Datum datum = consistencyService.get(KeyBuilder.getSwitchDomainKey());
-            SwitchDomain switchDomain;
-            
-            if (datum != null && datum.value != null) {
-                switchDomain = (SwitchDomain) datum.value;
-            } else {
-                switchDomain = this.switchDomain.clone();
-            }
+            SwitchDomain tempSwitchDomain = this.switchDomain.clone();
             
             if (SwitchEntry.BATCH.equals(entry)) {
                 //batch update
                 SwitchDomain dom = JacksonUtils.toObj(value, SwitchDomain.class);
-                dom.setEnableStandalone(switchDomain.isEnableStandalone());
+                dom.setEnableStandalone(tempSwitchDomain.isEnableStandalone());
                 if (dom.getHttpHealthParams().getMin() < SwitchDomain.HttpHealthParams.MIN_MIN
                         || dom.getTcpHealthParams().getMin() < SwitchDomain.HttpHealthParams.MIN_MIN) {
                     
@@ -110,7 +132,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                     throw new IllegalArgumentException("malformed factor");
                 }
                 
-                switchDomain = dom;
+                tempSwitchDomain = dom;
             }
             
             if (entry.equals(SwitchEntry.DISTRO_THRESHOLD)) {
@@ -118,12 +140,12 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                 if (threshold <= 0) {
                     throw new IllegalArgumentException("distroThreshold can not be zero or negative: " + threshold);
                 }
-                switchDomain.setDistroThreshold(threshold);
+                tempSwitchDomain.setDistroThreshold(threshold);
             }
             
             if (entry.equals(SwitchEntry.CLIENT_BEAT_INTERVAL)) {
                 long clientBeatInterval = Long.parseLong(value);
-                switchDomain.setClientBeatInterval(clientBeatInterval);
+                tempSwitchDomain.setClientBeatInterval(clientBeatInterval);
             }
             
             if (entry.equals(SwitchEntry.PUSH_VERSION)) {
@@ -137,13 +159,13 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                 }
                 
                 if (StringUtils.equals(SwitchEntry.CLIENT_JAVA, type)) {
-                    switchDomain.setPushJavaVersion(version);
+                    tempSwitchDomain.setPushJavaVersion(version);
                 } else if (StringUtils.equals(SwitchEntry.CLIENT_PYTHON, type)) {
-                    switchDomain.setPushPythonVersion(version);
+                    tempSwitchDomain.setPushPythonVersion(version);
                 } else if (StringUtils.equals(SwitchEntry.CLIENT_C, type)) {
-                    switchDomain.setPushCVersion(version);
+                    tempSwitchDomain.setPushCVersion(version);
                 } else if (StringUtils.equals(SwitchEntry.CLIENT_GO, type)) {
-                    switchDomain.setPushGoVersion(version);
+                    tempSwitchDomain.setPushGoVersion(version);
                 } else {
                     throw new IllegalArgumentException("unsupported client type: " + type);
                 }
@@ -156,7 +178,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                     throw new IllegalArgumentException("min cache time for http or tcp is too small(<10000)");
                 }
                 
-                switchDomain.setDefaultPushCacheMillis(cacheMillis);
+                tempSwitchDomain.setDefaultPushCacheMillis(cacheMillis);
             }
             
             // extremely careful while modifying this, cause it will affect all clients without pushing enabled
@@ -167,27 +189,27 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                     throw new IllegalArgumentException("min default cache time  is too small(<1000)");
                 }
                 
-                switchDomain.setDefaultCacheMillis(cacheMillis);
+                tempSwitchDomain.setDefaultCacheMillis(cacheMillis);
             }
             
             if (entry.equals(SwitchEntry.MASTERS)) {
                 List<String> masters = Arrays.asList(value.split(","));
-                switchDomain.setMasters(masters);
+                tempSwitchDomain.setMasters(masters);
             }
             
             if (entry.equals(SwitchEntry.DISTRO)) {
                 boolean enabled = Boolean.parseBoolean(value);
-                switchDomain.setDistroEnabled(enabled);
+                tempSwitchDomain.setDistroEnabled(enabled);
             }
             
             if (entry.equals(SwitchEntry.CHECK)) {
                 boolean enabled = Boolean.parseBoolean(value);
-                switchDomain.setHealthCheckEnabled(enabled);
+                tempSwitchDomain.setHealthCheckEnabled(enabled);
             }
             
             if (entry.equals(SwitchEntry.PUSH_ENABLED)) {
                 boolean enabled = Boolean.parseBoolean(value);
-                switchDomain.setPushEnabled(enabled);
+                tempSwitchDomain.setPushEnabled(enabled);
             }
             
             if (entry.equals(SwitchEntry.SERVICE_STATUS_SYNC_PERIOD)) {
@@ -197,7 +219,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                     throw new IllegalArgumentException("serviceStatusSynchronizationPeriodMillis is too small(<5000)");
                 }
                 
-                switchDomain.setServiceStatusSynchronizationPeriodMillis(millis);
+                tempSwitchDomain.setServiceStatusSynchronizationPeriodMillis(millis);
             }
             
             if (entry.equals(SwitchEntry.SERVER_STATUS_SYNC_PERIOD)) {
@@ -207,25 +229,25 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                     throw new IllegalArgumentException("serverStatusSynchronizationPeriodMillis is too small(<15000)");
                 }
                 
-                switchDomain.setServerStatusSynchronizationPeriodMillis(millis);
+                tempSwitchDomain.setServerStatusSynchronizationPeriodMillis(millis);
             }
             
             if (entry.equals(SwitchEntry.HEALTH_CHECK_TIMES)) {
                 int times = Integer.parseInt(value);
                 
-                switchDomain.setCheckTimes(times);
+                tempSwitchDomain.setCheckTimes(times);
             }
             
             if (entry.equals(SwitchEntry.DISABLE_ADD_IP)) {
                 boolean disableAddIp = Boolean.parseBoolean(value);
                 
-                switchDomain.setDisableAddIP(disableAddIp);
+                tempSwitchDomain.setDisableAddIP(disableAddIp);
             }
             
             if (entry.equals(SwitchEntry.SEND_BEAT_ONLY)) {
                 boolean sendBeatOnly = Boolean.parseBoolean(value);
                 
-                switchDomain.setSendBeatOnly(sendBeatOnly);
+                tempSwitchDomain.setSendBeatOnly(sendBeatOnly);
             }
             
             if (entry.equals(SwitchEntry.LIMITED_URL_MAP)) {
@@ -253,14 +275,14 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                         
                     }
                     
-                    switchDomain.setLimitedUrlMap(limitedUrlMap);
+                    tempSwitchDomain.setLimitedUrlMap(limitedUrlMap);
                 }
             }
             
             if (entry.equals(SwitchEntry.ENABLE_STANDALONE)) {
                 
                 if (!StringUtils.isNotEmpty(value)) {
-                    switchDomain.setEnableStandalone(Boolean.parseBoolean(value));
+                    tempSwitchDomain.setEnableStandalone(Boolean.parseBoolean(value));
                 }
             }
             
@@ -269,33 +291,33 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                 if (Constants.NULL_STRING.equals(status)) {
                     status = StringUtils.EMPTY;
                 }
-                switchDomain.setOverriddenServerStatus(status);
+                tempSwitchDomain.setOverriddenServerStatus(status);
             }
             
             if (entry.equals(SwitchEntry.DEFAULT_INSTANCE_EPHEMERAL)) {
-                switchDomain.setDefaultInstanceEphemeral(Boolean.parseBoolean(value));
+                tempSwitchDomain.setDefaultInstanceEphemeral(Boolean.parseBoolean(value));
             }
             
             if (entry.equals(SwitchEntry.DISTRO_SERVER_EXPIRED_MILLIS)) {
-                switchDomain.setDistroServerExpiredMillis(Long.parseLong(value));
+                tempSwitchDomain.setDistroServerExpiredMillis(Long.parseLong(value));
             }
             
             if (entry.equals(SwitchEntry.LIGHT_BEAT_ENABLED)) {
-                switchDomain.setLightBeatEnabled(ConvertUtils.toBoolean(value));
+                tempSwitchDomain.setLightBeatEnabled(ConvertUtils.toBoolean(value));
             }
             
             if (entry.equals(SwitchEntry.AUTO_CHANGE_HEALTH_CHECK_ENABLED)) {
-                switchDomain.setAutoChangeHealthCheckEnabled(ConvertUtils.toBoolean(value));
+                tempSwitchDomain.setAutoChangeHealthCheckEnabled(ConvertUtils.toBoolean(value));
             }
             
             if (debug) {
-                update(switchDomain);
+                update(tempSwitchDomain);
             } else {
-                consistencyService.put(KeyBuilder.getSwitchDomainKey(), switchDomain);
+                updateWithConsistency(tempSwitchDomain);
             }
             
         } finally {
-            lock.unlock();
+            this.requestLock.unlock();
         }
         
     }
@@ -340,27 +362,145 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
         switchDomain.setLightBeatEnabled(newSwitchDomain.isLightBeatEnabled());
     }
     
+    private void updateWithConsistency(SwitchDomain tempSwitchDomain) throws NacosException {
+        try {
+            final BatchWriteRequest req = new BatchWriteRequest();
+            String switchDomainKey = KeyBuilder.getSwitchDomainKey();
+            Datum datum = Datum.createDatum(switchDomainKey, tempSwitchDomain);
+            req.append(ByteUtils.toBytes(switchDomainKey), serializer.serialize(datum));
+            WriteRequest operationLog = WriteRequest.newBuilder().setGroup(group())
+                    .setOperation(OldDataOperation.Write.getDesc()).setData(ByteString.copyFrom(serializer.serialize(req)))
+                    .build();
+            protocolManager.getCpProtocol().write(operationLog);
+        } catch (Exception e) {
+            Loggers.RAFT.error("Submit switch domain failed: ", e);
+            throw new NacosException(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage());
+        }
+    }
+    
     public SwitchDomain getSwitchDomain() {
         return switchDomain;
     }
     
     @Override
-    public boolean interests(String key) {
-        return KeyBuilder.matchSwitchKey(key);
+    public List<SnapshotOperation> loadSnapshotOperate() {
+        return Collections.singletonList(snapshotOperation);
+    }
+    
+    /**
+     * Load Snapshot from snapshot dir.
+     *
+     * @param snapshotPath snapshot dir
+     */
+    public void loadSnapshot(String snapshotPath) {
+        this.raftLock.writeLock().lock();
+        try {
+            File srcDir = Paths.get(snapshotPath).toFile();
+            // If snapshot path is non-exist, means snapshot is empty
+            if (srcDir.exists()) {
+                // First clean up the local file information, before the file copy
+                String baseDir = this.dataFile.getParent();
+                DiskUtils.deleteDirThenMkdir(baseDir);
+                File descDir = Paths.get(baseDir).toFile();
+                DiskUtils.copyDirectory(srcDir, descDir);
+                if (!this.dataFile.exists()) {
+                    return;
+                }
+                byte[] snapshotData = DiskUtils.readFileBytes(this.dataFile);
+                final Datum datum = serializer.deserialize(snapshotData, getDatumType());
+                final Record value = null != datum ? datum.value : null;
+                if (!(value instanceof SwitchDomain)) {
+                    return;
+                }
+                update((SwitchDomain) value);
+            }
+        } catch (IOException e) {
+            throw new NacosRuntimeException(ErrorCode.IOCopyDirError.getCode(), e);
+        } finally {
+            this.raftLock.writeLock().unlock();
+        }
+    }
+    
+    /**
+     * Dump data from data dir to snapshot dir.
+     *
+     * @param backupPath snapshot dir
+     */
+    public void dumpSnapshot(String backupPath) {
+        this.raftLock.writeLock().lock();
+        try {
+            File srcDir = Paths.get(this.dataFile.getParent()).toFile();
+            File descDir = Paths.get(backupPath).toFile();
+            DiskUtils.copyDirectory(srcDir, descDir);
+        } catch (IOException e) {
+            throw new NacosRuntimeException(ErrorCode.IOCopyDirError.getCode(), e);
+        } finally {
+            this.raftLock.writeLock().unlock();
+        }
     }
     
     @Override
-    public boolean matchUnlistenKey(String key) {
-        return KeyBuilder.matchSwitchKey(key);
+    public Response onRequest(ReadRequest request) {
+        this.raftLock.readLock().lock();
+        try {
+            final List<byte[]> keys = serializer.deserialize(request.getData().toByteArray(),
+                    TypeUtils.parameterize(List.class, byte[].class));
+            if (isNotSwitchDomainKey(keys)) {
+                return Response.newBuilder().setSuccess(false).setErrMsg("not switch domain key").build();
+            }
+            Datum datum = Datum.createDatum(KeyBuilder.getSwitchDomainKey(), switchDomain);
+            final BatchReadResponse response = new BatchReadResponse();
+            response.append(ByteUtils.toBytes(KeyBuilder.getSwitchDomainKey()), serializer.serialize(datum));
+            return Response.newBuilder().setSuccess(true).setData(ByteString.copyFrom(serializer.serialize(response)))
+                    .build();
+        } catch (Exception e) {
+            Loggers.RAFT.warn("On read switch domain failed, ", e);
+            return Response.newBuilder().setSuccess(false).setErrMsg(e.getMessage()).build();
+        } finally {
+            this.raftLock.readLock().unlock();
+        }
     }
     
     @Override
-    public void onChange(String key, SwitchDomain domain) throws Exception {
-        update(domain);
+    public Response onApply(WriteRequest log) {
+        this.raftLock.writeLock().lock();
+        try {
+            BatchWriteRequest bwRequest = serializer.deserialize(log.getData().toByteArray(), BatchWriteRequest.class);
+            if (isNotSwitchDomainKey(bwRequest.getKeys())) {
+                return Response.newBuilder().setSuccess(false).setErrMsg("not switch domain key").build();
+            }
+            final Datum datum = serializer.deserialize(bwRequest.getValues().get(0), getDatumType());
+            final Record value = null != datum ? datum.value : null;
+            if (!(value instanceof SwitchDomain)) {
+                return Response.newBuilder().setSuccess(false).setErrMsg("datum is not switch domain").build();
+            }
+            DiskUtils.touch(dataFile);
+            DiskUtils.writeFile(dataFile, bwRequest.getValues().get(0), false);
+            SwitchDomain switchDomain = (SwitchDomain) value;
+            update(switchDomain);
+            return Response.newBuilder().setSuccess(true).build();
+        } catch (Exception e) {
+            Loggers.RAFT.warn("On apply switch domain failed, ", e);
+            return Response.newBuilder().setSuccess(false).setErrMsg(e.getMessage()).build();
+        } finally {
+            this.raftLock.writeLock().unlock();
+        }
     }
     
     @Override
-    public void onDelete(String key) throws Exception {
+    public String group() {
+        return com.alibaba.nacos.naming.constants.Constants.NAMING_PERSISTENT_SERVICE_GROUP;
+    }
     
+    private boolean isNotSwitchDomainKey(List<byte[]> keys) {
+        if (1 != keys.size()) {
+            return false;
+        }
+        String keyString = new String(keys.get(0));
+        return !KeyBuilder.getSwitchDomainKey().equals(keyString);
+    }
+    
+    private Type getDatumType() {
+        return TypeUtils.parameterize(Datum.class, SwitchDomain.class);
     }
 }
