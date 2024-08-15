@@ -59,7 +59,7 @@
             <artifactId>nacos-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.alipay.sofa</groupId>
+            <groupId>com.caucho</groupId>
             <artifactId>hessian</artifactId>
         </dependency>
         <dependency>

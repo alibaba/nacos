@@ -150,14 +150,14 @@
                                             <exclude>META-INF/*.RSA</exclude>
                                         </excludes>
                                     </filter>
-                                    <filter>
-                                        <artifact>io.grpc:grpc-netty-shaded</artifact>
-                                        <excludes>
-                                            <exclude>
-                                                META-INF/native/*.*
-                                            </exclude>
-                                        </excludes>
-                                    </filter>
+                                    <!-- <filter> -->
+                                    <!--     <artifact>io.grpc:grpc-netty-shaded</artifact> -->
+                                    <!--     <excludes> -->
+                                    <!--         <exclude> -->
+                                    <!--             META-INF/native/*.* -->
+                                    <!--         </exclude> -->
+                                    <!--     </excludes> -->
+                                    <!-- </filter> -->
                                     <filter>
                                         <artifact>com.google.*:*</artifact>
                                         <excludes>
