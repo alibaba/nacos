@@ -6,6 +6,10 @@
   "name":"[Lcom.sun.management.internal.DiagnosticCommandInfo;"
 },
 {
+  "name":"com.alibaba.nacos.Nacos",
+  "methods":[{"name":"main","parameterTypes":["java.lang.String[]"] }]
+},
+{
   "name":"com.sun.management.internal.DiagnosticCommandArgumentInfo",
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","java.lang.String","boolean","boolean","boolean","int"] }]
 },

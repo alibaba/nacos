@@ -20,6 +20,7 @@ import org.springframework.aot.hint.MemberCategory;
 import org.springframework.aot.hint.RuntimeHints;
 import org.springframework.aot.hint.RuntimeHintsRegistrar;
 
+import java.io.File;
 import java.io.Serializable;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -77,6 +78,11 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
     
     // region SQL
     private final Class<?>[] sqlClasses = {
+            org.apache.derby.impl.store.raw.data.CachedPage.class,
+            org.apache.derby.catalog.types.TypesImplInstanceGetter.class,
+            org.apache.derby.impl.services.uuid.BasicUUIDGetter.class,
+            org.apache.derby.iapi.types.DTSClassInfo.class,
+            org.apache.derby.iapi.services.loader.ClassInfo.class,
             org.apache.derby.impl.io.DirStorageFactory.class,
             org.apache.derby.impl.store.raw.log.LogRecord.class,
             org.apache.derby.impl.store.raw.xact.XactId.class,
@@ -452,7 +458,8 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             ".*\\.woff$",
             ".*\\.woff2$",
             ".*\\.ttf$",
-            "org/apache/derby/modules.properties",
+            "org" + File.separator + "apache" + File.separator
+                    + "derby" + File.separator + "modules.properties",
             "application.properties",
     };
     

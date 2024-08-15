@@ -75,6 +75,8 @@
   }, {
     "pattern":"\\QMETA-INF/services/com.alipay.sofa.jraft.rpc.RaftRpcFactory\\E"
   }, {
+    "pattern":"\\QMETA-INF/services/com.alipay.sofa.jraft.util.JRaftSignalHandler\\E"
+  }, {
     "pattern":"\\QMETA-INF/services/com.alipay.sofa.jraft.util.timer.RaftTimerFactory\\E"
   }, {
     "pattern":"\\QMETA-INF/services/io.grpc.LoadBalancerProvider\\E"
@@ -958,6 +960,8 @@
     "pattern":"\\Qjavax/sql/CommonDataSource.class\\E"
   }, {
     "pattern":"\\Qjavax/sql/DataSource.class\\E"
+  }, {
+    "pattern":"\\Qlibrocksdbjni-osx-arm64.jnilib\\E"
   }, {
     "pattern":"\\Qlibrocksdbjni-win64.dll\\E"
   }, {
@@ -2599,6 +2603,8 @@
   }, {
     "pattern":"\\Qstatic/console-ui/public/js/merge.js\\E"
   }, {
+    "pattern":"\\Qstatic/console-ui/public/js/vs/base/worker/workerMain.js\\E"
+  }, {
     "pattern":"\\Qstatic/console-ui/public/js/vs/editor/editor.main.css\\E"
   }, {
     "pattern":"\\Qstatic/console-ui/public/js/vs/editor/editor.main.js\\E"
@@ -2620,6 +2626,8 @@
     "pattern":"java.base:\\Qjava/lang/Object.class\\E"
   }, {
     "pattern":"java.base:\\Qjava/util/function/BiPredicate.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjdk/internal/icu/impl/data/icudt67b/nfc.nrm\\E"
   }, {
     "pattern":"java.management:\\Qcom/sun/jmx/mbeanserver/JmxMBeanServer.class\\E"
   }, {
