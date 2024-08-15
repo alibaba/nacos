@@ -53,6 +53,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -68,7 +69,9 @@ public class SwitchManager extends RequestProcessor4CP {
     
     private final ProtocolManager protocolManager;
     
-    private final ReentrantReadWriteLock lock;
+    private final ReentrantReadWriteLock raftLock;
+    
+    private final ReentrantLock requestLock;
     
     private final Serializer serializer;
     
@@ -79,9 +82,10 @@ public class SwitchManager extends RequestProcessor4CP {
     public SwitchManager(SwitchDomain switchDomain, ProtocolManager protocolManager) {
         this.switchDomain = switchDomain;
         this.protocolManager = protocolManager;
-        this.lock = new ReentrantReadWriteLock();
+        this.raftLock = new ReentrantReadWriteLock();
+        this.requestLock = new ReentrantLock();
         this.serializer = SerializeFactory.getSerializer("JSON");
-        this.snapshotOperation = new SwitchDomainSnapshotOperation(this.lock, this, this.serializer);
+        this.snapshotOperation = new SwitchDomainSnapshotOperation(this.raftLock, this, this.serializer);
         this.dataFile = Paths.get(UtilsAndCommons.DATA_BASE_DIR, "data", KeyBuilder.getSwitchDomainKey()).toFile();
         try {
             DiskUtils.forceMkdir(this.dataFile.getParent());
@@ -101,7 +105,7 @@ public class SwitchManager extends RequestProcessor4CP {
      */
     public void update(String entry, String value, boolean debug) throws Exception {
         
-        this.lock.writeLock().lock();
+        this.requestLock.lock();
         try {
             
             SwitchDomain tempSwitchDomain = this.switchDomain.clone();
@@ -313,7 +317,7 @@ public class SwitchManager extends RequestProcessor4CP {
             }
             
         } finally {
-            this.lock.writeLock().unlock();
+            this.requestLock.unlock();
         }
         
     }
@@ -389,7 +393,7 @@ public class SwitchManager extends RequestProcessor4CP {
      * @param snapshotPath snapshot dir
      */
     public void loadSnapshot(String snapshotPath) {
-        this.lock.writeLock().lock();
+        this.raftLock.writeLock().lock();
         try {
             File srcDir = Paths.get(snapshotPath).toFile();
             // If snapshot path is non-exist, means snapshot is empty
@@ -413,7 +417,7 @@ public class SwitchManager extends RequestProcessor4CP {
         } catch (IOException e) {
             throw new NacosRuntimeException(ErrorCode.IOCopyDirError.getCode(), e);
         } finally {
-            this.lock.writeLock().unlock();
+            this.raftLock.writeLock().unlock();
         }
     }
     
@@ -423,7 +427,7 @@ public class SwitchManager extends RequestProcessor4CP {
      * @param backupPath snapshot dir
      */
     public void dumpSnapshot(String backupPath) {
-        this.lock.writeLock().lock();
+        this.raftLock.writeLock().lock();
         try {
             File srcDir = Paths.get(this.dataFile.getParent()).toFile();
             File descDir = Paths.get(backupPath).toFile();
@@ -431,13 +435,13 @@ public class SwitchManager extends RequestProcessor4CP {
         } catch (IOException e) {
             throw new NacosRuntimeException(ErrorCode.IOCopyDirError.getCode(), e);
         } finally {
-            this.lock.writeLock().unlock();
+            this.raftLock.writeLock().unlock();
         }
     }
     
     @Override
     public Response onRequest(ReadRequest request) {
-        this.lock.readLock().lock();
+        this.raftLock.readLock().lock();
         try {
             final List<byte[]> keys = serializer.deserialize(request.getData().toByteArray(),
                     TypeUtils.parameterize(List.class, byte[].class));
@@ -453,13 +457,13 @@ public class SwitchManager extends RequestProcessor4CP {
             Loggers.RAFT.warn("On read switch domain failed, ", e);
             return Response.newBuilder().setSuccess(false).setErrMsg(e.getMessage()).build();
         } finally {
-            this.lock.readLock().unlock();
+            this.raftLock.readLock().unlock();
         }
     }
     
     @Override
     public Response onApply(WriteRequest log) {
-        this.lock.writeLock().lock();
+        this.raftLock.writeLock().lock();
         try {
             BatchWriteRequest bwRequest = serializer.deserialize(log.getData().toByteArray(), BatchWriteRequest.class);
             if (isNotSwitchDomainKey(bwRequest.getKeys())) {
@@ -479,7 +483,7 @@ public class SwitchManager extends RequestProcessor4CP {
             Loggers.RAFT.warn("On apply switch domain failed, ", e);
             return Response.newBuilder().setSuccess(false).setErrMsg(e.getMessage()).build();
         } finally {
-            this.lock.writeLock().unlock();
+            this.raftLock.writeLock().unlock();
         }
     }
     
