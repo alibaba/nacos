@@ -16,9 +16,11 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
+import com.alibaba.nacos.common.utils.ArrayUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.mapper.ext.WhereBuilder;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
@@ -111,40 +113,31 @@ public interface ConfigTagsRelationMapper extends Mapper {
         final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
         final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
         final String[] tagArr = (String[]) context.getWhereParameter(FieldConstant.TAG_ARR);
+        final String[] types = (String[]) context.getWhereParameter(FieldConstant.TYPE);
         
-        List<Object> paramList = new ArrayList<>();
-        StringBuilder where = new StringBuilder(" WHERE ");
-        final String sqlCount = "SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id ";
+        WhereBuilder where = new WhereBuilder("SELECT count(*) FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id");
         
-        where.append(" a.tenant_id LIKE ? ");
-        paramList.add(tenantId);
-        if (!StringUtils.isBlank(dataId)) {
-            where.append(" AND a.data_id LIKE ? ");
-            paramList.add(dataId);
+        where.like("a.tenant_id", tenantId);
+        if (StringUtils.isNotBlank(dataId)) {
+            where.and().like("a.data_id", dataId);
         }
         if (StringUtils.isNotBlank(group)) {
-            where.append(" AND a.group_id LIKE ? ");
-            paramList.add(group);
+            where.and().like("a.group_id", group);
         }
         if (StringUtils.isNotBlank(appName)) {
-            where.append(" AND a.app_name = ? ");
-            paramList.add(appName);
+            where.and().eq("a.app_name", appName);
         }
         if (StringUtils.isNotBlank(content)) {
-            where.append(" AND a.content LIKE ? ");
-            paramList.add(content);
+            where.and().like("a.content", content);
+        }
+        if (!ArrayUtils.isEmpty(tagArr)) {
+            where.and().in("b.tag_name", tagArr);
+        }
+        if (!ArrayUtils.isEmpty(types)) {
+            where.and().in("a.type", types);
         }
         
-        where.append(" AND b.tag_name IN (");
-        for (int i = 0; i < tagArr.length; i++) {
-            if (i != 0) {
-                where.append(", ");
-            }
-            where.append('?');
-            paramList.add(tagArr[i]);
-        }
-        where.append(") ");
-        return new MapperResult(sqlCount + where, paramList);
+        return where.build();
     }
     
     /**

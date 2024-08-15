@@ -17,10 +17,12 @@
 package com.alibaba.nacos.config.server.service.repository.extrnal;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.constant.Symbols;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.constant.ParametersField;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
@@ -77,6 +79,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_ADVANCE_INFO_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_ALL_INFO_ROW_MAPPER;
@@ -836,6 +839,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
         final String content = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("content");
+        final String types = Optional.ofNullable(configAdvanceInfo).map(e -> (String) e.get(ParametersField.TYPES)).orElse(null);
         final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
         MapperResult sqlCountRows;
@@ -855,6 +859,10 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         }
         if (!StringUtils.isBlank(content)) {
             context.putWhereParameter(FieldConstant.CONTENT, generateLikeArgument(content));
+        }
+        if (StringUtils.isNotBlank(types)) {
+            String[] typesArr = types.split(Symbols.COMMA);
+            context.putWhereParameter(FieldConstant.TYPE, typesArr);
         }
         
         if (StringUtils.isNotBlank(configTags)) {
