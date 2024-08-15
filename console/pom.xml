@@ -105,6 +105,7 @@
                     <include>META-INF/**</include>
                     <include>static/**</include>
                     <include>application.properties</include>
+                    <include>org/apache/derby/modules.properties</include>
                     <include>**/*.proto</include>
                     <include>org/apache/derby/modules.properties</include>
                 </includes>
@@ -124,12 +125,6 @@
         </plugins>
     </reporting>
     
-    <properties>
-        <shared.native.hints>
-        
-        </shared.native.hints>
-    </properties>
-    
     <profiles>
         <profile>
             <id>native-os-windows</id>
@@ -140,8 +135,18 @@
             </activation>
             <properties>
                 <nacos.home>D:\Coding\Project\nacos</nacos.home>
-                <osResourcesHints>-H:IncludeResources='.*\.dll$'</osResourcesHints>
+                <hints.os.resources>-H:IncludeResources='.*\.dll$'</hints.os.resources>
             </properties>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <includes>
+                            <include>**/*.dll</include>
+                        </includes>
+                    </resource>
+                </resources>
+            </build>
         </profile>
         <profile>
             <id>native-os-unix</id>
@@ -151,9 +156,20 @@
                 </os>
             </activation>
             <properties>
-                <nacos.home>'/Users/dioxide/Project Cache/Cache/nacos'</nacos.home>
-                <osResourcesHints>-H:IncludeResources='.*\.so$ -H:IncludeResources='.*\.jnilib$'</osResourcesHints>
+                <nacos.home>/Users/dioxide/Project\ Cache/Cache/nacos</nacos.home>
+                <hints.os.resources>-H:IncludeResources='.*\.so$ -H:IncludeResources='.*\.jnilib$'</hints.os.resources>
             </properties>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <includes>
+                            <include>**/*.jnilib</include>
+                            <include>**/*.so</include>
+                        </includes>
+                    </resource>
+                </resources>
+            </build>
         </profile>
         <profile>
             <id>native</id>
@@ -165,7 +181,7 @@
                         <configuration>
                             <jvmArguments>
                                 -Dnacos.standalone=true
-                                -Dnacos.home=${nacos.home}
+                                -Dnacos.home="${nacos.home}"
                                 -agentlib:native-image-agent=config-merge-dir=src/main/resources/META-INF/native-image/com.alibaba.nacos/nacos-console/
                             </jvmArguments>
                             <image>
@@ -197,7 +213,7 @@
                                 --enable-url-protocols=http
                                 --enable-preview
                                 <!-- Resource Hints -->
-                                ${osResourcesHints}
+                                ${hints.os.resources}
                                 <!-- Runtime Hints -->
                                 --initialize-at-run-time=io.grpc.netty.shaded.io.netty.buffer.Unpooled
                                 --initialize-at-run-time=io.grpc.netty.shaded.io.netty.buffer.PoolArena

@@ -47,7 +47,8 @@ if [[ "${MODE}" == "standalone" ]]; then
     OPT="${OPT} -Dnacos.standalone=true"
 fi
 
-OPT="${OPT} -Dnacos.home='/Users/dioxide/Project Cache/Cache/nacos'"
+WORK_DIR="/Users/dioxide/Project\ Cache/Cache/nacos"
+OPT="${OPT} -Dnacos.home=${WORK_DIR}"
 
 if [[ "${MODE}" == "standalone" ]]; then
     echo "native nacos is starting with standalone"
@@ -55,6 +56,8 @@ else
     echo "native nacos is starting with cluster"
 fi
 
+JAVA_OPT="${JAVA_OPT} -Xlog:gc*:file=${WORK_DIR}/logs/nacos_gc.log:time,tags:filecount=10,filesize=100m --logging.config=${BASE_DIR}/conf/nacos-logback.xml"
+
 BASE_DIR="/Users/dioxide/Project Cache/Project Com/nacos/console/target/nacos-server"
 
-echo "$BASE_DIR" "$OPT"
+echo "$BASE_DIR""$OPT""$JAVA_OPT"
