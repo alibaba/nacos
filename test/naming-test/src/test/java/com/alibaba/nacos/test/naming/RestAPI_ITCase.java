@@ -49,6 +49,7 @@ class RestAPI_ITCase extends NamingBase {
     void setUp() throws Exception {
         String url = String.format("http://localhost:%d/", port);
         this.base = new URL(url);
+        prepareServer(port);
         //prepareData();
     }
     
