@@ -107,7 +107,6 @@
                     <include>application.properties</include>
                     <include>org/apache/derby/modules.properties</include>
                     <include>**/*.proto</include>
-                    <include>org/apache/derby/modules.properties</include>
                 </includes>
                 <excludes>
                     <exclude>static/console-ui/.vscode/**</exclude>
@@ -127,45 +126,260 @@
     
     <profiles>
         <profile>
-            <id>native-os-windows</id>
+            <id>native-win64</id>
             <activation>
                 <os>
-                    <family>Windows</family>
+                    <family>windows</family>
                 </os>
             </activation>
             <properties>
-                <nacos.home>D:\Coding\Project\nacos</nacos.home>
-                <hints.os.resources>-H:IncludeResources='.*\.dll$'</hints.os.resources>
+                <hints.os.rocksdb>win64.dll</hints.os.rocksdb>
             </properties>
             <build>
                 <resources>
                     <resource>
                         <directory>src/main/resources</directory>
                         <includes>
-                            <include>**/*.dll</include>
+                            <include>librocksdbjni-${hints.os.rocksdb}</include>
                         </includes>
                     </resource>
                 </resources>
             </build>
         </profile>
         <profile>
-            <id>native-os-unix</id>
+            <id>native-linux32</id>
             <activation>
                 <os>
                     <family>unix</family>
+                    <name>Linux</name>
+                    <arch>x86</arch>
                 </os>
             </activation>
             <properties>
-                <nacos.home>/Users/dioxide/Project\ Cache/Cache/nacos</nacos.home>
-                <hints.os.resources>-H:IncludeResources='.*\.so$ -H:IncludeResources='.*\.jnilib$'</hints.os.resources>
+                <hints.os.rocksdb>linux32.so</hints.os.rocksdb>
             </properties>
             <build>
                 <resources>
                     <resource>
                         <directory>src/main/resources</directory>
                         <includes>
-                            <include>**/*.jnilib</include>
-                            <include>**/*.so</include>
+                            <include>librocksdbjni-${hints.os.rocksdb}</include>
+                        </includes>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+        <profile>
+            <id>native-linux32-musl</id>
+            <properties>
+                <hints.os.rocksdb>linux32-musl.so</hints.os.rocksdb>
+            </properties>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <includes>
+                            <include>librocksdbjni-${hints.os.rocksdb}</include>
+                        </includes>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+        <profile>
+            <id>native-linux64</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                    <name>Linux</name>
+                    <arch>x64</arch>
+                </os>
+            </activation>
+            <properties>
+                <hints.os.rocksdb>linux64.so</hints.os.rocksdb>
+            </properties>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <includes>
+                            <include>librocksdbjni-${hints.os.rocksdb}</include>
+                        </includes>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+        <profile>
+            <id>native-linux64-musl</id>
+            <properties>
+                <hints.os.rocksdb>linux64-musl.so</hints.os.rocksdb>
+            </properties>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <includes>
+                            <include>librocksdbjni-${hints.os.rocksdb}</include>
+                        </includes>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+        <profile>
+            <id>native-linux-aarch64</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                    <name>Linux</name>
+                    <arch>aarch64</arch>
+                </os>
+            </activation>
+            <properties>
+                <hints.os.rocksdb>linux-aarch64.so</hints.os.rocksdb>
+            </properties>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <includes>
+                            <include>librocksdbjni-${hints.os.rocksdb}</include>
+                        </includes>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+        <profile>
+            <id>native-linux-aarch64-musl</id>
+            <properties>
+                <hints.os.rocksdb>linux-aarch64-musl.so</hints.os.rocksdb>
+            </properties>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <includes>
+                            <include>librocksdbjni-${hints.os.rocksdb}</include>
+                        </includes>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+        <profile>
+            <id>native-linux-ppc64le</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                    <name>Linux</name>
+                    <arch>aarch64</arch>
+                </os>
+            </activation>
+            <properties>
+                <hints.os.rocksdb>linux-ppc64le.so</hints.os.rocksdb>
+            </properties>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <includes>
+                            <include>librocksdbjni-${hints.os.rocksdb}</include>
+                        </includes>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+        <profile>
+            <id>native-linux-ppc64le-musl</id>
+            <properties>
+                <hints.os.rocksdb>linux-ppc64le-musl.so</hints.os.rocksdb>
+            </properties>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <includes>
+                            <include>librocksdbjni-${hints.os.rocksdb}</include>
+                        </includes>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+        <profile>
+            <id>native-linux-s390x</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                    <name>Linux</name>
+                    <arch>s390x</arch>
+                </os>
+            </activation>
+            <properties>
+                <hints.os.rocksdb>linux-s390x.so</hints.os.rocksdb>
+            </properties>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <includes>
+                            <include>librocksdbjni-${hints.os.rocksdb}</include>
+                        </includes>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+        <profile>
+            <id>native-linux-s390x-musl</id>
+            <properties>
+                <hints.os.rocksdb>linux-s390x-musl.so</hints.os.rocksdb>
+            </properties>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <includes>
+                            <include>librocksdbjni-${hints.os.rocksdb}</include>
+                        </includes>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+        <profile>
+            <id>native-osx-arm64</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                    <arch>arm64</arch>
+                </os>
+            </activation>
+            <properties>
+                <hints.os.rocksdb>osx-arm64.so</hints.os.rocksdb>
+            </properties>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <includes>
+                            <include>librocksdbjni-${hints.os.rocksdb}</include>
+                        </includes>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+        <profile>
+            <id>native-osx-x86_64</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                    <arch>x86_64</arch>
+                </os>
+            </activation>
+            <properties>
+                <hints.os.rocksdb>osx-x86_64.so</hints.os.rocksdb>
+            </properties>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <includes>
+                            <include>librocksdbjni-${hints.os.rocksdb}</include>
                         </includes>
                     </resource>
                 </resources>
@@ -181,7 +395,6 @@
                         <configuration>
                             <jvmArguments>
                                 -Dnacos.standalone=true
-                                -Dnacos.home="${nacos.home}"
                                 -agentlib:native-image-agent=config-merge-dir=src/main/resources/META-INF/native-image/com.alibaba.nacos/nacos-console/
                             </jvmArguments>
                             <image>
@@ -213,7 +426,7 @@
                                 --enable-url-protocols=http
                                 --enable-preview
                                 <!-- Resource Hints -->
-                                ${hints.os.resources}
+                                -H:IncludeResources='librocksdbjni-${hints.os.rocksdb}'
                                 <!-- Runtime Hints -->
                                 --initialize-at-run-time=io.grpc.netty.shaded.io.netty.buffer.Unpooled
                                 --initialize-at-run-time=io.grpc.netty.shaded.io.netty.buffer.PoolArena

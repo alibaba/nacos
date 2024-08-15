@@ -20,7 +20,6 @@ import org.springframework.aot.hint.MemberCategory;
 import org.springframework.aot.hint.RuntimeHints;
 import org.springframework.aot.hint.RuntimeHintsRegistrar;
 
-import java.io.File;
 import java.io.Serializable;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -446,9 +445,6 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
     private final String[] resourcePattern = {
             ".*\\.desc$",
             ".*\\.proto$",
-            ".*\\.dll$",
-            ".*\\.jnilib$",
-            ".*\\.so$",
             ".*\\.html$",
             ".*\\.css$",
             ".*\\.js$",
@@ -458,8 +454,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             ".*\\.woff$",
             ".*\\.woff2$",
             ".*\\.ttf$",
-            "org" + File.separator + "apache" + File.separator
-                    + "derby" + File.separator + "modules.properties",
+            "org/apache/derby/modules.properties",
             "application.properties",
     };
     
