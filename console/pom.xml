@@ -139,6 +139,7 @@
                 </os>
             </activation>
             <properties>
+                <nacos.home>D:\Coding\Project\nacos</nacos.home>
                 <osResourcesHints>-H:IncludeResources='.*\.dll$'</osResourcesHints>
             </properties>
         </profile>
@@ -150,6 +151,7 @@
                 </os>
             </activation>
             <properties>
+                <nacos.home>'/Users/dioxide/Project Cache/Cache/nacos'</nacos.home>
                 <osResourcesHints>-H:IncludeResources='.*\.so$ -H:IncludeResources='.*\.jnilib$'</osResourcesHints>
             </properties>
         </profile>
@@ -163,7 +165,7 @@
                         <configuration>
                             <jvmArguments>
                                 -Dnacos.standalone=true
-                                -Dnacos.home=D:\Coding\Project\nacos
+                                -Dnacos.home=${nacos.home}
                                 -agentlib:native-image-agent=config-merge-dir=src/main/resources/META-INF/native-image/com.alibaba.nacos/nacos-console/
                             </jvmArguments>
                             <image>
@@ -251,7 +253,8 @@
                                 --initialize-at-run-time=org.apache.derby.impl.services.monitor.ProtocolKey
                                 --initialize-at-run-time=org.apache.derby.impl.services.monitor.BaseMonitor
                                 --initialize-at-run-time=org.apache.derby.impl.services.monitor.TopService
-                                
+                                --initialize-at-run-time=org.apache.derby.iapi.services.cache.ClassSizeCatalogImpl
+
                                 --initialize-at-run-time=com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata
                                 --initialize-at-run-time=com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo
                                 --initialize-at-run-time=com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo

@@ -37,6 +37,8 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
     
     // region Java
     private final Class<?>[] javaClasses = {
+            byte.class,
+            byte[].class,
             boolean.class,
             Object.class,
             com.sun.management.GarbageCollectorMXBean.class,
@@ -75,6 +77,32 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
     
     // region SQL
     private final Class<?>[] sqlClasses = {
+            org.apache.derby.impl.io.DirStorageFactory.class,
+            org.apache.derby.impl.store.raw.log.LogRecord.class,
+            org.apache.derby.impl.store.raw.xact.XactId.class,
+            org.apache.derby.impl.store.raw.log.CheckpointOperation.class,
+            org.apache.derby.impl.store.raw.xact.TransactionTable.class,
+            org.apache.derby.impl.store.raw.xact.TransactionTableEntry.class,
+            org.apache.derby.impl.store.raw.log.LogCounter.class,
+            org.apache.derby.impl.store.raw.log.ChecksumOperation.class,
+            org.apache.derby.impl.store.raw.data.BaseDataFileFactoryJ4.class,
+            org.apache.derby.impl.store.raw.xact.XactFactory.class,
+            org.apache.derby.impl.store.raw.log.ReadOnly.class,
+            org.apache.derby.impl.store.raw.xact.BeginXact.class,
+            org.apache.derby.impl.store.raw.xact.EndXact.class,
+            org.apache.derby.impl.store.raw.data.ContainerOperation.class,
+            org.apache.derby.impl.store.raw.data.InitPageOperation.class,
+            org.apache.derby.impl.store.raw.data.AllocPageOperation.class,
+            org.apache.derby.impl.store.raw.data.InsertOperation.class,
+            org.apache.derby.impl.store.raw.data.LogicalUndoOperation.class,
+            org.apache.derby.impl.store.raw.data.InvalidatePageOperation.class,
+            org.apache.derby.impl.store.raw.data.EncryptContainerOperation.class,
+            org.apache.derby.impl.store.raw.data.EncryptContainerUndoOperation.class,
+            org.apache.derby.impl.store.raw.data.CopyRowsOperation.class,
+            org.apache.derby.impl.store.raw.data.ContainerUndoOperation.class,
+            org.apache.derby.impl.store.raw.data.CompressSpacePageOperation.class,
+            org.apache.derby.impl.store.raw.data.CompressSpacePageOperation10_2.class,
+            org.apache.derby.impl.store.raw.data.ChainAllocPageOperation.class,
             org.apache.derby.jdbc.AutoloadedDriver.class,
             org.apache.derby.jdbc.InternalDriver.class,
             org.apache.derby.jdbc.Driver42.class,
@@ -89,14 +117,12 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             org.apache.derby.impl.services.jmx.JMXManagementService.class,
             org.apache.derby.impl.services.cache.ConcurrentCacheFactory.class,
             org.apache.derby.impl.services.locks.ConcurrentPool.class,
-            org.apache.derby.impl.store.raw.data.BaseDataFileFactoryJ4.class,
             org.apache.derby.impl.services.jce.JCECipherFactoryBuilder.class,
             org.apache.derby.iapi.types.DataValueFactoryImpl.class,
             org.apache.derby.impl.store.raw.data.BaseDataFileFactory.class,
             org.apache.derby.impl.store.replication.master.MasterController.class,
             org.apache.derby.impl.sql.execute.RealResultSetStatisticsFactory.class,
             org.apache.derby.impl.jdbc.authentication.NoneAuthenticationServiceImpl.class,
-            org.apache.derby.impl.store.raw.log.ReadOnly.class,
             org.apache.derby.iapi.services.property.PropertyValidation.class,
             org.apache.derby.impl.sql.conn.GenericLanguageConnectionFactory.class,
             org.apache.derby.impl.sql.compile.OptimizerFactoryImpl.class,
@@ -109,7 +135,6 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             org.apache.derby.impl.services.timer.SingletonTimerFactory.class,
             org.apache.derby.impl.jdbc.authentication.BasicAuthenticationServiceImpl.class,
             org.apache.derby.impl.db.BasicDatabase.class,
-            org.apache.derby.impl.store.raw.xact.XactFactory.class,
             org.apache.derby.impl.services.stream.SingleStream.class,
             org.apache.derby.impl.jdbc.authentication.NativeAuthenticationServiceImpl.class,
             org.apache.derby.impl.store.access.sort.ExternalSortFactory.class,
@@ -133,7 +158,8 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             Class.forName("org.apache.derby.impl.services.monitor.ModuleInstance"),
             Class.forName("org.apache.derby.impl.services.monitor.ProtocolKey"),
             Class.forName("org.apache.derby.impl.services.monitor.TopService"),
-            
+            Class.forName("org.apache.derby.iapi.services.cache.ClassSizeCatalogImpl"),
+
             com.alibaba.nacos.persistence.datasource.ExternalDataSourceProperties.class,
             com.mysql.cj.jdbc.Driver.class
     };
