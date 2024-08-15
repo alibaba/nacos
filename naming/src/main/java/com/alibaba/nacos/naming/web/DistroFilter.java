@@ -42,7 +42,6 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -138,7 +137,7 @@ public class DistroFilter implements Filter {
             } catch (Exception ignore) {
                 Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + distroMapper.mapSrv(distroTag) + urlString);
             }
-        } catch (AccessControlException e) {
+        } catch (SecurityException e) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN, "access denied: " + ExceptionUtil.getAllExceptionMsg(e));
         } catch (NoSuchMethodException e) {
             resp.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED,
