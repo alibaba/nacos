@@ -23,6 +23,8 @@ import com.alibaba.nacos.config.server.configuration.ConditionStandaloneEmbedSto
 import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
+import com.alibaba.nacos.config.server.service.sql.limit.SqlLimiter;
+import com.alibaba.nacos.config.server.service.sql.limit.SqlTypeLimiter;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -55,11 +57,14 @@ public class StandaloneDatabaseOperateImpl implements BaseDatabaseOperate {
     
     private TransactionTemplate transactionTemplate;
     
+    private SqlLimiter sqlLimiter;
+    
     @PostConstruct
     protected void init() {
         DataSourceService dataSourceService = DynamicDataSource.getInstance().getDataSource();
         jdbcTemplate = dataSourceService.getJdbcTemplate();
         transactionTemplate = dataSourceService.getTransactionTemplate();
+        sqlLimiter = new SqlTypeLimiter();
         LogUtil.DEFAULT_LOG.info("use StandaloneDatabaseOperateImpl");
     }
     
@@ -104,6 +109,7 @@ public class StandaloneDatabaseOperateImpl implements BaseDatabaseOperate {
                 while (iterator.hasNext()) {
                     String sql = iterator.next();
                     if (StringUtils.isNotBlank(sql)) {
+                        sqlLimiter.doLimit(sql);
                         batchUpdate.add(sql);
                     }
                     if (batchUpdate.size() == batchSize || !iterator.hasNext()) {

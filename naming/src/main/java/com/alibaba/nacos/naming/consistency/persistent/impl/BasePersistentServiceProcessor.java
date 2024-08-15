@@ -28,6 +28,7 @@ import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
+import com.alibaba.nacos.core.exception.ErrorCode;
 import com.alibaba.nacos.core.exception.KvStorageException;
 import com.alibaba.nacos.core.storage.kv.KvStorage;
 import com.alibaba.nacos.naming.consistency.Datum;
@@ -47,6 +48,7 @@ import org.apache.commons.lang3.reflect.TypeUtils;
 import java.lang.reflect.Type;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
@@ -142,11 +144,12 @@ public abstract class BasePersistentServiceProcessor extends RequestProcessor4CP
     
     @Override
     public Response onRequest(ReadRequest request) {
-        final List<byte[]> keys = serializer
-                .deserialize(request.getData().toByteArray(), TypeUtils.parameterize(List.class, byte[].class));
+        final List<byte[]> keys = serializer.deserialize(request.getData().toByteArray(),
+                TypeUtils.parameterize(List.class, byte[].class));
         final Lock lock = readLock;
         lock.lock();
         try {
+            preCheckKeys(keys);
             final Map<byte[], byte[]> result = kvStorage.batchGet(keys);
             final BatchReadResponse response = new BatchReadResponse();
             result.forEach(response::append);
@@ -168,11 +171,14 @@ public abstract class BasePersistentServiceProcessor extends RequestProcessor4CP
             op = Op.valueOf(request.getOperation());
         } catch (Exception e) {
             Loggers.RAFT.error("unsupport operation: {}, request: {}", request.getOperation(), request, e);
-            return Response.newBuilder().setSuccess(false).setErrMsg("unsupport operation : " + request.getOperation()).build();
+            return Response.newBuilder().setSuccess(false).setErrMsg("unsupport operation : " + request.getOperation())
+                    .build();
         }
         final Lock lock = readLock;
         lock.lock();
         try {
+            // Before kvStorage write, try to deserialize values, if contains invalid data, don't do write.
+            List<ValueChangeEvent> changeEvents = tryBuildChangeEvents(op, bwRequest);
             switch (op) {
                 case Write:
                     kvStorage.batchPut(bwRequest.getKeys(), bwRequest.getValues());
@@ -183,7 +189,7 @@ public abstract class BasePersistentServiceProcessor extends RequestProcessor4CP
                 default:
                     return Response.newBuilder().setSuccess(false).setErrMsg("unsupport operation : " + op).build();
             }
-            publishValueChangeEvent(op, bwRequest);
+            publishValueChangeEvent(changeEvents);
             return Response.newBuilder().setSuccess(true).build();
         } catch (KvStorageException e) {
             return Response.newBuilder().setSuccess(false).setErrMsg(e.getErrMsg()).build();
@@ -192,16 +198,25 @@ public abstract class BasePersistentServiceProcessor extends RequestProcessor4CP
         }
     }
     
-    private void publishValueChangeEvent(final Op op, final BatchWriteRequest request) {
+    private List<ValueChangeEvent> tryBuildChangeEvents(Op op, BatchWriteRequest request) throws KvStorageException {
+        List<ValueChangeEvent> result = new LinkedList<>();
         final List<byte[]> keys = request.getKeys();
         final List<byte[]> values = request.getValues();
         for (int i = 0; i < keys.size(); i++) {
             final String key = new String(keys.get(i));
+            preCheckKey(key);
             final Datum datum = serializer.deserialize(values.get(i), getDatumTypeFromKey(key));
             final Record value = null != datum ? datum.value : null;
             final ValueChangeEvent event = ValueChangeEvent.builder().key(key).value(value)
                     .action(Op.Delete.equals(op) ? DataOperation.DELETE : DataOperation.CHANGE).build();
-            NotifyCenter.publishEvent(event);
+            result.add(event);
+        }
+        return result;
+    }
+    
+    private void publishValueChangeEvent(final List<ValueChangeEvent> changeEvents) {
+        for (ValueChangeEvent each : changeEvents) {
+            NotifyCenter.publishEvent(each);
         }
     }
     
@@ -249,7 +264,8 @@ public abstract class BasePersistentServiceProcessor extends RequestProcessor4CP
     }
     
     /**
-     * This notify should only notify once during startup. See {@link com.alibaba.nacos.naming.core.ServiceManager#init()}
+     * This notify should only notify once during startup. See
+     * {@link com.alibaba.nacos.naming.core.ServiceManager#init()}
      */
     private void notifierAllServiceMeta(RecordListener listener) throws NacosException {
         for (byte[] each : kvStorage.allKeys()) {
@@ -268,6 +284,19 @@ public abstract class BasePersistentServiceProcessor extends RequestProcessor4CP
             listener.onChange(key, datum.value);
         } catch (Exception e) {
             Loggers.RAFT.error("NACOS-RAFT failed to notify listener", e);
+        }
+    }
+    
+    private void preCheckKeys(List<byte[]> keys) throws KvStorageException {
+        for (byte[] each : keys) {
+            String keyString = new String(each);
+            preCheckKey(keyString);
+        }
+    }
+    
+    private void preCheckKey(String key) throws KvStorageException {
+        if (!KeyBuilder.isValidKey(key)) {
+            throw new KvStorageException(ErrorCode.KVStorageReadError, "invalid key: " + key);
         }
     }
 }

@@ -43,6 +43,8 @@ import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
 import com.alibaba.nacos.config.server.service.sql.QueryType;
 import com.alibaba.nacos.config.server.service.sql.SelectRequest;
+import com.alibaba.nacos.config.server.service.sql.limit.SqlLimiter;
+import com.alibaba.nacos.config.server.service.sql.limit.SqlTypeLimiter;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.consistency.SerializeFactory;
@@ -57,8 +59,8 @@ import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.utils.ClassUtils;
-import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.core.utils.GenericType;
+import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import org.springframework.context.annotation.Conditional;
@@ -71,6 +73,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.File;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -167,10 +170,13 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
     
     private ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
     
+    private final SqlLimiter sqlLimiter;
+    
     public DistributedDatabaseOperateImpl(ServerMemberManager memberManager, ProtocolManager protocolManager)
             throws Exception {
         this.memberManager = memberManager;
         this.protocol = protocolManager.getCpProtocol();
+        sqlLimiter = new SqlTypeLimiter();
         init();
     }
     
@@ -223,8 +229,8 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                     SelectRequest.builder().queryType(QueryType.QUERY_ONE_NO_MAPPER_NO_ARGS).sql(sql)
                             .className(cls.getCanonicalName()).build());
             
-            final boolean blockRead = EmbeddedStorageContextUtils
-                    .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
+            final boolean blockRead = EmbeddedStorageContextUtils.containsExtendInfo(
+                    Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
             
             Response response = innerRead(
                     ReadRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
@@ -247,8 +253,8 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                     SelectRequest.builder().queryType(QueryType.QUERY_ONE_NO_MAPPER_WITH_ARGS).sql(sql).args(args)
                             .className(cls.getCanonicalName()).build());
             
-            final boolean blockRead = EmbeddedStorageContextUtils
-                    .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
+            final boolean blockRead = EmbeddedStorageContextUtils.containsExtendInfo(
+                    Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
             
             Response response = innerRead(
                     ReadRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
@@ -271,8 +277,8 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                     SelectRequest.builder().queryType(QueryType.QUERY_ONE_WITH_MAPPER_WITH_ARGS).sql(sql).args(args)
                             .className(mapper.getClass().getCanonicalName()).build());
             
-            final boolean blockRead = EmbeddedStorageContextUtils
-                    .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
+            final boolean blockRead = EmbeddedStorageContextUtils.containsExtendInfo(
+                    Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
             
             Response response = innerRead(
                     ReadRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
@@ -296,8 +302,8 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                     SelectRequest.builder().queryType(QueryType.QUERY_MANY_WITH_MAPPER_WITH_ARGS).sql(sql).args(args)
                             .className(mapper.getClass().getCanonicalName()).build());
             
-            final boolean blockRead = EmbeddedStorageContextUtils
-                    .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
+            final boolean blockRead = EmbeddedStorageContextUtils.containsExtendInfo(
+                    Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
             
             Response response = innerRead(
                     ReadRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
@@ -320,8 +326,8 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                     SelectRequest.builder().queryType(QueryType.QUERY_MANY_NO_MAPPER_WITH_ARGS).sql(sql).args(args)
                             .className(rClass.getCanonicalName()).build());
             
-            final boolean blockRead = EmbeddedStorageContextUtils
-                    .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
+            final boolean blockRead = EmbeddedStorageContextUtils.containsExtendInfo(
+                    Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
             
             Response response = innerRead(
                     ReadRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
@@ -344,8 +350,8 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                     SelectRequest.builder().queryType(QueryType.QUERY_MANY_WITH_LIST_WITH_ARGS).sql(sql).args(args)
                             .build());
             
-            final boolean blockRead = EmbeddedStorageContextUtils
-                    .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
+            final boolean blockRead = EmbeddedStorageContextUtils.containsExtendInfo(
+                    Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
             
             Response response = innerRead(
                     ReadRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
@@ -390,9 +396,10 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                     if (submit) {
                         List<ModifyRequest> requests = batchUpdate.stream().map(ModifyRequest::new)
                                 .collect(Collectors.toList());
-                        CompletableFuture<Response> future = protocol.writeAsync(WriteRequest.newBuilder().setGroup(group())
-                                .setData(ByteString.copyFrom(serializer.serialize(requests)))
-                                .putExtendInfo(DATA_IMPORT_KEY, Boolean.TRUE.toString()).build());
+                        CompletableFuture<Response> future = protocol.writeAsync(
+                                WriteRequest.newBuilder().setGroup(group())
+                                        .setData(ByteString.copyFrom(serializer.serialize(requests)))
+                                        .putExtendInfo(DATA_IMPORT_KEY, Boolean.TRUE.toString()).build());
                         futures.add(future);
                         batchUpdate.clear();
                     }
@@ -463,8 +470,8 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
     @SuppressWarnings("all")
     @Override
     public Response onRequest(final ReadRequest request) {
-        final SelectRequest selectRequest = serializer
-                .deserialize(request.getData().toByteArray(), SelectRequest.class);
+        final SelectRequest selectRequest = serializer.deserialize(request.getData().toByteArray(),
+                SelectRequest.class);
         
         LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "getData info : selectRequest : {}", selectRequest);
         
@@ -473,6 +480,7 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
         readLock.lock();
         Object data;
         try {
+            sqlLimiter.doLimitForSelectRequest(selectRequest);
             switch (type) {
                 case QueryType.QUERY_ONE_WITH_MAPPER_WITH_ARGS:
                     data = queryOne(jdbcTemplate, selectRequest.getSql(), selectRequest.getArgs(), mapper);
@@ -515,10 +523,11 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
         LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "onApply info : log : {}", log);
         final ByteString byteString = log.getData();
         Preconditions.checkArgument(byteString != null, "Log.getData() must not null");
-        List<ModifyRequest> sqlContext = serializer.deserialize(byteString.toByteArray(), List.class);
         final Lock lock = readLock;
         lock.lock();
         try {
+            List<ModifyRequest> sqlContext = serializer.deserialize(byteString.toByteArray(), List.class);
+            sqlLimiter.doLimitForModifyRequest(sqlContext);
             boolean isOk = false;
             if (log.containsExtendInfo(DATA_IMPORT_KEY)) {
                 isOk = doDataImport(jdbcTemplate, sqlContext);
@@ -539,6 +548,9 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
             return Response.newBuilder().setSuccess(false).setErrMsg(e.toString()).build();
         } catch (DataAccessException e) {
             throw new ConsistencyException(e.toString());
+        } catch (SQLException e) {
+            LogUtil.FATAL_LOG.error("onApply warn : log : {}", log, e);
+            return Response.newBuilder().setSuccess(false).setErrMsg(e.toString()).build();
         } catch (Throwable t) {
             throw t;
         } finally {
