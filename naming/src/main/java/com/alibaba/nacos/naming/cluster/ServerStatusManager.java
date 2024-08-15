@@ -81,8 +81,8 @@ public class ServerStatusManager {
         if (hasLeader()) {
             return Optional.empty();
         }
-        return Optional.of(
-                "No leader for raft group {}, please see logs `alipay-jraft.log` or `naming-raft.log` to see details.");
+        return Optional.of("No leader for raft group " + Constants.NAMING_PERSISTENT_SERVICE_GROUP
+                + ", please see logs `alipay-jraft.log` or `naming-raft.log` to see details.");
     }
     
     public class ServerStatusUpdater implements Runnable {

@@ -49,7 +49,7 @@ class RestAPI_ITCase extends NamingBase {
     void setUp() throws Exception {
         String url = String.format("http://localhost:%d/", port);
         this.base = new URL(url);
-        prepareServer(port);
+        isNamingServerReady();
         //prepareData();
     }
     
@@ -86,8 +86,8 @@ class RestAPI_ITCase extends NamingBase {
     void createService() throws Exception {
         String serviceName = NamingBase.randomDomainName();
         ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
-                Params.newParams().appendParam("serviceName", serviceName).appendParam("protectThreshold", "0.3").done(), String.class,
-                HttpMethod.POST);
+                Params.newParams().appendParam("serviceName", serviceName).appendParam("protectThreshold", "0.3")
+                        .done(), String.class, HttpMethod.POST);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         assertEquals("ok", response.getBody());
         
@@ -103,14 +103,15 @@ class RestAPI_ITCase extends NamingBase {
     void getService() throws Exception {
         String serviceName = NamingBase.randomDomainName();
         ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
-                Params.newParams().appendParam("serviceName", serviceName).appendParam("protectThreshold", "0.3").done(), String.class,
-                HttpMethod.POST);
+                Params.newParams().appendParam("serviceName", serviceName).appendParam("protectThreshold", "0.3")
+                        .done(), String.class, HttpMethod.POST);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         assertEquals("ok", response.getBody());
         
         //get service
         response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
-                Params.newParams().appendParam("serviceName", serviceName).appendParam("protectThreshold", "0.3").done(), String.class);
+                Params.newParams().appendParam("serviceName", serviceName).appendParam("protectThreshold", "0.3")
+                        .done(), String.class);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
@@ -130,8 +131,8 @@ class RestAPI_ITCase extends NamingBase {
         String serviceName = NamingBase.randomDomainName();
         //get service
         ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service/list",
-                Params.newParams().appendParam("serviceName", serviceName).appendParam("pageNo", "1").appendParam("pageSize", "150").done(),
-                String.class);
+                Params.newParams().appendParam("serviceName", serviceName).appendParam("pageNo", "1")
+                        .appendParam("pageSize", "150").done(), String.class);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         JsonNode json = JacksonUtils.toObj(response.getBody());
@@ -139,14 +140,14 @@ class RestAPI_ITCase extends NamingBase {
         assertTrue(count >= 0);
         
         response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
-                Params.newParams().appendParam("serviceName", serviceName).appendParam("protectThreshold", "0.3").done(), String.class,
-                HttpMethod.POST);
+                Params.newParams().appendParam("serviceName", serviceName).appendParam("protectThreshold", "0.3")
+                        .done(), String.class, HttpMethod.POST);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         assertEquals("ok", response.getBody());
         
         response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service/list",
-                Params.newParams().appendParam("serviceName", serviceName).appendParam("pageNo", "1").appendParam("pageSize", "150").done(),
-                String.class);
+                Params.newParams().appendParam("serviceName", serviceName).appendParam("pageNo", "1")
+                        .appendParam("pageSize", "150").done(), String.class);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         json = JacksonUtils.toObj(response.getBody());
@@ -164,8 +165,8 @@ class RestAPI_ITCase extends NamingBase {
     void updateService() throws Exception {
         String serviceName = NamingBase.randomDomainName();
         ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
-                Params.newParams().appendParam("serviceName", serviceName).appendParam("protectThreshold", "0.6").done(), String.class,
-                HttpMethod.POST);
+                Params.newParams().appendParam("serviceName", serviceName).appendParam("protectThreshold", "0.6")
+                        .done(), String.class, HttpMethod.POST);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         assertEquals("ok", response.getBody());
         
@@ -209,8 +210,8 @@ class RestAPI_ITCase extends NamingBase {
     private void namingServiceDelete(String serviceName) {
         //delete service
         ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
-                Params.newParams().appendParam("serviceName", serviceName).appendParam("protectThreshold", "0.3").done(), String.class,
-                HttpMethod.DELETE);
+                Params.newParams().appendParam("serviceName", serviceName).appendParam("protectThreshold", "0.3")
+                        .done(), String.class, HttpMethod.DELETE);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         assertEquals("ok", response.getBody());
