@@ -107,6 +107,7 @@
                     <include>application.properties</include>
                     <include>org/apache/derby/modules.properties</include>
                     <include>**/*.proto</include>
+                    <include>librocksdbjni-${hints.os.rocksdb}</include>
                 </includes>
                 <excludes>
                     <exclude>static/console-ui/.vscode/**</exclude>
@@ -135,16 +136,6 @@
             <properties>
                 <hints.os.rocksdb>win64.dll</hints.os.rocksdb>
             </properties>
-            <build>
-                <resources>
-                    <resource>
-                        <directory>src/main/resources</directory>
-                        <includes>
-                            <include>librocksdbjni-${hints.os.rocksdb}</include>
-                        </includes>
-                    </resource>
-                </resources>
-            </build>
         </profile>
         <profile>
             <id>native-linux32</id>
@@ -158,32 +149,12 @@
             <properties>
                 <hints.os.rocksdb>linux32.so</hints.os.rocksdb>
             </properties>
-            <build>
-                <resources>
-                    <resource>
-                        <directory>src/main/resources</directory>
-                        <includes>
-                            <include>librocksdbjni-${hints.os.rocksdb}</include>
-                        </includes>
-                    </resource>
-                </resources>
-            </build>
         </profile>
         <profile>
             <id>native-linux32-musl</id>
             <properties>
                 <hints.os.rocksdb>linux32-musl.so</hints.os.rocksdb>
             </properties>
-            <build>
-                <resources>
-                    <resource>
-                        <directory>src/main/resources</directory>
-                        <includes>
-                            <include>librocksdbjni-${hints.os.rocksdb}</include>
-                        </includes>
-                    </resource>
-                </resources>
-            </build>
         </profile>
         <profile>
             <id>native-linux64</id>
@@ -197,32 +168,12 @@
             <properties>
                 <hints.os.rocksdb>linux64.so</hints.os.rocksdb>
             </properties>
-            <build>
-                <resources>
-                    <resource>
-                        <directory>src/main/resources</directory>
-                        <includes>
-                            <include>librocksdbjni-${hints.os.rocksdb}</include>
-                        </includes>
-                    </resource>
-                </resources>
-            </build>
         </profile>
         <profile>
             <id>native-linux64-musl</id>
             <properties>
                 <hints.os.rocksdb>linux64-musl.so</hints.os.rocksdb>
             </properties>
-            <build>
-                <resources>
-                    <resource>
-                        <directory>src/main/resources</directory>
-                        <includes>
-                            <include>librocksdbjni-${hints.os.rocksdb}</include>
-                        </includes>
-                    </resource>
-                </resources>
-            </build>
         </profile>
         <profile>
             <id>native-linux-aarch64</id>
@@ -236,32 +187,12 @@
             <properties>
                 <hints.os.rocksdb>linux-aarch64.so</hints.os.rocksdb>
             </properties>
-            <build>
-                <resources>
-                    <resource>
-                        <directory>src/main/resources</directory>
-                        <includes>
-                            <include>librocksdbjni-${hints.os.rocksdb}</include>
-                        </includes>
-                    </resource>
-                </resources>
-            </build>
         </profile>
         <profile>
             <id>native-linux-aarch64-musl</id>
             <properties>
                 <hints.os.rocksdb>linux-aarch64-musl.so</hints.os.rocksdb>
             </properties>
-            <build>
-                <resources>
-                    <resource>
-                        <directory>src/main/resources</directory>
-                        <includes>
-                            <include>librocksdbjni-${hints.os.rocksdb}</include>
-                        </includes>
-                    </resource>
-                </resources>
-            </build>
         </profile>
         <profile>
             <id>native-linux-ppc64le</id>
@@ -275,32 +206,12 @@
             <properties>
                 <hints.os.rocksdb>linux-ppc64le.so</hints.os.rocksdb>
             </properties>
-            <build>
-                <resources>
-                    <resource>
-                        <directory>src/main/resources</directory>
-                        <includes>
-                            <include>librocksdbjni-${hints.os.rocksdb}</include>
-                        </includes>
-                    </resource>
-                </resources>
-            </build>
         </profile>
         <profile>
             <id>native-linux-ppc64le-musl</id>
             <properties>
                 <hints.os.rocksdb>linux-ppc64le-musl.so</hints.os.rocksdb>
             </properties>
-            <build>
-                <resources>
-                    <resource>
-                        <directory>src/main/resources</directory>
-                        <includes>
-                            <include>librocksdbjni-${hints.os.rocksdb}</include>
-                        </includes>
-                    </resource>
-                </resources>
-            </build>
         </profile>
         <profile>
             <id>native-linux-s390x</id>
@@ -314,16 +225,6 @@
             <properties>
                 <hints.os.rocksdb>linux-s390x.so</hints.os.rocksdb>
             </properties>
-            <build>
-                <resources>
-                    <resource>
-                        <directory>src/main/resources</directory>
-                        <includes>
-                            <include>librocksdbjni-${hints.os.rocksdb}</include>
-                        </includes>
-                    </resource>
-                </resources>
-            </build>
         </profile>
         <profile>
             <id>native-linux-s390x-musl</id>
@@ -350,18 +251,8 @@
                 </os>
             </activation>
             <properties>
-                <hints.os.rocksdb>osx-arm64.so</hints.os.rocksdb>
+                <hints.os.rocksdb>osx-arm64.jnilib</hints.os.rocksdb>
             </properties>
-            <build>
-                <resources>
-                    <resource>
-                        <directory>src/main/resources</directory>
-                        <includes>
-                            <include>librocksdbjni-${hints.os.rocksdb}</include>
-                        </includes>
-                    </resource>
-                </resources>
-            </build>
         </profile>
         <profile>
             <id>native-osx-x86_64</id>
@@ -372,18 +263,8 @@
                 </os>
             </activation>
             <properties>
-                <hints.os.rocksdb>osx-x86_64.so</hints.os.rocksdb>
+                <hints.os.rocksdb>osx-x86_64.jnilib</hints.os.rocksdb>
             </properties>
-            <build>
-                <resources>
-                    <resource>
-                        <directory>src/main/resources</directory>
-                        <includes>
-                            <include>librocksdbjni-${hints.os.rocksdb}</include>
-                        </includes>
-                    </resource>
-                </resources>
-            </build>
         </profile>
         <profile>
             <id>native</id>
