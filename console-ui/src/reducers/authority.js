@@ -72,7 +72,7 @@ const searchUsers = username =>
  * @param {*} username
  */
 const deleteUser = username =>
-  request.delete('v1/auth/users', { params: { username } }).then(res => res);
+  request.delete('v1/auth/users', { params: { username } }).then(res => successMsg(res));
 
 /**
  * 重置密码
