@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
@@ -113,4 +114,32 @@ public class ExtraConfigInfoUtil {
         }
     }
     
+    public static String getExtraInfoFromGrayInfo(String grayNameTmp, String grayRuleTmp, String oldSrcUser) {
+        ObjectNode node = OBJECT_MAPPER.createObjectNode();
+        
+        if (StringUtils.isNotBlank(grayNameTmp)) {
+            node.put("gray_name", grayNameTmp);
+        }
+        
+        if (StringUtils.isNotBlank(oldSrcUser)) {
+            node.put("src_user", oldSrcUser);
+        }
+        
+        if (StringUtils.isNotBlank(grayRuleTmp)) {
+            try {
+                JsonNode grayRuleNode = OBJECT_MAPPER.readTree(grayRuleTmp);
+                node.setAll((ObjectNode) grayRuleNode);
+            } catch (Exception ex) {
+                LOGGER.error("Failed to parse grayRuleTmp as JSON: " + grayRuleTmp, ex);
+                return null;
+            }
+        }
+        
+        try {
+            return OBJECT_MAPPER.writeValueAsString(node);
+        } catch (Exception ex) {
+            LOGGER.error("Failed to serialize extra info from gray info", ex);
+            return null;
+        }
+    }
 }

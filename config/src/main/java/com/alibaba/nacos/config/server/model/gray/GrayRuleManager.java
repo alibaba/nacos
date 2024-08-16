@@ -62,7 +62,7 @@ public class GrayRuleManager {
      * @date 2024/3/14
      */
     public static GrayRule constructGrayRule(ConfigGrayPersistInfo configGrayPersistInfo) {
-        Class<?> classByTypeAndVersion = getClassByTypeAndVersion(configGrayPersistInfo.getType(),
+        Class<?> classByTypeAndVersion = getClassByTypeAndVersion(configGrayPersistInfo.getGrayType(),
                 configGrayPersistInfo.getVersion());
         if (classByTypeAndVersion == null) {
             return null;
@@ -74,7 +74,7 @@ public class GrayRuleManager {
                     configGrayPersistInfo.getPriority());
         } catch (Exception e) {
             throw new RuntimeException(String.format("construct gray rule failed with type[%s], version[%s].",
-                    configGrayPersistInfo.getType(), configGrayPersistInfo.getVersion()), e);
+                    configGrayPersistInfo.getGrayType(), configGrayPersistInfo.getVersion()), e);
         }
     }
     

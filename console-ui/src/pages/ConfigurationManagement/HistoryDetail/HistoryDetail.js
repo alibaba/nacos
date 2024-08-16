@@ -34,6 +34,9 @@ class HistoryDetail extends React.Component {
     super(props);
     this.state = {
       showmore: false,
+      currentPublishType: '',
+      grayVersion: '',
+      grayRule: '',
     };
     this.edasAppName = getParams('edasAppName');
     this.edasAppId = getParams('edasAppId');
@@ -74,6 +77,13 @@ class HistoryDetail extends React.Component {
           self.field.setValue('opType', data.opType.trim());
           self.field.setValue('group', data.group);
           self.field.setValue('md5', data.md5);
+          self.setState({
+            currentPublishType: data.publishType,
+            ...(data.publishType === 'gray' && {
+              grayVersion: JSON.parse(data.extraInfo || '{}').version || '',
+              grayRule: JSON.parse(data.extraInfo || '{}').expr || '',
+            }),
+          });
         }
       },
     });
@@ -100,6 +110,7 @@ class HistoryDetail extends React.Component {
   render() {
     const { locale = {} } = this.props;
     const { init } = this.field;
+    const { currentPublishType, grayVersion, grayRule } = this.state;
     const formItemLayout = {
       labelCol: {
         fixedSpan: 6,
@@ -132,6 +143,23 @@ class HistoryDetail extends React.Component {
               <Input htmlType="text" readOnly {...init('appName')} />
             </Form.Item>
           </div>
+          <Form.Item label={locale.publishType} required {...formItemLayout}>
+            <Input
+              htmlType="text"
+              readOnly
+              value={currentPublishType === 'gray' ? locale.gray : locale.formal}
+            />
+          </Form.Item>
+          {currentPublishType === 'gray' && (
+            <>
+              <Form.Item label={locale.grayVersion} required {...formItemLayout}>
+                <Input htmlType="text" readOnly value={grayVersion} />
+              </Form.Item>
+              <Form.Item label={locale.grayRule} required {...formItemLayout}>
+                <Input htmlType="text" readOnly value={grayRule} />
+              </Form.Item>
+            </>
+          )}
           <Form.Item label={locale.operator} required {...formItemLayout}>
             <Input htmlType="text" readOnly {...init('srcUser')} />
           </Form.Item>
