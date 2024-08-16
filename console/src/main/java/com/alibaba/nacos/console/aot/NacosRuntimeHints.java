@@ -443,6 +443,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
     // endregion
     
     private final String[] resourcePattern = {
+            AotConfiguration.reflectToNativeLibraryLoader(),
             ".*\\.desc$",
             ".*\\.proto$",
             ".*\\.html$",
