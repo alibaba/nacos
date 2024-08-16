@@ -199,7 +199,7 @@ public class UserController {
         
         userDetailsService.updateUserPassword(username, PasswordEncoderUtil.encode(newPassword));
         
-        return RestResultUtils.success("update user ok!","update user ok!");
+        return RestResultUtils.success("update user ok!");
     }
     
     private boolean hasPermission(String username, HttpServletRequest request)
