@@ -622,6 +622,7 @@ const I18N_CONF = {
     passwordError: 'Password cannot be empty!',
     rePasswordError: 'Repeat Password cannot be empty!',
     rePasswordError2: 'Passwords are inconsistent!',
+    resetSuccessfully: 'update user ok!',
   },
   RolesManagement: {
     roleManagement: 'Role management',

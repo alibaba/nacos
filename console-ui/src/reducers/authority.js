@@ -72,14 +72,14 @@ const searchUsers = username =>
  * @param {*} username
  */
 const deleteUser = username =>
-  request.delete('v1/auth/users', { params: { username } }).then(res => successMsg(res));
+  request.delete('v1/auth/users', { params: { username } }).then(res => res);
 
 /**
  * 重置密码
  * @param {*} param0
  */
 const passwordReset = ([username, newPassword]) =>
-  request.put('v1/auth/users', { username, newPassword }).then(res => successMsg(res));
+  request.put('v1/auth/users', { username, newPassword });
 
 /**
  * 角色列表
