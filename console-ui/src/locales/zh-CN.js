@@ -41,6 +41,7 @@ const I18N_CONF = {
   MainLayout: {
     nacosName: 'NACOS',
     nacosMode: '模式',
+    nacosInstanceName: '实例',
     doesNotExist: '您访问的页面不存在',
     configurationManagementVirtual: '配置管理',
     configurationManagement: '配置列表',

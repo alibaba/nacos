@@ -62,6 +62,7 @@ const getState = () => dispatch =>
           authAdminRequest: res.auth_admin_request,
           consoleUiEnable: res.console_ui_enabled,
           startupMode: res.startup_mode,
+          instanceName: res.instanceName,
         },
       });
     })
@@ -76,6 +77,7 @@ const getState = () => dispatch =>
           authEnabled: null,
           consoleUiEnable: null,
           authAdminRequest: null,
+          instanceName: null,
         },
       });
     });

@@ -80,4 +80,8 @@ public interface Constants {
     String AVAILABLE_PROCESSORS_BASIC = "nacos.core.sys.basic.processors";
     
     String SUPPORT_UPGRADE_FROM_1X = "nacos.core.support.upgrade.from.1x";
+    
+    String NACOS_INSTANCE_NAME = "nacos.instance.name";
+    
+    String NACOS_INSTANCE_NAME_STATE = "instanceName";
 }

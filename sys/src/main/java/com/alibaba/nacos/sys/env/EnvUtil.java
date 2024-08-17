@@ -278,6 +278,15 @@ public class EnvUtil {
         return functionModeType;
     }
     
+    /**
+     * Get instance name.
+     *
+     * @return Instance name,Default empty.
+     */
+    public static String getNacosInstanceName() {
+        return getProperty(Constants.NACOS_INSTANCE_NAME, StringUtils.EMPTY);
+    }
+    
     private static String nacosTmpDir;
     
     public static String getNacosTmpDir() {

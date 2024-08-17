@@ -20,6 +20,8 @@ import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.sys.module.ModuleState;
 import com.alibaba.nacos.sys.module.ModuleStateBuilder;
 
+import static com.alibaba.nacos.sys.env.Constants.NACOS_INSTANCE_NAME_STATE;
+
 /**
  * Module state builder for env module.
  *
@@ -34,8 +36,8 @@ public class EnvModuleStateBuilder implements ModuleStateBuilder {
                 EnvUtil.getStandaloneMode() ? EnvUtil.STANDALONE_MODE_ALONE : EnvUtil.STANDALONE_MODE_CLUSTER);
         state.newState(Constants.FUNCTION_MODE_STATE, EnvUtil.getFunctionMode());
         state.newState(Constants.NACOS_VERSION, VersionUtils.version);
-        
         state.newState(Constants.SERVER_PORT_STATE, EnvUtil.getPort());
+        state.newState(NACOS_INSTANCE_NAME_STATE, EnvUtil.getNacosInstanceName());
         return state;
     }
 }

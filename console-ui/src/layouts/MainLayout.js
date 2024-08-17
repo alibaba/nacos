@@ -18,7 +18,15 @@ import React from 'react';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { ConfigProvider, Icon, Menu, Message, Dialog, Button } from '@alifd/next';
+import {
+  ConfigProvider,
+  Icon,
+  Menu,
+  Message,
+  Dialog,
+  Button,
+  Divider
+} from '@alifd/next';
 import Header from './Header';
 import { getState, getNotice, getGuide } from '../reducers/base';
 import getMenuData from './menu';
@@ -53,6 +61,7 @@ class MainLayout extends React.Component {
     consoleUiEnable: PropTypes.string,
     getGuide: PropTypes.func,
     guideMsg: PropTypes.string,
+    instanceName: PropTypes.string,
   };
 
   componentDidMount() {
@@ -106,6 +115,7 @@ class MainLayout extends React.Component {
       authEnabled,
       consoleUiEnable,
       startupMode,
+      instanceName,
     } = this.props;
     const { visible } = this.state;
     const MenuData = getMenuData(functionMode);
@@ -134,8 +144,16 @@ class MainLayout extends React.Component {
                     </h1>
                     <h1 className="nav-mode">
                       {locale.nacosMode}
+                      <Divider direction="ver" />
                       <span>{startupMode}</span>
                     </h1>
+                    {instanceName && (
+                      <h1 className="nav-mode">
+                        <span>{locale.nacosInstanceName}</span>
+                        <Divider direction="ver" />
+                          <span>{instanceName}</span>
+                      </h1>
+                    )}
                     <Menu
                       defaultOpenKeys={this.defaultOpenKeys()}
                       className="next-nav next-normal next-active next-right next-no-arrow next-nav-embeddable"

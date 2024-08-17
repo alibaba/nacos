@@ -43,6 +43,7 @@ const I18N_CONF = {
   MainLayout: {
     nacosName: 'NACOS',
     nacosMode: 'MODE',
+    nacosInstanceName: 'Instance',
     doesNotExist: 'The page you visit does not exist',
     configurationManagementVirtual: 'ConfigManagement',
     configurationManagement: 'Configurations',
