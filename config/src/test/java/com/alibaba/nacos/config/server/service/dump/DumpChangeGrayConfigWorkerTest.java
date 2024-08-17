@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.service.dump;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
+import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
@@ -50,6 +51,9 @@ public class DumpChangeGrayConfigWorkerTest {
     @Mock
     ConfigInfoGrayPersistService configInfoGrayPersistService;
     
+    @Mock
+    HistoryConfigInfoPersistService historyConfigInfoPersistService;
+    
     static MockedStatic<EnvUtil> envUtilMockedStatic;
     
     static MockedStatic<ConfigCacheService> configCacheServiceMockedStatic;
@@ -76,7 +80,7 @@ public class DumpChangeGrayConfigWorkerTest {
         
         envUtilMockedStatic.when(() -> EnvUtil.getAvailableProcessors(anyInt())).thenReturn(2);
         dumpGrayConfigWorker = new DumpChangeGrayConfigWorker(configInfoGrayPersistService,
-                new Timestamp(System.currentTimeMillis()));
+                new Timestamp(System.currentTimeMillis()), historyConfigInfoPersistService);
     }
     
     @Test

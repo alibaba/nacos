@@ -267,7 +267,7 @@ public abstract class DumpService {
                                 currentTime), random.nextInt((int) PropertyUtil.getDumpChangeWorkerInterval()),
                         TimeUnit.MILLISECONDS);
                 ConfigExecutor.scheduleConfigChangeTask(
-                        new DumpChangeGrayConfigWorker(this.configInfoGrayPersistService, currentTime),
+                        new DumpChangeGrayConfigWorker(this.configInfoGrayPersistService, currentTime, this.historyConfigInfoPersistService),
                         random.nextInt((int) PropertyUtil.getDumpChangeWorkerInterval()), TimeUnit.MILLISECONDS);
             }
             

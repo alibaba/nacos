@@ -18,16 +18,22 @@ package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
+import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
+import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -41,23 +47,50 @@ public class DumpChangeGrayConfigWorker implements Runnable {
     
     ConfigInfoGrayPersistService configInfoGrayPersistService;
     
+    private final HistoryConfigInfoPersistService historyConfigInfoPersistService;
+    
     int pageSize = 100;
     
-    public DumpChangeGrayConfigWorker(ConfigInfoGrayPersistService configInfoGrayPersistService, Timestamp startTime) {
+    public DumpChangeGrayConfigWorker(ConfigInfoGrayPersistService configInfoGrayPersistService, Timestamp startTime,
+            HistoryConfigInfoPersistService historyConfigInfoPersistService) {
         this.configInfoGrayPersistService = configInfoGrayPersistService;
         this.startTime = startTime;
+        this.historyConfigInfoPersistService = historyConfigInfoPersistService;
     }
     
     @Override
     public void run() {
         try {
-            
             if (!PropertyUtil.isDumpChangeOn()) {
                 LogUtil.DEFAULT_LOG.info("DumpGrayChange task is not open");
                 return;
             }
             Timestamp currentTime = new Timestamp(System.currentTimeMillis());
             LogUtil.DEFAULT_LOG.info("DumpGrayChange start ,from time {},current time {}", startTime, currentTime);
+            
+            LogUtil.DEFAULT_LOG.info("Start to check delete configs from  time {}", startTime);
+            long startDeletedConfigTime = System.currentTimeMillis();
+            long deleteCursorId = 0L;
+            while (true) {
+                List<ConfigHistoryInfo> historyConfigDeleted = historyConfigInfoPersistService.findDeletedConfig(startTime,
+                        deleteCursorId, pageSize, "gray");
+                for (ConfigHistoryInfo historyInfo : historyConfigDeleted) {
+                    ConfigInfoStateWrapper configInfoStateWrapper = configInfoGrayPersistService.findConfigInfo4GrayState(historyInfo.getDataId(),
+                            historyInfo.getGroup(), historyInfo.getTenant(), extractGrayName(historyInfo.getExtraInfo()));
+                    if (configInfoStateWrapper == null) {
+                        ConfigCacheService.remove(historyInfo.getDataId(), historyInfo.getGroup(),
+                                historyInfo.getTenant());
+                        LogUtil.DEFAULT_LOG.info("[dump-delete-ok] {}",
+                                GroupKey2.getKey(historyInfo.getDataId(), historyInfo.getGroup()));
+                    }
+                }
+                if (historyConfigDeleted.size() < pageSize) {
+                    break;
+                }
+                deleteCursorId = historyConfigDeleted.get(historyConfigDeleted.size() - 1).getId();
+            }
+            LogUtil.DEFAULT_LOG.info("Check delete configs finished,cost:{}",
+                    System.currentTimeMillis() - startDeletedConfigTime);
             
             LogUtil.DEFAULT_LOG.info("Check changeGrayConfig start");
             long startChangeConfigTime = System.currentTimeMillis();
@@ -109,6 +142,17 @@ public class DumpChangeGrayConfigWorker implements Runnable {
             LogUtil.DEFAULT_LOG.info("Next dump gray change will scheduled after {} milliseconds",
                     PropertyUtil.getDumpChangeWorkerInterval());
             
+        }
+    }
+    
+    private String extractGrayName(String extraInfo)  {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            Map<String, String> dataMap = objectMapper.readValue(extraInfo, new TypeReference<Map<String, String>>() { });
+            return dataMap.get("gray_name");
+        } catch (Exception e) {
+            LogUtil.DEFAULT_LOG.error("[dump-change-gray-error] Error extracting gray_name from extraInfo", e);
+            return null;
         }
     }
 }

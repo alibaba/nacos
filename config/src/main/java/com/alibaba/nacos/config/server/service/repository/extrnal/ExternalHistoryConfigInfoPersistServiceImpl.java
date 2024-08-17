@@ -21,7 +21,6 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
@@ -50,7 +49,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.HISTORY_DETAIL_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.HISTORY_LIST_ROW_MAPPER;
 
@@ -122,7 +120,8 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     }
     
     @Override
-    public List<ConfigInfoStateWrapper> findDeletedConfig(final Timestamp startTime, long startId, int pageSize) {
+    public List<ConfigHistoryInfo> findDeletedConfig(final Timestamp startTime, long startId, int pageSize,
+            String publishType) {
         try {
             HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
                     dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
@@ -130,10 +129,11 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
             context.putWhereParameter(FieldConstant.START_TIME, startTime);
             context.putWhereParameter(FieldConstant.PAGE_SIZE, pageSize);
             context.putWhereParameter(FieldConstant.LAST_MAX_ID, startId);
+            context.putWhereParameter(FieldConstant.PUBLISH_TYPE, publishType);
             
             MapperResult mapperResult = historyConfigInfoMapper.findDeletedConfig(context);
             return jt.query(mapperResult.getSql(), mapperResult.getParamList().toArray(),
-                    CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER);
+                    HISTORY_DETAIL_ROW_MAPPER);
         } catch (DataAccessException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;

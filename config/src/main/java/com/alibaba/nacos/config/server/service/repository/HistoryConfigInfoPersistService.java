@@ -71,12 +71,13 @@ public interface HistoryConfigInfoPersistService {
     /**
      * Query deleted config.
      *
-     * @param startTime start time
-     * @param startId   last max id
-     * @param size      page size
+     * @param startTime   start time
+     * @param startId     last max id
+     * @param size        page size
+     * @param publishType publish type
      * @return {@link ConfigInfoStateWrapper} list
      */
-    List<ConfigInfoStateWrapper> findDeletedConfig(final Timestamp startTime, final long startId, int size);
+    List<ConfigHistoryInfo> findDeletedConfig(final Timestamp startTime, final long startId, int size, String publishType);
     
     /**
      * List configuration history change record.
