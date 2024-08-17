@@ -61,9 +61,11 @@ public interface HistoryConfigInfoMapper extends Mapper {
      */
     default MapperResult findDeletedConfig(MapperContext context) {
         return new MapperResult(
-                "SELECT data_id, group_id, tenant_id,gmt_modified,nid FROM his_config_info WHERE op_type = 'D' AND "
-                        + "gmt_modified >= ? and nid > ? order by nid limit ? ",
-                CollectionUtils.list(context.getWhereParameter(FieldConstant.START_TIME),
+                "SELECT id, nid, data_id, group_id, app_name, content, md5, gmt_create, gmt_modified, src_user, src_ip, op_type, tenant_id, "
+                        + "publish_type, ext_info, encrypted_data_key FROM his_config_info WHERE op_type = 'D' AND "
+                        + "publish_type = ? and gmt_modified >= ? and nid > ? order by nid limit ? ",
+                CollectionUtils.list(context.getWhereParameter(FieldConstant.PUBLISH_TYPE),
+                        context.getWhereParameter(FieldConstant.START_TIME),
                         context.getWhereParameter(FieldConstant.LAST_MAX_ID),
                         context.getWhereParameter(FieldConstant.PAGE_SIZE)));
     }

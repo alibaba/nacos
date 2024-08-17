@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
@@ -120,7 +121,7 @@ class DumpChangeConfigWorkerTest {
     void testDumpChangeIfOff() {
         PropertyUtil.setDumpChangeOn(false);
         dumpChangeConfigWorker.run();
-        Mockito.verify(historyConfigInfoPersistService, times(0)).findDeletedConfig(any(), anyLong(), anyInt());
+        Mockito.verify(historyConfigInfoPersistService, times(0)).findDeletedConfig(any(), anyLong(), anyInt(), any());
     }
     
     @Test
@@ -128,19 +129,19 @@ class DumpChangeConfigWorkerTest {
         PropertyUtil.setDumpChangeOn(true);
         dumpChangeConfigWorker.setPageSize(3);
         //mock delete first page
-        List<ConfigInfoStateWrapper> firstPageDeleted = new ArrayList<>();
+        List<ConfigHistoryInfo> firstPageDeleted = new ArrayList<>();
         Timestamp startTime = dumpChangeConfigWorker.startTime;
         String dataIdPrefix = "d12345";
         
-        firstPageDeleted.add(createConfigInfoStateWrapper(dataIdPrefix, 1, startTime.getTime() + 1));
-        firstPageDeleted.add(createConfigInfoStateWrapper(dataIdPrefix, 2, startTime.getTime() + 2));
-        firstPageDeleted.add(createConfigInfoStateWrapper(dataIdPrefix, 3, startTime.getTime() + 3));
+        firstPageDeleted.add(createConfigHistoryInfo(dataIdPrefix, 1, startTime.getTime() + 1));
+        firstPageDeleted.add(createConfigHistoryInfo(dataIdPrefix, 2, startTime.getTime() + 2));
+        firstPageDeleted.add(createConfigHistoryInfo(dataIdPrefix, 3, startTime.getTime() + 3));
         //pre set cache for id1
         preSetCache(dataIdPrefix, 1, System.currentTimeMillis());
         assertEquals("encrykey" + 1,
                 ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataIdPrefix + 1, "group" + 1, "tenant" + 1)).getConfigCache()
                         .getEncryptedDataKey());
-        Mockito.when(historyConfigInfoPersistService.findDeletedConfig(eq(startTime), eq(0L), eq(3))).thenReturn(firstPageDeleted);
+        Mockito.when(historyConfigInfoPersistService.findDeletedConfig(eq(startTime), eq(0L), eq(3), eq("formal"))).thenReturn(firstPageDeleted);
         //mock delete config query is null
         Mockito.when(configInfoPersistService.findConfigInfoState(eq(dataIdPrefix + 1), eq("group" + 1), eq("tenant" + 1)))
                 .thenReturn(null);
@@ -149,7 +150,7 @@ class DumpChangeConfigWorkerTest {
         dumpChangeConfigWorker.run();
         
         //expect delete page return pagesize and will select second page
-        Mockito.verify(historyConfigInfoPersistService, times(1)).findDeletedConfig(eq(startTime), eq(3L), eq(3));
+        Mockito.verify(historyConfigInfoPersistService, times(1)).findDeletedConfig(eq(startTime), eq(3L), eq(3), eq("formal"));
         //expect cache to be cleared.
         assertNull(ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataIdPrefix + 1, "group" + 1, "tenant" + 1)));
     }
@@ -309,6 +310,18 @@ class DumpChangeConfigWorkerTest {
     private void preSetCache(String dataIdPrefix, long id, long timeStamp) {
         ConfigCacheService.dumpWithMd5(dataIdPrefix + id, "group" + id, "tenant" + id, "content" + id,
                 MD5Utils.md5Hex("content" + id, "UTF-8"), timeStamp, "json", "encrykey" + id);
+    }
+    
+    private ConfigHistoryInfo createConfigHistoryInfo(String dataIdPreFix, long id, long timeStamp) {
+        Timestamp timestamp = new Timestamp(timeStamp);
+        ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
+        configHistoryInfo.setDataId(dataIdPreFix + id);
+        configHistoryInfo.setGroup("group" + id);
+        configHistoryInfo.setTenant("md5" + id);
+        configHistoryInfo.setTenant("tenant" + id);
+        configHistoryInfo.setId(id);
+        configHistoryInfo.setLastModifiedTime(timestamp);
+        return configHistoryInfo;
     }
     
     private ConfigInfoStateWrapper createConfigInfoStateWrapper(String dataIdPreFix, long id, long timeStamp) {
