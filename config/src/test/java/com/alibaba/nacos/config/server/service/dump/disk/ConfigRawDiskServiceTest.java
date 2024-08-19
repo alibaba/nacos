@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.dump.disk;
 
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -26,6 +27,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ConfigRawDiskServiceTest {
     
@@ -45,9 +47,10 @@ class ConfigRawDiskServiceTest {
      */
     @Test
     void testTargetFile() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetFile", String.class, String.class, String.class);
+        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetFile", String.class, String.class,
+                String.class);
         method.setAccessible(true);
-        File result = (File) method.invoke(null, "aaaa?dsaknkf", "aaaa*dsaknkf", "aaaa:dsaknkf");
+        File result = (File) method.invoke(null, "aaaa-dsaknkf", "aaaa.dsaknkf", "aaaa:dsaknkf");
         // 分解路径
         Path path = Paths.get(result.getPath());
         Path parent = path.getParent();
@@ -56,9 +59,16 @@ class ConfigRawDiskServiceTest {
         String lastSegment = path.getFileName().toString();
         String secondLastSegment = parent.getFileName().toString();
         String thirdLastSegment = grandParent.getFileName().toString();
-        assertEquals(isWindows() ? "aaaa%A3%dsaknkf" : thirdLastSegment, thirdLastSegment);
-        assertEquals(isWindows() ? "aaaa%A4%dsaknkf" : secondLastSegment, secondLastSegment);
+        assertEquals(isWindows() ? "aaaa-dsaknkf" : thirdLastSegment, thirdLastSegment);
+        assertEquals(isWindows() ? "aaaa.dsaknkf" : secondLastSegment, secondLastSegment);
         assertEquals(isWindows() ? "aaaa%A5%dsaknkf" : lastSegment, lastSegment);
+    }
+    
+    @Test
+    void testTargetFileWithInvalidParam() {
+        assertThrows(NacosRuntimeException.class, () -> ConfigRawDiskService.targetFile("../aaa", "testG", "testNS"));
+        assertThrows(NacosRuntimeException.class, () -> ConfigRawDiskService.targetFile("testD", "../aaa", "testNS"));
+        assertThrows(NacosRuntimeException.class, () -> ConfigRawDiskService.targetFile("testD", "testG", "../aaa"));
     }
     
     /**
@@ -66,9 +76,10 @@ class ConfigRawDiskServiceTest {
      */
     @Test
     void testTargetBetaFile() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetBetaFile", String.class, String.class, String.class);
+        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetBetaFile", String.class, String.class,
+                String.class);
         method.setAccessible(true);
-        File result = (File) method.invoke(null, "aaaa?dsaknkf", "aaaa*dsaknkf", "aaaa:dsaknkf");
+        File result = (File) method.invoke(null, "aaaa-dsaknkf", "aaaa.dsaknkf", "aaaa:dsaknkf");
         // 分解路径
         Path path = Paths.get(result.getPath());
         Path parent = path.getParent();
@@ -77,10 +88,19 @@ class ConfigRawDiskServiceTest {
         String lastSegment = path.getFileName().toString();
         String secondLastSegment = parent.getFileName().toString();
         String thirdLastSegment = grandParent.getFileName().toString();
-        assertEquals(isWindows() ? "aaaa%A3%dsaknkf" : thirdLastSegment, thirdLastSegment);
-        assertEquals(isWindows() ? "aaaa%A4%dsaknkf" : secondLastSegment, secondLastSegment);
+        assertEquals(isWindows() ? "aaaa-dsaknkf" : thirdLastSegment, thirdLastSegment);
+        assertEquals(isWindows() ? "aaaa.dsaknkf" : secondLastSegment, secondLastSegment);
         assertEquals(isWindows() ? "aaaa%A5%dsaknkf" : lastSegment, lastSegment);
-        
+    }
+    
+    @Test
+    void testTargetBetaFileWithInvalidParam() throws NoSuchMethodException {
+        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetBetaFile", String.class, String.class,
+                String.class);
+        method.setAccessible(true);
+        assertThrows(InvocationTargetException.class, () -> method.invoke(null, "../aaa", "testG", "testNS"));
+        assertThrows(InvocationTargetException.class, () -> method.invoke(null, "testD", "../aaa", "testNS"));
+        assertThrows(InvocationTargetException.class, () -> method.invoke(null, "testD", "testG", "../aaa"));
     }
     
     /**
@@ -92,10 +112,10 @@ class ConfigRawDiskServiceTest {
      */
     @Test
     void testTargetTagFile() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetTagFile", String.class, String.class, String.class,
-                String.class);
+        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetTagFile", String.class, String.class,
+                String.class, String.class);
         method.setAccessible(true);
-        File result = (File) method.invoke(null, "aaaa?dsaknkf", "aaaa*dsaknkf", "aaaa:dsaknkf", "aaaadsaknkf");
+        File result = (File) method.invoke(null, "aaaa-dsaknkf", "aaaa.dsaknkf", "aaaa:dsaknkf", "aaaa_dsaknkf");
         // 分解路径
         Path path = Paths.get(result.getPath());
         Path parent = path.getParent();
@@ -105,10 +125,23 @@ class ConfigRawDiskServiceTest {
         String secondLastSegment = parent.getFileName().toString();
         String thirdLastSegment = grandParent.getFileName().toString();
         String fourthLastSegment = greatGrandParent.getFileName().toString();
-        assertEquals(isWindows() ? "aaaa%A3%dsaknkf" : fourthLastSegment, fourthLastSegment);
-        assertEquals(isWindows() ? "aaaa%A4%dsaknkf" : thirdLastSegment, thirdLastSegment);
+        assertEquals(isWindows() ? "aaaa-dsaknkf" : fourthLastSegment, fourthLastSegment);
+        assertEquals(isWindows() ? "aaaa.dsaknkf" : thirdLastSegment, thirdLastSegment);
         assertEquals(isWindows() ? "aaaa%A5%dsaknkf" : secondLastSegment, secondLastSegment);
         String lastSegment = path.getFileName().toString();
-        assertEquals("aaaadsaknkf", lastSegment);
+        assertEquals("aaaa_dsaknkf", lastSegment);
+    }
+    
+    @Test
+    void testTargetTagFileWithInvalidParam() throws NoSuchMethodException {
+        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetTagFile", String.class, String.class,
+                String.class, String.class);
+        method.setAccessible(true);
+        assertThrows(InvocationTargetException.class,
+                () -> method.invoke(null, "../aaa", "testG", "testNS", "testTag"));
+        assertThrows(InvocationTargetException.class,
+                () -> method.invoke(null, "testD", "../aaa", "testNS", "testTag"));
+        assertThrows(InvocationTargetException.class, () -> method.invoke(null, "testD", "testG", "../aaa", "testTag"));
+        assertThrows(InvocationTargetException.class, () -> method.invoke(null, "testD", "testG", "testNS", "../aaa"));
     }
 }
