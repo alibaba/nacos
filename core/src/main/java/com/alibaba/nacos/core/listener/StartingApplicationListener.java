@@ -166,8 +166,9 @@ public class StartingApplicationListener implements NacosApplicationListener {
     }
     
     private void registerWatcher() throws NacosException {
-        
-        WatchFileCenter.registerWatcher(EnvUtil.getConfPath(), new FileWatcher() {
+        File confFile = EnvUtil.getApplicationConfFile();
+        String configFolder = confFile.getParentFile().getAbsolutePath();
+        WatchFileCenter.registerWatcher(configFolder, new FileWatcher() {
             @Override
             public void onChange(FileChangeEvent event) {
                 try {
@@ -178,13 +179,12 @@ public class StartingApplicationListener implements NacosApplicationListener {
                     LOGGER.warn("Failed to monitor file ", ignore);
                 }
             }
-            
+
             @Override
             public boolean interest(String context) {
                 return StringUtils.contains(context, "application.properties");
             }
         });
-        
     }
     
     private void initSystemProperty() {

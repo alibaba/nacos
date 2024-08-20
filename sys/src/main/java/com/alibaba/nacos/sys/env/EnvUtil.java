@@ -436,6 +436,16 @@ public class EnvUtil {
         Resource customResource = getCustomFileResource();
         return customResource == null ? getDefaultResource() : customResource;
     }
+
+    public static File getApplicationConfFile() {
+        String path = getProperty(CUSTOM_CONFIG_LOCATION_PROPERTY);
+        if (StringUtils.isNotBlank(path) && path.contains(FILE_PREFIX)) {
+            String[] paths = path.split(",", -1);
+            path = paths[paths.length - 1].substring(FILE_PREFIX.length());
+            return Paths.get(path, DEFAULT_CONFIG_LOCATION).toFile();
+        }
+        return Paths.get(EnvUtil.class.getResource(DEFAULT_RESOURCE_PATH).getPath()).toFile();
+    }
     
     private static Resource getCustomFileResource() {
         String path = getProperty(CUSTOM_CONFIG_LOCATION_PROPERTY);
