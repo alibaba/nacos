@@ -166,9 +166,7 @@ public class StartingApplicationListener implements NacosApplicationListener {
     }
     
     private void registerWatcher() throws NacosException {
-        File confFile = EnvUtil.getApplicationConfFile();
-        String configFolder = confFile.getParentFile().getAbsolutePath();
-        WatchFileCenter.registerWatcher(configFolder, new FileWatcher() {
+        WatchFileCenter.registerWatcher(EnvUtil.getApplicationConfFolderPath(), new FileWatcher() {
             @Override
             public void onChange(FileChangeEvent event) {
                 try {
