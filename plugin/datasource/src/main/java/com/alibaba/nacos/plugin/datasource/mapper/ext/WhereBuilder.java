@@ -43,7 +43,7 @@ public final class WhereBuilder {
     /**
      * Where Conditional.
      */
-    private final StringBuilder where = new StringBuilder(" WHERE ");
+    private final StringBuilder where = new StringBuilder(" WHERE  ");
     
     /**
      * Default Construct.
