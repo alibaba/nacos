@@ -15,11 +15,12 @@
  *
  */
 
-package com.alibaba.nacos.console.handler.inner;
+package com.alibaba.nacos.console.handler.inner.config;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.common.model.RestResultUtils;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.common.utils.DateFormatUtils;
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -34,7 +35,6 @@ import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
-import com.alibaba.nacos.config.server.result.code.ResultCodeEnum;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
@@ -45,24 +45,26 @@ import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
-import com.alibaba.nacos.console.handler.ConfigHandler;
+import com.alibaba.nacos.console.handler.config.ConfigHandler;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,6 +81,12 @@ import java.util.stream.Collectors;
 public class ConfigInnerHandler implements ConfigHandler {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigInnerHandler.class);
+    
+    private static final String EXPORT_CONFIG_FILE_NAME = "nacos_config_export_";
+    
+    private static final String EXPORT_CONFIG_FILE_NAME_EXT = ".zip";
+    
+    private static final String EXPORT_CONFIG_FILE_NAME_DATE_FORMAT = "yyyyMMddHHmmss";
     
     private final ConfigInfoPersistService configInfoPersistService;
     
@@ -104,14 +112,14 @@ public class ConfigInnerHandler implements ConfigHandler {
     }
     
     @Override
-    public void getConfig(HttpServletRequest request, HttpServletResponse response, String dataId, String group,
-            String namespaceId, String tag, String isNotify, String clientIp, boolean isV2)
-            throws IOException, ServletException, NacosException {
-        inner.doGetConfig(request, response, dataId, group, namespaceId, tag, isNotify, clientIp, true);
+    public Page<ConfigInfo> getConfigList(int pageNo, int pageSize, String dataId, String group, String namespaceId,
+            Map<String, Object> configAdvanceInfo) throws IOException, ServletException, NacosException {
+        return configInfoPersistService.findConfigInfoLike4Page(pageNo, pageSize, dataId, group, namespaceId,
+                configAdvanceInfo);
     }
     
     @Override
-    public ConfigAllInfo detailConfigInfo(String dataId, String group, String namespaceId) throws NacosException {
+    public ConfigAllInfo getConfigDetail(String dataId, String group, String namespaceId) throws NacosException {
         ConfigAllInfo configAllInfo = configInfoPersistService.findConfigAllInfo(dataId, group, namespaceId);
         // decrypted
         if (Objects.nonNull(configAllInfo)) {
@@ -143,7 +151,7 @@ public class ConfigInnerHandler implements ConfigHandler {
     }
     
     @Override
-    public Boolean deleteConfigs(List<Long> ids, String clientIp, String srcUser) {
+    public Boolean batchDeleteConfigs(List<Long> ids, String clientIp, String srcUser) {
         final Timestamp time = TimeUtils.getCurrentTime();
         List<ConfigInfo> configInfoList = configInfoPersistService.removeConfigInfoByIds(ids, clientIp, srcUser);
         if (CollectionUtils.isEmpty(configInfoList)) {
@@ -153,7 +161,7 @@ public class ConfigInnerHandler implements ConfigHandler {
             ConfigChangePublisher.notifyConfigChange(
                     new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
                             configInfo.getTenant(), time.getTime()));
-        
+            
             ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant(), null, time.getTime(), clientIp, ConfigTraceService.PERSISTENCE_EVENT,
                     ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
@@ -162,7 +170,7 @@ public class ConfigInnerHandler implements ConfigHandler {
     }
     
     @Override
-    public Page<ConfigInfo> searchConfigByDetails(String search, int pageNo, int pageSize, String dataId, String group,
+    public Page<ConfigInfo> getConfigListByContent(String search, int pageNo, int pageSize, String dataId, String group,
             String namespaceId, Map<String, Object> configAdvanceInfo) throws NacosException {
         try {
             return configDetailService.findConfigInfoPage(search, pageNo, pageSize, dataId, group, namespaceId,
@@ -177,7 +185,8 @@ public class ConfigInnerHandler implements ConfigHandler {
     @Override
     public GroupkeyListenserStatus getListeners(String dataId, String group, String namespaceId, int sampleTime)
             throws Exception {
-        SampleResult collectSampleResult = configSubService.getCollectSampleResult(dataId, group, namespaceId, sampleTime);
+        SampleResult collectSampleResult = configSubService.getCollectSampleResult(dataId, group, namespaceId,
+                sampleTime);
         GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
         gls.setCollectStatus(200);
         if (collectSampleResult.getLisentersGroupkeyStatus() != null) {
@@ -187,15 +196,87 @@ public class ConfigInnerHandler implements ConfigHandler {
     }
     
     @Override
-    public RestResult<Map<String, Object>> importAndPublishConfig(String srcUser, String namespaceId, SameConfigPolicy policy,
-            MultipartFile file, String srcIp, String requestIpApp) throws NacosException {
+    public ResponseEntity<byte[]> exportConfig(String dataId, String group, String namespaceId, String appName,
+            List<Long> ids) throws Exception {
+        List<ConfigAllInfo> dataList = configInfoPersistService.findAllConfigInfo4Export(dataId, group, namespaceId,
+                appName, ids);
+        List<ZipUtils.ZipItem> zipItemList = new ArrayList<>();
+        StringBuilder metaData = null;
+        for (ConfigInfo ci : dataList) {
+            if (StringUtils.isNotBlank(ci.getAppName())) {
+                // Handle appName
+                if (metaData == null) {
+                    metaData = new StringBuilder();
+                }
+                String metaDataId = ci.getDataId();
+                if (metaDataId.contains(".")) {
+                    metaDataId = metaDataId.substring(0, metaDataId.lastIndexOf(".")) + "~" + metaDataId.substring(
+                            metaDataId.lastIndexOf(".") + 1);
+                }
+                metaData.append(ci.getGroup()).append('.').append(metaDataId).append(".app=")
+                        // Fixed use of "\r\n" here
+                        .append(ci.getAppName()).append("\r\n");
+            }
+            Pair<String, String> pair = EncryptionHandler.decryptHandler(ci.getDataId(), ci.getEncryptedDataKey(),
+                    ci.getContent());
+            String itemName = ci.getGroup() + Constants.CONFIG_EXPORT_ITEM_FILE_SEPARATOR + ci.getDataId();
+            zipItemList.add(new ZipUtils.ZipItem(itemName, pair.getSecond()));
+        }
+        if (metaData != null) {
+            zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA, metaData.toString()));
+        }
+        
+        HttpHeaders headers = new HttpHeaders();
+        String fileName =
+                EXPORT_CONFIG_FILE_NAME + DateFormatUtils.format(new Date(), EXPORT_CONFIG_FILE_NAME_DATE_FORMAT)
+                        + EXPORT_CONFIG_FILE_NAME_EXT;
+        headers.add("Content-Disposition", "attachment;filename=" + fileName);
+        return new ResponseEntity<>(ZipUtils.zip(zipItemList), headers, HttpStatus.OK);
+    }
+    
+    @Override
+    public ResponseEntity<byte[]> exportConfigV2(String dataId, String group, String namespaceId, String appName,
+            List<Long> ids) throws Exception {
+        List<ConfigAllInfo> dataList = configInfoPersistService.findAllConfigInfo4Export(dataId, group, namespaceId,
+                appName, ids);
+        List<ZipUtils.ZipItem> zipItemList = new ArrayList<>();
+        List<ConfigMetadata.ConfigExportItem> configMetadataItems = new ArrayList<>();
+        for (ConfigAllInfo ci : dataList) {
+            ConfigMetadata.ConfigExportItem configMetadataItem = new ConfigMetadata.ConfigExportItem();
+            configMetadataItem.setAppName(ci.getAppName());
+            configMetadataItem.setDataId(ci.getDataId());
+            configMetadataItem.setDesc(ci.getDesc());
+            configMetadataItem.setGroup(ci.getGroup());
+            configMetadataItem.setType(ci.getType());
+            configMetadataItems.add(configMetadataItem);
+            Pair<String, String> pair = EncryptionHandler.decryptHandler(ci.getDataId(), ci.getEncryptedDataKey(),
+                    ci.getContent());
+            String itemName = ci.getGroup() + Constants.CONFIG_EXPORT_ITEM_FILE_SEPARATOR + ci.getDataId();
+            zipItemList.add(new ZipUtils.ZipItem(itemName, pair.getSecond()));
+        }
+        ConfigMetadata configMetadata = new ConfigMetadata();
+        configMetadata.setMetadata(configMetadataItems);
+        zipItemList.add(
+                new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW, YamlParserUtil.dumpObject(configMetadata)));
+        HttpHeaders headers = new HttpHeaders();
+        String fileName =
+                EXPORT_CONFIG_FILE_NAME + DateFormatUtils.format(new Date(), EXPORT_CONFIG_FILE_NAME_DATE_FORMAT)
+                        + EXPORT_CONFIG_FILE_NAME_EXT;
+        headers.add("Content-Disposition", "attachment;filename=" + fileName);
+        return new ResponseEntity<>(ZipUtils.zip(zipItemList), headers, HttpStatus.OK);
+    }
+    
+    @Override
+    public Result<Map<String, Object>> importAndPublishConfig(String srcUser, String namespaceId,
+            SameConfigPolicy policy, MultipartFile file, String srcIp, String requestIpApp) throws NacosException {
         Map<String, Object> failedData = new HashMap<>(4);
         if (Objects.isNull(file)) {
-            return RestResultUtils.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
+            return Result.failure(ErrorCode.DATA_EMPTY, failedData);
         }
-        if (StringUtils.isNotBlank(namespaceId) && namespacePersistService.tenantInfoCountByTenantId(namespaceId) <= 0) {
+        if (StringUtils.isNotBlank(namespaceId)
+                && namespacePersistService.tenantInfoCountByTenantId(namespaceId) <= 0) {
             failedData.put("succCount", 0);
-            return RestResultUtils.buildResult(ResultCodeEnum.NAMESPACE_NOT_EXIST, failedData);
+            return Result.failure(ErrorCode.NAMESPACE_NOT_EXIST, failedData);
         }
         
         List<ConfigAllInfo> configInfoList = new ArrayList<>();
@@ -203,7 +284,7 @@ public class ConfigInnerHandler implements ConfigHandler {
         try {
             ZipUtils.UnZipResult unziped = ZipUtils.unzip(file.getBytes());
             ZipUtils.ZipItem metaDataZipItem = unziped.getMetaDataItem();
-            RestResult<Map<String, Object>> errorResult;
+            Result<Map<String, Object>> errorResult;
             if (metaDataZipItem != null && Constants.CONFIG_EXPORT_METADATA_NEW.equals(metaDataZipItem.getItemName())) {
                 // new export
                 errorResult = parseImportDataV2(srcUser, unziped, configInfoList, unrecognizedList, namespaceId);
@@ -216,12 +297,12 @@ public class ConfigInnerHandler implements ConfigHandler {
         } catch (IOException e) {
             failedData.put("succCount", 0);
             LOGGER.error("parsing data failed", e);
-            return RestResultUtils.buildResult(ResultCodeEnum.PARSING_DATA_FAILED, failedData);
+            return Result.failure(ErrorCode.PARSING_DATA_FAILED, failedData);
         }
-    
+        
         if (CollectionUtils.isEmpty(configInfoList)) {
             failedData.put("succCount", 0);
-            return RestResultUtils.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
+            return Result.failure(ErrorCode.DATA_EMPTY, failedData);
         }
         final Timestamp time = TimeUtils.getCurrentTime();
         Map<String, Object> saveResult = configInfoPersistService.batchInsertOrUpdate(configInfoList, srcUser, srcIp,
@@ -240,7 +321,7 @@ public class ConfigInnerHandler implements ConfigHandler {
             saveResult.put("unrecognizedCount", unrecognizedList.size());
             saveResult.put("unrecognizedData", unrecognizedList);
         }
-        return  RestResultUtils.success("导入成功", saveResult);
+        return Result.success(saveResult);
     }
     
     /**
@@ -252,7 +333,7 @@ public class ConfigInnerHandler implements ConfigHandler {
      * @param namespace        import namespace.
      * @return error result.
      */
-    private RestResult<Map<String, Object>> parseImportData(String srcUser, ZipUtils.UnZipResult unziped,
+    private Result<Map<String, Object>> parseImportData(String srcUser, ZipUtils.UnZipResult unziped,
             List<ConfigAllInfo> configInfoList, List<Map<String, String>> unrecognizedList, String namespace) {
         ZipUtils.ZipItem metaDataZipItem = unziped.getMetaDataItem();
         
@@ -266,7 +347,7 @@ public class ConfigInnerHandler implements ConfigHandler {
                 String[] metaDataItemArr = metaDataItem.split("=");
                 if (metaDataItemArr.length != 2) {
                     failedData.put("succCount", 0);
-                    return RestResultUtils.buildResult(ResultCodeEnum.METADATA_ILLEGAL, failedData);
+                    return Result.failure(ErrorCode.METADATA_ILLEGAL, failedData);
                 }
                 metaDataMap.put(metaDataItemArr[0], metaDataItemArr[1]);
             }
@@ -321,7 +402,7 @@ public class ConfigInnerHandler implements ConfigHandler {
      * @param namespace        import namespace.
      * @return error result.
      */
-    private RestResult<Map<String, Object>> parseImportDataV2(String srcUser, ZipUtils.UnZipResult unziped,
+    private Result<Map<String, Object>> parseImportDataV2(String srcUser, ZipUtils.UnZipResult unziped,
             List<ConfigAllInfo> configInfoList, List<Map<String, String>> unrecognizedList, String namespace) {
         ZipUtils.ZipItem metaDataItem = unziped.getMetaDataItem();
         String metaData = metaDataItem.getItemData();
@@ -330,7 +411,7 @@ public class ConfigInnerHandler implements ConfigHandler {
         ConfigMetadata configMetadata = YamlParserUtil.loadObject(metaData, ConfigMetadata.class);
         if (configMetadata == null || CollectionUtils.isEmpty(configMetadata.getMetadata())) {
             failedData.put("succCount", 0);
-            return RestResultUtils.buildResult(ResultCodeEnum.METADATA_ILLEGAL, failedData);
+            return Result.failure(ErrorCode.METADATA_ILLEGAL, failedData);
         }
         List<ConfigMetadata.ConfigExportItem> configExportItems = configMetadata.getMetadata();
         // check config metadata
@@ -338,7 +419,7 @@ public class ConfigInnerHandler implements ConfigHandler {
             if (StringUtils.isBlank(configExportItem.getDataId()) || StringUtils.isBlank(configExportItem.getGroup())
                     || StringUtils.isBlank(configExportItem.getType())) {
                 failedData.put("succCount", 0);
-                return RestResultUtils.buildResult(ResultCodeEnum.METADATA_ILLEGAL, failedData);
+                return Result.failure(ErrorCode.METADATA_ILLEGAL, failedData);
             }
         }
         
@@ -402,38 +483,39 @@ public class ConfigInnerHandler implements ConfigHandler {
         }
         return null;
     }
-
+    
     @Override
-    public RestResult<Map<String, Object>> cloneConfig(String srcUser, String namespaceId,
-            List<SameNamespaceCloneConfigBean> configBeansList, SameConfigPolicy policy, String srcIp, String requestIpApp) throws NacosException {
+    public Result<Map<String, Object>> cloneConfig(String srcUser, String namespaceId,
+            List<SameNamespaceCloneConfigBean> configBeansList, SameConfigPolicy policy, String srcIp,
+            String requestIpApp) throws NacosException {
         Map<String, Object> failedData = new HashMap<>(4);
         if (CollectionUtils.isEmpty(configBeansList)) {
             failedData.put("succCount", 0);
-            return RestResultUtils.buildResult(ResultCodeEnum.NO_SELECTED_CONFIG, failedData);
+            return Result.failure(ErrorCode.NO_SELECTED_CONFIG, failedData);
         }
         if (StringUtils.isNotBlank(namespaceId)
                 && namespacePersistService.tenantInfoCountByTenantId(namespaceId) <= 0) {
             failedData.put("succCount", 0);
-            return RestResultUtils.buildResult(ResultCodeEnum.NAMESPACE_NOT_EXIST, failedData);
+            return Result.failure(ErrorCode.NAMESPACE_NOT_EXIST, failedData);
         }
-    
+        
         List<Long> idList = new ArrayList<>(configBeansList.size());
         Map<Long, SameNamespaceCloneConfigBean> configBeansMap = configBeansList.stream()
                 .collect(Collectors.toMap(SameNamespaceCloneConfigBean::getCfgId, cfg -> {
                     idList.add(cfg.getCfgId());
                     return cfg;
                 }, (k1, k2) -> k1));
-    
+        
         List<ConfigAllInfo> queryedDataList = configInfoPersistService.findAllConfigInfo4Export(null, null, null, null,
                 idList);
-    
+        
         if (queryedDataList == null || queryedDataList.isEmpty()) {
             failedData.put("succCount", 0);
-            return RestResultUtils.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
+            return Result.failure(ErrorCode.DATA_EMPTY, failedData);
         }
-    
+        
         List<ConfigAllInfo> configInfoList4Clone = new ArrayList<>(queryedDataList.size());
-    
+        
         for (ConfigAllInfo ci : queryedDataList) {
             SameNamespaceCloneConfigBean paramBean = configBeansMap.get(ci.getId());
             ConfigAllInfo ci4save = new ConfigAllInfo();
@@ -453,7 +535,7 @@ public class ConfigInnerHandler implements ConfigHandler {
                     ci.getEncryptedDataKey() == null ? StringUtils.EMPTY : ci.getEncryptedDataKey());
             configInfoList4Clone.add(ci4save);
         }
-    
+        
         final Timestamp time = TimeUtils.getCurrentTime();
         Map<String, Object> saveResult = configInfoPersistService.batchInsertOrUpdate(configInfoList4Clone, srcUser,
                 srcIp, null, policy);
@@ -466,7 +548,7 @@ public class ConfigInnerHandler implements ConfigHandler {
                     ConfigTraceService.PERSISTENCE_EVENT, ConfigTraceService.PERSISTENCE_TYPE_PUB,
                     configInfo.getContent());
         }
-        return RestResultUtils.success("Clone Completed Successfully", saveResult);
+        return Result.success(saveResult);
     }
-
+    
 }
