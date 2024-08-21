@@ -50,6 +50,9 @@ public class ConsoleConfig {
     @Value("${nacos.console.ui.enabled:true}")
     private boolean consoleUiEnabled;
     
+    @Value("${nacos.deployment.type:merged}")
+    private String type;
+    
     /**
      * Init.
      */
@@ -86,5 +89,9 @@ public class ConsoleConfig {
     
     public boolean isConsoleUiEnabled() {
         return consoleUiEnabled;
+    }
+    
+    public String getType() {
+        return type;
     }
 }
