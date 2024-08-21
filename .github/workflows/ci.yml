@@ -6,11 +6,10 @@ name: "Continuous Integration"
 on:
   push:
     branches: [ master, develop, v1.x-develop, v1.X ]
-  pull_request:
+  pull_request_target:
     branches: [ develop, v1.x-develop ]
 
-permissions:
-  contents: read # to fetch code (actions/checkout)
+permissions: read-all
 
 jobs:
   ci:
@@ -21,16 +20,20 @@ jobs:
         java: [8]
     steps:
       - name: "Cache Maven Repos"
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
+      - if: github.event_name == 'pull_request_target'
+        run: echo "REF=refs/pull/${{ github.event.number }}/merge" >> "$GITHUB_ENV"
       - name: "Checkout"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.REF }}
       - name: "Set up JDK ${{ matrix.java }}"
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: ${{ matrix.java }}
           distribution: 'zulu'
@@ -44,7 +47,11 @@ jobs:
       - name: "Test With Maven"
         run: mvn -Prelease-nacos clean test -DtrimStackTrace=false -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
       - name: "Codecov"
-        uses: codecov/codecov-action@v4.0.1
+        uses: codecov/codecov-action@v4.2.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
+          verbose: true
+          fail_ci_if_error: true
           files: ./address/target/site/jacoco/jacoco.xml,./api/target/site/jacoco/jacoco.xml,./auth/target/site/jacoco/jacoco.xml,./client/target/site/jacoco/jacoco.xml,./common/target/site/jacoco/jacoco.xml,./config/target/site/jacoco/jacoco.xml,./consistency/target/site/jacoco/jacoco.xml,./console/target/site/jacoco/jacoco.xml,./core/target/site/jacoco/jacoco.xml,./logger-adapter-impl/log4j2-adapter/target/site/jacoco/jacoco.xml,./logger-adapter-impl/logback-adapter-12/target/site/jacoco/jacoco.xml,./naming/target/site/jacoco/jacoco.xml,./persistence/target/site/jacoco/jacoco.xml,./plugin-default-impl/nacos-default-auth-plugin/target/site/jacoco/jacoco.xml,./plugin-default-impl/nacos-default-control-plugin/target/site/jacoco/jacoco.xml,./plugin/auth/target/site/jacoco/jacoco.xml,./plugin/config/target/site/jacoco/jacoco.xml,./plugin/control/target/site/jacoco/jacoco.xml,./plugin/datasource/target/site/jacoco/jacoco.xml,./plugin/encryption/target/site/jacoco/jacoco.xml,./plugin/environment/target/site/jacoco/jacoco.xml,./plugin/trace/target/site/jacoco/jacoco.xml,./prometheus/target/site/jacoco/jacoco.xml,./sys/target/site/jacoco/jacoco.xml
           token: ${{ secrets.CODECOV_TOKEN }}
