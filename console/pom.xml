@@ -106,7 +106,6 @@
                     <include>static/**</include>
                     <include>application.properties</include>
                     <include>org/apache/derby/modules.properties</include>
-                    <include>**/*.proto</include>
                     <include>librocksdbjni-${hints.os.rocksdb}</include>
                 </includes>
                 <excludes>
@@ -309,6 +308,19 @@
                                 <!-- Resource Hints -->
                                 -H:IncludeResources='librocksdbjni-${hints.os.rocksdb}'
                                 <!-- Runtime Hints -->
+                                --initialize-at-run-time=io.grpc.internal.ServerCallImpl
+                                --initialize-at-run-time=io.grpc.ForwardingServerCall
+                                --initialize-at-run-time=io.grpc.ForwardingServerCall$SimpleForwardingServerCall
+                                --initialize-at-run-time=io.grpc.netty.shaded.io.grpc.netty.WriteQueue
+                                --initialize-at-run-time=io.grpc.netty.shaded.io.grpc.netty.NettyServerStream
+                                --initialize-at-run-time=io.grpc.ServerCall
+                                --initialize-at-run-time=io.grpc.stub.ServerCalls
+                                --initialize-at-run-time=io.grpc.stub.ServerCalls$NoopStreamObserver
+                                --initialize-at-run-time=io.grpc.stub.ServerCalls$ServerCallStreamObserverImpl
+                                --initialize-at-run-time=io.grpc.stub.ServerCalls$StreamingServerCallHandler
+                                --initialize-at-run-time=io.grpc.stub.ServerCallStreamObserver
+                                --initialize-at-run-time=io.grpc.stub.CallStreamObserver
+                                --initialize-at-run-time=io.grpc.stub.StreamObserver
                                 --initialize-at-run-time=io.grpc.netty.shaded.io.netty.buffer.Unpooled
                                 --initialize-at-run-time=io.grpc.netty.shaded.io.netty.buffer.PoolArena
                                 --initialize-at-run-time=io.grpc.netty.shaded.io.netty.buffer.ByteBufUtil
@@ -372,6 +384,72 @@
                                 --initialize-at-run-time=com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo
                                 --initialize-at-run-time=com.alibaba.nacos.naming.core.v2.pojo.Service
                                 --initialize-at-run-time=com.alibaba.nacos.api.naming.pojo.Instance
+                                --initialize-at-run-time=com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest
+                                --initialize-at-run-time=com.alibaba.nacos.api.grpc.auto.Metadata
+                                --initialize-at-run-time=com.alibaba.nacos.api.grpc.auto.Metadata.Builder
+                                --initialize-at-run-time=com.alibaba.nacos.api.grpc.auto.Payload
+                                --initialize-at-run-time=com.alibaba.nacos.api.grpc.auto.Payload.Builder
+                                --initialize-at-run-time=com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc
+                                --initialize-at-run-time=com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc.BiRequestStreamBlockingStub
+                                --initialize-at-run-time=com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc.BiRequestStreamFutureStub
+                                --initialize-at-run-time=com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc.BiRequestStreamImplBase
+                                --initialize-at-run-time=com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc.BiRequestStreamStub
+                                --initialize-at-run-time=com.alibaba.nacos.api.naming.remote.request.InstanceRequest
+                                --initialize-at-run-time=com.alibaba.nacos.api.naming.remote.request.PersistentInstanceRequest
+                                --initialize-at-run-time=com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest
+                                --initialize-at-run-time=com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest
+                                --initialize-at-run-time=com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest
+                                --initialize-at-run-time=com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest
+                                --initialize-at-run-time=com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest
+                                --initialize-at-run-time=com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest
+                                --initialize-at-run-time=com.alibaba.nacos.api.config.remote.request.cluster.ConfigChangeClusterSyncRequest
+                                --initialize-at-run-time=com.alibaba.nacos.api.config.remote.response.ClientConfigMetricResponse
+                                --initialize-at-run-time=com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenResponse
+                                --initialize-at-run-time=com.alibaba.nacos.api.config.remote.response.ConfigChangeNotifyResponse
+                                --initialize-at-run-time=com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse
+                                --initialize-at-run-time=com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse
+                                --initialize-at-run-time=com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse
+                                --initialize-at-run-time=com.alibaba.nacos.api.config.remote.response.cluster.ConfigChangeClusterSyncResponse
+                                --initialize-at-run-time=com.alibaba.nacos.api.naming.remote.request.BatchInstanceRequest
+                                --initialize-at-run-time=com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest
+                                --initialize-at-run-time=com.alibaba.nacos.api.naming.remote.request.ServiceListRequest
+                                --initialize-at-run-time=com.alibaba.nacos.api.naming.remote.request.ServiceQueryRequest
+                                --initialize-at-run-time=com.alibaba.nacos.api.naming.remote.request.SubscribeServiceRequest
+                                --initialize-at-run-time=com.alibaba.nacos.api.naming.remote.response.BatchInstanceResponse
+                                --initialize-at-run-time=com.alibaba.nacos.api.naming.remote.response.InstanceResponse
+                                --initialize-at-run-time=com.alibaba.nacos.api.naming.remote.response.NotifySubscriberResponse
+                                --initialize-at-run-time=com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse
+                                --initialize-at-run-time=com.alibaba.nacos.api.naming.remote.response.ServiceListResponse
+                                --initialize-at-run-time=com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse
+                                --initialize-at-run-time=com.alibaba.nacos.api.remote.request.ConnectionSetupRequest
+                                --initialize-at-run-time=com.alibaba.nacos.api.remote.request.ClientDetectionRequest
+                                --initialize-at-run-time=com.alibaba.nacos.api.remote.request.ConnectResetRequest
+                                --initialize-at-run-time=com.alibaba.nacos.api.remote.request.HealthCheckRequest
+                                --initialize-at-run-time=com.alibaba.nacos.api.remote.request.PushAckRequest
+                                --initialize-at-run-time=com.alibaba.nacos.api.remote.request.ServerCheckRequest
+                                --initialize-at-run-time=com.alibaba.nacos.api.remote.request.ServerLoaderInfoRequest
+                                --initialize-at-run-time=com.alibaba.nacos.api.remote.request.ServerReloadRequest
+                                --initialize-at-run-time=com.alibaba.nacos.api.remote.request.SetupAckRequest
+                                --initialize-at-run-time=com.alibaba.nacos.api.remote.response.ClientDetectionResponse
+                                --initialize-at-run-time=com.alibaba.nacos.api.remote.response.ConnectResetResponse
+                                --initialize-at-run-time=com.alibaba.nacos.api.remote.response.ErrorResponse
+                                --initialize-at-run-time=com.alibaba.nacos.api.remote.response.HealthCheckResponse
+                                --initialize-at-run-time=com.alibaba.nacos.api.remote.response.ServerCheckResponse
+                                --initialize-at-run-time=com.alibaba.nacos.api.remote.response.ServerLoaderInfoResponse
+                                --initialize-at-run-time=com.alibaba.nacos.api.remote.response.ServerReloadResponse
+                                --initialize-at-run-time=com.alibaba.nacos.api.remote.response.SetupAckResponse
+                                --initialize-at-run-time=com.alibaba.nacos.core.monitor.GrpcServerThreadPoolMonitor
+                                --initialize-at-run-time=com.alibaba.nacos.core.remote.grpc.BaseGrpcServer
+                                --initialize-at-run-time=com.alibaba.nacos.core.remote.BaseRpcServer
+                                --initialize-at-run-time=com.alibaba.nacos.core.remote.grpc.GrpcBiStreamRequestAcceptor
+                                --initialize-at-run-time=com.alibaba.nacos.core.remote.grpc.GrpcClusterServer
+                                --initialize-at-run-time=com.alibaba.nacos.core.remote.grpc.GrpcSdkServer
+                                --initialize-at-run-time=com.alibaba.nacos.core.cluster.remote.request.MemberReportRequest
+                                --initialize-at-run-time=com.alibaba.nacos.core.cluster.remote.response.MemberReportResponse
+                                --initialize-at-run-time=com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest
+                                --initialize-at-run-time=com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest$ConfigListenContext
+                                --initialize-at-run-time=com.alibaba.nacos.naming.cluster.remote.request.DistroDataRequest
+                                --initialize-at-run-time=com.alibaba.nacos.naming.cluster.remote.response.DistroDataResponse
                                 <!-- Build-time Hints -->
                                 --initialize-at-build-time=org.slf4j.LoggerFactory
                                 --initialize-at-build-time=ch.qos.logback.core.util.Loader

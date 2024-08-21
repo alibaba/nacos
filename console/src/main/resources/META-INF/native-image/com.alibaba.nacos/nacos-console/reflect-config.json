@@ -5062,7 +5062,8 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllPublicMethods":true,
-  "queryAllDeclaredConstructors":true
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"postConstruct","parameterTypes":[] }]
 },
 {
   "name":"io.grpc.ForwardingServerCall$SimpleForwardingServerCall",
@@ -5336,6 +5337,30 @@
 },
 {
   "name":"io.grpc.override.ContextStorageOverride"
+},
+{
+  "name":"io.grpc.stub.ServerCalls",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"io.grpc.stub.ServerCalls$NoopStreamObserver",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"io.grpc.stub.ServerCalls$ServerCallStreamObserverImpl",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"io.grpc.stub.ServerCalls$StreamingServerCallHandler",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
 },
 {
   "name":"io.grpc.stub.StreamObserver"

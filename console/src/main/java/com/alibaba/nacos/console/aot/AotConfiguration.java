@@ -28,8 +28,8 @@ import java.util.Set;
  * Help graalvm and spring-aot find specific native file from jar like rocksdb.
  *
  * @author Dioxide.CN
- * @date 2024/8/16 09:03
- * @since 1.0
+ * @date 2024/8/16
+ * @since 2.4.0
  */
 public class AotConfiguration {
 
