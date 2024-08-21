@@ -47,7 +47,7 @@ jobs:
       - name: "Test With Maven"
         run: mvn -Prelease-nacos clean test -DtrimStackTrace=false -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
       - name: "Codecov"
-        uses: codecov/codecov-action@v4.2.0
+        uses: codecov/codecov-action@v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
