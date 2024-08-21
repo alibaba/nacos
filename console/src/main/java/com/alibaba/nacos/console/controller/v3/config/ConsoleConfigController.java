@@ -21,7 +21,7 @@ import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.enums.ApiType;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -77,44 +77,6 @@ public class ConsoleConfigController {
     }
     
     /**
-     * Get configure information list.
-     *
-     * @param dataId      Data ID string value.
-     * @param group       Group string value.
-     * @param namespaceId Namespace string value.
-     * @param configTags  Configuration tags.
-     * @param appName     Application name string value.
-     * @param pageNo      Page number.
-     * @param pageSize    Page size.
-     * @return Result containing the configuration information.
-     * @throws ServletException If a servlet-specific error occurs.
-     * @throws IOException      If an I/O error occurs.
-     * @throws NacosException   If a Nacos-specific error occurs.
-     */
-    @GetMapping
-    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
-    public Result<Page<ConfigInfo>> getConfigList(@RequestParam("dataId") String dataId,
-            @RequestParam("group") String group,
-            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
-            @RequestParam(value = "config_tags", required = false) String configTags,
-            @RequestParam(value = "appName", required = false) String appName, @RequestParam("pageNo") int pageNo,
-            @RequestParam("pageSize") int pageSize) throws IOException, ServletException, NacosException {
-        // check tenant
-        ParamUtils.checkTenant(namespaceId);
-        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
-        Map<String, Object> configAdvanceInfo = new HashMap<>(100);
-        if (StringUtils.isNotBlank(appName)) {
-            configAdvanceInfo.put("appName", appName);
-        }
-        if (StringUtils.isNotBlank(configTags)) {
-            configAdvanceInfo.put("config_tags", configTags);
-        }
-        
-        return Result.success(
-                configProxy.getConfigList(pageNo, pageSize, dataId, group, namespaceId, configAdvanceInfo));
-    }
-    
-    /**
      * Get the specific configuration information.
      *
      * @param dataId      Data ID string value.
@@ -123,7 +85,7 @@ public class ConsoleConfigController {
      * @return Result containing detailed configuration information.
      * @throws NacosException If a Nacos-specific error occurs.
      */
-    @GetMapping("/detail")
+    @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
     public Result<ConfigAllInfo> getConfigDetail(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
@@ -221,6 +183,44 @@ public class ConsoleConfigController {
         String srcUser = RequestUtil.getSrcUserName(request);
         
         return Result.success(configProxy.batchDeleteConfigs(ids, clientIp, srcUser));
+    }
+    
+    /**
+     * Get configure information list.
+     *
+     * @param dataId      Data ID string value.
+     * @param group       Group string value.
+     * @param namespaceId Namespace string value.
+     * @param configTags  Configuration tags.
+     * @param appName     Application name string value.
+     * @param pageNo      Page number.
+     * @param pageSize    Page size.
+     * @return Result containing the configuration information.
+     * @throws ServletException If a servlet-specific error occurs.
+     * @throws IOException      If an I/O error occurs.
+     * @throws NacosException   If a Nacos-specific error occurs.
+     */
+    @GetMapping("/list")
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
+    public Result<Page<ConfigInfo>> getConfigList(@RequestParam("dataId") String dataId,
+            @RequestParam("group") String group,
+            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
+            @RequestParam(value = "config_tags", required = false) String configTags,
+            @RequestParam(value = "appName", required = false) String appName, @RequestParam("pageNo") int pageNo,
+            @RequestParam("pageSize") int pageSize) throws IOException, ServletException, NacosException {
+        // check tenant
+        ParamUtils.checkTenant(namespaceId);
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
+        Map<String, Object> configAdvanceInfo = new HashMap<>(100);
+        if (StringUtils.isNotBlank(appName)) {
+            configAdvanceInfo.put("appName", appName);
+        }
+        if (StringUtils.isNotBlank(configTags)) {
+            configAdvanceInfo.put("config_tags", configTags);
+        }
+        
+        return Result.success(
+                configProxy.getConfigList(pageNo, pageSize, dataId, group, namespaceId, configAdvanceInfo));
     }
     
     /**
