@@ -30,7 +30,7 @@ import java.util.stream.Stream;
  *
  * @author Dioxide.CN
  * @date 2024/8/6
- * @since 1.0
+ * @since 2.4.0
  */
 @SuppressWarnings("all")
 public class NacosRuntimeHints implements RuntimeHintsRegistrar {
@@ -38,11 +38,13 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
     // region Java
     private final Class<?>[] javaClasses = {
             byte.class,
+            byte.class,
             byte[].class,
             boolean.class,
             Object.class,
             com.sun.management.GarbageCollectorMXBean.class,
             com.sun.management.GcInfo.class,
+            sun.misc.Unsafe.class,
             java.io.PrintWriter.class,
             java.lang.Double.class,
             java.lang.management.MemoryUsage.class,
@@ -280,6 +282,25 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
     };
     // endregion
     
+    // region gRpc
+    private final Class<?>[] grpcClasses = {
+            io.grpc.ServerCall.class,
+            io.grpc.ServerBuilder.class,
+            io.grpc.stub.ServerCalls.class,
+            io.grpc.stub.ServerCallStreamObserver.class,
+            io.grpc.stub.CallStreamObserver.class,
+            io.grpc.stub.StreamObserver.class,
+            io.grpc.internal.ServerImplBuilder.class,
+            io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder.class,
+            io.grpc.ForwardingServerCall.class,
+            io.grpc.ForwardingServerCall.SimpleForwardingServerCall.class,
+            
+            Class.forName("io.grpc.internal.ServerCallImpl"),
+            Class.forName("io.grpc.netty.shaded.io.grpc.netty.WriteQueue"),
+            Class.forName("io.grpc.netty.shaded.io.grpc.netty.NettyServerStream")
+    };
+    // endregion
+    
     // region Nacos Hints
     private final Class<?>[] nacosClasses = {
             // reflect
@@ -291,6 +312,9 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl.class,
             com.alibaba.nacos.consistency.snapshot.LocalFileMeta.class,
             com.alibaba.nacos.consistency.ProtocolMetaData.class,
+            com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest.class,
+            com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest.class,
+            com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest.ConfigListenContext.class,
             com.alibaba.nacos.api.remote.response.ClientDetectionResponse.class,
             com.alibaba.nacos.api.remote.response.ConnectResetResponse.class,
             com.alibaba.nacos.api.remote.response.ErrorResponse.class,
@@ -445,7 +469,6 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
     private final String[] resourcePattern = {
             AotConfiguration.reflectToNativeLibraryLoader(),
             ".*\\.desc$",
-            ".*\\.proto$",
             ".*\\.html$",
             ".*\\.css$",
             ".*\\.js$",
@@ -464,15 +487,16 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
     
     @Override
     public void registerHints(RuntimeHints hints, ClassLoader classLoader) {
-        Stream.of(javaClasses, hessianClasses, sqlClasses,
+        Stream.of(javaClasses, hessianClasses, sqlClasses, grpcClasses,
                         jraftDataClasses, jraftRpcClasses, jraftCliClasses, jraftUtilClasses,
                         nacosClasses)
                 .flatMap(Stream::of)
                 .forEach(type -> hints.reflection()
                         .registerType(type,
-                                MemberCategory.INVOKE_PUBLIC_CONSTRUCTORS,
-                                MemberCategory.INVOKE_PUBLIC_METHODS,
-                                MemberCategory.DECLARED_FIELDS));
+                                MemberCategory.INVOKE_DECLARED_CONSTRUCTORS,
+                                MemberCategory.INVOKE_DECLARED_METHODS,
+                                MemberCategory.DECLARED_FIELDS,
+                                MemberCategory.DECLARED_CLASSES));
         
         for (String pattern : resourcePattern) {
             hints.resources().registerPattern(pattern);
