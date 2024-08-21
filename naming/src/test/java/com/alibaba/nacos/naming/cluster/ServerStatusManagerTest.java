@@ -18,26 +18,43 @@
 
 package com.alibaba.nacos.naming.cluster;
 
-import com.alibaba.nacos.naming.consistency.ConsistencyService;
+import com.alibaba.nacos.consistency.cp.CPProtocol;
+import com.alibaba.nacos.core.distributed.ProtocolManager;
+import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alipay.sofa.jraft.RouteTable;
+import com.alipay.sofa.jraft.entity.PeerId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
 
-import java.lang.reflect.Field;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class ServerStatusManagerTest {
+    
+    @Mock
+    SwitchDomain switchDomain;
+    
+    @Mock
+    ProtocolManager protocolManager;
+    
+    @Mock
+    CPProtocol cpProtocol;
     
     @BeforeEach
     void setUp() {
@@ -47,7 +64,7 @@ class ServerStatusManagerTest {
     @Test
     void testInit() {
         try (MockedStatic mocked = mockStatic(GlobalExecutor.class)) {
-            ServerStatusManager serverStatusManager = new ServerStatusManager(mock(SwitchDomain.class));
+            ServerStatusManager serverStatusManager = new ServerStatusManager(protocolManager, switchDomain);
             serverStatusManager.init();
             mocked.verify(() -> GlobalExecutor.registerServerStatusUpdater(any()));
         }
@@ -55,30 +72,24 @@ class ServerStatusManagerTest {
     
     @Test
     void testGetServerStatus() {
-        ServerStatusManager serverStatusManager = new ServerStatusManager(mock(SwitchDomain.class));
+        ServerStatusManager serverStatusManager = new ServerStatusManager(protocolManager, switchDomain);
         ServerStatus serverStatus = serverStatusManager.getServerStatus();
         assertEquals(ServerStatus.STARTING, serverStatus);
         
     }
     
     @Test
-    void testGetErrorMsg() throws NoSuchFieldException, IllegalAccessException {
-        ServerStatusManager serverStatusManager = new ServerStatusManager(mock(SwitchDomain.class));
-        Field field = ServerStatusManager.class.getDeclaredField("consistencyService");
-        field.setAccessible(true);
-        ConsistencyService consistencyService = mock(ConsistencyService.class);
-        when(consistencyService.getErrorMsg()).thenReturn(Optional.empty());
-        field.set(serverStatusManager, consistencyService);
+    void testGetErrorMsg() {
+        ServerStatusManager serverStatusManager = new ServerStatusManager(protocolManager, switchDomain);
         Optional<String> errorMsg = serverStatusManager.getErrorMsg();
-        assertFalse(errorMsg.isPresent());
+        assertTrue(errorMsg.isPresent());
     }
     
     @Test
     void testUpdaterFromSwitch() {
-        SwitchDomain switchDomain = mock(SwitchDomain.class);
         String expect = ServerStatus.DOWN.toString();
         when(switchDomain.getOverriddenServerStatus()).thenReturn(expect);
-        ServerStatusManager serverStatusManager = new ServerStatusManager(switchDomain);
+        ServerStatusManager serverStatusManager = new ServerStatusManager(protocolManager, switchDomain);
         ServerStatusManager.ServerStatusUpdater updater = serverStatusManager.new ServerStatusUpdater();
         //then
         updater.run();
@@ -88,30 +99,36 @@ class ServerStatusManagerTest {
     }
     
     @Test
-    void testUpdaterFromConsistency1() throws NoSuchFieldException, IllegalAccessException {
-        SwitchDomain switchDomain = mock(SwitchDomain.class);
-        ServerStatusManager serverStatusManager = new ServerStatusManager(switchDomain);
-        Field field = ServerStatusManager.class.getDeclaredField("consistencyService");
-        field.setAccessible(true);
-        ConsistencyService consistencyService = mock(ConsistencyService.class);
-        when(consistencyService.isAvailable()).thenReturn(true);
-        field.set(serverStatusManager, consistencyService);
+    void testUpdaterFromConsistency1() {
+        try (MockedStatic mocked = mockStatic(RouteTable.class)) {
+            RouteTable mockTable = mock(RouteTable.class);
+            when(mockTable.selectLeader(Constants.NAMING_PERSISTENT_SERVICE_GROUP)).thenReturn(new PeerId());
+            mocked.when(RouteTable::getInstance).thenReturn(mockTable);
+            when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
+            ServerStatusManager serverStatusManager = new ServerStatusManager(protocolManager, switchDomain);
+            ServerStatusManager.ServerStatusUpdater updater = serverStatusManager.new ServerStatusUpdater();
+            //then
+            updater.run();
+            //then
+            assertEquals(ServerStatus.UP, serverStatusManager.getServerStatus());
+            assertFalse(serverStatusManager.getErrorMsg().isPresent());
+        }
+    }
+    
+    @Test
+    void testUpdaterFromConsistency2() {
+        when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
+        ServerStatusManager serverStatusManager = new ServerStatusManager(protocolManager, switchDomain);
         ServerStatusManager.ServerStatusUpdater updater = serverStatusManager.new ServerStatusUpdater();
         //then
         updater.run();
         //then
-        assertEquals(ServerStatus.UP, serverStatusManager.getServerStatus());
+        assertEquals(ServerStatus.DOWN, serverStatusManager.getServerStatus());
     }
     
     @Test
-    void testUpdaterFromConsistency2() throws NoSuchFieldException, IllegalAccessException {
-        SwitchDomain switchDomain = mock(SwitchDomain.class);
-        ServerStatusManager serverStatusManager = new ServerStatusManager(switchDomain);
-        Field field = ServerStatusManager.class.getDeclaredField("consistencyService");
-        field.setAccessible(true);
-        ConsistencyService consistencyService = mock(ConsistencyService.class);
-        when(consistencyService.isAvailable()).thenReturn(false);
-        field.set(serverStatusManager, consistencyService);
+    void testUpdaterFromConsistency3() {
+        ServerStatusManager serverStatusManager = new ServerStatusManager(protocolManager, switchDomain);
         ServerStatusManager.ServerStatusUpdater updater = serverStatusManager.new ServerStatusUpdater();
         //then
         updater.run();

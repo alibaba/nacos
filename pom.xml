@@ -88,7 +88,7 @@
     </issueManagement>
     
     <properties>
-        <revision>2.4.0</revision>
+        <revision>2.4.1</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Compiler settings properties -->
@@ -143,7 +143,7 @@
         <proto-google-common-protos.version>2.17.0</proto-google-common-protos.version>
         <protobuf-java.version>3.22.3</protobuf-java.version>
         <protoc-gen-grpc-java.version>${grpc-java.version}</protoc-gen-grpc-java.version>
-        <hessian.version>4.0.63</hessian.version>
+        <hessian.version>4.0.4</hessian.version>
         <mockito.version>4.11.0</mockito.version>
         <HikariCP.version>3.4.2</HikariCP.version>
         <jraft-core.version>1.3.14</jraft-core.version>
@@ -845,7 +845,7 @@
             <!-- hessian -->
             
             <dependency>
-                <groupId>com.caucho</groupId>
+                <groupId>com.alipay.sofa</groupId>
                 <artifactId>hessian</artifactId>
                 <version>${hessian.version}</version>
             </dependency>

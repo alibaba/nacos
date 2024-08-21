@@ -203,7 +203,9 @@ public final class NacosSignatureAlgorithm {
             Mac instance = Mac.getInstance(jcaName);
             instance.init(key);
             return instance;
-        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalArgumentException("No Such Algorithm: " + jcaName);
+        } catch (InvalidKeyException e) {
             throw new IllegalArgumentException("Invalid key: " + key);
         }
     }
