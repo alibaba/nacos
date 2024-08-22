@@ -77,7 +77,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
             
             @Override
             public void onNext(Payload payload) {
-                streamObserverOnNext(payload, clientIp, connectionId, localPort, remotePort, remoteIp, responseObserver);
+                streamObserverOnNext(payload, connectionId, localPort, remotePort, remoteIp, responseObserver);
             }
             
             @Override
@@ -124,10 +124,9 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
         return streamObserver;
     }
     
-    private void streamObserverOnNext(Payload payload, String clientIp,
-            String connectionId, Integer localPort,
+    private void streamObserverOnNext(Payload payload, String connectionId, Integer localPort,
             int remotePort, String remoteIp, StreamObserver<Payload> responseObserver) {
-        clientIp = payload.getMetadata().getClientIp();
+        String clientIp = payload.getMetadata().getClientIp();
         traceDetailIfNecessary(payload);
         Object parseObj;
         try {
