@@ -431,7 +431,8 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alibaba.nacos.naming.pojo.IpAddressInfo.class,
             com.alibaba.nacos.naming.pojo.Record.class,
             com.alibaba.nacos.naming.pojo.ServiceDetailInfo.class,
-            com.alibaba.nacos.naming.pojo.ServiceNameView.class
+            com.alibaba.nacos.naming.pojo.ServiceNameView.class,
+            com.alibaba.nacos.plugin.auth.impl.jwt.NacosJwtPayload.class
     };
     // endregion
     

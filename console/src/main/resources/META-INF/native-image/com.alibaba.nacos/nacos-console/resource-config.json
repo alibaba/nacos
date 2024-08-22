@@ -855,6 +855,8 @@
   }, {
     "pattern":"\\Qcom/alibaba/nacos/prometheus/exception/PrometheusApiExceptionHandler.class\\E"
   }, {
+    "pattern":"\\Qcom/alibaba/nacos/prometheus/filter/PrometheusAuthFilter.class\\E"
+  }, {
     "pattern":"\\Qcom/fasterxml/jackson/core/ObjectCodec.class\\E"
   }, {
     "pattern":"\\Qcom/fasterxml/jackson/core/TreeCodec.class\\E"
