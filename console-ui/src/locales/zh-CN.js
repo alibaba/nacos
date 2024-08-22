@@ -617,6 +617,7 @@ const I18N_CONF = {
     rePasswordPlaceholder: '请输入确认密码',
     rePasswordError: '确认密码不能为空!',
     rePasswordError2: '两次输入密码不一致!',
+    resetSuccessfully: '修改密码成功!',
   },
   RolesManagement: {
     roleManagement: '角色管理',
