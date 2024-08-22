@@ -23,6 +23,7 @@ import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -210,6 +211,7 @@ class ConfigInfoMapperByDerbyTest {
         assertArrayEquals(mapperResult.getParamList().toArray(), ids.toArray());
         
         context.putWhereParameter(FieldConstant.IDS, null);
+        context.putWhereParameter(FieldConstant.APP_NAME, Sets.newHashSet(appName));
         mapperResult = configInfoMapperByDerby.findAllConfigInfo4Export(context);
         assertEquals(mapperResult.getSql(),
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,"
@@ -236,6 +238,7 @@ class ConfigInfoMapperByDerbyTest {
     
     @Test
     void testFindConfigInfo4PageCountRows() {
+        context.putWhereParameter(FieldConstant.APP_NAME, Sets.newHashSet(appName));
         MapperResult mapperResult = configInfoMapperByDerby.findConfigInfo4PageCountRows(context);
         assertEquals("SELECT count(*) FROM config_info WHERE  tenant_id=?  AND app_name=? ", mapperResult.getSql());
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
@@ -262,6 +265,7 @@ class ConfigInfoMapperByDerbyTest {
     
     @Test
     void testFindConfigInfoLike4PageCountRows() {
+        context.putWhereParameter(FieldConstant.APP_NAME, Sets.newHashSet(appName));
         MapperResult mapperResult = configInfoMapperByDerby.findConfigInfoLike4PageCountRows(context);
         assertEquals("SELECT count(*) FROM config_info WHERE  tenant_id LIKE ?  AND app_name = ? ", mapperResult.getSql());
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());

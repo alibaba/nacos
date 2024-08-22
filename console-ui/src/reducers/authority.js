@@ -57,8 +57,8 @@ const getUsers = params => dispatch =>
  * 创建用户
  * @param {*} param0
  */
-const createUser = ([username, password]) =>
-  request.post('v1/auth/users', { username, password }).then(res => successMsg(res));
+const createUser = ([type, username, password]) =>
+  request.post('v1/auth/users', { type, username, password }).then(res => successMsg(res));
 
 /**
  * 通过username 模糊匹配
@@ -123,8 +123,10 @@ const getPermissions = params => dispatch =>
  * 给角色添加权限
  * @param {*} param0
  */
-const createPermission = ([role, resource, action]) =>
-  request.post('v1/auth/permissions', { role, resource, action }).then(res => successMsg(res));
+const createPermission = ([role, resource, action, appName]) =>
+  request
+    .post('v1/auth/permissions', { role, resource, action, appName })
+    .then(res => successMsg(res));
 
 /**
  * 删除权限

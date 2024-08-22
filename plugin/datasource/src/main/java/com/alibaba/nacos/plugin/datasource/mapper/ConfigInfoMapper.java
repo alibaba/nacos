@@ -28,6 +28,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * The mapper of config info.
@@ -258,7 +259,7 @@ public interface ConfigInfoMapper extends Mapper {
             
             String dataId = (String) context.getWhereParameter(FieldConstant.DATA_ID);
             String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
-            String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
+            Set<String> appNames = (Set) context.getWhereParameter(FieldConstant.APP_NAME);
             
             if (StringUtils.isNotBlank(dataId)) {
                 where.append(" AND data_id LIKE ? ");
@@ -268,9 +269,14 @@ public interface ConfigInfoMapper extends Mapper {
                 where.append(" AND group_id= ? ");
                 paramList.add(group);
             }
-            if (StringUtils.isNotBlank(appName)) {
-                where.append(" AND app_name= ? ");
-                paramList.add(appName);
+            if (CollectionUtils.isNotEmpty(appNames)) {
+                where.append(" AND app_name in (");
+                for (String appName : appNames) {
+                    where.append("?").append(",");
+                    paramList.add(appName);
+                }
+                where.deleteCharAt(where.length() - 1);
+                where.append(")");
             }
         }
         return new MapperResult(sql + where, paramList);
@@ -327,7 +333,7 @@ public interface ConfigInfoMapper extends Mapper {
         final String dataId = (String) context.getWhereParameter(FieldConstant.DATA_ID);
         final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
         final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
-        final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
+        final Set<String> appNames = (Set) context.getWhereParameter(FieldConstant.APP_NAME);
         final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
         final List<Object> paramList = new ArrayList<>();
         
@@ -343,9 +349,14 @@ public interface ConfigInfoMapper extends Mapper {
             where.append(" AND group_id=? ");
             paramList.add(group);
         }
-        if (StringUtils.isNotBlank(appName)) {
-            where.append(" AND app_name=? ");
-            paramList.add(appName);
+        if (CollectionUtils.isNotEmpty(appNames)) {
+            where.append(" AND app_name in (");
+            for (String appName : appNames) {
+                where.append("?").append(",");
+                paramList.add(appName);
+            }
+            where.deleteCharAt(where.length() - 1);
+            where.append(")");
         }
         if (!StringUtils.isBlank(content)) {
             where.append(" AND content LIKE ? ");
@@ -382,7 +393,7 @@ public interface ConfigInfoMapper extends Mapper {
         final String dataId = (String) context.getWhereParameter(FieldConstant.DATA_ID);
         final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
         final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
-        final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
+        final Set<String> appNames = (Set) context.getWhereParameter(FieldConstant.APP_NAME);
         final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
         
         final List<Object> paramList = new ArrayList<>();
@@ -399,13 +410,18 @@ public interface ConfigInfoMapper extends Mapper {
             where.append(" AND group_id LIKE ? ");
             paramList.add(group);
         }
-        if (!StringUtils.isBlank(appName)) {
-            where.append(" AND app_name = ? ");
-            paramList.add(appName);
-        }
         if (!StringUtils.isBlank(content)) {
             where.append(" AND content LIKE ? ");
             paramList.add(content);
+        }
+        if (CollectionUtils.isNotEmpty(appNames)) {
+            where.append(" AND app_name in (");
+            for (String appName : appNames) {
+                where.append("?").append(",");
+                paramList.add(appName);
+            }
+            where.deleteCharAt(where.length() - 1);
+            where.append(")");
         }
         return new MapperResult(sqlCountRows + where, paramList);
     }

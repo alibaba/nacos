@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
@@ -24,6 +25,7 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * The config with tags mapper.
@@ -43,7 +45,7 @@ public interface ConfigTagsRelationMapper extends Mapper {
      * @return The sql of get config info.
      */
     default MapperResult findConfigInfo4PageCountRows(final MapperContext context) {
-        final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
+        final Set<String> appNames = (Set) context.getWhereParameter(FieldConstant.APP_NAME);
         final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
         final String dataId = (String) context.getWhereParameter(FieldConstant.DATA_ID);
         final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
@@ -64,13 +66,18 @@ public interface ConfigTagsRelationMapper extends Mapper {
             where.append(" AND a.group_id=? ");
             paramList.add(group);
         }
-        if (StringUtils.isNotBlank(appName)) {
-            where.append(" AND a.app_name=? ");
-            paramList.add(appName);
-        }
         if (!StringUtils.isBlank(content)) {
             where.append(" AND a.content LIKE ? ");
             paramList.add(content);
+        }
+        if (CollectionUtils.isNotEmpty(appNames)) {
+            where.append(" AND app_name in (");
+            for (String appName : appNames) {
+                where.append("?").append(",");
+                paramList.add(appName);
+            }
+            where.deleteCharAt(where.length() - 1);
+            where.append(")");
         }
         where.append(" AND b.tag_name IN (");
         for (int i = 0; i < tagArr.length; i++) {
@@ -105,7 +112,7 @@ public interface ConfigTagsRelationMapper extends Mapper {
      * @return The sql of getting the count of config information.
      */
     default MapperResult findConfigInfoLike4PageCountRows(final MapperContext context) {
-        final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
+        final Set<String> appNames = (Set) context.getWhereParameter(FieldConstant.APP_NAME);
         final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
         final String dataId = (String) context.getWhereParameter(FieldConstant.DATA_ID);
         final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
@@ -126,15 +133,19 @@ public interface ConfigTagsRelationMapper extends Mapper {
             where.append(" AND a.group_id LIKE ? ");
             paramList.add(group);
         }
-        if (StringUtils.isNotBlank(appName)) {
-            where.append(" AND a.app_name = ? ");
-            paramList.add(appName);
-        }
         if (StringUtils.isNotBlank(content)) {
             where.append(" AND a.content LIKE ? ");
             paramList.add(content);
         }
-        
+        if (CollectionUtils.isNotEmpty(appNames)) {
+            where.append(" AND app_name in (");
+            for (String appName : appNames) {
+                where.append("?").append(",");
+                paramList.add(appName);
+            }
+            where.deleteCharAt(where.length() - 1);
+            where.append(")");
+        }
         where.append(" AND b.tag_name IN (");
         for (int i = 0; i < tagArr.length; i++) {
             if (i != 0) {

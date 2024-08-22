@@ -54,7 +54,7 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
         
         String sqlCountRows = "SELECT count(*) FROM permissions WHERE ";
         
-        String sqlFetchRows = "SELECT role,resource,action FROM permissions WHERE ";
+        String sqlFetchRows = "SELECT role,resource,action,app_name FROM permissions WHERE ";
         
         String where = " role= ? ";
         List<String> params = new ArrayList<>();
@@ -81,11 +81,12 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
      * @param role     role info string value.
      * @param resource resource info string value.
      * @param action   action info string value.
+     * @param appName   appName string value.
      */
     @Override
-    public void addPermission(String role, String resource, String action) {
-        String sql = "INSERT INTO permissions (role, resource, action) VALUES (?, ?, ?)";
-        EmbeddedStorageContextHolder.addSqlContext(sql, role, resource, action);
+    public void addPermission(String role, String resource, String action, String appName) {
+        String sql = "INSERT INTO permissions (role, resource, action, app_name) VALUES (?, ?, ?, ?)";
+        EmbeddedStorageContextHolder.addSqlContext(sql, role, resource, action, appName);
         databaseOperate.blockUpdate();
     }
     
@@ -95,11 +96,12 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
      * @param role     role info string value.
      * @param resource resource info string value.
      * @param action   action info string value.
+     * @param appName   appName info string value.
      */
     @Override
-    public void deletePermission(String role, String resource, String action) {
-        String sql = "DELETE FROM permissions WHERE role=? AND resource=? AND action=?";
-        EmbeddedStorageContextHolder.addSqlContext(sql, role, resource, action);
+    public void deletePermission(String role, String resource, String action, String appName) {
+        String sql = "DELETE FROM permissions WHERE role=? AND resource=? AND action=? AND app_name=?";
+        EmbeddedStorageContextHolder.addSqlContext(sql, role, resource, action, appName);
         databaseOperate.blockUpdate();
     }
     
@@ -109,7 +111,7 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
         
         String sqlCountRows = "SELECT count(*) FROM permissions ";
         
-        String sqlFetchRows = "SELECT role,resource,action FROM permissions ";
+        String sqlFetchRows = "SELECT role,resource,action,app_name FROM permissions ";
         
         StringBuilder where = new StringBuilder(" WHERE 1=1");
         List<String> params = new ArrayList<>();
@@ -148,5 +150,11 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
     @Override
     public <E> AuthPaginationHelper<E> createPaginationHelper() {
         return new AuthEmbeddedPaginationHelperImpl<>(databaseOperate);
+    }
+    
+    @Override
+    public List<String> getAllAppNames() {
+        String querySql = "select distinct app_name from permissions where app_name is not null and app_name != '*'";
+        return databaseOperate.queryMany(querySql, new Object[]{}, String.class);
     }
 }

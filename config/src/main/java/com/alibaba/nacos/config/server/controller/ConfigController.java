@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.controller;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.DateFormatUtils;
@@ -36,6 +37,8 @@ import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.paramcheck.ConfigBlurSearchHttpParamExtractor;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.config.server.paramcheck.ConfigListenerHttpParamExtractor;
+import com.alibaba.nacos.config.server.utils.AppNameUtils;
+import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
@@ -60,10 +63,13 @@ import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import com.alibaba.nacos.sys.utils.InetUtils;
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -127,16 +133,19 @@ public class ConfigController {
     
     private final ConfigSubService configSubService;
     
+    private AuthConfigs authConfigs;
+    
     public ConfigController(ConfigServletInner inner, ConfigOperationService configOperationService,
             ConfigSubService configSubService, ConfigInfoPersistService configInfoPersistService,
-            NamespacePersistService namespacePersistService,
-            ConfigInfoBetaPersistService configInfoBetaPersistService) {
+            NamespacePersistService namespacePersistService, ConfigInfoBetaPersistService configInfoBetaPersistService,
+            AuthConfigs authConfigs) {
         this.inner = inner;
         this.configOperationService = configOperationService;
         this.configSubService = configSubService;
         this.configInfoPersistService = configInfoPersistService;
         this.namespacePersistService = namespacePersistService;
         this.configInfoBetaPersistService = configInfoBetaPersistService;
+        this.authConfigs = authConfigs;
     }
     
     /**
@@ -166,6 +175,17 @@ public class ConfigController {
             @RequestParam(value = "schema", required = false) String schema,
             @RequestParam(required = false) String encryptedDataKey) throws NacosException {
         
+        IdentityContext identityContext = RequestContextHolder.getContext().getAuthContext().getIdentityContext();
+        Object userTypeObject = identityContext.getParameter(
+                com.alibaba.nacos.plugin.auth.constant.Constants.Identity.USER_TYPE);
+        if (authConfigs.isAuthAppPermissionEnabled() && null != userTypeObject && StringUtils.equals("1",
+                (String) userTypeObject)) {
+            Map<String, Set<String>> appPermissionMap = RequestUtil.getAppPermissions();
+            Set<String> permissions = AppNameUtils.getAppPermissions(appPermissionMap, appName);
+            if (!hasWritePermission(permissions)) {
+                throw new AccessException("no app permission");
+            }
+        }
         String encryptedDataKeyFinal = null;
         if (StringUtils.isNotBlank(encryptedDataKey)) {
             encryptedDataKeyFinal = encryptedDataKey;
@@ -385,21 +405,43 @@ public class ConfigController {
     @GetMapping(params = "search=accurate")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     @ExtractorManager.Extractor(httpExtractor = ConfigBlurSearchHttpParamExtractor.class)
-    public Page<ConfigInfo> searchConfig(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
-            @RequestParam(value = "appName", required = false) String appName,
+    public Page<ConfigInfo> searchConfig(HttpServletRequest request, @RequestParam("dataId") String dataId,
+            @RequestParam("group") String group, @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "config_tags", required = false) String configTags,
             @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) {
         Map<String, Object> configAdvanceInfo = new HashMap<>(100);
-        if (StringUtils.isNotBlank(appName)) {
-            configAdvanceInfo.put("appName", appName);
-        }
         if (StringUtils.isNotBlank(configTags)) {
             configAdvanceInfo.put("config_tags", configTags);
         }
+        Set<String> appNames = Sets.newHashSet();
+        if (authConfigs.isAuthAppPermissionEnabled()) {
+            appNames = RequestUtil.getAppNames();
+            if (checkAppAuth(appNames, appName)) {
+                Page<ConfigInfo> page = new Page<>();
+                page.setPageNumber(pageNo);
+                page.setPagesAvailable(0);
+                page.setTotalCount(0);
+                return page;
+            }
+        }
+        if (StringUtils.isNotBlank(appName)) {
+            appNames = Sets.newHashSet(appName);
+        }
+        configAdvanceInfo.put("appNames", appNames);
         try {
-            return configInfoPersistService.findConfigInfo4Page(pageNo, pageSize, dataId, group, tenant,
-                    configAdvanceInfo);
+            Page<ConfigInfo> configInfoPage = configInfoPersistService.findConfigInfo4Page(pageNo, pageSize, dataId,
+                    group, tenant, configAdvanceInfo);
+            if (CollectionUtils.isEmpty(configInfoPage.getPageItems()) || !authConfigs.isAuthAppPermissionEnabled()) {
+                return configInfoPage;
+            }
+            Map<String, Set<String>> appPermissionMap = RequestUtil.getAppPermissions();
+            configInfoPage.getPageItems().forEach(config -> {
+                Set<String> permissions = AppNameUtils.getAppPermissions(appPermissionMap, config.getAppName());
+                boolean canWrite = hasWritePermission(permissions);
+                config.setCanWrite(canWrite);
+            });
+            return configInfoPage;
         } catch (Exception e) {
             String errorMsg = "serialize page error, dataId=" + dataId + ", group=" + group;
             LOGGER.error(errorMsg, e);
@@ -414,22 +456,44 @@ public class ConfigController {
     @GetMapping(params = "search=blur")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     @ExtractorManager.Extractor(httpExtractor = ConfigBlurSearchHttpParamExtractor.class)
-    public Page<ConfigInfo> fuzzySearchConfig(@RequestParam("dataId") String dataId,
+    public Page<ConfigInfo> fuzzySearchConfig(HttpServletRequest request, @RequestParam("dataId") String dataId,
             @RequestParam("group") String group, @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "config_tags", required = false) String configTags,
             @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) {
         MetricsMonitor.getFuzzySearchMonitor().incrementAndGet();
         Map<String, Object> configAdvanceInfo = new HashMap<>(50);
-        if (StringUtils.isNotBlank(appName)) {
-            configAdvanceInfo.put("appName", appName);
-        }
         if (StringUtils.isNotBlank(configTags)) {
             configAdvanceInfo.put("config_tags", configTags);
         }
+        Set<String> appNames = Sets.newHashSet();
+        if (authConfigs.isAuthAppPermissionEnabled()) {
+            appNames = RequestUtil.getAppNames();
+            if (checkAppAuth(appNames, appName)) {
+                Page<ConfigInfo> page = new Page<>();
+                page.setPageNumber(pageNo);
+                page.setPagesAvailable(0);
+                page.setTotalCount(0);
+                return page;
+            }
+        }
+        if (StringUtils.isNotBlank(appName)) {
+            appNames = Sets.newHashSet(appName);
+        }
+        configAdvanceInfo.put("appNames", appNames);
         try {
-            return configInfoPersistService.findConfigInfoLike4Page(pageNo, pageSize, dataId, group, tenant,
-                    configAdvanceInfo);
+            Page<ConfigInfo> configInfoPage = configInfoPersistService.findConfigInfoLike4Page(pageNo, pageSize, dataId,
+                    group, tenant, configAdvanceInfo);
+            if (CollectionUtils.isEmpty(configInfoPage.getPageItems()) || !authConfigs.isAuthAppPermissionEnabled()) {
+                return configInfoPage;
+            }
+            Map<String, Set<String>> appPermissionMap = RequestUtil.getAppPermissions();
+            configInfoPage.getPageItems().forEach(config -> {
+                Set<String> permissions = AppNameUtils.getAppPermissions(appPermissionMap, config.getAppName());
+                boolean canWrite = hasWritePermission(permissions);
+                config.setCanWrite(canWrite);
+            });
+            return configInfoPage;
         } catch (Exception e) {
             String errorMsg = "serialize page error, dataId=" + dataId + ", group=" + group;
             LOGGER.error(errorMsg, e);
@@ -506,16 +570,43 @@ public class ConfigController {
      */
     @GetMapping(params = "export=true")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    public ResponseEntity<byte[]> exportConfig(@RequestParam(value = "dataId", required = false) String dataId,
+    public ResponseEntity<byte[]> exportConfig(HttpServletRequest request,
+            @RequestParam(value = "dataId", required = false) String dataId,
             @RequestParam(value = "group", required = false) String group,
             @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "ids", required = false) List<Long> ids) {
         ids.removeAll(Collections.singleton(null));
         tenant = NamespaceUtil.processNamespaceParameter(tenant);
-        List<ConfigAllInfo> dataList = configInfoPersistService.findAllConfigInfo4Export(dataId, group, tenant, appName,
-                ids);
+        
         List<ZipUtils.ZipItem> zipItemList = new ArrayList<>();
+        HttpHeaders headers = new HttpHeaders();
+        String fileName =
+                EXPORT_CONFIG_FILE_NAME + DateFormatUtils.format(new Date(), EXPORT_CONFIG_FILE_NAME_DATE_FORMAT)
+                        + EXPORT_CONFIG_FILE_NAME_EXT;
+        headers.add("Content-Disposition", "attachment;filename=" + fileName);
+        
+        Set<String> appNames = Sets.newHashSet();
+        if (authConfigs.isAuthAppPermissionEnabled()) {
+            Map<String, Set<String>> appPermissionMap = RequestUtil.getAppPermissions();
+            if (StringUtils.isNotBlank(appName)) {
+                Set<String> permissions = AppNameUtils.getAppPermissions(appPermissionMap, appName);
+                if (!hasWritePermission(permissions)) {
+                    return new ResponseEntity<byte[]>(ZipUtils.zip(zipItemList), headers, HttpStatus.OK);
+                }
+            } else {
+                appPermissionMap.forEach((app, permissions) -> {
+                    if (hasWritePermission(permissions)) {
+                        appNames.add(app);
+                    }
+                });
+                if (CollectionUtils.isEmpty(appNames)) {
+                    return new ResponseEntity<byte[]>(ZipUtils.zip(zipItemList), headers, HttpStatus.OK);
+                }
+            }
+        }
+        List<ConfigAllInfo> dataList = configInfoPersistService.findAllConfigInfo4Export(dataId, group, tenant,
+                appNames, ids);
         StringBuilder metaData = null;
         for (ConfigInfo ci : dataList) {
             if (StringUtils.isNotBlank(ci.getAppName())) {
@@ -541,11 +632,6 @@ public class ConfigController {
             zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA, metaData.toString()));
         }
         
-        HttpHeaders headers = new HttpHeaders();
-        String fileName =
-                EXPORT_CONFIG_FILE_NAME + DateFormatUtils.format(new Date(), EXPORT_CONFIG_FILE_NAME_DATE_FORMAT)
-                        + EXPORT_CONFIG_FILE_NAME_EXT;
-        headers.add("Content-Disposition", "attachment;filename=" + fileName);
         return new ResponseEntity<>(ZipUtils.zip(zipItemList), headers, HttpStatus.OK);
     }
     
@@ -561,16 +647,42 @@ public class ConfigController {
      */
     @GetMapping(params = "exportV2=true")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    public ResponseEntity<byte[]> exportConfigV2(@RequestParam(value = "dataId", required = false) String dataId,
+    public ResponseEntity<byte[]> exportConfigV2(HttpServletRequest request,
+            @RequestParam(value = "dataId", required = false) String dataId,
             @RequestParam(value = "group", required = false) String group,
             @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "ids", required = false) List<Long> ids) {
         ids.removeAll(Collections.singleton(null));
         tenant = NamespaceUtil.processNamespaceParameter(tenant);
-        List<ConfigAllInfo> dataList = configInfoPersistService.findAllConfigInfo4Export(dataId, group, tenant, appName,
-                ids);
+        
         List<ZipUtils.ZipItem> zipItemList = new ArrayList<>();
+        HttpHeaders headers = new HttpHeaders();
+        String fileName =
+                EXPORT_CONFIG_FILE_NAME + DateFormatUtils.format(new Date(), EXPORT_CONFIG_FILE_NAME_DATE_FORMAT)
+                        + EXPORT_CONFIG_FILE_NAME_EXT;
+        headers.add("Content-Disposition", "attachment;filename=" + fileName);
+        Set<String> appNames = Sets.newHashSet();
+        if (authConfigs.isAuthAppPermissionEnabled()) {
+            Map<String, Set<String>> appPermissionMap = RequestUtil.getAppPermissions();
+            if (StringUtils.isNotBlank(appName)) {
+                Set<String> permissions = AppNameUtils.getAppPermissions(appPermissionMap, appName);
+                if (!hasWritePermission(permissions)) {
+                    return new ResponseEntity<byte[]>(ZipUtils.zip(zipItemList), headers, HttpStatus.OK);
+                }
+            } else {
+                appPermissionMap.forEach((app, permissions) -> {
+                    if (hasWritePermission(permissions)) {
+                        appNames.add(app);
+                    }
+                });
+                if (CollectionUtils.isEmpty(appNames)) {
+                    return new ResponseEntity<byte[]>(ZipUtils.zip(zipItemList), headers, HttpStatus.OK);
+                }
+            }
+        }
+        List<ConfigAllInfo> dataList = configInfoPersistService.findAllConfigInfo4Export(dataId, group, tenant,
+                appNames, ids);
         List<ConfigMetadata.ConfigExportItem> configMetadataItems = new ArrayList<>();
         for (ConfigAllInfo ci : dataList) {
             ConfigMetadata.ConfigExportItem configMetadataItem = new ConfigMetadata.ConfigExportItem();
@@ -589,11 +701,7 @@ public class ConfigController {
         configMetadata.setMetadata(configMetadataItems);
         zipItemList.add(
                 new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW, YamlParserUtil.dumpObject(configMetadata)));
-        HttpHeaders headers = new HttpHeaders();
-        String fileName =
-                EXPORT_CONFIG_FILE_NAME + DateFormatUtils.format(new Date(), EXPORT_CONFIG_FILE_NAME_DATE_FORMAT)
-                        + EXPORT_CONFIG_FILE_NAME_EXT;
-        headers.add("Content-Disposition", "attachment;filename=" + fileName);
+        
         return new ResponseEntity<>(ZipUtils.zip(zipItemList), headers, HttpStatus.OK);
     }
     
@@ -657,6 +765,16 @@ public class ConfigController {
         final String srcIp = RequestUtil.getRemoteIp(request);
         String requestIpApp = RequestUtil.getAppName(request);
         final Timestamp time = TimeUtils.getCurrentTime();
+        if (authConfigs.isAuthAppPermissionEnabled()) {
+            Map<String, Set<String>> appPermissionMap = RequestUtil.getAppPermissions();
+            for (ConfigInfo configInfo : configInfoList) {
+                Set<String> permissions = AppNameUtils.getAppPermissions(appPermissionMap, configInfo.getAppName());
+                if (!hasWritePermission(permissions)) {
+                    return RestResultUtils.failedWithMsg(100007,
+                            "no appName:" + configInfo.getAppName() + " permission");
+                }
+            }
+        }
         Map<String, Object> saveResult = configInfoPersistService.batchInsertOrUpdate(configInfoList, srcUser, srcIp,
                 null, policy);
         for (ConfigInfo configInfo : configInfoList) {
@@ -854,12 +972,23 @@ public class ConfigController {
             @RequestParam(value = "tenant") String namespace,
             @RequestBody List<SameNamespaceCloneConfigBean> configBeansList,
             @RequestParam(value = "policy", defaultValue = "ABORT") SameConfigPolicy policy) throws NacosException {
+        
         Map<String, Object> failedData = new HashMap<>(4);
         if (CollectionUtils.isEmpty(configBeansList)) {
             failedData.put("succCount", 0);
             return RestResultUtils.buildResult(ResultCodeEnum.NO_SELECTED_CONFIG, failedData);
         }
         configBeansList.removeAll(Collections.singleton(null));
+        if (authConfigs.isAuthAppPermissionEnabled()) {
+            Map<String, Set<String>> appPermissionMap = RequestUtil.getAppPermissions();
+            for (SameNamespaceCloneConfigBean configBean : configBeansList) {
+                Set<String> permissions = AppNameUtils.getAppPermissions(appPermissionMap, configBean.getAppName());
+                if (!hasWritePermission(permissions)) {
+                    return RestResultUtils.failedWithMsg(100007,
+                            "no appName:" + configBean.getAppName() + " permission");
+                }
+            }
+        }
         
         namespace = NamespaceUtil.processNamespaceParameter(namespace);
         if (StringUtils.isNotBlank(namespace) && namespacePersistService.tenantInfoCountByTenantId(namespace) <= 0) {
@@ -923,4 +1052,39 @@ public class ConfigController {
         return RestResultUtils.success("Clone Completed Successfully", saveResult);
     }
     
+    /**
+     * check has app permission.
+     *
+     * @param appNames permission appNames.
+     * @param appName  appName.
+     * @return
+     */
+    private boolean checkAppAuth(Set<String> appNames, String appName) {
+        if (CollectionUtils.isEmpty(appNames)) {
+            return true;
+        }
+        if (StringUtils.isNotBlank(appName)) {
+            if (appNames.contains(com.alibaba.nacos.api.common.Constants.ALL_PATTERN)) {
+                return false;
+            }
+            if (!appNames.contains(appName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Has write permission.
+     *
+     * @param permissions permissions
+     * @return
+     */
+    private boolean hasWritePermission(Set<String> permissions) {
+        if (CollectionUtils.isEmpty(permissions)) {
+            return false;
+        }
+        return permissions.contains(ActionTypes.WRITE.toString()) || permissions.contains(
+                ActionTypes.READ_WRITE.toString());
+    }
 }

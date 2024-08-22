@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
@@ -44,7 +45,6 @@ import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
@@ -119,7 +119,7 @@ public abstract class DumpService {
     
     private static final String TAG_TABLE_NAME = "config_info_tag";
     
-    private int retentionDays = 30;
+    private int retentionCounts = 10;
     
     /**
      * Here you inject the dependent objects constructively, ensuring that some of the dependent functionality is
@@ -198,10 +198,15 @@ public abstract class DumpService {
         LOGGER.warn("clearConfigHistory start");
         if (canExecute()) {
             try {
-                Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(), 24 * getRetentionDays());
-                int pageSize = 1000;
-                LOGGER.warn("clearConfigHistory, getBeforeStamp:{}, pageSize:{}", startTime, pageSize);
-                historyConfigInfoPersistService.removeConfigHistory(startTime, pageSize);
+                List<String> dataIds = historyConfigInfoPersistService.getHistoryDataIdList();
+                int retentionCounts = getRetentionCounts();
+                for (String dataId : dataIds) {
+                    List<String> deleteNids = historyConfigInfoPersistService.getDeleteHistoryDataIdList(dataId, retentionCounts);
+                    if (CollectionUtils.isNotEmpty(deleteNids)) {
+                        historyConfigInfoPersistService.removeHistoryConfig(deleteNids);
+                        LOGGER.info("clearConfigHistory dataId:{} clear size:{}", dataId, deleteNids.size());
+                    }
+                }
             } catch (Throwable e) {
                 LOGGER.error("clearConfigHistory error : {}", e.toString());
             }
@@ -344,23 +349,23 @@ public abstract class DumpService {
         return Timestamp.valueOf(format.format(cal.getTime()));
     }
     
-    private int getRetentionDays() {
-        String val = EnvUtil.getProperty("nacos.config.retention.days");
+    private int getRetentionCounts() {
+        String val = EnvUtil.getProperty("nacos.config.retention.counts");
         if (null == val) {
-            return retentionDays;
+            return retentionCounts;
         }
         
         int tmp = 0;
         try {
             tmp = Integer.parseInt(val);
             if (tmp > 0) {
-                retentionDays = tmp;
+                retentionCounts = tmp;
             }
         } catch (NumberFormatException nfe) {
-            FATAL_LOG.error("read nacos.config.retention.days wrong", nfe);
+            FATAL_LOG.error("read nacos.config.retention.counts wrong", nfe);
         }
         
-        return retentionDays;
+        return retentionCounts;
     }
     
     /**

@@ -24,6 +24,7 @@ import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -209,7 +210,7 @@ class ConfigInfoMapperByMySqlTest {
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,"
                         + "src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info WHERE  id IN (?, ?, ?, ?, ?) ");
         assertArrayEquals(mapperResult.getParamList().toArray(), ids.toArray());
-        
+        context.putWhereParameter(FieldConstant.APP_NAME, Sets.newHashSet(appName));
         context.putWhereParameter(FieldConstant.IDS, null);
         mapperResult = configInfoMapperByMySql.findAllConfigInfo4Export(context);
         assertEquals(mapperResult.getSql(),
@@ -236,6 +237,7 @@ class ConfigInfoMapperByMySqlTest {
     
     @Test
     void testFindConfigInfo4PageCountRows() {
+        context.putWhereParameter(FieldConstant.APP_NAME, Sets.newHashSet(appName));
         MapperResult mapperResult = configInfoMapperByMySql.findConfigInfo4PageCountRows(context);
         assertEquals("SELECT count(*) FROM config_info WHERE  tenant_id=?  AND app_name=? ", mapperResult.getSql());
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
@@ -243,6 +245,7 @@ class ConfigInfoMapperByMySqlTest {
     
     @Test
     void testFindConfigInfo4PageFetchRows() {
+        context.putWhereParameter(FieldConstant.APP_NAME, Sets.newHashSet(appName));
         MapperResult mapperResult = configInfoMapperByMySql.findConfigInfo4PageFetchRows(context);
         assertEquals(mapperResult.getSql(), "SELECT id,data_id,group_id,tenant_id,app_name,content,type,encrypted_data_key FROM config_info"
                 + " WHERE  tenant_id=?  AND app_name=?  LIMIT " + startRow + "," + pageSize);
@@ -260,6 +263,7 @@ class ConfigInfoMapperByMySqlTest {
     
     @Test
     void testFindConfigInfoLike4PageCountRows() {
+        context.putWhereParameter(FieldConstant.APP_NAME, Sets.newHashSet(appName));
         MapperResult mapperResult = configInfoMapperByMySql.findConfigInfoLike4PageCountRows(context);
         assertEquals("SELECT count(*) FROM config_info WHERE  tenant_id LIKE ?  AND app_name = ? ", mapperResult.getSql());
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
@@ -267,6 +271,7 @@ class ConfigInfoMapperByMySqlTest {
     
     @Test
     void testFindConfigInfoLike4PageFetchRows() {
+        context.putWhereParameter(FieldConstant.APP_NAME, Sets.newHashSet(appName));
         MapperResult mapperResult = configInfoMapperByMySql.findConfigInfoLike4PageFetchRows(context);
         assertEquals(mapperResult.getSql(), "SELECT id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key FROM config_info "
                 + "WHERE  tenant_id LIKE ?  AND app_name = ?  LIMIT " + startRow + "," + pageSize);

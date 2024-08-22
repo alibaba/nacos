@@ -25,6 +25,7 @@ import {
   Select,
   Table,
   Message,
+  Input,
 } from '@alifd/next';
 import RegionGroup from 'components/RegionGroup';
 import { getParams, setParams, request } from '@/globalLib';
@@ -133,17 +134,33 @@ class HistoryRollback extends React.Component {
 
   renderCol(value, index, record) {
     const { locale = {} } = this.props;
+    const rollbackDisabled = index === 0 || record.canWrite === false;
+    const compareDisabled = index === 0;
     return (
       <div>
         <a onClick={this.goDetail.bind(this, record)} style={{ marginRight: 5 }}>
           {locale.details}
         </a>
         <span style={{ marginRight: 5 }}>|</span>
-        <a style={{ marginRight: 5 }} onClick={this.goRollBack.bind(this, record)}>
+        <a
+          style={
+            rollbackDisabled
+              ? { marginRight: 5, color: 'rgba(0,0,0,0.25)', textDecoration: 'node' }
+              : { marginRight: 5 }
+          }
+          onClick={rollbackDisabled ? () => {} : this.goRollBack.bind(this, record)}
+        >
           {locale.rollback}
         </a>
         <span style={{ marginRight: 5 }}>|</span>
-        <a style={{ marginRight: 5 }} onClick={this.goCompare.bind(this, record)}>
+        <a
+          style={
+            compareDisabled
+              ? { marginRight: 5, color: 'rgba(0,0,0,0.25)', textDecoration: 'node' }
+              : { marginRight: 5 }
+          }
+          onClick={compareDisabled ? () => {} : this.goCompare.bind(this, record)}
+        >
           {locale.compare}
         </a>
       </div>
@@ -174,9 +191,11 @@ class HistoryRollback extends React.Component {
       return false;
     }
     if (this.state.dataId !== this.preDataId) {
+      setParams('dataId', this.state.dataId);
       this.preDataId = this.state.dataId;
     }
     if (this.state.group !== this.preGroup) {
+      setParams('group', this.state.group);
       this.preGroup = this.state.group;
     }
     this.getData();
@@ -422,9 +441,13 @@ class HistoryRollback extends React.Component {
                 padding: 0,
                 margin: 0,
                 fontSize: 16,
+                paddingLeft: 10,
+                borderLeft: '3px solid #09c',
               }}
             >
-              <QueryResult total={this.state.total} />
+              {locale.queryResult}
+              <strong style={{ fontWeight: 'bold' }}> {this.state.total} </strong>
+              {locale.articleMeet}
             </h3>
           </div>
           <div>
@@ -444,6 +467,25 @@ class HistoryRollback extends React.Component {
                     return date.toLocaleString(locale.momentLocale);
                   } catch (e) {
                     return '';
+                  }
+                }}
+              />
+              <Table.Column
+                title={locale.opTypeDesc}
+                dataIndex="opType"
+                cell={val => {
+                  if (!val) {
+                    return '';
+                  }
+                  try {
+                    const typeMap = {
+                      U: locale.update,
+                      I: locale.insert,
+                      D: locale.delete,
+                    };
+                    return typeMap[val];
+                  } catch (e) {
+                    return val;
                   }
                 }}
               />

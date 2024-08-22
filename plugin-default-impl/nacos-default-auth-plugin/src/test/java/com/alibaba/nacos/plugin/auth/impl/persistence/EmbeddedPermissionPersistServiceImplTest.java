@@ -67,7 +67,7 @@ class EmbeddedPermissionPersistServiceImplTest {
     
     @Test
     void testAddPermission() {
-        embeddedPermissionPersistService.addPermission("role", "resource", "action");
+        embeddedPermissionPersistService.addPermission("role", "resource", "action", "test,");
         List<ModifyRequest> currentSqlContext = EmbeddedStorageContextHolder.getCurrentSqlContext();
         
         Mockito.verify(databaseOperate).blockUpdate();
@@ -75,7 +75,7 @@ class EmbeddedPermissionPersistServiceImplTest {
     
     @Test
     void testDeletePermission() {
-        embeddedPermissionPersistService.deletePermission("role", "resource", "action");
+        embeddedPermissionPersistService.deletePermission("role", "resource", "action", "test");
         List<ModifyRequest> currentSqlContext = EmbeddedStorageContextHolder.getCurrentSqlContext();
         
         Mockito.verify(databaseOperate).blockUpdate();

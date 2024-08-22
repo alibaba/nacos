@@ -21,8 +21,10 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
@@ -31,6 +33,7 @@ import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
+import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
@@ -40,6 +43,7 @@ import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordGeneratorUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.Sets;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -61,6 +65,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 /**
  * User related methods entry.
@@ -96,13 +101,14 @@ public class UserController {
      *
      * @param username username
      * @param password password
+     * @param type     type
      * @return ok if create succeed
      * @throws IllegalArgumentException if user already exist
      * @since 1.2.0
      */
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
     @PostMapping
-    public Object createUser(@RequestParam String username, @RequestParam String password) {
+    public Object createUser(@RequestParam String username, @RequestParam String password, @RequestParam String type) {
         if (AuthConstants.DEFAULT_USER.equals(username)) {
             return RestResultUtils.failed(HttpStatus.CONFLICT.value(),
                     "User `nacos` is default admin user. Please use `/nacos/v1/auth/users/admin` API to init `nacos` users. "
@@ -112,7 +118,7 @@ public class UserController {
         if (user != null) {
             throw new IllegalArgumentException("user '" + username + "' already exist!");
         }
-        userDetailsService.createUser(username, PasswordEncoderUtil.encode(password));
+        userDetailsService.createUser(username, PasswordEncoderUtil.encode(password), type);
         return RestResultUtils.success("create user ok!");
     }
     
@@ -130,7 +136,8 @@ public class UserController {
             }
             
             String username = AuthConstants.DEFAULT_USER;
-            userDetailsService.createUser(username, PasswordEncoderUtil.encode(password));
+            userDetailsService.createUser(username, PasswordEncoderUtil.encode(password),
+                    AuthConstants.PERSONAL_USER_TYPE);
             roleService.addAdminRole(username);
             ObjectNode result = JacksonUtils.createEmptyJsonNode();
             result.put(AuthConstants.PARAM_USERNAME, username);
@@ -263,14 +270,22 @@ public class UserController {
      * @throws AccessException if user info is incorrect
      */
     @PostMapping("/login")
-    public Object login(@RequestParam String username, @RequestParam String password, HttpServletResponse response,
-            HttpServletRequest request) throws AccessException, IOException {
+    public Object login(@RequestParam String username, @RequestParam String password,
+            @RequestParam(required = false) boolean webRequest,
+            HttpServletResponse response, HttpServletRequest request) throws AccessException, IOException {
         
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())
                 || AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
             
             NacosUser user = iAuthenticationManager.authenticate(request);
-            
+            if (authConfigs.isAuthAppPermissionEnabled() && webRequest && StringUtils.equals(
+                    AuthConstants.APP_USER_TYPE, user.getType())) {
+                throw new AccessException("application user forbidden login");
+            }
+            if (authConfigs.isAuthAppPermissionEnabled() && !webRequest && StringUtils.equals(
+                    AuthConstants.PERSONAL_USER_TYPE, user.getType())) {
+                throw new AccessException("personal user forbidden used in application");
+            }
             response.addHeader(AuthConstants.AUTHORIZATION_HEADER, AuthConstants.TOKEN_PREFIX + user.getToken());
             
             ObjectNode result = JacksonUtils.createEmptyJsonNode();
@@ -338,5 +353,39 @@ public class UserController {
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
     public List<String> searchUsersLikeUsername(@RequestParam String username) {
         return userDetailsService.findUserLikeUsername(username);
+    }
+    
+    /**
+     * Get appNames.
+     * @return
+     */
+    @GetMapping("/appNames")
+    @Secured(resource = AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, action = ActionTypes.READ)
+    public Set<String> getAppNames(HttpServletRequest request, @RequestParam ActionTypes action) {
+        String userName = RequestUtil.getSrcUserName(request);
+        List<RoleInfo> roleInfos = roleService.getRoles(userName);
+        boolean adminRole = roleInfos
+                .stream()
+                .anyMatch(roleInfo -> StringUtils.equals(roleInfo.getRole(), AuthConstants.GLOBAL_ADMIN_ROLE));
+        if (adminRole) {
+            return Sets.newHashSet(roleService.getAllAppNamesFromDatabase());
+        }
+        Set<String> appNames = Sets.newHashSet();
+        for (RoleInfo roleInfo : roleInfos) {
+            List<PermissionInfo> permissionInfos = roleService.getPermissions(roleInfo.getRole());
+            if (CollectionUtils.isEmpty(permissionInfos)) {
+                continue;
+            }
+            for (PermissionInfo permissionInfo : permissionInfos) {
+                if (StringUtils.equals(Constants.ALL_PATTERN, permissionInfo.getAppName())) {
+                    return Sets.newHashSet(roleService.getAllAppNamesFromDatabase());
+                }
+                String permissionAction = permissionInfo.getAction();
+                if (permissionAction.contains(action.toString())) {
+                    appNames.add(permissionInfo.getAppName());
+                }
+            }
+        }
+        return appNames;
     }
 }

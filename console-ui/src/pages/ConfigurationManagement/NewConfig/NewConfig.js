@@ -18,7 +18,7 @@ import $ from 'jquery';
 import React from 'react';
 import PropTypes from 'prop-types';
 import SuccessDialog from '../../../components/SuccessDialog';
-import { getParams, setParams, request } from '../../../globalLib';
+import { getParams, setParams, request, aliwareIntl } from '../../../globalLib';
 import { generateUrl } from '../../../utils/nacosutil';
 import {
   Balloon,
@@ -35,7 +35,7 @@ import {
   ConfigProvider,
 } from '@alifd/next';
 import validateContent from 'utils/validateContent';
-
+import { getTeamOptions } from '../../../reducers/configuration';
 import './index.scss';
 
 const FormItem = Form.Item;
@@ -81,10 +81,23 @@ class NewConfig extends React.Component {
       addonBefore: '',
       showGroupWarning: false,
       editorClass: 'editor-normal',
+      teamOptions: [],
     };
     this.codeValue = '';
     this.mode = 'text';
     this.ips = '';
+  }
+
+  getTeamOptions() {
+    getTeamOptions({ action: 'WRITE' }).then(teamOptions => {
+      const newTeamOptions = teamOptions.map(item => {
+        return {
+          label: item,
+          value: item,
+        };
+      });
+      this.setState({ teamOptions: newTeamOptions });
+    });
   }
 
   componentDidMount() {
@@ -101,6 +114,7 @@ class NewConfig extends React.Component {
       this.initMoacoEditor();
     }
     this.initFullScreenEvent();
+    this.getTeamOptions();
   }
 
   changeModel(type) {
@@ -135,6 +149,8 @@ class NewConfig extends React.Component {
       showFoldingControls: 'always',
       cursorStyle: 'line',
       automaticLayout: true,
+      wordWrapColumn: 120,
+      wordWrap: 'wordWrapColumn',
     });
   }
 
@@ -373,10 +389,17 @@ class NewConfig extends React.Component {
         this.goList();
       },
       error: res => {
+        const { status } = res || {};
+        if (status === 403) {
+          Dialog.alert({
+            content: locale.publishFailed403,
+          });
+        } else {
+          Dialog.alert({
+            content: locale.publishFailed,
+          });
+        }
         this.closeLoading();
-        Dialog.alert({
-          content: locale.publishFailed,
-        });
       },
     });
   };
@@ -463,7 +486,7 @@ class NewConfig extends React.Component {
         label: 'TOML',
       },
     ];
-    const { editorClass } = this.state;
+    const { editorClass, teamOptions } = this.state;
 
     return (
       <Loading
@@ -522,6 +545,23 @@ class NewConfig extends React.Component {
               hasClear
             />
           </FormItem>
+          <FormItem label={locale.groupIdCannotBeLonger} required>
+            <Select
+              style={{ width: '100%', height: '100%!important' }}
+              {...init('appName', {
+                rules: [
+                  {
+                    required: true,
+                    message: locale.appNameNotEmpty,
+                  },
+                  {
+                    validator: this.validateChart.bind(this),
+                  },
+                ],
+              })}
+              dataSource={teamOptions}
+            />
+          </FormItem>
           <FormItem label={' '} style={{ display: this.state.showGroupWarning ? 'block' : 'none' }}>
             <Message type={'warning'} size={'medium'} animation={false}>
               {locale.annotation}
@@ -553,13 +593,6 @@ class NewConfig extends React.Component {
               onSearch={val => this.tagSearch(val)}
               hasClear
             />
-          </FormItem>
-
-          <FormItem
-            label={locale.groupIdCannotBeLonger}
-            className={`more-item${!this.state.showmore ? ' hide' : ''}`}
-          >
-            <Input {...init('appName')} readOnly={this.inApp} />
           </FormItem>
 
           <FormItem label={locale.description}>

@@ -38,7 +38,11 @@ import {
   Message,
   Grid,
   ConfigProvider,
+  Field,
+  Switch,
 } from '@alifd/next';
+import { isGlobalAdmin } from '../../../layouts/menu';
+import { getTeamOptions } from '../../../reducers/configuration';
 
 const { Row, Col } = Grid;
 
@@ -70,6 +74,7 @@ class ConfigEditor extends React.Component {
       isBeta: false,
       isNewConfig: true,
       betaPublishSuccess: false,
+      isGlobalAdmin: isGlobalAdmin(),
       betaIps: '',
       casMd5: '',
       tabActiveKey: '',
@@ -86,9 +91,16 @@ class ConfigEditor extends React.Component {
       subscriberDataSource: [],
       openAdvancedSettings: false,
       editorClass: 'editor-normal',
+      teamOptions: [],
     };
     this.successDialog = React.createRef();
     this.diffEditorDialog = React.createRef();
+  }
+
+  getTeamOptions() {
+    getTeamOptions({ action: 'WRITE' }).then(teamOptions => {
+      this.setState({ teamOptions });
+    });
   }
 
   componentDidMount() {
@@ -125,6 +137,7 @@ class ConfigEditor extends React.Component {
       }
       this.initFullScreenEvent();
     });
+    this.getTeamOptions();
   }
 
   initMoacoEditor(language, value) {
@@ -144,6 +157,8 @@ class ConfigEditor extends React.Component {
       showFoldingControls: 'always',
       cursorStyle: 'line',
       automaticLayout: true,
+      wordWrapColumn: 120,
+      wordWrap: 'wordWrapColumn',
     };
     if (!window.monaco) {
       window.importEditor(() => {
@@ -259,6 +274,9 @@ class ConfigEditor extends React.Component {
     if (configTags.length > 0) {
       payload.config_tags = configTags.join(',');
     }
+    if (!(payload.md5 === null || payload.md5 === undefined || payload.md5.trim() === '')) {
+      headers.casMd5 = payload.md5;
+    }
     // #12046 console-ui should not offer encryptedDataKey field to API
     payload.encryptedDataKey = '';
     const stringify = require('qs/lib/stringify');
@@ -311,6 +329,7 @@ class ConfigEditor extends React.Component {
   }
 
   stopBeta() {
+    const { locale } = this.props;
     const { dataId, group } = this.state.form;
     const tenant = getParams('namespace');
     return request
@@ -476,6 +495,7 @@ class ConfigEditor extends React.Component {
       groupError = {},
       subscriberDataSource,
       editorClass,
+      teamOptions,
     } = this.state;
     const { locale = {} } = this.props;
 
@@ -529,6 +549,14 @@ class ConfigEditor extends React.Component {
                 disabled={!isNewConfig}
               />
             </Form.Item>
+            <Form.Item label={locale.targetEnvironment}>
+              <Select
+                value={form.appName}
+                dataSource={teamOptions}
+                onChange={appName => this.changeForm({ appName })}
+                disabled={!isNewConfig && !isGlobalAdmin}
+              />
+            </Form.Item>
             <Form.Item label=" ">
               <a onClick={() => this.setState({ openAdvancedSettings: !openAdvancedSettings })}>
                 {openAdvancedSettings ? locale.collapse : locale.groupNotEmpty}
@@ -548,9 +576,6 @@ class ConfigEditor extends React.Component {
                     onChange={config_tags => this.setConfigTags(config_tags)}
                     hasClear
                   />
-                </Form.Item>
-                <Form.Item label={locale.targetEnvironment}>
-                  <Input value={form.appName} onChange={appName => this.changeForm({ appName })} />
                 </Form.Item>
               </>
             )}

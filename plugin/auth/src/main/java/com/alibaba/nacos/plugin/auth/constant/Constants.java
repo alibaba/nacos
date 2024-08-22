@@ -36,7 +36,10 @@ public class Constants {
         public static final String NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE = "nacos.core.auth.server.identity.value";
         
         public static final String NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE = "nacos.core.auth.enable.userAgentAuthWhite";
-        
+    
+        public static final String NACOS_CORE_APP_AUTH_SYSTEM_TYPE = "nacos.core.app.auth.system.type";
+    
+        public static final String NACOS_CORE_APP_PERMISSION_AUTH_ENABLED = "nacos.core.app.permission.auth.enabled";
     }
     
     public static class Resource {
@@ -59,5 +62,11 @@ public class Constants {
         public static final String REMOTE_IP = "remote_ip";
         
         public static final String IDENTITY_CONTEXT = "identity_context";
+        
+        public static final String APP_PERMISSIONS = "appPermissions";
+        
+        public static final String USER_TYPE = "user_type";
+        
+        public static final String APP_NAME = "appName";
     }
 }

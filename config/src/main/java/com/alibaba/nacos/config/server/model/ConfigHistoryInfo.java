@@ -64,6 +64,8 @@ public class ConfigHistoryInfo implements Serializable {
     
     private String encryptedDataKey;
     
+    private boolean canWrite = true;
+    
     public long getId() {
         return id;
     }
@@ -174,6 +176,14 @@ public class ConfigHistoryInfo implements Serializable {
     
     public void setEncryptedDataKey(String encryptedDataKey) {
         this.encryptedDataKey = encryptedDataKey;
+    }
+    
+    public boolean isCanWrite() {
+        return canWrite;
+    }
+    
+    public void setCanWrite(boolean canWrite) {
+        this.canWrite = canWrite;
     }
     
     @Override

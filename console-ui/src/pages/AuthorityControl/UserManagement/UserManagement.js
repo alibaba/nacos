@@ -116,6 +116,7 @@ class UserManagement extends React.Component {
       createUserVisible,
       passwordResetUserVisible,
       passwordResetUser,
+      type,
     } = this.state;
     return (
       <>
@@ -175,14 +176,25 @@ class UserManagement extends React.Component {
             cell={value => value.replace(/\S/g, '*')}
           />
           <Table.Column
+            title={locale.type}
+            dataIndex="type"
+            cell={value => {
+              return value === '0' ? locale.appAccount : locale.personAccount;
+            }}
+          />
+          <Table.Column
             title={locale.operation}
             dataIndex="username"
-            cell={username => (
+            cell={(value, index, { username, type }) => (
               <>
                 <Button
                   type="primary"
                   onClick={() =>
-                    this.setState({ passwordResetUser: username, passwordResetUserVisible: true })
+                    this.setState({
+                      passwordResetUser: username,
+                      type,
+                      passwordResetUserVisible: true,
+                    })
                   }
                 >
                   {locale.resetPassword}
@@ -230,6 +242,7 @@ class UserManagement extends React.Component {
         <PasswordReset
           visible={passwordResetUserVisible}
           username={passwordResetUser}
+          type={type}
           onOk={user =>
             passwordReset(user).then(res => {
               this.getUsers();

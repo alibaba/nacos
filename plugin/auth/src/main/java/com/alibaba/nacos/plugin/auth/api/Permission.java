@@ -40,6 +40,11 @@ public class Permission implements Serializable {
      */
     private String action;
     
+    /**
+     * App name.
+     */
+    private String appName;
+    
     public Permission() {
     }
     
@@ -64,8 +69,17 @@ public class Permission implements Serializable {
         this.action = action;
     }
     
+    public String getAppName() {
+        return appName;
+    }
+    
+    public void setAppName(String appName) {
+        this.appName = appName;
+    }
+    
     @Override
     public String toString() {
-        return "Permission{" + "resource='" + resource + '\'' + ", action='" + action + '\'' + '}';
+        return "Permission{" + "resource='" + resource + '\'' + ", action='" + action + '\'' + ", appName='" + appName
+                + '}';
     }
 }

@@ -80,6 +80,12 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     
     private boolean hasGlobalAdminRole;
     
+    @Value("${" + Constants.Auth.NACOS_CORE_APP_AUTH_SYSTEM_TYPE + ":nacos}")
+    private String nacosAppAuthSystemType;
+    
+    @Value("${" + Constants.Auth.NACOS_CORE_APP_PERMISSION_AUTH_ENABLED + ":false}")
+    private boolean authAppPermissionEnabled;
+    
     private Map<String, Properties> authPluginProperties = new HashMap<>();
     
     public AuthConfigs() {
@@ -180,6 +186,18 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
         return authPluginProperties.get(authType);
     }
     
+    public String getNacosAppAuthSystemType() {
+        return nacosAppAuthSystemType;
+    }
+    
+    public void setNacosAppAuthSystemType(String nacosAppAuthSystemType) {
+        this.nacosAppAuthSystemType = nacosAppAuthSystemType;
+    }
+    
+    public boolean isAuthAppPermissionEnabled() {
+        return authAppPermissionEnabled;
+    }
+ 
     @JustForTest
     public static void setCachingEnabled(boolean cachingEnabled) {
         AuthConfigs.cachingEnabled = cachingEnabled;
@@ -195,6 +213,8 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
             enableUserAgentAuthWhite = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE,
                     Boolean.class, false);
             nacosAuthSystemType = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "");
+            authAppPermissionEnabled = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_APP_PERMISSION_AUTH_ENABLED, Boolean.class, false);
+            nacosAppAuthSystemType = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_APP_AUTH_SYSTEM_TYPE, "");
             refreshPluginProperties();
             ModuleStateHolder.getInstance().getModuleState(AuthModuleStateBuilder.AUTH_MODULE)
                     .ifPresent(moduleState -> {

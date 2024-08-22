@@ -176,7 +176,7 @@ class NacosRoleServiceImplTest {
     @Test
     void addPermission() {
         try {
-            nacosRoleService.addPermission("role-admin", "", "rw");
+            nacosRoleService.addPermission("role-admin", "", "rw", "test");
         } catch (Exception e) {
             assertTrue(e.getMessage().contains("role role-admin not found!"));
         }

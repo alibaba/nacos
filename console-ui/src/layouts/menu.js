@@ -83,9 +83,15 @@ const settingMenu = {
   key: 'settingCenter',
   url: '/settingCenter',
 };
-export default function(model) {
+
+export function isGlobalAdmin() {
   const { token = '{}' } = localStorage;
   const { globalAdmin } = isJsonString(token) ? JSON.parse(token) || {} : {};
+  return globalAdmin;
+}
+
+export default function(model) {
+  const globalAdmin = isGlobalAdmin();
   const result = [];
   if (model === 'naming') {
     result.push(serviceDiscoveryMenu);
@@ -96,9 +102,9 @@ export default function(model) {
   }
   if (globalAdmin) {
     result.push(authorityControlMenu);
+    result.push(namespaceMenu);
+    result.push(clusterMenu);
   }
-  result.push(namespaceMenu);
-  result.push(clusterMenu);
   result.push(settingMenu);
   return result.filter(item => item);
 }

@@ -72,17 +72,17 @@ public class PermissionControllerTest {
     @Test
     void testAddPermission() {
         
-        RestResult<String> result = (RestResult<String>) permissionController.addPermission("admin", "test", "test");
+        RestResult<String> result = (RestResult<String>) permissionController.addPermission("admin", "test", "test", "test");
         
-        verify(nacosRoleService, times(1)).addPermission(anyString(), anyString(), anyString());
+        verify(nacosRoleService, times(1)).addPermission(anyString(), anyString(), anyString(), anyString());
         assertEquals(200, result.getCode());
     }
     
     @Test
     void testDeletePermission() {
-        RestResult<String> result = (RestResult<String>) permissionController.deletePermission("admin", "test", "test");
+        RestResult<String> result = (RestResult<String>) permissionController.deletePermission("admin", "test", "test", "test");
         
-        verify(nacosRoleService, times(1)).deletePermission(anyString(), anyString(), anyString());
+        verify(nacosRoleService, times(1)).deletePermission(anyString(), anyString(), anyString(), anyString());
         assertEquals(200, result.getCode());
     }
     

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
@@ -25,6 +26,7 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * The mysql implementation of ConfigTagsRelationMapper.
@@ -39,7 +41,7 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapperByMysql imple
         final String tenant = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
         final String dataId = (String) context.getWhereParameter(FieldConstant.DATA_ID);
         final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
-        final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
+        final Set<String> appNames = (Set) context.getWhereParameter(FieldConstant.APP_NAME);
         final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
         final String[] tagArr = (String[]) context.getWhereParameter(FieldConstant.TAG_ARR);
 
@@ -60,13 +62,18 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapperByMysql imple
             where.append(" AND a.group_id=? ");
             paramList.add(group);
         }
-        if (StringUtils.isNotBlank(appName)) {
-            where.append(" AND a.app_name=? ");
-            paramList.add(appName);
-        }
         if (!StringUtils.isBlank(content)) {
             where.append(" AND a.content LIKE ? ");
             paramList.add(content);
+        }
+        if (CollectionUtils.isNotEmpty(appNames)) {
+            where.append(" AND app_name in (");
+            for (String appName : appNames) {
+                where.append("?").append(",");
+                paramList.add(appName);
+            }
+            where.deleteCharAt(where.length() - 1);
+            where.append(")");
         }
         where.append(" AND b.tag_name IN (");
         for (int i = 0; i < tagArr.length; i++) {
@@ -86,7 +93,7 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapperByMysql imple
         final String tenant = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
         final String dataId = (String) context.getWhereParameter(FieldConstant.DATA_ID);
         final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
-        final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
+        final Set<String> appNames = (Set) context.getWhereParameter(FieldConstant.APP_NAME);
         final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
         final String[] tagArr = (String[]) context.getWhereParameter(FieldConstant.TAG_ARR);
         
@@ -106,15 +113,19 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapperByMysql imple
             where.append(" AND a.group_id LIKE ? ");
             paramList.add(group);
         }
-        if (!StringUtils.isBlank(appName)) {
-            where.append(" AND a.app_name = ? ");
-            paramList.add(appName);
-        }
         if (!StringUtils.isBlank(content)) {
             where.append(" AND a.content LIKE ? ");
             paramList.add(content);
         }
-        
+        if (CollectionUtils.isNotEmpty(appNames)) {
+            where.append(" AND app_name in (");
+            for (String appName : appNames) {
+                where.append("?").append(",");
+                paramList.add(appName);
+            }
+            where.deleteCharAt(where.length() - 1);
+            where.append(")");
+        }
         where.append(" AND b.tag_name IN (");
         for (int i = 0; i < tagArr.length; i++) {
             if (i != 0) {

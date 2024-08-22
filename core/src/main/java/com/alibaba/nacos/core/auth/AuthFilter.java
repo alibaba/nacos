@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.core.auth;
 
+import com.alibaba.nacos.auth.AppAuthService;
+import com.alibaba.nacos.auth.DefaultAppAuthService;
 import com.alibaba.nacos.auth.HttpProtocolAuthService;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.AuthConfigs;
@@ -56,11 +58,14 @@ public class AuthFilter implements Filter {
     
     private final HttpProtocolAuthService protocolAuthService;
     
+    private final AppAuthService appAuthService;
+    
     public AuthFilter(AuthConfigs authConfigs, ControllerMethodsCache methodsCache) {
         this.authConfigs = authConfigs;
         this.methodsCache = methodsCache;
         this.protocolAuthService = new HttpProtocolAuthService(authConfigs);
         this.protocolAuthService.initialize();
+        this.appAuthService = new DefaultAppAuthService(authConfigs);
     }
     
     @Override
@@ -137,6 +142,10 @@ public class AuthFilter implements Filter {
                 if (!result) {
                     // TODO Get reason of failure
                     throw new AccessException("Validate Authority failed.");
+                }
+                // init app permission
+                if (authConfigs.isAuthAppPermissionEnabled()) {
+                    appAuthService.initAppPermissions(identityContext);
                 }
             }
             chain.doFilter(request, response);

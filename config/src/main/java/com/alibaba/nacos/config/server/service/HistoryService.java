@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * HistoryService.
@@ -54,6 +55,14 @@ public class HistoryService {
     public Page<ConfigHistoryInfo> listConfigHistory(String dataId, String group, String namespaceId, Integer pageNo,
             Integer pageSize) {
         return historyConfigInfoPersistService.findConfigHistory(dataId, group, namespaceId, pageNo, pageSize);
+    }
+    
+    /**
+     * Query the list history config.
+     */
+    public Page<ConfigHistoryInfo> listConfigHistory(String dataId, String group, String namespaceId, Integer pageNo,
+            Integer pageSize, Set<String> appNames) {
+        return historyConfigInfoPersistService.findConfigHistory(dataId, group, namespaceId, pageNo, pageSize, appNames);
     }
     
     /**

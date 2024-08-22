@@ -132,6 +132,12 @@ public class NacosConfigService implements ConfigService {
     }
     
     @Override
+    public boolean publishConfig(String dataId, String group, String content, String type, String appName)
+            throws NacosException {
+        return publishConfigInner(namespace, dataId, group, null, appName, null, content, type, null);
+    }
+    
+    @Override
     public boolean publishConfig(String dataId, String group, String content, String type) throws NacosException {
         return publishConfigInner(namespace, dataId, group, null, null, null, content, type, null);
     }

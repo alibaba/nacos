@@ -52,6 +52,7 @@ public class NacosAuthPluginService implements AuthPluginService {
             add(Constants.ACCESS_TOKEN);
             add(AuthConstants.PARAM_USERNAME);
             add(AuthConstants.PARAM_PASSWORD);
+            add(AuthConstants.APP_NAME);
         }
     };
     
@@ -83,6 +84,8 @@ public class NacosAuthPluginService implements AuthPluginService {
         identityContext.setParameter(AuthConstants.NACOS_USER_KEY, nacosUser);
         identityContext.setParameter(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID,
                 nacosUser.getUserName());
+        identityContext.setParameter(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.USER_TYPE,
+                nacosUser.getType());
         return true;
     }
     

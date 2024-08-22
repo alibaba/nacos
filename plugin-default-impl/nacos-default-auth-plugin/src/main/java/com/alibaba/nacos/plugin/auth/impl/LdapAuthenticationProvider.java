@@ -95,7 +95,8 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
             userDetails = userDetailsService.loadUserByUsername(AuthConstants.LDAP_PREFIX + username);
         } catch (UsernameNotFoundException exception) {
             String nacosPassword = PasswordEncoderUtil.encode(AuthConstants.LDAP_DEFAULT_PASSWORD);
-            userDetailsService.createUser(AuthConstants.LDAP_PREFIX + username, nacosPassword);
+            userDetailsService.createUser(AuthConstants.LDAP_PREFIX + username, nacosPassword,
+                    AuthConstants.PERSONAL_USER_TYPE);
             User user = new User();
             user.setUsername(AuthConstants.LDAP_PREFIX + username);
             user.setPassword(nacosPassword);

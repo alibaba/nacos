@@ -121,7 +121,7 @@ class UserControllerTest {
         when(authenticationManager.hasGlobalAdminRole(user)).thenReturn(true);
         when(authConfigs.getNacosAuthSystemType()).thenReturn(AuthSystemTypes.NACOS.name());
         when(tokenManagerDelegate.getTokenTtlInSeconds(anyString())).thenReturn(18000L);
-        Object actual = userController.login("nacos", "nacos", response, request);
+        Object actual = userController.login("nacos", "nacos", false, response, request);
         assertTrue(actual instanceof JsonNode);
         String actualString = actual.toString();
         assertTrue(actualString.contains("\"accessToken\":\"1234567890\""));
@@ -132,7 +132,7 @@ class UserControllerTest {
     @Test
     void testCreateUser1() {
         when(userDetailsService.getUserFromDatabase("test")).thenReturn(null);
-        RestResult<String> result = (RestResult<String>) userController.createUser("test", "test");
+        RestResult<String> result = (RestResult<String>) userController.createUser("test", "test", "1");
         assertEquals(200, result.getCode());
         
     }
@@ -141,13 +141,13 @@ class UserControllerTest {
     void testCreateUser2() {
         when(userDetailsService.getUserFromDatabase("test")).thenReturn(new User());
         assertThrows(IllegalArgumentException.class, () -> {
-            userController.createUser("test", "test");
+            userController.createUser("test", "test", "1");
         });
     }
     
     @Test
     void testCreateUserNamedNacos() {
-        RestResult<String> result = (RestResult<String>) userController.createUser("nacos", "test");
+        RestResult<String> result = (RestResult<String>) userController.createUser("nacos", "test", "1");
         assertEquals(409, result.getCode());
     }
     

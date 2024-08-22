@@ -208,3 +208,12 @@ CREATE TABLE `permissions` (
     UNIQUE INDEX `uk_role_permission` (`role`,`resource`,`action`) USING BTREE
 );
 
+ALTER TABLE `users` ADD COLUMN `type` varchar(50) NOT NULL DEFAULT '0' COMMENT '0应用中配置用户，1网页端对应的用户' after `enabled`;
+
+ALTER TABLE `permissions` ADD COLUMN `app_name` varchar(255) NOT NULL DEFAULT '0' COMMENT '应用名/团队名';
+ALTER TABLE `permissions` DROP INDEX `uk_role_permission`;
+ALTER TABLE `permissions` ADD UNIQUE INDEX `uk_role_permission` (`role`,`resource`,`action`, `app_name`) USING BTREE;
+
+
+
+

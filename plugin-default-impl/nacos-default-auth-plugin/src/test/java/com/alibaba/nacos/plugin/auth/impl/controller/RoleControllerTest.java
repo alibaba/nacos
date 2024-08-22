@@ -19,6 +19,7 @@ package com.alibaba.nacos.plugin.auth.impl.controller;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
+import com.alibaba.nacos.plugin.auth.impl.persistence.RoleMapInfo;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -64,11 +65,11 @@ public class RoleControllerTest {
     @Test
     void testFuzzySearchRole() {
         
-        Page<RoleInfo> rolesTest = new Page<RoleInfo>();
+        Page<RoleMapInfo> rolesTest = new Page<RoleMapInfo>();
         
-        when(roleService.findRolesLike4Page(anyString(), anyString(), anyInt(), anyInt())).thenReturn(rolesTest);
+        when(roleService.findRoleMapLike4Page(anyString(), anyString(), anyInt(), anyInt())).thenReturn(rolesTest);
         
-        Page<RoleInfo> roleInfoPage = roleController.fuzzySearchRole(1, 10, "nacos", "test");
+        Page<RoleMapInfo> roleInfoPage = roleController.fuzzySearchRole(1, 10, "nacos", "test");
         
         assertEquals(rolesTest, roleInfoPage);
     }

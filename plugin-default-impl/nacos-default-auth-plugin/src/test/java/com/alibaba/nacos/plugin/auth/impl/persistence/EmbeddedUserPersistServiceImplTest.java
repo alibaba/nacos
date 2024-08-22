@@ -60,7 +60,7 @@ class EmbeddedUserPersistServiceImplTest {
     
     @Test
     void testCreateUser() {
-        embeddedUserPersistService.createUser("username", "password");
+        embeddedUserPersistService.createUser("username", "password", "test");
         
         Mockito.verify(databaseOperate).blockUpdate();
     }

@@ -77,6 +77,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_ADVANCE_INFO_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_ALL_INFO_ROW_MAPPER;
@@ -715,7 +716,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             final String group, final String tenant, final Map<String, Object> configAdvanceInfo) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
-        final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
+        final Set<String> appNames = configAdvanceInfo == null ? null : (Set) configAdvanceInfo.get("appNames");
         final String content = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("content");
         final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
         MapperResult sql;
@@ -728,10 +729,9 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         }
         if (StringUtils.isNotBlank(group)) {
             context.putWhereParameter(FieldConstant.GROUP_ID, group);
-            
         }
-        if (StringUtils.isNotBlank(appName)) {
-            context.putWhereParameter(FieldConstant.APP_NAME, appName);
+        if (CollectionUtils.isNotEmpty(appNames) && !appNames.contains("*")) {
+            context.putWhereParameter(FieldConstant.APP_NAME, appNames);
         }
         if (!StringUtils.isBlank(content)) {
             context.putWhereParameter(FieldConstant.CONTENT, content);
@@ -834,7 +834,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     public Page<ConfigInfo> findConfigInfoLike4Page(final int pageNo, final int pageSize, final String dataId,
             final String group, final String tenant, final Map<String, Object> configAdvanceInfo) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
+        final Set<String> appNames = configAdvanceInfo == null ? null : (Set) configAdvanceInfo.get("appNames");
         final String content = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("content");
         final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
@@ -850,8 +850,8 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         if (!StringUtils.isBlank(group)) {
             context.putWhereParameter(FieldConstant.GROUP_ID, generateLikeArgument(group));
         }
-        if (!StringUtils.isBlank(appName)) {
-            context.putWhereParameter(FieldConstant.APP_NAME, appName);
+        if (CollectionUtils.isNotEmpty(appNames) && !appNames.contains("*")) {
+            context.putWhereParameter(FieldConstant.APP_NAME, appNames);
         }
         if (!StringUtils.isBlank(content)) {
             context.putWhereParameter(FieldConstant.CONTENT, generateLikeArgument(content));
@@ -1032,7 +1032,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     
     @Override
     public List<ConfigAllInfo> findAllConfigInfo4Export(final String dataId, final String group, final String tenant,
-            final String appName, final List<Long> ids) {
+            final Set<String> appNames, final List<Long> ids) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO);
@@ -1047,8 +1047,9 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             if (StringUtils.isNotBlank(group)) {
                 context.putWhereParameter(FieldConstant.GROUP_ID, group);
             }
-            if (StringUtils.isNotBlank(appName)) {
-                context.putWhereParameter(FieldConstant.APP_NAME, appName);
+            if (CollectionUtils.isNotEmpty(appNames) && !appNames.contains(
+                    com.alibaba.nacos.api.common.Constants.ALL_PATTERN)) {
+                context.putWhereParameter(FieldConstant.APP_NAME, appNames);
             }
         }
         MapperResult mapperResult = configInfoMapper.findAllConfigInfo4Export(context);

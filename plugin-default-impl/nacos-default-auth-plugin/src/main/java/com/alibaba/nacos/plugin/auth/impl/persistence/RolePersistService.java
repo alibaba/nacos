@@ -19,6 +19,8 @@ package com.alibaba.nacos.plugin.auth.impl.persistence;
 import com.alibaba.nacos.persistence.model.Page;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Role CRUD service.
@@ -47,6 +49,16 @@ public interface RolePersistService {
      * @return roles page info
      */
     Page<RoleInfo> getRolesByUserNameAndRoleName(String username, String role, int pageNo, int pageSize);
+    
+    /**
+     * query the user's role map by username.
+     *
+     * @param username username
+     * @param pageNo pageNo
+     * @param pageSize pageSize
+     * @return role map page info
+     */
+    Page<RoleMapInfo> getRoleMapByUserNameAndRoleName(String username, String role, int pageNo, int pageSize);
 
     /**
      * assign role to user.
@@ -97,6 +109,16 @@ public interface RolePersistService {
      */
     Page<RoleInfo> findRolesLike4Page(String username, String role, int pageNo, int pageSize);
     
+    /**.
+     * fuzzy query role information based on roleName and username
+     *
+     * @param username username of user
+     * @param pageNo page number
+     * @param pageSize page size
+     * @return {@link Page} with {@link RoleInfo} generation
+     */
+    Page<RoleMapInfo> findRoleMapLike4Page(String username, String role, int pageNo, int pageSize);
+    
     /**
      * create Pagination utils.
      *
@@ -104,4 +126,11 @@ public interface RolePersistService {
      * @return {@link AuthPaginationHelper}
      */
     <E> AuthPaginationHelper<E> createPaginationHelper();
+    
+    /**
+     * Get user has app permissions.
+     * @param userName userName.
+     * @return appName-> permissions
+     */
+    Map<String, Set<String>> getAppPermissions(String userName);
 }

@@ -54,11 +54,11 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
      * @param password password string value.
      */
     @Override
-    public void createUser(String username, String password) {
-        String sql = "INSERT INTO users (username, password, enabled) VALUES (?, ?, ?)";
+    public void createUser(String username, String password, String type) {
+        String sql = "INSERT INTO users (username, password, enabled, type) VALUES (?, ?, ?, ?)";
         
         try {
-            EmbeddedStorageContextHolder.addSqlContext(sql, username, password, true);
+            EmbeddedStorageContextHolder.addSqlContext(sql, username, password, true, type);
             databaseOperate.blockUpdate();
         } finally {
             EmbeddedStorageContextHolder.cleanAllContext();
@@ -100,7 +100,7 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     
     @Override
     public User findUserByUsername(String username) {
-        String sql = "SELECT username,password FROM users WHERE username=? ";
+        String sql = "SELECT username,password,type FROM users WHERE username=? ";
         return databaseOperate.queryOne(sql, new Object[] {username}, USER_ROW_MAPPER);
     }
     
@@ -111,7 +111,7 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
         
         String sqlCountRows = "SELECT count(*) FROM users ";
         
-        String sqlFetchRows = "SELECT username,password FROM users ";
+        String sqlFetchRows = "SELECT username,password,type FROM users ";
         
         StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
         List<String> params = new ArrayList<>();
@@ -139,7 +139,7 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     @Override
     public Page<User> findUsersLike4Page(String username, int pageNo, int pageSize) {
         String sqlCountRows = "SELECT count(*) FROM users ";
-        String sqlFetchRows = "SELECT username,password FROM users ";
+        String sqlFetchRows = "SELECT username,password,type FROM users ";
         
         StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
         List<String> params = new ArrayList<>();

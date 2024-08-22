@@ -82,7 +82,7 @@ class ExternalUserPersistServiceImplTest {
     
     @Test
     void testCreateUser() {
-        externalUserPersistService.createUser("username", "password");
+        externalUserPersistService.createUser("username", "password", "test");
         
         String sql = "INSERT INTO users (username, password, enabled) VALUES (?, ?, ?)";
         Mockito.verify(jdbcTemplate).update(sql, "username", "password", true);

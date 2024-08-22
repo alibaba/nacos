@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.repository.extrnal;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -38,9 +39,11 @@ import com.alibaba.nacos.plugin.datasource.mapper.HistoryConfigInfoMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.google.common.collect.Lists;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -49,6 +52,7 @@ import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.HISTORY_DETAIL_ROW_MAPPER;
@@ -169,6 +173,45 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     }
     
     @Override
+    public Page<ConfigHistoryInfo> findConfigHistory(String dataId, String group, String tenant, int pageNo,
+            int pageSize, Set<String> appNames) {
+        PaginationHelper<ConfigHistoryInfo> helper = createPaginationHelper();
+        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+    
+        MapperContext context = new MapperContext((pageNo - 1) * pageSize, pageSize);
+        context.putWhereParameter(FieldConstant.DATA_ID, dataId);
+        context.putWhereParameter(FieldConstant.GROUP_ID, group);
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
+    
+        HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
+                dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
+    
+        String sqlCountRows = historyConfigInfoMapper.count(Arrays.asList("data_id", "group_id", "tenant_id"));
+        if (CollectionUtils.isNotEmpty(appNames) && !appNames.contains("*")) {
+            context.putWhereParameter(FieldConstant.APP_NAME, appNames);
+            StringBuilder appNameBuilder = new StringBuilder(" AND app_name in (");
+            for (String appName : appNames) {
+                appNameBuilder.append("\'").append(appName).append("\'").append(",");
+            }
+            appNameBuilder.deleteCharAt(appNameBuilder.length() - 1);
+            appNameBuilder.append(")");
+            sqlCountRows += appNameBuilder.toString();
+        }
+        MapperResult sqlFetchRows = historyConfigInfoMapper.pageFindConfigHistoryFetchRows(context);
+    
+        Page<ConfigHistoryInfo> page;
+        try {
+            page = helper.fetchPage(sqlCountRows, sqlFetchRows.getSql(), sqlFetchRows.getParamList().toArray(), pageNo,
+                    pageSize, HISTORY_LIST_ROW_MAPPER);
+        } catch (DataAccessException e) {
+            LogUtil.FATAL_LOG.error("[list-config-history] error, dataId:{}, group:{}", new Object[] {dataId, group},
+                    e);
+            throw e;
+        }
+        return page;
+    }
+    
+    @Override
     public ConfigHistoryInfo detailConfigHistory(Long nid) {
         HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
                 dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
@@ -221,5 +264,31 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
             throw new IllegalArgumentException("findConfigHistoryCountByTime error");
         }
         return result;
+    }
+    
+    @Override
+    public List<String> getHistoryDataIdList() {
+        String sql = "SELECT distinct data_id FROM his_config_info";
+        return jt.queryForList(sql, String.class);
+    }
+    
+    @Override
+    public List<String> getDeleteHistoryDataIdList(String dataId, int retentionCounts) {
+        String sql = "SELECT nid FROM his_config_info where data_id = ? order by gmt_modified DESC";
+        List<String> nids = jt.queryForList(sql, new Object[]{dataId}, String.class);
+        if (CollectionUtils.isNotEmpty(nids) && nids.size() > retentionCounts) {
+            return nids.subList(retentionCounts, nids.size());
+        }
+        return Lists.newArrayList();
+    }
+    
+    @Override
+    public void removeHistoryConfig(List<String> nids) {
+        String sql = "DELETE FROM his_config_info where nid in (" + StringUtils.join(nids, ",") + ")";
+        try {
+            jt.update(sql);
+        } catch (CannotGetJdbcConnectionException e) {
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+        }
     }
 }

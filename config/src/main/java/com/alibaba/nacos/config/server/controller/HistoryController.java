@@ -17,12 +17,15 @@
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
+import com.alibaba.nacos.config.server.utils.AppNameUtils;
+import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.service.HistoryService;
@@ -30,13 +33,18 @@ import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
+import com.google.common.collect.Sets;
 import org.springframework.ui.ModelMap;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * History management controller.
@@ -50,8 +58,11 @@ public class HistoryController {
     
     private final HistoryService historyService;
     
-    public HistoryController(HistoryService historyService) {
+    private AuthConfigs authConfigs;
+    
+    public HistoryController(HistoryService historyService, AuthConfigs authConfigs) {
         this.historyService = historyService;
+        this.authConfigs = authConfigs;
     }
     
     /**
@@ -69,7 +80,8 @@ public class HistoryController {
      */
     @GetMapping(params = "search=accurate")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    public Page<ConfigHistoryInfo> listConfigHistory(@RequestParam("dataId") String dataId,
+    public Page<ConfigHistoryInfo> listConfigHistory(HttpServletRequest request,
+            @RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "appName", required = false) String appName,
@@ -78,8 +90,23 @@ public class HistoryController {
         pageNo = null == pageNo ? 1 : pageNo;
         pageSize = null == pageSize ? 100 : pageSize;
         pageSize = Math.min(500, pageSize);
+        Set<String> appNames = Sets.newHashSet();
+        if (authConfigs.isAuthAppPermissionEnabled()) {
+            appNames = RequestUtil.getAppNames();
+        }
         // configInfoBase has no appName field.
-        return historyService.listConfigHistory(dataId, group, tenant, pageNo, pageSize);
+        Page<ConfigHistoryInfo> configHistory = historyService.listConfigHistory(dataId, group, tenant, pageNo, pageSize, appNames);
+        List<ConfigHistoryInfo> pageItems = configHistory.getPageItems();
+        if (CollectionUtils.isEmpty(pageItems) || !authConfigs.isAuthAppPermissionEnabled()) {
+            return configHistory;
+        }
+        Map<String, Set<String>> appPermissionMap = RequestUtil.getAppPermissions();
+        pageItems.forEach((config -> {
+            Set<String> permissions = AppNameUtils.getAppPermissions(appPermissionMap, config.getAppName());
+            boolean canWrite = hasWritePermission(permissions);
+            config.setCanWrite(canWrite);
+        }));
+        return configHistory;
     }
     
     /**
@@ -137,4 +164,17 @@ public class HistoryController {
         return historyService.getConfigListByNamespace(tenant);
     }
     
+    /**
+     * Has write permission.
+     *
+     * @param permissions permissions
+     * @return
+     */
+    private boolean hasWritePermission(Set<String> permissions) {
+        if (CollectionUtils.isEmpty(permissions)) {
+            return false;
+        }
+        return permissions.contains(ActionTypes.WRITE.toString()) || permissions.contains(
+                ActionTypes.READ_WRITE.toString());
+    }
 }

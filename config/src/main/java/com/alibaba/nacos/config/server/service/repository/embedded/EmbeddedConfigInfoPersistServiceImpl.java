@@ -71,6 +71,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -215,7 +216,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             
             addConfigTagsRelation(configId, configTags, configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant());
-
+            
             Timestamp now = new Timestamp(System.currentTimeMillis());
             historyConfigInfoPersistService.insertConfigHistoryAtomic(hisId, configInfo, srcIp, srcUser, now, "I");
             EmbeddedStorageContextUtils.onModifyConfigInfo(configInfo, srcIp, now);
@@ -264,12 +265,12 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY : configInfo.getEncryptedDataKey();
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO);
-
+        
         final String sql = configInfoMapper.insert(
                 Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "src_ip",
-                        "src_user", "gmt_create@NOW()", "gmt_modified@NOW()", "c_desc", "c_use", "effect",
-                        "type", "c_schema", "encrypted_data_key"));
-        final Object[] args = new Object[]{id, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp,
+                        "src_user", "gmt_create@NOW()", "gmt_modified@NOW()", "c_desc", "c_use", "effect", "type",
+                        "c_schema", "encrypted_data_key"));
+        final Object[] args = new Object[] {id, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp,
                 configInfo.getContent(), md5Tmp, srcIp, srcUser, desc, use, effect, type, schema, encryptedDataKey};
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
         return id;
@@ -558,7 +559,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 addConfigTagsRelation(oldConfigInfo.getId(), configTags, configInfo.getDataId(), configInfo.getGroup(),
                         configInfo.getTenant());
             }
-
+            
             Timestamp time = new Timestamp(System.currentTimeMillis());
             historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigInfo.getId(), oldConfigInfo, srcIp,
                     srcUser, time, "U");
@@ -606,7 +607,8 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         context.putWhereParameter(FieldConstant.MD5, configInfo.getMd5());
         MapperResult mapperResult = configInfoMapper.updateConfigInfoAtomicCas(context);
         
-        EmbeddedStorageContextHolder.addSqlContext(Boolean.TRUE, mapperResult.getSql(), mapperResult.getParamList().toArray());
+        EmbeddedStorageContextHolder.addSqlContext(Boolean.TRUE, mapperResult.getSql(),
+                mapperResult.getParamList().toArray());
         return getConfigInfoOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
         
     }
@@ -624,17 +626,17 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         final String schema = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("schema");
         final String encryptedDataKey =
                 configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY : configInfo.getEncryptedDataKey();
-
+        
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO);
         final String sql = configInfoMapper.update(
-                Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified@NOW()", "app_name",
-                        "c_desc", "c_use", "effect", "type", "c_schema", "encrypted_data_key"),
+                Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified@NOW()", "app_name", "c_desc",
+                        "c_use", "effect", "type", "c_schema", "encrypted_data_key"),
                 Arrays.asList("data_id", "group_id", "tenant_id"));
-
-        final Object[] args = new Object[]{configInfo.getContent(), md5Tmp, srcIp, srcUser, appNameTmp, desc,
-                use, effect, type, schema, encryptedDataKey, configInfo.getDataId(), configInfo.getGroup(), tenantTmp};
-
+        
+        final Object[] args = new Object[] {configInfo.getContent(), md5Tmp, srcIp, srcUser, appNameTmp, desc, use,
+                effect, type, schema, encryptedDataKey, configInfo.getDataId(), configInfo.getGroup(), tenantTmp};
+        
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
     }
     
@@ -673,7 +675,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     public Page<ConfigInfo> findConfigInfo4Page(final int pageNo, final int pageSize, final String dataId,
             final String group, final String tenant, final Map<String, Object> configAdvanceInfo) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
+        final Set<String> appNames = configAdvanceInfo == null ? null : (Set) configAdvanceInfo.get("appNames");
         final String content = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("content");
         final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
         MapperResult sql;
@@ -687,8 +689,8 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         if (StringUtils.isNotBlank(group)) {
             context.putWhereParameter(FieldConstant.GROUP_ID, group);
         }
-        if (StringUtils.isNotBlank(appName)) {
-            context.putWhereParameter(FieldConstant.APP_NAME, appName);
+        if (CollectionUtils.isNotEmpty(appNames) && !appNames.contains("*")) {
+            context.putWhereParameter(FieldConstant.APP_NAME, appNames);
         }
         if (!StringUtils.isBlank(content)) {
             context.putWhereParameter(FieldConstant.CONTENT, content);
@@ -798,7 +800,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     public Page<ConfigInfo> findConfigInfoLike4Page(final int pageNo, final int pageSize, final String dataId,
             final String group, final String tenant, final Map<String, Object> configAdvanceInfo) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
+        final Set<String> appNames = configAdvanceInfo == null ? null : (Set) configAdvanceInfo.get("appNames");
         final String content = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("content");
         final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
         MapperResult sqlCountRows;
@@ -813,8 +815,8 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         if (!StringUtils.isBlank(group)) {
             context.putWhereParameter(FieldConstant.GROUP_ID, generateLikeArgument(group));
         }
-        if (!StringUtils.isBlank(appName)) {
-            context.putWhereParameter(FieldConstant.APP_NAME, appName);
+        if (CollectionUtils.isNotEmpty(appNames) && !appNames.contains("*")) {
+            context.putWhereParameter(FieldConstant.APP_NAME, appNames);
         }
         if (!StringUtils.isBlank(content)) {
             context.putWhereParameter(FieldConstant.CONTENT, generateLikeArgument(content));
@@ -949,7 +951,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     
     @Override
     public List<ConfigAllInfo> findAllConfigInfo4Export(final String dataId, final String group, final String tenant,
-            final String appName, final List<Long> ids) {
+            final Set<String> appNames, final List<Long> ids) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO);
@@ -964,8 +966,9 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             if (StringUtils.isNotBlank(group)) {
                 context.putWhereParameter(FieldConstant.GROUP_ID, group);
             }
-            if (StringUtils.isNotBlank(appName)) {
-                context.putWhereParameter(FieldConstant.APP_NAME, appName);
+            if (CollectionUtils.isNotEmpty(appNames) && !appNames.contains(
+                    com.alibaba.nacos.api.common.Constants.ALL_PATTERN)) {
+                context.putWhereParameter(FieldConstant.APP_NAME, appNames);
             }
         }
         

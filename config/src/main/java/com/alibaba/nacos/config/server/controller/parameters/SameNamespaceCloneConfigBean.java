@@ -30,6 +30,8 @@ public class SameNamespaceCloneConfigBean {
     
     private String group;
     
+    private String appName;
+    
     public Long getCfgId() {
         return cfgId;
     }
@@ -52,5 +54,13 @@ public class SameNamespaceCloneConfigBean {
     
     public void setGroup(String group) {
         this.group = group;
+    }
+    
+    public String getAppName() {
+        return appName;
+    }
+    
+    public void setAppName(String appName) {
+        this.appName = appName;
     }
 }

@@ -21,8 +21,12 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Request util.
@@ -83,4 +87,25 @@ public class RequestUtil {
         return StringUtils.isBlank(result) ? request.getParameter(Constants.USERNAME) : result;
     }
     
+    /**
+     * Gets app permissions.
+     * @return app->permissions.
+     */
+    public static Map<String, Set<String>> getAppPermissions() {
+        IdentityContext identityContext = RequestContextHolder.getContext().getAuthContext().getIdentityContext();
+        Map<String, Set<String>> appPermissionMap = identityContext.getParameter(
+                com.alibaba.nacos.plugin.auth.constant.Constants.Identity.APP_PERMISSIONS, Maps.newHashMap());
+        return appPermissionMap;
+    }
+    
+    /**
+     * Gets app names.
+     * @return appNames.
+     */
+    public static Set<String> getAppNames() {
+        IdentityContext identityContext = RequestContextHolder.getContext().getAuthContext().getIdentityContext();
+        Set<String> appNames = identityContext.getParameter(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.APP_NAME,
+                Sets.newHashSet());
+        return appNames;
+    }
 }

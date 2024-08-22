@@ -80,7 +80,7 @@ public class LdapAuthenticationManager extends AbstractAuthenticationManager {
             userDetails = userDetailsService.loadUserByUsername(AuthConstants.LDAP_PREFIX + username);
         } catch (UsernameNotFoundException exception) {
             String ldapUsername = AuthConstants.LDAP_PREFIX + username;
-            userDetailsService.createUser(ldapUsername, AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD);
+            userDetailsService.createUser(ldapUsername, AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD, AuthConstants.PERSONAL_USER_TYPE);
             User user = new User();
             user.setUsername(ldapUsername);
             user.setPassword(AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD);

@@ -31,6 +31,8 @@ const getConfigsV2 = params => dispatch =>
     .get('v2/cs/config/searchDetail', { params })
     .then(data => dispatch({ type: GET_CONFIGURATION, data }));
 
+const getTeamOptions = params => request.get('v1/auth/users/appNames', { params });
+
 export default (state = initialState, action) => {
   switch (action.type) {
     case GET_CONFIGURATION:
@@ -40,4 +42,4 @@ export default (state = initialState, action) => {
   }
 };
 
-export { getConfigs, getConfigsV2 };
+export { getConfigs, getConfigsV2, getTeamOptions };

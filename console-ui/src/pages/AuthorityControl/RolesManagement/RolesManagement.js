@@ -25,6 +25,7 @@ import {
   Form,
   Switch,
   Input,
+  Tag,
 } from '@alifd/next';
 import { connect } from 'react-redux';
 import { getRoles, createRole, deleteRole } from '../../../reducers/authority';
@@ -32,6 +33,7 @@ import RegionGroup from '../../../components/RegionGroup';
 import NewRole from './NewRole';
 
 import './RolesManagement.scss';
+const { Group: TagGroup, Closeable: CloseableTag } = Tag;
 
 @connect(state => ({ roles: state.authority.roles }), { getRoles })
 @ConfigProvider.config
@@ -101,6 +103,28 @@ class RolesManagement extends React.Component {
     });
   }
 
+  renderUsername(usernames, index, record) {
+    return (
+      <TagGroup>
+        {usernames.map(username => (
+          <CloseableTag
+            color={'blue'}
+            style={{ width: 145, height: 35 }}
+            size={'medium'}
+            onClose={() => {
+              this.setState({ loading: true });
+              deleteRole({ username, role: record.role }).then(() => {
+                this.setState({ loading: false });
+              });
+            }}
+          >
+            {username}
+          </CloseableTag>
+        ))}
+      </TagGroup>
+    );
+  }
+
   render() {
     const { roles, locale } = this.props;
     const { loading, pageSize, pageNo, createRoleVisible, passwordResetUser } = this.state;
@@ -154,19 +178,22 @@ class RolesManagement extends React.Component {
               {locale.query}
             </Button>
           </Form.Item>
-          <Form.Item style={{ float: 'right' }}>
-            <Button
-              type="primary"
-              onClick={() => this.setState({ createRoleVisible: true })}
-              style={{ marginRight: 20 }}
-            >
-              {locale.bindingRoles}
-            </Button>
-          </Form.Item>
         </Form>
+        <div className="filter-panel">
+          <Button type="primary" onClick={() => this.setState({ createRoleVisible: true })}>
+            {locale.bindingRoles}
+          </Button>
+          <Button type="secondary" onClick={() => this.getRoles()}>
+            {locale.refresh}
+          </Button>
+        </div>
         <Table dataSource={roles.pageItems} loading={loading} maxBodyHeight={476} fixedHeader>
           <Table.Column title={locale.role} dataIndex="role" />
-          <Table.Column title={locale.username} dataIndex="username" />
+          <Table.Column
+            title={locale.username}
+            dataIndex="usernames"
+            cell={this.renderUsername.bind(this)}
+          />
           <Table.Column
             title={locale.operation}
             dataIndex="role"
@@ -183,7 +210,7 @@ class RolesManagement extends React.Component {
                       title: locale.deleteRole,
                       content: locale.deleteRoleTip,
                       onOk: () =>
-                        deleteRole(record).then(() => {
+                        deleteRole({ role: record.role }).then(() => {
                           this.setState({ pageNo: 1 }, () => this.getRoles());
                         }),
                     })

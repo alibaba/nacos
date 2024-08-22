@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.controller;
 
+import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
@@ -24,6 +25,7 @@ import com.alibaba.nacos.config.server.service.HistoryService;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.Sets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -66,6 +68,9 @@ class HistoryControllerTest {
     @Mock
     private HistoryService historyService;
     
+    @Mock
+    private AuthConfigs authConfigs;
+    
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
@@ -92,7 +97,7 @@ class HistoryControllerTest {
         page.setPagesAvailable(2);
         page.setPageItems(configHistoryInfoList);
         
-        when(historyService.listConfigHistory("test", "test", "", 1, 10)).thenReturn(page);
+        when(historyService.listConfigHistory("test", "test", "", 1, 10, Sets.newHashSet("test"))).thenReturn(page);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.HISTORY_CONTROLLER_PATH).param("search", "accurate")
                 .param("dataId", "test").param("group", "test").param("tenant", "").param("appName", "").param("pageNo", "1")

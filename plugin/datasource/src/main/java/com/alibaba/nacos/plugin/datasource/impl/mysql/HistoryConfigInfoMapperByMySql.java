@@ -16,12 +16,15 @@
 
 package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.HistoryConfigInfoMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
+
+import java.util.Set;
 
 /**
  * The mysql implementation of HistoryConfigInfoMapper.
@@ -42,8 +45,19 @@ public class HistoryConfigInfoMapperByMySql extends AbstractMapperByMysql implem
     public MapperResult pageFindConfigHistoryFetchRows(MapperContext context) {
         String sql =
                 "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified FROM his_config_info "
-                        + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC  LIMIT "
-                        + context.getStartRow() + "," + context.getPageSize();
+                        + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ";
+        Set<String> appNames = (Set<String>) context.getWhereParameter(FieldConstant.APP_NAME);
+        if (CollectionUtils.isNotEmpty(appNames) && !appNames.contains(Constants.ALL_PATTERN)) {
+            sql += "AND app_name in(";
+            StringBuilder where = new StringBuilder();
+            for (String appName : appNames) {
+                where.append("\'").append(appName).append("\'").append(",");
+            }
+            where.deleteCharAt(where.length() - 1);
+            where.append(")");
+            sql += where.toString();
+        }
+        sql += "ORDER BY nid DESC  LIMIT " + context.getStartRow() + "," + context.getPageSize();
         return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.DATA_ID),
                 context.getWhereParameter(FieldConstant.GROUP_ID), context.getWhereParameter(FieldConstant.TENANT_ID)));
     }

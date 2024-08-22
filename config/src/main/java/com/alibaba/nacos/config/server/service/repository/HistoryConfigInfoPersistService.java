@@ -24,6 +24,7 @@ import com.alibaba.nacos.persistence.repository.PaginationHelper;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Database service, providing access to his_config_info in the database.
@@ -89,6 +90,20 @@ public interface HistoryConfigInfoPersistService {
     Page<ConfigHistoryInfo> findConfigHistory(String dataId, String group, String tenant, int pageNo, int pageSize);
     
     /**
+     * List configuration history change record.
+     *
+     * @param dataId   data Id
+     * @param group    group
+     * @param tenant   tenant
+     * @param pageNo   no
+     * @param pageSize size
+     * @param appNames appNames
+     * @return {@link Page} with {@link ConfigHistoryInfo} generation
+     */
+    Page<ConfigHistoryInfo> findConfigHistory(String dataId, String group, String tenant, int pageNo, int pageSize,
+            Set<String> appNames);
+    
+    /**
      * Get history config detail.
      *
      * @param nid nid
@@ -112,4 +127,24 @@ public interface HistoryConfigInfoPersistService {
      */
     @Deprecated
     int findConfigHistoryCountByTime(final Timestamp startTime);
+    
+    /**
+     * Get all history dataId.
+     * @return dataIds.
+     */
+    List<String> getHistoryDataIdList();
+    
+    /**
+     * Get need delete history ids, retain latest 10.
+     * @param dataId dataId.
+     * @param retentionCounts retentionCounts.
+     * @return
+     */
+    List<String> getDeleteHistoryDataIdList(String dataId, int retentionCounts);
+    
+    /**
+     * Delete history config by nid.
+     * @param nids nids
+     */
+    void removeHistoryConfig(List<String> nids);
 }

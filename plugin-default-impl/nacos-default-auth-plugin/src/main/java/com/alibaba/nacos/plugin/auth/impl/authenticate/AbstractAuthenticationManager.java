@@ -61,7 +61,9 @@ public class AbstractAuthenticationManager implements IAuthenticationManager {
         if (nacosUserDetails == null || !PasswordEncoderUtil.matches(rawPassword, nacosUserDetails.getPassword())) {
             throw new AccessException("user not found!");
         }
-        return new NacosUser(nacosUserDetails.getUsername(), jwtTokenManager.createToken(username));
+        NacosUser nacosUser = new NacosUser(nacosUserDetails.getUsername(), jwtTokenManager.createToken(username));
+        nacosUser.setType(nacosUserDetails.getUserType());
+        return nacosUser;
     }
     
     @Override
@@ -69,7 +71,13 @@ public class AbstractAuthenticationManager implements IAuthenticationManager {
         if (StringUtils.isBlank(token)) {
             throw new AccessException("user not found!");
         }
-        return jwtTokenManager.parseToken(token);
+        NacosUser nacosUser = jwtTokenManager.parseToken(token);
+        NacosUserDetails nacosUserDetails = (NacosUserDetails) userDetailsService.loadUserByUsername(nacosUser.getUserName());
+        if (nacosUserDetails == null) {
+            throw new AccessException("user not found!");
+        }
+        nacosUser.setType(nacosUserDetails.getUserType());
+        return nacosUser;
     }
     
     @Override

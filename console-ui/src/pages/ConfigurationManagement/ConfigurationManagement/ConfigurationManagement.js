@@ -36,6 +36,7 @@ import {
   MenuButton,
   Box,
   Switch,
+  Grid,
 } from '@alifd/next';
 import BatchHandle from 'components/BatchHandle';
 import RegionGroup from 'components/RegionGroup';
@@ -45,7 +46,7 @@ import DashboardCard from './DashboardCard';
 import { getParams, setParams, request } from '@/globalLib';
 import { goLogin } from '../../../globalLib';
 import { connect } from 'react-redux';
-import { getConfigs, getConfigsV2 } from '../../../reducers/configuration';
+import { getConfigs, getConfigsV2, getTeamOptions } from '../../../reducers/configuration';
 import PageTitle from '../../../components/PageTitle';
 import QueryResult from '../../../components/QueryResult';
 
@@ -55,6 +56,7 @@ import TotalRender from '../../../components/Page/TotalRender';
 
 const { Item } = MenuButton;
 const { Panel } = Collapse;
+const { Row, Col } = Grid;
 const configsTableSelected = new Map();
 @connect(
   state => ({
@@ -76,7 +78,7 @@ class ConfigurationManagement extends React.Component {
     this.deleteDialog = React.createRef();
     this.showcode = React.createRef();
     this.field = new Field(this);
-    this.appName = getParams('appName') || '';
+    this.appName = getParams('appName') || getParams('edasAppId') || '';
     this.preAppName = this.appName;
     this.group = getParams('group') || '';
     this.preGroup = this.group;
@@ -121,9 +123,14 @@ class ConfigurationManagement extends React.Component {
       rowSelection: {
         onChange: this.configDataTableOnChange.bind(this),
         selectedRowKeys: [],
+        getProps: record => {
+          return { disabled: !record.canWrite };
+        },
       },
       isPageEnter: false,
       defaultFuzzySearch: true,
+      configsTableSelected: new Map(),
+      teamOptions: [],
     };
     const obj = {
       dataId: this.dataId || '',
@@ -135,10 +142,23 @@ class ConfigurationManagement extends React.Component {
     this.toggleShowQuestionnaire = this.toggleShowQuestionnaire.bind(this);
   }
 
+  getTeamOptions() {
+    getTeamOptions({ action: 'READ' }).then(teamOptions => {
+      const newTeamOptions = teamOptions.map(item => {
+        return {
+          label: item,
+          value: item,
+        };
+      });
+      this.setState({ teamOptions: newTeamOptions });
+    });
+  }
+
   componentDidMount() {
     const { locale = {} } = this.props;
     // this.getGroup();
     this.setIsCn();
+    this.getTeamOptions();
     if (window._getLink && window._getLink('isCn') === 'true') {
       if (!this.checkQuestionnaire()) {
         if (window.location.host === 'acm.console.aliyun.com') {
@@ -239,10 +259,10 @@ class ConfigurationManagement extends React.Component {
       });
     }
     this.getData();
+    const { rowSelection, configsTableSelected } = this.state;
     configsTableSelected.clear();
-    const { rowSelection } = this.state;
     rowSelection.selectedRowKeys = [];
-    this.setState({ rowSelection });
+    this.setState({ rowSelection, configsTableSelected });
   }
 
   changeParamsBySearchType(params) {
@@ -356,6 +376,10 @@ class ConfigurationManagement extends React.Component {
             <span style={{ color: '#c7254e' }}>{record.group}</span>
           </p>
           <p>
+            <span style={{ color: '#999', marginRight: 5 }}>AppName:</span>
+            <span style={{ color: '#c7254e' }}>{record.appName}</span>
+          </p>
+          <p>
             <span style={{ color: '#999', marginRight: 5 }}>{locale.environment}</span>
             <span style={{ color: '#c7254e' }}>{self.serverId || ''}</span>
           </p>
@@ -403,11 +427,25 @@ class ConfigurationManagement extends React.Component {
           {locale.sampleCode}
         </a>
         <span style={{ marginRight: 5 }}>|</span>
-        <a style={{ marginRight: 5 }} onClick={this.goEditor.bind(this, record)}>
+        <a
+          style={
+            record.canWrite
+              ? { marginRight: 5 }
+              : { marginRight: 5, color: 'rgba(0,0,0,0.25)', textDecoration: 'none' }
+          }
+          onClick={record.canWrite ? this.goEditor.bind(this, record) : () => {}}
+        >
           {locale.edit}
         </a>
         <span style={{ marginRight: 5 }}>|</span>
-        <a style={{ marginRight: 5 }} onClick={this.removeConfig.bind(this, record)}>
+        <a
+          style={
+            record.canWrite
+              ? { marginRight: 5 }
+              : { marginRight: 5, color: 'rgba(0,0,0,0.25)', textDecoration: 'none' }
+          }
+          onClick={record.canWrite ? this.removeConfig.bind(this, record) : () => {}}
+        >
           {locale.deleteAction}
         </a>
         <span style={{ marginRight: 5 }}>|</span>
@@ -501,6 +539,9 @@ class ConfigurationManagement extends React.Component {
   };
 
   selectAll() {
+    setParams('dataId', this.dataId);
+    setParams('group', this.group);
+    setParams('appName', this.appName);
     this.getData();
   }
 
@@ -607,17 +648,19 @@ class ConfigurationManagement extends React.Component {
   }
 
   exportSelectedData(newVersion) {
-    const ids = [];
     const { locale = {} } = this.props;
     const { accessToken = '', username = '' } = JSON.parse(localStorage.token || '{}');
-    if (!configsTableSelected.size) {
+    const {
+      rowSelection: { selectedRowKeys },
+    } = this.state;
+    if (!selectedRowKeys.length) {
       Dialog.alert({
         title: locale.exportSelectedAlertTitle,
         content: locale.exportSelectedAlertContent,
       });
       return;
     }
-    configsTableSelected.forEach((value, key, map) => ids.push(key));
+    const ids = selectedRowKeys;
     if (newVersion) {
       this.openUri('v1/cs/configs', {
         exportV2: 'true',
@@ -644,14 +687,23 @@ class ConfigurationManagement extends React.Component {
   multipleSelectionDeletion() {
     const { locale = {} } = this.props;
     const self = this;
-    if (configsTableSelected.size === 0) {
+    const {
+      configsTableSelected,
+      rowSelection: { selectedRowKeys },
+    } = this.state;
+    const filterConfigsTableSelected = new Map(
+      [...configsTableSelected].filter(item => {
+        return selectedRowKeys.includes(item[0]);
+      })
+    );
+    if (selectedRowKeys.size === 0) {
       Dialog.alert({
         title: locale.delSelectedAlertTitle,
         content: locale.delSelectedAlertContent,
       });
     } else {
       let toShowDatas = [];
-      configsTableSelected.forEach((value, key, map) => {
+      filterConfigsTableSelected.forEach((value, key, map) => {
         let item = {};
         item.dataId = value.dataId;
         item.group = value.group;
@@ -691,7 +743,16 @@ class ConfigurationManagement extends React.Component {
     const self = this;
     self.field.setValue('sameConfigPolicy', 'ABORT');
     self.field.setValue('cloneTargetSpace', undefined);
-    if (configsTableSelected.size === 0) {
+    const {
+      configsTableSelected,
+      rowSelection: { selectedRowKeys },
+    } = this.state;
+    const filterConfigsTableSelected = new Map(
+      [...configsTableSelected].filter(item => {
+        return selectedRowKeys.includes(item[0]);
+      })
+    );
+    if (selectedRowKeys.size === 0) {
       Dialog.alert({
         title: locale.cloneSelectedAlertTitle,
         content: locale.cloneSelectedAlertContent,
@@ -738,19 +799,22 @@ class ConfigurationManagement extends React.Component {
 
         let editableTableData = [];
         let configsTableSelectedDeepCopyed = new Map();
-        configsTableSelected.forEach((value, key, map) => {
+        filterConfigsTableSelected.forEach((value, key, map) => {
           let dataItem = {};
           dataItem.id = key;
           dataItem.dataId = value.dataId;
           dataItem.group = value.group;
+          dataItem.appName = value.appName;
           editableTableData.push(dataItem);
           configsTableSelectedDeepCopyed.set(key, JSON.parse(JSON.stringify(value)));
         });
         let editableTableOnBlur = (record, type, e) => {
           if (type === 1) {
             configsTableSelectedDeepCopyed.get(record.id).dataId = e.target.value;
-          } else {
+          } else if (type === 2) {
             configsTableSelectedDeepCopyed.get(record.id).group = e.target.value;
+          } else {
+            configsTableSelectedDeepCopyed.get(record.id).appName = e.target.value;
           }
         };
 
@@ -759,6 +823,9 @@ class ConfigurationManagement extends React.Component {
         );
         let renderEditableTableCellGroup = (value, index, record) => (
           <Input defaultValue={value} onBlur={editableTableOnBlur.bind(this, record, 2)} />
+        );
+        let renderEditableTableCellAppName = (value, index, record) => (
+          <Input defaultValue={value} onBlur={editableTableOnBlur.bind(this, record, 3)} />
         );
 
         const cloneConfirm = Dialog.confirm({
@@ -773,7 +840,7 @@ class ConfigurationManagement extends React.Component {
               </div>
               <div style={{ marginBottom: 10 }}>
                 <span style={{ color: '#999', marginRight: 5 }}>{locale.configurationNumber}</span>
-                <span style={{ color: '#49D2E7' }}>{configsTableSelected.size} </span>
+                <span style={{ color: '#49D2E7' }}>{filterConfigsTableSelected.size} </span>
                 {locale.selectedEntry}
               </div>
               <div style={{ marginBottom: 10 }}>
@@ -850,6 +917,7 @@ class ConfigurationManagement extends React.Component {
                       postDataItem.cfgId = key;
                       postDataItem.dataId = value.dataId;
                       postDataItem.group = value.group;
+                      postDataItem.appName = value.appName;
                       clonePostData.push(postDataItem);
                     });
                     let cloneTargetSpace = self.field.getValue('cloneTargetSpace');
@@ -897,6 +965,11 @@ class ConfigurationManagement extends React.Component {
                 />
                 <Table.Column title="Group" dataIndex="group" cell={renderEditableTableCellGroup} />
               </Table>
+              <Table.Column
+                title="App Name"
+                dataIndex="appName"
+                cell={renderEditableTableCellAppName()}
+              />
             </>
           ),
         });
@@ -1005,6 +1078,9 @@ class ConfigurationManagement extends React.Component {
       }
       if (resultCode === 100003 || resultCode === 100004 || resultCode === 100005) {
         alertContent = locale.importDataValidationError;
+      }
+      if (resultCode === 100007) {
+        alertContent = locale.noAppPermission;
       }
       Dialog.alert({
         title: isImport ? locale.importFail : locale.cloneFail,
@@ -1127,17 +1203,60 @@ class ConfigurationManagement extends React.Component {
   }
 
   configDataTableOnChange(ids, records) {
-    const { rowSelection } = this.state;
+    const { rowSelection, configsTableSelected } = this.state;
     rowSelection.selectedRowKeys = ids;
-    this.setState({ rowSelection });
-    configsTableSelected.clear();
     records.forEach((record, i) => {
       configsTableSelected.set(record.id, record);
     });
+    const filterConfigsTableSelected = new Map(
+      [...configsTableSelected].filter(item => {
+        return ids.includes(item[0]);
+      })
+    );
+    this.setState({ rowSelection, configsTableSelected: filterConfigsTableSelected });
+  }
+
+  configCheckboxOnChange(value) {
+    const { rowSelection } = this.state;
+    rowSelection.selectedRowKeys = value;
+    this.setState({ rowSelection });
+  }
+
+  allCheckboxChange(value) {
+    const {
+      rowSelection,
+      rowSelection: { selectedRowKeys },
+      configsTableSelected,
+    } = this.state;
+    const allValues = [];
+    const checkboxDataSource = [...configsTableSelected].map(item => {
+      allValues.push(item[0]);
+      return {
+        label: item[1]['dataId'],
+        value: item[0],
+      };
+    });
+    if (value) {
+      rowSelection.selectedRowKeys = allValues;
+    } else {
+      rowSelection.selectedRowKeys = [];
+    }
+    this.setState({ rowSelection });
   }
 
   render() {
+    const { teamOptions } = this.state;
     const { locale = {}, configurations = {} } = this.props;
+    const {
+      rowSelection: { selectedRowKeys },
+      configsTableSelected,
+    } = this.state;
+    const checkboxDataSource = [...configsTableSelected].map(item => {
+      return {
+        label: item[1]['dataId'],
+        value: item[0],
+      };
+    });
     return (
       <>
         <BatchHandle ref={ref => (this.batchHandle = ref)} />
@@ -1162,9 +1281,49 @@ class ConfigurationManagement extends React.Component {
 
             <div
               style={{
+                display: this.inApp ? 'none' : 'block',
+                position: 'relative',
+                width: '100%',
+                overflow: 'hidden',
+                height: '40px',
+              }}
+            >
+              <h3
+                style={{
+                  height: 30,
+                  width: '100%',
+                  lineHeight: '30px',
+                  padding: 0,
+                  margin: 0,
+                  paddingLeft: 10,
+                  borderLeft: '3px solid #09c',
+                  color: '#ccc',
+                  fontSize: '12px',
+                }}
+              >
+                <span style={{ fontSize: '14px', color: '#000', marginRight: 8 }}>
+                  {locale.configurationManagement8}
+                </span>
+                <span style={{ fontSize: '14px', color: '#000', marginRight: 8 }}>|</span>
+                <span style={{ fontSize: '14px', color: '#000', marginRight: 8 }}>
+                  {this.state.nownamespace_name}
+                </span>
+                <span style={{ fontSize: '14px', color: '#000', marginRight: 8 }}>
+                  {this.state.nownamespace_id}
+                </span>
+                {locale.queryResults}
+                <strong style={{ fontWeight: 'bold' }}> {configurations.totalCount} </strong>
+                {locale.articleMeetRequirements}
+              </h3>
+              <div
+                style={{ position: 'absolute', textAlign: 'right', zIndex: 2, right: 0, top: 0 }}
+              />
+            </div>
+            <div
+              style={{
                 position: 'relative',
                 marginTop: 10,
-                height: 'auto',
+                height: this.state.isAdvancedQuery ? 'auto' : 42,
                 overflow: 'visible',
               }}
             >
@@ -1205,7 +1364,18 @@ class ConfigurationManagement extends React.Component {
                     hasClear
                   />
                 </Form.Item>
-
+                <Form.Item style={this.inApp ? { display: 'none' } : {}} label={locale.application}>
+                  <Select
+                    htmlType={'text'}
+                    style={{ width: '100%' }}
+                    placeholder={locale.app1}
+                    value={this.state.appName}
+                    dataSource={teamOptions}
+                    onChange={this.setAppName.bind(this)}
+                    onPressEnter={() => this.getData()}
+                    hasClear
+                  />
+                </Form.Item>
                 <Form.Item label={locale.fuzzydMode}>
                   <Switch
                     checkedChildren=""
@@ -1260,25 +1430,6 @@ class ConfigurationManagement extends React.Component {
                 </Form.Item>
                 <br />
                 <Form.Item
-                  style={
-                    this.inApp
-                      ? { display: 'none' }
-                      : this.state.isAdvancedQuery
-                      ? {}
-                      : { display: 'none' }
-                  }
-                  label={locale.application}
-                >
-                  <Input
-                    htmlType={'text'}
-                    placeholder={locale.app1}
-                    style={{ width: 200 }}
-                    value={this.state.appName}
-                    onChange={this.setAppName.bind(this)}
-                    onPressEnter={() => this.getData()}
-                  />
-                </Form.Item>
-                <Form.Item
                   style={this.state.isAdvancedQuery ? {} : { display: 'none' }}
                   label={locale.tags}
                 >
@@ -1316,6 +1467,29 @@ class ConfigurationManagement extends React.Component {
                 </Form.Item>
               </Form>
             </div>
+            <Row style={{ padding: '20px', border: '1px solid #ddd', marginBottom: '10px' }}>
+              {checkboxDataSource.length > 0 && (
+                <Col span="2">
+                  <Checkbox
+                    checked={checkboxDataSource.length === selectedRowKeys.length}
+                    onChange={this.allCheckboxChange.bind(this)}
+                  >
+                    {checkboxDataSource.length === selectedRowKeys.length ? '取消全选' : '全选'}
+                  </Checkbox>
+                </Col>
+              )}
+              <Col span="2">{`已选中${selectedRowKeys.length}条`}</Col>
+              <Col span="20">
+                <Checkbox.Group
+                  dataSource={checkboxDataSource.slice(0, 20)}
+                  size="small"
+                  value={selectedRowKeys}
+                  onChange={this.configCheckboxOnChange.bind(this)}
+                />
+                {checkboxDataSource.length > 20 && '......'}
+              </Col>
+            </Row>
+
             <QueryResult total={configurations.totalCount} />
 
             <Table
@@ -1329,10 +1503,12 @@ class ConfigurationManagement extends React.Component {
             >
               <Table.Column sortable={true} title={'Data Id'} dataIndex={'dataId'} />
               <Table.Column sortable={true} title={'Group'} dataIndex={'group'} />
-              {!this.inApp && (
-                <Table.Column sortable={true} title={locale.application} dataIndex="appName" />
-              )}
-              <Table.Column title={locale.operation} cell={this.renderCol.bind(this)} />
+              <Table.Column sortable={true} title={locale.application} dataIndex="appName" />
+              <Table.Column
+                sortable={true}
+                title={locale.operation}
+                cell={this.renderCol.bind(this)}
+              />
             </Table>
             {configurations.totalCount > 0 && (
               <>

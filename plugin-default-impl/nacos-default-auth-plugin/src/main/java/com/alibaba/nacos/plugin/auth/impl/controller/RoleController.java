@@ -22,7 +22,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
-import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
+import com.alibaba.nacos.plugin.auth.impl.persistence.RoleMapInfo;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -61,7 +61,7 @@ public class RoleController {
     public Object getRoles(@RequestParam int pageNo, @RequestParam int pageSize,
             @RequestParam(name = "username", defaultValue = "") String username,
             @RequestParam(name = "role", defaultValue = "") String role) {
-        return roleService.getRolesFromDatabase(username, role, pageNo, pageSize);
+        return roleService.getRoleMapFromDatabase(username, role, pageNo, pageSize);
     }
 
     /**
@@ -74,10 +74,10 @@ public class RoleController {
      */
     @GetMapping(params = "search=blur")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.READ)
-    public Page<RoleInfo> fuzzySearchRole(@RequestParam int pageNo, @RequestParam int pageSize,
+    public Page<RoleMapInfo> fuzzySearchRole(@RequestParam int pageNo, @RequestParam int pageSize,
             @RequestParam(name = "username", defaultValue = "") String username,
             @RequestParam(name = "role", defaultValue = "") String role) {
-        return roleService.findRolesLike4Page(username, role, pageNo, pageSize);
+        return roleService.findRoleMapLike4Page(username, role, pageNo, pageSize);
     }
     
     /**

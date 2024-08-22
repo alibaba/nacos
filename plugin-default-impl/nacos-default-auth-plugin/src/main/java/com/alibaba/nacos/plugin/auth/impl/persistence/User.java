@@ -31,6 +31,8 @@ public class User implements Serializable {
     
     private String password;
     
+    private String type;
+    
     public String getPassword() {
         return password;
     }
@@ -45,5 +47,13 @@ public class User implements Serializable {
     
     public void setUsername(String username) {
         this.username = username;
+    }
+    
+    public String getType() {
+        return type;
+    }
+    
+    public void setType(String type) {
+        this.type = type;
     }
 }

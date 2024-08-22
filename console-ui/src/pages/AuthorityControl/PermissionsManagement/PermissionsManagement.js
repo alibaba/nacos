@@ -176,6 +176,7 @@ class PermissionsManagement extends React.Component {
               return namespaceShowName + (namespace ? ` (${namespace})` : '');
             }}
           />
+          <Table.Column title={locale.appName} dataIndex="appName" />
           <Table.Column
             title={locale.action}
             dataIndex="action"

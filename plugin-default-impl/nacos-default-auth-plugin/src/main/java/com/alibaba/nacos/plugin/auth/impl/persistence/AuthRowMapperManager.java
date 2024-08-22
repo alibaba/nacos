@@ -53,6 +53,7 @@ public class AuthRowMapperManager {
             User user = new User();
             user.setUsername(rs.getString("username"));
             user.setPassword(rs.getString("password"));
+            user.setType(rs.getString("type"));
             return user;
         }
     }
@@ -76,6 +77,7 @@ public class AuthRowMapperManager {
             info.setResource(rs.getString("resource"));
             info.setAction(rs.getString("action"));
             info.setRole(rs.getString("role"));
+            info.setAppName(rs.getString("app_name"));
             return info;
         }
     }

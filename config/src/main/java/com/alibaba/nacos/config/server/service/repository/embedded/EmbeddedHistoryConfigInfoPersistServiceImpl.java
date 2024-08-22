@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service.repository.embedded;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -24,6 +25,7 @@ import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
+import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
@@ -41,13 +43,16 @@ import com.alibaba.nacos.plugin.datasource.mapper.HistoryConfigInfoMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.google.common.collect.Lists;
 import org.springframework.context.annotation.Conditional;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.HISTORY_DETAIL_ROW_MAPPER;
@@ -156,6 +161,37 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     }
     
     @Override
+    public Page<ConfigHistoryInfo> findConfigHistory(String dataId, String group, String tenant, int pageNo,
+            int pageSize, Set<String> appNames) {
+        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+    
+        HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
+                dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
+    
+        MapperContext context = new MapperContext((pageNo - 1) * pageSize, pageSize);
+        context.putWhereParameter(FieldConstant.DATA_ID, dataId);
+        context.putWhereParameter(FieldConstant.GROUP_ID, group);
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
+    
+        String sqlCountRows = historyConfigInfoMapper.count(Arrays.asList("data_id", "group_id", "tenant_id"));
+        if (CollectionUtils.isNotEmpty(appNames) && !appNames.contains("*")) {
+            context.putWhereParameter(FieldConstant.APP_NAME, appNames);
+            StringBuilder appNameBuilder = new StringBuilder(" AND app_name in (");
+            for (String appName : appNames) {
+                appNameBuilder.append("\'").append(appName).append("\'").append(",");
+            }
+            appNameBuilder.deleteCharAt(appNameBuilder.length() - 1);
+            appNameBuilder.append(")");
+            sqlCountRows += appNameBuilder.toString();
+        }
+        MapperResult sqlFetchRows = historyConfigInfoMapper.pageFindConfigHistoryFetchRows(context);
+    
+        PaginationHelper<ConfigHistoryInfo> helper = createPaginationHelper();
+        return helper.fetchPage(sqlCountRows, sqlFetchRows.getSql(), sqlFetchRows.getParamList().toArray(), pageNo,
+                pageSize, HISTORY_LIST_ROW_MAPPER);
+    }
+    
+    @Override
     public ConfigHistoryInfo detailConfigHistory(Long nid) {
         HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
                 dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
@@ -190,5 +226,32 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
             throw new IllegalArgumentException("findConfigHistoryCountByTime error");
         }
         return result;
+    }
+    
+    @Override
+    public List<String> getHistoryDataIdList() {
+        String sql = "SELECT distinct data_id FROM his_config_info";
+        return databaseOperate.queryMany(sql, new Object[]{}, String.class);
+    }
+    
+    @Override
+    public List<String> getDeleteHistoryDataIdList(String dataId, int retentionCounts) {
+        String sql = "SELECT nid FROM his_config_info where data_id = ? order by gmt_modified DESC";
+        List<String> nids = databaseOperate.queryMany(sql, new Object[]{dataId}, String.class);
+        if (CollectionUtils.isNotEmpty(nids) && nids.size() > retentionCounts) {
+            return nids.subList(retentionCounts, nids.size());
+        }
+        return Lists.newArrayList();
+    }
+    
+    @Override
+    public void removeHistoryConfig(List<String> nids) {
+        String sql = "DELETE FROM his_config_info where nid in (" + StringUtils.join(nids, ",") + ")";
+        try {
+            EmbeddedStorageContextHolder.addSqlContext(sql, new Object[]{});
+            databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
+        } catch (CannotGetJdbcConnectionException e) {
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+        }
     }
 }

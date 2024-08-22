@@ -31,6 +31,7 @@ import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Database service, providing access to config_info in the database.
@@ -402,12 +403,12 @@ public interface ConfigInfoPersistService {
      * @param dataId  data id
      * @param group   group
      * @param tenant  tenant
-     * @param appName appName
+     * @param appNames appNames
      * @param ids     ids
      * @return Collection of ConfigInfo objects
      */
     List<ConfigAllInfo> findAllConfigInfo4Export(final String dataId, final String group, final String tenant,
-            final String appName, final List<Long> ids);
+            final Set<String> appNames, final List<Long> ids);
     
     /**
      * Query dataId list by namespace.

@@ -32,6 +32,8 @@ public class ConfigInfo extends ConfigInfoBase {
     
     private String type;
     
+    private boolean canWrite = true;
+    
     public ConfigInfo() {
     }
     
@@ -72,6 +74,14 @@ public class ConfigInfo extends ConfigInfoBase {
     
     public void setType(String type) {
         this.type = type;
+    }
+    
+    public boolean isCanWrite() {
+        return canWrite;
+    }
+    
+    public void setCanWrite(boolean canWrite) {
+        this.canWrite = canWrite;
     }
     
     @Override

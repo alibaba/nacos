@@ -16,7 +16,7 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Field, Form, Input, Dialog, ConfigProvider } from '@alifd/next';
+import { Field, Form, Input, Dialog, ConfigProvider, Select } from '@alifd/next';
 import './UserManagement.scss';
 
 const FormItem = Form.Item;
@@ -42,6 +42,7 @@ class NewUser extends React.Component {
   check() {
     const { locale } = this.props;
     const errors = {
+      type: locale.typeError,
       username: locale.usernameError,
       password: locale.passwordError,
       rePassword: locale.rePasswordError,
@@ -53,7 +54,7 @@ class NewUser extends React.Component {
       }
       return val;
     });
-    if (vals.filter(v => v).length !== 3) {
+    if (vals.filter(v => v).length !== 4) {
       return null;
     }
     const [password, rePassword] = ['password', 'rePassword'].map(k => this.field.getValue(k));
@@ -84,6 +85,23 @@ class NewUser extends React.Component {
           afterClose={() => this.field.reset()}
         >
           <Form style={{ width: 400 }} {...formItemLayout} field={this.field}>
+            <FormItem label={locale.type} required help={getError('type')}>
+              <Select
+                name="type"
+                style={{ width: '100%' }}
+                dataSource={[
+                  {
+                    label: locale.personAccount,
+                    value: '1',
+                  },
+                  {
+                    label: locale.appAccount,
+                    value: '0',
+                  },
+                ]}
+                placeholder={locale.typePlaceholder}
+              />
+            </FormItem>
             <FormItem label={locale.username} required help={getError('username')}>
               <Input name="username" trim placeholder={locale.usernamePlaceholder} />
             </FormItem>

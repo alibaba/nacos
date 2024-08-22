@@ -80,4 +80,10 @@ public class AuthConstants {
     public static final String LDAP_DEFAULT_ENCODED_PASSWORD = PasswordEncoderUtil.encode(LDAP_DEFAULT_PASSWORD);
     
     public static final String LDAP_PREFIX = "LDAP_";
+    
+    public static final String PERSONAL_USER_TYPE = "1";
+    
+    public static final String APP_USER_TYPE = "0";
+    
+    public static final String APP_NAME = "appName";
 }

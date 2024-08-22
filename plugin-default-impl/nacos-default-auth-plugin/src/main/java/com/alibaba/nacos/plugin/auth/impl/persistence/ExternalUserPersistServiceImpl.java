@@ -62,13 +62,14 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
      *
      * @param username username string value.
      * @param password password string value.
+     * @param type type string value.
      */
     @Override
-    public void createUser(String username, String password) {
-        String sql = "INSERT INTO users (username, password, enabled) VALUES (?, ?, ?)";
+    public void createUser(String username, String password, String type) {
+        String sql = "INSERT INTO users (username, password, enabled, type) VALUES (?, ?, ?, ?)";
         
         try {
-            jt.update(sql, username, password, true);
+            jt.update(sql, username, password, true, type);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
@@ -115,7 +116,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
      */
     @Override
     public User findUserByUsername(String username) {
-        String sql = "SELECT username,password FROM users WHERE username=? ";
+        String sql = "SELECT username,password,type FROM users WHERE username=? ";
         try {
             return this.jt.queryForObject(sql, new Object[] {username}, USER_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
@@ -136,7 +137,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
         
         String sqlCountRows = "SELECT count(*) FROM users ";
         
-        String sqlFetchRows = "SELECT username,password FROM users ";
+        String sqlFetchRows = "SELECT username,password,type FROM users ";
         
         StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
         List<String> params = new ArrayList<>();
@@ -170,7 +171,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
     @Override
     public Page<User> findUsersLike4Page(String username, int pageNo, int pageSize) {
         String sqlCountRows = "SELECT count(*) FROM users ";
-        String sqlFetchRows = "SELECT username,password FROM users ";
+        String sqlFetchRows = "SELECT username,password,type FROM users ";
         
         StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
         List<String> params = new ArrayList<>();

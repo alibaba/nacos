@@ -327,19 +327,15 @@ class ConfigDetail extends React.Component {
             <FormItem label={'Group'} required>
               <Input htmlType={'text'} readOnly {...init('group')} />
             </FormItem>
+            <FormItem label={locale.home} required>
+              <Input htmlType={'text'} readOnly {...init('appName')} />
+            </FormItem>
             <FormItem label=" ">
               <div>
                 <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>
                   {this.state.showmore ? locale.collapse : locale.more}
                 </a>
               </div>
-            </FormItem>
-
-            <FormItem
-              label={locale.home}
-              className={`more-item${!this.state.showmore ? ' hide' : ''}`}
-            >
-              <Input htmlType={'text'} readOnly {...init('appName')} />
             </FormItem>
 
             <FormItem

@@ -16,17 +16,27 @@
 
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.extrnal.AuthExternalPaginationHelperImpl;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -34,6 +44,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.plugin.auth.impl.persistence.AuthRowMapperManager.ROLE_INFO_ROW_MAPPER;
 
@@ -45,6 +59,9 @@ import static com.alibaba.nacos.plugin.auth.impl.persistence.AuthRowMapperManage
 @Conditional(value = ConditionOnExternalStorage.class)
 @Component
 public class ExternalRolePersistServiceImpl implements RolePersistService {
+    
+    @Autowired
+    private PermissionPersistService permissionPersistService;
     
     private JdbcTemplate jt;
     
@@ -61,7 +78,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     
     @Override
     public Page<RoleInfo> getRoles(int pageNo, int pageSize) {
-    
+        
         AuthPaginationHelper<RoleInfo> helper = createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM (SELECT DISTINCT role FROM roles) roles WHERE ";
@@ -87,7 +104,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     
     @Override
     public Page<RoleInfo> getRolesByUserNameAndRoleName(String username, String role, int pageNo, int pageSize) {
-    
+        
         AuthPaginationHelper<RoleInfo> helper = createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM roles ";
@@ -112,6 +129,58 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
+    }
+    
+    @Override
+    public Page<RoleMapInfo> getRoleMapByUserNameAndRoleName(String username, String role, int pageNo, int pageSize) {
+        String sqlCountRows = "SELECT count(*) FROM roles ";
+        StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
+        List<String> params = new ArrayList<>();
+        if (StringUtils.isNotBlank(username)) {
+            where.append(" AND username = ? ");
+            params.add(username);
+        }
+        if (StringUtils.isNotBlank(role)) {
+            where.append(" AND role = ? ");
+            params.add(role);
+        }
+        
+        Integer count = jt.queryForObject(sqlCountRows + where, params.toArray(), Integer.class);
+        if (null == count || 0 == count) {
+            return null;
+        }
+        Page<RoleMapInfo> page = new Page<>();
+        page.setTotalCount(count);
+        page.setPageNumber(pageNo);
+        int pageCount = count / pageSize;
+        if (count > pageSize * pageCount) {
+            pageCount++;
+        }
+        page.setPagesAvailable(pageCount);
+        if (pageNo > pageCount) {
+            return page;
+        }
+        int startRow = (pageNo - 1) * pageSize;
+        String sqlSelectRole = "select DISTINCT role from roles " + where + " limit " + startRow + "," + pageSize;
+        List<String> roleString = jt.queryForList(sqlSelectRole, params.toArray(), String.class);
+        MapSqlParameterSource parameterSource = new MapSqlParameterSource();
+        parameterSource.addValue("roleString", roleString);
+        String sqlRole = "select role,username from roles where role in (:roleString)";
+        NamedParameterJdbcTemplate namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(
+                Objects.requireNonNull(this.jt.getDataSource()));
+        List<RoleInfo> roleInfos = namedParameterJdbcTemplate.query(sqlRole, parameterSource, ROLE_INFO_ROW_MAPPER);
+        Map<String, List<RoleInfo>> collect = roleInfos.stream().collect(Collectors.groupingBy(RoleInfo::getRole));
+        List<RoleMapInfo> roleMapInfos = Lists.newArrayList();
+        for (String roleName : roleString) {
+            RoleMapInfo mapInfo = new RoleMapInfo();
+            mapInfo.setRole(roleName);
+            List<String> userNames = collect.get(roleName).stream().map(RoleInfo::getUsername)
+                    .collect(Collectors.toList());
+            mapInfo.setUsernames(userNames);
+            roleMapInfos.add(mapInfo);
+        }
+        page.setPageItems(roleMapInfos);
+        return page;
     }
     
     /**
@@ -203,7 +272,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
             where.append(" AND role LIKE ? ");
             params.add(generateLikeArgument(role));
         }
-    
+        
         AuthPaginationHelper<RoleInfo> helper = createPaginationHelper();
         try {
             return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
@@ -215,8 +284,87 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     }
     
     @Override
+    public Page<RoleMapInfo> findRoleMapLike4Page(String username, String role, int pageNo, int pageSize) {
+        String sqlCountRows = "SELECT count(*) FROM roles ";
+        StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
+        List<String> params = new ArrayList<>();
+        if (StringUtils.isNotBlank(username)) {
+            where.append(" AND username like ? ");
+            params.add(username);
+        }
+        if (StringUtils.isNotBlank(role)) {
+            where.append(" AND role like ? ");
+            params.add(role);
+        }
+    
+        Integer count = jt.queryForObject(sqlCountRows + where, params.toArray(), Integer.class);
+        if (null == count || 0 == count) {
+            return null;
+        }
+        Page<RoleMapInfo> page = new Page<>();
+        page.setTotalCount(count);
+        page.setPageNumber(pageNo);
+        int pageCount = count / pageSize;
+        if (count > pageSize * pageCount) {
+            pageCount++;
+        }
+        page.setPagesAvailable(pageCount);
+        if (pageNo > pageCount) {
+            return page;
+        }
+        int startRow = (pageNo - 1) * pageSize;
+        String sqlSelectRole = "select DISTINCT role from roles where " + where + " limit " + startRow + "," + pageSize;
+        List<String> roleString = jt.queryForList(sqlSelectRole, params.toArray(), String.class);
+        MapSqlParameterSource parameterSource = new MapSqlParameterSource();
+        parameterSource.addValue("roleString", roleString);
+        String sqlRole = "select role,username from roles where role in (:roleString)";
+        NamedParameterJdbcTemplate namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(
+                Objects.requireNonNull(this.jt.getDataSource()));
+        List<RoleInfo> roleInfos = namedParameterJdbcTemplate.query(sqlRole, parameterSource, ROLE_INFO_ROW_MAPPER);
+        Map<String, List<RoleInfo>> collect = roleInfos.stream().collect(Collectors.groupingBy(RoleInfo::getRole));
+        List<RoleMapInfo> roleMapInfos = Lists.newArrayList();
+        for (String roleName : roleString) {
+            RoleMapInfo mapInfo = new RoleMapInfo();
+            mapInfo.setRole(roleName);
+            List<String> userNames = collect.get(roleName).stream().map(RoleInfo::getUsername)
+                    .collect(Collectors.toList());
+            mapInfo.setUsernames(userNames);
+            roleMapInfos.add(mapInfo);
+        }
+        page.setPageItems(roleMapInfos);
+        return page;
+    
+    }
+    
+    @Override
     public <E> AuthPaginationHelper<E> createPaginationHelper() {
         return new AuthExternalPaginationHelperImpl<>(jt, dataSourceType);
+    }
+    
+    @Override
+    public Map<String, Set<String>> getAppPermissions(String userName) {
+        Page<RoleInfo> pageRoles = getRolesByUserNameAndRoleName(userName, null, 1, Integer.MAX_VALUE);
+        if (null == pageRoles || CollectionUtils.isEmpty(pageRoles.getPageItems())) {
+            return Maps.newHashMap();
+        }
+        List<RoleInfo> roleInfos = pageRoles.getPageItems();
+        Map<String, Set<String>> appPermissionMap = Maps.newHashMap();
+        for (RoleInfo roleInfo : roleInfos) {
+            if (StringUtils.equals(roleInfo.getRole(), AuthConstants.GLOBAL_ADMIN_ROLE)) {
+                appPermissionMap.put(Constants.ALL_PATTERN, Sets.newHashSet(ActionTypes.READ_WRITE.toString()));
+            }
+            Page<PermissionInfo> permissionInfoPage = permissionPersistService.getPermissions(roleInfo.getRole(), 1,
+                    Integer.MAX_VALUE);
+            if (null == permissionInfoPage || CollectionUtils.isEmpty(permissionInfoPage.getPageItems())) {
+                continue;
+            }
+            for (PermissionInfo permissionInfo : permissionInfoPage.getPageItems()) {
+                Set<String> permissions = appPermissionMap.computeIfAbsent(permissionInfo.getAppName(),
+                        key -> Sets.newHashSet());
+                permissions.add(permissionInfo.getAction());
+            }
+        }
+        return appPermissionMap;
     }
     
     private static final class RoleInfoRowMapper implements RowMapper<RoleInfo> {

@@ -34,8 +34,9 @@ public interface UserPersistService {
      *
      * @param username username
      * @param password password
+     * @param type type
      */
-    void createUser(String username, String password);
+    void createUser(String username, String password, String type);
 
     /**
      * delete user by username.

@@ -35,6 +35,7 @@ import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.google.common.collect.Sets;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -901,7 +902,7 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         when(databaseOperate.queryMany(anyString(), eq(new Object[] {132L, 1343L, 245L}), eq(CONFIG_ALL_INFO_ROW_MAPPER))).thenReturn(
                 mockConfigs);
         //execute return mock obj
-        List<ConfigAllInfo> configAllInfosIds = embeddedConfigInfoPersistService.findAllConfigInfo4Export(dataId, group, tenant, appName,
+        List<ConfigAllInfo> configAllInfosIds = embeddedConfigInfoPersistService.findAllConfigInfo4Export(dataId, group, tenant, Sets.newHashSet(appName),
                 ids);
         //expect check
         assertEquals(mockConfigs, configAllInfosIds);
@@ -910,7 +911,7 @@ class EmbeddedConfigInfoPersistServiceImplTest {
                 eq(CONFIG_ALL_INFO_ROW_MAPPER))).thenReturn(mockConfigs);
         //execute return mock obj
         List<ConfigAllInfo> configAllInfosWithDataId = embeddedConfigInfoPersistService.findAllConfigInfo4Export(dataId, group, tenant,
-                appName, null);
+                Sets.newHashSet(appName), null);
         //expect check
         assertEquals(mockConfigs, configAllInfosWithDataId);
         

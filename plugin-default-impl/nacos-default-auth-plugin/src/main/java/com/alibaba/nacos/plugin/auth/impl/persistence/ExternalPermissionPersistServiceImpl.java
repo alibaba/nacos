@@ -62,7 +62,7 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
         AuthPaginationHelper<PermissionInfo> helper = createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM permissions WHERE ";
-        String sqlFetchRows = "SELECT role,resource,action FROM permissions WHERE ";
+        String sqlFetchRows = "SELECT role,resource,action,app_name FROM permissions WHERE ";
         
         String where = " role= ? ";
         List<String> params = new ArrayList<>();
@@ -96,14 +96,15 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
      * @param role     role string value.
      * @param resource resource string value.
      * @param action   action string value.
+     * @param appName   appName string value.
      */
     @Override
-    public void addPermission(String role, String resource, String action) {
+    public void addPermission(String role, String resource, String action, String appName) {
         
-        String sql = "INSERT INTO permissions (role, resource, action) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO permissions (role, resource, action, app_name) VALUES (?, ?, ?, ?)";
         
         try {
-            jt.update(sql, role, resource, action);
+            jt.update(sql, role, resource, action, appName);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
@@ -116,13 +117,14 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
      * @param role     role string value.
      * @param resource resource string value.
      * @param action   action string value.
+     * @param appName   appName info string value.
      */
     @Override
-    public void deletePermission(String role, String resource, String action) {
+    public void deletePermission(String role, String resource, String action, String appName) {
         
-        String sql = "DELETE FROM permissions WHERE role=? AND resource=? AND action=?";
+        String sql = "DELETE FROM permissions WHERE role=? AND resource=? AND action=? AND app_name=?";
         try {
-            jt.update(sql, role, resource, action);
+            jt.update(sql, role, resource, action, appName);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
@@ -134,7 +136,7 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
         AuthPaginationHelper<PermissionInfo> helper = createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM permissions ";
-        String sqlFetchRows = "SELECT role,resource,action FROM permissions ";
+        String sqlFetchRows = "SELECT role,resource,action,app_name FROM permissions ";
         
         StringBuilder where = new StringBuilder(" WHERE 1=1");
         List<String> params = new ArrayList<>();
@@ -179,5 +181,11 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
     @Override
     public <E> AuthPaginationHelper<E> createPaginationHelper() {
         return new AuthExternalPaginationHelperImpl<E>(jt, dataSourceType);
+    }
+    
+    @Override
+    public List<String> getAllAppNames() {
+        String querySql = "select distinct app_name from permissions where app_name is not null and app_name != '*'";
+        return this.jt.queryForList(querySql, String.class);
     }
 }

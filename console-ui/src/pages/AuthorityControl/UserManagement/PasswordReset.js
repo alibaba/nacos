@@ -16,7 +16,7 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Field, Form, Input, Dialog, ConfigProvider } from '@alifd/next';
+import { Field, Form, Input, Dialog, ConfigProvider, Select } from '@alifd/next';
 import './UserManagement.scss';
 
 const FormItem = Form.Item;
@@ -38,6 +38,7 @@ class PasswordReset extends React.Component {
     username: PropTypes.string,
     onCancel: PropTypes.func,
     onOk: PropTypes.func,
+    type: PropTypes.string,
   };
 
   check() {
@@ -67,7 +68,7 @@ class PasswordReset extends React.Component {
   render() {
     const { locale } = this.props;
     const { getError } = this.field;
-    const { username, onOk, onCancel, visible } = this.props;
+    const { username, type, onOk, onCancel, visible } = this.props;
     return (
       <>
         <Dialog
@@ -84,6 +85,23 @@ class PasswordReset extends React.Component {
           afterClose={() => this.field.reset()}
         >
           <Form style={{ width: 400 }} {...formItemLayout} field={this.field}>
+            <FormItem label={locale.type} required help={getError('type')}>
+              <Select
+                name="type"
+                style={{ width: '100%' }}
+                dataSource={[
+                  {
+                    label: locale.personAccount,
+                    value: '1',
+                  },
+                  {
+                    label: locale.appAccount,
+                    value: '0',
+                  },
+                ]}
+                placeholder={locale.typePlaceholder}
+              />
+            </FormItem>
             <FormItem label={locale.username} required>
               <p>{username}</p>
             </FormItem>

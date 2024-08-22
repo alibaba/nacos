@@ -43,6 +43,11 @@ public class PermissionInfo implements Serializable {
      */
     private String action;
     
+    /**
+     * App name.
+     */
+    private String appName;
+    
     public String getRole() {
         return role;
     }
@@ -65,5 +70,13 @@ public class PermissionInfo implements Serializable {
     
     public void setAction(String action) {
         this.action = action;
+    }
+    
+    public String getAppName() {
+        return appName;
+    }
+    
+    public void setAppName(String appName) {
+        this.appName = appName;
     }
 }

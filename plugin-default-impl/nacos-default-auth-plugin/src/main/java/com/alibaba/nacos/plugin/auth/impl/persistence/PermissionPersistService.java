@@ -18,6 +18,8 @@ package com.alibaba.nacos.plugin.auth.impl.persistence;
 
 import com.alibaba.nacos.persistence.model.Page;
 
+import java.util.List;
+
 /**
  * Permission CRUD service.
  *
@@ -43,8 +45,9 @@ public interface PermissionPersistService {
      * @param role role
      * @param resource resource
      * @param action action
+     * @param appName appName
      */
-    void addPermission(String role, String resource, String action);
+    void addPermission(String role, String resource, String action, String appName);
 
     /**
      * delete the role's permission.
@@ -52,8 +55,9 @@ public interface PermissionPersistService {
      * @param role role
      * @param resource resource
      * @param action action
+     * @param appName appName
      */
-    void deletePermission(String role, String resource, String action);
+    void deletePermission(String role, String resource, String action, String appName);
 
     Page<PermissionInfo> findPermissionsLike4Page(String role, int pageNo, int pageSize);
 
@@ -66,4 +70,10 @@ public interface PermissionPersistService {
      * @return {@link AuthPaginationHelper}
      */
     <E> AuthPaginationHelper<E> createPaginationHelper();
+    
+    /**
+     * Get all appNames.
+     * @return appName list
+     */
+    List<String> getAllAppNames();
 }

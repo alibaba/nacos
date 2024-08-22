@@ -112,10 +112,10 @@ class ConfigRollback extends React.Component {
     const self = this;
     let type = 'post';
     let additionalMsg = '';
-    if (this.opType.trim() === 'I') {
-      type = 'delete';
-      additionalMsg = locale.additionalRollbackMessage;
-    }
+    // if (this.opType.trim() === 'I') {
+    //   type = 'delete';
+    //   additionalMsg = locale.additionalRollbackMessage;
+    // }
     Dialog.confirm({
       title: locale.rollBack,
       content: (
@@ -147,10 +147,10 @@ class ConfigRollback extends React.Component {
         };
 
         let url = 'v1/cs/configs';
-        if (self.opType.trim() === 'I') {
-          url = `v1/cs/configs?dataId=${self.dataId}&group=${self.group}`;
-          postData = {};
-        }
+        // if (self.opType.trim() === 'I') {
+        //   url = `v1/cs/configs?dataId=${self.dataId}&group=${self.group}`;
+        //   postData = {};
+        // }
 
         // ajax
         request({

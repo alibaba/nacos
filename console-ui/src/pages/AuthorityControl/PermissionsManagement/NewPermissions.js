@@ -20,6 +20,7 @@ import { Field, Form, Input, Select, Dialog, ConfigProvider } from '@alifd/next'
 import { connect } from 'react-redux';
 import { getNamespaces } from '../../../reducers/namespace';
 import { searchRoles } from '../../../reducers/authority';
+import { getTeamOptions } from '../../../reducers/configuration';
 
 const FormItem = Form.Item;
 const { Option } = Select;
@@ -48,10 +49,18 @@ class NewPermissions extends React.Component {
 
   state = {
     dataSource: [],
+    teamOptions: [],
   };
+
+  getTeamOptions() {
+    getTeamOptions({ action: 'READ' }).then(teamOptions => {
+      this.setState({ teamOptions });
+    });
+  }
 
   componentDidMount() {
     this.props.getNamespaces();
+    this.getTeamOptions();
   }
 
   check() {
@@ -60,6 +69,7 @@ class NewPermissions extends React.Component {
       role: locale.roleError,
       resource: locale.resourceError,
       action: locale.actionError,
+      appName: locale.appNameError,
     };
     const vals = Object.keys(errors).map(key => {
       const val = this.field.getValue(key);
@@ -68,7 +78,7 @@ class NewPermissions extends React.Component {
       }
       return val;
     });
-    if (vals.filter(v => v).length === 3) {
+    if (vals.filter(v => v).length === 4) {
       return vals;
     }
     return null;
@@ -84,6 +94,7 @@ class NewPermissions extends React.Component {
 
   render() {
     const { getError } = this.field;
+    const { teamOptions } = this.state;
     const { visible, onOk, onCancel, locale, namespaces } = this.props;
     return (
       <>
@@ -134,6 +145,19 @@ class NewPermissions extends React.Component {
                 <Option value="w">{locale.writeOnly}(w)</Option>
                 <Option value="rw">{locale.readWrite}(rw)</Option>
               </Select>
+            </FormItem>
+            <FormItem label={locale.appName} required help={getError('appName')}>
+              <Select.AutoComplete
+                name="appName"
+                filterLocal={false}
+                placeholder={locale.appNamePlaceholder}
+                onChange={value => {
+                  this.setState({ dataSource: value });
+                }}
+                dataSource={teamOptions}
+                hasClear
+                style={{ width: '100%' }}
+              />
             </FormItem>
           </Form>
         </Dialog>

@@ -22,6 +22,7 @@ import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
+import com.google.common.collect.Sets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -77,7 +78,7 @@ class ConfigTagsRelationMapperByMySqlTest {
     void testFindConfigInfo4PageFetchRows() {
         context.putWhereParameter(FieldConstant.DATA_ID, "dataID1");
         context.putWhereParameter(FieldConstant.GROUP_ID, "groupID1");
-        context.putWhereParameter(FieldConstant.APP_NAME, "AppName1");
+        context.putWhereParameter(FieldConstant.APP_NAME, Sets.newHashSet("AppName1"));
         context.putWhereParameter(FieldConstant.CONTENT, "Content1");
         
         MapperResult mapperResult = configTagsRelationMapperByMySql.findConfigInfo4PageFetchRows(context);
@@ -98,7 +99,7 @@ class ConfigTagsRelationMapperByMySqlTest {
     void testFindConfigInfoLike4PageCountRowss() {
         context.putWhereParameter(FieldConstant.DATA_ID, "dataID1");
         context.putWhereParameter(FieldConstant.GROUP_ID, "groupID1");
-        context.putWhereParameter(FieldConstant.APP_NAME, "AppName1");
+        context.putWhereParameter(FieldConstant.APP_NAME, Sets.newHashSet("AppName1"));
         context.putWhereParameter(FieldConstant.CONTENT, "Content1");
         MapperResult mapperResult = configTagsRelationMapperByMySql.findConfigInfoLike4PageCountRows(context);
         assertEquals("SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id  "
@@ -117,7 +118,7 @@ class ConfigTagsRelationMapperByMySqlTest {
     void tsetFindConfigInfoLike4PageFetchRows() {
         context.putWhereParameter(FieldConstant.DATA_ID, "dataID1");
         context.putWhereParameter(FieldConstant.GROUP_ID, "groupID1");
-        context.putWhereParameter(FieldConstant.APP_NAME, "AppName1");
+        context.putWhereParameter(FieldConstant.APP_NAME, Sets.newHashSet("AppName1"));
         context.putWhereParameter(FieldConstant.CONTENT, "Content1");
         MapperResult mapperResult = configTagsRelationMapperByMySql.findConfigInfoLike4PageFetchRows(context);
         assertEquals(mapperResult.getSql(), "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info a LEFT JOIN"

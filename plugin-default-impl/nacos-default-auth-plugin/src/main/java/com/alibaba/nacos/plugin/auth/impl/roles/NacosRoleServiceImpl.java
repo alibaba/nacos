@@ -30,6 +30,7 @@ import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionPersistService;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
+import com.alibaba.nacos.plugin.auth.impl.persistence.RoleMapInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RolePersistService;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
@@ -193,6 +194,14 @@ public class NacosRoleServiceImpl {
         return roles;
     }
     
+    public Page<RoleMapInfo> getRoleMapFromDatabase(String userName, String role, int pageNo, int pageSize) {
+        Page<RoleMapInfo> roles = rolePersistService.getRoleMapByUserNameAndRoleName(userName, role, pageNo, pageSize);
+        if (roles == null) {
+            return new Page<>();
+        }
+        return roles;
+    }
+    
     public List<PermissionInfo> getPermissions(String role) {
         List<PermissionInfo> permissionInfoList = permissionInfoMap.get(role);
         if (!authConfigs.isCachingEnabled() || permissionInfoList == null) {
@@ -283,16 +292,17 @@ public class NacosRoleServiceImpl {
      * @param role     role name
      * @param resource resource
      * @param action   action
+     * @param appName   appName
      */
-    public void addPermission(String role, String resource, String action) {
+    public void addPermission(String role, String resource, String action, String appName) {
         if (!roleSet.contains(role)) {
             throw new IllegalArgumentException("role " + role + " not found!");
         }
-        permissionPersistService.addPermission(role, resource, action);
+        permissionPersistService.addPermission(role, resource, action, appName);
     }
     
-    public void deletePermission(String role, String resource, String action) {
-        permissionPersistService.deletePermission(role, resource, action);
+    public void deletePermission(String role, String resource, String action, String appName) {
+        permissionPersistService.deletePermission(role, resource, action, appName);
     }
     
     public List<String> findRolesLikeRoleName(String role) {
@@ -331,6 +341,10 @@ public class NacosRoleServiceImpl {
         return rolePersistService.findRolesLike4Page(username, role, pageNo, pageSize);
     }
     
+    public Page<RoleMapInfo> findRoleMapLike4Page(String username, String role, int pageNo, int pageSize) {
+        return rolePersistService.findRoleMapLike4Page(username, role, pageNo, pageSize);
+    }
+    
     public Page<PermissionInfo> findPermissionsLike4Page(String role, int pageNo, int pageSize) {
         return permissionPersistService.findPermissionsLike4Page(role, pageNo, pageSize);
     }
@@ -363,4 +377,11 @@ public class NacosRoleServiceImpl {
         return hasGlobalAdminRole;
     }
     
+    /**
+     * Get all appName.
+     * @return
+     */
+    public List<String> getAllAppNamesFromDatabase() {
+        return permissionPersistService.getAllAppNames();
+    }
 }

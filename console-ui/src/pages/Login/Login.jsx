@@ -68,6 +68,7 @@ class Login extends React.Component {
   handleSubmit = () => {
     const { locale = {} } = this.props;
     this.field.validate((errors, values) => {
+      values.webRequest = true;
       if (errors) {
         return;
       }
@@ -76,10 +77,17 @@ class Login extends React.Component {
           localStorage.setItem('token', JSON.stringify(res));
           this.props.history.push('/');
         })
-        .catch(() => {
-          Message.error({
-            content: locale.invalidUsernameOrPassword,
-          });
+        .catch((res) => {
+          const errorMessage = res.data;
+          if (errorMessage != null && errorMessage != undefined && errorMessage.trim() != '') {
+            Message.error({
+              content: errorMessage,
+            });
+          } else {
+            Message.error({
+              content: locale.invalidUsernameOrPassword,
+            });
+          }
         });
     });
   };

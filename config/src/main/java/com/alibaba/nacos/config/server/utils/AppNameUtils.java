@@ -16,9 +16,12 @@
 
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.File;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * appName util.
@@ -98,4 +101,17 @@ public class AppNameUtils {
         return serverType;
     }
     
+    /**
+     * Get app has permissions.
+     * @param appPermissionMap app->permissions.
+     * @param appName appName.
+     * @return permissions.
+     */
+    public static Set<String> getAppPermissions(Map<String, Set<String>> appPermissionMap, String appName) {
+        String currAppName = appName;
+        if (!appPermissionMap.containsKey(currAppName) && appPermissionMap.containsKey(Constants.ALL_PATTERN)) {
+            currAppName = Constants.ALL_PATTERN;
+        }
+        return appPermissionMap.get(currAppName);
+    }
 }

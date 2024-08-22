@@ -31,7 +31,11 @@ public enum ActionTypes {
     /**
      * Write.
      */
-    WRITE("w");
+    WRITE("w"),
+    /**
+     * Read and write.
+     */
+    READ_WRITE("rw");
     
     private final String action;
     
