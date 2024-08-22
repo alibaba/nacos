@@ -2887,7 +2887,13 @@
   "name":"com.alibaba.nacos.naming.core.v2.metadata.ExpiredMetadataInfo"
 },
 {
-  "name":"com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata"
+  "name":"com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "unsafeAllocated":true
+},
+{
+  "name":"com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadataHessianDeserializer"
 },
 {
   "name":"com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadataProcessor",
@@ -3712,13 +3718,20 @@
   "queryAllDeclaredMethods":true,
   "queryAllPublicMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"login","parameterTypes":["java.lang.String","java.lang.String","jakarta.servlet.http.HttpServletResponse","jakarta.servlet.http.HttpServletRequest"] }]
 },
 {
   "name":"com.alibaba.nacos.plugin.auth.impl.controller.UserController__Autowiring"
 },
 {
   "name":"com.alibaba.nacos.plugin.auth.impl.controller.UserController__BeanDefinitions"
+},
+{
+  "name":"com.alibaba.nacos.plugin.auth.impl.jwt.NacosJwtPayload",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getExp","parameterTypes":[] }, {"name":"getSub","parameterTypes":[] }, {"name":"setExp","parameterTypes":["long"] }, {"name":"setSub","parameterTypes":["java.lang.String"] }]
 },
 {
   "name":"com.alibaba.nacos.plugin.auth.impl.persistence.AuthPaginationHelper"
@@ -3909,6 +3922,29 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.prometheus.filter.PrometheusAuthFilter",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"anonymousAuthenticationFilter","parameterTypes":[] }, {"name":"authorizationFilter","parameterTypes":[] }, {"name":"basicAuthenticationFilter","parameterTypes":["org.springframework.security.authentication.AuthenticationManager"] }, {"name":"exceptionTranslationFilter","parameterTypes":[] }, {"name":"setBeanFactory","parameterTypes":["org.springframework.beans.factory.BeanFactory"] }]
+},
+{
+  "name":"com.alibaba.nacos.prometheus.filter.PrometheusAuthFilter$$SpringCGLIB$$0",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "fields":[{"name":"CGLIB$FACTORY_DATA"}],
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"CGLIB$SET_STATIC_CALLBACKS","parameterTypes":["org.springframework.cglib.proxy.Callback[]"] }, {"name":"CGLIB$SET_THREAD_CALLBACKS","parameterTypes":["org.springframework.cglib.proxy.Callback[]"] }]
+},
+{
+  "name":"com.alibaba.nacos.prometheus.filter.PrometheusAuthFilter$$SpringCGLIB$$FastClass$$0",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.Class"] }]
+},
+{
+  "name":"com.alibaba.nacos.prometheus.filter.PrometheusAuthFilter$$SpringCGLIB$$FastClass$$1",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.Class"] }]
 },
 {
   "name":"com.alibaba.nacos.sys.env.EnvModuleStateBuilder"
@@ -4892,6 +4928,10 @@
 },
 {
   "name":"com.sun.crypto.provider.GaloisCounterMode$AESGCM",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.sun.crypto.provider.HmacCore$HmacSHA512",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
@@ -5933,7 +5973,7 @@
   "queryAllDeclaredMethods":true,
   "queryAllPublicMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["org.springframework.security.web.FilterChainProxy"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1356/0x000000f001a26bd8"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1356/0x00000188c99e8a60"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1357/0x000001e6d19f64c0"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1362/0x0000007001a1e800"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1370/0x0000019a3aa20e98"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1370/0x0000020b55a3e920"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1372/0x000001ca6da42278"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1372/0x0000022944a3edb8"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1372/0x0000023b5ea3f750"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1405/0x00000070019c8830"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1407/0x000000e0019a69d8"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1410/0x0000022b3b98f428"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1410/0x00000246d69b7670"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1413/0x000001cf3b99ba60"] }, {"name":"destroy","parameterTypes":[] }, {"name":"from","parameterTypes":["org.springframework.security.web.FilterChainProxy"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1356/0x000000f001a26bd8"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1356/0x00000188c99e8a60"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1357/0x000001e6d19f64c0"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1362/0x0000007001a1e800"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1370/0x0000019a3aa20e98"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1370/0x0000020b55a3e920"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1372/0x000001ca6da42278"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1372/0x0000022944a3edb8"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1372/0x0000023b5ea3f750"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1405/0x00000070019c8830"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1407/0x000000e0019a69d8"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1410/0x0000022b3b98f428"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1410/0x00000246d69b7670"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1413/0x000001cf3b99ba60"] }, {"name":"init","parameterTypes":["jakarta.servlet.FilterConfig"] }, {"name":"of","parameterTypes":["org.springframework.security.web.FilterChainProxy"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1356/0x000000f001a26bd8"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1356/0x00000188c99e8a60"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1357/0x000001e6d19f64c0"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1362/0x0000007001a1e800"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1370/0x0000019a3aa20e98"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1370/0x0000020b55a3e920"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1372/0x000001ca6da42278"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1372/0x0000022944a3edb8"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1372/0x0000023b5ea3f750"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1405/0x00000070019c8830"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1407/0x000000e0019a69d8"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1410/0x0000022b3b98f428"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1410/0x00000246d69b7670"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1413/0x000001cf3b99ba60"] }, {"name":"valueOf","parameterTypes":["org.springframework.security.web.FilterChainProxy"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1356/0x000000f001a26bd8"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1356/0x00000188c99e8a60"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1357/0x000001e6d19f64c0"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1362/0x0000007001a1e800"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1370/0x0000019a3aa20e98"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1370/0x0000020b55a3e920"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1372/0x000001ca6da42278"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1372/0x0000022944a3edb8"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1372/0x0000023b5ea3f750"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1405/0x00000070019c8830"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1407/0x000000e0019a69d8"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1410/0x0000022b3b98f428"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1410/0x00000246d69b7670"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1413/0x000001cf3b99ba60"] }]
+  "methods":[{"name":"<init>","parameterTypes":["org.springframework.security.web.FilterChainProxy"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1356/0x000000f001a26bd8"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1356/0x00000188c99e8a60"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1357/0x000001e6d19f64c0"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1362/0x0000007001a1e800"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1370/0x0000019a3aa20e98"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1370/0x0000020b55a3e920"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1372/0x000001ca6da42278"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1372/0x0000022944a3edb8"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1372/0x0000023b5ea3f750"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1376/0x000002933ca3e800"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1405/0x00000070019c8830"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1407/0x000000e0019a69d8"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1410/0x0000022b3b98f428"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1410/0x00000246d69b7670"] }, {"name":"<init>","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1413/0x000001cf3b99ba60"] }, {"name":"destroy","parameterTypes":[] }, {"name":"from","parameterTypes":["org.springframework.security.web.FilterChainProxy"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1356/0x000000f001a26bd8"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1356/0x00000188c99e8a60"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1357/0x000001e6d19f64c0"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1362/0x0000007001a1e800"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1370/0x0000019a3aa20e98"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1370/0x0000020b55a3e920"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1372/0x000001ca6da42278"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1372/0x0000022944a3edb8"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1372/0x0000023b5ea3f750"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1376/0x000002933ca3e800"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1405/0x00000070019c8830"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1407/0x000000e0019a69d8"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1410/0x0000022b3b98f428"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1410/0x00000246d69b7670"] }, {"name":"from","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1413/0x000001cf3b99ba60"] }, {"name":"init","parameterTypes":["jakarta.servlet.FilterConfig"] }, {"name":"of","parameterTypes":["org.springframework.security.web.FilterChainProxy"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1356/0x000000f001a26bd8"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1356/0x00000188c99e8a60"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1357/0x000001e6d19f64c0"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1362/0x0000007001a1e800"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1370/0x0000019a3aa20e98"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1370/0x0000020b55a3e920"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1372/0x000001ca6da42278"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1372/0x0000022944a3edb8"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1372/0x0000023b5ea3f750"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1376/0x000002933ca3e800"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1405/0x00000070019c8830"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1407/0x000000e0019a69d8"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1410/0x0000022b3b98f428"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1410/0x00000246d69b7670"] }, {"name":"of","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1413/0x000001cf3b99ba60"] }, {"name":"valueOf","parameterTypes":["org.springframework.security.web.FilterChainProxy"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1356/0x000000f001a26bd8"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1356/0x00000188c99e8a60"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1357/0x000001e6d19f64c0"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1362/0x0000007001a1e800"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1370/0x0000019a3aa20e98"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1370/0x0000020b55a3e920"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1372/0x000001ca6da42278"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1372/0x0000022944a3edb8"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1372/0x0000023b5ea3f750"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1376/0x000002933ca3e800"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1405/0x00000070019c8830"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1407/0x000000e0019a69d8"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1410/0x0000022b3b98f428"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1410/0x00000246d69b7670"] }, {"name":"valueOf","parameterTypes":["org.springframework.web.servlet.handler.HandlerMappingIntrospector$$Lambda$1413/0x000001cf3b99ba60"] }]
 },
 {
   "name":"jakarta.servlet.FilterChain"
@@ -7872,6 +7912,62 @@
 },
 {
   "name":"org.apache.derby.exe.acaddac06ex0191x54eaxbc3cx000004d71800f",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.derby.exe.acaddac06ex0191x77e6x43eax000002e398100",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.derby.exe.acaddac06ex0191x77e6x43eax000002e398101",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.derby.exe.acaddac06ex0191x77e6x43eax000002e398102",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.derby.exe.acaddac06ex0191x77e6x43eax000002e398103",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.derby.exe.acaddac06ex0191x77e6x43eax000002e398104",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.derby.exe.acaddac06ex0191x77e6x43eax000002e398105",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.derby.exe.acaddac06ex0191x77e6x43eax000002e398106",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.derby.exe.acaddac06ex0191x77e6x43eax000002e398107",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.derby.exe.acaddac06ex0191x77e6x43eax000002e398108",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.derby.exe.acaddac06ex0191x77e6x43eax000002e398109",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.derby.exe.acaddac06ex0191x77e6x43eax000002e39810a",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.derby.exe.acaddac06ex0191x77e6x43eax000002e39810b",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.derby.exe.acaddac06ex0191x77e6x43eax000002e39810c",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.derby.exe.acaddac06ex0191x77e6x43eax000002e39810d",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
@@ -16457,10 +16553,18 @@
   "methods":[{"name":"close","parameterTypes":[] }, {"name":"shutdown","parameterTypes":[] }]
 },
 {
+  "name":"org.springframework.security.web.access.intercept.AuthorizationFilter",
+  "queryAllDeclaredMethods":true
+},
+{
   "name":"org.springframework.security.web.aot.hint.WebMvcSecurityRuntimeHints",
   "queryAllDeclaredConstructors":true,
   "queryAllPublicConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.springframework.security.web.authentication.AnonymousAuthenticationFilter",
+  "queryAllDeclaredMethods":true
 },
 {
   "name":"org.springframework.security.web.authentication.logout.LogoutFilter",
@@ -16503,6 +16607,10 @@
   "name":"org.springframework.security.web.authentication.session.SessionAuthenticationStrategy",
   "queryAllDeclaredMethods":true,
   "queryAllPublicMethods":true
+},
+{
+  "name":"org.springframework.security.web.authentication.www.BasicAuthenticationFilter",
+  "queryAllDeclaredMethods":true
 },
 {
   "name":"org.springframework.security.web.context.AbstractSecurityWebApplicationInitializer"
@@ -17837,6 +17945,10 @@
 },
 {
   "name":"sun.security.provider.SHA2$SHA256",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"sun.security.provider.SHA5$SHA512",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {

@@ -450,6 +450,8 @@
                                 --initialize-at-run-time=com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest$ConfigListenContext
                                 --initialize-at-run-time=com.alibaba.nacos.naming.cluster.remote.request.DistroDataRequest
                                 --initialize-at-run-time=com.alibaba.nacos.naming.cluster.remote.response.DistroDataResponse
+                                
+                                --initialize-at-run-time=com.alibaba.nacos.plugin.auth.impl.jwt.NacosJwtPayload
                                 <!-- Build-time Hints -->
                                 --initialize-at-build-time=org.slf4j.LoggerFactory
                                 --initialize-at-build-time=ch.qos.logback.core.util.Loader
