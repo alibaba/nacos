@@ -56,6 +56,7 @@ import com.alibaba.nacos.naming.paramcheck.NamingInstanceMetadataBatchHttpParamE
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.pojo.instance.BeatInfoInstanceBuilder;
+import com.alibaba.nacos.naming.utils.NamingRequestUtil;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -115,9 +116,9 @@ public class InstanceControllerV2 {
         instanceServiceV2.registerInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm),
                 instance);
         NotifyCenter.publishEvent(
-                new RegisterInstanceTraceEvent(System.currentTimeMillis(), "", false, instanceForm.getNamespaceId(),
-                        instanceForm.getGroupName(), instanceForm.getServiceName(), instance.getIp(),
-                        instance.getPort()));
+                new RegisterInstanceTraceEvent(System.currentTimeMillis(), NamingRequestUtil.getSourceIp(), false,
+                        instanceForm.getNamespaceId(), instanceForm.getGroupName(), instanceForm.getServiceName(),
+                        instance.getIp(), instance.getPort()));
         return Result.success("ok");
     }
     
@@ -136,9 +137,10 @@ public class InstanceControllerV2 {
         Instance instance = buildInstance(instanceForm);
         instanceServiceV2.removeInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm),
                 instance);
-        NotifyCenter.publishEvent(new DeregisterInstanceTraceEvent(System.currentTimeMillis(), "", false,
-                DeregisterInstanceReason.REQUEST, instanceForm.getNamespaceId(), instanceForm.getGroupName(),
-                instanceForm.getServiceName(), instance.getIp(), instance.getPort()));
+        NotifyCenter.publishEvent(
+                new DeregisterInstanceTraceEvent(System.currentTimeMillis(), NamingRequestUtil.getSourceIp(), false,
+                        DeregisterInstanceReason.REQUEST, instanceForm.getNamespaceId(), instanceForm.getGroupName(),
+                        instanceForm.getServiceName(), instance.getIp(), instance.getPort()));
         return Result.success("ok");
     }
     
@@ -158,9 +160,9 @@ public class InstanceControllerV2 {
         instanceServiceV2.updateInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm),
                 instance);
         NotifyCenter.publishEvent(
-                new UpdateInstanceTraceEvent(System.currentTimeMillis(), "", instanceForm.getNamespaceId(),
-                        instanceForm.getGroupName(), instanceForm.getServiceName(), instance.getIp(),
-                        instance.getPort(), instance.getMetadata()));
+                new UpdateInstanceTraceEvent(System.currentTimeMillis(), NamingRequestUtil.getSourceIp(),
+                        instanceForm.getNamespaceId(), instanceForm.getGroupName(), instanceForm.getServiceName(),
+                        instance.getIp(), instance.getPort(), instance.getMetadata()));
         return Result.success("ok");
     }
     
@@ -230,7 +232,6 @@ public class InstanceControllerV2 {
         }
         return Collections.emptyList();
     }
-    
     
     /**
      * Patch instance.
@@ -463,4 +464,5 @@ public class InstanceControllerV2 {
     private String buildCompositeServiceName(InstanceMetadataBatchOperationForm form) {
         return NamingUtils.getGroupedName(form.getServiceName(), form.getGroupName());
     }
+    
 }

@@ -198,6 +198,24 @@ public class ConnectionMeta {
     }
     
     /**
+     * Getter method for property <tt>remoteIp</tt>.
+     *
+     * @return property value of remoteIp
+     */
+    public String getRemoteIp() {
+        return remoteIp;
+    }
+    
+    /**
+     * Getter method for property <tt>remotePort</tt>.
+     *
+     * @return property value of remotePort
+     */
+    public int getRemotePort() {
+        return remotePort;
+    }
+    
+    /**
      * Getter method for property <tt>connectionId</tt>.
      *
      * @return property value of connectionId

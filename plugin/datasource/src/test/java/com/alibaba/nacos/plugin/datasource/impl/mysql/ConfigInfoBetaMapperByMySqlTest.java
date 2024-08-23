@@ -74,7 +74,6 @@ class ConfigInfoBetaMapperByMySqlTest {
         String newMD5 = "newMD5";
         String srcIp = "1.1.1.1";
         Object srcUser = "nacos";
-        Object time = new Timestamp(System.currentTimeMillis());
         Object appNameTmp = "newAppName";
         Object desc = "description";
         Object use = "use";
@@ -88,7 +87,6 @@ class ConfigInfoBetaMapperByMySqlTest {
         context.putUpdateParameter(FieldConstant.BETA_IPS, betaIps);
         context.putUpdateParameter(FieldConstant.SRC_IP, srcIp);
         context.putUpdateParameter(FieldConstant.SRC_USER, srcUser);
-        context.putUpdateParameter(FieldConstant.GMT_MODIFIED, time);
         context.putUpdateParameter(FieldConstant.APP_NAME, appNameTmp);
         context.putUpdateParameter(FieldConstant.C_DESC, desc);
         context.putUpdateParameter(FieldConstant.C_USE, use);
@@ -108,11 +106,11 @@ class ConfigInfoBetaMapperByMySqlTest {
         MapperResult mapperResult = configInfoBetaMapperByMySql.updateConfigInfo4BetaCas(context);
         
         String sql = mapperResult.getSql();
-        List<Object> paramList = mapperResult.getParamList();
         assertEquals(sql,
-                "UPDATE config_info_beta SET content = ?,md5 = ?,beta_ips = ?,src_ip = ?,src_user = ?,gmt_modified = ?,app_name = ? "
+                "UPDATE config_info_beta SET content = ?,md5 = ?,beta_ips = ?,"
+                        + "src_ip = ?,src_user = ?,gmt_modified = NOW(3),app_name = ? "
                         + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND (md5 = ? OR md5 is null OR md5 = '')");
-        assertArrayEquals(new Object[] {newContent, newMD5, betaIps, srcIp, srcUser, time, appNameTmp, dataId, group, tenantId, md5},
+        assertArrayEquals(new Object[]{newContent, newMD5, betaIps, srcIp, srcUser, appNameTmp, dataId, group, tenantId, md5},
                 mapperResult.getParamList().toArray());
     }
     

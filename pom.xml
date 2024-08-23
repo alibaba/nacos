@@ -88,7 +88,7 @@
     </issueManagement>
     
     <properties>
-        <revision>2.4.0-SNAPSHOT</revision>
+        <revision>2.4.1</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Compiler settings properties -->
@@ -139,11 +139,11 @@
         <mysql-connector-java.version>8.0.33</mysql-connector-java.version>
         <derby.version>10.14.2.0</derby.version>
         <jjwt.version>0.11.2</jjwt.version>
-        <grpc-java.version>1.57.2</grpc-java.version>
+        <grpc-java.version>1.64.2</grpc-java.version>
         <proto-google-common-protos.version>2.17.0</proto-google-common-protos.version>
         <protobuf-java.version>3.22.3</protobuf-java.version>
         <protoc-gen-grpc-java.version>${grpc-java.version}</protoc-gen-grpc-java.version>
-        <hessian.version>4.0.63</hessian.version>
+        <hessian.version>4.0.4</hessian.version>
         <mockito.version>4.11.0</mockito.version>
         <HikariCP.version>3.4.2</HikariCP.version>
         <jraft-core.version>1.3.14</jraft-core.version>
@@ -361,6 +361,7 @@
                         <exclude>**/filter-config.json</exclude>
                         <exclude>**/disk_cache_test/**</exclude>
                         <exclude>**/failover_test/**</exclude>
+                        <exclude>lefthook.yml</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -844,7 +845,7 @@
             <!-- hessian -->
             
             <dependency>
-                <groupId>com.caucho</groupId>
+                <groupId>com.alipay.sofa</groupId>
                 <artifactId>hessian</artifactId>
                 <version>${hessian.version}</version>
             </dependency>
@@ -987,6 +988,12 @@
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-stub</artifactId>
                 <version>${grpc-java.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-util</artifactId>
+                <version>${grpc-java.version}</version>
+                <scope>compile</scope>
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>

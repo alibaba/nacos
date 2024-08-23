@@ -16,14 +16,15 @@
 
 package com.alibaba.nacos.naming.cluster;
 
-import com.alibaba.nacos.naming.consistency.ConsistencyService;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.distributed.ProtocolManager;
+import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
-import com.alibaba.nacos.common.utils.StringUtils;
+import com.alipay.sofa.jraft.RouteTable;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
 import java.util.Optional;
 
 /**
@@ -35,14 +36,14 @@ import java.util.Optional;
 @Service
 public class ServerStatusManager {
     
-    @Resource(name = "persistentConsistencyServiceDelegate")
-    private ConsistencyService consistencyService;
+    private final ProtocolManager protocolManager;
     
     private final SwitchDomain switchDomain;
     
     private ServerStatus serverStatus = ServerStatus.STARTING;
     
-    public ServerStatusManager(SwitchDomain switchDomain) {
+    public ServerStatusManager(ProtocolManager protocolManager, SwitchDomain switchDomain) {
+        this.protocolManager = protocolManager;
         this.switchDomain = switchDomain;
     }
     
@@ -58,11 +59,18 @@ public class ServerStatusManager {
             return;
         }
         
-        if (consistencyService.isAvailable()) {
+        if (hasLeader()) {
             serverStatus = ServerStatus.UP;
         } else {
             serverStatus = ServerStatus.DOWN;
         }
+    }
+    
+    private boolean hasLeader() {
+        if (protocolManager.getCpProtocol() == null) {
+            return false;
+        }
+        return null != RouteTable.getInstance().selectLeader(Constants.NAMING_PERSISTENT_SERVICE_GROUP);
     }
     
     public ServerStatus getServerStatus() {
@@ -70,7 +78,11 @@ public class ServerStatusManager {
     }
     
     public Optional<String> getErrorMsg() {
-        return consistencyService.getErrorMsg();
+        if (hasLeader()) {
+            return Optional.empty();
+        }
+        return Optional.of("No leader for raft group " + Constants.NAMING_PERSISTENT_SERVICE_GROUP
+                + ", please see logs `alipay-jraft.log` or `naming-raft.log` to see details.");
     }
     
     public class ServerStatusUpdater implements Runnable {
