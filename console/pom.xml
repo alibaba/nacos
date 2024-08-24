@@ -359,6 +359,17 @@
                                 --initialize-at-run-time=io.grpc.netty.shaded.io.netty.internal.tcnative.AsyncSSLPrivateKeyMethod
                                 --initialize-at-run-time=io.grpc.netty.shaded.io.netty.internal.tcnative.CertificateCompressionAlgo
                                 
+                                --initialize-at-run-time=com.alibaba.nacos.consistency.entity.WriteRequest
+                                --initialize-at-run-time=com.alibaba.nacos.consistency.entity.WriteRequest$Builder
+                                --initialize-at-run-time=com.alibaba.nacos.consistency.entity.ReadRequest
+                                --initialize-at-run-time=com.alibaba.nacos.consistency.entity.ReadRequest$Builder
+                                --initialize-at-run-time=com.alibaba.nacos.consistency.entity.Response
+                                --initialize-at-run-time=com.alibaba.nacos.consistency.entity.Response$Builder
+                                --initialize-at-run-time=com.alibaba.nacos.consistency.entity.GetRequest
+                                --initialize-at-run-time=com.alibaba.nacos.consistency.entity.GetRequest$Builder
+                                --initialize-at-run-time=com.alibaba.nacos.consistency.entity.Log
+                                --initialize-at-run-time=com.alibaba.nacos.consistency.entity.Log$Builder
+                                
                                 --initialize-at-run-time=com.alipay.sofa.jraft.entity.LocalFileMetaOutter$LocalFileMeta
                                 --initialize-at-run-time=com.alipay.sofa.jraft.rpc.ProtobufMsgFactory
                                 
@@ -383,6 +394,8 @@
                                 --initialize-at-run-time=com.alibaba.nacos.naming.core.v2.pojo.BatchInstanceData
                                 --initialize-at-run-time=com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo
                                 --initialize-at-run-time=com.alibaba.nacos.naming.core.v2.pojo.Service
+                                --initialize-at-run-time=com.alibaba.nacos.naming.core.v2.service.impl.PersistentClientOperationServiceImpl
+                                --initialize-at-run-time=com.alibaba.nacos.naming.core.v2.service.impl.PersistentClientOperationServiceImpl$InstanceStoreRequest
                                 --initialize-at-run-time=com.alibaba.nacos.api.naming.pojo.Instance
                                 --initialize-at-run-time=com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest
                                 --initialize-at-run-time=com.alibaba.nacos.api.grpc.auto.Metadata
@@ -438,6 +451,7 @@
                                 --initialize-at-run-time=com.alibaba.nacos.api.remote.response.ServerLoaderInfoResponse
                                 --initialize-at-run-time=com.alibaba.nacos.api.remote.response.ServerReloadResponse
                                 --initialize-at-run-time=com.alibaba.nacos.api.remote.response.SetupAckResponse
+                                --initialize-at-run-time=com.alibaba.nacos.core.distributed.raft.NacosClosure
                                 --initialize-at-run-time=com.alibaba.nacos.core.monitor.GrpcServerThreadPoolMonitor
                                 --initialize-at-run-time=com.alibaba.nacos.core.remote.grpc.BaseGrpcServer
                                 --initialize-at-run-time=com.alibaba.nacos.core.remote.BaseRpcServer
