@@ -284,6 +284,8 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
     
     // region gRpc
     private final Class<?>[] grpcClasses = {
+            com.google.protobuf.Message.class,
+            
             io.grpc.ServerCall.class,
             io.grpc.ServerBuilder.class,
             io.grpc.stub.ServerCalls.class,
@@ -304,11 +306,15 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
     // region Nacos Hints
     private final Class<?>[] nacosClasses = {
             // reflect
+            com.alibaba.nacos.common.notify.SlowEvent.class,
             com.alibaba.nacos.common.packagescan.PackageScan.class,
             com.alibaba.nacos.common.packagescan.DefaultPackageScan.class,
             com.alibaba.nacos.plugin.auth.impl.NacosAuthConfig.class,
             com.alibaba.nacos.console.config.ConsoleConfig.class,
             com.alibaba.nacos.naming.controllers.CatalogController.class,
+            com.alibaba.nacos.naming.core.v2.event.metadata.MetadataEvent.ServiceMetadataEvent.class,
+            com.alibaba.nacos.naming.core.v2.service.impl.PersistentClientOperationServiceImpl.class,
+            com.alibaba.nacos.naming.core.v2.service.impl.PersistentClientOperationServiceImpl.InstanceStoreRequest.class,
             com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl.class,
             com.alibaba.nacos.consistency.snapshot.LocalFileMeta.class,
             com.alibaba.nacos.consistency.ProtocolMetaData.class,
@@ -336,7 +342,6 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alibaba.nacos.consistency.entity.Log.class,
             com.alibaba.nacos.consistency.entity.Log.Builder.class,
             // grpc
-            io.grpc.stub.StreamObserver.class,
             com.alibaba.nacos.api.grpc.auto.Metadata.class,
             com.alibaba.nacos.api.grpc.auto.Metadata.Builder.class,
             com.alibaba.nacos.api.grpc.auto.Payload.class,
@@ -390,6 +395,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alibaba.nacos.api.remote.response.ServerLoaderInfoResponse.class,
             com.alibaba.nacos.api.remote.response.ServerReloadResponse.class,
             com.alibaba.nacos.api.remote.response.SetupAckResponse.class,
+            com.alibaba.nacos.core.distributed.raft.NacosClosure.class,
             com.alibaba.nacos.core.monitor.GrpcServerThreadPoolMonitor.class,
             com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.class,
             com.alibaba.nacos.core.remote.BaseRpcServer.class,
@@ -452,6 +458,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alibaba.nacos.naming.core.v2.pojo.BatchInstanceData.class,
             com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo.class,
             com.alibaba.nacos.naming.core.v2.pojo.Service.class,
+            com.alibaba.nacos.naming.core.v2.service.impl.PersistentClientOperationServiceImpl.InstanceStoreRequest.class,
             com.alibaba.nacos.api.naming.pojo.Cluster.class,
             com.alibaba.nacos.api.naming.pojo.Instance.class,
             com.alibaba.nacos.api.naming.pojo.Service.class,
@@ -463,7 +470,12 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alibaba.nacos.naming.pojo.ClusterInfo.class,
             com.alibaba.nacos.naming.pojo.IpAddressInfo.class,
             com.alibaba.nacos.naming.pojo.Record.class,
-            com.alibaba.nacos.naming.pojo.ServiceDetailInfo.class
+            com.alibaba.nacos.naming.pojo.ServiceDetailInfo.class,
+            com.alibaba.nacos.consistency.entity.WriteRequest.class,
+            com.alibaba.nacos.consistency.entity.ReadRequest.class,
+            com.alibaba.nacos.consistency.entity.Response.class,
+            com.alibaba.nacos.consistency.entity.GetRequest.class,
+            com.alibaba.nacos.consistency.entity.Log.class
     );
     // endregion
     
@@ -473,6 +485,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             ".*\\.html$",
             ".*\\.css$",
             ".*\\.js$",
+            ".*\\.js.map$",
             ".*\\.png$",
             ".*\\.svg$",
             ".*\\.eot$",

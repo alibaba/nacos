@@ -43,6 +43,9 @@
       "name":"ch.qos.logback.core.model.StatusListenerModel"
     },
     {
+      "name":"com.alibaba.nacos.naming.core.v2.service.impl.PersistentClientOperationServiceImpl$InstanceStoreRequest"
+    },
+    {
       "name":"java.lang.Boolean"
     },
     {
