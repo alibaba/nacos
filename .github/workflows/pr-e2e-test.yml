@@ -506,7 +506,7 @@ jobs:
 
 
   clean:
-    if: ${{ always() }}
+    if: ${{ !cancelled() }}
     name: Clean
     needs: [docker, e2e-java-test, e2e-go-test, e2e-cpp-test, e2e-csharp-test, e2e-nodejs-test, e2e-python-test]
     runs-on: ubuntu-latest
