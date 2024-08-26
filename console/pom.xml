@@ -299,9 +299,6 @@
                         <configuration>
                             <imageName>nacos-server</imageName>
                             <buildArgs>
-                                -Dnacos.standalone=true
-                                -march=compatibility
-                                
                                 --add-opens java.base/java.lang=ALL-UNNAMED
                                 --enable-url-protocols=http
                                 --enable-preview
