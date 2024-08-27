@@ -547,11 +547,11 @@ jobs:
           done
           job_status=""
           if [ ${{ needs.docker.result }} = 'success' ]  && [ ${{ needs.deploy.result }} = 'success' ] && [ ${{ needs.e2e-java-test.result }} = 'success' ] && [ ${{ needs.e2e-go-test.result }} = 'success' ] && [ ${{ needs.e2e-cpp-test.result }} = 'success' ] && [ ${{ needs.e2e-csharp-test.result }} = 'success' ] && [ ${{ needs.e2e-nodejs-test.result }} = 'success' ] && [ ${{ needs.e2e-python-test.result }} = 'success' ]; then
-            
             jobs_status="SUCCESS"
           else
             jobs_status="FAILURE"
           fi
+          echo "${jobs_status}"
           content="<h3> [${jobs_status}](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }}) </h3> 
                      <h5>
                      - docker: ${{ needs.docker.result }} <br>
@@ -564,6 +564,8 @@ jobs:
                      - e2e-python-test: ${{ needs.e2e-python-test.result }} <br>
                      - clean: ${{ needs.clean.result }} <br>
                      </h5>"
+          echo "${content}"
+          curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d "{\"body\":\"The URL of CI ( pr-e2e-test ) is : https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }}\"}"
           curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d "{\"body\":\"${content}\"}"
           # curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d "{\"body\":\"The URL of CI ( pr-e2e-test ) is : https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }}\"}"
           curl -L -X DELETE ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables/VAR_${{ github.event.workflow_run.id }}
