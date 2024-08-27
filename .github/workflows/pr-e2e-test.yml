@@ -551,7 +551,8 @@ jobs:
           else
             jobs_status='$\\color{red}{FAILURE}$  [详情](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }})'
           fi
-          markdown_content="<h4>${job_status}</h4>"
+          echo ${jobs_status}
+          markdown_content="<h4>${jobs_status}</h4>"
           echo "1- ${markdown_content}"
           generate_content() {
              if [ $1 = "success" ];then
@@ -574,4 +575,4 @@ jobs:
           echo "2- ${markdown_content}"
           payload="{\"body\": \"$(printf '%q' "${markdown_content}")\"}"
           curl -L -X DELETE ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables/VAR_${{ github.event.workflow_run.id }}
-          curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d "${payload}"
+          curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d ${payload}
