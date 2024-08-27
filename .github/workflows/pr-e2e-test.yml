@@ -552,7 +552,7 @@ jobs:
           else
             jobs_status="FAILURE"
           fi
-          content = "<h3> [${jobs_status}](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }}) </h3> 
+          content="<h3> [${jobs_status}](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }}) </h3> 
                      <h5>
                      - docker: ${{ needs.docker.result }} <br>
                      - deploy: ${{ needs.deploy.result }} <br>
