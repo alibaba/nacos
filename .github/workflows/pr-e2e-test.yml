@@ -580,15 +580,15 @@ jobs:
           payload1=`echo "{\"body\": \"${markdown_content}\"}" | jq .`
           echo "4- ${payload1}"
           
-          markdown_content1="<h4>${jobs_status}</h4>"
-          markdown_content1+="<h5>"
-          for job in "docker" "deploy" "e2e-java-test" "e2e-go-test" "e2e-cpp-test" "e2e-csharp-test" "e2e-nodejs-test" "e2e-python-test" "clean"; do
-            markdown_content1+=$(generate_content ${{ needs.$job.result }} "- $job: ")
-          done
-          markdown_content1+="</h5>"
-          echo "5- ${markdown_content}"
-          payload2=$(printf '{"body": "%q"}' "${markdown_content1}")
-          echo "6- ${payload1}"
+          # markdown_content1="<h4>${jobs_status}</h4>"
+          # markdown_content1+="<h5>"
+          # for job in "docker" "deploy" "e2e-java-test" "e2e-go-test" "e2e-cpp-test" "e2e-csharp-test" "e2e-nodejs-test" "e2e-python-test" "clean"; do
+          #   markdown_content1+=$(generate_content ${{ needs.$job.result }} "- $job: ")
+          # done
+          # markdown_content1+="</h5>"
+          # echo "5- ${markdown_content}"
+          payload2=$(printf '{"body": "%q"}' "${markdown_content}")
+          echo "6- ${payload2}"
           
           curl -L -X DELETE ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables/VAR_${{ github.event.workflow_run.id }}
 
