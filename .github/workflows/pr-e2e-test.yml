@@ -571,20 +571,6 @@ jobs:
           markdown_content=`generate_content ${{ needs.e2e-python-test.result }} "- e2e-python-test: " ${markdown_content}`
           markdown_content=`generate_content ${{ needs.clean.result }} "- clean: " ${markdown_content}`
           markdown_content="${markdown_content} </h5>"
-
-#          markdown_content="<h4> [${jobs_status}](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }}) </h4>
-#                     <h5>
-#                     - docker: ${{ needs.docker.result }} <br>
-#                     - deploy: ${{ needs.deploy.result }} <br>
-#                     - e2e-java-test: ${{ needs.e2e-java-test.result }} <br>
-#                     - e2e-go-test: ${{ needs.e2e-go-test.result }} <br>
-#                     - e2e-cpp-test: ${{ needs.e2e-cpp-test.result }} <br>
-#                     - e2e-csharp-test: ${{ needs.e2e-csharp-test.result }} <br>
-#                     - e2e-nodejs-test: ${{ needs.e2e-nodejs-test.result }} <br>
-#                     - e2e-python-test: ${{ needs.e2e-python-test.result }} <br>
-#                     - clean: ${{ needs.clean.result }} <br>
-#                     </h5>"
-
           echo "2- ${markdown_content}"
           payload="{\"body\": \"$(printf '%q' "${markdown_content}")\"}"
           curl -L -X DELETE ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables/VAR_${{ github.event.workflow_run.id }}
