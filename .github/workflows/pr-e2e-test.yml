@@ -578,6 +578,7 @@ jobs:
           echo "3- ${payload}"
           
           payload1=`echo "{\"body\": \"${markdown_content}\"}" | jq .`
+          echo "4- ${payload1}"
           
           curl -L -X DELETE ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables/VAR_${{ github.event.workflow_run.id }}
           curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d ${payload}
