@@ -528,8 +528,8 @@ public class ClientWorker implements Closeable {
         metric.put("listenConfigSize", String.valueOf(this.cacheMap.get().size()));
         metric.put("clientVersion", VersionUtils.getFullClientVersion());
         metric.put("snapshotDir", LocalConfigInfoProcessor.LOCAL_SNAPSHOT_PATH);
-        metric.put("addressUrl", agent.serverListManager.getServerListProvider().getAddressSource());
-        metric.put("isFixedServer", agent.serverListManager.getServerListProvider().isFixed());
+        metric.put("addressUrl", agent.serverListManager.getAddressSource());
+        metric.put("isFixedServer", agent.serverListManager.isFixed());
         metric.put("serverUrls", agent.serverListManager.getUrlString());
         
         Map<ClientConfigMetricRequest.MetricsKey, Object> metricValues = getMetricsValue(metricsKeys);

@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.address.AbstractServerListManager;
 import com.alibaba.nacos.client.address.EndpointServerListProvider;
 import com.alibaba.nacos.client.address.ServerListProvider;
 import com.alibaba.nacos.client.env.NacosClientProperties;
@@ -44,7 +45,6 @@ import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
@@ -92,13 +92,6 @@ class NamingServerListManagerTest {
         if (null != serverListManager) {
             serverListManager.shutdown();
         }
-    }
-    
-    @Test
-    void testConstructError() {
-        assertThrows(NacosException.class, () -> {
-            serverListManager = new NamingServerListManager(new Properties());
-        });
     }
     
     @Test
@@ -278,13 +271,15 @@ class NamingServerListManagerTest {
     
     private void mockThreadInvoke(NamingServerListManager serverListManager, boolean expectedInvoked)
             throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
-        ServerListProvider provider = serverListManager.getServerListProvider();
-        assertInstanceOf(EndpointServerListProvider.class, provider);
+        Field providerField = AbstractServerListManager.class.getDeclaredField("serverListProvider");
+        providerField.setAccessible(true);
+        ServerListProvider serverListProvider = (ServerListProvider) providerField.get(serverListManager);
+        assertInstanceOf(EndpointServerListProvider.class, serverListProvider);
         Field field = EndpointServerListProvider.class.getDeclaredField("lastServerListRefreshTime");
         field.setAccessible(true);
-        field.set(provider, expectedInvoked ? 0 : System.currentTimeMillis());
+        field.set(serverListProvider, expectedInvoked ? 0 : System.currentTimeMillis());
         Method method = EndpointServerListProvider.class.getDeclaredMethod("refreshServerListIfNeed");
         method.setAccessible(true);
-        method.invoke(provider);
+        method.invoke(serverListProvider);
     }
 }

@@ -219,7 +219,7 @@ public class ServerHttpAgent implements HttpAgent {
     }
     
     private String getUrl(String serverAddr, String relativePath) {
-        String contextPath = serverListMgr.getServerListProvider().getContextPath();
+        String contextPath = serverListMgr.getContextPath();
         return serverAddr + ContextPathUtil.normalizeContextPath(contextPath) + relativePath;
     }
     
@@ -258,7 +258,7 @@ public class ServerHttpAgent implements HttpAgent {
     
     @Override
     public String getNamespace() {
-        return serverListMgr.getServerListProvider().getNamespace();
+        return serverListMgr.getNamespace();
     }
     
     @Override

@@ -18,7 +18,6 @@ package com.alibaba.nacos.client.config.http;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.address.AddressServerListProvider;
 import com.alibaba.nacos.client.config.impl.ConfigServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
@@ -70,9 +69,6 @@ class ServerHttpAgentTest {
     @Mock
     ConfigServerListManager serverListManager;
     
-    @Mock
-    AddressServerListProvider provider;
-    
     NacosRestTemplate cachedNacosRestTemplate;
     
     @Mock
@@ -94,8 +90,7 @@ class ServerHttpAgentTest {
         injectRestTemplate();
         when(serverListManager.getCurrentServer()).thenReturn(SERVER_ADDRESS_1);
         when(serverListManager.getIterator()).thenReturn(mockIterator);
-        when(serverListManager.getServerListProvider()).thenReturn(provider);
-        when(provider.getServerList()).thenReturn(Collections.singletonList(SERVER_ADDRESS_2));
+        when(serverListManager.getServerList()).thenReturn(Collections.singletonList(SERVER_ADDRESS_2));
         when(mockIterator.next()).thenReturn(SERVER_ADDRESS_2);
         Field restMapField = HttpClientBeanHolder.class.getDeclaredField("SINGLETON_REST");
         restMapField.setAccessible(true);

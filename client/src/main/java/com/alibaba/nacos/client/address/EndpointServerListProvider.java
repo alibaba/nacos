@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.address;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.constant.Constants.Address;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
@@ -55,8 +56,6 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
     private NacosRestTemplate nacosRestTemplate;
     
     private static final String CUSTOM_NAME = "custom";
-    
-    private static final String MODULE_NAME = "Address";
     
     private final long refreshServerListInternal = TimeUnit.SECONDS.toMillis(30);
     
@@ -109,7 +108,7 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
     
     @Override
     public int getOrder() {
-        return ServerListProviderOrder.ORDER;
+        return Address.ENDPOINT_SERVER_LIST_PROVIDER_ORDER;
     }
     
     @Override
@@ -168,6 +167,7 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
             if (CollectionUtils.isEmpty(list)) {
                 throw new Exception("Can not acquire Nacos list");
             }
+            list.sort(String::compareTo);
             if (null == serversFromEndpoint || !CollectionUtils.isEqualCollection(list, serversFromEndpoint)) {
                 LOGGER.info("[SERVER-LIST] server list is updated: {}", list);
                 serversFromEndpoint = list;

@@ -22,7 +22,9 @@ import com.alibaba.nacos.client.address.AbstractServerListManager;
 import com.alibaba.nacos.client.address.AddressServerListProvider;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
+import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import org.slf4j.Logger;
 
 import java.util.List;
 import java.util.Properties;
@@ -35,6 +37,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author xiweng.yy
  */
 public class NamingServerListManager extends AbstractServerListManager {
+    
+    private static final Logger LOGGER = LogUtils.logger(NamingServerListManager.class);
     
     private final AtomicInteger currentIndex = new AtomicInteger();
     
@@ -68,10 +72,6 @@ public class NamingServerListManager extends AbstractServerListManager {
     
     public String getNacosDomain() {
         return nacosDomain;
-    }
-    
-    public void setNacosDomain(final String nacosDomain) {
-        this.nacosDomain = nacosDomain;
     }
     
     public boolean isDomain() {

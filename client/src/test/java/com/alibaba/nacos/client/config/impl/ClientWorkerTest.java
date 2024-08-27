@@ -31,7 +31,6 @@ import com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenRespo
 import com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.address.AddressServerListProvider;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
@@ -78,7 +77,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ClientWorkerTest {
@@ -388,8 +386,6 @@ class ClientWorkerTest {
         
         prop.put(NAMESPACE, tenant);
         ConfigServerListManager agent = Mockito.mock(ConfigServerListManager.class);
-        AddressServerListProvider provider = Mockito.mock(AddressServerListProvider.class);
-        when(agent.getServerListProvider()).thenReturn(provider);
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         ClientWorker clientWorker = new ClientWorker(null, agent, nacosClientProperties);
         

@@ -252,4 +252,9 @@ class ParamUtilTest {
         String actual = ParamUtil.getInputParameters(clientProperties.asProperties());
         assertEquals("Nacos client key init properties: \n\tserverAddr=localhost:8848\n", actual);
     }
+    
+    @Test
+    void testGetNameSuffixByServerIps() {
+        assertEquals("1.1.1.1-2.2.2.2_8848", ParamUtil.getNameSuffixByServerIps("http://1.1.1.1", "2.2.2.2:8848"));
+    }
 }

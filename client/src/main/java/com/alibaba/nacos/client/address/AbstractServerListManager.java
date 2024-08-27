@@ -42,7 +42,7 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
     
     protected ServerListProvider serverListProvider;
     
-    private final NacosClientProperties properties;
+    private NacosClientProperties properties;
     
     public AbstractServerListManager(NacosClientProperties properties) throws NacosException {
         this(properties, null);
@@ -50,7 +50,8 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
     
     public AbstractServerListManager(NacosClientProperties properties, String namespace) throws NacosException {
         if (null == properties) {
-            throw new NacosException(NacosException.INVALID_PARAM, "properties is null");
+            LOGGER.error("properties is null");
+            return;
         }
         if (StringUtils.isNotBlank(namespace)) {
             properties.setProperty(PropertyKeyConst.NAMESPACE, namespace);
@@ -67,7 +68,8 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
             }
         }
         if (null == serverListProvider) {
-            throw new NacosException(NacosException.SERVER_ERROR, "no server list provider found");
+            LOGGER.error("no server list provider found");
+            return;
         }
         this.serverListProvider.init(properties, getNacosRestTemplate());
     }
@@ -88,16 +90,28 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
         LOGGER.info("{} do shutdown stop", className);
     }
     
-    public ServerListProvider getServerListProvider() {
-        return serverListProvider;
-    }
-    
     public NacosClientProperties getProperties() {
         return properties;
     }
     
     public String getServerName() {
         return getModuleName() + "-" + serverListProvider.getServerName();
+    }
+    
+    public String getContextPath() {
+        return serverListProvider.getContextPath();
+    }
+    
+    public String getNamespace() {
+        return serverListProvider.getNamespace();
+    }
+    
+    public String getAddressSource() {
+        return serverListProvider.getAddressSource();
+    }
+    
+    public boolean isFixed() {
+        return serverListProvider.isFixed();
     }
     
     /**

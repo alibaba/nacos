@@ -296,6 +296,18 @@ public class ParamUtil {
         return result.toString();
     }
     
+    public static String getNameSuffixByServerIps(String... serverIps) {
+        StringBuilder sb = new StringBuilder();
+        String split = "";
+        for (String serverIp : serverIps) {
+            sb.append(split);
+            serverIp = serverIp.replaceAll("http(s)?://", "");
+            sb.append(serverIp.replaceAll(":", "_"));
+            split = "-";
+        }
+        return sb.toString();
+    }
+    
     private static void appendKeyParameters(StringBuilder result, Properties properties, String propertyKey) {
         String propertyValue = properties.getProperty(propertyKey);
         if (StringUtils.isBlank(propertyValue)) {

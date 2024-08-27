@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.address;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.constant.Constants.Address;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
@@ -64,18 +65,6 @@ public class AddressServerListProvider extends AbstractServerListProvider {
         }
     }
     
-    public String getFixedNameSuffix(String... serverIps) {
-        StringBuilder sb = new StringBuilder();
-        String split = "";
-        for (String serverIp : serverIps) {
-            sb.append(split);
-            serverIp = serverIp.replaceAll("http(s)?://", "");
-            sb.append(serverIp.replaceAll(":", "_"));
-            split = "-";
-        }
-        return sb.toString();
-    }
-    
     @Override
     public List<String> getServerList() {
         return serverList;
@@ -84,12 +73,12 @@ public class AddressServerListProvider extends AbstractServerListProvider {
     @Override
     public String getServerName() {
         return FIXED_NAME + "-" + (StringUtils.isNotBlank(namespace) ? (StringUtils.trim(namespace) + "-")
-                : "") + getFixedNameSuffix(serverList.toArray(new String[0]));
+                : "") + ParamUtil.getNameSuffixByServerIps(serverList.toArray(new String[0]));
     }
     
     @Override
     public int getOrder() {
-        return ServerListProviderOrder.ORDER - 1;
+        return Address.ADDRESS_SERVER_LIST_PROVIDER_ORDER;
     }
     
     @Override
