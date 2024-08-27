@@ -510,7 +510,7 @@ jobs:
     name: Clean
     needs: [deploy, e2e-java-test, e2e-go-test, e2e-cpp-test, e2e-csharp-test, e2e-nodejs-test, e2e-python-test]
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 5
     strategy:
       fail-fast: false
       matrix:
@@ -524,6 +524,13 @@ jobs:
             action: clean
             namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
             askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
+  write-comment:
+    if: ${{ always() }}
+    name: rewrite
+    needs: [docker, deploy, e2e-java-test, e2e-go-test, e2e-cpp-test, e2e-csharp-test, e2e-nodejs-test, e2e-python-test, clean]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
       - name: write issue comment
         run: |
           echo ${GITHUB_REPOSITORY}
@@ -553,19 +560,8 @@ jobs:
                      - e2e-csharp-test: ${{ needs.e2e-csharp-test.result }} <br>
                      - e2e-nodejs-test: ${{ needs.e2e-nodejs-test.result }} <br>
                      - e2e-python-test: ${{ needs.e2e-python-test.result }} <br>
+                     - clean: ${{ needs.clean.result }} <br>
                      </h5>"
           curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d "{\"body\":\"${content}\"}"
           # curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d "{\"body\":\"The URL of CI ( pr-e2e-test ) is : https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }}\"}"
           curl -L -X DELETE ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables/VAR_${{ github.event.workflow_run.id }}
-#  write-comment:
-#    if: ${{ always() }}
-#    name: rewrite
-#    needs: [docker, deploy, e2e-java-test, e2e-go-test, e2e-cpp-test, e2e-csharp-test, e2e-nodejs-test, e2e-python-test, clean]
-#    runs-on: ubuntu-latest
-#    timeout-minutes: 60
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        mode: ["cluster","standalone"]
-#        version: ${{ fromJSON(needs.docker.outputs.version-json) }}
-#    steps:
