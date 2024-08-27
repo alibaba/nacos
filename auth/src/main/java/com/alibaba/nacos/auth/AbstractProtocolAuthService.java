@@ -18,7 +18,6 @@ package com.alibaba.nacos.auth;
 
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.AuthConfigs;
-import com.alibaba.nacos.auth.enums.ApiType;
 import com.alibaba.nacos.auth.util.Loggers;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
@@ -56,17 +55,6 @@ public abstract class AbstractProtocolAuthService<R> implements ProtocolAuthServ
         Loggers.AUTH.warn("Can't find auth plugin for type {}, please add plugin to classpath or set {} as false",
                 authConfigs.getNacosAuthSystemType(), Constants.Auth.NACOS_CORE_AUTH_ENABLED);
         return false;
-    }
-    
-    @Override
-    public boolean authEnabled(Secured secured) {
-        boolean isAuthEnabled;
-        if (secured.apiType() == ApiType.ADMIN_API) {
-            isAuthEnabled = authConfigs.isConsoleAuthEnabled();
-        } else {
-            isAuthEnabled = authConfigs.isServerAuthEnabled();
-        }
-        return isAuthEnabled;
     }
     
     @Override

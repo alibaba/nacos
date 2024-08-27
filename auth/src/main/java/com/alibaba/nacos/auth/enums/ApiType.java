@@ -26,7 +26,7 @@ public enum ApiType {
     /**
      * console API.
      */
-    ADMIN_API("ADMIN_API"),
+    CONSOLE_API("CONSOLE_API"),
     /**
      * server API.
      */

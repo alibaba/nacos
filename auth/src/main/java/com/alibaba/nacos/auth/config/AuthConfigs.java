@@ -100,7 +100,7 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
      */
     @PostConstruct
     public void validate() throws NacosException {
-        if (!authEnabled) {
+        if (!authEnabled && !consoleAuthEnabled) {
             return;
         }
         if (StringUtils.isEmpty(nacosAuthSystemType)) {
@@ -158,15 +158,6 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     }
     
     /**
-     * auth function is open.
-     *
-     * @return auth function is open
-     */
-    public boolean isAuthEnabled() {
-        return consoleAuthEnabled || authEnabled;
-    }
-    
-    /**
      * console auth function is open.
      *
      * @return console auth function is open
@@ -180,7 +171,7 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
      *
      * @return server auth function is open
      */
-    public boolean isServerAuthEnabled() {
+    public boolean isAuthEnabled() {
         return authEnabled;
     }
 
