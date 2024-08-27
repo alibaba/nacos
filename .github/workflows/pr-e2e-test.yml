@@ -561,25 +561,26 @@ jobs:
                echo "$3 - [ ] $2  $1 </br>"
              fi
           }
-          markdown_content="${markdown_content} <h5>" &&
-          markdown_content=`generate_content ${{ needs.docker.result }} "- docker: " ${markdown_content}` &&
-          markdown_content=`generate_content ${{ needs.deploy.result }} "- deploy: " ${markdown_content}` &&
-          markdown_content=`generate_content ${{ needs.e2e-java-test.result }} "- e2e-java-test: " ${markdown_content}` &&
-          markdown_content=`generate_content ${{ needs.e2e-go-test.result }} "- e2e-go-test: " ${markdown_content}` &&
-          markdown_content=`generate_content ${{ needs.e2e-cpp-test.result }} "- e2e-cpp-test: " ${markdown_content}` &&
-          markdown_content=`generate_content ${{ needs.e2e-csharp-test.result }} "- e2e-csharp-test: " ${markdown_content}` &&
-          markdown_content=`generate_content ${{ needs.e2e-nodejs-test.result }} "- e2e-nodejs-test: " ${markdown_content}` &&
-          markdown_content=`generate_content ${{ needs.e2e-python-test.result }} "- e2e-python-test: " ${markdown_content}` &&
-          markdown_content=`generate_content ${{ needs.clean.result }} "- clean: " ${markdown_content}` &&
-          markdown_content="${markdown_content} </h5>" &&
-          echo "2- ${markdown_content}"
-          payload="{\"body\": \"$(printf '%q' "${markdown_content}")\"}"
+          markdown_content1="${markdown_content} <h5>" &&
+          markdown_content2=`generate_content ${{ needs.docker.result }} "- docker: " ${markdown_content1}` &&
+          markdown_content3=`generate_content ${{ needs.deploy.result }} "- deploy: " ${markdown_content2}` &&
+          markdown_content4=`generate_content ${{ needs.e2e-java-test.result }} "- e2e-java-test: " ${markdown_content3}` &&
+          markdown_content5=`generate_content ${{ needs.e2e-go-test.result }} "- e2e-go-test: " ${markdown_content4}` &&
+          markdown_content6=`generate_content ${{ needs.e2e-cpp-test.result }} "- e2e-cpp-test: " ${markdown_content5}` &&
+          markdown_content7=`generate_content ${{ needs.e2e-csharp-test.result }} "- e2e-csharp-test: " ${markdown_content6}` &&
+          markdown_content8=`generate_content ${{ needs.e2e-nodejs-test.result }} "- e2e-nodejs-test: " ${markdown_content7}` &&
+          markdown_content9=`generate_content ${{ needs.e2e-python-test.result }} "- e2e-python-test: " ${markdown_content8}` &&
+          markdown_content10=`generate_content ${{ needs.clean.result }} "- clean: " ${markdown_content9}` &&
+          markdown_content11="${markdown_content10} </h5>" &&
+          echo "2- ${markdown_content11}"
+          payload="{\"body\": \"$(printf '%q' "${markdown_content11}")\"}"
           
           echo "3- ${payload}"
           
-          payload1=`echo "{\"body\": \"${markdown_content}\"}" | jq .`
+          payload1=`echo "{\"body\": \"${markdown_content11}\"}" | jq .`
           echo "4- ${payload1}"
           
           curl -L -X DELETE ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables/VAR_${{ github.event.workflow_run.id }}
-          curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d ${payload1}
+
           curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d ${payload}
+          curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d ${payload1}
