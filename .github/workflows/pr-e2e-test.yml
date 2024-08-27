@@ -567,16 +567,17 @@ jobs:
           echo "${markdown_content}"
           export "MARKDOWN_CONTENT1=${markdown_content}"
           echo "1- ${MARKDOWN_CONTENT1}"
-          echo "MARKDOWN_CONTENT=${markdown_content}" >> $GITHUB_ENV
-          echo "2- ${{ env.MARKDOWN_CONTENT }}"
+#          echo "MARKDOWN_CONTENT=${markdown_content}" >> $GITHUB_ENV
+#          echo "2- ${{ env.MARKDOWN_CONTENT }}"
 
           curl -L -X DELETE ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables/VAR_${{ github.event.workflow_run.id }}
           curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d "{\"body\":\"The URL of CI ( pr-e2e-test ) is : https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }}\"}"
-          curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d "{\"body\":\" <h3> [${jobs_status}](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }}) </h3> </br> <h5> - docker: ${{ needs.docker.result }} <br>- deploy: ${{ needs.deploy.result }} <br> - e2e-java-test: ${{ needs.e2e-java-test.result }} <br> - e2e-go-test: ${{ needs.e2e-go-test.result }} <br> - e2e-cpp-test: ${{ needs.e2e-cpp-test.result }} <br> - e2e-csharp-test: ${{ needs.e2e-csharp-test.result }} <br> - e2e-nodejs-test: ${{ needs.e2e-nodejs-test.result }} <br> - e2e-python-test: ${{ needs.e2e-python-test.result }} <br> - clean: ${{ needs.clean.result }} <br></h5> \"}"
-          
-          curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d "{\"body\":\" ${{ env.MARKDOWN_CONTENT }} \"}"
-          
           curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d "{\"body\":\" ${MARKDOWN_CONTENT1} \"}"
-          echo "${{ env.CONTENT }}"
+          curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d "{\"body\":\" <h3> [${jobs_status}](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }}) </h3> </br> <h5> - docker: ${{ needs.docker.result }} <br>- deploy: ${{ needs.deploy.result }} <br> - e2e-java-test: ${{ needs.e2e-java-test.result }} <br> - e2e-go-test: ${{ needs.e2e-go-test.result }} <br> - e2e-cpp-test: ${{ needs.e2e-cpp-test.result }} <br> - e2e-csharp-test: ${{ needs.e2e-csharp-test.result }} <br> - e2e-nodejs-test: ${{ needs.e2e-nodejs-test.result }} <br> - e2e-python-test: ${{ needs.e2e-python-test.result }} <br> - clean: ${{ needs.clean.result }} <br></h5> \"}"
+
+          # curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d "{\"body\":\" ${{ env.MARKDOWN_CONTENT }} \"}"
+
+          curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d "{\"body\":\" ${MARKDOWN_CONTENT1} \"}"
+          #echo "${{ env.CONTENT }}"
           # curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d "{\"body\":\"The URL of CI ( pr-e2e-test ) is : https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }}\"}"
 
