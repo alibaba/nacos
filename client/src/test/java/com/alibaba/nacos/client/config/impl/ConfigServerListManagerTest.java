@@ -251,7 +251,6 @@ class ConfigServerListManagerTest {
         providerField.setAccessible(true);
         ServerListProvider serverListProvider = (ServerListProvider) providerField.get(serverListManager);
         
-        
         Field endpointField = EndpointServerListProvider.class.getDeclaredField("endpoint");
         endpointField.setAccessible(true);
         String fieldEndpoint = (String) endpointField.get(serverListProvider);
