@@ -545,11 +545,12 @@ jobs:
           
             echo "number=${number}"
           done
-          job_status = ""
+          job_status=""
           if [ ${{ needs.docker.result }} = 'success' ]  && [ ${{ needs.deploy.result }} = 'success' ] && [ ${{ needs.e2e-java-test.result }} = 'success' ] && [ ${{ needs.e2e-go-test.result }} = 'success' ] && [ ${{ needs.e2e-cpp-test.result }} = 'success' ] && [ ${{ needs.e2e-csharp-test.result }} = 'success' ] && [ ${{ needs.e2e-nodejs-test.result }} = 'success' ] && [ ${{ needs.e2e-python-test.result }} = 'success' ]; then
-            jobs_status = SUCCESS
+            
+            jobs_status="SUCCESS"
           else
-            jobs_status = FAILURE
+            jobs_status="FAILURE"
           fi
           content = "<h3> [${jobs_status}](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }}) </h3> 
                      <h5>
