@@ -585,6 +585,6 @@ jobs:
           
           curl -L -X DELETE ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables/VAR_${{ github.event.workflow_run.id }}
 
-          curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d "\"${payload2}\""
-          curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d ${payload}
+          curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d "${payload2}"
+          curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d "\"${payload1}\""
           curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d "${payload1}"
