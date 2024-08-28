@@ -547,18 +547,20 @@ jobs:
           done
           job_status=""
           if [ ${{ needs.docker.result }} = 'success' ]  && [ ${{ needs.deploy.result }} = 'success' ] && [ ${{ needs.e2e-java-test.result }} = 'success' ] && [ ${{ needs.e2e-go-test.result }} = 'success' ] && [ ${{ needs.e2e-cpp-test.result }} = 'success' ] && [ ${{ needs.e2e-csharp-test.result }} = 'success' ] && [ ${{ needs.e2e-nodejs-test.result }} = 'success' ] && [ ${{ needs.e2e-python-test.result }} = 'success' ]; then
-            jobs_status='$\\color{green}{SUCCESS}$ <br> [详情](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }})'
+            jobs_status='$\\color{green}{SUCCESS}$'
+            jobs_status+="\n[详情](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }})"
           else
-            jobs_status='$\\color{red}{FAILURE}$ <br> [详情](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }})'
+            jobs_status='$\\color{red}{FAILURE}$'
+            jobs_status+="\n[详情](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }})"
           fi
           echo ${jobs_status}
           markdown_content="${jobs_status}"
           echo "1- ${markdown_content}"
           generate_content() {
              if [ $1 = "success" ];then
-               echo " - [x] $2  $1 \n"
+               echo "\n - [x] $2  $1 "
              else
-               echo " - [ ] $2  $1 \n"
+               echo "\n - [ ] $2  $1 "
              fi
           }
           # markdown_content+="<h5>"
