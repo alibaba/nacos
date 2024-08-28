@@ -52,10 +52,10 @@ public interface HistoryConfigInfoPersistService {
      * @param time            time
      * @param ops             ops type
      * @param publishType     publish type
-     * @param extraInfo       extra config info
+     * @param extInfo       extra config info
      */
     void insertConfigHistoryAtomic(long id, ConfigInfo configInfo, String srcIp, String srcUser, final Timestamp time,
-            String ops, String publishType, String extraInfo);
+            String ops, String publishType, String extInfo);
     //------------------------------------------delete---------------------------------------------//
     
     /**

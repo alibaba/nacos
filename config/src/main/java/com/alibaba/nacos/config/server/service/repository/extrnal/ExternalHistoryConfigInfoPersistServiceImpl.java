@@ -86,7 +86,7 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     
     @Override
     public void insertConfigHistoryAtomic(long id, ConfigInfo configInfo, String srcIp, String srcUser,
-            final Timestamp time, String ops, String publishType, String extraInfo) {
+            final Timestamp time, String ops, String publishType, String extInfo) {
         String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
         String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
@@ -100,7 +100,7 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
                             Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "src_ip",
                                     "src_user", "gmt_modified", "op_type", "publish_type", "ext_info", "encrypted_data_key")),
                     id, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp, configInfo.getContent(),
-                    md5Tmp, srcIp, srcUser, time, ops, publishTypeTmp, extraInfo, encryptedDataKey);
+                    md5Tmp, srcIp, srcUser, time, ops, publishTypeTmp, extInfo, encryptedDataKey);
         } catch (DataAccessException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;

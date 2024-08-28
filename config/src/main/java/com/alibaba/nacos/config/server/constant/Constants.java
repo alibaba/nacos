@@ -308,6 +308,13 @@ public class Constants {
     
     public static final String NACOS_PERSIST_ENCODE_KEY = "nacosPersistEncodingKey";
     
+    /**
+     * config publish type.
+     */
+    public static final String FORMAL = "formal";
+    
+    public static final String GRAY = "gray";
+    
     static String getPersistEncode() {
         String persistEncode = System.getenv(NACOS_PERSIST_ENCODE_KEY);
         if (StringUtils.isBlank(persistEncode)) {

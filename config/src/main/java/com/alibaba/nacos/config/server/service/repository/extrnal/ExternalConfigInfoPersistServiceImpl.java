@@ -149,7 +149,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 Timestamp now = new Timestamp(System.currentTimeMillis());
                 
                 historyConfigInfoPersistService.insertConfigHistoryAtomic(0, configInfo, srcIp, srcUser, now, "I",
-                        "formal", ExtraConfigInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser));
+                        Constants.FORMAL, ExtraConfigInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser));
                 ConfigInfoStateWrapper configInfoCurrent = this.findConfigInfoState(configInfo.getDataId(),
                         configInfo.getGroup(), configInfo.getTenant());
                 if (configInfoCurrent == null) {
@@ -401,7 +401,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                         removeConfigInfoAtomic(dataId, group, tenant, srcIp, srcUser);
                         removeTagByIdAtomic(oldConfigAllInfo.getId());
                         historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo.getId(), oldConfigAllInfo,
-                                srcIp, srcUser, time, "D", "formal", ExtraConfigInfoUtil.getExtraInfoFromAllInfo(oldConfigAllInfo));
+                                srcIp, srcUser, time, "D", Constants.FORMAL, ExtraConfigInfoUtil.getExtraInfoFromAllInfo(oldConfigAllInfo));
                     }
                 } catch (CannotGetJdbcConnectionException e) {
                     LogUtil.FATAL_LOG.error("[db-error] " + e, e);
@@ -431,7 +431,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                         for (ConfigAllInfo configAllInfo : oldConfigAllInfoList) {
                             removeTagByIdAtomic(configAllInfo.getId());
                             historyConfigInfoPersistService.insertConfigHistoryAtomic(configAllInfo.getId(),
-                                    configAllInfo, srcIp, srcUser, time, "D", "formal",
+                                    configAllInfo, srcIp, srcUser, time, "D", Constants.FORMAL,
                                     ExtraConfigInfoUtil.getExtraInfoFromAllInfo(configAllInfo));
                         }
                     }
@@ -528,7 +528,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 
                 Timestamp now = new Timestamp(System.currentTimeMillis());
                 historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo.getId(), oldConfigAllInfo, srcIp, srcUser,
-                        now, "U", "formal", ExtraConfigInfoUtil.getExtraInfoFromAllInfo(oldConfigAllInfo));
+                        now, "U", Constants.FORMAL, ExtraConfigInfoUtil.getExtraInfoFromAllInfo(oldConfigAllInfo));
                 return getConfigInfoOperateResult(configInfo.getDataId(), configInfo.getGroup(),
                         configInfo.getTenant());
             } catch (CannotGetJdbcConnectionException e) {
@@ -583,7 +583,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 Timestamp now = new Timestamp(System.currentTimeMillis());
                 
                 historyConfigInfoPersistService.insertConfigHistoryAtomic(oldAllConfigInfo.getId(), oldAllConfigInfo, srcIp, srcUser, now,
-                        "U", "formal", ExtraConfigInfoUtil.getExtraInfoFromAllInfo(oldAllConfigInfo));
+                        "U", Constants.FORMAL, ExtraConfigInfoUtil.getExtraInfoFromAllInfo(oldAllConfigInfo));
                 ConfigInfoStateWrapper configInfoLast = this.findConfigInfoState(configInfo.getDataId(),
                         configInfo.getGroup(), configInfo.getTenant());
                 if (configInfoLast == null) {

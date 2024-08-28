@@ -83,14 +83,14 @@ public class DumpChangeConfigWorker implements Runnable {
             
             while (true) {
                 List<ConfigHistoryInfo> configDeleted = historyConfigInfoPersistService.findDeletedConfig(startTime,
-                        deleteCursorId, pageSize, "formal");
+                        deleteCursorId, pageSize, Constants.FORMAL);
                 for (ConfigHistoryInfo historyInfo : configDeleted) {
                     if (configInfoPersistService.findConfigInfoState(historyInfo.getDataId(), historyInfo.getGroup(),
                             historyInfo.getTenant()) == null) {
                         ConfigCacheService.remove(historyInfo.getDataId(), historyInfo.getGroup(),
                                 historyInfo.getTenant());
-                        LogUtil.DEFAULT_LOG.info("[dump-delete-ok] {}",
-                                new Object[] {GroupKey2.getKey(historyInfo.getDataId(), historyInfo.getGroup())});
+                        LogUtil.DEFAULT_LOG.info("[dump-delete-ok], groupKey: {}, tenant: {}",
+                                new Object[] {GroupKey2.getKey(historyInfo.getDataId(), historyInfo.getGroup())}, historyInfo.getTenant());
                     }
                 }
                 if (configDeleted.size() < pageSize) {

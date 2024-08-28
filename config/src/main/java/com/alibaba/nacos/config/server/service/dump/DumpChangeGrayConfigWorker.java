@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
@@ -73,15 +74,21 @@ public class DumpChangeGrayConfigWorker implements Runnable {
             long deleteCursorId = 0L;
             while (true) {
                 List<ConfigHistoryInfo> historyConfigDeleted = historyConfigInfoPersistService.findDeletedConfig(startTime,
-                        deleteCursorId, pageSize, "gray");
+                        deleteCursorId, pageSize, Constants.GRAY);
                 for (ConfigHistoryInfo historyInfo : historyConfigDeleted) {
+                    String grayName = extractGrayName(historyInfo.getExtraInfo());
+                    if (StringUtils.isBlank(grayName)) {
+                        grayName = StringUtils.EMPTY;
+                        LogUtil.DEFAULT_LOG.warn("GrayName is null or empty");
+                    }
+                    
                     ConfigInfoStateWrapper configInfoStateWrapper = configInfoGrayPersistService.findConfigInfo4GrayState(historyInfo.getDataId(),
-                            historyInfo.getGroup(), historyInfo.getTenant(), extractGrayName(historyInfo.getExtraInfo()));
+                            historyInfo.getGroup(), historyInfo.getTenant(), grayName);
                     if (configInfoStateWrapper == null) {
-                        ConfigCacheService.remove(historyInfo.getDataId(), historyInfo.getGroup(),
-                                historyInfo.getTenant());
-                        LogUtil.DEFAULT_LOG.info("[dump-delete-ok] {}",
-                                GroupKey2.getKey(historyInfo.getDataId(), historyInfo.getGroup()));
+                        ConfigCacheService.removeGray(historyInfo.getDataId(), historyInfo.getGroup(),
+                                historyInfo.getTenant(), grayName);
+                        LogUtil.DEFAULT_LOG.info("[dump-gray-delete-ok], groupKey: {}, tenant: {}, grayName: {}",
+                                GroupKey2.getKey(historyInfo.getDataId(), historyInfo.getGroup()), historyInfo.getTenant(), grayName);
                     }
                 }
                 if (historyConfigDeleted.size() < pageSize) {
