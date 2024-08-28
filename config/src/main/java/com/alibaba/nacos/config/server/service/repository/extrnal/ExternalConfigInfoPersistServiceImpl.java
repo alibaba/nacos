@@ -413,19 +413,18 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     }
     
     @Override
-    public List<ConfigInfo> removeConfigInfoByIds(final List<Long> ids, final String srcIp, final String srcUser) {
+    public List<ConfigAllInfo> removeConfigInfoByIds(final List<Long> ids, final String srcIp, final String srcUser) {
         if (CollectionUtils.isEmpty(ids)) {
             return null;
         }
         ids.removeAll(Collections.singleton(null));
-        return tjt.execute(new TransactionCallback<List<ConfigInfo>>() {
+        return tjt.execute(new TransactionCallback<List<ConfigAllInfo>>() {
             final Timestamp time = new Timestamp(System.currentTimeMillis());
             
             @Override
-            public List<ConfigInfo> doInTransaction(TransactionStatus status) {
+            public List<ConfigAllInfo> doInTransaction(TransactionStatus status) {
                 try {
                     String idsStr = StringUtils.join(ids, StringUtils.COMMA);
-                    List<ConfigInfo> configInfoList = findConfigInfosByIds(idsStr);
                     List<ConfigAllInfo> oldConfigAllInfoList = findAllConfigInfo4Export(null, null, null, null, ids);
                     if (!CollectionUtils.isEmpty(oldConfigAllInfoList)) {
                         removeConfigInfoByIdsAtomic(idsStr);
@@ -436,7 +435,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                                     ExtraConfigInfoUtil.getExtraInfoFromAllInfo(configAllInfo));
                         }
                     }
-                    return configInfoList;
+                    return oldConfigAllInfoList;
                 } catch (CannotGetJdbcConnectionException e) {
                     LogUtil.FATAL_LOG.error("[db-error] " + e, e);
                     throw e;

@@ -425,7 +425,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     }
     
     @Override
-    public List<ConfigInfo> removeConfigInfoByIds(final List<Long> ids, final String srcIp, final String srcUser) {
+    public List<ConfigAllInfo> removeConfigInfoByIds(final List<Long> ids, final String srcIp, final String srcUser) {
         if (CollectionUtils.isEmpty(ids)) {
             return null;
         }
@@ -433,7 +433,6 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         final Timestamp time = new Timestamp(System.currentTimeMillis());
         try {
             String idsStr = StringUtils.join(ids, StringUtils.COMMA);
-            List<ConfigInfo> configInfoList = findConfigInfosByIds(idsStr);
             List<ConfigAllInfo> oldConfigAllInfoList = findAllConfigInfo4Export(null, null, null, null, ids);
             if (CollectionUtils.isNotEmpty(oldConfigAllInfoList)) {
                 removeConfigInfoByIdsAtomic(idsStr);
@@ -445,13 +444,13 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 }
             }
             
-            EmbeddedStorageContextUtils.onBatchDeleteConfigInfo(configInfoList);
+            EmbeddedStorageContextUtils.onBatchDeleteConfigInfo(oldConfigAllInfoList);
             boolean result = databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
             if (!result) {
                 throw new NacosConfigException("Failed to config batch deletion");
             }
             
-            return configInfoList;
+            return oldConfigAllInfoList;
         } finally {
             EmbeddedStorageContextHolder.cleanAllContext();
         }
