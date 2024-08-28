@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.auth.GrpcProtocolAuthService;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.enums.ApiType;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.context.RequestContext;
 import com.alibaba.nacos.core.context.RequestContextHolder;
@@ -62,13 +63,20 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
         try {
             
             Method method = getHandleMethod(handlerClazz);
-            if (method.isAnnotationPresent(Secured.class) && authConfigs.isAuthEnabled()) {
+            if (method.isAnnotationPresent(Secured.class) && (authConfigs.isConsoleAuthEnabled() || authConfigs.isAuthEnabled())) {
                 
                 if (Loggers.AUTH.isDebugEnabled()) {
                     Loggers.AUTH.debug("auth start, request: {}", request.getClass().getSimpleName());
                 }
                 
                 Secured secured = method.getAnnotation(Secured.class);
+                ApiType apiType = secured.apiType();
+                if (apiType == ApiType.CONSOLE_API && !authConfigs.isConsoleAuthEnabled()) {
+                    return null;
+                }
+                if (apiType == ApiType.OPEN_API && !authConfigs.isAuthEnabled()) {
+                    return null;
+                }
                 if (!protocolAuthService.enableAuth(secured)) {
                     return null;
                 }

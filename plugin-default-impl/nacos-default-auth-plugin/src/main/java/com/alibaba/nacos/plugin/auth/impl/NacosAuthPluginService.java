@@ -110,7 +110,7 @@ public class NacosAuthPluginService implements AuthPluginService {
     
     @Override
     public boolean isLoginEnabled() {
-        return ApplicationUtils.getBean(AuthConfigs.class).isAuthEnabled();
+        return ApplicationUtils.getBean(AuthConfigs.class).isConsoleAuthEnabled();
     }
     
     /**

@@ -19,6 +19,7 @@ package com.alibaba.nacos.core.auth;
 import com.alibaba.nacos.auth.HttpProtocolAuthService;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.enums.ApiType;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
@@ -67,7 +68,7 @@ public class AuthFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
         
-        if (!authConfigs.isAuthEnabled()) {
+        if (!authConfigs.isConsoleAuthEnabled() && !authConfigs.isAuthEnabled()) {
             chain.doFilter(request, response);
             return;
         }
@@ -108,13 +109,22 @@ public class AuthFilter implements Filter {
                 return;
             }
             
-            if (method.isAnnotationPresent(Secured.class) && authConfigs.isAuthEnabled()) {
+            if (method.isAnnotationPresent(Secured.class) && (authConfigs.isConsoleAuthEnabled() || authConfigs.isAuthEnabled())) {
                 
                 if (Loggers.AUTH.isDebugEnabled()) {
                     Loggers.AUTH.debug("auth start, request: {} {}", req.getMethod(), req.getRequestURI());
                 }
                 
                 Secured secured = method.getAnnotation(Secured.class);
+                ApiType apiType = secured.apiType();
+                if (apiType == ApiType.CONSOLE_API && !authConfigs.isConsoleAuthEnabled()) {
+                    chain.doFilter(request, response);
+                    return;
+                }
+                if (apiType == ApiType.OPEN_API && !authConfigs.isAuthEnabled()) {
+                    chain.doFilter(request, response);
+                    return;
+                }
                 if (!protocolAuthService.enableAuth(secured)) {
                     chain.doFilter(request, response);
                     return;
