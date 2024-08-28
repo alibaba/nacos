@@ -102,16 +102,20 @@ class EmbeddedHistoryConfigInfoPersistServiceImplTest {
         String srcUser = "user12345";
         String srcIp = "ip1234";
         String ops = "D";
+        String publishType = "formal";
+        String extraInfo = "{\"type\":\"properties\"}";
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
         configInfo.setEncryptedDataKey("key23456");
         //expect insert success,verify insert invoked
-        embeddedHistoryConfigInfoPersistService.insertConfigHistoryAtomic(id, configInfo, srcIp, srcUser, timestamp, ops);
+        embeddedHistoryConfigInfoPersistService.insertConfigHistoryAtomic(id, configInfo, srcIp, srcUser, timestamp, ops,
+                publishType, extraInfo);
         
         //verify insert to be invoked
         embeddedStorageContextHolderMockedStatic.verify(
                 () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(id), eq(dataId), eq(group), eq(tenant), eq(appName),
-                        eq(content), eq(configInfo.getMd5()), eq(srcIp), eq(srcUser), eq(timestamp), eq(ops),
+                        eq(content), eq(configInfo.getMd5()), eq(srcIp), eq(srcUser), eq(timestamp), eq(ops), eq(
+                                publishType), eq(extraInfo),
                         eq(configInfo.getEncryptedDataKey())), times(1));
     }
     

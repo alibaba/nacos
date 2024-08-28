@@ -169,10 +169,10 @@ public interface ConfigInfoPersistService {
      * @param ids     id list
      * @param srcIp   remote ip
      * @param srcUser user
-     * @return {@link ConfigInfo} list
+     * @return {@link ConfigAllInfo} list
      * @author klw
      */
-    List<ConfigInfo> removeConfigInfoByIds(final List<Long> ids, final String srcIp, final String srcUser);
+    List<ConfigAllInfo> removeConfigInfoByIds(final List<Long> ids, final String srcIp, final String srcUser);
     
     /**
      * Delete tag.

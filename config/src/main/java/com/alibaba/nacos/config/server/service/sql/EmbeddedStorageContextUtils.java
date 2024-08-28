@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.service.sql;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.event.ConfigDumpEvent;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
@@ -151,12 +152,12 @@ public class EmbeddedStorageContextUtils {
      * In the case of the in-cluster storage mode, the logic of horizontal notification is implemented asynchronously
      * via the raft state machine, along with the information.
      *
-     * @param configInfos {@link ConfigInfo} list
+     * @param configInfos {@link ConfigAllInfo} list
      */
-    public static void onBatchDeleteConfigInfo(List<ConfigInfo> configInfos) {
+    public static void onBatchDeleteConfigInfo(List<ConfigAllInfo> configInfos) {
         if (!EnvUtil.getStandaloneMode()) {
             List<ConfigDumpEvent> events = new ArrayList<>();
-            for (ConfigInfo configInfo : configInfos) {
+            for (ConfigAllInfo configInfo : configInfos) {
                 String namespaceId =
                         StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
                 ConfigDumpEvent event = ConfigDumpEvent.builder().remove(true).namespaceId(namespaceId)
