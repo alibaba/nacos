@@ -12,32 +12,12 @@ env:
   DOCKER_REPO_B: wuyfeehub/nacos-ci
   TEST_REPO_NAME: nacos-group/nacos-e2e
   ACTIONS_ALLOW_UNSECURE_COMMANDS: true
-  # HEADER_PARAMS: "-H \"Accept: application/vnd.github+json\" -H \"Authorization: Bearer ${{ secrets.ACTION_TOKEN }}\" -H \"X-GitHub-Api-Version: 2022-11-28\""
-  HEADER_PARAMS: "-H \"Accept: application/vnd.github+json\" -H \"Authorization: Bearer ${{ secrets.ACTION_TOKEN_OTHER }}\" -H \"X-GitHub-Api-Version: 2022-11-28\""
-  HEADER_PARAMS_WRITE_COMMENT: "-H \"Accept: application/vnd.github+json\" -H \"Authorization: Bearer ${{ secrets.ACTION_TOKEN_OTHER }}\" -H \"X-GitHub-Api-Version: 2022-11-28\""
+  HEADER_PARAMS: "-H \"Accept: application/vnd.github+json\" -H \"Authorization: Bearer ${{ secrets.ACTION_TOKEN }}\" -H \"X-GitHub-Api-Version: 2022-11-28\""
+  HEADER_PARAMS_WRITE_COMMENT: "-H \"Accept: application/vnd.github+json\" -H \"Authorization: Bearer ${{ secrets.ACTION_TOKEN }}\" -H \"X-GitHub-Api-Version: 2022-11-28\""
   BASE_URL_NACOS: https://api.github.com/repos/${GITHUB_REPOSITORY}
   BASE_URL: https://api.github.com/repos/wuyfee/nacos
 
 jobs:
-#  write-issue:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: write issue comment
-#        run: |
-#          echo ${GITHUB_REPOSITORY}
-#          number=''
-#          count=10
-#          while [[ "${number}" == "" && ${count} -gt 0 ]]
-#          do
-#            sleep 3
-#            let "count--"
-#            echo `curl -L ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables`
-#            number=`curl -L ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables | jq -r '.variables[]? | select(.name == "VAR_${{ github.event.workflow_run.id }}") | .value'`
-#
-#            echo "number=${number}"
-#          done
-#          curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d "{\"body\":\"The URL of CI ( pr-e2e-test ) is : https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }}\"}"
-#          curl -L -X DELETE ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables/VAR_${{ github.event.workflow_run.id }}
   docker:
     runs-on: ubuntu-latest
     if: >
@@ -540,22 +520,19 @@ jobs:
           do
             sleep 3
             let "count--"
-            echo `curl -L ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables`
             number=`curl -L ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables | jq -r '.variables[]? | select(.name == "VAR_${{ github.event.workflow_run.id }}") | .value'`
-          
             echo "number=${number}"
           done
           job_status=""
           if [ ${{ needs.docker.result }} = 'success' ]  && [ ${{ needs.deploy.result }} = 'success' ] && [ ${{ needs.e2e-java-test.result }} = 'success' ] && [ ${{ needs.e2e-go-test.result }} = 'success' ] && [ ${{ needs.e2e-cpp-test.result }} = 'success' ] && [ ${{ needs.e2e-csharp-test.result }} = 'success' ] && [ ${{ needs.e2e-nodejs-test.result }} = 'success' ] && [ ${{ needs.e2e-python-test.result }} = 'success' ]; then
             jobs_status='$\\color{green}{SUCCESS}$'
-            jobs_status+="\n[详情](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }})"
+            jobs_status+="\n[DETAILS](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }})"
           else
             jobs_status='$\\color{red}{FAILURE}$'
-            jobs_status+="\n[详情](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }})"
+            jobs_status+="\n[DETAILS](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }})"
           fi
           echo ${jobs_status}
           markdown_content="${jobs_status}"
-          echo "1- ${markdown_content}"
           generate_content() {
              if [ $1 = "success" ];then
                echo "\n - [x] $2  $1 "
@@ -563,7 +540,6 @@ jobs:
                echo "\n - [ ] $2  $1 "
              fi
           }
-          # markdown_content+="<h5>"
           markdown_content+=$(generate_content ${{ needs.docker.result }} "- docker: ")
           markdown_content+=$(generate_content ${{ needs.deploy.result }} "- deploy: ")
           markdown_content+=$(generate_content ${{ needs.e2e-java-test.result }} "- e2e-java-test: ")
@@ -573,20 +549,7 @@ jobs:
           markdown_content+=$(generate_content ${{ needs.e2e-nodejs-test.result }} "- e2e-nodejs-test: ")
           markdown_content+=$(generate_content ${{ needs.e2e-python-test.result }} "- e2e-python-test: ")
           markdown_content+=$(generate_content ${{ needs.clean.result }} "- clean: ")
-          # markdown_content+="</h5>" &&
-          echo "2- ${markdown_content}"
-          payload="{\"body\": \"$(printf '%q' "${markdown_content}")\"}"
-          
-          echo "3- ${payload}"
-          
-          payload1=`echo "{\"body\": \"${markdown_content}\"}" | jq .`
-          echo "4- ${payload1}"
-          
-          payload2=$(printf '{"body": "%q"}' "${markdown_content}")
-          echo "6- ${payload2}"
-          
+          echo "markdown_content: \n ${markdown_content}"
+          payload=`echo "{\"body\": \"${markdown_content}\"}" | jq .`
           curl -L -X DELETE ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables/VAR_${{ github.event.workflow_run.id }}
-
-          #curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d "${payload2}"
-          #curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d "\"${payload1}\""
-          curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d "${payload1}"
+          curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d "${payload}"
