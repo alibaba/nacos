@@ -40,10 +40,12 @@ import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
+import com.alibaba.nacos.client.serverlist.ServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.env.SourceType;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
+import com.alibaba.nacos.client.serverlist.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.EnvUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -527,10 +529,11 @@ public class ClientWorker implements Closeable {
         metric.put("listenConfigSize", String.valueOf(this.cacheMap.get().size()));
         metric.put("clientVersion", VersionUtils.getFullClientVersion());
         metric.put("snapshotDir", LocalConfigInfoProcessor.LOCAL_SNAPSHOT_PATH);
-        boolean isFixServer = agent.serverListManager.isFixed;
-        metric.put("isFixedServer", isFixServer);
-        metric.put("addressUrl", agent.serverListManager.addressServerUrl);
+        metric.put("addressUrl", agent.serverListManager.getAddressUrl());
         metric.put("serverUrls", agent.serverListManager.getUrlString());
+        String serverListHolderName = agent.serverListManager.getServerListHolderName();
+        metric.put("isFixedServer", agent.serverListManager.isFixedServer());
+        metric.put("serverListHolder", serverListHolderName);
         
         Map<ClientConfigMetricRequest.MetricsKey, Object> metricValues = getMetricsValue(metricsKeys);
         metric.put("metricValues", metricValues);
@@ -733,36 +736,37 @@ public class ClientWorker implements Closeable {
                 }
                 
             });
-            
             rpcClientInner.serverListFactory(new ServerListFactory() {
                 @Override
                 public String genNextServer() {
-                    return ConfigRpcTransportClient.super.serverListManager.getNextServerAddr();
+                    return ConfigRpcTransportClient.super.serverListManager.genNextServer();
                     
                 }
                 
                 @Override
                 public String getCurrentServer() {
-                    return ConfigRpcTransportClient.super.serverListManager.getCurrentServerAddr();
+                    return ConfigRpcTransportClient.super.serverListManager.getCurrentServer();
                     
                 }
                 
                 @Override
                 public List<String> getServerList() {
-                    return ConfigRpcTransportClient.super.serverListManager.getServerUrls();
-                    
+                    return ConfigRpcTransportClient.super.serverListManager.getServerList();
                 }
             });
             
             subscriber = new Subscriber() {
                 @Override
                 public void onEvent(Event event) {
-                    rpcClientInner.onServerListChange();
+                    ServerListChangedEvent env = (ServerListChangedEvent) event;
+                    if (Constants.Config.CONFIG_MODULE.equals(env.getModule())) {
+                        rpcClientInner.onServerListChange();
+                    }
                 }
                 
                 @Override
                 public Class<? extends Event> subscribeType() {
-                    return ServerListChangeEvent.class;
+                    return ServerListChangedEvent.class;
                 }
             };
             NotifyCenter.registerSubscriber(subscriber);

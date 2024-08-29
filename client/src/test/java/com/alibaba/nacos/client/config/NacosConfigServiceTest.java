@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.client.config;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -23,8 +25,8 @@ import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
 import com.alibaba.nacos.client.config.impl.ConfigTransportClient;
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
-import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.serverlist.ServerListManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -182,7 +184,10 @@ class NacosConfigServiceTest {
         };
         
         final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive(new Properties());
-        Mockito.when(mockWoker.getAgent()).thenReturn(new ConfigTransportClient(properties, new ServerListManager()) {
+        Properties addrProperties = new Properties();
+        addrProperties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1");
+        Mockito.when(mockWoker.getAgent()).thenReturn(new ConfigTransportClient(properties,
+                new ServerListManager(addrProperties, Constants.Config.CONFIG_MODULE)) {
             @Override
             public void startInternal() throws NacosException {
                 // NOOP

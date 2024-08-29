@@ -19,6 +19,7 @@
 package com.alibaba.nacos.client.naming.remote.http;
 
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
@@ -26,8 +27,8 @@ import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.naming.core.ServerListManager;
-import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
+import com.alibaba.nacos.client.serverlist.ServerListManager;
+import com.alibaba.nacos.client.serverlist.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.common.http.HttpRestResult;
@@ -96,7 +97,7 @@ class NamingHttpClientProxyTest {
     
     @Test
     void testOnEvent() {
-        clientProxy.onEvent(new ServerListChangedEvent());
+        clientProxy.onEvent(new ServerListChangedEvent(Constants.Naming.NAMING_MODULE));
         // Do nothing
     }
     
@@ -643,8 +644,8 @@ class NamingHttpClientProxyTest {
             when(mgr.isDomain()).thenReturn(true);
             when(mgr.getNacosDomain()).thenReturn("http://test.nacos.domain");
             clientProxy.reqApi("api", params, Collections.emptyMap(), Collections.emptyList(), HttpMethod.GET);
-            
+
         });
-        
+
     }
 }

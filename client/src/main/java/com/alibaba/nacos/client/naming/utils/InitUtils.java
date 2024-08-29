@@ -138,6 +138,20 @@ public class InitUtils {
     }
     
     /**
+     * init context path.
+     *
+     * @param properties nacos client properties
+     * @return
+     */
+    public static String initEndpointContextPath(NacosClientProperties properties) {
+        String endpointContextPathTmp = properties.getProperty(PropertyKeyConst.ENDPOINT_CONTEXT_PATH);
+        String contentPath = properties.getProperty(PropertyKeyConst.CONTEXT_PATH);
+        
+        return StringUtils.isNotBlank(endpointContextPathTmp) ? ContextPathUtil.normalizeContextPath(endpointContextPathTmp) :
+                StringUtils.isNotBlank(contentPath) ? ContextPathUtil.normalizeContextPath(contentPath) : ParamUtil.getDefaultContextPath();
+    }
+    
+    /**
      * Register subType for serialization.
      *
      * <p>

@@ -17,7 +17,7 @@
 package com.alibaba.nacos.client.naming.remote;
 
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
-import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
+import com.alibaba.nacos.client.serverlist.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.common.notify.listener.Subscriber;

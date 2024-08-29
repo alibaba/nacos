@@ -24,7 +24,6 @@ import java.util.concurrent.TimeUnit;
  * @author onew
  */
 public class Constants {
-    
     public static class SysEnv {
         
         public static final String USER_HOME = "user.home";
