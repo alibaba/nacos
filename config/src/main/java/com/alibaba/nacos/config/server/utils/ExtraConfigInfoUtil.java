@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -116,6 +117,7 @@ public class ExtraConfigInfoUtil {
     
     public static String getExtraInfoFromGrayInfo(String grayNameTmp, String grayRuleTmp, String oldSrcUser) {
         ObjectNode node = OBJECT_MAPPER.createObjectNode();
+        ObjectNode grayRuleNode = OBJECT_MAPPER.createObjectNode();
         
         if (StringUtils.isNotBlank(grayNameTmp)) {
             node.put("gray_name", grayNameTmp);
@@ -127,13 +129,27 @@ public class ExtraConfigInfoUtil {
         
         if (StringUtils.isNotBlank(grayRuleTmp)) {
             try {
-                JsonNode grayRuleNode = OBJECT_MAPPER.readTree(grayRuleTmp);
-                node.setAll((ObjectNode) grayRuleNode);
+                JsonNode parsedGrayRuleNode = OBJECT_MAPPER.readTree(grayRuleTmp);
+                if (parsedGrayRuleNode.has(Constants.GRAY_RULE_TYPE)) {
+                    grayRuleNode.put(Constants.GRAY_RULE_TYPE, parsedGrayRuleNode.get(Constants.GRAY_RULE_TYPE).asText());
+                }
+                if (parsedGrayRuleNode.has(Constants.GRAY_RULE_EXPR)) {
+                    grayRuleNode.put(Constants.GRAY_RULE_EXPR, parsedGrayRuleNode.get(Constants.GRAY_RULE_EXPR).asText());
+                }
+                if (parsedGrayRuleNode.has(Constants.GRAY_RULE_VERSION)) {
+                    grayRuleNode.put(Constants.GRAY_RULE_VERSION, parsedGrayRuleNode.get(Constants.GRAY_RULE_VERSION).asText());
+                }
+                if (parsedGrayRuleNode.has(Constants.GRAY_RULE_PRIORITY)) {
+                    grayRuleNode.put(Constants.GRAY_RULE_PRIORITY, parsedGrayRuleNode.get(Constants.GRAY_RULE_PRIORITY).asText());
+                }
+                node.set("gray_rule", grayRuleNode);
             } catch (Exception ex) {
-                LOGGER.error("Failed to parse grayRuleTmp as JSON: " + grayRuleTmp, ex);
+                LOGGER.error("Failed to parse gray rule as json", ex);
                 return null;
             }
         }
+        
+        node.put("type", "json");
         
         try {
             return OBJECT_MAPPER.writeValueAsString(node);

@@ -156,7 +156,7 @@ class ConfigCacheServiceTest {
         String group = "group11";
         String tenant = "tenant112";
         String grayName = "grayName";
-        String grayRule = "{\"gray_type\":\"tag\",\"version\":\"1.0.0\",\"expr\":\"dgray123\",\"priority\":1}";
+        String grayRule = "{\"type\":\"tag\",\"version\":\"1.0.0\",\"expr\":\"dgray123\",\"priority\":1}";
         String content = "mockContent11";
         
         String md5 = MD5Utils.md5Hex(content, "UTF-8");
@@ -201,7 +201,7 @@ class ConfigCacheServiceTest {
         
         //ts new ,md5 not update,grayRule changes
         long tsNew2 = tsNew + 1;
-        String grayRuleNew = "{\"gray_type\":\"tag\",\"version\":\"1.0.0\",\"expr\":\"gray1234\",\"priority\":1}";
+        String grayRuleNew = "{\"type\":\"tag\",\"version\":\"1.0.0\",\"expr\":\"gray1234\",\"priority\":1}";
         
         String contentWithPrev = contentNew;
         boolean resultNew2 = ConfigCacheService.dumpGray(dataId, group, tenant, grayName, grayRuleNew, contentWithPrev,
