@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.config.server.model.gray;
 
-import com.google.gson.annotations.SerializedName;
-
 /**
  * description.
  *
@@ -25,8 +23,8 @@ import com.google.gson.annotations.SerializedName;
  * @date 2024-03-14 10:57
  */
 public class ConfigGrayPersistInfo {
-    @SerializedName("gray_type")
-    private String grayType;
+
+    private String type;
     
     private String version;
     
@@ -34,19 +32,19 @@ public class ConfigGrayPersistInfo {
     
     private int priority;
     
-    public ConfigGrayPersistInfo(String grayType, String version, String expr, int priority) {
-        this.grayType = grayType;
+    public ConfigGrayPersistInfo(String type, String version, String expr, int priority) {
+        this.type = type;
         this.version = version;
         this.expr = expr;
         this.priority = priority;
     }
     
-    public String getGrayType() {
-        return grayType;
+    public String getType() {
+        return type;
     }
     
-    public void setGrayType(String grayType) {
-        this.grayType = grayType;
+    public void setType(String type) {
+        this.type = type;
     }
     
     public String getVersion() {
