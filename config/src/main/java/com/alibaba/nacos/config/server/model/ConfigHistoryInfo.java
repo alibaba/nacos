@@ -58,6 +58,10 @@ public class ConfigHistoryInfo implements Serializable {
      */
     private String opType;
     
+    private String publishType;
+    
+    private String extraInfo;
+    
     private Timestamp createdTime;
     
     private Timestamp lastModifiedTime;
@@ -134,6 +138,22 @@ public class ConfigHistoryInfo implements Serializable {
     
     public void setOpType(String opType) {
         this.opType = opType;
+    }
+    
+    public String getPublishType() {
+        return publishType;
+    }
+    
+    public void setPublishType(String publishType) {
+        this.publishType = publishType;
+    }
+    
+    public String getExtraInfo() {
+        return extraInfo;
+    }
+    
+    public void setExtraInfo(String extraInfo) {
+        this.extraInfo = extraInfo;
     }
     
     public Timestamp getCreatedTime() {

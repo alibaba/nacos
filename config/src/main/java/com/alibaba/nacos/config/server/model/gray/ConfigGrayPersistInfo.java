@@ -23,7 +23,7 @@ package com.alibaba.nacos.config.server.model.gray;
  * @date 2024-03-14 10:57
  */
 public class ConfigGrayPersistInfo {
-    
+
     private String type;
     
     private String version;

@@ -55,6 +55,8 @@ CREATE TABLE his_config_info (
                                  src_user varchar(128),
                                  src_ip varchar(50) DEFAULT NULL,
                                  op_type char(10) DEFAULT NULL,
+                                 publish_type varchar(128) DEFAULT 'formal',
+                                 ext_info LONG VARCHAR DEFAULT NULL,
                                  encrypted_data_key LONG VARCHAR DEFAULT NULL,
                                  constraint hisconfiginfo_nid_key PRIMARY KEY (nid));
 

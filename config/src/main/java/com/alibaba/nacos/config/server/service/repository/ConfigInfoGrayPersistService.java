@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.repository;
 
+import com.alibaba.nacos.config.server.model.ConfigAllInfo4Gray;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
@@ -48,9 +49,9 @@ public interface ConfigInfoGrayPersistService {
     /**
      * get gray config info state.
      *
-     * @param dataId dataId.
-     * @param group  group.
-     * @param tenant tenant.
+     * @param dataId   dataId.
+     * @param group    group.
+     * @param tenant   tenant.
      * @param grayName gray name.
      * @return config info state.
      */
@@ -60,24 +61,38 @@ public interface ConfigInfoGrayPersistService {
     /**
      * Add gray configuration information and publish data change events.
      *
-     * @param configInfo config info
-     * @param grayName gray name
-     * @param grayRule gray rule
-     * @param srcIp      remote ip
-     * @param srcUser    user
+     * @param configInfo        config info
+     * @param grayName          gray name
+     * @param grayRule          gray rule
+     * @param srcIp             remote ip
+     * @param srcUser           user
      * @return config operation result.
      */
     ConfigOperateResult addConfigInfo4Gray(ConfigInfo configInfo, String grayName, String grayRule,
             String srcIp, String srcUser);
     
     /**
+     * Adds configuration information with database atomic operations, minimizing SQL actions and avoiding business
+     * encapsulation.
+     *
+     * @param configGrayId the ID for the gray configuration
+     * @param configInfo   the configuration information to be added
+     * @param grayName     the name of the gray configuration
+     * @param grayRule     the rule of the gray configuration
+     * @param srcIp        the IP address of the source
+     * @param srcUser      the user who performs the addition
+     */
+    void addConfigInfoGrayAtomic(final long configGrayId, final ConfigInfo configInfo, final String grayName, final String grayRule,
+            final String srcIp, final String srcUser);
+    
+    /**
      * insert or update gray config.
      *
-     * @param configInfo config info
-     * @param grayName gray name
-     * @param grayRule gray rule
-     * @param srcIp      remote ip
-     * @param srcUser    user
+     * @param configInfo        config info
+     * @param grayName          gray name
+     * @param grayRule          gray rule
+     * @param srcIp             remote ip
+     * @param srcUser           user
      * @return config operation result.
      */
     ConfigOperateResult insertOrUpdateGray(final ConfigInfo configInfo, final String grayName, final String grayRule,
@@ -87,8 +102,8 @@ public interface ConfigInfoGrayPersistService {
      * insert or update gray config cas.
      *
      * @param configInfo config info.
-     * @param grayName gray name
-     * @param grayRule gray rule
+     * @param grayName   gray name
+     * @param grayRule   gray rule
      * @param srcIp      remote ip.
      * @param srcUser    user.
      * @return config operation result.
@@ -100,12 +115,12 @@ public interface ConfigInfoGrayPersistService {
     /**
      * Delete configuration; database atomic operation, minimum SQL action, no business encapsulation.
      *
-     * @param dataId  dataId
-     * @param group   group
-     * @param tenant  tenant
+     * @param dataId   dataId
+     * @param group    group
+     * @param tenant   tenant
      * @param grayName gray name
-     * @param srcIp   remote ip
-     * @param srcUser user
+     * @param srcIp    remote ip
+     * @param srcUser  user
      */
     void removeConfigInfoGray(final String dataId, final String group, final String tenant, final String grayName,
             final String srcIp, final String srcUser);
@@ -115,8 +130,8 @@ public interface ConfigInfoGrayPersistService {
      * Update gray configuration information.
      *
      * @param configInfo config info
-     * @param grayName gray name
-     * @param grayRule gray rule
+     * @param grayName   gray name
+     * @param grayRule   gray rule
      * @param srcIp      remote ip
      * @param srcUser    user
      * @return config operation result.
@@ -128,8 +143,8 @@ public interface ConfigInfoGrayPersistService {
      * Update gray configuration information.
      *
      * @param configInfo config info
-     * @param grayName gray name
-     * @param grayRule gray rule
+     * @param grayName   gray name
+     * @param grayRule   gray rule
      * @param srcIp      remote ip
      * @param srcUser    user
      * @return success or not.
@@ -141,13 +156,25 @@ public interface ConfigInfoGrayPersistService {
     /**
      * Query gray configuration information based on dataId and group.
      *
-     * @param dataId data id
-     * @param group  group
-     * @param tenant tenant
+     * @param dataId   data id
+     * @param group    group
+     * @param tenant   tenant
      * @param grayName gray name
      * @return {@link com.alibaba.nacos.config.server.model.ConfigInfo4Gray}
      */
     ConfigInfoGrayWrapper findConfigInfo4Gray(final String dataId, final String group, final String tenant,
+            final String grayName);
+    
+    /**
+     * Query all gray configuration information based on dataId and group.
+     *
+     * @param dataId   dataId
+     * @param group    group
+     * @param tenant   tenant
+     * @param grayName gray name
+     * @return all gray config info
+     */
+    ConfigAllInfo4Gray findConfigAllInfo4Gray(final String dataId, final String group, final String tenant,
             final String grayName);
     
     /**
@@ -169,9 +196,9 @@ public interface ConfigInfoGrayPersistService {
     /**
      * Query all gray config info for dump task.
      *
-     * @param startTime   startTime
+     * @param startTime startTime
      * @param lastMaxId lastMaxId
-     * @param pageSize pageSize
+     * @param pageSize  pageSize
      * @return {@link Page} with {@link ConfigInfoWrapper} generation
      */
     List<ConfigInfoGrayWrapper> findChangeConfig(final Timestamp startTime, long lastMaxId, final int pageSize);
