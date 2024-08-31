@@ -187,7 +187,7 @@ class EmbeddedNamespacePersistServiceTest {
     @Test
     void isExistTableTest() {
         String tableName = "tableName";
-        String sql = String.format("SELECT 1 FROM %s FETCH FIRST ROW ONLY", tableName);
+        String sql = String.format("SELECT COUNT(*) FROM %s ", tableName);
         
         when(databaseOperate.queryOne(sql, Integer.class)).thenReturn(1);
         boolean existTableA = embeddedNamespacePersistService.isExistTable(tableName);
