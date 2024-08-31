@@ -21,8 +21,9 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * {@link RequestFilters} unit test.
@@ -30,10 +31,10 @@ import org.junit.Test;
  * @author chenglu
  * @date 2021-07-02 19:20
  */
-public class RequestFiltersTest {
+class RequestFiltersTest {
     
     @Test
-    public void testRegisterFilter() {
+    void testRegisterFilter() {
         RequestFilters requestFilters = new RequestFilters();
         requestFilters.registerFilter(new AbstractRequestFilter() {
             @Override
@@ -41,7 +42,7 @@ public class RequestFiltersTest {
                 return null;
             }
         });
-    
-        Assert.assertEquals(1, requestFilters.filters.size());
+        
+        assertEquals(1, requestFilters.filters.size());
     }
 }

@@ -109,7 +109,7 @@ class RolesManagement extends React.Component {
         <RegionGroup left={locale.roleManagement} />
 
         <Form inline>
-          <Form.Item label="用户名">
+          <Form.Item label={locale.username}>
             <Input
               value={this.state.username}
               htmlType="text"
@@ -120,7 +120,7 @@ class RolesManagement extends React.Component {
               }}
             />
           </Form.Item>
-          <Form.Item label="角色名">
+          <Form.Item label={locale.role}>
             <Input
               value={this.state.role}
               htmlType="text"

@@ -18,38 +18,38 @@ package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.security.util.FieldUtils;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.File;
 import java.lang.reflect.Field;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-public class PropertyUtilTest {
+@ExtendWith(SpringExtension.class)
+class PropertyUtilTest {
     
     MockedStatic<EnvUtil> envUtilMockedStatic;
     
     private String mockMem = "tmpmocklimitfile.txt";
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
-        envUtilMockedStatic.when(() -> EnvUtil.getProperty(eq("memory_limit_file_path"),
-                eq("/sys/fs/cgroup/memory/memory.limit_in_bytes"))).thenReturn(mockMem);
+        envUtilMockedStatic.when(() -> EnvUtil.getProperty(eq("memory_limit_file_path"), eq("/sys/fs/cgroup/memory/memory.limit_in_bytes")))
+                .thenReturn(mockMem);
         
     }
     
-    @After
-    public void after() {
+    @AfterEach
+    void after() {
         envUtilMockedStatic.close();
         File file = new File(mockMem);
         if (file.exists()) {
@@ -58,18 +58,18 @@ public class PropertyUtilTest {
     }
     
     @Test
-    public void testGetPropertyV1() {
+    void testGetPropertyV1() {
         
         envUtilMockedStatic.when(() -> EnvUtil.getProperty(eq("test"))).thenReturn("test");
-        Assert.assertEquals("test", new PropertyUtil().getProperty("test"));
+        assertEquals("test", new PropertyUtil().getProperty("test"));
         
     }
     
     @Test
-    public void testGetPropertyV2() {
+    void testGetPropertyV2() {
         
         envUtilMockedStatic.when(() -> EnvUtil.getProperty(eq("test"), eq("default"))).thenReturn("default");
-        Assert.assertEquals("default", new PropertyUtil().getProperty("test", "default"));
+        assertEquals("default", new PropertyUtil().getProperty("test", "default"));
     }
     
     private void clearAllDumpFiled() throws Exception {
@@ -79,7 +79,7 @@ public class PropertyUtilTest {
     }
     
     @Test
-    public void testGetAllDumpPageSize() throws Exception {
+    void testGetAllDumpPageSize() throws Exception {
         
         clearAllDumpFiled();
         File file = new File(mockMem);
@@ -89,14 +89,14 @@ public class PropertyUtilTest {
         FileUtils.writeStringToFile(file, String.valueOf(gb2));
         int allDumpPageSizeNormal = PropertyUtil.getAllDumpPageSize();
         //expect  2*2*50
-        Assert.assertEquals(200, allDumpPageSizeNormal);
+        assertEquals(200, allDumpPageSizeNormal);
         
         clearAllDumpFiled();
         // 12G pageSize over 1000
         long gb12 = 12L * 1024L * 1024L * 1024L;
         FileUtils.writeStringToFile(file, String.valueOf(gb12));
         int allDumpPageSizeOverMax = PropertyUtil.getAllDumpPageSize();
-        Assert.assertEquals(1000, allDumpPageSizeOverMax);
+        assertEquals(1000, allDumpPageSizeOverMax);
         
         clearAllDumpFiled();
         //100MB
@@ -104,11 +104,11 @@ public class PropertyUtilTest {
         FileUtils.writeStringToFile(file, String.valueOf(mb100));
         
         int allDumpPageSizeUnderMin = PropertyUtil.getAllDumpPageSize();
-        Assert.assertEquals(50, allDumpPageSizeUnderMin);
+        assertEquals(50, allDumpPageSizeUnderMin);
     }
     
     @Test
-    public void testGetAllDumpPageSizeWithJvmArgs() throws Exception {
+    void testGetAllDumpPageSizeWithJvmArgs() throws Exception {
         
         File file = new File(mockMem);
         if (file.exists()) {
@@ -118,11 +118,11 @@ public class PropertyUtilTest {
         long maxMem = Runtime.getRuntime().maxMemory();
         long pageSize = maxMem / 1024 / 1024 / 512 * 50;
         if (pageSize < 50) {
-            Assert.assertEquals(50, allDumpPageSizeUnderMin);
+            assertEquals(50, allDumpPageSizeUnderMin);
         } else if (pageSize > 1000) {
-            Assert.assertEquals(1000, allDumpPageSizeUnderMin);
+            assertEquals(1000, allDumpPageSizeUnderMin);
         } else {
-            Assert.assertEquals(pageSize, allDumpPageSizeUnderMin);
+            assertEquals(pageSize, allDumpPageSizeUnderMin);
         }
     }
     

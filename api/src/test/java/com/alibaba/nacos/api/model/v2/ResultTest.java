@@ -16,15 +16,15 @@
 
 package com.alibaba.nacos.api.model.v2;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class ResultTest {
+class ResultTest {
     
     @Test
-    public void testSuccessEmptyResult() {
+    void testSuccessEmptyResult() {
         Result<String> result = Result.success();
         assertNull(result.getData());
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
@@ -32,7 +32,7 @@ public class ResultTest {
     }
     
     @Test
-    public void testSuccessWithData() {
+    void testSuccessWithData() {
         Result<String> result = Result.success("test");
         assertEquals("test", result.getData());
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
@@ -40,7 +40,7 @@ public class ResultTest {
     }
     
     @Test
-    public void testFailureMessageResult() {
+    void testFailureMessageResult() {
         Result<String> result = Result.failure("test");
         assertNull(result.getData());
         assertEquals(ErrorCode.SERVER_ERROR.getCode(), result.getCode());
@@ -48,7 +48,7 @@ public class ResultTest {
     }
     
     @Test
-    public void testFailureWithoutData() {
+    void testFailureWithoutData() {
         Result<String> result = Result.failure(ErrorCode.DATA_ACCESS_ERROR);
         assertNull(result.getData());
         assertEquals(ErrorCode.DATA_ACCESS_ERROR.getCode(), result.getCode());
@@ -56,7 +56,7 @@ public class ResultTest {
     }
     
     @Test
-    public void testFailureWithData() {
+    void testFailureWithData() {
         Result<String> result = Result.failure(ErrorCode.DATA_ACCESS_ERROR, "error");
         assertEquals("error", result.getData());
         assertEquals(ErrorCode.DATA_ACCESS_ERROR.getCode(), result.getCode());
@@ -64,7 +64,7 @@ public class ResultTest {
     }
     
     @Test
-    public void testToString() {
+    void testToString() {
         Result<String> result = Result.success("test");
         assertEquals("Result{errorCode=0, message='success', data=test}", result.toString());
     }

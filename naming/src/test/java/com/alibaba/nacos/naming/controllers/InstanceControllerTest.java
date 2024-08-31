@@ -34,13 +34,15 @@ import com.alibaba.nacos.naming.core.InstancePatchObject;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
@@ -48,16 +50,18 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class InstanceControllerTest extends BaseTest {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class InstanceControllerTest extends BaseTest {
     
     @Mock
     private InstanceOperatorClientImpl instanceServiceV2;
@@ -72,7 +76,7 @@ public class InstanceControllerTest extends BaseTest {
     
     private volatile Class<? extends Event> eventReceivedClass;
     
-    @Before
+    @BeforeEach
     public void before() {
         super.before();
         when(switchDomain.isDefaultInstanceEphemeral()).thenReturn(true);
@@ -97,8 +101,8 @@ public class InstanceControllerTest extends BaseTest {
         mockRequestParameter("port", "3306");
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         NotifyCenter.deregisterSubscriber(subscriber);
         NotifyCenter.deregisterPublisher(RegisterInstanceTraceEvent.class);
         NotifyCenter.deregisterPublisher(DeregisterInstanceTraceEvent.class);
@@ -111,34 +115,34 @@ public class InstanceControllerTest extends BaseTest {
     }
     
     @Test
-    public void testRegister() throws Exception {
+    void testRegister() throws Exception {
         assertEquals("ok", instanceController.register(request));
-        verify(instanceServiceV2).registerInstance(eq(Constants.DEFAULT_NAMESPACE_ID),
-                eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME), any(Instance.class));
+        verify(instanceServiceV2).registerInstance(eq(Constants.DEFAULT_NAMESPACE_ID), eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME),
+                any(Instance.class));
         TimeUnit.SECONDS.sleep(1);
-        assertEquals(eventReceivedClass, RegisterInstanceTraceEvent.class);
+        assertEquals(RegisterInstanceTraceEvent.class, eventReceivedClass);
     }
     
     @Test
-    public void testDeregister() throws Exception {
+    void testDeregister() throws Exception {
         assertEquals("ok", instanceController.deregister(request));
-        verify(instanceServiceV2).removeInstance(eq(Constants.DEFAULT_NAMESPACE_ID),
-                eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME), any(Instance.class));
+        verify(instanceServiceV2).removeInstance(eq(Constants.DEFAULT_NAMESPACE_ID), eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME),
+                any(Instance.class));
         TimeUnit.SECONDS.sleep(1);
-        assertEquals(eventReceivedClass, DeregisterInstanceTraceEvent.class);
+        assertEquals(DeregisterInstanceTraceEvent.class, eventReceivedClass);
     }
     
     @Test
-    public void testUpdate() throws Exception {
+    void testUpdate() throws Exception {
         assertEquals("ok", instanceController.update(request));
-        verify(instanceServiceV2).updateInstance(eq(Constants.DEFAULT_NAMESPACE_ID),
-                eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME), any(Instance.class));
+        verify(instanceServiceV2).updateInstance(eq(Constants.DEFAULT_NAMESPACE_ID), eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME),
+                any(Instance.class));
         TimeUnit.SECONDS.sleep(1);
-        assertEquals(eventReceivedClass, UpdateInstanceTraceEvent.class);
+        assertEquals(UpdateInstanceTraceEvent.class, eventReceivedClass);
     }
     
     @Test
-    public void testBatchUpdateInstanceMetadata() throws Exception {
+    void testBatchUpdateInstanceMetadata() throws Exception {
         Instance instance = new Instance();
         instance.setIp("1.1.1.1");
         instance.setPort(3306);
@@ -153,7 +157,7 @@ public class InstanceControllerTest extends BaseTest {
     }
     
     @Test
-    public void testBatchDeleteInstanceMetadata() throws Exception {
+    void testBatchDeleteInstanceMetadata() throws Exception {
         mockRequestParameter("metadata", "{}");
         when(instanceServiceV2.batchDeleteMetadata(eq(Constants.DEFAULT_NAMESPACE_ID), any(), anyMap())).thenReturn(
                 Collections.singletonList("1.1.1.1:3306:unknown:DEFAULT:ephemeral"));
@@ -162,32 +166,31 @@ public class InstanceControllerTest extends BaseTest {
     }
     
     @Test
-    public void testPatch() throws Exception {
+    void testPatch() throws Exception {
         mockRequestParameter("metadata", "{}");
         mockRequestParameter("app", "test");
         mockRequestParameter("weight", "10");
         mockRequestParameter("healthy", "false");
         mockRequestParameter("enabled", "false");
         assertEquals("ok", instanceController.patch(request));
-        verify(instanceServiceV2).patchInstance(eq(Constants.DEFAULT_NAMESPACE_ID),
-                eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME), any(InstancePatchObject.class));
+        verify(instanceServiceV2).patchInstance(eq(Constants.DEFAULT_NAMESPACE_ID), eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME),
+                any(InstancePatchObject.class));
     }
     
     @Test
-    public void testList() throws Exception {
+    void testList() throws Exception {
         Instance instance = new Instance();
         instance.setIp("1.1.1.1");
         instance.setPort(3306);
         ServiceInfo expected = new ServiceInfo();
         expected.setHosts(Collections.singletonList(instance));
-        when(instanceServiceV2.listInstance(eq(Constants.DEFAULT_NAMESPACE_ID),
-                eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME), any(Subscriber.class), eq(StringUtils.EMPTY),
-                eq(false))).thenReturn(expected);
+        when(instanceServiceV2.listInstance(eq(Constants.DEFAULT_NAMESPACE_ID), eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME),
+                any(Subscriber.class), eq(StringUtils.EMPTY), eq(false))).thenReturn(expected);
         assertEquals(expected, instanceController.list(request));
     }
     
     @Test
-    public void testDetail() throws Exception {
+    void testDetail() throws Exception {
         Instance instance = new Instance();
         instance.setIp("1.1.1.1");
         instance.setPort(3306);
@@ -207,13 +210,11 @@ public class InstanceControllerTest extends BaseTest {
     }
     
     @Test
-    public void testBeat() throws Exception {
-        when(instanceServiceV2.handleBeat(eq(Constants.DEFAULT_NAMESPACE_ID),
-                eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME), eq("1.1.1.1"), eq(3306),
-                eq(UtilsAndCommons.DEFAULT_CLUSTER_NAME), any(), any())).thenReturn(200);
-        when(instanceServiceV2.getHeartBeatInterval(eq(Constants.DEFAULT_NAMESPACE_ID),
-                eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME), eq("1.1.1.1"), eq(3306),
-                eq(UtilsAndCommons.DEFAULT_CLUSTER_NAME))).thenReturn(10000L);
+    void testBeat() throws Exception {
+        when(instanceServiceV2.handleBeat(eq(Constants.DEFAULT_NAMESPACE_ID), eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME), eq("1.1.1.1"),
+                eq(3306), eq(UtilsAndCommons.DEFAULT_CLUSTER_NAME), any(), any())).thenReturn(200);
+        when(instanceServiceV2.getHeartBeatInterval(eq(Constants.DEFAULT_NAMESPACE_ID), eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME),
+                eq("1.1.1.1"), eq(3306), eq(UtilsAndCommons.DEFAULT_CLUSTER_NAME))).thenReturn(10000L);
         ObjectNode actual = instanceController.beat(request);
         assertEquals(200, actual.get("code").intValue());
         assertEquals(10000L, actual.get("clientBeatInterval").longValue());

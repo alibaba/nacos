@@ -18,25 +18,25 @@ package com.alibaba.nacos.client.naming.backups;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.client.naming.cache.InstancesDiffer;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
+import com.alibaba.nacos.client.naming.event.InstancesDiff;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.Meter;
-import io.micrometer.core.instrument.Tag;
-import io.micrometer.core.instrument.ImmutableTag;
 import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.ImmutableTag;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Tag;
 
-import java.util.Map;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -59,15 +59,16 @@ public class FailoverReactor implements Closeable {
     
     private final ScheduledExecutorService executorService;
     
+    private final InstancesDiffer instancesDiffer;
+    
     private FailoverDataSource failoverDataSource;
     
     private String notifierEventScope;
     
-    private Map<String, Meter> meterMap = new HashMap<>(10);
-    
     public FailoverReactor(ServiceInfoHolder serviceInfoHolder, String notifierEventScope) {
         this.serviceInfoHolder = serviceInfoHolder;
         this.notifierEventScope = notifierEventScope;
+        this.instancesDiffer = new InstancesDiffer();
         Collection<FailoverDataSource> dataSources = NacosServiceLoader.load(FailoverDataSource.class);
         for (FailoverDataSource dataSource : dataSources) {
             failoverDataSource = dataSource;
@@ -106,11 +107,12 @@ public class FailoverReactor implements Closeable {
                     for (Map.Entry<String, FailoverData> entry : failoverData.entrySet()) {
                         ServiceInfo newService = (ServiceInfo) entry.getValue().getData();
                         ServiceInfo oldService = serviceMap.get(entry.getKey());
-                        if (serviceInfoHolder.isChangedServiceInfo(oldService, newService)) {
+                        InstancesDiff diff = instancesDiffer.doDiff(oldService, newService);
+                        if (diff.hasDifferent()) {
                             NAMING_LOGGER.info("[NA] failoverdata isChangedServiceInfo. newService:{}",
                                     JacksonUtils.toJson(newService));
                             NotifyCenter.publishEvent(new InstancesChangeEvent(notifierEventScope, newService.getName(),
-                                    newService.getGroupName(), newService.getClusters(), newService.getHosts()));
+                                    newService.getGroupName(), newService.getClusters(), newService.getHosts(), diff));
                         }
                         failoverMap.put(entry.getKey(), (ServiceInfo) entry.getValue().getData());
                     }
@@ -130,12 +132,12 @@ public class FailoverReactor implements Closeable {
                         ServiceInfo oldService = entry.getValue();
                         ServiceInfo newService = serviceInfoMap.get(entry.getKey());
                         if (newService != null) {
-                            boolean changed = serviceInfoHolder.isChangedServiceInfo(oldService, newService);
-                            if (changed) {
+                            InstancesDiff diff = instancesDiffer.doDiff(oldService, newService);
+                            if (diff.hasDifferent()) {
                                 NotifyCenter.publishEvent(
                                         new InstancesChangeEvent(notifierEventScope, newService.getName(),
                                                 newService.getGroupName(), newService.getClusters(),
-                                                newService.getHosts()));
+                                                newService.getHosts(), diff));
                             }
                         }
                     }

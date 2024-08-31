@@ -23,12 +23,13 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthPluginManager;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -37,21 +38,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class SecurityProxyTest {
+@ExtendWith(MockitoExtension.class)
+// todo  remove strictness lenient
+@MockitoSettings(strictness = Strictness.LENIENT)
+class SecurityProxyTest {
     
     private SecurityProxy securityProxy;
     
     @Mock
     private NacosRestTemplate nacosRestTemplate;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         //given
         HttpRestResult<Object> result = new HttpRestResult<>();
         result.setData("{\"accessToken\":\"ttttttttttttttttt\",\"tokenTtl\":1000}");
@@ -64,7 +69,7 @@ public class SecurityProxyTest {
     }
     
     @Test
-    public void testLoginClientAuthService() throws Exception {
+    void testLoginClientAuthService() throws Exception {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
         properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
@@ -73,7 +78,7 @@ public class SecurityProxyTest {
     }
     
     @Test
-    public void testGetIdentityContext() {
+    void testGetIdentityContext() {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
         properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
@@ -81,11 +86,11 @@ public class SecurityProxyTest {
         //when
         Map<String, String> keyMap = securityProxy.getIdentityContext(null);
         //then
-        Assert.assertEquals("ttttttttttttttttt", keyMap.get(NacosAuthLoginConstant.ACCESSTOKEN));
+        assertEquals("ttttttttttttttttt", keyMap.get(NacosAuthLoginConstant.ACCESSTOKEN));
     }
     
     @Test
-    public void testLoginWithoutAnyPlugin() throws NoSuchFieldException, IllegalAccessException {
+    void testLoginWithoutAnyPlugin() throws NoSuchFieldException, IllegalAccessException {
         Field clientAuthPluginManagerField = SecurityProxy.class.getDeclaredField("clientAuthPluginManager");
         clientAuthPluginManagerField.setAccessible(true);
         ClientAuthPluginManager clientAuthPluginManager = mock(ClientAuthPluginManager.class);
@@ -93,6 +98,6 @@ public class SecurityProxyTest {
         when(clientAuthPluginManager.getAuthServiceSpiImplSet()).thenReturn(Collections.emptySet());
         securityProxy.login(new Properties());
         Map<String, String> header = securityProxy.getIdentityContext(new RequestResource());
-        Assert.assertTrue(header.isEmpty());
+        assertTrue(header.isEmpty());
     }
 }

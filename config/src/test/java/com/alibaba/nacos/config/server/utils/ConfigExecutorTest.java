@@ -16,16 +16,18 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ConfigExecutorTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class ConfigExecutorTest {
     
     @Test
-    public void testScheduleConfigTask() throws InterruptedException {
+    void testScheduleConfigTask() throws InterruptedException {
         
         AtomicInteger atomicInteger = new AtomicInteger();
         
@@ -35,12 +37,12 @@ public class ConfigExecutorTest {
         
         TimeUnit.MILLISECONDS.sleep(10);
         
-        Assert.assertTrue(atomicInteger.get() >= 1);
+        assertTrue(atomicInteger.get() >= 1);
         
     }
     
     @Test
-    public void testScheduleCorrectUsageTask() throws InterruptedException {
+    void testScheduleCorrectUsageTask() throws InterruptedException {
         
         AtomicInteger atomicInteger = new AtomicInteger();
         
@@ -50,12 +52,12 @@ public class ConfigExecutorTest {
         
         TimeUnit.MILLISECONDS.sleep(10);
         
-        Assert.assertTrue(atomicInteger.get() >= 1);
+        assertTrue(atomicInteger.get() >= 1);
         
     }
     
     @Test
-    public void testExecuteAsyncNotify() throws InterruptedException {
+    void testExecuteAsyncNotify() throws InterruptedException {
         
         AtomicInteger atomicInteger = new AtomicInteger();
         
@@ -65,12 +67,12 @@ public class ConfigExecutorTest {
         
         TimeUnit.MILLISECONDS.sleep(20);
         
-        Assert.assertEquals(1, atomicInteger.get());
+        assertEquals(1, atomicInteger.get());
         
     }
     
     @Test
-    public void testScheduleAsyncNotify() throws InterruptedException {
+    void testScheduleAsyncNotify() throws InterruptedException {
         
         AtomicInteger atomicInteger = new AtomicInteger();
         
@@ -78,15 +80,15 @@ public class ConfigExecutorTest {
         
         ConfigExecutor.scheduleAsyncNotify(runnable, 20, TimeUnit.MILLISECONDS);
         
-        Assert.assertEquals(0, atomicInteger.get());
+        assertEquals(0, atomicInteger.get());
         
         TimeUnit.MILLISECONDS.sleep(40);
         
-        Assert.assertEquals(1, atomicInteger.get());
+        assertEquals(1, atomicInteger.get());
     }
     
     @Test
-    public void testScheduleLongPollingV1() throws InterruptedException {
+    void testScheduleLongPollingV1() throws InterruptedException {
         
         AtomicInteger atomicInteger = new AtomicInteger();
         
@@ -96,11 +98,11 @@ public class ConfigExecutorTest {
         
         TimeUnit.MILLISECONDS.sleep(10);
         
-        Assert.assertTrue(atomicInteger.get() >= 1);
+        assertTrue(atomicInteger.get() >= 1);
     }
     
     @Test
-    public void testScheduleLongPollingV2() throws InterruptedException {
+    void testScheduleLongPollingV2() throws InterruptedException {
         
         AtomicInteger atomicInteger = new AtomicInteger();
         
@@ -108,15 +110,15 @@ public class ConfigExecutorTest {
         
         ConfigExecutor.scheduleLongPolling(runnable, 20, TimeUnit.MILLISECONDS);
         
-        Assert.assertEquals(0, atomicInteger.get());
+        assertEquals(0, atomicInteger.get());
         
         TimeUnit.MILLISECONDS.sleep(40);
         
-        Assert.assertEquals(1, atomicInteger.get());
+        assertEquals(1, atomicInteger.get());
     }
     
     @Test
-    public void testExecuteLongPolling() throws InterruptedException {
+    void testExecuteLongPolling() throws InterruptedException {
         
         AtomicInteger atomicInteger = new AtomicInteger();
         
@@ -126,6 +128,6 @@ public class ConfigExecutorTest {
         
         TimeUnit.MILLISECONDS.sleep(20);
         
-        Assert.assertEquals(1, atomicInteger.get());
+        assertEquals(1, atomicInteger.get());
     }
 }

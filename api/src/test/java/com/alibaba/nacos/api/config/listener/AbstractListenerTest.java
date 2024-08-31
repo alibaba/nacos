@@ -16,14 +16,14 @@
 
 package com.alibaba.nacos.api.config.listener;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class AbstractListenerTest {
+class AbstractListenerTest {
     
     @Test
-    public void testGetExecutor() {
+    void testGetExecutor() {
         // Default listener executor is null.
         assertNull(new AbstractListener() {
             @Override

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service.dump.disk;
 
 import com.alibaba.nacos.api.utils.StringUtils;
+import com.alibaba.nacos.common.pathencoder.PathEncoderManager;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -65,6 +66,10 @@ public class ConfigRawDiskService implements ConfigDiskService {
      * Returns the path of the server cache file.
      */
     private static File targetFile(String dataId, String group, String tenant) {
+        // fix https://github.com/alibaba/nacos/issues/10067
+        dataId = PathEncoderManager.getInstance().encode(dataId);
+        group = PathEncoderManager.getInstance().encode(group);
+        tenant = PathEncoderManager.getInstance().encode(tenant);
         File file = null;
         if (StringUtils.isBlank(tenant)) {
             file = new File(EnvUtil.getNacosHome(), BASE_DIR);
@@ -81,6 +86,10 @@ public class ConfigRawDiskService implements ConfigDiskService {
      * Returns the path of cache file in server.
      */
     private static File targetBetaFile(String dataId, String group, String tenant) {
+        // fix https://github.com/alibaba/nacos/issues/10067
+        dataId = PathEncoderManager.getInstance().encode(dataId);
+        group = PathEncoderManager.getInstance().encode(group);
+        tenant = PathEncoderManager.getInstance().encode(tenant);
         File file = null;
         if (StringUtils.isBlank(tenant)) {
             file = new File(EnvUtil.getNacosHome(), BETA_DIR);
@@ -97,6 +106,10 @@ public class ConfigRawDiskService implements ConfigDiskService {
      * Returns the path of the tag cache file in server.
      */
     private static File targetTagFile(String dataId, String group, String tenant, String tag) {
+        // fix https://github.com/alibaba/nacos/issues/10067
+        dataId = PathEncoderManager.getInstance().encode(dataId);
+        group = PathEncoderManager.getInstance().encode(group);
+        tenant = PathEncoderManager.getInstance().encode(tenant);
         File file = null;
         if (StringUtils.isBlank(tenant)) {
             file = new File(EnvUtil.getNacosHome(), TAG_DIR);

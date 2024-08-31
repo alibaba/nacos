@@ -17,36 +17,34 @@
 package com.alibaba.nacos.client.naming.remote.gprc.redo.data;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-public class BatchInstanceRedoDataTest {
+class BatchInstanceRedoDataTest {
     
     @Test
     @SuppressWarnings("all")
-    public void testEquals() {
+    void testEquals() {
         BatchInstanceRedoData redoData1 = new BatchInstanceRedoData("a", "b");
         redoData1.setInstances(Collections.singletonList(new Instance()));
         BatchInstanceRedoData redoData2 = new BatchInstanceRedoData("a", "b");
         redoData2.setInstances(Collections.singletonList(new Instance()));
-        assertTrue(redoData1.equals(redoData1));
-        assertTrue(redoData1.equals(redoData2));
+        assertEquals(redoData1, redoData1);
+        assertEquals(redoData1, redoData2);
         redoData2.getInstances().get(0).setIp("1.1.1.1");
-        assertFalse(redoData1.equals(null));
-        assertFalse(redoData1.equals(redoData2));
-        assertFalse(redoData1.equals(redoData2));
+        assertNotEquals(null, redoData1);
+        assertNotEquals(redoData1, redoData2);
+        assertNotEquals(redoData1, redoData2);
         BatchInstanceRedoData redoData3 = new BatchInstanceRedoData("c", "b");
-        assertFalse(redoData1.equals(redoData3));
+        assertNotEquals(redoData1, redoData3);
     }
     
     @Test
-    public void testHashCode() {
+    void testHashCode() {
         BatchInstanceRedoData redoData1 = new BatchInstanceRedoData("a", "b");
         redoData1.setInstances(Collections.singletonList(new Instance()));
         BatchInstanceRedoData redoData2 = new BatchInstanceRedoData("a", "b");

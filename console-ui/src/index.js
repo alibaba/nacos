@@ -29,9 +29,10 @@ import { ConfigProvider, Loading } from '@alifd/next';
 import './lib';
 
 import Layout from './layouts/MainLayout';
-import { LANGUAGE_KEY, REDUX_DEVTOOLS, THEME } from './constants';
+import { LANGUAGE_KEY, NAME_SHOW, REDUX_DEVTOOLS, THEME } from './constants';
 
 import Login from './pages/Login';
+import Register from './pages/Register';
 import Namespace from './pages/NameSpace';
 import Newconfig from './pages/ConfigurationManagement/NewConfig';
 import Configsync from './pages/ConfigurationManagement/ConfigSync';
@@ -56,6 +57,7 @@ import reducers from './reducers';
 import { changeLanguage } from './reducers/locale';
 import { getState } from './reducers/base';
 import changeTheme from './theme';
+import changeNameShow from './components/NameSpaceList/show';
 
 import './index.scss';
 import PropTypes from 'prop-types';
@@ -99,7 +101,12 @@ const MENU = [
   { path: '/settingCenter', component: SettingCenter },
 ];
 
-@connect(state => ({ ...state.locale, ...state.base }), { changeLanguage, getState, changeTheme })
+@connect(state => ({ ...state.locale, ...state.base }), {
+  changeLanguage,
+  getState,
+  changeTheme,
+  changeNameShow,
+})
 class App extends React.Component {
   static propTypes = {
     locale: PropTypes.object,
@@ -108,6 +115,7 @@ class App extends React.Component {
     loginPageEnabled: PropTypes.string,
     consoleUiEnable: PropTypes.string,
     changeTheme: PropTypes.func,
+    changeNameShow: PropTypes.func,
   };
 
   constructor(props) {
@@ -123,8 +131,10 @@ class App extends React.Component {
     this.props.getState();
     const language = localStorage.getItem(LANGUAGE_KEY);
     const theme = localStorage.getItem(THEME);
+    const nameShow = localStorage.getItem(NAME_SHOW);
     this.props.changeLanguage(language);
     this.props.changeTheme(theme);
+    this.props.changeNameShow(nameShow);
   }
 
   get router() {
@@ -136,6 +146,7 @@ class App extends React.Component {
           {loginPageEnabled && loginPageEnabled === 'false' ? null : (
             <Route path="/login" component={Login} />
           )}
+          <Route path="/register" component={Register} />
           {/* <Route path="/login" component={Login} /> */}
           <Layout>
             {consoleUiEnable &&

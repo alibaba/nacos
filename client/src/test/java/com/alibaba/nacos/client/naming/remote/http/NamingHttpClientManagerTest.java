@@ -22,8 +22,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.client.request.HttpClientRequest;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.io.IOException;
@@ -31,31 +30,32 @@ import java.lang.reflect.Field;
 import java.util.Map;
 
 import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-public class NamingHttpClientManagerTest {
+class NamingHttpClientManagerTest {
     
     @Test
-    public void testGetInstance() {
-        Assert.assertNotNull(NamingHttpClientManager.getInstance());
+    void testGetInstance() {
+        assertNotNull(NamingHttpClientManager.getInstance());
     }
     
     @Test
-    public void testGetPrefix() {
+    void testGetPrefix() {
         assertEquals(HTTP_PREFIX, NamingHttpClientManager.getInstance().getPrefix());
     }
     
     @Test
-    public void testGetNacosRestTemplate() {
-        Assert.assertNotNull(NamingHttpClientManager.getInstance().getNacosRestTemplate());
+    void testGetNacosRestTemplate() {
+        assertNotNull(NamingHttpClientManager.getInstance().getNacosRestTemplate());
     }
     
     @Test
-    public void testShutdown() throws NoSuchFieldException, IllegalAccessException, NacosException, IOException {
+    void testShutdown() throws NoSuchFieldException, IllegalAccessException, NacosException, IOException {
         //given
         NamingHttpClientManager instance = NamingHttpClientManager.getInstance();
         
@@ -70,7 +70,7 @@ public class NamingHttpClientManagerTest {
     }
     
     @Test
-    public void testShutdownWithException() throws Exception {
+    void testShutdownWithException() throws Exception {
         String key = "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager$NamingHttpClientFactory";
         try {
             HttpClientBeanHolder.shutdownNacosSyncRest(key);

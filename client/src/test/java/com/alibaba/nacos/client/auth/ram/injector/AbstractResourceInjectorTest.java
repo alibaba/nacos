@@ -16,23 +16,24 @@
 
 package com.alibaba.nacos.client.auth.ram.injector;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-public class AbstractResourceInjectorTest {
+class AbstractResourceInjectorTest {
     
     AbstractResourceInjector injector;
     
-    @Before
-    public void setUp() {
-        injector = new AbstractResourceInjector() { };
+    @BeforeEach
+    void setUp() {
+        injector = new AbstractResourceInjector() {
+        };
     }
     
     /**
      * TODO, fill test case after AbstractResourceInjector include default logic.
      */
     @Test
-    public void testDoInject() {
+    void testDoInject() {
         injector.doInject(null, null, null);
     }
 }

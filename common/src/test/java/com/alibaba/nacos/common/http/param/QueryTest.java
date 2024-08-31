@@ -17,21 +17,21 @@
 package com.alibaba.nacos.common.http.param;
 
 import com.alibaba.nacos.api.naming.CommonParams;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class QueryTest {
+class QueryTest {
     
     @Test
-    public void testInitParams() {
+    void testInitParams() {
         Map<String, String> parameters = new LinkedHashMap<String, String>();
         parameters.put(CommonParams.NAMESPACE_ID, "namespace");
         parameters.put(CommonParams.SERVICE_NAME, "service");
@@ -48,17 +48,18 @@ public class QueryTest {
     }
     
     @Test
-    public void testAddParams() throws Exception {
+    void testAddParams() throws Exception {
         Query query = Query.newInstance().addParam("key-1", "value-1").addParam("key-2", "value-2");
         String s1 = query.toQueryUrl();
-        String s2 = "key-1=" + URLEncoder.encode("value-1", StandardCharsets.UTF_8.name()) + "&key-2=" + URLEncoder
-                .encode("value-2", StandardCharsets.UTF_8.name());
+        String s2 =
+                "key-1=" + URLEncoder.encode("value-1", StandardCharsets.UTF_8.name()) + "&key-2=" + URLEncoder.encode("value-2",
+                        StandardCharsets.UTF_8.name());
         assertEquals(s2, s1);
         assertEquals("value-1", query.getValue("key-1"));
     }
     
     @Test
-    public void testClear() {
+    void testClear() {
         Query query = Query.newInstance().addParam("key-1", "value-1").addParam("key-2", "value-2");
         assertFalse(query.isEmpty());
         assertEquals("value-1", query.getValue("key-1"));

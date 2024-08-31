@@ -25,57 +25,60 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.naming.remote.TestConnection;
 import com.alibaba.nacos.common.remote.ConnectionType;
-import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.Connection;
+import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientConfig;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class AbilityTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+class AbilityTest {
     
     private RpcClient rpcClient;
     
     private Connection connection;
     
     @Test
-    public void testReceive() throws Exception {
+    void testReceive() throws Exception {
         rpcClient = new RpcClient(new RpcClientConfig() {
             @Override
             public String name() {
                 return "test";
             }
-
+            
             @Override
             public int retryTimes() {
                 return 1;
             }
-
+            
             @Override
             public long timeOutMills() {
                 return 3000L;
             }
-
+            
             @Override
             public long connectionKeepAlive() {
                 return 5000L;
             }
-
+            
             @Override
             public int healthCheckRetryTimes() {
                 return 1;
             }
-
+            
             @Override
             public long healthCheckTimeOut() {
                 return 3000L;
             }
-
+            
             @Override
             public Map<String, String> labels() {
                 return new HashMap<>();
@@ -86,12 +89,12 @@ public class AbilityTest {
             public ConnectionType getConnectionType() {
                 return null;
             }
-    
+            
             @Override
             public int rpcPortOffset() {
                 return 0;
             }
-    
+            
             @Override
             public Connection connectToServer(ServerInfo serverInfo) throws Exception {
                 connection = new Connection(new RpcClient.ServerInfo()) {
@@ -101,33 +104,34 @@ public class AbilityTest {
                         super.abilityTable.put(AbilityKey.SERVER_TEST_1.getName(), true);
                         super.abilityTable.put(AbilityKey.SERVER_TEST_2.getName(), false);
                     }
-    
+                    
                     @Override
                     public Response request(Request request, long timeoutMills) throws NacosException {
                         return null;
                     }
-    
+                    
                     @Override
                     public RequestFuture requestFuture(Request request) throws NacosException {
                         return null;
                     }
-    
+                    
                     @Override
                     public void asyncRequest(Request request, RequestCallBack requestCallBack) throws NacosException {
-        
+                    
                     }
-    
+                    
                     @Override
                     public void close() {
-        
+                    
                     }
-                };;
+                };
+                ;
                 return connection;
             }
         };
         rpcClient.start();
         // test not ready
-        Assert.assertNull(rpcClient.getConnectionAbility(AbilityKey.SERVER_TEST_1));
+        assertNull(rpcClient.getConnectionAbility(AbilityKey.SERVER_TEST_1));
         
         // test ready
         rpcClient.serverListFactory(new ServerListFactory() {
@@ -136,12 +140,12 @@ public class AbilityTest {
             public String genNextServer() {
                 return "localhost:8848";
             }
-    
+            
             @Override
             public String getCurrentServer() {
                 return "localhost:8848";
             }
-    
+            
             @Override
             public List<String> getServerList() {
                 return null;
@@ -149,24 +153,26 @@ public class AbilityTest {
         });
         rpcClient.start();
         // if connect successfully
-        Assert.assertEquals(rpcClient.getConnectionAbility(AbilityKey.SERVER_TEST_1), AbilityStatus.SUPPORTED);
-        Assert.assertEquals(rpcClient.getConnectionAbility(AbilityKey.SERVER_TEST_2), AbilityStatus.NOT_SUPPORTED);
+        assertEquals(AbilityStatus.SUPPORTED, rpcClient.getConnectionAbility(AbilityKey.SERVER_TEST_1));
+        assertEquals(AbilityStatus.NOT_SUPPORTED, rpcClient.getConnectionAbility(AbilityKey.SERVER_TEST_2));
     }
     
-    @After
-    public void testServerRequestAbility() {
+    @AfterEach
+    void testServerRequestAbility() {
         //test support
         ServerRequestHandler serverRequestHandler = (request, connection) -> {
-            Assert.assertEquals(connection.getConnectionAbility(AbilityKey.SERVER_TEST_1), AbilityStatus.SUPPORTED);
-            Assert.assertEquals(connection.getConnectionAbility(AbilityKey.SERVER_TEST_2), AbilityStatus.NOT_SUPPORTED);
-            return new Response() { };
+            assertEquals(AbilityStatus.SUPPORTED, connection.getConnectionAbility(AbilityKey.SERVER_TEST_1));
+            assertEquals(AbilityStatus.NOT_SUPPORTED, connection.getConnectionAbility(AbilityKey.SERVER_TEST_2));
+            return new Response() {
+            };
         };
         serverRequestHandler.requestReply(null, connection);
-    
+        
         // test no ability table
         serverRequestHandler = (request, connection) -> {
-            Assert.assertEquals(connection.getConnectionAbility(AbilityKey.SERVER_TEST_1), AbilityStatus.UNKNOWN);
-            return new Response() { };
+            assertEquals(AbilityStatus.UNKNOWN, connection.getConnectionAbility(AbilityKey.SERVER_TEST_1));
+            return new Response() {
+            };
         };
         serverRequestHandler.requestReply(null, new TestConnection(new RpcClient.ServerInfo()));
     }

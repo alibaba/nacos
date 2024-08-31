@@ -21,13 +21,11 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -36,7 +34,7 @@ import java.lang.reflect.Field;
 
 import static org.mockito.Mockito.doReturn;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public abstract class BaseTest {
     
     protected static final String TEST_CLUSTER_NAME = "test-cluster";
@@ -55,9 +53,6 @@ public abstract class BaseTest {
             + "\"port\":9870,\"weight\":2.0,\"healthy\":true,\"enabled\":true,\"ephemeral\":true"
             + ",\"clusterName\":\"clusterName\",\"serviceName\":\"serviceName\",\"metadata\":{}}]";
     
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-    
     @Spy
     protected ConfigurableApplicationContext context;
     
@@ -73,14 +68,13 @@ public abstract class BaseTest {
     @Spy
     protected MockEnvironment environment;
     
-    @Before
+    @BeforeEach
     public void before() {
         EnvUtil.setEnvironment(environment);
         ApplicationUtils.injectContext(context);
     }
     
-    protected MockHttpServletRequestBuilder convert(Object simpleOb, MockHttpServletRequestBuilder builder)
-            throws IllegalAccessException {
+    protected MockHttpServletRequestBuilder convert(Object simpleOb, MockHttpServletRequestBuilder builder) throws IllegalAccessException {
         Field[] declaredFields = simpleOb.getClass().getDeclaredFields();
         for (Field declaredField : declaredFields) {
             declaredField.setAccessible(true);

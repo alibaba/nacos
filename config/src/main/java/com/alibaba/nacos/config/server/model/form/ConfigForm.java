@@ -60,11 +60,14 @@ public class ConfigForm implements Serializable {
     
     private String schema;
     
+    private String encryptedDataKey;
+    
     public ConfigForm() {
     }
     
     public ConfigForm(String dataId, String group, String namespaceId, String content, String tag, String appName,
-            String srcUser, String configTags, String desc, String use, String effect, String type, String schema) {
+            String srcUser, String configTags, String desc, String use, String effect, String type, String schema,
+            String encryptedDataKey) {
         this.dataId = dataId;
         this.group = group;
         this.namespaceId = namespaceId;
@@ -78,6 +81,7 @@ public class ConfigForm implements Serializable {
         this.effect = effect;
         this.type = type;
         this.schema = schema;
+        this.encryptedDataKey = encryptedDataKey;
     }
     
     public String getDataId() {
@@ -184,6 +188,14 @@ public class ConfigForm implements Serializable {
         this.schema = schema;
     }
     
+    public String getEncryptedDataKey() {
+        return encryptedDataKey;
+    }
+    
+    public void setEncryptedDataKey(String encryptedDataKey) {
+        this.encryptedDataKey = encryptedDataKey;
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -196,15 +208,16 @@ public class ConfigForm implements Serializable {
         return dataId.equals(configForm.dataId) && group.equals(configForm.group) && Objects.equals(namespaceId, configForm.namespaceId)
                 && content.equals(configForm.content) && Objects.equals(tag, configForm.tag) && Objects
                 .equals(appName, configForm.appName) && Objects.equals(srcUser, configForm.srcUser) && Objects
-                .equals(configTags, configForm.configTags) && Objects.equals(desc, configForm.desc) && Objects
-                .equals(use, configForm.use) && Objects.equals(effect, configForm.effect) && Objects
-                .equals(type, configForm.type) && Objects.equals(schema, configForm.schema);
+                .equals(configTags, configForm.configTags) && Objects.equals(desc, configForm.desc) && Objects.equals(
+                use, configForm.use) && Objects.equals(effect, configForm.effect) && Objects.equals(type,
+                configForm.type) && Objects.equals(schema, configForm.schema) && Objects.equals(encryptedDataKey,
+                configForm.encryptedDataKey);
     }
     
     @Override
     public int hashCode() {
         return Objects.hash(dataId, group, namespaceId, content, tag, appName, srcUser, configTags, desc, use, effect, type,
-                schema);
+                schema, encryptedDataKey);
     }
     
     @Override
@@ -213,7 +226,7 @@ public class ConfigForm implements Serializable {
                 + ", content='" + content + '\'' + ", tag='" + tag + '\'' + ", appName='" + appName + '\''
                 + ", srcUser='" + srcUser + '\'' + ", configTags='" + configTags + '\'' + ", desc='" + desc + '\''
                 + ", use='" + use + '\'' + ", effect='" + effect + '\'' + ", type='" + type + '\'' + ", schema='"
-                + schema + '\'' + '}';
+                + schema + '\'' + ", encryptedDataKey='" + encryptedDataKey + '\'' + '}';
     }
     
     /**

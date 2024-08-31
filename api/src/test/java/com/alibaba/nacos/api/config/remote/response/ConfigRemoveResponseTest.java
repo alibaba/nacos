@@ -18,17 +18,17 @@ package com.alibaba.nacos.api.config.remote.response;
 
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ConfigRemoveResponseTest extends BasedConfigResponseTest {
+class ConfigRemoveResponseTest extends BasedConfigResponseTest {
     
     ConfigRemoveResponse configRemoveResponse;
     
-    @Before
-    public void before() {
+    @BeforeEach
+    void before() {
         configRemoveResponse = ConfigRemoveResponse.buildSuccessResponse();
         requestId = injectResponseUuId(configRemoveResponse);
     }

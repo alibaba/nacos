@@ -25,10 +25,9 @@ import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.conn.ConnectTimeoutException;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -43,53 +42,60 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
-@RunWith(MockitoJUnitRunner.class)
-public class HttpUtilsTest {
+@ExtendWith(MockitoExtension.class)
+class HttpUtilsTest {
     
     String exceptUrl = "http://127.0.0.1:8080/v1/api/test";
     
     @Test
-    public void testBuildHttpUrl1() {
+    void testBuildHttpUrl1() {
         String targetUrl = HttpUtils.buildUrl(false, "127.0.0.1:8080", "/v1/api/test");
-        Assert.assertEquals(exceptUrl, targetUrl);
+        assertEquals(exceptUrl, targetUrl);
         targetUrl = HttpUtils.buildUrl(false, "127.0.0.1:8080", "v1/api/test");
-        Assert.assertEquals(exceptUrl, targetUrl);
+        assertEquals(exceptUrl, targetUrl);
         targetUrl = HttpUtils.buildUrl(false, "127.0.0.1:8080", "/v1", "/api/test");
-        Assert.assertEquals(exceptUrl, targetUrl);
+        assertEquals(exceptUrl, targetUrl);
         targetUrl = HttpUtils.buildUrl(false, "127.0.0.1:8080", "/v1", "/api", "/test");
-        Assert.assertEquals(exceptUrl, targetUrl);
+        assertEquals(exceptUrl, targetUrl);
         targetUrl = HttpUtils.buildUrl(false, "127.0.0.1:8080", "/v1", "/api/", "/test");
-        Assert.assertEquals(exceptUrl, targetUrl);
+        assertEquals(exceptUrl, targetUrl);
         targetUrl = HttpUtils.buildUrl(false, "127.0.0.1:8080", "/v1", "", "/api/", "/test");
-        Assert.assertEquals(exceptUrl, targetUrl);
+        assertEquals(exceptUrl, targetUrl);
         targetUrl = HttpUtils.buildUrl(false, "127.0.0.1:8080", "/v1", "", null, "/api/", "/test");
-        Assert.assertEquals(exceptUrl, targetUrl);
+        assertEquals(exceptUrl, targetUrl);
         targetUrl = HttpUtils.buildUrl(false, "127.0.0.1:8080", "/v1", "/api/", "test");
-        Assert.assertEquals(exceptUrl, targetUrl);
+        assertEquals(exceptUrl, targetUrl);
         targetUrl = HttpUtils.buildUrl(true, "127.0.0.1:8080", "/v1", "", null, "/api/", "/test");
-        Assert.assertEquals("https://127.0.0.1:8080/v1/api/test", targetUrl);
-    }
-    
-    @Test(expected = IllegalArgumentException.class)
-    public void testBuildHttpUrl2() {
-        String targetUrl = HttpUtils.buildUrl(false, "127.0.0.1:8080", "//v1/api/test");
-        Assert.assertNotEquals(exceptUrl, targetUrl);
-    }
-    
-    @Test(expected = IllegalArgumentException.class)
-    public void testBuildHttpUrl3() {
-        String targetUrl = HttpUtils.buildUrl(false, "127.0.0.1:8080", "/v1", "/api//", "test");
-        Assert.assertNotEquals(exceptUrl, targetUrl);
+        assertEquals("https://127.0.0.1:8080/v1/api/test", targetUrl);
     }
     
     @Test
-    public void testInitRequestHeader() {
+    void testBuildHttpUrl2() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            String targetUrl = HttpUtils.buildUrl(false, "127.0.0.1:8080", "//v1/api/test");
+            assertNotEquals(exceptUrl, targetUrl);
+        });
+    }
+    
+    @Test
+    void testBuildHttpUrl3() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            String targetUrl = HttpUtils.buildUrl(false, "127.0.0.1:8080", "/v1", "/api//", "test");
+            assertNotEquals(exceptUrl, targetUrl);
+        });
+    }
+    
+    @Test
+    void testInitRequestHeader() {
         BaseHttpMethod.HttpGetWithEntity httpRequest = new BaseHttpMethod.HttpGetWithEntity("");
         Header header = Header.newInstance();
         header.addParam("k", "v");
@@ -97,13 +103,13 @@ public class HttpUtilsTest {
         HttpUtils.initRequestHeader(httpRequest, header);
         
         org.apache.http.Header[] headers = httpRequest.getHeaders("k");
-        Assert.assertEquals(1, headers.length);
-        Assert.assertEquals("k", headers[0].getName());
-        Assert.assertEquals("v", headers[0].getValue());
+        assertEquals(1, headers.length);
+        assertEquals("k", headers[0].getName());
+        assertEquals("v", headers[0].getValue());
     }
     
     @Test
-    public void testInitRequestEntity1() throws Exception {
+    void testInitRequestEntity1() throws Exception {
         BaseHttpMethod.HttpGetWithEntity httpRequest = new BaseHttpMethod.HttpGetWithEntity("");
         Header header = Header.newInstance();
         header.addParam(HttpHeaderConsts.CONTENT_TYPE, "text/html");
@@ -114,13 +120,13 @@ public class HttpUtilsTest {
         InputStream contentStream = entity.getContent();
         byte[] bytes = new byte[contentStream.available()];
         contentStream.read(bytes);
-        Assert.assertArrayEquals(new byte[] {0, 1, 0, 1}, bytes);
-        Assert.assertEquals(HttpHeaderConsts.CONTENT_TYPE, entity.getContentType().getName());
-        Assert.assertEquals("text/html; charset=UTF-8", entity.getContentType().getValue());
+        assertArrayEquals(new byte[] {0, 1, 0, 1}, bytes);
+        assertEquals(HttpHeaderConsts.CONTENT_TYPE, entity.getContentType().getName());
+        assertEquals("text/html; charset=UTF-8", entity.getContentType().getValue());
     }
     
     @Test
-    public void testInitRequestEntity2() throws Exception {
+    void testInitRequestEntity2() throws Exception {
         BaseHttpMethod.HttpGetWithEntity httpRequest = new BaseHttpMethod.HttpGetWithEntity("");
         Header header = Header.newInstance();
         header.addParam(HttpHeaderConsts.CONTENT_TYPE, "text/html");
@@ -131,13 +137,13 @@ public class HttpUtilsTest {
         InputStream contentStream = entity.getContent();
         byte[] bytes = new byte[contentStream.available()];
         contentStream.read(bytes);
-        Assert.assertEquals("{\"k\":\"v\"}", new String(bytes, Constants.ENCODE));
-        Assert.assertEquals(HttpHeaderConsts.CONTENT_TYPE, entity.getContentType().getName());
-        Assert.assertEquals("text/html; charset=UTF-8", entity.getContentType().getValue());
+        assertEquals("{\"k\":\"v\"}", new String(bytes, Constants.ENCODE));
+        assertEquals(HttpHeaderConsts.CONTENT_TYPE, entity.getContentType().getName());
+        assertEquals("text/html; charset=UTF-8", entity.getContentType().getValue());
     }
     
     @Test
-    public void testInitRequestEntity3() throws Exception {
+    void testInitRequestEntity3() throws Exception {
         BaseHttpMethod.HttpGetWithEntity httpRequest = new BaseHttpMethod.HttpGetWithEntity("");
         Header header = Header.newInstance();
         header.addParam(HttpHeaderConsts.CONTENT_TYPE, "text/html");
@@ -148,35 +154,35 @@ public class HttpUtilsTest {
         InputStream contentStream = entity.getContent();
         byte[] bytes = new byte[contentStream.available()];
         contentStream.read(bytes);
-        Assert.assertEquals("common text", new String(bytes, Constants.ENCODE));
-        Assert.assertEquals(HttpHeaderConsts.CONTENT_TYPE, entity.getContentType().getName());
-        Assert.assertEquals("text/html; charset=UTF-8", entity.getContentType().getValue());
+        assertEquals("common text", new String(bytes, Constants.ENCODE));
+        assertEquals(HttpHeaderConsts.CONTENT_TYPE, entity.getContentType().getName());
+        assertEquals("text/html; charset=UTF-8", entity.getContentType().getValue());
     }
     
     @Test
-    public void testInitRequestEntity4() throws Exception {
+    void testInitRequestEntity4() throws Exception {
         BaseHttpMethod.HttpGetWithEntity httpRequest = new BaseHttpMethod.HttpGetWithEntity("");
         
         HttpUtils.initRequestEntity(httpRequest, null, null);
         
         // nothing change
-        Assert.assertEquals(new BaseHttpMethod.HttpGetWithEntity("").getEntity(), httpRequest.getEntity());
-        Assert.assertArrayEquals(new BaseHttpMethod.HttpGetWithEntity("").getAllHeaders(), httpRequest.getAllHeaders());
+        assertEquals(new BaseHttpMethod.HttpGetWithEntity("").getEntity(), httpRequest.getEntity());
+        assertArrayEquals(new BaseHttpMethod.HttpGetWithEntity("").getAllHeaders(), httpRequest.getAllHeaders());
     }
     
     @Test
-    public void testInitRequestEntity5() throws Exception {
+    void testInitRequestEntity5() throws Exception {
         HttpDelete httpDelete = new HttpDelete("");
         
         HttpUtils.initRequestEntity(httpDelete, null, null);
         
         // nothing change
-        Assert.assertEquals(new HttpDelete("").getMethod(), httpDelete.getMethod());
-        Assert.assertArrayEquals(new HttpDelete("").getAllHeaders(), httpDelete.getAllHeaders());
+        assertEquals(new HttpDelete("").getMethod(), httpDelete.getMethod());
+        assertArrayEquals(new HttpDelete("").getAllHeaders(), httpDelete.getAllHeaders());
     }
     
     @Test
-    public void testInitRequestFromEntity1() throws Exception {
+    void testInitRequestFromEntity1() throws Exception {
         BaseHttpMethod.HttpGetWithEntity httpRequest = new BaseHttpMethod.HttpGetWithEntity("");
         
         HttpUtils.initRequestFromEntity(httpRequest, Collections.singletonMap("k", "v"), "UTF-8");
@@ -185,72 +191,72 @@ public class HttpUtilsTest {
         InputStream contentStream = entity.getContent();
         byte[] bytes = new byte[contentStream.available()];
         contentStream.read(bytes);
-        Assert.assertEquals("k=v", new String(bytes, StandardCharsets.UTF_8));
+        assertEquals("k=v", new String(bytes, StandardCharsets.UTF_8));
     }
     
     @Test
-    public void testInitRequestFromEntity2() throws Exception {
+    void testInitRequestFromEntity2() throws Exception {
         BaseHttpMethod.HttpGetWithEntity httpRequest = new BaseHttpMethod.HttpGetWithEntity("");
         
         HttpUtils.initRequestFromEntity(httpRequest, null, "UTF-8");
         
         // nothing change
-        Assert.assertEquals(new BaseHttpMethod.HttpGetWithEntity("").getEntity(), httpRequest.getEntity());
+        assertEquals(new BaseHttpMethod.HttpGetWithEntity("").getEntity(), httpRequest.getEntity());
     }
     
     @Test
-    public void testInitRequestFromEntity3() throws Exception {
+    void testInitRequestFromEntity3() throws Exception {
         BaseHttpMethod.HttpGetWithEntity httpRequest = new BaseHttpMethod.HttpGetWithEntity("");
         
         HttpUtils.initRequestFromEntity(httpRequest, Collections.emptyMap(), "UTF-8");
         
         // nothing change
-        Assert.assertEquals(new BaseHttpMethod.HttpGetWithEntity("").getEntity(), httpRequest.getEntity());
+        assertEquals(new BaseHttpMethod.HttpGetWithEntity("").getEntity(), httpRequest.getEntity());
     }
     
     @Test
-    public void testInitRequestFromEntity4() throws Exception {
+    void testInitRequestFromEntity4() throws Exception {
         BaseHttpMethod.HttpGetWithEntity httpRequest = new BaseHttpMethod.HttpGetWithEntity("");
         
         HttpUtils.initRequestFromEntity(mock(HttpRequestBase.class), Collections.emptyMap(), "UTF-8");
         
         // nothing change
-        Assert.assertEquals(new BaseHttpMethod.HttpGetWithEntity("").getEntity(), httpRequest.getEntity());
+        assertEquals(new BaseHttpMethod.HttpGetWithEntity("").getEntity(), httpRequest.getEntity());
     }
     
     @Test
-    public void testInitRequestFromEntity5() throws Exception {
+    void testInitRequestFromEntity5() throws Exception {
         HttpDelete httpDelete = new HttpDelete("");
         
         HttpUtils.initRequestFromEntity(httpDelete, Collections.singletonMap("k", "v"), "UTF-8");
         
         // nothing change
-        Assert.assertEquals(new HttpDelete("").getMethod(), httpDelete.getMethod());
-        Assert.assertArrayEquals(new HttpDelete("").getAllHeaders(), httpDelete.getAllHeaders());
+        assertEquals(new HttpDelete("").getMethod(), httpDelete.getMethod());
+        assertArrayEquals(new HttpDelete("").getAllHeaders(), httpDelete.getAllHeaders());
     }
     
     @Test
-    public void testTranslateParameterMap() throws Exception {
+    void testTranslateParameterMap() throws Exception {
         Map<String, String[]> map = Collections.singletonMap("K", new String[] {"V1", "V2"});
         Map<String, String> resultMap = HttpUtils.translateParameterMap(map);
-        Assert.assertEquals(Collections.singletonMap("K", "V1"), resultMap);
+        assertEquals(Collections.singletonMap("K", "V1"), resultMap);
     }
     
     @Test
-    public void testDecode() throws UnsupportedEncodingException {
+    void testDecode() throws UnsupportedEncodingException {
         // % - %25, { - %7B, } - %7D
-        Assert.assertEquals("{k,v}", HttpUtils.decode("%7Bk,v%7D", "UTF-8"));
-        Assert.assertEquals("{k,v}", HttpUtils.decode("%257Bk,v%257D", "UTF-8"));
+        assertEquals("{k,v}", HttpUtils.decode("%7Bk,v%7D", "UTF-8"));
+        assertEquals("{k,v}", HttpUtils.decode("%257Bk,v%257D", "UTF-8"));
     }
     
     @Test
-    public void testEncodingParamsMapWithNullOrEmpty() throws UnsupportedEncodingException {
+    void testEncodingParamsMapWithNullOrEmpty() throws UnsupportedEncodingException {
         assertNull(HttpUtils.encodingParams((Map<String, String>) null, "UTF-8"));
         assertNull(HttpUtils.encodingParams(Collections.emptyMap(), "UTF-8"));
     }
     
     @Test
-    public void testEncodingParamsMap() throws UnsupportedEncodingException {
+    void testEncodingParamsMap() throws UnsupportedEncodingException {
         Map<String, String> params = new LinkedHashMap<>();
         params.put("a", "");
         params.put("b", "x");
@@ -260,12 +266,12 @@ public class HttpUtilsTest {
     }
     
     @Test
-    public void testEncodingParamsListWithNull() throws UnsupportedEncodingException {
+    void testEncodingParamsListWithNull() throws UnsupportedEncodingException {
         assertNull(HttpUtils.encodingParams((List<String>) null, "UTF-8"));
     }
     
     @Test
-    public void testEncodingParamsList() throws UnsupportedEncodingException {
+    void testEncodingParamsList() throws UnsupportedEncodingException {
         List<String> params = new LinkedList<>();
         params.add("a");
         params.add("");
@@ -279,7 +285,7 @@ public class HttpUtilsTest {
     }
     
     @Test
-    public void testBuildUriForEmptyQuery() throws URISyntaxException {
+    void testBuildUriForEmptyQuery() throws URISyntaxException {
         URI actual = HttpUtils.buildUri("www.aliyun.com", null);
         assertEquals("www.aliyun.com", actual.toString());
         actual = HttpUtils.buildUri("www.aliyun.com", new Query());
@@ -287,7 +293,7 @@ public class HttpUtilsTest {
     }
     
     @Test
-    public void testBuildUri() throws URISyntaxException {
+    void testBuildUri() throws URISyntaxException {
         Query query = new Query();
         query.addParam("a", "");
         query.addParam("b", "x");
@@ -298,7 +304,7 @@ public class HttpUtilsTest {
     }
     
     @Test
-    public void testIsTimeoutException() {
+    void testIsTimeoutException() {
         assertFalse(HttpUtils.isTimeoutException(new NacosRuntimeException(0)));
         assertTrue(HttpUtils.isTimeoutException(new TimeoutException()));
         assertTrue(HttpUtils.isTimeoutException(new SocketTimeoutException()));

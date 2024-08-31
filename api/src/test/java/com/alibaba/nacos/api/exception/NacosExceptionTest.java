@@ -17,14 +17,14 @@
 package com.alibaba.nacos.api.exception;
 
 import com.alibaba.nacos.api.common.Constants;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class NacosExceptionTest {
+class NacosExceptionTest {
     
     @Test
-    public void testEmptyConstructor() {
+    void testEmptyConstructor() {
         NacosException exception = new NacosException();
         assertEquals(0, exception.getErrCode());
         assertEquals(Constants.NULL, exception.getErrMsg());
@@ -35,7 +35,7 @@ public class NacosExceptionTest {
     }
     
     @Test
-    public void testConstructorWithErrMsg() {
+    void testConstructorWithErrMsg() {
         NacosException exception = new NacosException(NacosException.SERVER_ERROR, "test");
         assertEquals(NacosException.SERVER_ERROR, exception.getErrCode());
         assertEquals("test", exception.getErrMsg());
@@ -43,7 +43,7 @@ public class NacosExceptionTest {
     }
     
     @Test
-    public void testConstructorWithCause() {
+    void testConstructorWithCause() {
         NacosException exception = new NacosException(NacosException.SERVER_ERROR, new RuntimeException("cause test"));
         assertEquals(NacosException.SERVER_ERROR, exception.getErrCode());
         assertEquals("cause test", exception.getErrMsg());
@@ -51,7 +51,7 @@ public class NacosExceptionTest {
     }
     
     @Test
-    public void testConstructorWithMultiCauses() {
+    void testConstructorWithMultiCauses() {
         NacosException exception = new NacosException(NacosException.SERVER_ERROR,
                 new RuntimeException("cause test", new RuntimeException("multi")));
         assertEquals(NacosException.SERVER_ERROR, exception.getErrCode());
@@ -60,7 +60,7 @@ public class NacosExceptionTest {
     }
     
     @Test
-    public void testConstructorWithFull() {
+    void testConstructorWithFull() {
         NacosException exception = new NacosException(NacosException.SERVER_ERROR, "test",
                 new RuntimeException("cause test"));
         assertEquals(NacosException.SERVER_ERROR, exception.getErrCode());

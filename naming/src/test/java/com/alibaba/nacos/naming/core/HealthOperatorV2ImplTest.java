@@ -27,17 +27,18 @@ import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.service.ClientOperationServiceProxy;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * {@link HealthOperatorV2Impl} unit tests.
@@ -45,8 +46,8 @@ import java.util.Optional;
  * @author chenglu
  * @date 2021-08-03 22:31
  */
-@RunWith(MockitoJUnitRunner.class)
-public class HealthOperatorV2ImplTest {
+@ExtendWith(MockitoExtension.class)
+class HealthOperatorV2ImplTest {
     
     @InjectMocks
     private HealthOperatorV2Impl healthOperatorV2;
@@ -61,7 +62,7 @@ public class HealthOperatorV2ImplTest {
     private ClientOperationServiceProxy clientOperationService;
     
     @Test
-    public void testUpdateHealthStatusForPersistentInstance() {
+    void testUpdateHealthStatusForPersistentInstance() {
         try {
             ServiceMetadata metadata = new ServiceMetadata();
             Map<String, ClusterMetadata> clusterMap = new HashMap<>(2);
@@ -84,7 +85,7 @@ public class HealthOperatorV2ImplTest {
             healthOperatorV2.updateHealthStatusForPersistentInstance("A", "B", "C", "1.1.1.1", 8080, true);
         } catch (NacosException e) {
             e.printStackTrace();
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
     }
     

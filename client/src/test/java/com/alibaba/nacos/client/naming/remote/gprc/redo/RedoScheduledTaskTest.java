@@ -22,11 +22,13 @@ import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.BatchInstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.InstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.SubscriberRedoData;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -37,8 +39,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class RedoScheduledTaskTest {
+@ExtendWith(MockitoExtension.class)
+// todo  remove strictness lenient
+@MockitoSettings(strictness = Strictness.LENIENT)
+class RedoScheduledTaskTest {
     
     private static final String SERVICE = "service";
     
@@ -56,15 +60,15 @@ public class RedoScheduledTaskTest {
     
     private RedoScheduledTask redoTask;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         redoTask = new RedoScheduledTask(clientProxy, redoService);
         when(clientProxy.isEnable()).thenReturn(true);
         when(redoService.isConnected()).thenReturn(true);
     }
     
     @Test
-    public void testRunRedoRegisterInstance() throws NacosException {
+    void testRunRedoRegisterInstance() throws NacosException {
         Set<InstanceRedoData> mockData = generateMockInstanceData(false, false, true);
         when(redoService.findInstanceRedoData()).thenReturn(mockData);
         redoTask.run();
@@ -72,9 +76,9 @@ public class RedoScheduledTaskTest {
     }
     
     @Test
-    public void testRunRedoRegisterBatchInstance() throws NacosException {
-        BatchInstanceRedoData redoData = BatchInstanceRedoData
-                .build(SERVICE, GROUP, Collections.singletonList(INSTANCE));
+    void testRunRedoRegisterBatchInstance() throws NacosException {
+        BatchInstanceRedoData redoData = BatchInstanceRedoData.build(SERVICE, GROUP,
+                Collections.singletonList(INSTANCE));
         redoData.setRegistered(false);
         redoData.setUnregistering(false);
         redoData.setExpectedRegistered(true);
@@ -86,7 +90,7 @@ public class RedoScheduledTaskTest {
     }
     
     @Test
-    public void testRunRedoDeregisterInstance() throws NacosException {
+    void testRunRedoDeregisterInstance() throws NacosException {
         Set<InstanceRedoData> mockData = generateMockInstanceData(true, true, false);
         when(redoService.findInstanceRedoData()).thenReturn(mockData);
         redoTask.run();
@@ -94,7 +98,7 @@ public class RedoScheduledTaskTest {
     }
     
     @Test
-    public void testRunRedoRemoveInstanceRedoData() throws NacosException {
+    void testRunRedoRemoveInstanceRedoData() throws NacosException {
         Set<InstanceRedoData> mockData = generateMockInstanceData(false, true, false);
         when(redoService.findInstanceRedoData()).thenReturn(mockData);
         redoTask.run();
@@ -102,7 +106,7 @@ public class RedoScheduledTaskTest {
     }
     
     @Test
-    public void testRunRedoRegisterInstanceWithClientDisabled() throws NacosException {
+    void testRunRedoRegisterInstanceWithClientDisabled() throws NacosException {
         when(clientProxy.isEnable()).thenReturn(false);
         Set<InstanceRedoData> mockData = generateMockInstanceData(false, false, true);
         when(redoService.findInstanceRedoData()).thenReturn(mockData);
@@ -111,7 +115,7 @@ public class RedoScheduledTaskTest {
     }
     
     @Test
-    public void testRunRedoDeregisterInstanceWithClientDisabled() throws NacosException {
+    void testRunRedoDeregisterInstanceWithClientDisabled() throws NacosException {
         when(clientProxy.isEnable()).thenReturn(false);
         Set<InstanceRedoData> mockData = generateMockInstanceData(true, true, false);
         when(redoService.findInstanceRedoData()).thenReturn(mockData);
@@ -120,7 +124,7 @@ public class RedoScheduledTaskTest {
     }
     
     @Test
-    public void testRunRedoRegisterInstanceWithNacosException() throws NacosException {
+    void testRunRedoRegisterInstanceWithNacosException() throws NacosException {
         Set<InstanceRedoData> mockData = generateMockInstanceData(false, false, true);
         when(redoService.findInstanceRedoData()).thenReturn(mockData);
         doThrow(new NacosException()).when(clientProxy).doRegisterService(SERVICE, GROUP, INSTANCE);
@@ -129,7 +133,7 @@ public class RedoScheduledTaskTest {
     }
     
     @Test
-    public void testRunRedoRegisterInstanceWithOtherException() throws NacosException {
+    void testRunRedoRegisterInstanceWithOtherException() throws NacosException {
         Set<InstanceRedoData> mockData = generateMockInstanceData(false, false, true);
         when(redoService.findInstanceRedoData()).thenReturn(mockData);
         doThrow(new RuntimeException("test")).when(clientProxy).doRegisterService(SERVICE, GROUP, INSTANCE);
@@ -149,7 +153,7 @@ public class RedoScheduledTaskTest {
     }
     
     @Test
-    public void testRunRedoRegisterSubscriber() throws NacosException {
+    void testRunRedoRegisterSubscriber() throws NacosException {
         Set<SubscriberRedoData> mockData = generateMockSubscriberData(false, false, true);
         when(redoService.findSubscriberRedoData()).thenReturn(mockData);
         redoTask.run();
@@ -157,7 +161,7 @@ public class RedoScheduledTaskTest {
     }
     
     @Test
-    public void testRunRedoDeregisterSubscriber() throws NacosException {
+    void testRunRedoDeregisterSubscriber() throws NacosException {
         Set<SubscriberRedoData> mockData = generateMockSubscriberData(true, true, false);
         when(redoService.findSubscriberRedoData()).thenReturn(mockData);
         redoTask.run();
@@ -165,7 +169,7 @@ public class RedoScheduledTaskTest {
     }
     
     @Test
-    public void testRunRedoRemoveSubscriberRedoData() throws NacosException {
+    void testRunRedoRemoveSubscriberRedoData() throws NacosException {
         Set<SubscriberRedoData> mockData = generateMockSubscriberData(false, true, false);
         when(redoService.findSubscriberRedoData()).thenReturn(mockData);
         redoTask.run();
@@ -173,7 +177,7 @@ public class RedoScheduledTaskTest {
     }
     
     @Test
-    public void testRunRedoRegisterSubscriberWithClientDisabled() throws NacosException {
+    void testRunRedoRegisterSubscriberWithClientDisabled() throws NacosException {
         when(clientProxy.isEnable()).thenReturn(false);
         Set<SubscriberRedoData> mockData = generateMockSubscriberData(false, false, true);
         when(redoService.findSubscriberRedoData()).thenReturn(mockData);
@@ -182,7 +186,7 @@ public class RedoScheduledTaskTest {
     }
     
     @Test
-    public void testRunRedoDeRegisterSubscriberWithClientDisabled() throws NacosException {
+    void testRunRedoDeRegisterSubscriberWithClientDisabled() throws NacosException {
         when(clientProxy.isEnable()).thenReturn(false);
         Set<SubscriberRedoData> mockData = generateMockSubscriberData(true, true, false);
         when(redoService.findSubscriberRedoData()).thenReturn(mockData);
@@ -191,7 +195,7 @@ public class RedoScheduledTaskTest {
     }
     
     @Test
-    public void testRunRedoRegisterSubscriberWithNacosException() throws NacosException {
+    void testRunRedoRegisterSubscriberWithNacosException() throws NacosException {
         Set<SubscriberRedoData> mockData = generateMockSubscriberData(false, false, true);
         when(redoService.findSubscriberRedoData()).thenReturn(mockData);
         doThrow(new NacosException()).when(clientProxy).doSubscribe(SERVICE, GROUP, CLUSTER);
@@ -211,7 +215,7 @@ public class RedoScheduledTaskTest {
     }
     
     @Test
-    public void testRunRedoWithDisconnection() {
+    void testRunRedoWithDisconnection() {
         when(redoService.isConnected()).thenReturn(false);
         redoTask.run();
         verify(redoService, never()).findInstanceRedoData();

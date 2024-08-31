@@ -18,13 +18,13 @@ package com.alibaba.nacos.auth.config;
 
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class AuthConfigsTest {
+class AuthConfigsTest {
     
     private static final boolean TEST_AUTH_ENABLED = true;
     
@@ -40,8 +40,8 @@ public class AuthConfigsTest {
     
     private MockEnvironment environment;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         environment.setProperty("nacos.core.auth.plugin.test.key", "test");
@@ -49,7 +49,7 @@ public class AuthConfigsTest {
     }
     
     @Test
-    public void testUpgradeFromEvent() {
+    void testUpgradeFromEvent() {
         environment.setProperty("nacos.core.auth.enabled", String.valueOf(TEST_AUTH_ENABLED));
         environment.setProperty("nacos.core.auth.caching.enabled", String.valueOf(TEST_CACHING_ENABLED));
         environment.setProperty("nacos.core.auth.server.identity.key", TEST_SERVER_IDENTITY_KEY);

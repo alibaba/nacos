@@ -16,23 +16,25 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
 
-public class SimpleCacheTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+class SimpleCacheTest {
     
     @Test
-    public void testPutAndGet() throws InterruptedException {
+    void testPutAndGet() throws InterruptedException {
         SimpleCache<String> simpleCache = new SimpleCache<>();
         simpleCache.put("key", "value", 1000);
-        Assert.assertEquals("value", simpleCache.get("key"));
+        assertEquals("value", simpleCache.get("key"));
         
         //time expire
         TimeUnit.MILLISECONDS.sleep(1100);
         Object value = simpleCache.get("key");
-        Assert.assertNull(value);
+        assertNull(value);
     }
     
 }

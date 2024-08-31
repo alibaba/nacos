@@ -19,19 +19,19 @@ package com.alibaba.nacos.naming.pojo.instance;
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static com.alibaba.nacos.api.common.Constants.SNOWFLAKE_INSTANCE_ID_GENERATOR;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(MockitoJUnitRunner.class)
-public class SnowFlakeInstanceIdGeneratorTest {
+@ExtendWith(MockitoExtension.class)
+class SnowFlakeInstanceIdGeneratorTest {
     
     static {
         MockEnvironment environment = new MockEnvironment();
@@ -41,7 +41,7 @@ public class SnowFlakeInstanceIdGeneratorTest {
     }
     
     @Test
-    public void testGenerateInstanceId() {
+    void testGenerateInstanceId() {
         final SnowFlakeInstanceIdGenerator instanceIdGenerator = new SnowFlakeInstanceIdGenerator();
         Instance instance = new Instance();
         Map<String, String> metaData = new HashMap<>(1);

@@ -83,11 +83,26 @@ public class ConfigSubService {
         return new ClusterListenerJob(params, completionService, memberManager).runJobs();
     }
     
+    private List<SampleResult> runConfigListenerByIpCollectionJob(Map<String, String> params,
+            CompletionService<SampleResult> completionService) {
+        return new ClusterListenerByIpJob(params, completionService, memberManager).runJobs();
+    }
+    
     static class ClusterListenerJob extends ClusterJob<SampleResult> {
         
         static final String URL = Constants.COMMUNICATION_CONTROLLER_PATH + "/configWatchers";
         
         ClusterListenerJob(Map<String, String> params, CompletionService<SampleResult> completionService,
+                ServerMemberManager serverMemberManager) {
+            super(URL, params, completionService, serverMemberManager);
+        }
+    }
+    
+    static class ClusterListenerByIpJob extends ClusterJob<SampleResult> {
+        
+        static final String URL = Constants.COMMUNICATION_CONTROLLER_PATH + "/watcherConfigs";
+        
+        ClusterListenerByIpJob(Map<String, String> params, CompletionService<SampleResult> completionService,
                 ServerMemberManager serverMemberManager) {
             super(URL, params, completionService, serverMemberManager);
         }
@@ -324,7 +339,7 @@ public class ConfigSubService {
         
         SampleResult sampleCollectResult = new SampleResult();
         for (int i = 0; i < sampleTime; i++) {
-            List<SampleResult> sampleResults = runConfigListenerCollectionJob(params, completionService);
+            List<SampleResult> sampleResults = runConfigListenerByIpCollectionJob(params, completionService);
             if (sampleResults != null) {
                 sampleCollectResult = mergeSampleResult(sampleCollectResult, sampleResults);
             }

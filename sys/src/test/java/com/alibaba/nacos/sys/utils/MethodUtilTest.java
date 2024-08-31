@@ -16,12 +16,14 @@
 
 package com.alibaba.nacos.sys.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
 
-public class MethodUtilTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+
+class MethodUtilTest {
     
     private static final Method DOUBLE_METHOD;
     
@@ -37,18 +39,18 @@ public class MethodUtilTest {
     }
     
     @Test
-    public void invokeAndReturnDouble() {
+    void invokeAndReturnDouble() {
         InternalMethod internalMethod = new InternalMethod();
-        Assert.assertNotEquals(Double.NaN, MethodUtil.invokeAndReturnDouble(DOUBLE_METHOD, internalMethod), 0.000001d);
+        assertNotEquals(Double.NaN, MethodUtil.invokeAndReturnDouble(DOUBLE_METHOD, internalMethod), 0.000001d);
         
-        Assert.assertEquals(Double.NaN, MethodUtil.invokeAndReturnDouble(LONG_METHOD, internalMethod), 0.000001d);
+        assertEquals(Double.NaN, MethodUtil.invokeAndReturnDouble(LONG_METHOD, internalMethod), 0.000001d);
     }
     
     @Test
-    public void invokeAndReturnLong() {
+    void invokeAndReturnLong() {
         InternalMethod internalMethod = new InternalMethod();
-        Assert.assertEquals(100L, MethodUtil.invokeAndReturnLong(LONG_METHOD, internalMethod));
-        Assert.assertNotEquals(100L, MethodUtil.invokeAndReturnLong(DOUBLE_METHOD, internalMethod));
+        assertEquals(100L, MethodUtil.invokeAndReturnLong(LONG_METHOD, internalMethod));
+        assertNotEquals(100L, MethodUtil.invokeAndReturnLong(DOUBLE_METHOD, internalMethod));
     }
     
     public static class InternalMethod {

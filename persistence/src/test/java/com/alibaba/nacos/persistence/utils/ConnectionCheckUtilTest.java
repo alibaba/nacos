@@ -17,11 +17,12 @@
 package com.alibaba.nacos.persistence.utils;
 
 import com.zaxxer.hikari.HikariDataSource;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -31,18 +32,20 @@ import static org.mockito.Mockito.when;
  *
  * @author Long Yu
  */
-public class ConnectionCheckUtilTest {
+class ConnectionCheckUtilTest {
     
-    @Test(expected = RuntimeException.class)
-    public void testCheckConnectionThrowException() throws SQLException {
-        HikariDataSource ds = mock(HikariDataSource.class);
-        when(ds.getConnection()).thenThrow(new RuntimeException());
-        ConnectionCheckUtil.checkDataSourceConnection(ds);
-        verify(ds).getConnection();
+    @Test
+    void testCheckConnectionThrowException() throws SQLException {
+        assertThrows(RuntimeException.class, () -> {
+            HikariDataSource ds = mock(HikariDataSource.class);
+            when(ds.getConnection()).thenThrow(new RuntimeException());
+            ConnectionCheckUtil.checkDataSourceConnection(ds);
+            verify(ds).getConnection();
+        });
     }
     
     @Test
-    public void testCheckConnectionNormal() throws SQLException {
+    void testCheckConnectionNormal() throws SQLException {
         HikariDataSource ds = mock(HikariDataSource.class);
         Connection connection = mock(Connection.class);
         when(ds.getConnection()).thenReturn(connection);

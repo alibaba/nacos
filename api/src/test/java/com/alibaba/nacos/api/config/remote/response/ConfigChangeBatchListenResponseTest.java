@@ -18,18 +18,18 @@ package com.alibaba.nacos.api.config.remote.response;
 
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ConfigChangeBatchListenResponseTest extends BasedConfigResponseTest {
+class ConfigChangeBatchListenResponseTest extends BasedConfigResponseTest {
     
     ConfigChangeBatchListenResponse configChangeBatchListenResponse;
     
-    @Before
-    public void before() {
+    @BeforeEach
+    void before() {
         configChangeBatchListenResponse = new ConfigChangeBatchListenResponse();
         requestId = injectResponseUuId(configChangeBatchListenResponse);
         configChangeBatchListenResponse.addChangeConfig(DATA_ID, GROUP, TENANT);
@@ -50,8 +50,8 @@ public class ConfigChangeBatchListenResponseTest extends BasedConfigResponseTest
     @Override
     @Test
     public void testSerializeFailResponse() throws JsonProcessingException {
-        ConfigChangeBatchListenResponse configChangeBatchListenResponse = ConfigChangeBatchListenResponse
-                .buildFailResponse("Fail");
+        ConfigChangeBatchListenResponse configChangeBatchListenResponse = ConfigChangeBatchListenResponse.buildFailResponse(
+                "Fail");
         String json = mapper.writeValueAsString(configChangeBatchListenResponse);
         assertTrue(json.contains("\"resultCode\":" + ResponseCode.FAIL.getCode()));
         assertTrue(json.contains("\"errorCode\":0"));

@@ -18,28 +18,29 @@ package com.alibaba.nacos.config.server.configuration;
 
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.lang.reflect.Constructor;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Nacos config common configs test.
  *
  * @author blake.qiu
  */
-public class ConfigCommonConfigTest {
+class ConfigCommonConfigTest {
     
     private ConfigCommonConfig commonConfig;
     
     private MockEnvironment environment;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         Constructor<ConfigCommonConfig> declaredConstructor = ConfigCommonConfig.class.getDeclaredConstructor();
@@ -48,13 +49,13 @@ public class ConfigCommonConfigTest {
     }
     
     @Test
-    public void getMaxPushRetryTimes() {
+    void getMaxPushRetryTimes() {
         Integer property = EnvUtil.getProperty("nacos.config.push.maxRetryTime", Integer.class, 50);
         assertEquals(property.intValue(), commonConfig.getMaxPushRetryTimes());
     }
     
     @Test
-    public void setMaxPushRetryTimes() {
+    void setMaxPushRetryTimes() {
         int maxPushRetryTimesOld = commonConfig.getMaxPushRetryTimes();
         commonConfig.setMaxPushRetryTimes(100);
         assertEquals(100, commonConfig.getMaxPushRetryTimes());
@@ -62,20 +63,29 @@ public class ConfigCommonConfigTest {
     }
     
     @Test
-    public void testUpgradeFromEvent() {
-        environment.setProperty("nacos.config.push.maxRetryTime", "100");
-        commonConfig.onEvent(ServerConfigChangeEvent.newEvent());
-        assertEquals(100, commonConfig.getMaxPushRetryTimes());
+    void testSetDerbyOpsEnabled() {
+        assertFalse(commonConfig.isDerbyOpsEnabled());
+        commonConfig.setDerbyOpsEnabled(true);
+        assertTrue(commonConfig.isDerbyOpsEnabled());
     }
     
     @Test
-    public void testInitConfigFormEnv() throws ReflectiveOperationException {
+    void testUpgradeFromEvent() {
+        environment.setProperty("nacos.config.push.maxRetryTime", "100");
+        environment.setProperty("nacos.config.derby.ops.enabled", "true");
+        commonConfig.onEvent(ServerConfigChangeEvent.newEvent());
+        assertEquals(100, commonConfig.getMaxPushRetryTimes());
+        assertTrue(commonConfig.isDerbyOpsEnabled());
+    }
+    
+    @Test
+    void testInitConfigFormEnv() throws ReflectiveOperationException {
         MockEnvironment environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         environment.setProperty("nacos.config.push.maxRetryTime", "6");
         Constructor<ConfigCommonConfig> declaredConstructor = ConfigCommonConfig.class.getDeclaredConstructor();
         declaredConstructor.setAccessible(true);
         ConfigCommonConfig configCommonConfig = declaredConstructor.newInstance();
-        Assert.assertEquals(6, configCommonConfig.getMaxPushRetryTimes());
+        assertEquals(6, configCommonConfig.getMaxPushRetryTimes());
     }
 }

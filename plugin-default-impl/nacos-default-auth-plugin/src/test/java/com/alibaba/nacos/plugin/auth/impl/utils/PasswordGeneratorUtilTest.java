@@ -16,18 +16,19 @@
 
 package com.alibaba.nacos.plugin.auth.impl.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class PasswordGeneratorUtilTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class PasswordGeneratorUtilTest {
     
     /**
      * generatePwd test.
      */
     @Test
-    public void generatePwd() {
+    void generatePwd() {
         String pwd = PasswordGeneratorUtil.generateRandomPassword();
-        Assert.assertEquals(8, pwd.length());
+        assertEquals(8, pwd.length());
     }
     
 }

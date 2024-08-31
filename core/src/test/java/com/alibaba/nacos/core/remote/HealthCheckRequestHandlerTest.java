@@ -18,8 +18,9 @@
 package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.remote.response.HealthCheckResponse;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * {@link HealthCheckRequestHandler} unit test.
@@ -27,12 +28,12 @@ import org.junit.Test;
  * @author chenglu
  * @date 2021-07-02 19:17
  */
-public class HealthCheckRequestHandlerTest {
+class HealthCheckRequestHandlerTest {
     
     @Test
-    public void testHandle() {
+    void testHandle() {
         HealthCheckRequestHandler handler = new HealthCheckRequestHandler();
         HealthCheckResponse response = handler.handle(null, null);
-        Assert.assertNotNull(response);
+        assertNotNull(response);
     }
 }

@@ -44,7 +44,6 @@ import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
@@ -54,14 +53,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.DUMP_LOG;
-import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
 
 /**
  * Dump data service.
@@ -194,29 +190,31 @@ public abstract class DumpService {
      */
     protected abstract void init() throws Throwable;
     
-    void clearConfigHistory() {
-        LOGGER.warn("clearConfigHistory start");
-        if (canExecute()) {
-            try {
-                Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(), 24 * getRetentionDays());
-                int pageSize = 1000;
-                LOGGER.warn("clearConfigHistory, getBeforeStamp:{}, pageSize:{}", startTime, pageSize);
-                historyConfigInfoPersistService.removeConfigHistory(startTime, pageSize);
-            } catch (Throwable e) {
-                LOGGER.error("clearConfigHistory error : {}", e.toString());
-            }
-        }
-        
-    }
-    
     /**
      * config history clear.
      */
     class ConfigHistoryClear implements Runnable {
         
+        private HistoryConfigCleaner historyConfigCleaner;
+        
+        public ConfigHistoryClear(HistoryConfigCleaner historyConfigCleaner) {
+            this.historyConfigCleaner = historyConfigCleaner;
+        }
+        
         @Override
         public void run() {
-            clearConfigHistory();
+            LOGGER.warn("clearHistoryConfig get scheduled");
+            if (canExecute()) {
+                try {
+                    LOGGER.warn("clearHistoryConfig is enable in current context, try to run cleaner");
+                    historyConfigCleaner.cleanHistoryConfig();
+                    LOGGER.warn("history config cleaner successfully");
+                } catch (Throwable e) {
+                    LOGGER.error("clearConfigHistory error : {}", e.toString());
+                }
+            } else {
+                LOGGER.warn("clearHistoryConfig is disable in current context");
+            }
         }
     }
     
@@ -316,7 +314,10 @@ public abstract class DumpService {
                 
             }
             
-            ConfigExecutor.scheduleConfigTask(new ConfigHistoryClear(), 10, 10, TimeUnit.MINUTES);
+            HistoryConfigCleaner cleaner = HistoryConfigCleanerManager.getHistoryConfigCleaner(
+                    HistoryConfigCleanerConfig.getInstance().getActiveHistoryConfigCleaner());
+            ConfigExecutor.scheduleConfigTask(new ConfigHistoryClear(cleaner), 10, 10, TimeUnit.MINUTES);
+            
         } finally {
             TimerContext.end(dumpFileContext, LogUtil.DUMP_LOG);
         }
@@ -333,34 +334,6 @@ public abstract class DumpService {
             LogUtil.FATAL_LOG.error("dump config fail" + e.getMessage());
             throw e;
         }
-    }
-    
-    private Timestamp getBeforeStamp(Timestamp date, int step) {
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(date);
-        // before 6 hour
-        cal.add(Calendar.HOUR_OF_DAY, -step);
-        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        return Timestamp.valueOf(format.format(cal.getTime()));
-    }
-    
-    private int getRetentionDays() {
-        String val = EnvUtil.getProperty("nacos.config.retention.days");
-        if (null == val) {
-            return retentionDays;
-        }
-        
-        int tmp = 0;
-        try {
-            tmp = Integer.parseInt(val);
-            if (tmp > 0) {
-                retentionDays = tmp;
-            }
-        } catch (NumberFormatException nfe) {
-            FATAL_LOG.error("read nacos.config.retention.days wrong", nfe);
-        }
-        
-        return retentionDays;
     }
     
     /**

@@ -29,11 +29,13 @@ const I18N_CONF = {
   },
   Login: {
     login: 'Login',
+    initPassword: 'Initialize password',
     internalSysTip1: 'Internal system.',
     internalSysTip2: 'Not exposed to the public network',
     submit: 'Submit',
     pleaseInputUsername: 'Please input username',
     pleaseInputPassword: 'Please input password',
+    pleaseInputPasswordTips: 'Please input password, or generate one for you.',
     invalidUsernameOrPassword: 'invalid username or password',
     productDesc:
       'an easy-to-use dynamic service discovery, configuration and service management platform for building cloud native applications',
@@ -127,6 +129,7 @@ const I18N_CONF = {
     promptDelete: 'Do you want to delete the service?',
     create: 'Create Service',
     subscriber: 'Subscriber',
+    total: 'Total:',
   },
   SubscriberList: {
     subscriberList: 'Subscriber List',
@@ -309,6 +312,8 @@ const I18N_CONF = {
     app1: 'Enter App Name\n',
     tags: 'Tags',
     pleaseEnterTag: 'Enter Tag',
+    types: 'Type',
+    typeSelectedAlertContent: 'Please select the configuration type',
     configDetailLabel: 'DetailSearch',
     configDetailH: 'search config detail',
     application: 'Application',
@@ -367,6 +372,7 @@ const I18N_CONF = {
     cloneEditableTitle: 'Modify Data Id and Group (optional)',
     authFail: 'Auth failed',
     copyNamespaceID: 'Copy namespace ID',
+    total: 'Total:',
   },
   NewConfig: {
     newListingMain: 'Create Configuration',
@@ -616,6 +622,7 @@ const I18N_CONF = {
     passwordError: 'Password cannot be empty!',
     rePasswordError: 'Repeat Password cannot be empty!',
     rePasswordError2: 'Passwords are inconsistent!',
+    resetSuccessfully: 'modify password ok!',
   },
   RolesManagement: {
     roleManagement: 'Role management',
@@ -681,6 +688,9 @@ const I18N_CONF = {
     settingTheme: 'Themes',
     settingLight: 'light',
     settingDark: 'dark',
+    settingShowSelect: 'select',
+    settingShowLabel: 'label',
+    settingShow: 'namespace select style',
     settingLocale: 'Language',
     settingSubmit: 'Apply',
   },

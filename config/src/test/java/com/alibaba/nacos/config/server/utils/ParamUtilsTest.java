@@ -17,25 +17,28 @@
 package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class ParamUtilsTest {
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
+class ParamUtilsTest {
     
     @Test
-    public void testIsValid() {
-        Assert.assertTrue(ParamUtils.isValid("test"));
-        Assert.assertTrue(ParamUtils.isValid("test1234"));
-        Assert.assertTrue(ParamUtils.isValid("test_-.:"));
-        Assert.assertFalse(ParamUtils.isValid("test!"));
-        Assert.assertFalse(ParamUtils.isValid("test~"));
+    void testIsValid() {
+        assertTrue(ParamUtils.isValid("test"));
+        assertTrue(ParamUtils.isValid("test1234"));
+        assertTrue(ParamUtils.isValid("test_-.:"));
+        assertFalse(ParamUtils.isValid("test!"));
+        assertFalse(ParamUtils.isValid("test~"));
     }
     
     @Test
-    public void testCheckParamV1() {
+    void testCheckParamV1() {
         //dataId is empty
         String dataId = "";
         String group = "test";
@@ -43,7 +46,7 @@ public class ParamUtilsTest {
         String content = "test";
         try {
             ParamUtils.checkParam(dataId, group, datumId, content);
-            Assert.fail();
+            fail();
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
@@ -54,7 +57,7 @@ public class ParamUtilsTest {
         content = "test";
         try {
             ParamUtils.checkParam(dataId, group, datumId, content);
-            Assert.fail();
+            fail();
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
@@ -65,7 +68,7 @@ public class ParamUtilsTest {
         content = "test";
         try {
             ParamUtils.checkParam(dataId, group, datumId, content);
-            Assert.fail();
+            fail();
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
@@ -76,7 +79,7 @@ public class ParamUtilsTest {
         content = "";
         try {
             ParamUtils.checkParam(dataId, group, datumId, content);
-            Assert.fail();
+            fail();
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
@@ -87,7 +90,7 @@ public class ParamUtilsTest {
         content = "test";
         try {
             ParamUtils.checkParam(dataId, group, datumId, content);
-            Assert.fail();
+            fail();
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
@@ -98,7 +101,7 @@ public class ParamUtilsTest {
         content = "test";
         try {
             ParamUtils.checkParam(dataId, group, datumId, content);
-            Assert.fail();
+            fail();
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
@@ -109,7 +112,7 @@ public class ParamUtilsTest {
         content = "test";
         try {
             ParamUtils.checkParam(dataId, group, datumId, content);
-            Assert.fail();
+            fail();
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
@@ -126,19 +129,19 @@ public class ParamUtilsTest {
         
         try {
             ParamUtils.checkParam(dataId, group, datumId, content);
-            Assert.fail();
+            fail();
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
     }
     
     @Test
-    public void testCheckParamV2() {
+    void testCheckParamV2() {
         //tag invalid
         String tag = "test!";
         try {
             ParamUtils.checkParam(tag);
-            Assert.fail();
+            fail();
         } catch (IllegalArgumentException e) {
             System.out.println(e.toString());
         }
@@ -147,7 +150,7 @@ public class ParamUtilsTest {
         tag = "testtesttesttest1";
         try {
             ParamUtils.checkParam(tag);
-            Assert.fail();
+            fail();
         } catch (IllegalArgumentException e) {
             System.out.println(e.toString());
         }
@@ -155,13 +158,13 @@ public class ParamUtilsTest {
     }
     
     @Test
-    public void testCheckParamV3() {
+    void testCheckParamV3() {
         //tag size over 5
         Map<String, Object> configAdvanceInfo = new HashMap<>();
         configAdvanceInfo.put("config_tags", "test,test,test,test,test,test");
         try {
             ParamUtils.checkParam(configAdvanceInfo);
-            Assert.fail();
+            fail();
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
@@ -174,7 +177,7 @@ public class ParamUtilsTest {
         configAdvanceInfo.put("config_tags", tagBuilder.toString());
         try {
             ParamUtils.checkParam(configAdvanceInfo);
-            Assert.fail();
+            fail();
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
@@ -188,7 +191,7 @@ public class ParamUtilsTest {
         configAdvanceInfo.put("desc", descBuilder.toString());
         try {
             ParamUtils.checkParam(configAdvanceInfo);
-            Assert.fail();
+            fail();
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
@@ -202,7 +205,7 @@ public class ParamUtilsTest {
         configAdvanceInfo.put("use", useBuilder.toString());
         try {
             ParamUtils.checkParam(configAdvanceInfo);
-            Assert.fail();
+            fail();
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
@@ -216,7 +219,7 @@ public class ParamUtilsTest {
         configAdvanceInfo.put("effect", effectBuilder.toString());
         try {
             ParamUtils.checkParam(configAdvanceInfo);
-            Assert.fail();
+            fail();
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
@@ -230,7 +233,7 @@ public class ParamUtilsTest {
         configAdvanceInfo.put("type", typeBuilder.toString());
         try {
             ParamUtils.checkParam(configAdvanceInfo);
-            Assert.fail();
+            fail();
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
@@ -244,7 +247,7 @@ public class ParamUtilsTest {
         configAdvanceInfo.put("schema", schemaBuilder.toString());
         try {
             ParamUtils.checkParam(configAdvanceInfo);
-            Assert.fail();
+            fail();
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
@@ -254,19 +257,19 @@ public class ParamUtilsTest {
         configAdvanceInfo.put("test", "test");
         try {
             ParamUtils.checkParam(configAdvanceInfo);
-            Assert.fail();
+            fail();
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
     }
     
     @Test
-    public void testCheckTenant() {
+    void testCheckTenant() {
         //tag invalid
         String tenant = "test!";
         try {
             ParamUtils.checkTenant(tenant);
-            Assert.fail();
+            fail();
         } catch (IllegalArgumentException e) {
             System.out.println(e.toString());
         }
@@ -280,7 +283,7 @@ public class ParamUtilsTest {
         tenant = tenantBuilder.toString();
         try {
             ParamUtils.checkTenant(tenant);
-            Assert.fail();
+            fail();
         } catch (IllegalArgumentException e) {
             System.out.println(e.toString());
         }

@@ -17,14 +17,14 @@
 package com.alibaba.nacos.naming.utils;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class ServiceUtilTest {
+class ServiceUtilTest {
     
     @Test
-    public void testSelectInstances() {
+    void testSelectInstances() {
         ServiceInfo serviceInfo = new ServiceInfo();
         serviceInfo.setGroupName("groupName");
         serviceInfo.setName("serviceName");
