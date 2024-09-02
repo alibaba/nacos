@@ -174,8 +174,8 @@ public class NacosConfigService implements ConfigService {
         // changing config needed in the same time, while nacos server is down.
         String content = LocalConfigInfoProcessor.getFailover(worker.getAgentName(), dataId, group, tenant);
         if (content != null) {
-            LOGGER.warn("[{}] [get-config] get failover ok, dataId={}, group={}, tenant={}, config={}",
-                    worker.getAgentName(), dataId, group, tenant, ContentUtils.truncateContent(content));
+            LOGGER.warn("[{}] [get-config] get failover ok, dataId={}, group={}, tenant={}",
+                    worker.getAgentName(), dataId, group, tenant);
             cr.setContent(content);
             String encryptedDataKey = LocalEncryptedDataKeyProcessor
                     .getEncryptDataKeyFailover(agent.getName(), dataId, group, tenant);
@@ -203,8 +203,8 @@ public class NacosConfigService implements ConfigService {
 
         content = LocalConfigInfoProcessor.getSnapshot(worker.getAgentName(), dataId, group, tenant);
         if (content != null) {
-            LOGGER.warn("[{}] [get-config] get snapshot ok, dataId={}, group={}, tenant={}, config={}",
-                    worker.getAgentName(), dataId, group, tenant, ContentUtils.truncateContent(content));
+            LOGGER.warn("[{}] [get-config] get snapshot ok, dataId={}, group={}, tenant={}",
+                    worker.getAgentName(), dataId, group, tenant);
         }
         cr.setContent(content);
         String encryptedDataKey = LocalEncryptedDataKeyProcessor
