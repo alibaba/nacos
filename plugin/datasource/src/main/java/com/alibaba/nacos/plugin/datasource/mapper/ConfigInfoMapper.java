@@ -16,11 +16,13 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
+import com.alibaba.nacos.common.utils.ArrayUtils;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.mapper.ext.WhereBuilder;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
@@ -384,30 +386,27 @@ public interface ConfigInfoMapper extends Mapper {
         final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
         final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
         final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
+        final String[] types = (String[]) context.getWhereParameter(FieldConstant.TYPE);
         
-        final List<Object> paramList = new ArrayList<>();
+        WhereBuilder where = new WhereBuilder("SELECT count(*) FROM config_info");
         
-        final String sqlCountRows = "SELECT count(*) FROM config_info";
-        StringBuilder where = new StringBuilder(" WHERE ");
-        where.append(" tenant_id LIKE ? ");
-        paramList.add(tenantId);
-        if (!StringUtils.isBlank(dataId)) {
-            where.append(" AND data_id LIKE ? ");
-            paramList.add(dataId);
+        where.like("tenant_id", tenantId);
+        if (StringUtils.isNotBlank(dataId)) {
+            where.and().like("data_id", dataId);
         }
-        if (!StringUtils.isBlank(group)) {
-            where.append(" AND group_id LIKE ? ");
-            paramList.add(group);
+        if (StringUtils.isNotBlank(group)) {
+            where.and().like("group_id", group);
         }
-        if (!StringUtils.isBlank(appName)) {
-            where.append(" AND app_name = ? ");
-            paramList.add(appName);
+        if (StringUtils.isNotBlank(appName)) {
+            where.and().eq("app_name", appName);
         }
-        if (!StringUtils.isBlank(content)) {
-            where.append(" AND content LIKE ? ");
-            paramList.add(content);
+        if (StringUtils.isNotBlank(content)) {
+            where.and().like("content", content);
         }
-        return new MapperResult(sqlCountRows + where, paramList);
+        if (!ArrayUtils.isEmpty(types)) {
+            where.and().in("type", types);
+        }
+        return where.build();
     }
     
     /**

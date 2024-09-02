@@ -312,6 +312,8 @@ const I18N_CONF = {
     app1: 'Enter App Name\n',
     tags: 'Tags',
     pleaseEnterTag: 'Enter Tag',
+    types: 'Type',
+    typeSelectedAlertContent: 'Please select the configuration type',
     configDetailLabel: 'DetailSearch',
     configDetailH: 'search config detail',
     application: 'Application',
@@ -620,6 +622,7 @@ const I18N_CONF = {
     passwordError: 'Password cannot be empty!',
     rePasswordError: 'Repeat Password cannot be empty!',
     rePasswordError2: 'Passwords are inconsistent!',
+    resetSuccessfully: 'modify password ok!',
   },
   RolesManagement: {
     roleManagement: 'Role management',
