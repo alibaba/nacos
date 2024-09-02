@@ -136,14 +136,14 @@
         <logback.version>1.2.13</logback.version>
         <log4j.version>2.17.1</log4j.version>
         
-        <mysql-connector-java.version>8.0.33</mysql-connector-java.version>
+        <mysql-connector-java.version>8.2.0</mysql-connector-java.version>
         <derby.version>10.14.2.0</derby.version>
         <jjwt.version>0.11.2</jjwt.version>
         <grpc-java.version>1.64.2</grpc-java.version>
         <proto-google-common-protos.version>2.17.0</proto-google-common-protos.version>
         <protobuf-java.version>3.22.3</protobuf-java.version>
         <protoc-gen-grpc-java.version>${grpc-java.version}</protoc-gen-grpc-java.version>
-        <hessian.version>4.0.4</hessian.version>
+        <hessian.version>4.0.63</hessian.version>
         <mockito.version>4.11.0</mockito.version>
         <HikariCP.version>3.4.2</HikariCP.version>
         <jraft-core.version>1.3.14</jraft-core.version>
@@ -845,7 +845,7 @@
             <!-- hessian -->
             
             <dependency>
-                <groupId>com.alipay.sofa</groupId>
+                <groupId>com.caucho</groupId>
                 <artifactId>hessian</artifactId>
                 <version>${hessian.version}</version>
             </dependency>

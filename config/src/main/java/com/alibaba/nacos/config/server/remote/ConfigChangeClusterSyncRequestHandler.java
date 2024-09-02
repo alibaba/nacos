@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.config.server.service.dump.DumpRequest;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
+import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.ConfigRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
@@ -49,7 +50,7 @@ public class ConfigChangeClusterSyncRequestHandler
     @ExtractorManager.Extractor(rpcExtractor = ConfigRequestParamExtractor.class)
     public ConfigChangeClusterSyncResponse handle(ConfigChangeClusterSyncRequest configChangeSyncRequest,
             RequestMeta meta) throws NacosException {
-    
+        ParamUtils.checkParam(configChangeSyncRequest.getTag());
         DumpRequest dumpRequest = DumpRequest.create(configChangeSyncRequest.getDataId(),
                 configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant(),
                 configChangeSyncRequest.getLastModified(), meta.getClientIp());
