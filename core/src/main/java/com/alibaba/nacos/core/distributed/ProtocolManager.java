@@ -99,6 +99,14 @@ public class ProtocolManager extends MemberChangeListener implements DisposableB
         return apProtocol;
     }
     
+    public boolean isCpInit() {
+        return cpInit;
+    }
+    
+    public boolean isApInit() {
+        return apInit;
+    }
+    
     @PreDestroy
     @Override
     public void destroy() {
