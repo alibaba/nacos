@@ -151,11 +151,8 @@ public class ApplicationUtils implements ApplicationContextInitializer<Configura
     }
     
     public static <T> void getBeanIfExist(Class<T> requiredType, Consumer<T> consumer) throws BeansException {
-        try {
-            T bean = applicationContext.getBean(requiredType);
-            consumer.accept(bean);
-        } catch (NoSuchBeanDefinitionException ignore) {
-        }
+        T bean = applicationContext.getBean(requiredType);
+        consumer.accept(bean);
     }
     
     public static <T> T getBean(Class<T> requiredType, Object... args) throws BeansException {
