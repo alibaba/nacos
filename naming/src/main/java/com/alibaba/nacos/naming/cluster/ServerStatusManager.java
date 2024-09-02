@@ -77,7 +77,7 @@ public class ServerStatusManager {
         if (!globalConfig.isDataWarmup()) {
             return true;
         }
-        if (protocolManager.getCpProtocol() == null) {
+        if (!protocolManager.isCpInit() || protocolManager.getCpProtocol() == null) {
             return false;
         }
         return protocolManager.getCpProtocol().isReady() && distroProtocol.isInitialized();

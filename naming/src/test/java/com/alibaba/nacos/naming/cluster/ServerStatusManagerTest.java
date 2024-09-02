@@ -85,6 +85,7 @@ class ServerStatusManagerTest {
     
     @Test
     void testGetErrorMsgForDistroProtocol() {
+        when(protocolManager.isCpInit()).thenReturn(true);
         when(globalConfig.isDataWarmup()).thenReturn(true);
         when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
         when(distroProtocol.isInitialized()).thenReturn(false);
@@ -95,6 +96,7 @@ class ServerStatusManagerTest {
     
     @Test
     void testGetErrorMsgForRaft() {
+        when(protocolManager.isCpInit()).thenReturn(true);
         when(globalConfig.isDataWarmup()).thenReturn(true);
         when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
         when(cpProtocol.isReady()).thenReturn(false);
@@ -137,6 +139,7 @@ class ServerStatusManagerTest {
     
     @Test
     void testUpdaterStatusForDistroFailed() {
+        when(protocolManager.isCpInit()).thenReturn(true);
         when(globalConfig.isDataWarmup()).thenReturn(true);
         when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
         ServerStatusManager.ServerStatusUpdater updater = serverStatusManager.new ServerStatusUpdater();
@@ -146,6 +149,7 @@ class ServerStatusManagerTest {
     
     @Test
     void testUpdaterStatusForRaftFailed() {
+        when(protocolManager.isCpInit()).thenReturn(true);
         when(globalConfig.isDataWarmup()).thenReturn(true);
         ServerStatusManager.ServerStatusUpdater updater = serverStatusManager.new ServerStatusUpdater();
         updater.run();
@@ -158,6 +162,7 @@ class ServerStatusManagerTest {
     
     @Test
     void testUpdaterStatus() {
+        when(protocolManager.isCpInit()).thenReturn(true);
         when(globalConfig.isDataWarmup()).thenReturn(true);
         when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
         when(cpProtocol.isReady()).thenReturn(true);
