@@ -78,6 +78,10 @@ public class ParamUtil {
     
     private static final String DEFAULT_PER_TASK_CONFIG_SIZE_KEY = "3000";
     
+    private static final int DESENSITISE_PARAMETER_MIN_LENGTH = 2;
+    
+    private static final int DESENSITISE_PARAMETER_KEEP_ONE_CHAR_LENGTH = 8;
+    
     static {
         // Client identity information
         appKey = NacosClientProperties.PROTOTYPE.getProperty(NACOS_CLIENT_APP_KEY, BLANK_STR);
@@ -282,25 +286,51 @@ public class ParamUtil {
                             .append("\n"));
         } else {
             result.append("Nacos client key init properties: \n");
-            appendKeyParameters(result, properties, PropertyKeyConst.SERVER_ADDR);
-            appendKeyParameters(result, properties, PropertyKeyConst.NAMESPACE);
-            appendKeyParameters(result, properties, PropertyKeyConst.ENDPOINT);
-            appendKeyParameters(result, properties, PropertyKeyConst.ENDPOINT_PORT);
-            appendKeyParameters(result, properties, PropertyKeyConst.USERNAME);
-            appendKeyParameters(result, properties, PropertyKeyConst.PASSWORD);
-            appendKeyParameters(result, properties, PropertyKeyConst.ACCESS_KEY);
-            appendKeyParameters(result, properties, PropertyKeyConst.SECRET_KEY);
-            appendKeyParameters(result, properties, PropertyKeyConst.RAM_ROLE_NAME);
-            appendKeyParameters(result, properties, PropertyKeyConst.SIGNATURE_REGION_ID);
+            appendKeyParameters(result, properties, PropertyKeyConst.SERVER_ADDR, false);
+            appendKeyParameters(result, properties, PropertyKeyConst.NAMESPACE, false);
+            appendKeyParameters(result, properties, PropertyKeyConst.ENDPOINT, false);
+            appendKeyParameters(result, properties, PropertyKeyConst.ENDPOINT_PORT, false);
+            appendKeyParameters(result, properties, PropertyKeyConst.USERNAME, false);
+            appendKeyParameters(result, properties, PropertyKeyConst.PASSWORD, true);
+            appendKeyParameters(result, properties, PropertyKeyConst.ACCESS_KEY, false);
+            appendKeyParameters(result, properties, PropertyKeyConst.SECRET_KEY, true);
+            appendKeyParameters(result, properties, PropertyKeyConst.RAM_ROLE_NAME, false);
+            appendKeyParameters(result, properties, PropertyKeyConst.SIGNATURE_REGION_ID, false);
         }
         return result.toString();
     }
     
-    private static void appendKeyParameters(StringBuilder result, Properties properties, String propertyKey) {
+    private static void appendKeyParameters(StringBuilder result, Properties properties, String propertyKey,
+            boolean needDesensitise) {
         String propertyValue = properties.getProperty(propertyKey);
         if (StringUtils.isBlank(propertyValue)) {
             return;
         }
-        result.append("\t").append(propertyKey).append("=").append(propertyValue).append("\n");
+        result.append("\t").append(propertyKey).append("=")
+                .append(needDesensitise ? desensitiseParameter(propertyValue) : propertyValue).append("\n");
+    }
+    
+    /**
+     * Do desensitise for parameters with `*` to replace inner content.
+     *
+     * @param parameterValue parameter value which need be desensitised.
+     * @return desensitised parameter value.
+     */
+    public static String desensitiseParameter(String parameterValue) {
+        if (parameterValue.length() <= DESENSITISE_PARAMETER_MIN_LENGTH) {
+            return parameterValue;
+        }
+        if (parameterValue.length() < DESENSITISE_PARAMETER_KEEP_ONE_CHAR_LENGTH) {
+            return doDesensitiseParameter(parameterValue, 1);
+        }
+        return doDesensitiseParameter(parameterValue, 2);
+    }
+    
+    private static String doDesensitiseParameter(String parameterValue, int keepCharCount) {
+        StringBuilder result = new StringBuilder(parameterValue);
+        for (int i = keepCharCount; i < parameterValue.length() - keepCharCount; i++) {
+            result.setCharAt(i, '*');
+        }
+        return result.toString();
     }
 }
