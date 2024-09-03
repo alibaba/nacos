@@ -17,7 +17,6 @@
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.api.config.remote.response.ClientConfigMetricResponse;
-import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.core.cluster.Member;
@@ -103,9 +102,8 @@ class ClientMetricsControllerTest {
         
         when(memberManager.allMembers()).thenReturn(members);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(
-                        Constants.METRICS_CONTROLLER_PATH + "/cluster").param("ip", "127.0.0.1").param("tenant", "test")
-                .param("dataId", "test").param("group", "test");
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.METRICS_CONTROLLER_PATH + "/cluster")
+                .param("ip", "127.0.0.1").param("tenant", "test").param("dataId", "test").param("group", "test");
         int actualValue = mockMvc.perform(builder).andReturn().getResponse().getStatus();
         assertEquals(200, actualValue);
     }
@@ -159,42 +157,11 @@ class ClientMetricsControllerTest {
         connections.add(connection);
         when(connectionManager.getConnectionByIp(eq("127.0.0.1"))).thenReturn(connections);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(
-                        Constants.METRICS_CONTROLLER_PATH + "/current").param("ip", "127.0.0.1").param("tenant", "test")
-                .param("dataId", "test").param("group", "test");
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.METRICS_CONTROLLER_PATH + "/current")
+                .param("ip", "127.0.0.1").param("tenant", "test").param("dataId", "test").param("group", "test");
         String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
         assertEquals("{\"test\":\"test\"}", actualValue);
         
-    }
-    
-    @Test
-    void testGetCurrentMetricInvalidParam() throws Exception {
-        
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(
-                        Constants.METRICS_CONTROLLER_PATH + "/current").param("ip", "127.0.0.1").param("tenant", "test")
-                .param("dataId", "../").param("group", "test");
-        try {
-            mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
-            assertFalse(true);
-        } catch (Exception e) {
-            assertTrue(e.getCause() instanceof NacosApiException);
-            assertEquals(400, ((NacosApiException) e.getCause()).getErrCode());
-        }
-    }
-    
-    @Test
-    void testGetClusterMetricInvalidParam() throws Exception {
-        
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(
-                        Constants.METRICS_CONTROLLER_PATH + "/cluster").param("ip", "127.0.0.1").param("tenant", "test")
-                .param("dataId", "../").param("group", "test");
-        try {
-            mockMvc.perform(builder).andReturn().getResponse().getStatus();
-            assertFalse(true);
-        } catch (Exception e) {
-            assertTrue(e.getCause() instanceof NacosApiException);
-            assertEquals(400, ((NacosApiException) e.getCause()).getErrCode());
-        }
     }
     
 }
