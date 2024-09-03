@@ -149,7 +149,7 @@
         <jraft-core.version>1.3.14</jraft-core.version>
         <rpc-grpc-impl.version>${jraft-core.version}</rpc-grpc-impl.version>
         <SnakeYaml.version>2.0</SnakeYaml.version>
-        <spring.version>5.3.34</spring.version>
+        <spring.version>5.3.38</spring.version>
         <spring-security.version>5.7.12</spring-security.version>
         <junit5.version>5.10.2</junit5.version>
     </properties>
