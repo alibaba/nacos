@@ -26,6 +26,7 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.builder.InstanceBuilder;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.enums.ApiType;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.console.proxy.naming.InstanceProxy;
 import com.alibaba.nacos.core.control.TpsControl;
@@ -77,7 +78,7 @@ public class ConsoleInstanceController {
      * @param pageSize    size of each page
      * @return instances information
      */
-    @Secured(action = ActionTypes.READ)
+    @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)
     @RequestMapping("/list")
     public Result<ObjectNode> getInstanceList(
             @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
@@ -96,7 +97,7 @@ public class ConsoleInstanceController {
     @CanDistro
     @PutMapping
     @TpsControl(pointName = "NamingInstanceUpdate", name = "HttpNamingInstanceUpdate")
-    @Secured(action = ActionTypes.WRITE)
+    @Secured(action = ActionTypes.WRITE, apiType = ApiType.CONSOLE_API)
     public Result<String> updateInstance(InstanceForm instanceForm) throws NacosException {
         // check param
         instanceForm.validate();

@@ -25,8 +25,10 @@ import com.alibaba.nacos.common.trace.event.naming.UpdateServiceTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.console.handler.naming.ServiceHandler;
 import com.alibaba.nacos.naming.core.CatalogServiceV2Impl;
+import com.alibaba.nacos.naming.core.ClusterOperatorV2Impl;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.SubscribeManager;
+import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.model.form.ServiceForm;
@@ -55,13 +57,16 @@ public class ServiceInnerHandler implements ServiceHandler {
     
     private final SubscribeManager subscribeManager;
     
+    private final ClusterOperatorV2Impl clusterOperatorV2;
+    
     @Autowired
     public ServiceInnerHandler(ServiceOperatorV2Impl serviceOperatorV2, SelectorManager selectorManager,
-            CatalogServiceV2Impl catalogServiceV2, SubscribeManager subscribeManager) {
+            CatalogServiceV2Impl catalogServiceV2, SubscribeManager subscribeManager, ClusterOperatorV2Impl clusterOperatorV2) {
         this.serviceOperatorV2 = serviceOperatorV2;
         this.selectorManager = selectorManager;
         this.catalogServiceV2 = catalogServiceV2;
         this.subscribeManager = subscribeManager;
+        this.clusterOperatorV2 = clusterOperatorV2;
     }
     
     @Override
@@ -142,6 +147,11 @@ public class ServiceInnerHandler implements ServiceHandler {
     public Object getServiceDetail(String namespaceId, String serviceNameWithoutGroup, String groupName)
             throws NacosException {
         return catalogServiceV2.getServiceDetail(namespaceId, groupName, serviceNameWithoutGroup);
+    }
+    
+    @Override
+    public void updateClusterMetadata(String namespaceId, String serviceName, String clusterName, ClusterMetadata clusterMetadata) throws Exception {
+        clusterOperatorV2.updateClusterMetadata(namespaceId, serviceName, clusterName, clusterMetadata);
     }
     
 }

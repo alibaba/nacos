@@ -21,8 +21,6 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.handler.core.ClusterHandler;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.naming.core.ClusterOperatorV2Impl;
-import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -39,18 +37,14 @@ public class ClusterInnerHandler implements ClusterHandler {
     
     private final ServerMemberManager memberManager;
     
-    private final ClusterOperatorV2Impl clusterOperatorV2;
-    
     /**
      * Constructs a new ClusterInnerHandler with the provided dependencies.
      *
-     * @param memberManager     the manager for server members
-     * @param clusterOperatorV2 the operator for cluster operations
+     * @param memberManager the manager for server members
      */
     @Autowired
-    public ClusterInnerHandler(ServerMemberManager memberManager, ClusterOperatorV2Impl clusterOperatorV2) {
+    public ClusterInnerHandler(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
-        this.clusterOperatorV2 = clusterOperatorV2;
     }
     
     /**
@@ -76,19 +70,5 @@ public class ClusterInnerHandler implements ClusterHandler {
         });
         
         return result;
-    }
-    
-    /**
-     * Updates the metadata of a cluster.
-     *
-     * @param namespaceId    the namespace ID
-     * @param serviceName    the service name
-     * @param clusterName    the cluster name
-     * @param clusterMetadata the metadata for the cluster
-     * @throws Exception if the update operation fails
-     */
-    @Override
-    public void updateClusterMetadata(String namespaceId, String serviceName, String clusterName, ClusterMetadata clusterMetadata) throws Exception {
-        clusterOperatorV2.updateClusterMetadata(namespaceId, serviceName, clusterName, clusterMetadata);
     }
 }

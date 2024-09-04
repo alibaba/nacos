@@ -23,9 +23,13 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckerFactory;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.enums.ApiType;
+import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.NumberUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -34,6 +38,7 @@ import com.alibaba.nacos.console.proxy.naming.ServiceProxy;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.utils.WebUtils;
+import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -82,7 +87,7 @@ public class ConsoleServiceController {
      */
     @PostMapping()
     @TpsControl(pointName = "NamingServiceRegister", name = "HttpNamingServiceRegister")
-    @Secured(action = ActionTypes.WRITE)
+    @Secured(action = ActionTypes.WRITE, apiType = ApiType.CONSOLE_API)
     public Result<String> createService(ServiceForm serviceForm) throws Exception {
         serviceForm.validate();
         ServiceMetadata serviceMetadata = new ServiceMetadata();
@@ -100,7 +105,7 @@ public class ConsoleServiceController {
      */
     @DeleteMapping()
     @TpsControl(pointName = "NamingServiceDeregister", name = "HttpNamingServiceDeregister")
-    @Secured(action = ActionTypes.WRITE)
+    @Secured(action = ActionTypes.WRITE, apiType = ApiType.CONSOLE_API)
     public Result<String> deleteService(
             @RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam("serviceName") String serviceName,
@@ -115,7 +120,7 @@ public class ConsoleServiceController {
      */
     @PutMapping()
     @TpsControl(pointName = "NamingServiceUpdate", name = "HttpNamingServiceUpdate")
-    @Secured(action = ActionTypes.WRITE)
+    @Secured(action = ActionTypes.WRITE, apiType = ApiType.CONSOLE_API)
     public Result<String> updateService(ServiceForm serviceForm) throws Exception {
         serviceForm.validate();
         
@@ -148,7 +153,7 @@ public class ConsoleServiceController {
      * @return Jackson object node
      */
     @GetMapping("/subscribers")
-    @Secured(action = ActionTypes.READ)
+    @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)
     public Result<ObjectNode> subscribers(HttpServletRequest request) throws Exception {
         
         int pageNo = NumberUtils.toInt(WebUtils.optional(request, "pageNo", "1"));
@@ -196,7 +201,7 @@ public class ConsoleServiceController {
      * @param hasIpCount        whether filter services with empty instance
      * @return list service detail
      */
-    @Secured(action = ActionTypes.READ)
+    @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)
     @GetMapping("/list")
     public Object getServiceList(@RequestParam(required = false) boolean withInstances,
             @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
@@ -218,13 +223,43 @@ public class ConsoleServiceController {
      * @return service detail information
      * @throws NacosException nacos exception
      */
-    @Secured(action = ActionTypes.READ)
+    @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)
     @GetMapping()
     public Object getServiceDetail(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             String serviceName) throws NacosException {
         String serviceNameWithoutGroup = NamingUtils.getServiceName(serviceName);
         String groupName = NamingUtils.getGroupName(serviceName);
         return Result.success(serviceProxy.getServiceDetail(namespaceId, serviceNameWithoutGroup, groupName));
+    }
+    
+    /**
+     * Update cluster.
+     *
+     * @param request http request
+     * @return 'ok' if success
+     * @throws Exception if failed
+     */
+    @PutMapping("/cluster")
+    @Secured(action = ActionTypes.WRITE, apiType = ApiType.CONSOLE_API)
+    public Result<String> updateCluster(HttpServletRequest request) throws Exception {
+        final String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
+                Constants.DEFAULT_NAMESPACE_ID);
+        final String clusterName = WebUtils.required(request, CommonParams.CLUSTER_NAME);
+        final String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        
+        ClusterMetadata clusterMetadata = new ClusterMetadata();
+        clusterMetadata.setHealthyCheckPort(NumberUtils.toInt(WebUtils.required(request, "checkPort")));
+        clusterMetadata.setUseInstancePortForCheck(
+                ConvertUtils.toBoolean(WebUtils.required(request, "useInstancePort4Check")));
+        AbstractHealthChecker healthChecker = HealthCheckerFactory.deserialize(
+                WebUtils.required(request, "healthChecker"));
+        clusterMetadata.setHealthChecker(healthChecker);
+        clusterMetadata.setHealthyCheckType(healthChecker.getType());
+        clusterMetadata.setExtendData(
+                UtilsAndCommons.parseMetadata(WebUtils.optional(request, "metadata", StringUtils.EMPTY)));
+    
+        serviceProxy.updateClusterMetadata(namespaceId, serviceName, clusterName, clusterMetadata);
+        return Result.success("ok");
     }
     
 }

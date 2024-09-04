@@ -21,7 +21,6 @@ import com.alibaba.nacos.console.config.ConsoleConfig;
 import com.alibaba.nacos.console.handler.core.ClusterHandler;
 import com.alibaba.nacos.console.handler.inner.core.ClusterInnerHandler;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
@@ -64,25 +63,6 @@ public class ClusterProxy {
             throw new IllegalArgumentException("Invalid deployment type");
         }
         return clusterHandler.getNodeList(ipKeyWord);
-    }
-    
-    /**
-     * Updates the metadata of a cluster.
-     *
-     * @param namespaceId     the namespace ID
-     * @param serviceName     the service name
-     * @param clusterName     the cluster name
-     * @param clusterMetadata the metadata for the cluster
-     * @throws Exception                if the update operation fails
-     * @throws IllegalArgumentException if the deployment type is invalid
-     */
-    public void updateClusterMetadata(String namespaceId, String serviceName, String clusterName,
-            ClusterMetadata clusterMetadata) throws Exception {
-        ClusterHandler clusterHandler = clusterHandlerMap.get(consoleConfig.getType());
-        if (clusterHandler == null) {
-            throw new IllegalArgumentException("Invalid deployment type");
-        }
-        clusterHandler.updateClusterMetadata(namespaceId, serviceName, clusterName, clusterMetadata);
     }
 }
 

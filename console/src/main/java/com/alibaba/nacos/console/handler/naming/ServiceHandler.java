@@ -18,6 +18,7 @@
 package com.alibaba.nacos.console.handler.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.model.form.ServiceForm;
@@ -37,6 +38,7 @@ public interface ServiceHandler {
      * Create a new service.
      *
      * @param serviceForm the service form containing the service details
+     * @param serviceMetadata the service metadata created from serviceForm
      * @throws Exception if an error occurs during service creation
      */
     void createService(ServiceForm serviceForm, ServiceMetadata serviceMetadata) throws Exception;
@@ -57,6 +59,7 @@ public interface ServiceHandler {
      * @param serviceForm     the service form containing the service details
      * @param service         the service object created from serviceForm
      * @param serviceMetadata the service metadata created from serviceForm
+     * @param metadata       the service metadata
      * @throws Exception if an error occurs during service update
      */
     void updateService(ServiceForm serviceForm, Service service, ServiceMetadata serviceMetadata,
@@ -110,5 +113,17 @@ public interface ServiceHandler {
      * @throws NacosException if an error occurs during fetching service details
      */
     Object getServiceDetail(String namespaceId, String serviceNameWithoutGroup, String groupName) throws NacosException;
+    
+    /**
+     * Update the metadata of a cluster.
+     *
+     * @param namespaceId     the namespace ID
+     * @param serviceName     the service name
+     * @param clusterName     the cluster name
+     * @param clusterMetadata the metadata for the cluster
+     * @throws Exception if the update operation fails
+     */
+    void updateClusterMetadata(String namespaceId, String serviceName, String clusterName,
+            ClusterMetadata clusterMetadata) throws Exception;
 }
 

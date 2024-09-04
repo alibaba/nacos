@@ -19,8 +19,10 @@ package com.alibaba.nacos.console.proxy.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.console.config.ConsoleConfig;
+import com.alibaba.nacos.console.handler.core.ClusterHandler;
 import com.alibaba.nacos.console.handler.inner.naming.ServiceInnerHandler;
 import com.alibaba.nacos.console.handler.naming.ServiceHandler;
+import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 
 import com.alibaba.nacos.naming.model.form.ServiceForm;
@@ -175,6 +177,25 @@ public class ServiceProxy {
             throw new IllegalArgumentException("Invalid deployment type");
         }
         return serviceHandler.getServiceDetail(namespaceId, serviceNameWithoutGroup, groupName);
+    }
+    
+    /**
+     * Updates the metadata of a cluster.
+     *
+     * @param namespaceId     the namespace ID
+     * @param serviceName     the service name
+     * @param clusterName     the cluster name
+     * @param clusterMetadata the metadata for the cluster
+     * @throws Exception                if the update operation fails
+     * @throws IllegalArgumentException if the deployment type is invalid
+     */
+    public void updateClusterMetadata(String namespaceId, String serviceName, String clusterName,
+            ClusterMetadata clusterMetadata) throws Exception {
+        ServiceHandler serviceHandler = serviceHandlerMap.get(consoleConfig.getType());
+        if (serviceHandler == null) {
+            throw new IllegalArgumentException("Invalid deployment type");
+        }
+        serviceHandler.updateClusterMetadata(namespaceId, serviceName, clusterName, clusterMetadata);
     }
 }
 

@@ -18,7 +18,6 @@
 package com.alibaba.nacos.console.handler.core;
 
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 
 import java.util.Collection;
 
@@ -36,16 +35,5 @@ public interface ClusterHandler {
      * @return a collection of matching members
      */
     Collection<Member> getNodeList(String ipKeyWord);
-    
-    /**
-     * Update the metadata of a cluster.
-     *
-     * @param namespaceId    the namespace ID
-     * @param serviceName    the service name
-     * @param clusterName    the cluster name
-     * @param clusterMetadata the metadata for the cluster
-     * @throws Exception if the update operation fails
-     */
-    void updateClusterMetadata(String namespaceId, String serviceName, String clusterName, ClusterMetadata clusterMetadata) throws Exception;
 }
 

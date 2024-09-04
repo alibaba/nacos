@@ -20,6 +20,7 @@ package com.alibaba.nacos.console.controller.v3.config;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.enums.ApiType;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
@@ -40,7 +41,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * .
+ * Controller for handling HTTP requests related to history operations.
  *
  * @author zhangyukun on:2024/8/16
  */
@@ -66,7 +67,7 @@ public class ConsoleHistoryController {
      * @return history config info
      */
     @GetMapping
-    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
     public Result<ConfigHistoryInfo> getConfigHistoryInfo(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
@@ -91,7 +92,7 @@ public class ConsoleHistoryController {
      * @return the page of history config.
      */
     @GetMapping("/list")
-    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
     public Result<Page<ConfigHistoryInfo>> listConfigHistory(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
@@ -118,7 +119,7 @@ public class ConsoleHistoryController {
      * @return history config info
      */
     @GetMapping(value = "/previous")
-    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
     public Result<ConfigHistoryInfo> getPreviousConfigHistoryInfo(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
@@ -139,7 +140,7 @@ public class ConsoleHistoryController {
      * @return list
      */
     @GetMapping(value = "/configs")
-    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
     public Result<List<ConfigInfoWrapper>> getConfigsByTenant(@RequestParam("namespaceId") String namespaceId)
             throws NacosException {
         // check namespaceId
