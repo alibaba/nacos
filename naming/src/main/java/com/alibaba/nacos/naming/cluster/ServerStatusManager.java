@@ -60,9 +60,6 @@ public class ServerStatusManager {
     }
     
     private void refreshServerStatus() {
-        System.out.println("Refreshing Server Status...");
-        System.out.println(" value -> switchDomain.getOverriddenServerStatus(): " + switchDomain.getOverriddenServerStatus());
-        System.out.println(" value -> consistencyService.isAvailable(): " + consistencyService.isAvailable());
         if (StringUtils.isNotBlank(switchDomain.getOverriddenServerStatus())) {
             serverStatus = ServerStatus.valueOf(switchDomain.getOverriddenServerStatus());
             return;

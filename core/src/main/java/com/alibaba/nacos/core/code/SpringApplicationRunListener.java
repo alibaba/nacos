@@ -49,7 +49,6 @@ public class SpringApplicationRunListener implements org.springframework.boot.Sp
     
     @Override
     public void starting(ConfigurableBootstrapContext bootstrapContext) {
-        System.out.println(">> starting");
         for (NacosApplicationListener nacosApplicationListener : nacosApplicationListeners) {
             nacosApplicationListener.starting();
         }
@@ -58,7 +57,6 @@ public class SpringApplicationRunListener implements org.springframework.boot.Sp
     @Override
     public void environmentPrepared(ConfigurableBootstrapContext bootstrapContext,
             ConfigurableEnvironment environment) {
-        System.out.println(">> environmentPrepared");
         for (NacosApplicationListener nacosApplicationListener : nacosApplicationListeners) {
             nacosApplicationListener.environmentPrepared(environment);
         }
@@ -66,7 +64,6 @@ public class SpringApplicationRunListener implements org.springframework.boot.Sp
     
     @Override
     public void contextPrepared(ConfigurableApplicationContext context) {
-        System.out.println(">> contextPrepared");
         for (NacosApplicationListener nacosApplicationListener : nacosApplicationListeners) {
             nacosApplicationListener.contextPrepared(context);
         }
@@ -74,7 +71,6 @@ public class SpringApplicationRunListener implements org.springframework.boot.Sp
     
     @Override
     public void contextLoaded(ConfigurableApplicationContext context) {
-        System.out.println(">> contextLoaded");
         for (NacosApplicationListener nacosApplicationListener : nacosApplicationListeners) {
             nacosApplicationListener.contextLoaded(context);
         }
@@ -82,7 +78,6 @@ public class SpringApplicationRunListener implements org.springframework.boot.Sp
     
     @Override
     public void started(ConfigurableApplicationContext context, Duration timeTaken) {
-        System.out.println(">> started");
         for (NacosApplicationListener nacosApplicationListener : nacosApplicationListeners) {
             nacosApplicationListener.started(context);
         }
@@ -90,7 +85,6 @@ public class SpringApplicationRunListener implements org.springframework.boot.Sp
     
     @Override
     public void ready(ConfigurableApplicationContext context, Duration timeTaken) {
-        System.out.println(">> ready");
         for (NacosApplicationListener nacosApplicationListener : nacosApplicationListeners) {
             nacosApplicationListener.ready(context);
         }
