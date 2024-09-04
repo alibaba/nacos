@@ -79,7 +79,7 @@ const deleteUser = username =>
  * @param {*} param0
  */
 const passwordReset = ([username, newPassword]) =>
-  request.put('v1/auth/users', { username, newPassword }).then(res => successMsg(res));
+  request.put('v1/auth/users', { username, newPassword });
 
 /**
  * 角色列表

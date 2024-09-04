@@ -118,4 +118,10 @@ class JRaftProtocolTest {
         verify(serverMock).findNodeByGroup(groupId);
         verify(nodeMock).isLeader();
     }
+    
+    @Test
+    void testIsReady() {
+        raftProtocol.isReady();
+        verify(serverMock).isReady();
+    }
 }

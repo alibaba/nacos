@@ -16,10 +16,13 @@
 
 package com.alibaba.nacos.config.server.service.dump.disk;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.utils.StringUtils;
 import com.alibaba.nacos.common.pathencoder.PathEncoderManager;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.io.FileUtils;
 
@@ -65,7 +68,12 @@ public class ConfigRawDiskService implements ConfigDiskService {
     /**
      * Returns the path of the server cache file.
      */
-    private static File targetFile(String dataId, String group, String tenant) {
+    static File targetFile(String dataId, String group, String tenant) {
+        try {
+            ParamUtils.checkParam(dataId, group, tenant);
+        } catch (Exception e) {
+            throw new NacosRuntimeException(NacosException.CLIENT_INVALID_PARAM, "parameter is invalid.");
+        }
         // fix https://github.com/alibaba/nacos/issues/10067
         dataId = PathEncoderManager.getInstance().encode(dataId);
         group = PathEncoderManager.getInstance().encode(group);
@@ -86,6 +94,11 @@ public class ConfigRawDiskService implements ConfigDiskService {
      * Returns the path of cache file in server.
      */
     private static File targetBetaFile(String dataId, String group, String tenant) {
+        try {
+            ParamUtils.checkParam(dataId, group, tenant);
+        } catch (Exception e) {
+            throw new NacosRuntimeException(NacosException.CLIENT_INVALID_PARAM, "parameter is invalid.");
+        }
         // fix https://github.com/alibaba/nacos/issues/10067
         dataId = PathEncoderManager.getInstance().encode(dataId);
         group = PathEncoderManager.getInstance().encode(group);
@@ -106,6 +119,12 @@ public class ConfigRawDiskService implements ConfigDiskService {
      * Returns the path of the tag cache file in server.
      */
     private static File targetTagFile(String dataId, String group, String tenant, String tag) {
+        try {
+            ParamUtils.checkParam(tag);
+            ParamUtils.checkParam(dataId, group, tenant);
+        } catch (Exception e) {
+            throw new NacosRuntimeException(NacosException.CLIENT_INVALID_PARAM, "parameter is invalid.");
+        }
         // fix https://github.com/alibaba/nacos/issues/10067
         dataId = PathEncoderManager.getInstance().encode(dataId);
         group = PathEncoderManager.getInstance().encode(group);

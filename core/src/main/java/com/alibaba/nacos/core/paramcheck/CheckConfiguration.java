@@ -35,7 +35,7 @@ public class CheckConfiguration {
         FilterRegistrationBean<ParamCheckerFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(checkerFilter);
         registration.addUrlPatterns("/*");
-        registration.setName("requestContextFilter");
+        registration.setName("checkerFilter");
         registration.setOrder(8);
         return registration;
     }

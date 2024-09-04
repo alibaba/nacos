@@ -29,27 +29,16 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URL;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
-import static com.alibaba.nacos.test.naming.NamingBase.NAMING_CONTROLLER_PATH;
-import static com.alibaba.nacos.test.naming.NamingBase.TEST_GROUP_1;
-import static com.alibaba.nacos.test.naming.NamingBase.TEST_NAMESPACE_1;
-import static com.alibaba.nacos.test.naming.NamingBase.TEST_NAMESPACE_2;
-import static com.alibaba.nacos.test.naming.NamingBase.TEST_PORT2_4_DOM_1;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -58,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-class CPInstancesAPI_ITCase {
+class CPInstancesAPI_ITCase extends NamingBase {
     
     private NamingService naming;
     
@@ -68,11 +57,6 @@ class CPInstancesAPI_ITCase {
     
     @LocalServerPort
     private int port;
-    
-    private URL base;
-    
-    @Autowired
-    private TestRestTemplate restTemplate;
     
     @BeforeEach
     void setUp() throws Exception {
@@ -90,6 +74,7 @@ class CPInstancesAPI_ITCase {
         properties.put(PropertyKeyConst.NAMESPACE, TEST_NAMESPACE_2);
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1" + ":" + port);
         naming2 = NamingFactory.createNamingService(properties);
+        isNamingServerReady();
     }
     
     @AfterEach
@@ -182,13 +167,14 @@ class CPInstancesAPI_ITCase {
         String serviceName = NamingBase.randomDomainName();
         
         ResponseEntity<String> registerResponse = request(NamingBase.NAMING_CONTROLLER_PATH + "/instance",
-                Params.newParams().appendParam("serviceName", serviceName).appendParam("ip", "11.11.11.11").appendParam("port", "80")
-                        .appendParam("namespaceId", TEST_NAMESPACE_1).done(), String.class, HttpMethod.POST);
+                Params.newParams().appendParam("serviceName", serviceName).appendParam("ip", "11.11.11.11")
+                        .appendParam("port", "80").appendParam("namespaceId", TEST_NAMESPACE_1).done(), String.class,
+                HttpMethod.POST);
         assertTrue(registerResponse.getStatusCode().is2xxSuccessful());
         
         ResponseEntity<String> deleteServiceResponse = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
-                Params.newParams().appendParam("serviceName", serviceName).appendParam("namespaceId", TEST_NAMESPACE_1).done(),
-                String.class, HttpMethod.DELETE);
+                Params.newParams().appendParam("serviceName", serviceName).appendParam("namespaceId", TEST_NAMESPACE_1)
+                        .done(), String.class, HttpMethod.DELETE);
         assertTrue(deleteServiceResponse.getStatusCode().is4xxClientError());
     }
     
@@ -210,8 +196,8 @@ class CPInstancesAPI_ITCase {
         
         //get service
         response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
-                Params.newParams().appendParam("serviceName", serviceName).appendParam("namespaceId", TEST_NAMESPACE_1).done(),
-                String.class);
+                Params.newParams().appendParam("serviceName", serviceName).appendParam("namespaceId", TEST_NAMESPACE_1)
+                        .done(), String.class);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
@@ -254,8 +240,8 @@ class CPInstancesAPI_ITCase {
         
         //get service
         ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service/list",
-                Params.newParams().appendParam("serviceName", serviceName).appendParam("pageNo", "1").appendParam("pageSize", "150").done(),
-                String.class);
+                Params.newParams().appendParam("serviceName", serviceName).appendParam("pageNo", "1")
+                        .appendParam("pageSize", "150").done(), String.class);
         
         System.out.println("json = " + response.getBody());
         assertTrue(response.getStatusCode().is2xxSuccessful());
@@ -337,7 +323,8 @@ class CPInstancesAPI_ITCase {
         assertEquals(1, json.get("hosts").size());
         
         instanceDeregister(serviceName, Constants.DEFAULT_NAMESPACE_ID, "33.33.33.33", TEST_PORT2_4_DOM_1);
-        instanceDeregister(serviceName, Constants.DEFAULT_NAMESPACE_ID, TEST_GROUP_1, "22.22.22.22", TEST_PORT2_4_DOM_1);
+        instanceDeregister(serviceName, Constants.DEFAULT_NAMESPACE_ID, TEST_GROUP_1, "22.22.22.22",
+                TEST_PORT2_4_DOM_1);
         
         namingServiceDelete(serviceName, Constants.DEFAULT_NAMESPACE_ID);
         namingServiceDelete(serviceName, Constants.DEFAULT_NAMESPACE_ID, TEST_GROUP_1);
@@ -349,17 +336,19 @@ class CPInstancesAPI_ITCase {
     
     private void instanceDeregister(String serviceName, String namespace, String groupName, String ip, String port) {
         ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/instance",
-                Params.newParams().appendParam("serviceName", serviceName).appendParam("ip", ip).appendParam("port", port)
-                        .appendParam("namespaceId", namespace).appendParam("groupName", groupName).appendParam("ephemeral", "false").done(),
-                String.class, HttpMethod.DELETE);
+                Params.newParams().appendParam("serviceName", serviceName).appendParam("ip", ip)
+                        .appendParam("port", port).appendParam("namespaceId", namespace)
+                        .appendParam("groupName", groupName).appendParam("ephemeral", "false").done(), String.class,
+                HttpMethod.DELETE);
         assertTrue(response.getStatusCode().is2xxSuccessful());
     }
     
     private void instanceRegister(String serviceName, String namespace, String groupName, String ip, String port) {
         ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/instance",
-                Params.newParams().appendParam("serviceName", serviceName).appendParam("ip", ip).appendParam("port", port)
-                        .appendParam("namespaceId", namespace).appendParam("groupName", groupName).appendParam("ephemeral", "false").done(),
-                String.class, HttpMethod.POST);
+                Params.newParams().appendParam("serviceName", serviceName).appendParam("ip", ip)
+                        .appendParam("port", port).appendParam("namespaceId", namespace)
+                        .appendParam("groupName", groupName).appendParam("ephemeral", "false").done(), String.class,
+                HttpMethod.POST);
         assertTrue(response.getStatusCode().is2xxSuccessful());
     }
     
@@ -374,7 +363,8 @@ class CPInstancesAPI_ITCase {
     private void namingServiceCreate(String serviceName, String namespace, String groupName) {
         ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
                 Params.newParams().appendParam("serviceName", serviceName).appendParam("protectThreshold", "0.3")
-                        .appendParam("namespaceId", namespace).appendParam("groupName", groupName).done(), String.class, HttpMethod.POST);
+                        .appendParam("namespaceId", namespace).appendParam("groupName", groupName).done(), String.class,
+                HttpMethod.POST);
         System.out.println(response);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         assertEquals("ok", response.getBody());
@@ -392,27 +382,5 @@ class CPInstancesAPI_ITCase {
         System.out.println(response);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         assertEquals("ok", response.getBody());
-    }
-    
-    private <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz) {
-        
-        HttpHeaders headers = new HttpHeaders();
-        
-        HttpEntity<?> entity = new HttpEntity<T>(headers);
-        
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(this.base.toString() + path).queryParams(params);
-        
-        return this.restTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, clazz);
-    }
-    
-    private <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz, HttpMethod httpMethod) {
-        
-        HttpHeaders headers = new HttpHeaders();
-        
-        HttpEntity<?> entity = new HttpEntity<T>(headers);
-        
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(this.base.toString() + path).queryParams(params);
-        
-        return this.restTemplate.exchange(builder.toUriString(), httpMethod, entity, clazz);
     }
 }

@@ -56,6 +56,8 @@ import com.alibaba.nacos.persistence.repository.embedded.operate.BaseDatabaseOpe
 import com.alibaba.nacos.persistence.repository.embedded.sql.ModifyRequest;
 import com.alibaba.nacos.persistence.repository.embedded.sql.QueryType;
 import com.alibaba.nacos.persistence.repository.embedded.sql.SelectRequest;
+import com.alibaba.nacos.persistence.repository.embedded.sql.limiter.SqlLimiter;
+import com.alibaba.nacos.persistence.repository.embedded.sql.limiter.SqlTypeLimiter;
 import com.alibaba.nacos.persistence.utils.PersistenceExecutor;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.google.protobuf.ByteString;
@@ -171,11 +173,14 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
     
     private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
     
+    private final SqlLimiter sqlLimiter;
+    
     public DistributedDatabaseOperateImpl(ServerMemberManager memberManager, ProtocolManager protocolManager)
             throws Exception {
         this.memberManager = memberManager;
         this.protocol = protocolManager.getCpProtocol();
         init();
+        this.sqlLimiter = new SqlTypeLimiter();
     }
     
     protected void init() throws Exception {
@@ -471,6 +476,7 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
         try {
             selectRequest = serializer.deserialize(request.getData().toByteArray(), SelectRequest.class);
             LoggerUtils.printIfDebugEnabled(LOGGER, "getData info : selectRequest : {}", selectRequest);
+            sqlLimiter.doLimitForSelectRequest(selectRequest);
             final RowMapper<Object> mapper = RowMapperManager.getRowMapper(selectRequest.getClassName());
             final byte type = selectRequest.getQueryType();
             switch (type) {
@@ -518,6 +524,7 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
         lock.lock();
         try {
             List<ModifyRequest> sqlContext = serializer.deserialize(byteString.toByteArray(), List.class);
+            sqlLimiter.doLimitForModifyRequest(sqlContext);
             boolean isOk = false;
             if (log.containsExtendInfo(DATA_IMPORT_KEY)) {
                 isOk = doDataImport(jdbcTemplate, sqlContext);
