@@ -335,6 +335,8 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             // cluster
             com.alibaba.nacos.consistency.ap.APProtocol.class,
             com.alibaba.nacos.consistency.cp.CPProtocol.class,
+            com.alibaba.nacos.core.distributed.raft.RaftConfig.class,
+            com.alibaba.nacos.core.distributed.raft.RaftEvent.class,
             // proto
             com.alibaba.nacos.consistency.entity.WriteRequest.class,
             com.alibaba.nacos.consistency.entity.WriteRequest.Builder.class,

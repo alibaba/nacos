@@ -129,7 +129,6 @@ public class ProtocolManager extends MemberChangeListener implements DisposableB
     private void initAPProtocol() {
         ApplicationUtils.getBeanIfExist(APProtocol.class, protocol -> {
             Class configType = ClassUtils.resolveGenericType(protocol.getClass());
-            System.out.println("Getting AP class: " + configType.getName());
             Config config = (Config) ApplicationUtils.getBean(configType);
             injectMembers4AP(config);
             protocol.init(config);
@@ -140,7 +139,6 @@ public class ProtocolManager extends MemberChangeListener implements DisposableB
     private void initCPProtocol() {
         ApplicationUtils.getBeanIfExist(CPProtocol.class, protocol -> {
             Class configType = ClassUtils.resolveGenericType(protocol.getClass());
-            System.out.println("Getting CP class: " + configType.getName());
             Config config = (Config) ApplicationUtils.getBean(configType);
             injectMembers4CP(config);
             protocol.init(config);
