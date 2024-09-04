@@ -189,6 +189,7 @@ public class JRaftServer {
     
     synchronized void start() {
         if (!isStarted) {
+            System.out.println("========= The raft protocol is starting... =========");
             Loggers.RAFT.info("========= The raft protocol is starting... =========");
             try {
                 // init raft group node
@@ -203,6 +204,7 @@ public class JRaftServer {
                 rpcServer = JRaftUtils.initRpcServer(this, localPeerId);
                 
                 if (!this.rpcServer.init(null)) {
+                    System.out.println("Fail to init [BaseRpcServer].");
                     Loggers.RAFT.error("Fail to init [BaseRpcServer].");
                     throw new RuntimeException("Fail to init [BaseRpcServer].");
                 }
@@ -210,6 +212,7 @@ public class JRaftServer {
                 // Initialize multi raft group service framework
                 isStarted = true;
                 createMultiRaftGroup(processors);
+                System.out.println("========= The raft protocol start finished... =========");
                 Loggers.RAFT.info("========= The raft protocol start finished... =========");
             } catch (Exception e) {
                 Loggers.RAFT.error("raft protocol start failure, cause: ", e);
@@ -358,7 +361,6 @@ public class JRaftServer {
                 if (status.isOk()) {
                     return;
                 }
-                System.out.println("Failed to join the cluster, retry...");
                 Loggers.RAFT.warn("Failed to join the cluster, retry...");
             } catch (Exception e) {
                 Loggers.RAFT.error("Failed to join the cluster, retry...", e);
