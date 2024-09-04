@@ -79,12 +79,12 @@ public class DefaultLabelsCollector implements LabelsCollector {
         
         //env
         LOGGER.info("default nacos collect env raw labels: {}",
-                System.getenv(Constants.APP_CONN_LABELS_KEY.replaceAll(DOT, UNDERSCORE)));
+                System.getenv(Constants.APP_CONN_LABELS_KEY.replaceAll("\\" + DOT, UNDERSCORE)));
         Map<String, String> envLabels = ConnLabelsUtils.parseRawLabels(
-                System.getenv(Constants.APP_CONN_LABELS_KEY.replaceAll(DOT, UNDERSCORE)));
-        if (System.getenv(Constants.CONFIG_GRAY_LABEL.replaceAll(DOT, UNDERSCORE)) != null) {
+                System.getenv(Constants.APP_CONN_LABELS_KEY.replaceAll("\\" + DOT, UNDERSCORE)));
+        if (System.getenv(Constants.CONFIG_GRAY_LABEL.replaceAll("\\" + DOT, UNDERSCORE)) != null) {
             envLabels.put(Constants.CONFIG_GRAY_LABEL,
-                    System.getenv(Constants.CONFIG_GRAY_LABEL.replaceAll(DOT, UNDERSCORE)));
+                    System.getenv(Constants.CONFIG_GRAY_LABEL.replaceAll("\\" + DOT, UNDERSCORE)));
         }
         LOGGER.info("default nacos collect env labels: {}", envLabels);
         
