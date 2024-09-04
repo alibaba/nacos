@@ -59,6 +59,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             java.lang.management.ThreadMXBean.class,
             java.lang.management.ThreadInfo.class,
             java.lang.management.LockInfo.class,
+            java.lang.System.class,
             java.security.AccessController.class,
             java.sql.Date.class,
             java.sql.Driver.class,
@@ -284,6 +285,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
     
     // region gRpc
     private final Class<?>[] grpcClasses = {
+            com.google.protobuf.Any.class,
             com.google.protobuf.Message.class,
             
             io.grpc.ServerCall.class,
@@ -337,6 +339,20 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alibaba.nacos.consistency.cp.CPProtocol.class,
             com.alibaba.nacos.core.distributed.raft.RaftConfig.class,
             com.alibaba.nacos.core.distributed.raft.RaftEvent.class,
+            com.alibaba.nacos.api.ability.ServerAbilities.class,
+            com.alibaba.nacos.api.config.ability.ServerConfigAbility.class,
+            com.alibaba.nacos.api.naming.ability.ServerNamingAbility.class,
+            com.alibaba.nacos.consistency.DataOperation.class,
+            com.alibaba.nacos.core.cluster.Member.class,
+            com.alibaba.nacos.core.cluster.remote.request.AbstractClusterRequest.class,
+            com.alibaba.nacos.core.cluster.remote.request.MemberReportRequest.class,
+            com.alibaba.nacos.core.cluster.remote.response.MemberReportResponse.class,
+            com.alibaba.nacos.core.distributed.distro.entity.DistroData.class,
+            com.alibaba.nacos.core.distributed.distro.entity.DistroKey.class,
+            com.alibaba.nacos.naming.cluster.remote.request.DistroDataRequest.class,
+            com.alibaba.nacos.naming.cluster.remote.response.DistroDataResponse.class,
+            com.alibaba.nacos.naming.core.v2.client.ClientSyncDatumSnapshot.class,
+            com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo.class,
             // proto
             com.alibaba.nacos.consistency.entity.WriteRequest.class,
             com.alibaba.nacos.consistency.entity.WriteRequest.Builder.class,
