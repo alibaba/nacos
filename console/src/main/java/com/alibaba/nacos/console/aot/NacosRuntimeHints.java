@@ -332,6 +332,9 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alibaba.nacos.api.remote.response.ServerLoaderInfoResponse.class,
             com.alibaba.nacos.api.remote.response.ServerReloadResponse.class,
             com.alibaba.nacos.api.remote.response.SetupAckResponse.class,
+            // cluster
+            com.alibaba.nacos.consistency.ap.APProtocol.class,
+            com.alibaba.nacos.consistency.cp.CPProtocol.class,
             // proto
             com.alibaba.nacos.consistency.entity.WriteRequest.class,
             com.alibaba.nacos.consistency.entity.WriteRequest.Builder.class,
