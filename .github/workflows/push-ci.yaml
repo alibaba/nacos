@@ -65,7 +65,7 @@ jobs:
           repository: nacos-group/nacos-e2e.git
           ref: main
           path: nacos-e2e
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4.1.7
         name: Download distribution tar
         with:
           name: nacos

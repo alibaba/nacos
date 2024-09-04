@@ -24,6 +24,8 @@ import com.alibaba.nacos.persistence.configuration.condition.ConditionStandalone
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.repository.embedded.sql.ModifyRequest;
+import com.alibaba.nacos.persistence.repository.embedded.sql.limiter.SqlLimiter;
+import com.alibaba.nacos.persistence.repository.embedded.sql.limiter.SqlTypeLimiter;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,9 +56,15 @@ public class StandaloneDatabaseOperateImpl implements BaseDatabaseOperate {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(StandaloneDatabaseOperateImpl.class);
     
+    private final SqlLimiter sqlLimiter;
+    
     private JdbcTemplate jdbcTemplate;
     
     private TransactionTemplate transactionTemplate;
+    
+    public StandaloneDatabaseOperateImpl() {
+        this.sqlLimiter = new SqlTypeLimiter();
+    }
     
     @PostConstruct
     protected void init() {
@@ -107,6 +115,7 @@ public class StandaloneDatabaseOperateImpl implements BaseDatabaseOperate {
                 while (iterator.hasNext()) {
                     String sql = iterator.next();
                     if (StringUtils.isNotBlank(sql)) {
+                        sqlLimiter.doLimit(sql);
                         batchUpdate.add(sql);
                     }
                     if (batchUpdate.size() == batchSize || !iterator.hasNext()) {

@@ -235,7 +235,8 @@ class ParamUtilTest {
         properties.setProperty(PropertyKeyConst.LOG_ALL_PROPERTIES, "true");
         NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         String actual = ParamUtil.getInputParameters(clientProperties.asProperties());
-        assertTrue(actual.startsWith("Log nacos client init properties with Full mode, This mode is only used for debugging and troubleshooting."));
+        assertTrue(actual.startsWith(
+                "Log nacos client init properties with Full mode, This mode is only used for debugging and troubleshooting."));
         assertTrue(actual.contains("\ttestKey=testValue\n"));
         Properties envProperties = clientProperties.getProperties(SourceType.ENV);
         String envCaseKey = envProperties.stringPropertyNames().iterator().next();
@@ -248,8 +249,22 @@ class ParamUtilTest {
         Properties properties = new Properties();
         properties.setProperty("testKey", "testValue");
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, "localhost:8848");
+        properties.setProperty(PropertyKeyConst.PASSWORD, "testPassword");
         NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         String actual = ParamUtil.getInputParameters(clientProperties.asProperties());
-        assertEquals("Nacos client key init properties: \n\tserverAddr=localhost:8848\n", actual);
+        assertEquals("Nacos client key init properties: \n\tserverAddr=localhost:8848\n\tpassword=te********rd\n",
+                actual);
+    }
+    
+    @Test
+    void testDesensitiseParameter() {
+        String shortParameter = "aa";
+        assertEquals(shortParameter, ParamUtil.desensitiseParameter(shortParameter));
+        String middleParameter = "aaa";
+        assertEquals("a*a", ParamUtil.desensitiseParameter(middleParameter));
+        middleParameter = "aaaaaaa";
+        assertEquals("a*****a", ParamUtil.desensitiseParameter(middleParameter));
+        String longParameter = "testPass";
+        assertEquals("te****ss", ParamUtil.desensitiseParameter(longParameter));
     }
 }

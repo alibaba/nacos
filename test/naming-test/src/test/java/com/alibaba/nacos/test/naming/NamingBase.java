@@ -24,11 +24,14 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.test.base.HttpClient4Test;
+import com.alibaba.nacos.test.base.Params;
 import org.apache.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -231,5 +234,18 @@ public class NamingBase extends HttpClient4Test {
             return StringUtils.EMPTY;
         }
         return contextPath.startsWith("/") ? contextPath : "/" + contextPath;
+    }
+    
+    protected void isNamingServerReady() throws InterruptedException {
+        int retry = 0;
+        while (retry < 3) {
+            ResponseEntity<String> response = request("/nacos/v1/ns/operator/metrics", Params.newParams().done(),
+                    String.class);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody().contains("UP")) {
+                break;
+            }
+            retry++;
+            TimeUnit.SECONDS.sleep(5);
+        }
     }
 }

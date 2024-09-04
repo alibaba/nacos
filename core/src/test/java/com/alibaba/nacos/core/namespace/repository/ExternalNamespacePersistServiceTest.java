@@ -191,7 +191,7 @@ class ExternalNamespacePersistServiceTest {
     @Test
     void isExistTableTest() {
         String tableName = "tableName";
-        String sql = String.format("SELECT 1 FROM %s LIMIT 1", tableName);
+        String sql = String.format("SELECT COUNT(*) FROM %s ", tableName);
         
         when(jt.queryForObject(eq(sql), eq(Integer.class))).thenReturn(1);
         boolean existTableA = externalNamespacePersistService.isExistTable(tableName);

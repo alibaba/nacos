@@ -14,22 +14,18 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.persistent;
-
-import com.alibaba.nacos.naming.consistency.ConsistencyService;
+package com.alibaba.nacos.config.server.constant;
 
 /**
- * A consistency service that guarantee CP consistency for the published data.
+ * Parameters Field.
  *
- * <p>CP consistency is hereby defined as follows:
- *
- * <p>Once the writing operation returned client a success, the data within the operation is guaranteed to be
- * successfully written to the cluster. And the data should be consistent between servers after some time without any
- * outside interfere.
- *
- * @author nkorange
- * @since 1.0.0
+ * @author haiqi.wang
+ * @date 2024/08/13
  */
-public interface PersistentConsistencyService extends ConsistencyService {
+public final class ParametersField {
     
+    /**
+     * Types.
+     */
+    public static final String TYPES = "types";
 }

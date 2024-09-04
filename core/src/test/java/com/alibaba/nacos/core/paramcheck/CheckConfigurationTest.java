@@ -19,7 +19,10 @@ package com.alibaba.nacos.core.paramcheck;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
@@ -36,5 +39,15 @@ class CheckConfigurationTest {
         ControllerMethodsCache methodsCache = Mockito.mock(ControllerMethodsCache.class);
         ParamCheckerFilter checkerFilter = checkConfiguration.checkerFilter(methodsCache);
         assertNotNull(checkerFilter);
+    }
+    
+    @Test
+    void testCheckerFilterRegistration() {
+        ParamCheckerFilter checkerFilter = Mockito.mock(ParamCheckerFilter.class);
+        CheckConfiguration configuration = new CheckConfiguration();
+        FilterRegistrationBean<ParamCheckerFilter> registration = configuration.checkerFilterRegistration(checkerFilter);
+        String name = (String) ReflectionTestUtils.getField(registration, "name");
+        assertEquals("checkerFilter", name);
+        assertEquals(8, registration.getOrder());
     }
 }
