@@ -42,7 +42,13 @@ public class PersistentConsistencyServiceDelegateImpl implements PersistentConsi
     private final BasePersistentServiceProcessor persistentServiceProcessor;
     
     public PersistentConsistencyServiceDelegateImpl(ProtocolManager protocolManager) throws Exception {
-        this.persistentServiceProcessor = createPersistentServiceProcessor(protocolManager);
+        System.out.println("Starting construct persistentConsistencyServiceDelegate...");
+        try {
+            this.persistentServiceProcessor = createPersistentServiceProcessor(protocolManager);
+        } catch (Exception e) {
+            System.out.println("ERROR OCCURRED! " + e.getLocalizedMessage());
+            throw new Error(e);
+        }
     }
     
     @Override
