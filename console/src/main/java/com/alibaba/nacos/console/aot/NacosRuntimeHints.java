@@ -60,6 +60,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             java.lang.management.ThreadInfo.class,
             java.lang.management.LockInfo.class,
             java.lang.System.class,
+            java.net.InetSocketAddress.class,
             java.security.AccessController.class,
             java.sql.Date.class,
             java.sql.Driver.class,

@@ -351,7 +351,6 @@ public class JRaftServer {
         while (!isShutdown) {
             try {
                 List<PeerId> peerIds = cliService.getPeers(groupId, conf);
-                System.out.println("[?] groupId: " + groupId);
                 for (PeerId peerId : peerIds) {
                     System.out.println(" - " + peerId.getIp() + "#" + peerId.getPriority());
                 }
