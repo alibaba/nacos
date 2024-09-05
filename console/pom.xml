@@ -305,6 +305,8 @@
                                 <!-- Resource Hints -->
                                 -H:IncludeResources='librocksdbjni-${hints.os.rocksdb}'
                                 <!-- Runtime Hints -->
+                                --initialize-at-run-time=com.google.common.util.concurrent.AbstractFuture$Waiter
+                                --initialize-at-run-time=com.google.common.util.concurrent.AbstractFuture$Listener
                                 --initialize-at-run-time=io.grpc.internal.ServerCallImpl
                                 --initialize-at-run-time=io.grpc.ForwardingServerCall
                                 --initialize-at-run-time=io.grpc.ForwardingServerCall$SimpleForwardingServerCall

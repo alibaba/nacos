@@ -60,13 +60,16 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             java.lang.management.ThreadInfo.class,
             java.lang.management.LockInfo.class,
             java.lang.System.class,
+            java.lang.Thread.class,
             java.net.InetSocketAddress.class,
+            java.nio.ByteBuffer.class,
             java.security.AccessController.class,
             java.sql.Date.class,
             java.sql.Driver.class,
             java.sql.DriverManager.class,
             java.sql.Time.class,
             java.sql.Timestamp.class,
+            java.util.concurrent.locks.LockSupport.class,
             java.util.Optional.class,
             java.util.Properties.class
     };
@@ -278,6 +281,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alipay.sofa.jraft.rpc.impl.AbstractClientService.class,
             com.alipay.sofa.jraft.rpc.impl.BoltRaftRpcFactory.class,
             com.alipay.sofa.jraft.rpc.impl.GrpcRaftRpcFactory.class,
+            com.alipay.sofa.jraft.util.JRaftSignalHandler.class,
             com.alipay.sofa.jraft.util.concurrent.MpscSingleThreadExecutor.class,
             com.alipay.sofa.jraft.util.timer.DefaultRaftTimerFactory.class,
             com.alipay.sofa.jraft.core.DefaultJRaftServiceFactory.class,
@@ -356,6 +360,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alibaba.nacos.naming.cluster.remote.response.DistroDataResponse.class,
             com.alibaba.nacos.naming.core.v2.client.ClientSyncDatumSnapshot.class,
             com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo.class,
+            com.google.common.util.concurrent.AbstractFuture.class,
             // proto
             com.alibaba.nacos.consistency.entity.WriteRequest.class,
             com.alibaba.nacos.consistency.entity.WriteRequest.Builder.class,
