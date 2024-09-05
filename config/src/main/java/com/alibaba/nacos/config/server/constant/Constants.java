@@ -33,7 +33,10 @@ public class Constants {
     public static final String DEFAULT_GROUP = "DEFAULT_GROUP";
     
     public static final String DATASOURCE_PLATFORM_PROPERTY_STATE = "datasource_platform";
-    
+
+    public static final String CONFIG_RENTENTION_DAYS_PROPERTY_STATE = "config_retention_days";
+
+
     /**
      * Config file directory in server side.
      */

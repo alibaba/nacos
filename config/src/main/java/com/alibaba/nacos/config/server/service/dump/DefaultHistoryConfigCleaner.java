@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
@@ -39,8 +40,6 @@ public class DefaultHistoryConfigCleaner implements HistoryConfigCleaner {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultHistoryConfigCleaner.class);
     
     private HistoryConfigInfoPersistService historyConfigInfoPersistService;
-    
-    private int retentionDays = 30;
     
     @Override
     public void cleanHistoryConfig() {
@@ -66,22 +65,7 @@ public class DefaultHistoryConfigCleaner implements HistoryConfigCleaner {
     }
     
     private int getRetentionDays() {
-        String val = EnvUtil.getProperty("nacos.config.retention.days");
-        if (null == val) {
-            return retentionDays;
-        }
-        
-        int tmp = 0;
-        try {
-            tmp = Integer.parseInt(val);
-            if (tmp > 0) {
-                retentionDays = tmp;
-            }
-        } catch (NumberFormatException nfe) {
-            FATAL_LOG.error("read nacos.config.retention.days wrong", nfe);
-        }
-        
-        return retentionDays;
+        return PropertyUtil.getConfigRententionDays();
     }
     
     @Override
