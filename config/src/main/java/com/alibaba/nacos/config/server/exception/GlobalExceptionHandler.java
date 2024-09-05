@@ -21,6 +21,8 @@ import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.persistence.monitor.DatasourceMetrics;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -33,7 +35,8 @@ import java.io.IOException;
  *
  * @author Nacos
  */
-@ControllerAdvice
+@ControllerAdvice(basePackages = "com.alibaba.nacos.config.server")
+@Order(Ordered.LOWEST_PRECEDENCE - 1)
 public class GlobalExceptionHandler {
     
     /**
