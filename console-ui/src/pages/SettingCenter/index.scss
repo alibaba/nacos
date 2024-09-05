@@ -26,12 +26,13 @@
 }
 
 .text-box {
-  height: 140px;
+  width: 100%;
+  flex-wrap: wrap;
   display: flex;
 }
 
 .setting-checkbox {
-  flex: 1;
+  flex: 0 0 50%;
   height: 100px;
   box-sizing: border-box;
 }

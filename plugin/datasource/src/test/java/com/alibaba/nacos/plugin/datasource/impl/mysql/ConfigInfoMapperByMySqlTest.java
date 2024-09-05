@@ -261,15 +261,15 @@ class ConfigInfoMapperByMySqlTest {
     @Test
     void testFindConfigInfoLike4PageCountRows() {
         MapperResult mapperResult = configInfoMapperByMySql.findConfigInfoLike4PageCountRows(context);
-        assertEquals("SELECT count(*) FROM config_info WHERE  tenant_id LIKE ?  AND app_name = ? ", mapperResult.getSql());
+        assertEquals("SELECT count(*) FROM config_info WHERE tenant_id LIKE ?  AND app_name = ? ", mapperResult.getSql());
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
     }
     
     @Test
     void testFindConfigInfoLike4PageFetchRows() {
         MapperResult mapperResult = configInfoMapperByMySql.findConfigInfoLike4PageFetchRows(context);
-        assertEquals(mapperResult.getSql(), "SELECT id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key FROM config_info "
-                + "WHERE  tenant_id LIKE ?  AND app_name = ?  LIMIT " + startRow + "," + pageSize);
+        assertEquals(mapperResult.getSql(), "SELECT id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key,type FROM config_info "
+                + "WHERE tenant_id LIKE ?  AND app_name = ?  LIMIT " + startRow + "," + pageSize);
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
     }
     

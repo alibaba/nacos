@@ -13,8 +13,7 @@ yarn --registry=https://registry.npm.taobao.org
 
 NodeJS提供了一些安装程序，都可以在[nodejs.org](https://nodejs.org/download/release/) 这里下载并安装。mac系统选择.pkg结尾的文件下载安装。
 注意node版本号过高可能导致 `npm install` 时失败，建议版本:
-- node:v8.16.0
-- npm:6.4.1
+- node:v14.20.1
 
 ## 安装依赖
 ```sh
