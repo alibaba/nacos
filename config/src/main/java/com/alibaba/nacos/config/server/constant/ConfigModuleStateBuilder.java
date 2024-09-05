@@ -50,7 +50,8 @@ public class ConfigModuleStateBuilder implements ModuleStateBuilder {
         moduleState.newState(PropertiesConstant.DEFAULT_MAX_SIZE, PropertyUtil.getDefaultMaxSize());
         moduleState.newState(PropertiesConstant.DEFAULT_MAX_AGGR_COUNT, PropertyUtil.getDefaultMaxAggrCount());
         moduleState.newState(PropertiesConstant.DEFAULT_MAX_AGGR_SIZE, PropertyUtil.getDefaultMaxAggrSize());
-        
+        moduleState.newState(Constants.CONFIG_RENTENTION_DAYS_PROPERTY_STATE, PropertyUtil.getConfigRententionDays());
+
         return moduleState;
     }
 }
