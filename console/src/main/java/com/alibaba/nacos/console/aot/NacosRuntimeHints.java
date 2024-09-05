@@ -186,6 +186,8 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alipay.sofa.jraft.entity.LocalStorageOutter.ConfigurationPBMeta.Builder.class,
             com.alipay.sofa.jraft.entity.LocalStorageOutter.LocalSnapshotPbMeta.class,
             com.alipay.sofa.jraft.entity.LocalStorageOutter.LocalSnapshotPbMeta.Builder.class,
+            com.alipay.sofa.jraft.entity.LocalStorageOutter.LocalSnapshotPbMeta.File.class,
+            com.alipay.sofa.jraft.entity.LocalStorageOutter.LocalSnapshotPbMeta.File.Builder.class,
             com.alipay.sofa.jraft.entity.RaftOutter.EntryMeta.class,
             com.alipay.sofa.jraft.entity.RaftOutter.EntryMeta.Builder.class,
             com.alipay.sofa.jraft.entity.RaftOutter.SnapshotMeta.class,
