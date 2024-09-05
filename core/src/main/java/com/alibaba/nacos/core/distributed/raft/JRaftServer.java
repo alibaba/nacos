@@ -351,17 +351,22 @@ public class JRaftServer {
         while (!isShutdown) {
             try {
                 List<PeerId> peerIds = cliService.getPeers(groupId, conf);
+                System.out.println("[?] groupId: " + groupId);
+                for (PeerId peerId : peerIds) {
+                    System.out.println(" - " + peerId.getIp() + "#" + peerId.getPriority());
+                }
                 if (peerIds.contains(selfIp)) {
                     return;
                 }
                 Status status = cliService.addPeer(groupId, conf, selfIp);
+                System.out.println("[?] status: " + status.toString());
                 if (status.isOk()) {
                     return;
                 }
-                System.out.println("[!] Failed to join the cluster, retry...");
                 Loggers.RAFT.warn("Failed to join the cluster, retry...");
             } catch (Exception e) {
                 System.out.println("[!] Failed to join the cluster, retry, " + e.getMessage());
+                e.printStackTrace();
                 Loggers.RAFT.error("Failed to join the cluster, retry...", e);
             }
             ThreadUtils.sleep(1_000L);
@@ -369,7 +374,6 @@ public class JRaftServer {
     }
     
     protected PeerId getLeader(final String raftGroupId) {
-        System.out.println("[-] Getting leader");
         return RouteTable.getInstance().selectLeader(raftGroupId);
     }
     
@@ -426,7 +430,6 @@ public class JRaftServer {
         try {
             final Endpoint leaderIp = Optional.ofNullable(getLeader(group))
                     .orElseThrow(() -> new NoLeaderException(group)).getEndpoint();
-            System.out.println("[-] leaderIp: " + leaderIp.getIp());
             cliClientService.getRpcClient().invokeAsync(leaderIp, request, new InvokeCallback() {
                 @Override
                 public void complete(Object o, Throwable ex) {
@@ -488,7 +491,6 @@ public class JRaftServer {
         if (isShutdown) {
             return;
         }
-        System.out.println("[-] refreshRouteTable");
         
         final String groupName = group;
         Status status = null;
