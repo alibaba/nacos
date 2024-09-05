@@ -351,21 +351,15 @@ public class JRaftServer {
         while (!isShutdown) {
             try {
                 List<PeerId> peerIds = cliService.getPeers(groupId, conf);
-                for (PeerId peerId : peerIds) {
-                    System.out.println(" - " + peerId.getIp() + "#" + peerId.getPriority());
-                }
                 if (peerIds.contains(selfIp)) {
                     return;
                 }
                 Status status = cliService.addPeer(groupId, conf, selfIp);
-                System.out.println("[?] status: " + status.toString());
                 if (status.isOk()) {
                     return;
                 }
                 Loggers.RAFT.warn("Failed to join the cluster, retry...");
             } catch (Exception e) {
-                System.out.println("[!] Failed to join the cluster, retry, " + e.getMessage());
-                e.printStackTrace();
                 Loggers.RAFT.error("Failed to join the cluster, retry...", e);
             }
             ThreadUtils.sleep(1_000L);
