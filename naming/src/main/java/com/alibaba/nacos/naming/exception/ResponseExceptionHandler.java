@@ -20,6 +20,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.naming.misc.Loggers;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -31,7 +33,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
  *
  * @author nkorange
  */
-@ControllerAdvice
+@ControllerAdvice(basePackages = "com.alibaba.nacos.naming")
+@Order(Ordered.LOWEST_PRECEDENCE - 1)
 public class ResponseExceptionHandler {
     
     /**
