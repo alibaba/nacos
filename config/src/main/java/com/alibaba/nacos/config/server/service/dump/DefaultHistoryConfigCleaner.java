@@ -19,7 +19,6 @@ package com.alibaba.nacos.config.server.service.dump;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,8 +26,6 @@ import org.slf4j.LoggerFactory;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-
-import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
 
 /**
  * The type Default history config cleaner.
