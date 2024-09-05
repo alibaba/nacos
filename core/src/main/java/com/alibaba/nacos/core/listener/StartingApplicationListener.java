@@ -235,13 +235,16 @@ public class StartingApplicationListener implements NacosApplicationListener {
     
     private void logStarting() {
         if (!EnvUtil.getStandaloneMode()) {
-            
+            long startTime = System.currentTimeMillis();
             scheduledExecutorService = ExecutorFactory
                     .newSingleScheduledExecutorService(new NameThreadFactory("com.alibaba.nacos.core.nacos-starting"));
             
             scheduledExecutorService.scheduleWithFixedDelay(() -> {
                 if (starting) {
                     LOGGER.info("Nacos is starting...");
+                    if (System.currentTimeMillis() - startTime >= 30000) {
+                        throw new Error("Nacos has been starting for too long!");
+                    }
                 }
             }, 1, 1, TimeUnit.SECONDS);
         }
