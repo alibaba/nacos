@@ -303,10 +303,11 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             io.grpc.stub.StreamObserver.class,
             io.grpc.internal.ServerImplBuilder.class,
             io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder.class,
+            io.grpc.netty.shaded.io.grpc.netty.NettyServerProvider.class,
+            io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder.class,
+            io.grpc.netty.shaded.io.grpc.netty.NettyChannelProvider.class,
             io.grpc.ForwardingServerCall.class,
             io.grpc.ForwardingServerCall.SimpleForwardingServerCall.class,
-            
-            io.grpc.netty.shaded.io.grpc.netty.NettyChannelProvider.class,
             
             Class.forName("io.grpc.internal.ServerCallImpl"),
             Class.forName("io.grpc.netty.shaded.io.grpc.netty.WriteQueue"),
