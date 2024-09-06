@@ -5261,11 +5261,25 @@
   "methods":[{"name":"channelActive","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, {"name":"exceptionCaught","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Throwable"] }]
 },
 {
+  "name":"io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllPublicMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
   "name":"io.grpc.netty.shaded.io.grpc.netty.NettyClientHandler",
   "methods":[{"name":"channelInactive","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, {"name":"close","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }, {"name":"write","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object","io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }]
 },
 {
   "name":"io.grpc.netty.shaded.io.grpc.netty.NettyServer$1"
+},
+{
+  "name":"io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllPublicMethods":true,
+  "queryAllDeclaredConstructors":true
 },
 {
   "name":"io.grpc.netty.shaded.io.grpc.netty.NettyServerHandler",
