@@ -320,6 +320,7 @@
                                 --initialize-at-run-time=io.grpc.netty.shaded.io.grpc.netty.NettyChannelProvider
                                 --initialize-at-run-time=io.grpc.internal.ManagedChannelImpl
                                 --initialize-at-run-time=io.grpc.internal.ManagedChannelImpl$RealChannel
+                                --initialize-at-run-time=io.grpc.netty.shaded.io.netty.channel.socket.nio.NioSocketChannel
                                 --initialize-at-run-time=io.grpc.ServerCall
                                 --initialize-at-run-time=io.grpc.stub.ServerCalls
                                 --initialize-at-run-time=io.grpc.stub.ServerCalls$NoopStreamObserver
