@@ -63,6 +63,8 @@ public class PropertyKeyConst {
     
     public static final String CONFIG_RETRY_TIME = "configRetryTime";
     
+    public static final String CONFIG_REQUEST_TIMEOUT = "configRequestTimeout";
+    
     public static final String CLIENT_WORKER_MAX_THREAD_COUNT = "clientWorkerMaxThreadCount";
     
     public static final String CLIENT_WORKER_THREAD_COUNT = "clientWorkerThreadCount";
