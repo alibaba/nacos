@@ -56,7 +56,7 @@ class ParamExtractorTest {
     void testBlurFilter() throws Exception {
         MockedStatic<EnvUtil> mockedStatic = Mockito.mockStatic(EnvUtil.class);
         final Method check = ConfigController.class.getMethod("fuzzySearchConfig", String.class, String.class, String.class, String.class,
-                String.class, int.class, int.class);
+                String.class, String.class, int.class, int.class);
         ExtractorManager.Extractor annotation = check.getAnnotation(ExtractorManager.Extractor.class);
         AbstractHttpParamExtractor httpExtractor = Mockito.spy(ExtractorManager.getHttpExtractor(annotation));
         
