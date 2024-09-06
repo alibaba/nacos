@@ -19,7 +19,6 @@ package com.alibaba.nacos.console.proxy.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.console.config.ConsoleConfig;
-import com.alibaba.nacos.console.handler.core.ClusterHandler;
 import com.alibaba.nacos.console.handler.inner.naming.ServiceInnerHandler;
 import com.alibaba.nacos.console.handler.naming.ServiceHandler;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;

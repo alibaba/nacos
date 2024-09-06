@@ -42,6 +42,7 @@ import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.GroupKey;
+import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
@@ -192,6 +193,36 @@ public class ConfigInnerHandler implements ConfigHandler {
         if (collectSampleResult.getLisentersGroupkeyStatus() != null) {
             gls.setLisentersGroupkeyStatus(collectSampleResult.getLisentersGroupkeyStatus());
         }
+        return gls;
+    }
+    
+    @Override
+    public GroupkeyListenserStatus getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime) {
+        SampleResult collectSampleResult = configSubService.getCollectSampleResultByIp(ip, sampleTime);
+        GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
+        gls.setCollectStatus(200);
+        Map<String, String> configMd5Status = new HashMap<>(100);
+        
+        if (collectSampleResult.getLisentersGroupkeyStatus() == null) {
+            return gls;
+        }
+        
+        Map<String, String> status = collectSampleResult.getLisentersGroupkeyStatus();
+        for (Map.Entry<String, String> config : status.entrySet()) {
+            if (!StringUtils.isBlank(namespaceId) && config.getKey().contains(namespaceId)) {
+                configMd5Status.put(config.getKey(), config.getValue());
+                continue;
+            }
+            if (all) {
+                configMd5Status.put(config.getKey(), config.getValue());
+            } else {
+                String[] configKeys = GroupKey2.parseKey(config.getKey());
+                if (StringUtils.isBlank(configKeys[2])) {
+                    configMd5Status.put(config.getKey(), config.getValue());
+                }
+            }
+        }
+        gls.setLisentersGroupkeyStatus(configMd5Status);
         return gls;
     }
     

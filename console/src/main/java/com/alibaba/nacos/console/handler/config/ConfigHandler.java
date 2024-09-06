@@ -51,6 +51,7 @@ public interface ConfigHandler {
      * @param group             The group to which the configuration belongs.
      * @param namespaceId       The namespace identifier.
      * @param configAdvanceInfo Additional advanced search criteria.
+     * @return ConfigInfo  containing all details of the specified configuration.
      * @throws IOException      If an input or output exception occurs.
      * @throws ServletException If a servlet-specific exception occurs.
      * @throws NacosException   If an error related to Nacos configuration occurs.
@@ -161,6 +162,17 @@ public interface ConfigHandler {
     GroupkeyListenserStatus getListeners(String dataId, String group, String namespaceId, int sampleTime)
             throws Exception;
     
+    /**
+     * Get subscription information based on IP, tenant, and other parameters.
+     *
+     * @param ip IP address of the client
+     * @param all Whether to retrieve all configurations
+     * @param namespaceId Tenant information
+     * @param sampleTime Sample time for the subscription
+     * @return GroupkeyListenserStatus object containing subscription information
+     */
+    GroupkeyListenserStatus getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime);
+
     /**
      * Imports and publishes a configuration from a file.
      *
