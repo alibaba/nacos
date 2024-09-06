@@ -312,6 +312,7 @@
                                 --initialize-at-run-time=io.grpc.ForwardingServerCall$SimpleForwardingServerCall
                                 --initialize-at-run-time=io.grpc.netty.shaded.io.grpc.netty.WriteQueue
                                 --initialize-at-run-time=io.grpc.netty.shaded.io.grpc.netty.NettyServerStream
+                                --initialize-at-run-time=io.grpc.netty.shaded.io.grpc.netty.NettyChannelProvider
                                 --initialize-at-run-time=io.grpc.ServerCall
                                 --initialize-at-run-time=io.grpc.stub.ServerCalls
                                 --initialize-at-run-time=io.grpc.stub.ServerCalls$NoopStreamObserver

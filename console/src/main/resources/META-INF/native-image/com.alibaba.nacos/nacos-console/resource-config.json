@@ -2641,7 +2641,7 @@
   }]},
   "bundles":[{
     "name":"com.mysql.cj.LocalizedErrorMessages",
-    "locales":["und"]
+    "locales":["", "und"]
   }, {
     "name":"jakarta.servlet.LocalStrings",
     "locales":["und"]
@@ -2749,7 +2749,7 @@
     "locales":["en"]
   }, {
     "name":"org.apache.naming.LocalStrings",
-    "locales":["und"]
+    "locales":["", "und"]
   }, {
     "name":"org.apache.tomcat.util.LocalStrings",
     "locales":["", "und"]
