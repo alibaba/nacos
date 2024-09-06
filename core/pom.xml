@@ -108,7 +108,7 @@
         </dependency>
 
         <dependency>
-            <groupId>com.alipay.sofa</groupId>
+            <groupId>cn.dioxide.lab</groupId>
             <artifactId>rpc-grpc-impl</artifactId>
         </dependency>
         <!-- JRaft dependency end -->
