@@ -295,6 +295,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
     private final Class<?>[] grpcClasses = {
             com.google.protobuf.Any.class,
             com.google.protobuf.Message.class,
+            com.google.common.util.concurrent.AbstractFuture.class,
             
             io.grpc.ServerCall.class,
             io.grpc.ServerBuilder.class,
@@ -372,7 +373,6 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alibaba.nacos.naming.cluster.remote.response.DistroDataResponse.class,
             com.alibaba.nacos.naming.core.v2.client.ClientSyncDatumSnapshot.class,
             com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo.class,
-            com.google.common.util.concurrent.AbstractFuture.class,
             // proto
             com.alibaba.nacos.consistency.entity.WriteRequest.class,
             com.alibaba.nacos.consistency.entity.WriteRequest.Builder.class,
