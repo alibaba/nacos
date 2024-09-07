@@ -990,9 +990,9 @@
             </dependency>
             
             <dependency>
-                <groupId>com.alipay.sofa</groupId>
+                <groupId>cn.dioxide.lab</groupId>
                 <artifactId>rpc-grpc-impl</artifactId>
-                <version>${rpc-grpc-impl.version}</version>
+                <version>1.3.20</version>
             </dependency>
             
             <!-- Third-party libs -->
