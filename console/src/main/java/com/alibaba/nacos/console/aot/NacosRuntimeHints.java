@@ -71,8 +71,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             java.sql.Timestamp.class,
             java.util.concurrent.locks.LockSupport.class,
             java.util.Optional.class,
-            java.util.Properties.class,
-            jakarta.servlet.Filter.class
+            java.util.Properties.class
     };
     // endregion
     
@@ -360,19 +359,19 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alibaba.nacos.core.distributed.raft.RaftConfig.class,
             com.alibaba.nacos.core.distributed.raft.RaftEvent.class,
             com.alibaba.nacos.api.ability.ServerAbilities.class,
-            com.alibaba.nacos.api.config.ability.ServerConfigAbility.class,
-            com.alibaba.nacos.api.naming.ability.ServerNamingAbility.class,
-            com.alibaba.nacos.consistency.DataOperation.class,
-            com.alibaba.nacos.core.cluster.Member.class,
-            com.alibaba.nacos.core.cluster.remote.request.AbstractClusterRequest.class,
-            com.alibaba.nacos.core.cluster.remote.request.MemberReportRequest.class,
-            com.alibaba.nacos.core.cluster.remote.response.MemberReportResponse.class,
-            com.alibaba.nacos.core.distributed.distro.entity.DistroData.class,
-            com.alibaba.nacos.core.distributed.distro.entity.DistroKey.class,
-            com.alibaba.nacos.naming.cluster.remote.request.DistroDataRequest.class,
-            com.alibaba.nacos.naming.cluster.remote.response.DistroDataResponse.class,
-            com.alibaba.nacos.naming.core.v2.client.ClientSyncDatumSnapshot.class,
-            com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo.class,
+//            com.alibaba.nacos.api.config.ability.ServerConfigAbility.class,
+//            com.alibaba.nacos.api.naming.ability.ServerNamingAbility.class,
+//            com.alibaba.nacos.consistency.DataOperation.class,
+//            com.alibaba.nacos.core.cluster.Member.class,
+//            com.alibaba.nacos.core.cluster.remote.request.AbstractClusterRequest.class,
+//            com.alibaba.nacos.core.cluster.remote.request.MemberReportRequest.class,
+//            com.alibaba.nacos.core.cluster.remote.response.MemberReportResponse.class,
+//            com.alibaba.nacos.core.distributed.distro.entity.DistroData.class,
+//            com.alibaba.nacos.core.distributed.distro.entity.DistroKey.class,
+//            com.alibaba.nacos.naming.cluster.remote.request.DistroDataRequest.class,
+//            com.alibaba.nacos.naming.cluster.remote.response.DistroDataResponse.class,
+//            com.alibaba.nacos.naming.core.v2.client.ClientSyncDatumSnapshot.class,
+//            com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo.class,
             // proto
             com.alibaba.nacos.consistency.entity.WriteRequest.class,
             com.alibaba.nacos.consistency.entity.WriteRequest.Builder.class,

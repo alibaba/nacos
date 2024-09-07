@@ -5261,11 +5261,7 @@
   "methods":[{"name":"channelActive","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, {"name":"exceptionCaught","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Throwable"] }]
 },
 {
-  "name":"io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder",
-  "allDeclaredFields":true,
-  "queryAllDeclaredMethods":true,
-  "queryAllPublicMethods":true,
-  "queryAllDeclaredConstructors":true
+  "name":"io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder"
 },
 {
   "name":"io.grpc.netty.shaded.io.grpc.netty.NettyClientHandler",
@@ -5275,11 +5271,7 @@
   "name":"io.grpc.netty.shaded.io.grpc.netty.NettyServer$1"
 },
 {
-  "name":"io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder",
-  "allDeclaredFields":true,
-  "queryAllDeclaredMethods":true,
-  "queryAllPublicMethods":true,
-  "queryAllDeclaredConstructors":true
+  "name":"io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder"
 },
 {
   "name":"io.grpc.netty.shaded.io.grpc.netty.NettyServerHandler",
@@ -5504,28 +5496,16 @@
   "name":"io.grpc.override.ContextStorageOverride"
 },
 {
-  "name":"io.grpc.stub.ServerCalls",
-  "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "name":"io.grpc.stub.ServerCalls"
 },
 {
-  "name":"io.grpc.stub.ServerCalls$NoopStreamObserver",
-  "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "name":"io.grpc.stub.ServerCalls$NoopStreamObserver"
 },
 {
-  "name":"io.grpc.stub.ServerCalls$ServerCallStreamObserverImpl",
-  "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "name":"io.grpc.stub.ServerCalls$ServerCallStreamObserverImpl"
 },
 {
-  "name":"io.grpc.stub.ServerCalls$StreamingServerCallHandler",
-  "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "name":"io.grpc.stub.ServerCalls$StreamingServerCallHandler"
 },
 {
   "name":"io.grpc.stub.StreamObserver"
