@@ -349,4 +349,9 @@
         <appender-ref ref="CONSOLE"/>
         <level value="INFO"/>
     </logger>
+  
+    <logger name="com.alibaba.nacos.core.cluster.lookup.AddressServerMemberLookup">
+        <appender-ref ref="CONSOLE"/>
+        <level value="INFO"/>
+    </logger>
 </configuration>
