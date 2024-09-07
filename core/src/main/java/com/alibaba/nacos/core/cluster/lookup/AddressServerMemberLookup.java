@@ -24,16 +24,23 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.cluster.AbstractMemberLookup;
+import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtil;
+import com.alibaba.nacos.core.listener.StartingApplicationListener;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
@@ -44,7 +51,9 @@ import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class AddressServerMemberLookup extends AbstractMemberLookup {
-    
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AddressServerMemberLookup.class);
+
     private final GenericType<String> genericType = new GenericType<String>() { };
     
     public String domainName;
@@ -149,7 +158,24 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
             }
         }
         if (!success) {
-            throw new NacosException(NacosException.SERVER_ERROR, ex);
+            // 程序启动调用addressUrl失败，检测本地 cluster.conf 缓存文件是否存在，如果存在则启动成功
+            // 接口调用失败 并且 本地不存在 cluster.conf 时，抛出异常终止程序
+            boolean loadLocalClusterConfFlag = false;
+            try {
+                Collection<Member> members = MemberUtil.readServerConf(EnvUtil.readClusterConf());
+                if (!members.isEmpty()) {
+                    afterLookup(members);
+                    loadLocalClusterConfFlag = true;
+                    String errorMessage = ExceptionUtil.getAllExceptionMsg(ex);
+                    LOGGER.error("[serverlist] exception, use local cache. addressServerUrl = {}, error : {}", addressServerUrl, errorMessage);
+                    Loggers.CLUSTER.error("[serverlist] exception, use local cache. addressServerUrl = {}, error : {}", addressServerUrl, errorMessage);
+                }
+            } catch (IOException e) {
+                // No need to do anything
+            }
+            if (!loadLocalClusterConfFlag) {
+                throw new NacosException(NacosException.SERVER_ERROR, ex);
+            }
         }
         
         GlobalExecutor.scheduleByCommon(new AddressServerSyncTask(), DEFAULT_SYNC_TASK_DELAY_MS);
