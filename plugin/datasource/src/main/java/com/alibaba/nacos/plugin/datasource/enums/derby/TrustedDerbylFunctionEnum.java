@@ -31,7 +31,12 @@ public enum TrustedDerbylFunctionEnum {
     /**
      * NOW().
      */
-    NOW("NOW()", "CURRENT_TIMESTAMP");
+    NOW("NOW()", "CURRENT_TIMESTAMP"),
+    
+    /**
+     * SQL keyword ESCAPE.
+     */
+    ESCAPE_CHARACTER("ESCAPE", "'");
 
     private static final Map<String, TrustedDerbylFunctionEnum> LOOKUP_MAP = new HashMap<>();
 

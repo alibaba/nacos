@@ -95,9 +95,10 @@ public class TenantCapacityPersistService {
     public TenantCapacity getTenantCapacity(String tenantId) {
         TenantCapacityMapper tenantCapacityMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.TENANT_CAPACITY);
+        String escape = tenantCapacityMapper.getFunction("ESCAPE");
         String sql = tenantCapacityMapper.select(
-                Arrays.asList("id", "quota", "`usage`", "`max_size`", "max_aggr_count", "max_aggr_size", "tenant_id"),
-                Collections.singletonList("tenant_id"));
+                Arrays.asList("id", "quota", escape + "usage" + escape, escape + "max_size" + escape, "max_aggr_count",
+                        "max_aggr_size", "tenant_id"), Collections.singletonList("tenant_id"));
         List<TenantCapacity> list = jdbcTemplate.query(sql, new Object[] {tenantId}, TENANT_CAPACITY_ROW_MAPPER);
         if (list.isEmpty()) {
             return null;
