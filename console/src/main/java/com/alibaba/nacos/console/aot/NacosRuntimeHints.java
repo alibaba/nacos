@@ -71,7 +71,8 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             java.sql.Timestamp.class,
             java.util.concurrent.locks.LockSupport.class,
             java.util.Optional.class,
-            java.util.Properties.class
+            java.util.Properties.class,
+            jakarta.servlet.Filter.class
     };
     // endregion
     
@@ -302,6 +303,13 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             io.grpc.stub.CallStreamObserver.class,
             io.grpc.stub.StreamObserver.class,
             io.grpc.internal.ServerImplBuilder.class,
+            io.grpc.netty.shaded.io.netty.bootstrap.ServerBootstrap.class,
+            io.grpc.netty.shaded.io.netty.buffer.AbstractByteBufAllocator.class,
+            io.grpc.netty.shaded.io.netty.buffer.AbstractReferenceCountedByteBuf.class,
+            io.grpc.netty.shaded.io.netty.buffer.ByteBufAllocator.class,
+            io.grpc.netty.shaded.io.netty.buffer.ByteBufUtil.class,
+            io.grpc.netty.shaded.io.netty.buffer.PooledByteBufAllocator.class,
+            io.grpc.netty.shaded.io.netty.buffer.UnpooledDirectByteBuf.class,
             io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder.class,
             io.grpc.netty.shaded.io.grpc.netty.NettyServerProvider.class,
             io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder.class,
