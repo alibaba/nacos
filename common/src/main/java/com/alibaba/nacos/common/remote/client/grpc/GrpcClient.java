@@ -229,8 +229,8 @@ public abstract class GrpcClient extends RpcClient {
     private Response serverCheck(String ip, int port, RequestGrpc.RequestFutureStub requestBlockingStub) {
         try {
             ServerCheckRequest serverCheckRequest = new ServerCheckRequest();
+            LOGGER.info("[?] serverCheckRequest: {}", serverCheckRequest);
             Payload grpcRequest = GrpcUtils.convert(serverCheckRequest);
-            
             LOGGER.info("[?] grpcRequest: {}", grpcRequest.getClass().getName());
             LOGGER.info("    [>] metadata: {}", grpcRequest.getMetadata());
             LOGGER.info("    [>] body: {}", grpcRequest.getBody());
