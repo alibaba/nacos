@@ -30,11 +30,8 @@ import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
