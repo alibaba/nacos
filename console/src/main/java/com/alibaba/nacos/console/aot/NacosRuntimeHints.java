@@ -63,6 +63,8 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             java.lang.Thread.class,
             java.net.InetSocketAddress.class,
             java.nio.ByteBuffer.class,
+            java.nio.channels.SelectableChannel.class,
+            java.nio.channels.SocketChannel.class,
             java.security.AccessController.class,
             java.sql.Date.class,
             java.sql.Driver.class,
@@ -523,6 +525,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
     
     private final String[] resourcePattern = {
             AotConfiguration.reflectToNativeLibraryLoader(),
+            ".*libnetty_transport_native_epoll_.*\\.so",
             ".*\\.desc$",
             ".*\\.html$",
             ".*\\.css$",
