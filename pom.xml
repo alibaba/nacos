@@ -964,7 +964,7 @@
             <dependency>
                 <groupId>cn.dioxide.lab</groupId>
                 <artifactId>jraft-core</artifactId>
-                <version>1.3.20</version>
+                <version>1.3.21</version>
                 <exclusions>
                     <exclusion>
                         <groupId>com.alipay.sofa</groupId>
