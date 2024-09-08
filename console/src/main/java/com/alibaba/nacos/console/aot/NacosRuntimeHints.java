@@ -65,6 +65,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             java.nio.ByteBuffer.class,
             java.nio.channels.SelectableChannel.class,
             java.nio.channels.SocketChannel.class,
+            java.nio.channels.FileChannel.class,
             java.security.AccessController.class,
             java.sql.Date.class,
             java.sql.Driver.class,
