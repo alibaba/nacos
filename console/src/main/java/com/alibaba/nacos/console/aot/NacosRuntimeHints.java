@@ -42,6 +42,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             byte[].class,
             boolean.class,
             Object.class,
+            Integer.class,
             com.sun.management.GarbageCollectorMXBean.class,
             com.sun.management.GcInfo.class,
             sun.misc.Unsafe.class,
