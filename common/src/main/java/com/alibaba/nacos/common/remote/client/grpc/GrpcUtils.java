@@ -46,8 +46,6 @@ import java.util.Map;
  */
 public class GrpcUtils {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(GrpcUtils.class);
-    
     /**
      * convert request to payload.
      *
@@ -83,7 +81,6 @@ public class GrpcUtils {
                 .setClientIp(NetUtils.localIp()).putAllHeaders(request.getHeaders()).build();
         
         byte[] jsonBytes = convertRequestToByte(request);
-        LOGGER.info("[*] jsonBytes: {}", Arrays.toString(jsonBytes));
         
         Payload.Builder builder = Payload.newBuilder();
         

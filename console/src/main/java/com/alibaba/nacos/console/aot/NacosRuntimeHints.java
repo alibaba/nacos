@@ -296,6 +296,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
     // region gRpc
     private final Class<?>[] grpcClasses = {
             com.google.protobuf.Any.class,
+            com.google.protobuf.Any.Builder.class,
             com.google.protobuf.Message.class,
             com.google.common.util.concurrent.AbstractFuture.class,
             

@@ -309,6 +309,7 @@
                                 --initialize-at-run-time=com.google.common.util.concurrent.AbstractFuture$Waiter
                                 --initialize-at-run-time=com.google.common.util.concurrent.AbstractFuture$Listener
                                 --initialize-at-run-time=com.google.protobuf.Any
+                                --initialize-at-run-time=com.google.protobuf.Any$Builder
                                 
                                 --initialize-at-run-time=io.grpc.internal.ServerCallImpl
                                 --initialize-at-run-time=io.grpc.ForwardingServerCall
