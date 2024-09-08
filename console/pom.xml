@@ -304,6 +304,7 @@
                                 --enable-preview
                                 <!-- Resource Hints -->
                                 -H:IncludeResources='librocksdbjni-${hints.os.rocksdb}'
+                                -H:IncludeResources='.*libnetty_transport_native_epoll_.*\.so'
                                 <!-- Runtime Hints -->
                                 --initialize-at-run-time=com.google.common.util.concurrent.AbstractFuture$Waiter
                                 --initialize-at-run-time=com.google.common.util.concurrent.AbstractFuture$Listener
