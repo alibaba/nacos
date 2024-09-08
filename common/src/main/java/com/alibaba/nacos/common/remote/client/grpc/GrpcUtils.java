@@ -30,8 +30,11 @@ import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,6 +45,8 @@ import java.util.Map;
  * @version $Id: GrpcUtils.java, v 0.1 2020年08月09日 1:43 PM liuzunfei Exp $
  */
 public class GrpcUtils {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(GrpcUtils.class);
     
     /**
      * convert request to payload.
@@ -78,6 +83,7 @@ public class GrpcUtils {
                 .setClientIp(NetUtils.localIp()).putAllHeaders(request.getHeaders()).build();
         
         byte[] jsonBytes = convertRequestToByte(request);
+        LOGGER.info("[*] jsonBytes: {}", Arrays.toString(jsonBytes));
         
         Payload.Builder builder = Payload.newBuilder();
         
