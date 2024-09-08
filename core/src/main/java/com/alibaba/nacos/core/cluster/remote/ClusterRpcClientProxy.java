@@ -121,13 +121,13 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
         String memberClientKey = memberClientKey(member);
         RpcClient client = buildRpcClient(type, labels, memberClientKey);
         if (!client.getConnectionType().equals(type)) {
-            Loggers.CLUSTER.info("connection type changed,destroy client of member - > : {}", member);
+            Loggers.CLUSTER.info("connection type changed, destroy client of member - > : {}", member);
             RpcClientFactory.destroyClient(memberClientKey);
             client = buildRpcClient(type, labels, memberClientKey);
         }
         
         if (client.isWaitInitiated()) {
-            Loggers.CLUSTER.info("start a new rpc client to member - > : {}", member);
+            Loggers.CLUSTER.info("start a new rpc client to member -> : {}", member);
             
             //one fixed server
             client.serverListFactory(new ServerListFactory() {
