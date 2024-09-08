@@ -230,6 +230,7 @@ public abstract class GrpcClient extends RpcClient {
         try {
             ServerCheckRequest serverCheckRequest = new ServerCheckRequest();
             Payload grpcRequest = GrpcUtils.convert(serverCheckRequest);
+            LOGGER.info("[?] grpcRequest, class type: {}, message: {}", grpcRequest.getClass().getName(), grpcRequest);
             ListenableFuture<Payload> responseFuture = requestBlockingStub.request(grpcRequest);
             Payload response = responseFuture.get(clientConfig.serverCheckTimeOut(), TimeUnit.MILLISECONDS);
             //receive connection unregister response here,not check response is success.
