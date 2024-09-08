@@ -231,7 +231,9 @@ public abstract class GrpcClient extends RpcClient {
             ServerCheckRequest serverCheckRequest = new ServerCheckRequest();
             Payload grpcRequest = GrpcUtils.convert(serverCheckRequest);
             
-            LOGGER.info("[?] grpcRequest, class type: {}, message: {}", grpcRequest.getClass().getName(), grpcRequest);
+            LOGGER.info("[?] grpcRequest: {}", grpcRequest.getClass().getName());
+            LOGGER.info("    [>] metadata: {}", grpcRequest.getMetadata());
+            LOGGER.info("    [>] body: {}", grpcRequest.getBody());
             
             ListenableFuture<Payload> responseFuture = requestBlockingStub.request(grpcRequest);
             Payload response = responseFuture.get(clientConfig.serverCheckTimeOut(), TimeUnit.MILLISECONDS);
