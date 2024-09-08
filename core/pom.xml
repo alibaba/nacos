@@ -103,12 +103,12 @@
  
         <!-- JRaft dependency start -->
         <dependency>
-            <groupId>com.alipay.sofa</groupId>
+            <groupId>cn.dioxide.lab</groupId>
             <artifactId>jraft-core</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>cn.dioxide.lab</groupId>
+            <groupId>com.alipay.sofa</groupId>
             <artifactId>rpc-grpc-impl</artifactId>
         </dependency>
         <!-- JRaft dependency end -->
