@@ -31,7 +31,17 @@ public enum TrustedMysqlFunctionEnum {
     /**
      * NOW().
      */
-    NOW("NOW()", "NOW(3)");
+    NOW("NOW()", "NOW(3)"),
+    
+    /**
+     * SQL keyword start quotes.
+     */
+    START_QUOTES("START_QUOTES", "`"),
+    
+    /**
+     * SQL keyword end quotes.
+     */
+    END_QUOTES("END_QUOTES", "`");
 
     private static final Map<String, TrustedMysqlFunctionEnum> LOOKUP_MAP = new HashMap<>();
 
