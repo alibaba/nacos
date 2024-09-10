@@ -48,6 +48,7 @@ import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -111,6 +112,7 @@ public class ConsoleServiceController {
             @RequestParam("serviceName") String serviceName,
             @RequestParam(value = "groupName", defaultValue = Constants.DEFAULT_GROUP) String groupName)
             throws Exception {
+        checkServiceName(serviceName);
         serviceProxy.deleteService(namespaceId, serviceName, groupName);
         return Result.success("ok");
     }
@@ -227,6 +229,7 @@ public class ConsoleServiceController {
     @GetMapping()
     public Object getServiceDetail(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             String serviceName) throws NacosException {
+        checkServiceName(serviceName);
         String serviceNameWithoutGroup = NamingUtils.getServiceName(serviceName);
         String groupName = NamingUtils.getGroupName(serviceName);
         return Result.success(serviceProxy.getServiceDetail(namespaceId, serviceNameWithoutGroup, groupName));
@@ -246,7 +249,6 @@ public class ConsoleServiceController {
                 Constants.DEFAULT_NAMESPACE_ID);
         final String clusterName = WebUtils.required(request, CommonParams.CLUSTER_NAME);
         final String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        
         ClusterMetadata clusterMetadata = new ClusterMetadata();
         clusterMetadata.setHealthyCheckPort(NumberUtils.toInt(WebUtils.required(request, "checkPort")));
         clusterMetadata.setUseInstancePortForCheck(
@@ -260,6 +262,13 @@ public class ConsoleServiceController {
     
         serviceProxy.updateClusterMetadata(namespaceId, serviceName, clusterName, clusterMetadata);
         return Result.success("ok");
+    }
+    
+    private void checkServiceName(String serviceName) throws NacosApiException {
+        if (StringUtils.isBlank(serviceName)) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
+                    "Required parameter 'serviceName' type String is not present");
+        }
     }
     
 }
