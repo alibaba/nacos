@@ -132,24 +132,40 @@ public class NacosConfigService implements ConfigService {
     
     @Override
     public boolean publishConfig(String dataId, String group, String content, String type) throws NacosException {
-        return publishConfigInner(namespace, dataId, group, null, null, null, content, type, null);
+        return publishConfigInner(namespace, dataId, group, null, null, null, content, type, null, null);
+    }
+    
+    @Override
+    public boolean publishConfig(String dataId, String group, String content, String type, String srcUser) throws NacosException {
+        return publishConfigInner(namespace, dataId, group, null, null, null, content, type, null, srcUser);
     }
     
     @Override
     public boolean publishConfigCas(String dataId, String group, String content, String casMd5) throws NacosException {
         return publishConfigInner(namespace, dataId, group, null, null, null, content,
-                ConfigType.getDefaultType().getType(), casMd5);
+                ConfigType.getDefaultType().getType(), casMd5, null);
     }
     
     @Override
     public boolean publishConfigCas(String dataId, String group, String content, String casMd5, String type)
             throws NacosException {
-        return publishConfigInner(namespace, dataId, group, null, null, null, content, type, casMd5);
+        return publishConfigInner(namespace, dataId, group, null, null, null, content, type, casMd5, null);
+    }
+    
+    @Override
+    public boolean publishConfigCas(String dataId, String group, String content, String casMd5, String type, String srcUser)
+            throws NacosException {
+        return publishConfigInner(namespace, dataId, group, null, null, null, content, type, casMd5, srcUser);
     }
     
     @Override
     public boolean removeConfig(String dataId, String group) throws NacosException {
-        return removeConfigInner(namespace, dataId, group, null);
+        return removeConfigInner(namespace, dataId, group, null, null);
+    }
+    
+    @Override
+    public boolean removeConfig(String dataId, String group, String srcUser) throws NacosException {
+        return removeConfigInner(namespace, dataId, group, null, srcUser);
     }
     
     @Override
@@ -218,14 +234,14 @@ public class NacosConfigService implements ConfigService {
         return (StringUtils.isBlank(group)) ? Constants.DEFAULT_GROUP : group.trim();
     }
     
-    private boolean removeConfigInner(String tenant, String dataId, String group, String tag) throws NacosException {
+    private boolean removeConfigInner(String tenant, String dataId, String group, String tag, String srcUser) throws NacosException {
         group = blank2defaultGroup(group);
         ParamUtils.checkKeyParam(dataId, group);
-        return worker.removeConfig(dataId, group, tenant, tag);
+        return worker.removeConfig(dataId, group, tenant, tag, srcUser);
     }
     
     private boolean publishConfigInner(String tenant, String dataId, String group, String tag, String appName,
-            String betaIps, String content, String type, String casMd5) throws NacosException {
+            String betaIps, String content, String type, String casMd5, String srcUser) throws NacosException {
         group = blank2defaultGroup(group);
         ParamUtils.checkParam(dataId, group, content);
         
@@ -240,7 +256,7 @@ public class NacosConfigService implements ConfigService {
         String encryptedDataKey = cr.getEncryptedDataKey();
         
         return worker
-                .publishConfig(dataId, group, tenant, appName, tag, betaIps, content, encryptedDataKey, casMd5, type);
+                .publishConfig(dataId, group, tenant, appName, tag, betaIps, content, encryptedDataKey, casMd5, type, srcUser);
     }
     
     @Override
