@@ -29,18 +29,7 @@ APP_OPT="${APP_OPT} -Dnacos.member.list=${MEMBER_LIST}"
 APP_OPT="${APP_OPT} --logging.config=${BASE_DIR}/conf/nacos-logback.xml"
 APP_OPT="${APP_OPT} --spring.config.additional-location=${CUSTOM_SEARCH_LOCATIONS}"
 
-if [[ "${NACOS_START_MODE}" == "standalone" ]]; then
-  APP_OPT="${APP_OPT} -Dnacos.standalone=true"
-fi
+# Expose gdb server to 9000 port
+GDB_OPT=${GDB_OPT} localhost:9000 ${SERVER} ${APP_OPT}
 
-if [[ ! -z "${NACOS_AUTH_ENABLE}" ]]; then
-  APP_OPT="${APP_OPT} -Dnacos.core.auth.enabled=${NACOS_AUTH_ENABLE}"
-fi
-
-if [[ "${PREFER_HOST_MODE}" == "hostname" ]]; then
-  APP_OPT="${APP_OPT} -Dnacos.preferHostnameOverIp=true"
-fi
-
-# Start the application
-echo "Nacos native is now starting with ${NACOS_START_MODE} mode"
-echo ${SERVER} ${APP_OPT}
+echo ${GDB_OPT}
