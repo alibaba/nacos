@@ -96,7 +96,7 @@ public class TenantCapacityPersistService {
         TenantCapacityMapper tenantCapacityMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.TENANT_CAPACITY);
         String sql = tenantCapacityMapper.select(
-                Arrays.asList("id", "quota", "`usage`", "`max_size`", "max_aggr_count", "max_aggr_size", "tenant_id"),
+                Arrays.asList("id", "quota", "usage", "max_size", "max_aggr_count", "max_aggr_size", "tenant_id"),
                 Collections.singletonList("tenant_id"));
         List<TenantCapacity> list = jdbcTemplate.query(sql, new Object[] {tenantId}, TENANT_CAPACITY_ROW_MAPPER);
         if (list.isEmpty()) {
