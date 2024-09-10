@@ -25,6 +25,8 @@
   }, {
     "pattern":"\\QMETA-INF/logback/naming-included.xml\\E"
   }, {
+    "pattern":"\\QMETA-INF/native/libio_grpc_netty_shaded_netty_transport_native_epoll_x86_64.so\\E"
+  }, {
     "pattern":"\\QMETA-INF/services/ch.qos.logback.classic.spi.Configurator\\E"
   }, {
     "pattern":"\\QMETA-INF/services/com.alibaba.nacos.api.naming.spi.generator.InstanceIdGenerator\\E"
@@ -962,6 +964,8 @@
     "pattern":"\\Qjavax/sql/CommonDataSource.class\\E"
   }, {
     "pattern":"\\Qjavax/sql/DataSource.class\\E"
+  }, {
+    "pattern":"\\Qlibrocksdbjni-linux64.so\\E"
   }, {
     "pattern":"\\Qlibrocksdbjni-osx-arm64.jnilib\\E"
   }, {
