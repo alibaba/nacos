@@ -26,6 +26,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -64,6 +66,11 @@ public class ConsoleServerStateController {
     @GetMapping("/announcement")
     public Result<String> getAnnouncement(
             @RequestParam(required = false, name = "language", defaultValue = "zh-CN") String language) {
+        // Validate the language parameter
+        List<String> supportedLanguages = Arrays.asList("zh-CN", "en-US");
+        if (!supportedLanguages.contains(language)) {
+            return Result.failure("Unsupported language: " + language);
+        }
         String announcement = serverStateProxy.getAnnouncement(language);
         return Result.success(announcement);
     }
