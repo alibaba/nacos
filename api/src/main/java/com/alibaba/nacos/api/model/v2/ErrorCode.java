@@ -183,7 +183,46 @@ public enum ErrorCode {
     /**
      *  server error.
      */
-    SERVER_ERROR(30000, "server error");
+    SERVER_ERROR(30000, "server error"),
+    
+    /**
+     * Config use 100001 ~ 100999.
+     **/
+    METADATA_ILLEGAL(100002, "导入的元数据非法"),
+    
+    DATA_VALIDATION_FAILED(100003, "未读取到合法数据"),
+    
+    PARSING_DATA_FAILED(100004, "解析数据失败"),
+    
+    DATA_EMPTY(100005, "导入的文件数据为空"),
+    
+    NO_SELECTED_CONFIG(100006, "没有选择任何配置"),
+    
+    /**
+     * Conflict error.
+     */
+    CONFLICT(409, "Conflict"),
+    
+    /**
+     * Not Implemented error.
+     */
+    NOT_IMPLEMENTED(501, "Not Implemented"),
+    
+    /**
+     * Authorization failed error.
+     */
+    FORBIDDEN(403, "Authorization failed!"),
+    
+    /**
+     * Unauthorized error.
+     */
+    UNAUTHORIZED(401, "Unauthorized"),
+    
+    /**
+     * Internal Server Error.
+     */
+    INTERNAL_SERVER_ERROR(500, "Internal Server Error");
+    
     
     private final Integer code;
     
