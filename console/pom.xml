@@ -322,6 +322,9 @@
                                 --initialize-at-run-time=io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder
                                 --initialize-at-run-time=io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder$NettyTransportFactory
                                 --initialize-at-run-time=io.grpc.netty.shaded.io.grpc.netty.NettyChannelProvider
+                                --initialize-at-run-time=io.grpc.netty.shaded.io.grpc.netty.NettyClientHandler
+                                --initialize-at-run-time=io.grpc.netty.shaded.io.grpc.netty.NettyClientStream
+                                --initialize-at-run-time=io.grpc.netty.shaded.io.grpc.netty.WriteBufferingAndExceptionHandler
                                 --initialize-at-run-time=io.grpc.internal.ManagedChannelImpl
                                 --initialize-at-run-time=io.grpc.internal.ManagedChannelImpl$RealChannel
                                 --initialize-at-run-time=io.grpc.netty.shaded.io.netty.channel.socket.nio.NioSocketChannel
@@ -333,6 +336,7 @@
                                 --initialize-at-run-time=io.grpc.stub.ServerCallStreamObserver
                                 --initialize-at-run-time=io.grpc.stub.CallStreamObserver
                                 --initialize-at-run-time=io.grpc.stub.StreamObserver
+                                --initialize-at-run-time=io.grpc.protobuf.lite.ProtoInputStream
                                 --initialize-at-run-time=io.grpc.netty.shaded.io.netty.buffer.Unpooled
                                 --initialize-at-run-time=io.grpc.netty.shaded.io.netty.buffer.PoolArena
                                 --initialize-at-run-time=io.grpc.netty.shaded.io.netty.buffer.ByteBufUtil
