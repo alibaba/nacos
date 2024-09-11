@@ -20,12 +20,11 @@ package com.alibaba.nacos.naming.cluster;
 
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
-import com.alibaba.nacos.naming.constants.Constants;
+import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
+import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import com.alipay.sofa.jraft.RouteTable;
-import com.alipay.sofa.jraft.entity.PeerId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,7 +39,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
@@ -54,17 +52,25 @@ class ServerStatusManagerTest {
     ProtocolManager protocolManager;
     
     @Mock
+    GlobalConfig globalConfig;
+    
+    @Mock
+    DistroProtocol distroProtocol;
+    
+    @Mock
     CPProtocol cpProtocol;
+    
+    ServerStatusManager serverStatusManager;
     
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new MockEnvironment());
+        serverStatusManager = new ServerStatusManager(globalConfig, distroProtocol, protocolManager, switchDomain);
     }
     
     @Test
     void testInit() {
         try (MockedStatic mocked = mockStatic(GlobalExecutor.class)) {
-            ServerStatusManager serverStatusManager = new ServerStatusManager(protocolManager, switchDomain);
             serverStatusManager.init();
             mocked.verify(() -> GlobalExecutor.registerServerStatusUpdater(any()));
         }
@@ -72,24 +78,38 @@ class ServerStatusManagerTest {
     
     @Test
     void testGetServerStatus() {
-        ServerStatusManager serverStatusManager = new ServerStatusManager(protocolManager, switchDomain);
         ServerStatus serverStatus = serverStatusManager.getServerStatus();
         assertEquals(ServerStatus.STARTING, serverStatus);
         
     }
     
     @Test
-    void testGetErrorMsg() {
-        ServerStatusManager serverStatusManager = new ServerStatusManager(protocolManager, switchDomain);
+    void testGetErrorMsgForDistroProtocol() {
+        when(protocolManager.isCpInit()).thenReturn(true);
+        when(globalConfig.isDataWarmup()).thenReturn(true);
+        when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
+        when(distroProtocol.isInitialized()).thenReturn(false);
         Optional<String> errorMsg = serverStatusManager.getErrorMsg();
         assertTrue(errorMsg.isPresent());
+        assertTrue(errorMsg.get().contains("distro"));
+    }
+    
+    @Test
+    void testGetErrorMsgForRaft() {
+        when(protocolManager.isCpInit()).thenReturn(true);
+        when(globalConfig.isDataWarmup()).thenReturn(true);
+        when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
+        when(cpProtocol.isReady()).thenReturn(false);
+        when(distroProtocol.isInitialized()).thenReturn(true);
+        Optional<String> errorMsg = serverStatusManager.getErrorMsg();
+        assertTrue(errorMsg.isPresent());
+        assertTrue(errorMsg.get().contains("raft"));
     }
     
     @Test
     void testUpdaterFromSwitch() {
         String expect = ServerStatus.DOWN.toString();
         when(switchDomain.getOverriddenServerStatus()).thenReturn(expect);
-        ServerStatusManager serverStatusManager = new ServerStatusManager(protocolManager, switchDomain);
         ServerStatusManager.ServerStatusUpdater updater = serverStatusManager.new ServerStatusUpdater();
         //then
         updater.run();
@@ -99,40 +119,56 @@ class ServerStatusManagerTest {
     }
     
     @Test
-    void testUpdaterFromConsistency1() {
-        try (MockedStatic mocked = mockStatic(RouteTable.class)) {
-            RouteTable mockTable = mock(RouteTable.class);
-            when(mockTable.selectLeader(Constants.NAMING_PERSISTENT_SERVICE_GROUP)).thenReturn(new PeerId());
-            mocked.when(RouteTable::getInstance).thenReturn(mockTable);
-            when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
-            ServerStatusManager serverStatusManager = new ServerStatusManager(protocolManager, switchDomain);
-            ServerStatusManager.ServerStatusUpdater updater = serverStatusManager.new ServerStatusUpdater();
-            //then
-            updater.run();
-            //then
-            assertEquals(ServerStatus.UP, serverStatusManager.getServerStatus());
-            assertFalse(serverStatusManager.getErrorMsg().isPresent());
-        }
+    void testUpdaterStatusForWarmUpDisabled() {
+        ServerStatusManager.ServerStatusUpdater updater = serverStatusManager.new ServerStatusUpdater();
+        updater.run();
+        assertEquals(ServerStatus.UP, serverStatusManager.getServerStatus());
+        assertFalse(serverStatusManager.getErrorMsg().isPresent());
     }
     
     @Test
-    void testUpdaterFromConsistency2() {
+    void testUpdaterStatusBySwitch() {
+        when(switchDomain.getOverriddenServerStatus()).thenReturn("UP");
+        ServerStatusManager.ServerStatusUpdater updater = serverStatusManager.new ServerStatusUpdater();
+        updater.run();
+        assertEquals(ServerStatus.UP, serverStatusManager.getServerStatus());
+        when(switchDomain.getOverriddenServerStatus()).thenReturn("DOWN");
+        updater.run();
+        assertEquals(ServerStatus.DOWN, serverStatusManager.getServerStatus());
+    }
+    
+    @Test
+    void testUpdaterStatusForDistroFailed() {
+        when(protocolManager.isCpInit()).thenReturn(true);
+        when(globalConfig.isDataWarmup()).thenReturn(true);
         when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
-        ServerStatusManager serverStatusManager = new ServerStatusManager(protocolManager, switchDomain);
         ServerStatusManager.ServerStatusUpdater updater = serverStatusManager.new ServerStatusUpdater();
-        //then
         updater.run();
-        //then
         assertEquals(ServerStatus.DOWN, serverStatusManager.getServerStatus());
     }
     
     @Test
-    void testUpdaterFromConsistency3() {
-        ServerStatusManager serverStatusManager = new ServerStatusManager(protocolManager, switchDomain);
+    void testUpdaterStatusForRaftFailed() {
+        when(protocolManager.isCpInit()).thenReturn(true);
+        when(globalConfig.isDataWarmup()).thenReturn(true);
         ServerStatusManager.ServerStatusUpdater updater = serverStatusManager.new ServerStatusUpdater();
-        //then
         updater.run();
-        //then
         assertEquals(ServerStatus.DOWN, serverStatusManager.getServerStatus());
+        when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
+        when(cpProtocol.isReady()).thenReturn(false);
+        updater.run();
+        assertEquals(ServerStatus.DOWN, serverStatusManager.getServerStatus());
+    }
+    
+    @Test
+    void testUpdaterStatus() {
+        when(protocolManager.isCpInit()).thenReturn(true);
+        when(globalConfig.isDataWarmup()).thenReturn(true);
+        when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
+        when(cpProtocol.isReady()).thenReturn(true);
+        when(distroProtocol.isInitialized()).thenReturn(true);
+        ServerStatusManager.ServerStatusUpdater updater = serverStatusManager.new ServerStatusUpdater();
+        updater.run();
+        assertEquals(ServerStatus.UP, serverStatusManager.getServerStatus());
     }
 }

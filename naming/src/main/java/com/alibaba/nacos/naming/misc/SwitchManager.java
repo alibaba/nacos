@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.common.utils.ConvertUtils;
@@ -110,31 +111,6 @@ public class SwitchManager extends RequestProcessor4CP {
             
             SwitchDomain tempSwitchDomain = this.switchDomain.clone();
             
-            if (SwitchEntry.BATCH.equals(entry)) {
-                //batch update
-                SwitchDomain dom = JacksonUtils.toObj(value, SwitchDomain.class);
-                dom.setEnableStandalone(tempSwitchDomain.isEnableStandalone());
-                if (dom.getHttpHealthParams().getMin() < SwitchDomain.HttpHealthParams.MIN_MIN
-                        || dom.getTcpHealthParams().getMin() < SwitchDomain.HttpHealthParams.MIN_MIN) {
-                    
-                    throw new IllegalArgumentException("min check time for http or tcp is too small(<500)");
-                }
-                
-                if (dom.getHttpHealthParams().getMax() < SwitchDomain.HttpHealthParams.MIN_MAX
-                        || dom.getTcpHealthParams().getMax() < SwitchDomain.HttpHealthParams.MIN_MAX) {
-                    
-                    throw new IllegalArgumentException("max check time for http or tcp is too small(<3000)");
-                }
-                
-                if (dom.getHttpHealthParams().getFactor() < 0 || dom.getHttpHealthParams().getFactor() > 1
-                        || dom.getTcpHealthParams().getFactor() < 0 || dom.getTcpHealthParams().getFactor() > 1) {
-                    
-                    throw new IllegalArgumentException("malformed factor");
-                }
-                
-                tempSwitchDomain = dom;
-            }
-            
             if (entry.equals(SwitchEntry.DISTRO_THRESHOLD)) {
                 float threshold = Float.parseFloat(value);
                 if (threshold <= 0) {
@@ -166,6 +142,8 @@ public class SwitchManager extends RequestProcessor4CP {
                     tempSwitchDomain.setPushCVersion(version);
                 } else if (StringUtils.equals(SwitchEntry.CLIENT_GO, type)) {
                     tempSwitchDomain.setPushGoVersion(version);
+                } else if (StringUtils.equals(SwitchEntry.CLIENT_CSHARP, type)) {
+                    tempSwitchDomain.setPushCSharpVersion(version);
                 } else {
                     throw new IllegalArgumentException("unsupported client type: " + type);
                 }
@@ -310,6 +288,24 @@ public class SwitchManager extends RequestProcessor4CP {
                 tempSwitchDomain.setAutoChangeHealthCheckEnabled(ConvertUtils.toBoolean(value));
             }
             
+            try {
+                if (SwitchEntry.HTTP_HEALTH_PARAMS.equals(entry)) {
+                    SwitchDomain.HttpHealthParams httpHealthParams = JacksonUtils.toObj(value, SwitchDomain.HttpHealthParams.class);
+                    tempSwitchDomain.setHttpHealthParams(httpHealthParams);
+                    validateHealthParams(httpHealthParams);
+                }
+                if (SwitchEntry.TCP_HEALTH_PARAMS.equals(entry)) {
+                    SwitchDomain.TcpHealthParams tcpHealthParams = JacksonUtils.toObj(value, SwitchDomain.TcpHealthParams.class);
+                    tempSwitchDomain.setTcpHealthParams(tcpHealthParams);
+                    validateHealthParams(tcpHealthParams);
+                }
+                if (SwitchEntry.MYSQL_HEALTH_PARAMS.equals(entry)) {
+                    tempSwitchDomain.setMysqlHealthParams(JacksonUtils.toObj(value, SwitchDomain.MysqlHealthParams.class));
+                }
+            } catch (NacosDeserializationException e) {
+                throw new IllegalArgumentException("json param invalid.");
+            }
+            
             if (debug) {
                 update(tempSwitchDomain);
             } else {
@@ -356,10 +352,32 @@ public class SwitchManager extends RequestProcessor4CP {
         switchDomain.setPushJavaVersion(newSwitchDomain.getPushJavaVersion());
         switchDomain.setPushPythonVersion(newSwitchDomain.getPushPythonVersion());
         switchDomain.setPushCVersion(newSwitchDomain.getPushCVersion());
+        switchDomain.setPushCSharpVersion(newSwitchDomain.getPushCSharpVersion());
         switchDomain.setEnableAuthentication(newSwitchDomain.isEnableAuthentication());
         switchDomain.setOverriddenServerStatus(newSwitchDomain.getOverriddenServerStatus());
         switchDomain.setDefaultInstanceEphemeral(newSwitchDomain.isDefaultInstanceEphemeral());
         switchDomain.setLightBeatEnabled(newSwitchDomain.isLightBeatEnabled());
+    }
+    
+    /**
+     * Validate health params.
+     *
+     * @param healthParams health params
+     */
+    public void validateHealthParams(SwitchDomain.HealthParams healthParams) {
+        if (healthParams.getMin() < SwitchDomain.HttpHealthParams.MIN_MIN) {
+            throw new IllegalArgumentException("min check time for http or tcp is too small(<500)");
+        }
+        
+        if (healthParams.getMax() < SwitchDomain.HttpHealthParams.MIN_MAX) {
+            
+            throw new IllegalArgumentException("max check time for http or tcp is too small(<3000)");
+        }
+        
+        if (healthParams.getFactor() < 0 || healthParams.getFactor() > 1) {
+            
+            throw new IllegalArgumentException("malformed factor");
+        }
     }
     
     private void updateWithConsistency(SwitchDomain tempSwitchDomain) throws NacosException {

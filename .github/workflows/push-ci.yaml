@@ -38,7 +38,7 @@ jobs:
       - name: Build distribution tar
         run: |
           mvn -Prelease-nacos -DskipTests clean install -U -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         name: Upload distribution tar
         with:
           name: nacos
@@ -65,7 +65,7 @@ jobs:
           repository: nacos-group/nacos-e2e.git
           ref: main
           path: nacos-e2e
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4.1.7
         name: Download distribution tar
         with:
           name: nacos
