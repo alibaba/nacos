@@ -298,10 +298,12 @@
                         <artifactId>native-maven-plugin</artifactId>
                         <configuration>
                             <imageName>nacos-server</imageName>
+                            <debug>true</debug>
                             <buildArgs>
                                 --add-opens java.base/java.lang=ALL-UNNAMED
                                 --enable-url-protocols=http
                                 --enable-preview
+                                -H:-SpawnIsolates
                                 <!-- Resource Hints -->
                                 -H:IncludeResources='librocksdbjni-${hints.os.rocksdb}'
                                 -H:IncludeResources='.*libnetty_transport_native_epoll_.*\.so'
