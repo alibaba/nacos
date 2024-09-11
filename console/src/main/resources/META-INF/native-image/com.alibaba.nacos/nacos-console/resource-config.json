@@ -2648,7 +2648,7 @@
     "locales":["und"]
   }, {
     "name":"jakarta.servlet.LocalStrings",
-    "locales":["", "und"]
+    "locales":["und"]
   }, {
     "name":"jakarta.servlet.http.LocalStrings",
     "locales":["und"]
@@ -2657,7 +2657,7 @@
     "locales":["", "und"]
   }, {
     "name":"org.apache.catalina.authenticator.jaspic.LocalStrings",
-    "locales":["", "und"]
+    "locales":["und"]
   }, {
     "name":"org.apache.catalina.connector.LocalStrings",
     "locales":["und"]
@@ -2705,7 +2705,7 @@
     "locales":["und"]
   }, {
     "name":"org.apache.coyote.http11.filters.LocalStrings",
-    "locales":["", "und"]
+    "locales":["und"]
   }, {
     "name":"org.apache.derby.loc.m0",
     "locales":["en"]
@@ -2771,7 +2771,7 @@
     "locales":["", "und"]
   }, {
     "name":"org.apache.tomcat.util.http.parser.LocalStrings",
-    "locales":["", "und"]
+    "locales":["und"]
   }, {
     "name":"org.apache.tomcat.util.modeler.LocalStrings",
     "locales":["und"]

@@ -308,6 +308,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             io.grpc.KnownLength.class,
             io.grpc.ServerCall.class,
             io.grpc.ServerBuilder.class,
+            io.grpc.stub.ClientCalls.class,
             io.grpc.stub.ServerCalls.class,
             io.grpc.stub.ServerCallStreamObserver.class,
             io.grpc.stub.CallStreamObserver.class,

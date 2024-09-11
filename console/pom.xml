@@ -298,12 +298,11 @@
                         <artifactId>native-maven-plugin</artifactId>
                         <configuration>
                             <imageName>nacos-server</imageName>
-                            <debug>true</debug>
                             <buildArgs>
                                 --add-opens java.base/java.lang=ALL-UNNAMED
                                 --enable-url-protocols=http
                                 --enable-preview
-                                -H:-SpawnIsolates
+                                --no-fallback
                                 <!-- Resource Hints -->
                                 -H:IncludeResources='librocksdbjni-${hints.os.rocksdb}'
                                 -H:IncludeResources='.*libnetty_transport_native_epoll_.*\.so'
@@ -331,6 +330,8 @@
                                 --initialize-at-run-time=io.grpc.internal.ManagedChannelImpl$RealChannel
                                 --initialize-at-run-time=io.grpc.netty.shaded.io.netty.channel.socket.nio.NioSocketChannel
                                 --initialize-at-run-time=io.grpc.ServerCall
+                                --initialize-at-run-time=io.grpc.stub.ClientCalls
+                                --initialize-at-run-time=io.grpc.stub.ClientCalls$UnaryStreamToFuture
                                 --initialize-at-run-time=io.grpc.stub.ServerCalls
                                 --initialize-at-run-time=io.grpc.stub.ServerCalls$NoopStreamObserver
                                 --initialize-at-run-time=io.grpc.stub.ServerCalls$ServerCallStreamObserverImpl
