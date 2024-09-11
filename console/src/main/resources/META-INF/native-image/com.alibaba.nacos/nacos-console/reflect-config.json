@@ -6209,6 +6209,10 @@
   "methods":[{"name":"close","parameterTypes":[] }]
 },
 {
+  "name":"java.io.Console",
+  "methods":[{"name":"isTerminal","parameterTypes":[] }]
+},
+{
   "name":"java.io.DataInput"
 },
 {

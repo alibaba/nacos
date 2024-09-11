@@ -298,6 +298,7 @@
                         <artifactId>native-maven-plugin</artifactId>
                         <configuration>
                             <imageName>nacos-server</imageName>
+                            <debug>true</debug>
                             <buildArgs>
                                 --add-opens java.base/java.lang=ALL-UNNAMED
                                 --enable-url-protocols=http
