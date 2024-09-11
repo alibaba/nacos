@@ -25,6 +25,8 @@
   }, {
     "pattern":"\\QMETA-INF/logback/naming-included.xml\\E"
   }, {
+    "pattern":"\\QMETA-INF/native/libio_grpc_netty_shaded_netty_transport_native_epoll_x86_64.so\\E"
+  }, {
     "pattern":"\\QMETA-INF/services/ch.qos.logback.classic.spi.Configurator\\E"
   }, {
     "pattern":"\\QMETA-INF/services/com.alibaba.nacos.api.naming.spi.generator.InstanceIdGenerator\\E"
@@ -962,6 +964,8 @@
     "pattern":"\\Qjavax/sql/CommonDataSource.class\\E"
   }, {
     "pattern":"\\Qjavax/sql/DataSource.class\\E"
+  }, {
+    "pattern":"\\Qlibrocksdbjni-linux64.so\\E"
   }, {
     "pattern":"\\Qlibrocksdbjni-osx-arm64.jnilib\\E"
   }, {
@@ -2644,7 +2648,7 @@
     "locales":["", "und"]
   }, {
     "name":"jakarta.servlet.LocalStrings",
-    "locales":["und"]
+    "locales":["", "und"]
   }, {
     "name":"jakarta.servlet.http.LocalStrings",
     "locales":["", "und"]
@@ -2653,7 +2657,7 @@
     "locales":["", "und"]
   }, {
     "name":"org.apache.catalina.authenticator.jaspic.LocalStrings",
-    "locales":["und"]
+    "locales":["", "und"]
   }, {
     "name":"org.apache.catalina.connector.LocalStrings",
     "locales":["", "und"]
@@ -2701,7 +2705,7 @@
     "locales":["", "und"]
   }, {
     "name":"org.apache.coyote.http11.filters.LocalStrings",
-    "locales":["und"]
+    "locales":["", "und"]
   }, {
     "name":"org.apache.derby.loc.m0",
     "locales":["en"]
@@ -2767,7 +2771,7 @@
     "locales":["", "und"]
   }, {
     "name":"org.apache.tomcat.util.http.parser.LocalStrings",
-    "locales":["und"]
+    "locales":["", "und"]
   }, {
     "name":"org.apache.tomcat.util.modeler.LocalStrings",
     "locales":["", "und"]
