@@ -300,6 +300,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.google.protobuf.Any.Builder.class,
             com.google.protobuf.ByteString.class,
             com.google.protobuf.Message.class,
+            com.google.protobuf.ByteString.class,
             com.google.protobuf.CodedInputStream.class,
             com.google.common.util.concurrent.AbstractFuture.class,
             com.google.common.util.concurrent.ListenableFuture.class,
