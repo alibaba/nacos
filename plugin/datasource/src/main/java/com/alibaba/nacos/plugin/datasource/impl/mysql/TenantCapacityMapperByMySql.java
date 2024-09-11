@@ -36,7 +36,7 @@ public class TenantCapacityMapperByMySql extends AbstractMapperByMysql implement
     
     @Override
     public String select(List<String> columns, List<String> where) {
-        columns = columns.parallelStream().map(c -> "`" + c + "`").collect(Collectors.toList());
+        columns = columns.stream().map(c -> "`" + c + "`").collect(Collectors.toList());
         return super.select(columns, where);
     }
     
