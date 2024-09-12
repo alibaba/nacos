@@ -23,6 +23,8 @@ import com.alibaba.nacos.plugin.datasource.mapper.TenantCapacityMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
+import java.util.List;
+
 /**
  * The mysql implementation of TenantCapacityMapper.
  *
@@ -42,5 +44,10 @@ public class TenantCapacityMapperByMySql extends AbstractMapperByMysql implement
         return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.ID),
                 context.getWhereParameter(FieldConstant.LIMIT_SIZE)));
     }
-    
+
+    @Override
+    public List<String> getColumns() {
+        return TenantCapacityMapper.super.getColumns();
+    }
+
 }

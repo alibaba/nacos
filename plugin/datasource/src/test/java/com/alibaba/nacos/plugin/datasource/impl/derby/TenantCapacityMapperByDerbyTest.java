@@ -25,6 +25,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Timestamp;
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -145,4 +147,12 @@ class TenantCapacityMapperByDerbyTest {
         assertArrayEquals(new Object[] {tenantId, quota, maxSize, maxAggrCount, maxAggrSize, createTime, modified, tenantId},
                 mapperResult.getParamList().toArray());
     }
+
+    @Test
+    void testGetTenantCapacityColumns() {
+        List<String> columns = tenantCapacityMapperByDerby.getColumns();
+        String sql = "SELECT " + String.join(",", columns) + " FROM tenant_capacity WHERE tenant_id = ?";
+        assertArrayEquals(sql.toCharArray(), tenantCapacityMapperByDerby.select(columns, Collections.singletonList("tenant_id")).toCharArray());
+    }
+
 }

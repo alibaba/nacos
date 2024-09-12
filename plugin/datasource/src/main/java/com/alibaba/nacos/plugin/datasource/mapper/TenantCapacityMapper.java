@@ -23,6 +23,7 @@ import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -150,7 +151,16 @@ public interface TenantCapacityMapper extends Mapper {
                         + "gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE tenant_id=?;",
                 paramList);
     }
-    
+
+    /**
+     * 获取列名.
+     *
+     * @return 列名
+     */
+    default List<String> getColumns() {
+        return Arrays.asList("id", "quota", "`usage`", "`max_size`", "max_aggr_count", "max_aggr_size", "tenant_id");
+    }
+
     /**
      * 获取返回表名.
      *
