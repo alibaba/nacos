@@ -232,7 +232,6 @@ public abstract class GrpcClient extends RpcClient {
             Payload grpcRequest = GrpcUtils.convert(serverCheckRequest);
             ListenableFuture<Payload> responseFuture = requestBlockingStub.request(grpcRequest);
             Payload response = responseFuture.get(clientConfig.serverCheckTimeOut(), TimeUnit.MILLISECONDS);
-            System.out.println("[nacos] response: " + response.toString());
             //receive connection unregister response here,not check response is success.
             return (Response) GrpcUtils.parse(response);
         } catch (Exception e) {
@@ -345,6 +344,7 @@ public abstract class GrpcClient extends RpcClient {
             RequestGrpc.RequestFutureStub newChannelStubTemp = createNewChannelStub(managedChannel);
             
             Response response = serverCheck(serverInfo.getServerIp(), port, newChannelStubTemp);
+            LOGGER.info("[nacos] receiving server check response: {}", response);
             if (!(response instanceof ServerCheckResponse)) {
                 shuntDownChannel(managedChannel);
                 return null;
