@@ -455,6 +455,7 @@
                                 --initialize-at-run-time=com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse
                                 --initialize-at-run-time=com.alibaba.nacos.api.remote.request.ConnectionSetupRequest
                                 --initialize-at-run-time=com.alibaba.nacos.api.remote.request.ClientDetectionRequest
+                                --initialize-at-run-time=com.alibaba.nacos.api.remote.request.ConnectionSetupRequest
                                 --initialize-at-run-time=com.alibaba.nacos.api.remote.request.ConnectResetRequest
                                 --initialize-at-run-time=com.alibaba.nacos.api.remote.request.HealthCheckRequest
                                 --initialize-at-run-time=com.alibaba.nacos.api.remote.request.PushAckRequest
