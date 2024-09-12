@@ -352,6 +352,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl.class,
             com.alibaba.nacos.consistency.snapshot.LocalFileMeta.class,
             com.alibaba.nacos.consistency.ProtocolMetaData.class,
+            com.alibaba.nacos.common.remote.client.grpc.GrpcUtils.class,
             com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest.class,
             com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest.class,
             com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest.ConfigListenContext.class,
