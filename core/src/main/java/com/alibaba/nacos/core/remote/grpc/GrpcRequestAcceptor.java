@@ -99,7 +99,9 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
 
         // server check.
         if (ServerCheckRequest.class.getSimpleName().equals(type)) {
-            Loggers.REMOTE_DIGEST.info("[nacos] receiving server check request: {}", grpcRequest);
+            Loggers.REMOTE_DIGEST.info(
+                    "[nacos] receiving server check request: {}, response observer: {}",
+                    grpcRequest, responseObserver.getClass().getName());
             Payload serverCheckResponseP = GrpcUtils.convert(new ServerCheckResponse(GrpcServerConstants.CONTEXT_KEY_CONN_ID.get(), true));
             traceIfNecessary(serverCheckResponseP, false);
             responseObserver.onNext(serverCheckResponseP);
