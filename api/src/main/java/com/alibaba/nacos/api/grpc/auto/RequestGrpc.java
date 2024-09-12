@@ -204,13 +204,8 @@ public final class RequestGrpc {
      */
     public com.google.common.util.concurrent.ListenableFuture<com.alibaba.nacos.api.grpc.auto.Payload> request(
         com.alibaba.nacos.api.grpc.auto.Payload request) {
-      ClientCall<Payload, Payload> payloadPayloadClientCall = getChannel().newCall(getRequestMethod(),
-              getCallOptions());
-      System.out.println("[?] request: " + request.getMetadata().getType()
-              + ", clientCall: " + payloadPayloadClientCall.getClass().getName()
-              + ", requestMethod: " + getRequestMethod().getFullMethodName()
-              + ", callOptions: " + getCallOptions().toString());
-      return futureUnaryCall(payloadPayloadClientCall, request);
+      return futureUnaryCall(getChannel().newCall(getRequestMethod(),
+              getCallOptions()), request);
     }
   }
 
