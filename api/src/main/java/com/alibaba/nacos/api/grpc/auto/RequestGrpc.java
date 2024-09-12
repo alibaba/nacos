@@ -206,7 +206,8 @@ public final class RequestGrpc {
         com.alibaba.nacos.api.grpc.auto.Payload request) {
       ClientCall<Payload, Payload> payloadPayloadClientCall = getChannel().newCall(getRequestMethod(),
               getCallOptions());
-      System.out.println("[*] clientCall: " + payloadPayloadClientCall.getClass().getName()
+      System.out.println("[?] request: " + request.getMetadata().getType()
+              + ", clientCall: " + payloadPayloadClientCall.getClass().getName()
               + ", requestMethod: " + getRequestMethod().getFullMethodName()
               + ", callOptions: " + getCallOptions().toString());
       return futureUnaryCall(payloadPayloadClientCall, request);
