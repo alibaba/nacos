@@ -99,7 +99,7 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
 
         // server check.
         if (ServerCheckRequest.class.getSimpleName().equals(type)) {
-            Loggers.REMOTE_DIGEST.info(
+            Loggers.CORE.info(
                     "[nacos] receiving server check request: {}, response observer: {}",
                     grpcRequest, responseObserver.getClass().getName());
             Payload serverCheckResponseP = GrpcUtils.convert(new ServerCheckResponse(GrpcServerConstants.CONTEXT_KEY_CONN_ID.get(), true));
@@ -213,7 +213,7 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
                     response.getErrorCode(), null, request.getModule(), System.nanoTime() - startTime);
         } catch (Throwable e) {
             Loggers.REMOTE_DIGEST
-                    .error("[{}] Fail to handle request from connection [{}] ,error message :{}", "grpc", connectionId,
+                    .error("[{}] Fail to handle request from connection [{}], error message :{}", "grpc", connectionId,
                             e);
             Payload payloadResponse = GrpcUtils.convert(ErrorResponse.build(e));
             traceIfNecessary(payloadResponse, false);
