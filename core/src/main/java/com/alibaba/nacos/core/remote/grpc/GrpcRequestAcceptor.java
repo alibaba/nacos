@@ -84,6 +84,10 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         String type = grpcRequest.getMetadata().getType();
         long startTime = System.nanoTime();
         
+        Loggers.CORE.info(
+                "[nacos] receiving server grpc request: {}, response observer: {}",
+                grpcRequest, responseObserver.getClass().getName());
+        
         //server is on starting.
         if (!ApplicationUtils.isStarted()) {
             Payload payloadResponse = GrpcUtils.convert(
@@ -99,9 +103,6 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
 
         // server check.
         if (ServerCheckRequest.class.getSimpleName().equals(type)) {
-            Loggers.CORE.info(
-                    "[nacos] receiving server check request: {}, response observer: {}",
-                    grpcRequest, responseObserver.getClass().getName());
             Payload serverCheckResponseP = GrpcUtils.convert(new ServerCheckResponse(GrpcServerConstants.CONTEXT_KEY_CONN_ID.get(), true));
             traceIfNecessary(serverCheckResponseP, false);
             responseObserver.onNext(serverCheckResponseP);
