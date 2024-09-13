@@ -60,7 +60,7 @@ public class ConfigHistoryInfo implements Serializable {
     
     private String publishType;
     
-    private String extraInfo;
+    private String extInfo;
     
     private Timestamp createdTime;
     
@@ -148,12 +148,12 @@ public class ConfigHistoryInfo implements Serializable {
         this.publishType = publishType;
     }
     
-    public String getExtraInfo() {
-        return extraInfo;
+    public String getExtInfo() {
+        return extInfo;
     }
     
-    public void setExtraInfo(String extraInfo) {
-        this.extraInfo = extraInfo;
+    public void setExtraInfo(String extInfo) {
+        this.extInfo = extInfo;
     }
     
     public Timestamp getCreatedTime() {

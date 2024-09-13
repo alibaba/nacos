@@ -183,11 +183,15 @@ class ConfigControllerTest {
     @Test
     void testDeleteConfigs() throws Exception {
         
-        List<ConfigInfo> resultInfos = new ArrayList<>();
+        final List<ConfigAllInfo> resultInfos = new ArrayList<>();
+        ConfigAllInfo configAllInfo = new ConfigAllInfo();
         String dataId = "dataId1123";
         String group = "group34567";
         String tenant = "tenant45678";
-        resultInfos.add(new ConfigInfo(dataId, group, tenant));
+        configAllInfo.setDataId(dataId);
+        configAllInfo.setGroup(group);
+        configAllInfo.setTenant(tenant);
+        resultInfos.add(configAllInfo);
         Mockito.when(configInfoPersistService.removeConfigInfoByIds(eq(Arrays.asList(1L, 2L)), anyString(), eq(null)))
                 .thenReturn(resultInfos);
         AtomicReference<ConfigDataChangeEvent> reference = new AtomicReference<>();

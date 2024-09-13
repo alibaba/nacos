@@ -77,7 +77,7 @@ public interface HistoryConfigInfoPersistService {
      * @param publishType publish type
      * @return {@link ConfigInfoStateWrapper} list
      */
-    List<ConfigHistoryInfo> findDeletedConfig(final Timestamp startTime, final long startId, int size, String publishType);
+    List<ConfigInfoStateWrapper> findDeletedConfig(final Timestamp startTime, final long startId, int size, String publishType);
     
     /**
      * List configuration history change record.

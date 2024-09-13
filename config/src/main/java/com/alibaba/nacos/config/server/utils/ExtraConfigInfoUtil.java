@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -54,6 +55,9 @@ public class ExtraConfigInfoUtil {
     private ExtraConfigInfoUtil() {
     }
     
+    /**
+     * Extract the extInfo from advance config info.
+     */
     public static String getExtraInfoFromAdvanceInfoMap(Map<String, Object> advanceConfigInfoMap, String srcUser) {
         try {
             if (advanceConfigInfoMap == null || advanceConfigInfoMap.isEmpty()) {
@@ -82,6 +86,9 @@ public class ExtraConfigInfoUtil {
         }
     }
     
+    /**
+     * Extract the extInfo from all config info.
+     */
     public static String getExtraInfoFromAllInfo(ConfigAllInfo configAllInfo) {
         ObjectNode node = OBJECT_MAPPER.createObjectNode();
         
@@ -115,6 +122,9 @@ public class ExtraConfigInfoUtil {
         }
     }
     
+    /**
+     * Extract the extInfo from gray config info.
+     */
     public static String getExtraInfoFromGrayInfo(String grayNameTmp, String grayRuleTmp, String oldSrcUser) {
         ObjectNode node = OBJECT_MAPPER.createObjectNode();
         ObjectNode grayRuleNode = OBJECT_MAPPER.createObjectNode();
@@ -158,4 +168,19 @@ public class ExtraConfigInfoUtil {
             return null;
         }
     }
+    
+    /**
+     * Extract grayName from extInfo.
+     */
+    public static String extractGrayName(String extraInfo) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            Map<String, String> dataMap = objectMapper.readValue(extraInfo, new TypeReference<Map<String, String>>() { });
+            return dataMap.get("gray_name");
+        } catch (Exception e) {
+            LogUtil.DEFAULT_LOG.error("Error extracting gray_name from extraInfo", e);
+            return null;
+        }
+    }
+    
 }

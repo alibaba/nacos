@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.service.repository.extrnal;
 
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.service.sql.ExternalStorageUtils;
 import com.alibaba.nacos.config.server.utils.TestCaseUtils;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
@@ -163,17 +164,17 @@ class ExternalHistoryConfigInfoPersistServiceImplTest {
                         jdbcTemplate.query(anyString(), eq(new Object[] {publishType, timestamp, startId, pageSize}), eq(HISTORY_DETAIL_ROW_MAPPER)))
                 .thenReturn(list);
         //execute
-        List<ConfigHistoryInfo> deletedConfig = externalHistoryConfigInfoPersistService.findDeletedConfig(timestamp, startId,
+        List<ConfigInfoStateWrapper> deletedConfig = externalHistoryConfigInfoPersistService.findDeletedConfig(timestamp, startId,
                 pageSize, "formal");
         //expect verify
         assertEquals("data_id1", deletedConfig.get(0).getDataId());
         assertEquals("group_id1", deletedConfig.get(0).getGroup());
         assertEquals("tenant_id1", deletedConfig.get(0).getTenant());
-        assertEquals(mockObj1.getLastModifiedTime(), deletedConfig.get(0).getLastModifiedTime());
+        assertEquals(mockObj1.getLastModifiedTime(), new Timestamp(deletedConfig.get(0).getLastModified()));
         assertEquals("data_id2", deletedConfig.get(1).getDataId());
         assertEquals("group_id2", deletedConfig.get(1).getGroup());
         assertEquals("tenant_id2", deletedConfig.get(1).getTenant());
-        assertEquals(mockObj2.getLastModifiedTime(), deletedConfig.get(1).getLastModifiedTime());
+        assertEquals(mockObj2.getLastModifiedTime(), new Timestamp(deletedConfig.get(1).getLastModified()));
         
         //mock exception
         Mockito.when(

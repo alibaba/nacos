@@ -18,7 +18,6 @@ package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
@@ -82,15 +81,15 @@ public class DumpChangeConfigWorker implements Runnable {
             long deleteCursorId = 0L;
             
             while (true) {
-                List<ConfigHistoryInfo> configDeleted = historyConfigInfoPersistService.findDeletedConfig(startTime,
+                List<ConfigInfoStateWrapper> configDeleted = historyConfigInfoPersistService.findDeletedConfig(startTime,
                         deleteCursorId, pageSize, Constants.FORMAL);
-                for (ConfigHistoryInfo historyInfo : configDeleted) {
-                    if (configInfoPersistService.findConfigInfoState(historyInfo.getDataId(), historyInfo.getGroup(),
-                            historyInfo.getTenant()) == null) {
-                        ConfigCacheService.remove(historyInfo.getDataId(), historyInfo.getGroup(),
-                                historyInfo.getTenant());
+                for (ConfigInfoStateWrapper configInfo : configDeleted) {
+                    if (configInfoPersistService.findConfigInfoState(configInfo.getDataId(), configInfo.getGroup(),
+                            configInfo.getTenant()) == null) {
+                        ConfigCacheService.remove(configInfo.getDataId(), configInfo.getGroup(),
+                                configInfo.getTenant());
                         LogUtil.DEFAULT_LOG.info("[dump-delete-ok], groupKey: {}, tenant: {}",
-                                new Object[] {GroupKey2.getKey(historyInfo.getDataId(), historyInfo.getGroup())}, historyInfo.getTenant());
+                                new Object[] {GroupKey2.getKey(configInfo.getDataId(), configInfo.getGroup())}, configInfo.getTenant());
                     }
                 }
                 if (configDeleted.size() < pageSize) {

@@ -17,7 +17,6 @@
 package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
-import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
@@ -129,13 +128,13 @@ class DumpChangeConfigWorkerTest {
         PropertyUtil.setDumpChangeOn(true);
         dumpChangeConfigWorker.setPageSize(3);
         //mock delete first page
-        List<ConfigHistoryInfo> firstPageDeleted = new ArrayList<>();
+        List<ConfigInfoStateWrapper> firstPageDeleted = new ArrayList<>();
         Timestamp startTime = dumpChangeConfigWorker.startTime;
         String dataIdPrefix = "d12345";
         
-        firstPageDeleted.add(createConfigHistoryInfo(dataIdPrefix, 1, startTime.getTime() + 1));
-        firstPageDeleted.add(createConfigHistoryInfo(dataIdPrefix, 2, startTime.getTime() + 2));
-        firstPageDeleted.add(createConfigHistoryInfo(dataIdPrefix, 3, startTime.getTime() + 3));
+        firstPageDeleted.add(createConfigInfoStateWrapper(dataIdPrefix, 1, startTime.getTime() + 1));
+        firstPageDeleted.add(createConfigInfoStateWrapper(dataIdPrefix, 2, startTime.getTime() + 2));
+        firstPageDeleted.add(createConfigInfoStateWrapper(dataIdPrefix, 3, startTime.getTime() + 3));
         //pre set cache for id1
         preSetCache(dataIdPrefix, 1, System.currentTimeMillis());
         assertEquals("encrykey" + 1,
@@ -310,18 +309,6 @@ class DumpChangeConfigWorkerTest {
     private void preSetCache(String dataIdPrefix, long id, long timeStamp) {
         ConfigCacheService.dumpWithMd5(dataIdPrefix + id, "group" + id, "tenant" + id, "content" + id,
                 MD5Utils.md5Hex("content" + id, "UTF-8"), timeStamp, "json", "encrykey" + id);
-    }
-    
-    private ConfigHistoryInfo createConfigHistoryInfo(String dataIdPreFix, long id, long timeStamp) {
-        Timestamp timestamp = new Timestamp(timeStamp);
-        ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
-        configHistoryInfo.setDataId(dataIdPreFix + id);
-        configHistoryInfo.setGroup("group" + id);
-        configHistoryInfo.setTenant("md5" + id);
-        configHistoryInfo.setTenant("tenant" + id);
-        configHistoryInfo.setId(id);
-        configHistoryInfo.setLastModifiedTime(timestamp);
-        return configHistoryInfo;
     }
     
     private ConfigInfoStateWrapper createConfigInfoStateWrapper(String dataIdPreFix, long id, long timeStamp) {

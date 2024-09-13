@@ -22,7 +22,9 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
+import com.alibaba.nacos.config.server.utils.ExtraConfigInfoUtil;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
@@ -44,6 +46,7 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -119,7 +122,7 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     }
     
     @Override
-    public List<ConfigHistoryInfo> findDeletedConfig(final Timestamp startTime, long lastMaxId,
+    public List<ConfigInfoStateWrapper> findDeletedConfig(final Timestamp startTime, long lastMaxId,
             final int pageSize, String publishType) {
         HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
                 dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
@@ -130,8 +133,22 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
         context.putWhereParameter(FieldConstant.PUBLISH_TYPE, publishType);
         
         MapperResult mapperResult = historyConfigInfoMapper.findDeletedConfig(context);
-        return databaseOperate.queryMany(mapperResult.getSql(), mapperResult.getParamList().toArray(),
-                HISTORY_DETAIL_ROW_MAPPER);
+        List<ConfigHistoryInfo> configHistoryInfos = databaseOperate.queryMany(mapperResult.getSql(),
+                mapperResult.getParamList().toArray(), HISTORY_DETAIL_ROW_MAPPER);
+        
+        List<ConfigInfoStateWrapper> configInfoStateWrappers = new ArrayList<>();
+        for (ConfigHistoryInfo configHistoryInfo : configHistoryInfos) {
+            ConfigInfoStateWrapper configInfoStateWrapper = new ConfigInfoStateWrapper();
+            configInfoStateWrapper.setId(configHistoryInfo.getId());
+            configInfoStateWrapper.setDataId(configHistoryInfo.getDataId());
+            configInfoStateWrapper.setGroup(configHistoryInfo.getGroup());
+            configInfoStateWrapper.setTenant(configHistoryInfo.getTenant());
+            configInfoStateWrapper.setMd5(configHistoryInfo.getMd5());
+            configInfoStateWrapper.setLastModified(configHistoryInfo.getLastModifiedTime().getTime());
+            configInfoStateWrapper.setGrayName(ExtraConfigInfoUtil.extractGrayName(configHistoryInfo.getExtInfo()));
+            configInfoStateWrappers.add(configInfoStateWrapper);
+        }
+        return configInfoStateWrappers;
     }
     
     @Override

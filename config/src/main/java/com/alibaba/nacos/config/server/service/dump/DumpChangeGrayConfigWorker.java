@@ -19,7 +19,6 @@ package com.alibaba.nacos.config.server.service.dump;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
@@ -29,12 +28,9 @@ import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.sql.Timestamp;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -73,28 +69,27 @@ public class DumpChangeGrayConfigWorker implements Runnable {
             long startDeletedConfigTime = System.currentTimeMillis();
             long deleteCursorId = 0L;
             while (true) {
-                List<ConfigHistoryInfo> historyConfigDeleted = historyConfigInfoPersistService.findDeletedConfig(startTime,
+                List<ConfigInfoStateWrapper> configDeleted = historyConfigInfoPersistService.findDeletedConfig(startTime,
                         deleteCursorId, pageSize, Constants.GRAY);
-                for (ConfigHistoryInfo historyInfo : historyConfigDeleted) {
-                    String grayName = extractGrayName(historyInfo.getExtraInfo());
+                for (ConfigInfoStateWrapper configInfo : configDeleted) {
+                    String grayName = configInfo.getGrayName();
                     if (StringUtils.isBlank(grayName)) {
-                        grayName = StringUtils.EMPTY;
-                        LogUtil.DEFAULT_LOG.warn("GrayName is null or empty");
+                        continue;
                     }
                     
-                    ConfigInfoStateWrapper configInfoStateWrapper = configInfoGrayPersistService.findConfigInfo4GrayState(historyInfo.getDataId(),
-                            historyInfo.getGroup(), historyInfo.getTenant(), grayName);
+                    ConfigInfoStateWrapper configInfoStateWrapper = configInfoGrayPersistService.findConfigInfo4GrayState(configInfo.getDataId(),
+                            configInfo.getGroup(), configInfo.getTenant(), grayName);
                     if (configInfoStateWrapper == null) {
-                        ConfigCacheService.removeGray(historyInfo.getDataId(), historyInfo.getGroup(),
-                                historyInfo.getTenant(), grayName);
+                        ConfigCacheService.removeGray(configInfo.getDataId(), configInfo.getGroup(),
+                                configInfo.getTenant(), grayName);
                         LogUtil.DEFAULT_LOG.info("[dump-gray-delete-ok], groupKey: {}, tenant: {}, grayName: {}",
-                                GroupKey2.getKey(historyInfo.getDataId(), historyInfo.getGroup()), historyInfo.getTenant(), grayName);
+                                GroupKey2.getKey(configInfo.getDataId(), configInfo.getGroup()), configInfo.getTenant(), grayName);
                     }
                 }
-                if (historyConfigDeleted.size() < pageSize) {
+                if (configDeleted.size() < pageSize) {
                     break;
                 }
-                deleteCursorId = historyConfigDeleted.get(historyConfigDeleted.size() - 1).getId();
+                deleteCursorId = configDeleted.get(configDeleted.size() - 1).getId();
             }
             LogUtil.DEFAULT_LOG.info("Check delete configs finished,cost:{}",
                     System.currentTimeMillis() - startDeletedConfigTime);
@@ -149,17 +144,6 @@ public class DumpChangeGrayConfigWorker implements Runnable {
             LogUtil.DEFAULT_LOG.info("Next dump gray change will scheduled after {} milliseconds",
                     PropertyUtil.getDumpChangeWorkerInterval());
             
-        }
-    }
-    
-    private String extractGrayName(String extraInfo)  {
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            Map<String, String> dataMap = objectMapper.readValue(extraInfo, new TypeReference<Map<String, String>>() { });
-            return dataMap.get("gray_name");
-        } catch (Exception e) {
-            LogUtil.DEFAULT_LOG.error("[dump-change-gray-error] Error extracting gray_name from extraInfo", e);
-            return null;
         }
     }
 }
