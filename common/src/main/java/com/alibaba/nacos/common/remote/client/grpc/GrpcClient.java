@@ -232,15 +232,16 @@ public abstract class GrpcClient extends RpcClient {
             Payload grpcRequest = GrpcUtils.convert(serverCheckRequest);
             ListenableFuture<Payload> responseFuture = requestBlockingStub.request(grpcRequest);
             Payload response = responseFuture.get(clientConfig.serverCheckTimeOut(), TimeUnit.MILLISECONDS);
-            //receive connection unregister response here,not check response is success.
+            LOGGER.info("[nacos, 4] receiving server check response payload: {}", response);
+            // receive connection unregister response here,not check response is success.
             return (Response) GrpcUtils.parse(response);
         } catch (Exception e) {
             LoggerUtils.printIfErrorEnabled(LOGGER,
-                    "Server check fail, please check server {} ,port {} is available , error ={}", ip, port, e);
+                    "Server check fail, please check server {}, port {} is available , error ={}", ip, port, e);
             if (this.clientConfig != null && this.clientConfig.tlsConfig() != null && this.clientConfig.tlsConfig()
                     .getEnableTls()) {
                 LoggerUtils.printIfErrorEnabled(LOGGER,
-                        "current client is require tls encrypted ,server must support tls ,please check");
+                        "current client is require tls encrypted, server must support tls ,please check");
             }
             return null;
         }
@@ -344,7 +345,6 @@ public abstract class GrpcClient extends RpcClient {
             RequestGrpc.RequestFutureStub newChannelStubTemp = createNewChannelStub(managedChannel);
             
             Response response = serverCheck(serverInfo.getServerIp(), port, newChannelStubTemp);
-            LOGGER.info("[nacos] receiving server check response: {}", response);
             if (!(response instanceof ServerCheckResponse)) {
                 shuntDownChannel(managedChannel);
                 return null;
