@@ -34,6 +34,10 @@ public class ExternalDataSourcePropertiesTest {
     
     public static final String USERNAME = "nacos_devtest";
     
+    private static final String JDBC_DRIVER_NAME = "com.mysql.cj.jdbc.Driver";
+    
+    private static final String KINGBASE_JDBC_DRIVER_NAME = "com.kingbase8.Driver";
+    
     @Test
     void externalDatasourceNormally() {
         HikariDataSource expectedDataSource = new HikariDataSource();
@@ -148,4 +152,27 @@ public class ExternalDataSourcePropertiesTest {
         });
     }
     
+    @Test
+    void externalDatasourceToAssertDriverClassName() {
+        try (HikariDataSource expectedDataSource = new HikariDataSource()) {
+            expectedDataSource.setJdbcUrl(JDBC_URL);
+            expectedDataSource.setUsername(USERNAME);
+            expectedDataSource.setPassword(PASSWORD);
+            expectedDataSource.setDriverClassName(JDBC_DRIVER_NAME);
+            MockEnvironment environment = new MockEnvironment();
+            // error num of db
+            environment.setProperty("db.num", "1");
+            environment.setProperty("db.url", JDBC_URL);
+            environment.setProperty("db.user", USERNAME);
+            environment.setProperty("db.password", PASSWORD);
+            environment.setProperty("db.driverClassName", JDBC_DRIVER_NAME);
+            List<HikariDataSource> dataSources = new ExternalDataSourceProperties().build(environment, (dataSource -> {
+                assertEquals(dataSource.getJdbcUrl(), expectedDataSource.getJdbcUrl());
+                assertEquals(dataSource.getUsername(), expectedDataSource.getUsername());
+                assertEquals(dataSource.getPassword(), expectedDataSource.getPassword());
+                assertEquals(dataSource.getDataSourceClassName(), expectedDataSource.getDataSourceClassName());
+                
+            }));
+        }
+    }
 }

@@ -49,6 +49,8 @@ public class ExternalDataSourceProperties {
     
     private List<String> password = new ArrayList<>();
     
+    private List<String> driverClassName = new ArrayList<>();
+    
     public void setNum(Integer num) {
         this.num = num;
     }
@@ -63,6 +65,10 @@ public class ExternalDataSourceProperties {
     
     public void setPassword(List<String> password) {
         this.password = password;
+    }
+    
+    public void setDriverClassName(List<String> driverClassName) {
+        this.driverClassName = driverClassName;
     }
     
     /**
@@ -82,9 +88,8 @@ public class ExternalDataSourceProperties {
             int currentSize = index + 1;
             Preconditions.checkArgument(url.size() >= currentSize, "db.url.%s is null", index);
             DataSourcePoolProperties poolProperties = DataSourcePoolProperties.build(environment);
-            if (StringUtils.isEmpty(poolProperties.getDataSource().getDriverClassName())) {
-                poolProperties.setDriverClassName(JDBC_DRIVER_NAME);
-            }
+            // 支持不同数据库配置不同的数据库驱动
+            poolProperties.setDriverClassName(getOrDefault(driverClassName, index, JDBC_DRIVER_NAME).trim());
             poolProperties.setJdbcUrl(url.get(index).trim());
             poolProperties.setUsername(getOrDefault(user, index, user.get(0)).trim());
             poolProperties.setPassword(getOrDefault(password, index, password.get(0)).trim());
