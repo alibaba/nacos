@@ -288,8 +288,10 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alipay.sofa.jraft.util.JRaftSignalHandler.class,
             com.alipay.sofa.jraft.util.concurrent.MpscSingleThreadExecutor.class,
             com.alipay.sofa.jraft.util.timer.DefaultRaftTimerFactory.class,
+            com.alipay.sofa.jraft.util.internal.ThrowUtil.class,
             com.alipay.sofa.jraft.core.DefaultJRaftServiceFactory.class,
             com.alipay.sofa.jraft.core.NodeImpl.class,
+            com.alipay.sofa.jraft.core.Replicator.class,
             com.alipay.sofa.jraft.storage.snapshot.local.LocalSnapshotReader.class
     };
     // endregion
@@ -327,7 +329,9 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             io.grpc.netty.shaded.io.grpc.netty.NettyServerProvider.class,
             io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder.class,
             io.grpc.netty.shaded.io.grpc.netty.NettyChannelProvider.class,
+            io.grpc.netty.shaded.io.grpc.netty.NettyConnectionHelper.class,
             io.grpc.netty.shaded.io.netty.channel.socket.nio.NioSocketChannel.class,
+            io.grpc.netty.shaded.io.netty.util.AttributeKey.class,
             io.grpc.ForwardingServerCall.class,
             io.grpc.ForwardingServerCall.SimpleForwardingServerCall.class,
             
