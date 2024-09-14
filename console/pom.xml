@@ -326,6 +326,7 @@
                                 --initialize-at-run-time=io.grpc.netty.shaded.io.grpc.netty.NettyClientHandler
                                 --initialize-at-run-time=io.grpc.netty.shaded.io.grpc.netty.NettyClientStream
                                 --initialize-at-run-time=io.grpc.netty.shaded.io.grpc.netty.WriteBufferingAndExceptionHandler
+                                --initialize-at-run-time=io.grpc.netty.shaded.io.grpc.netty.NettyConnection
                                 --initialize-at-run-time=io.grpc.internal.ManagedChannelImpl
                                 --initialize-at-run-time=io.grpc.internal.ManagedChannelImpl$RealChannel
                                 --initialize-at-run-time=io.grpc.netty.shaded.io.netty.channel.socket.nio.NioSocketChannel
