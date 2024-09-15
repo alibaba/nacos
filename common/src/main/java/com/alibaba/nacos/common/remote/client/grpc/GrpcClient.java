@@ -198,7 +198,7 @@ public abstract class GrpcClient extends RpcClient {
      * @return if server check success,return a non-null channel.
      */
     private ManagedChannel createNewManagedChannel(String serverIp, int serverPort) {
-        LOGGER.info("grpc client connection server:{} ip,serverPort:{},grpcTslConfig:{}", serverIp, serverPort,
+        LOGGER.info("grpc client connection server: {} ip, serverPort: {}, grpcTslConfig: {}", serverIp, serverPort,
                 JacksonUtils.toJson(clientConfig.tlsConfig()));
         ManagedChannelBuilder<?> managedChannelBuilder = buildChannel(serverIp, serverPort, buildSslContext()).executor(
                         grpcExecutor).compressorRegistry(CompressorRegistry.getDefaultInstance())
@@ -232,7 +232,6 @@ public abstract class GrpcClient extends RpcClient {
             Payload grpcRequest = GrpcUtils.convert(serverCheckRequest);
             ListenableFuture<Payload> responseFuture = requestBlockingStub.request(grpcRequest);
             Payload response = responseFuture.get(clientConfig.serverCheckTimeOut(), TimeUnit.MILLISECONDS);
-            LOGGER.info("[nacos, 4] receiving server check response payload: {}", response);
             // receive connection unregister response here,not check response is success.
             return (Response) GrpcUtils.parse(response);
         } catch (Exception e) {

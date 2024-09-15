@@ -66,12 +66,12 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         String connectionId = GrpcServerConstants.CONTEXT_KEY_CONN_ID.get();
         try {
             if (connectionManager.traced(clientIp)) {
-                Loggers.REMOTE_DIGEST.info("[{}]Payload {},meta={},body={}", connectionId, receive ? "receive" : "send",
+                Loggers.REMOTE_DIGEST.info("[{}] Payload {}, meta={}, body={}", connectionId, receive ? "receive" : "send",
                         grpcRequest.getMetadata().toByteString().toStringUtf8(),
                         grpcRequest.getBody().toByteString().toStringUtf8());
             }
         } catch (Throwable throwable) {
-            Loggers.REMOTE_DIGEST.error("[{}]Monitor request error,payload={},error={}", connectionId, clientIp,
+            Loggers.REMOTE_DIGEST.error("[{}] Monitor request error, payload={}, error={}", connectionId, clientIp,
                     grpcRequest.toByteString().toStringUtf8());
         }
         
@@ -83,10 +83,6 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         traceIfNecessary(grpcRequest, true);
         String type = grpcRequest.getMetadata().getType();
         long startTime = System.nanoTime();
-        
-        Loggers.CORE.info(
-                "[nacos] receiving server grpc request: {}, response observer: {}",
-                grpcRequest, responseObserver.getClass().getName());
         
         //server is on starting.
         if (!ApplicationUtils.isStarted()) {
