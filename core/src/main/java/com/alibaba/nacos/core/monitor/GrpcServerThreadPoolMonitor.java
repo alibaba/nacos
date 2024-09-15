@@ -24,7 +24,9 @@ import org.springframework.scheduling.config.IntervalTask;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
+import java.time.Duration;
 import java.util.concurrent.ThreadPoolExecutor;
 
 /**
@@ -40,11 +42,20 @@ public class GrpcServerThreadPoolMonitor implements SchedulingConfigurer {
 
     @Resource
     private GrpcClusterServer clusterServer;
+    
+    /**
+     * Just for test.
+     */
+    @PostConstruct
+    public void postConstructor() {
+        System.out.println("[test] GrpcServerThreadPoolMonitor finish construct: ");
+        System.out.println(" - sdkServer: " + sdkServer.getServicePort());
+        System.out.println(" - clusterServer: " + clusterServer.getServicePort());
+    }
 
     @Override
     public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {
         Boolean enabled = EnvUtil.getProperty("nacos.metric.grpc.server.executor.enabled", Boolean.class, true);
-        System.out.println("configureTasks: " + enabled.toString());
         if (!enabled) {
             return;
         }
@@ -68,6 +79,8 @@ public class GrpcServerThreadPoolMonitor implements SchedulingConfigurer {
             MetricsMonitor.getClusterServerExecutorMetric().getCorePoolSize().set(clusterServerRpcExecutor.getCorePoolSize());
             MetricsMonitor.getClusterServerExecutorMetric().getMaximumPoolSize().set(clusterServerRpcExecutor.getMaximumPoolSize());
             MetricsMonitor.getClusterServerExecutorMetric().getPoolSize().set(clusterServerRpcExecutor.getPoolSize());
-        }, Integer.parseInt(EnvUtil.getProperty("nacos.metric.grpc.server.executor.interval", "15000")), 1000L));
+        }, Duration.ofMillis(Integer.parseInt(
+                EnvUtil.getProperty("nacos.metric.grpc.server.executor.interval", "15000"))),
+                Duration.ofMillis(1000L)));
     }
 }

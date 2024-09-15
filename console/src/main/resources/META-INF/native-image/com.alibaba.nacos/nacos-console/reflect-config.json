@@ -15969,7 +15969,8 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllPublicMethods":true,
-  "queryAllDeclaredConstructors":true
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"postConstructor","parameterTypes":[] }]
 },
 {
   "name":"org.springframework.scheduling.concurrent.CustomizableThreadFactory",
