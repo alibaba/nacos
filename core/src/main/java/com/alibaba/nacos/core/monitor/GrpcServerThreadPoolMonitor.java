@@ -44,6 +44,7 @@ public class GrpcServerThreadPoolMonitor implements SchedulingConfigurer {
     @Override
     public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {
         Boolean enabled = EnvUtil.getProperty("nacos.metric.grpc.server.executor.enabled", Boolean.class, true);
+        System.out.println("configureTasks: " + enabled.toString());
         if (!enabled) {
             return;
         }
