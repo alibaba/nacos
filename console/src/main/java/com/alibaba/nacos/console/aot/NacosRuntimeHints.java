@@ -384,6 +384,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alibaba.nacos.core.cluster.remote.request.AbstractClusterRequest.class,
             com.alibaba.nacos.core.cluster.remote.request.MemberReportRequest.class,
             com.alibaba.nacos.core.cluster.remote.response.MemberReportResponse.class,
+            com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy.class,
             com.alibaba.nacos.core.distributed.distro.entity.DistroData.class,
             com.alibaba.nacos.core.distributed.distro.entity.DistroKey.class,
             com.alibaba.nacos.naming.cluster.remote.request.DistroDataRequest.class,
@@ -507,7 +508,22 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alibaba.nacos.naming.pojo.Record.class,
             com.alibaba.nacos.naming.pojo.ServiceDetailInfo.class,
             com.alibaba.nacos.naming.pojo.ServiceNameView.class,
-            com.alibaba.nacos.plugin.auth.impl.jwt.NacosJwtPayload.class
+            com.alibaba.nacos.plugin.auth.impl.jwt.NacosJwtPayload.class,
+            // sys
+            com.alibaba.nacos.config.server.filter.ConfigEnabledFilter.class,
+            com.alibaba.nacos.naming.config.NamingEnabledFilter.class,
+            com.alibaba.nacos.istio.config.IstioEnabledFilter.class,
+            com.alibaba.nacos.config.server.Config.class,
+            com.alibaba.nacos.naming.NamingApp.class,
+            com.alibaba.nacos.cmdb.CmdbApp.class,
+            com.alibaba.nacos.istio.IstioApp.class,
+            com.alibaba.nacos.prometheus.PrometheusApp.class,
+            com.alibaba.nacos.sys.filter.NacosTypeExcludeFilter.class,
+            com.alibaba.nacos.sys.filter.NacosPackageExcludeFilter.class,
+            com.alibaba.nacos.plugin.control.connection.ConnectionMetricsCollector.class,
+            com.alibaba.nacos.config.server.service.LongPollingConnectionMetricsCollector.class,
+            com.alibaba.nacos.core.remote.RuntimeConnectionEjector.class,
+            com.alibaba.nacos.core.remote.ConnectionManager.class,
     };
     // endregion
     

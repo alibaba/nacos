@@ -236,7 +236,7 @@ public abstract class GrpcClient extends RpcClient {
             return (Response) GrpcUtils.parse(response);
         } catch (Exception e) {
             LoggerUtils.printIfErrorEnabled(LOGGER,
-                    "Server check fail, please check server {}, port {} is available , error ={}", ip, port, e);
+                    "Server check fail, please check server {}, port {} is available, error ={}", ip, port, e);
             if (this.clientConfig != null && this.clientConfig.tlsConfig() != null && this.clientConfig.tlsConfig()
                     .getEnableTls()) {
                 LoggerUtils.printIfErrorEnabled(LOGGER,
