@@ -509,7 +509,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alibaba.nacos.naming.pojo.ServiceDetailInfo.class,
             com.alibaba.nacos.naming.pojo.ServiceNameView.class,
             com.alibaba.nacos.plugin.auth.impl.jwt.NacosJwtPayload.class,
-            // sys
+            // sys and plugin
             com.alibaba.nacos.config.server.filter.ConfigEnabledFilter.class,
             com.alibaba.nacos.naming.config.NamingEnabledFilter.class,
             com.alibaba.nacos.istio.config.IstioEnabledFilter.class,
@@ -520,10 +520,12 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alibaba.nacos.prometheus.PrometheusApp.class,
             com.alibaba.nacos.sys.filter.NacosTypeExcludeFilter.class,
             com.alibaba.nacos.sys.filter.NacosPackageExcludeFilter.class,
+            com.alibaba.nacos.plugin.control.ControlManagerCenter.class,
             com.alibaba.nacos.plugin.control.connection.ConnectionMetricsCollector.class,
             com.alibaba.nacos.config.server.service.LongPollingConnectionMetricsCollector.class,
             com.alibaba.nacos.core.remote.RuntimeConnectionEjector.class,
             com.alibaba.nacos.core.remote.ConnectionManager.class,
+            com.alibaba.nacos.config.server.remote.RpcConfigChangeNotifier.class,
     };
     // endregion
     
