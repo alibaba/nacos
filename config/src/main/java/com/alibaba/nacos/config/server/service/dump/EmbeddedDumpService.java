@@ -84,6 +84,7 @@ public class EmbeddedDumpService extends DumpService {
                 configInfoAggrPersistService, configInfoBetaPersistService, configInfoTagPersistService,
                 mergeDatumService, memberManager);
         this.protocolManager = protocolManager;
+        System.out.println("[test] Building EmbeddedDumpService Bean");
     }
     
     @PostConstruct

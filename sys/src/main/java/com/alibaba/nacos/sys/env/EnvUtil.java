@@ -262,7 +262,6 @@ public class EnvUtil {
      * Standalone mode or not.
      */
     public static boolean getStandaloneMode() {
-        System.out.println("[test] counting judge standalone mode");
         if (Objects.isNull(isStandalone)) {
             isStandalone = Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME);
         }

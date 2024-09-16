@@ -57,6 +57,7 @@ public class ExternalDumpService extends DumpService {
         super(configInfoPersistService, namespacePersistService, historyConfigInfoPersistService,
                 configInfoAggrPersistService, configInfoBetaPersistService, configInfoTagPersistService,
                 mergeDatumService, memberManager);
+        System.out.println("[test] Building ExternalDumpService Bean");
     }
     
     @PostConstruct
