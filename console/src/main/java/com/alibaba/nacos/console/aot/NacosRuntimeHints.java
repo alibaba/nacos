@@ -579,6 +579,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             ".*\\.woff2$",
             ".*\\.ttf$",
             "org/apache/derby/modules.properties",
+            "application.properties",
     };
     
     public NacosRuntimeHints() throws ClassNotFoundException {

@@ -48,6 +48,7 @@ public class DatasourceConfiguration implements ApplicationContextInitializer<Co
     }
     
     public static boolean isEmbeddedStorage() {
+        System.out.println("[test] isEmbeddedStorage: " + embeddedStorage);
         return embeddedStorage;
     }
     
