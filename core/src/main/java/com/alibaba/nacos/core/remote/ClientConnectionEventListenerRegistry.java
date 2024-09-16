@@ -33,10 +33,6 @@ public class ClientConnectionEventListenerRegistry {
     
     final List<ClientConnectionEventListener> clientConnectionEventListeners = new ArrayList<>();
     
-    public ClientConnectionEventListenerRegistry() {
-        System.out.println("[test] Building ClientConnectionEventListenerRegistry Bean");
-    }
-    
     /**
      * notify where a new client connected.
      *
