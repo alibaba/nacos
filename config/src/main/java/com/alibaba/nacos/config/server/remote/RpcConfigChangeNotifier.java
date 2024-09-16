@@ -61,6 +61,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     TpsControlManager tpsControlManager = ControlManagerCenter.getInstance().getTpsControlManager();
     
     public RpcConfigChangeNotifier() {
+        System.out.println("[test] Building RpcConfigChangeNotifier Bean");
         NotifyCenter.registerSubscriber(this);
     }
     
