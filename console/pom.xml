@@ -104,6 +104,7 @@
                 <includes>
                     <include>META-INF/**</include>
                     <include>static/**</include>
+                    <include>application.properties</include>
                     <include>org/apache/derby/modules.properties</include>
                     <include>librocksdbjni-${hints.os.rocksdb}</include>
                 </includes>
