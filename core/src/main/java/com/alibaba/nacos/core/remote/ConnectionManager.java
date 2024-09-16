@@ -67,6 +67,7 @@ public class ConnectionManager {
     private ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
     
     public ConnectionManager(ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry) {
+        System.out.println("[test] Building ConnectionManager Bean");
         this.clientConnectionEventListenerRegistry = clientConnectionEventListenerRegistry;
     }
     
