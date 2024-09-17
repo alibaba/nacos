@@ -42,20 +42,9 @@ public class GrpcServerThreadPoolMonitor implements SchedulingConfigurer {
 
     @Resource
     private GrpcClusterServer clusterServer;
-    
-    /**
-     * Just for test.
-     */
-    @PostConstruct
-    public void postConstructor() {
-        System.out.println("[test] GrpcServerThreadPoolMonitor finish construct: ");
-        System.out.println(" - sdkServer: " + sdkServer.getServicePort());
-        System.out.println(" - clusterServer: " + clusterServer.getServicePort());
-    }
 
     @Override
     public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {
-        System.out.println("[test] Building GrpcServerThreadPoolMonitor");
         Boolean enabled = EnvUtil.getProperty("nacos.metric.grpc.server.executor.enabled", Boolean.class, true);
         if (!enabled) {
             return;
