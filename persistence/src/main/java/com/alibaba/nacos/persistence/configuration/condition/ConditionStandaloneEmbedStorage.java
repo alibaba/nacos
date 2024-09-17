@@ -32,8 +32,6 @@ public class ConditionStandaloneEmbedStorage implements Condition {
     
     @Override
     public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
-        System.out.println("[test] DatasourceConfiguration.isEmbeddedStorage: " + DatasourceConfiguration.isEmbeddedStorage());
-        System.out.println("[test] EnvUtil.getStandaloneMode: " + EnvUtil.getStandaloneMode());
         return DatasourceConfiguration.isEmbeddedStorage() && EnvUtil.getStandaloneMode();
     }
 }
