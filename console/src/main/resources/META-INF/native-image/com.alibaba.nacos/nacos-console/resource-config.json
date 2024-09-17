@@ -369,6 +369,8 @@
   }, {
     "pattern":"\\Qcom/alibaba/nacos/consistency/cp/RequestProcessor4CP.class\\E"
   }, {
+    "pattern":"\\Qcom/alibaba/nacos/console/aot/BeanProcessorHints.class\\E"
+  }, {
     "pattern":"\\Qcom/alibaba/nacos/console/config/ConsoleConfig.class\\E"
   }, {
     "pattern":"\\Qcom/alibaba/nacos/console/controller/HealthController.class\\E"

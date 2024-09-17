@@ -274,7 +274,6 @@
                         <artifactId>spring-boot-maven-plugin</artifactId>
                         <configuration>
                             <jvmArguments>
-                                -Dnacos.standalone=true
                                 -agentlib:native-image-agent=config-merge-dir=src/main/resources/META-INF/native-image/com.alibaba.nacos/nacos-console/
                             </jvmArguments>
                             <image>
