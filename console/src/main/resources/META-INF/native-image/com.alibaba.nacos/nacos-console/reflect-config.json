@@ -1702,6 +1702,13 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
+  "name":"com.alibaba.nacos.console.aot.BeanProcessorHints",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"postProcessBeforeInitialization","parameterTypes":["java.lang.Object","java.lang.String"] }]
+},
+{
   "name":"com.alibaba.nacos.console.aot.NacosRuntimeHints",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
