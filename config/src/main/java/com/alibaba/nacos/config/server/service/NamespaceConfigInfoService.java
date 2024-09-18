@@ -22,7 +22,6 @@ import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistServi
 import com.alibaba.nacos.core.namespace.injector.AbstractNamespaceDetailInjector;
 import com.alibaba.nacos.core.namespace.model.Namespace;
 import com.alibaba.nacos.sys.env.EnvUtil;
-
 import org.springframework.stereotype.Service;
 
 /**
@@ -32,26 +31,26 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class NamespaceConfigInfoService extends AbstractNamespaceDetailInjector {
-
-	private final ConfigInfoPersistService configInfoPersistService;
-
-	private final TenantCapacityPersistService tenantCapacityPersistService;
-
-	public NamespaceConfigInfoService(ConfigInfoPersistService configInfoPersistService,
-			TenantCapacityPersistService tenantCapacityPersistService) {
-		this.configInfoPersistService = configInfoPersistService;
-		this.tenantCapacityPersistService = tenantCapacityPersistService;
-	}
-
-	@Override
-	public void injectDetail(Namespace namespace) {
-
-		if (EnvUtil.getProperty(PropertiesConstant.DEFAULT_TENANT_QUOTA, Integer.class) != null) {
-			namespace.setQuota(EnvUtil.getProperty(PropertiesConstant.DEFAULT_TENANT_QUOTA, Integer.class));
-		}
-
-		// set config count.
-		int configCount = configInfoPersistService.configInfoCount(namespace.getNamespace());
-		namespace.setConfigCount(configCount);
-	}
+    
+    private final ConfigInfoPersistService configInfoPersistService;
+    
+    private final TenantCapacityPersistService tenantCapacityPersistService;
+    
+    public NamespaceConfigInfoService(ConfigInfoPersistService configInfoPersistService,
+            TenantCapacityPersistService tenantCapacityPersistService) {
+        this.configInfoPersistService = configInfoPersistService;
+        this.tenantCapacityPersistService = tenantCapacityPersistService;
+    }
+    
+    @Override
+    public void injectDetail(Namespace namespace) {
+        
+        if (EnvUtil.getProperty(PropertiesConstant.DEFAULT_TENANT_QUOTA, Integer.class) != null) {
+            namespace.setQuota(EnvUtil.getProperty(PropertiesConstant.DEFAULT_TENANT_QUOTA, Integer.class));
+        }
+        
+        // set config count.
+        int configCount = configInfoPersistService.configInfoCount(namespace.getNamespace());
+        namespace.setConfigCount(configCount);
+    }
 }
