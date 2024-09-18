@@ -17,7 +17,6 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.model.capacity.TenantCapacity;
-import com.alibaba.nacos.config.server.service.capacity.TenantCapacityPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.core.namespace.model.Namespace;
