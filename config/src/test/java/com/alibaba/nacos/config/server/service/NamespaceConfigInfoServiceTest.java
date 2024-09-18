@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.config.server.constant.PropertiesConstant;
 import com.alibaba.nacos.config.server.model.capacity.TenantCapacity;
-import com.alibaba.nacos.config.server.service.capacity.TenantCapacityPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.core.namespace.model.Namespace;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +31,7 @@ import org.mockito.Mockito;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
@@ -39,14 +40,11 @@ public class NamespaceConfigInfoServiceTest {
     @Mock
     private ConfigInfoPersistService configInfoPersistService;
     
-    @Mock
-    private TenantCapacityPersistService tenantCapacityPersistService;
-    
-    MockedStatic<PropertyUtil> propertyUtilMockedStatic;
+    MockedStatic<EnvUtil> propertyUtilMockedStatic;
     
     @BeforeEach
     void setUp() throws Exception {
-        propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
+        propertyUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
         
     }
     
@@ -59,14 +57,12 @@ public class NamespaceConfigInfoServiceTest {
     public void testInjectDetailNotDefault() {
         
         String namespaceId = "test1234";
-        TenantCapacity tenantCapacity = new TenantCapacity();
-        tenantCapacity.setQuota(1023);
-        
-        when(tenantCapacityPersistService.getTenantCapacity(namespaceId)).thenReturn(tenantCapacity);
+        when(EnvUtil.getProperty(eq(PropertiesConstant.DEFAULT_TENANT_QUOTA), eq(Integer.class))).thenReturn(1023);
         when(configInfoPersistService.configInfoCount(namespaceId)).thenReturn(101);
         Namespace namespace = new Namespace(namespaceId, "test123ShowName");
-        NamespaceConfigInfoService namespaceConfigInfoService = new NamespaceConfigInfoService(configInfoPersistService,
-                tenantCapacityPersistService);
+        namespace.setQuota(200);
+        NamespaceConfigInfoService namespaceConfigInfoService = new NamespaceConfigInfoService(
+                configInfoPersistService);
         namespaceConfigInfoService.injectDetail(namespace);
         assertEquals(101, namespace.getConfigCount());
         assertEquals(1023, namespace.getQuota());
@@ -79,17 +75,17 @@ public class NamespaceConfigInfoServiceTest {
         String namespaceId = "test1234";
         TenantCapacity tenantCapacity = new TenantCapacity();
         tenantCapacity.setQuota(0);
-        when(tenantCapacityPersistService.getTenantCapacity(namespaceId)).thenReturn(tenantCapacity);
         when(configInfoPersistService.configInfoCount(namespaceId)).thenReturn(105);
         
-        when(PropertyUtil.getDefaultTenantQuota()).thenReturn(1025);
+        when(EnvUtil.getProperty(eq(PropertiesConstant.DEFAULT_TENANT_QUOTA), eq(Integer.class))).thenReturn(null);
         Namespace namespace = new Namespace(namespaceId, "test123ShowName");
-        NamespaceConfigInfoService namespaceConfigInfoService = new NamespaceConfigInfoService(configInfoPersistService,
-                tenantCapacityPersistService);
+        namespace.setQuota(200);
+        NamespaceConfigInfoService namespaceConfigInfoService = new NamespaceConfigInfoService(
+                configInfoPersistService);
         namespaceConfigInfoService.injectDetail(namespace);
         
         assertEquals(105, namespace.getConfigCount());
-        assertEquals(1025, namespace.getQuota());
+        assertEquals(200, namespace.getQuota());
     }
     
 }

@@ -138,6 +138,8 @@ public class ClientWorker implements Closeable {
     
     private long timeout;
     
+    private long requestTimeout;
+    
     private final ConfigRpcTransportClient agent;
     
     private int taskPenaltyTime;
@@ -405,7 +407,7 @@ public class ClientWorker implements Closeable {
                 cache.setTaskId(taskId);
                 // fix issue # 1317
                 if (enableRemoteSyncConfig) {
-                    ConfigResponse response = getServerConfig(dataId, group, tenant, 3000L, false);
+                    ConfigResponse response = getServerConfig(dataId, group, tenant, requestTimeout, false);
                     cache.setEncryptedDataKey(response.getEncryptedDataKey());
                     cache.setContent(response.getContent());
                 }
@@ -509,6 +511,8 @@ public class ClientWorker implements Closeable {
     }
     
     private void init(NacosClientProperties properties) {
+        
+        requestTimeout = ConvertUtils.toLong(properties.getProperty(PropertyKeyConst.CONFIG_REQUEST_TIMEOUT, "-1"));
         
         timeout = Math.max(ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT),
                 Constants.CONFIG_LONG_POLL_TIMEOUT), Constants.MIN_CONFIG_LONG_POLL_TIMEOUT);
@@ -927,7 +931,7 @@ public class ClientWorker implements Closeable {
             try {
                 
                 ConfigResponse response = this.queryConfigInner(rpcClient, cacheData.dataId, cacheData.group,
-                        cacheData.tenant, 3000L, notify);
+                        cacheData.tenant, requestTimeout, notify);
                 cacheData.setEncryptedDataKey(response.getEncryptedDataKey());
                 cacheData.setContent(response.getContent());
                 if (null != response.getConfigType()) {
@@ -1198,7 +1202,7 @@ public class ClientWorker implements Closeable {
         }
         
         private Response requestProxy(RpcClient rpcClientInner, Request request) throws NacosException {
-            return requestProxy(rpcClientInner, request, 3000L);
+            return requestProxy(rpcClientInner, request, requestTimeout);
         }
         
         private Response requestProxy(RpcClient rpcClientInner, Request request, long timeoutMills)
@@ -1216,6 +1220,9 @@ public class ClientWorker implements Closeable {
             if (limit) {
                 throw new NacosException(NacosException.CLIENT_OVER_THRESHOLD,
                         "More than client-side current limit threshold");
+            }
+            if (timeoutMills < 0) {
+                return rpcClientInner.request(request);
             }
             return rpcClientInner.request(request, timeoutMills);
         }
