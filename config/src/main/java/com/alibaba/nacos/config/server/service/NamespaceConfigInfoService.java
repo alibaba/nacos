@@ -17,7 +17,6 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.constant.PropertiesConstant;
-import com.alibaba.nacos.config.server.service.capacity.TenantCapacityPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.core.namespace.injector.AbstractNamespaceDetailInjector;
 import com.alibaba.nacos.core.namespace.model.Namespace;
@@ -34,12 +33,8 @@ public class NamespaceConfigInfoService extends AbstractNamespaceDetailInjector 
     
     private final ConfigInfoPersistService configInfoPersistService;
     
-    private final TenantCapacityPersistService tenantCapacityPersistService;
-    
-    public NamespaceConfigInfoService(ConfigInfoPersistService configInfoPersistService,
-            TenantCapacityPersistService tenantCapacityPersistService) {
+    public NamespaceConfigInfoService(ConfigInfoPersistService configInfoPersistService) {
         this.configInfoPersistService = configInfoPersistService;
-        this.tenantCapacityPersistService = tenantCapacityPersistService;
     }
     
     @Override

@@ -39,9 +39,6 @@ public class NamespaceConfigInfoServiceTest {
     @Mock
     private ConfigInfoPersistService configInfoPersistService;
     
-    @Mock
-    private TenantCapacityPersistService tenantCapacityPersistService;
-    
     MockedStatic<PropertyUtil> propertyUtilMockedStatic;
     
     @BeforeEach
@@ -62,11 +59,9 @@ public class NamespaceConfigInfoServiceTest {
         TenantCapacity tenantCapacity = new TenantCapacity();
         tenantCapacity.setQuota(1023);
         
-        when(tenantCapacityPersistService.getTenantCapacity(namespaceId)).thenReturn(tenantCapacity);
         when(configInfoPersistService.configInfoCount(namespaceId)).thenReturn(101);
         Namespace namespace = new Namespace(namespaceId, "test123ShowName");
-        NamespaceConfigInfoService namespaceConfigInfoService = new NamespaceConfigInfoService(configInfoPersistService,
-                tenantCapacityPersistService);
+        NamespaceConfigInfoService namespaceConfigInfoService = new NamespaceConfigInfoService(configInfoPersistService);
         namespaceConfigInfoService.injectDetail(namespace);
         assertEquals(101, namespace.getConfigCount());
         assertEquals(1023, namespace.getQuota());
@@ -79,13 +74,11 @@ public class NamespaceConfigInfoServiceTest {
         String namespaceId = "test1234";
         TenantCapacity tenantCapacity = new TenantCapacity();
         tenantCapacity.setQuota(0);
-        when(tenantCapacityPersistService.getTenantCapacity(namespaceId)).thenReturn(tenantCapacity);
         when(configInfoPersistService.configInfoCount(namespaceId)).thenReturn(105);
         
         when(PropertyUtil.getDefaultTenantQuota()).thenReturn(1025);
         Namespace namespace = new Namespace(namespaceId, "test123ShowName");
-        NamespaceConfigInfoService namespaceConfigInfoService = new NamespaceConfigInfoService(configInfoPersistService,
-                tenantCapacityPersistService);
+        NamespaceConfigInfoService namespaceConfigInfoService = new NamespaceConfigInfoService(configInfoPersistService);
         namespaceConfigInfoService.injectDetail(namespace);
         
         assertEquals(105, namespace.getConfigCount());
