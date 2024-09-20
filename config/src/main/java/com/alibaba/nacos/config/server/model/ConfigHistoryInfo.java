@@ -152,7 +152,7 @@ public class ConfigHistoryInfo implements Serializable {
         return extInfo;
     }
     
-    public void setExtraInfo(String extInfo) {
+    public void setExtInfo(String extInfo) {
         this.extInfo = extInfo;
     }
     

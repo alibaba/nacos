@@ -34,9 +34,9 @@ import java.util.Map;
  *
  * @author Nacos
  */
-public class ExtraConfigInfoUtil {
+public class ConfigExtInfoUtil {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(ExtraConfigInfoUtil.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigExtInfoUtil.class);
     
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     
@@ -52,7 +52,7 @@ public class ExtraConfigInfoUtil {
         EXTRA_INFO_KEYS_MAPPING.put("schema", "c_schema");
     }
     
-    private ExtraConfigInfoUtil() {
+    private ConfigExtInfoUtil() {
     }
     
     /**

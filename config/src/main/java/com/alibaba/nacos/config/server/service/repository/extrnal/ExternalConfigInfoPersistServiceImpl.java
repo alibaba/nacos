@@ -32,7 +32,7 @@ import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.sql.ExternalStorageUtils;
-import com.alibaba.nacos.config.server.utils.ExtraConfigInfoUtil;
+import com.alibaba.nacos.config.server.utils.ConfigExtInfoUtil;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
@@ -149,7 +149,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 Timestamp now = new Timestamp(System.currentTimeMillis());
                 
                 historyConfigInfoPersistService.insertConfigHistoryAtomic(0, configInfo, srcIp, srcUser, now, "I",
-                        Constants.FORMAL, ExtraConfigInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser));
+                        Constants.FORMAL, ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser));
                 ConfigInfoStateWrapper configInfoCurrent = this.findConfigInfoState(configInfo.getDataId(),
                         configInfo.getGroup(), configInfo.getTenant());
                 if (configInfoCurrent == null) {
@@ -401,7 +401,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                         removeConfigInfoAtomic(dataId, group, tenant, srcIp, srcUser);
                         removeTagByIdAtomic(oldConfigAllInfo.getId());
                         historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo.getId(), oldConfigAllInfo,
-                                srcIp, srcUser, time, "D", Constants.FORMAL, ExtraConfigInfoUtil.getExtraInfoFromAllInfo(oldConfigAllInfo));
+                                srcIp, srcUser, time, "D", Constants.FORMAL, ConfigExtInfoUtil.getExtraInfoFromAllInfo(oldConfigAllInfo));
                     }
                 } catch (CannotGetJdbcConnectionException e) {
                     LogUtil.FATAL_LOG.error("[db-error] " + e, e);
@@ -432,7 +432,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                             removeTagByIdAtomic(configAllInfo.getId());
                             historyConfigInfoPersistService.insertConfigHistoryAtomic(configAllInfo.getId(),
                                     configAllInfo, srcIp, srcUser, time, "D", Constants.FORMAL,
-                                    ExtraConfigInfoUtil.getExtraInfoFromAllInfo(configAllInfo));
+                                    ConfigExtInfoUtil.getExtraInfoFromAllInfo(configAllInfo));
                         }
                     }
                     return oldConfigAllInfoList;
@@ -528,7 +528,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 
                 Timestamp now = new Timestamp(System.currentTimeMillis());
                 historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo.getId(), oldConfigAllInfo, srcIp, srcUser,
-                        now, "U", Constants.FORMAL, ExtraConfigInfoUtil.getExtraInfoFromAllInfo(oldConfigAllInfo));
+                        now, "U", Constants.FORMAL, ConfigExtInfoUtil.getExtraInfoFromAllInfo(oldConfigAllInfo));
                 return getConfigInfoOperateResult(configInfo.getDataId(), configInfo.getGroup(),
                         configInfo.getTenant());
             } catch (CannotGetJdbcConnectionException e) {
@@ -583,7 +583,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 Timestamp now = new Timestamp(System.currentTimeMillis());
                 
                 historyConfigInfoPersistService.insertConfigHistoryAtomic(oldAllConfigInfo.getId(), oldAllConfigInfo, srcIp, srcUser, now,
-                        "U", Constants.FORMAL, ExtraConfigInfoUtil.getExtraInfoFromAllInfo(oldAllConfigInfo));
+                        "U", Constants.FORMAL, ConfigExtInfoUtil.getExtraInfoFromAllInfo(oldAllConfigInfo));
                 ConfigInfoStateWrapper configInfoLast = this.findConfigInfoState(configInfo.getDataId(),
                         configInfo.getGroup(), configInfo.getTenant());
                 if (configInfoLast == null) {

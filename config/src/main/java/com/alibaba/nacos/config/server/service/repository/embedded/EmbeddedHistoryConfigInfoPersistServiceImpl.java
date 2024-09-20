@@ -24,7 +24,7 @@ import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
-import com.alibaba.nacos.config.server.utils.ExtraConfigInfoUtil;
+import com.alibaba.nacos.config.server.utils.ConfigExtInfoUtil;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
@@ -145,7 +145,7 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
             configInfoStateWrapper.setTenant(configHistoryInfo.getTenant());
             configInfoStateWrapper.setMd5(configHistoryInfo.getMd5());
             configInfoStateWrapper.setLastModified(configHistoryInfo.getLastModifiedTime().getTime());
-            configInfoStateWrapper.setGrayName(ExtraConfigInfoUtil.extractGrayName(configHistoryInfo.getExtInfo()));
+            configInfoStateWrapper.setGrayName(ConfigExtInfoUtil.extractGrayName(configHistoryInfo.getExtInfo()));
             configInfoStateWrappers.add(configInfoStateWrapper);
         }
         return configInfoStateWrappers;

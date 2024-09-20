@@ -28,7 +28,7 @@ import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
-import com.alibaba.nacos.config.server.utils.ExtraConfigInfoUtil;
+import com.alibaba.nacos.config.server.utils.ConfigExtInfoUtil;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
@@ -155,7 +155,7 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         String srcUser = "srcUser";
         //mock insert config info
         Mockito.doNothing().when(historyConfigInfoPersistService).insertConfigHistoryAtomic(eq(0), eq(configInfo), eq(srcIp), eq(srcUser),
-                any(Timestamp.class), eq("I"), eq("formal"), eq(ExtraConfigInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser)));
+                any(Timestamp.class), eq("I"), eq("formal"), eq(ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser)));
         
         ConfigOperateResult configOperateResult = embeddedConfigInfoPersistService.insertOrUpdate(srcIp, srcUser, configInfo,
                 configAdvanceInfo);
@@ -178,7 +178,7 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         //expect insert history info
         Mockito.verify(historyConfigInfoPersistService, times(1))
                 .insertConfigHistoryAtomic(eq(0L), eq(configInfo), eq(srcIp), eq(srcUser), any(Timestamp.class), eq("I"),
-                        eq("formal"), eq(ExtraConfigInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser)));
+                        eq("formal"), eq(ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser)));
         
     }
     
@@ -236,7 +236,7 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         //expect insert history info
         Mockito.verify(historyConfigInfoPersistService, times(1))
                 .insertConfigHistoryAtomic(eq(0L), eq(configInfo), eq(srcIp), eq(srcUser), any(Timestamp.class), eq("I"), eq("formal"),
-                        eq(ExtraConfigInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser)));
+                        eq(ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser)));
     }
     
     @Test
@@ -298,7 +298,7 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         //expect insert history info of U
         Mockito.verify(historyConfigInfoPersistService, times(1))
                 .insertConfigHistoryAtomic(eq(configAllInfo.getId()), any(ConfigInfo.class), eq(srcIp), eq(srcUser),
-                        any(Timestamp.class), eq("U"), eq("formal"), eq(ExtraConfigInfoUtil.getExtraInfoFromAllInfo(configAllInfo)));
+                        any(Timestamp.class), eq("U"), eq("formal"), eq(ConfigExtInfoUtil.getExtraInfoFromAllInfo(configAllInfo)));
         
     }
     
@@ -366,7 +366,7 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         //expect insert history info of U
         Mockito.verify(historyConfigInfoPersistService, times(1))
                 .insertConfigHistoryAtomic(eq(configAllInfo.getId()), any(ConfigInfo.class), eq(srcIp), eq(srcUser), any(Timestamp.class),
-                        eq("U"), eq("formal"), eq(ExtraConfigInfoUtil.getExtraInfoFromAllInfo(configAllInfo)));
+                        eq("U"), eq("formal"), eq(ConfigExtInfoUtil.getExtraInfoFromAllInfo(configAllInfo)));
         
     }
     
@@ -401,7 +401,7 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         //expect insert delete history
         Mockito.verify(historyConfigInfoPersistService, times(1))
                 .insertConfigHistoryAtomic(eq(configAllInfo.getId()), eq(configAllInfo), eq(srcIp), eq(srcUser), any(),
-                        eq("D"), eq("formal"), eq(ExtraConfigInfoUtil.getExtraInfoFromAllInfo(configAllInfo)));
+                        eq("D"), eq("formal"), eq(ConfigExtInfoUtil.getExtraInfoFromAllInfo(configAllInfo)));
         
     }
     
@@ -445,11 +445,11 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         //expect insert delete history
         Mockito.verify(historyConfigInfoPersistService, times(1)).insertConfigHistoryAtomic(eq(configAllInfos.get(0).getId()),
                 eq(configAllInfos.get(0)), eq(srcIp), eq(srcUser), any(), eq("D"), eq("formal"),
-                eq(ExtraConfigInfoUtil.getExtraInfoFromAllInfo(configAllInfos.get(0))));
+                eq(ConfigExtInfoUtil.getExtraInfoFromAllInfo(configAllInfos.get(0))));
         Mockito.verify(historyConfigInfoPersistService, times(1))
                 .insertConfigHistoryAtomic(eq(configAllInfos.get(1).getId()),
                         eq(configAllInfos.get(1)), eq(srcIp), eq(srcUser), any(), eq("D"), eq("formal"),
-                        eq(ExtraConfigInfoUtil.getExtraInfoFromAllInfo(configAllInfos.get(1))));
+                        eq(ConfigExtInfoUtil.getExtraInfoFromAllInfo(configAllInfos.get(1))));
         
     }
     
