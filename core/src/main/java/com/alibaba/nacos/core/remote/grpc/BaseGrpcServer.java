@@ -16,10 +16,15 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.grpc.auto.Payload;
+import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
+import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import com.alibaba.nacos.core.remote.BaseRpcServer;
 import com.alibaba.nacos.core.remote.ConnectionManager;
+import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
 import com.alibaba.nacos.core.remote.grpc.negotiator.NacosGrpcProtocolNegotiator;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -36,6 +41,7 @@ import io.grpc.netty.shaded.io.grpc.netty.InternalProtocolNegotiator;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import io.grpc.protobuf.ProtoUtils;
 import io.grpc.stub.ServerCalls;
+import io.grpc.stub.StreamObserver;
 import io.grpc.util.MutableHandlerRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -69,6 +75,10 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     
     @Autowired
     private ConnectionManager connectionManager;
+    
+    @Autowired
+    private RequestHandlerRegistry requestHandlerRegistry;
+    
     
     @Override
     public ConnectionType getConnectionType() {
@@ -163,6 +173,12 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         return Collections.singletonList(new AddressTransportFilter(connectionManager));
     }
     
+    protected abstract String getSource();
+    
+    private boolean invokeSourceAllowCheck(Payload grpcRequest) {
+        return requestHandlerRegistry.checkSourceInvokeAllowed(grpcRequest.getMetadata().getType(), getSource());
+    }
+    
     private void addServices(MutableHandlerRegistry handlerRegistry, ServerInterceptor... serverInterceptor) {
         
         // unary common call register.
@@ -174,7 +190,13 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                 .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
         
         final ServerCallHandler<Payload, Payload> payloadHandler = ServerCalls.asyncUnaryCall(
-                (request, responseObserver) -> grpcCommonRequestAcceptor.request(request, responseObserver));
+                (request, responseObserver) -> {
+                    if (!invokeSourceAllowCheck(request)) {
+                        sourceCheckFail(request, responseObserver);
+                    } else {
+                        grpcCommonRequestAcceptor.request(request, responseObserver);
+                    }
+                });
         
         final ServerServiceDefinition serviceDefOfUnaryPayload = ServerServiceDefinition.builder(
                 GrpcServerConstants.REQUEST_SERVICE_NAME).addMethod(unaryPayloadMethod, payloadHandler).build();
@@ -195,6 +217,16 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                 GrpcServerConstants.REQUEST_BI_STREAM_SERVICE_NAME).addMethod(biStreamMethod, biStreamHandler).build();
         handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfBiStream, serverInterceptor));
         
+    }
+    
+    private void sourceCheckFail(Payload grpcRequest, StreamObserver<Payload> responseObserver) {
+        Payload payloadResponse = GrpcUtils.convert(
+                ErrorResponse.build(NacosException.BAD_GATEWAY, "Cant invoke this type of request from this source"));
+        responseObserver.onNext(payloadResponse);
+        
+        responseObserver.onCompleted();
+        MetricsMonitor.recordGrpcRequestEvent(grpcRequest.getMetadata().getType(), false, NacosException.BAD_GATEWAY,
+                null, null, 0);
     }
     
     @Override
