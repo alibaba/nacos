@@ -135,7 +135,7 @@ public class ConsoleServiceControllerTest {
                 serviceDetail);
         
         Result<ServiceDetail> actual = (Result<ServiceDetail>) consoleServiceController.getServiceDetail(
-                "testNamespace", "testService");
+                "testNamespace", "testService", "testGroup");
         
         verify(serviceProxy).getServiceDetail(any(String.class), any(String.class), any(String.class));
         
@@ -161,7 +161,7 @@ public class ConsoleServiceControllerTest {
         ObjectNode subscribers = new ObjectMapper().createObjectNode();
         subscribers.put("subscriber", "testSubscriber");
         
-        when(serviceProxy.getSubscribers(anyInt(), anyInt(), anyString(), anyString(), anyBoolean())).thenReturn(
+        when(serviceProxy.getSubscribers(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyBoolean())).thenReturn(
                 subscribers);
         
         MockHttpServletRequest request = new MockHttpServletRequest();
@@ -169,11 +169,12 @@ public class ConsoleServiceControllerTest {
         request.addParameter("pageSize", "10");
         request.addParameter("namespaceId", "testNamespace");
         request.addParameter("serviceName", "testService");
+        request.addParameter("groupName", "testGroup");
         request.addParameter("aggregation", "true");
         
         Result<ObjectNode> actual = consoleServiceController.subscribers(request);
         
-        verify(serviceProxy).getSubscribers(anyInt(), anyInt(), anyString(), anyString(), anyBoolean());
+        verify(serviceProxy).getSubscribers(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyBoolean());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals(subscribers, actual.getData());

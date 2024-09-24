@@ -18,7 +18,6 @@
 package com.alibaba.nacos.plugin.auth.impl.controller.v3;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.AuthConfigs;
@@ -42,6 +41,7 @@ import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordGeneratorUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -138,7 +138,7 @@ public class UserControllerV3 {
     
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
             if (iAuthenticationManager.hasGlobalAdminRole()) {
-                return Result.failure(ErrorCode.CONFLICT, "have admin user cannot use it");
+                return Result.failure(HttpStatus.CONFLICT, "have admin user cannot use it");
             }
             String username = AuthConstants.DEFAULT_USER;
             userDetailsService.createUser(username, PasswordEncoderUtil.encode(password));
@@ -148,7 +148,7 @@ public class UserControllerV3 {
             result.put(AuthConstants.PARAM_PASSWORD, password);
             return Result.success(result);
         } else {
-            return Result.failure(ErrorCode.NOT_IMPLEMENTED, "not support");
+            return Result.failure(HttpStatus.NOT_IMPLEMENTED, "not support");
         }
     }
     
@@ -322,7 +322,7 @@ public class UserControllerV3 {
             response.addHeader(AuthConstants.AUTHORIZATION_HEADER, "Bearer " + token);
             return Result.success("Bearer " + token);
         } catch (BadCredentialsException authentication) {
-            return Result.failure(ErrorCode.UNAUTHORIZED, "Login failed");
+            return Result.failure(HttpStatus.UNAUTHORIZED, "Login failed");
         }
     }
 }

@@ -30,13 +30,13 @@ import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.SubscribeManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.model.form.ServiceForm;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
@@ -46,7 +46,7 @@ import java.util.Map;
  *
  * @author zhangyukun
  */
-@Service
+@org.springframework.stereotype.Service
 public class ServiceInnerHandler implements ServiceHandler {
     
     private final ServiceOperatorV2Impl serviceOperatorV2;
@@ -61,7 +61,8 @@ public class ServiceInnerHandler implements ServiceHandler {
     
     @Autowired
     public ServiceInnerHandler(ServiceOperatorV2Impl serviceOperatorV2, SelectorManager selectorManager,
-            CatalogServiceV2Impl catalogServiceV2, SubscribeManager subscribeManager, ClusterOperatorV2Impl clusterOperatorV2) {
+            CatalogServiceV2Impl catalogServiceV2, SubscribeManager subscribeManager,
+            ClusterOperatorV2Impl clusterOperatorV2) {
         this.serviceOperatorV2 = serviceOperatorV2;
         this.selectorManager = selectorManager;
         this.catalogServiceV2 = catalogServiceV2;
@@ -100,15 +101,17 @@ public class ServiceInnerHandler implements ServiceHandler {
     }
     
     @Override
-    public ObjectNode getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName,
+    public ObjectNode getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName, String groupName,
             boolean aggregation) throws Exception {
+        
+        Service service = Service.newService(namespaceId, groupName, serviceName);
         
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         
         int count = 0;
         
         try {
-            List<Subscriber> subscribers = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
+            List<Subscriber> subscribers = subscribeManager.getSubscribers(service, aggregation);
             
             int start = (pageNo - 1) * pageSize;
             if (start < 0) {
@@ -144,13 +147,13 @@ public class ServiceInnerHandler implements ServiceHandler {
     }
     
     @Override
-    public Object getServiceDetail(String namespaceId, String serviceNameWithoutGroup, String groupName)
-            throws NacosException {
-        return catalogServiceV2.getServiceDetail(namespaceId, groupName, serviceNameWithoutGroup);
+    public Object getServiceDetail(String namespaceId, String serviceName, String groupName) throws NacosException {
+        return catalogServiceV2.getServiceDetail(namespaceId, groupName, serviceName);
     }
     
     @Override
-    public void updateClusterMetadata(String namespaceId, String serviceName, String clusterName, ClusterMetadata clusterMetadata) throws Exception {
+    public void updateClusterMetadata(String namespaceId, String serviceName, String clusterName,
+            ClusterMetadata clusterMetadata) throws Exception {
         clusterOperatorV2.updateClusterMetadata(namespaceId, serviceName, clusterName, clusterMetadata);
     }
     

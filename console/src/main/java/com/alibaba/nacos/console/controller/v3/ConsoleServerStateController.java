@@ -18,6 +18,7 @@
 package com.alibaba.nacos.console.controller.v3;
 
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.model.v2.SupportedLanguage;
 import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
 import com.alibaba.nacos.console.proxy.ServerStateProxy;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
@@ -26,8 +27,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -67,8 +66,7 @@ public class ConsoleServerStateController {
     public Result<String> getAnnouncement(
             @RequestParam(required = false, name = "language", defaultValue = "zh-CN") String language) {
         // Validate the language parameter
-        List<String> supportedLanguages = Arrays.asList("zh-CN", "en-US");
-        if (!supportedLanguages.contains(language)) {
+        if (!SupportedLanguage.isSupported(language)) {
             return Result.failure("Unsupported language: " + language);
         }
         String announcement = serverStateProxy.getAnnouncement(language);

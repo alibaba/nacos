@@ -37,7 +37,7 @@ public interface ServiceHandler {
     /**
      * Create a new service.
      *
-     * @param serviceForm the service form containing the service details
+     * @param serviceForm     the service form containing the service details
      * @param serviceMetadata the service metadata created from serviceForm
      * @throws Exception if an error occurs during service creation
      */
@@ -59,7 +59,7 @@ public interface ServiceHandler {
      * @param serviceForm     the service form containing the service details
      * @param service         the service object created from serviceForm
      * @param serviceMetadata the service metadata created from serviceForm
-     * @param metadata       the service metadata
+     * @param metadata        the service metadata
      * @throws Exception if an error occurs during service update
      */
     void updateService(ServiceForm serviceForm, Service service, ServiceMetadata serviceMetadata,
@@ -79,12 +79,13 @@ public interface ServiceHandler {
      * @param pageSize    the size of the page
      * @param namespaceId the namespace ID
      * @param serviceName the service name
+     * @param groupName   the group name
      * @param aggregation whether to aggregate the results
      * @return a JSON node containing the list of subscribers
      * @throws Exception if an error occurs during fetching subscribers
      */
-    ObjectNode getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName, boolean aggregation)
-            throws Exception;
+    ObjectNode getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName, String groupName,
+            boolean aggregation) throws Exception;
     
     /**
      * List service detail information.
@@ -106,13 +107,13 @@ public interface ServiceHandler {
     /**
      * Get the detail of a specific service.
      *
-     * @param namespaceId             the namespace ID
-     * @param serviceNameWithoutGroup the service name without group
-     * @param groupName               the group name
+     * @param namespaceId the namespace ID
+     * @param serviceName the service name without group
+     * @param groupName   the group name
      * @return service detail information
      * @throws NacosException if an error occurs during fetching service details
      */
-    Object getServiceDetail(String namespaceId, String serviceNameWithoutGroup, String groupName) throws NacosException;
+    Object getServiceDetail(String namespaceId, String serviceName, String groupName) throws NacosException;
     
     /**
      * Update the metadata of a cluster.

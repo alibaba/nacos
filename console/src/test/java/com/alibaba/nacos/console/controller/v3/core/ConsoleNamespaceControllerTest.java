@@ -77,7 +77,7 @@ public class ConsoleNamespaceControllerTest {
         List<Namespace> namespaces = Arrays.asList(namespace);
         when(namespaceProxy.getNamespaceList()).thenReturn(namespaces);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/namespace/list");
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/core/namespace/list");
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
@@ -98,7 +98,7 @@ public class ConsoleNamespaceControllerTest {
         
         when(namespaceProxy.getNamespaceDetail(anyString())).thenReturn(namespace);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/namespace")
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/core/namespace")
                 .param("namespaceId", "testNamespace");
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
@@ -133,7 +133,7 @@ public class ConsoleNamespaceControllerTest {
     void testDeleteNamespace() throws Exception {
         when(namespaceProxy.deleteNamespace(anyString())).thenReturn(true);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.delete("/v3/console/namespace")
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.delete("/v3/console/core/namespace")
                 .param("namespaceId", "testNamespace");
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
@@ -144,7 +144,7 @@ public class ConsoleNamespaceControllerTest {
     void testCheckNamespaceIdExist() throws Exception {
         when(namespaceProxy.checkNamespaceIdExist(anyString())).thenReturn(true);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/namespace/exist")
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/core/namespace/exist")
                 .param("customNamespaceId", "testNamespace");
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();

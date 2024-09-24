@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.enums.ApiType;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
 import com.alibaba.nacos.console.proxy.core.NamespaceProxy;
@@ -88,7 +89,7 @@ public class ConsoleNamespaceController {
      */
     @GetMapping()
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
-            + "namespaces", action = ActionTypes.READ, signType = SignType.CONSOLE)
+            + "namespaces", action = ActionTypes.READ, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
     public Result<Namespace> getNamespaceDetail(@RequestParam("namespaceId") String namespaceId) throws NacosException {
         return Result.success(namespaceProxy.getNamespaceDetail(namespaceId));
     }
@@ -102,7 +103,7 @@ public class ConsoleNamespaceController {
      */
     @PostMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
-            + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
+            + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
     public Result<Boolean> createNamespace(@RequestParam("customNamespaceId") String namespaceId,
             @RequestParam("namespaceName") String namespaceName,
             @RequestParam(value = "namespaceDesc", required = false) String namespaceDesc) throws NacosException {
@@ -141,7 +142,7 @@ public class ConsoleNamespaceController {
      */
     @PutMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
-            + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
+            + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
     public Result<Boolean> updateNamespace(NamespaceForm namespaceForm) throws NacosException {
         namespaceForm.validate();
         // contains illegal chars
@@ -160,7 +161,7 @@ public class ConsoleNamespaceController {
      */
     @DeleteMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
-            + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
+            + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
     public Result<Boolean> deleteNamespace(@RequestParam("namespaceId") String namespaceId) throws NacosException {
         return Result.success(namespaceProxy.deleteNamespace(namespaceId));
     }
