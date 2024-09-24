@@ -58,20 +58,22 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
+ * Integration tests for Derby Raft configuration in the cluster environment.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("all")
-@TestMethodOrder(MethodName.class)
 // todo the suffix is _DITCase, the case will be skipped by default
-class ConfigDerbyRaft_DITCase extends BaseClusterTest {
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
+@TestMethodOrder(MethodName.class)
+class ConfigDerbyRaftConfigITCase extends BaseClusterTest {
     
     @BeforeAll
     static void beforeClass() {
-        ConfigCleanUtils.changeToNewTestNacosHome(ConfigDerbyRaft_DITCase.class.getSimpleName());
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigDerbyRaftConfigITCase.class.getSimpleName());
     }
     
     @Test
-    void test_a_publish_config() throws Exception {
+    void testPublishConfigRaftCluster() throws Exception {
         boolean result = iconfig7.publishConfig("raft_test", "cluster_test_1", "this.is.raft_cluster=lessspring_7");
         assertTrue(result);
         
@@ -89,12 +91,13 @@ class ConfigDerbyRaft_DITCase extends BaseClusterTest {
         String s8 = operate8.findConfigInfo("raft_test", "cluster_test_1", "").getContent();
         String s9 = operate9.findConfigInfo("raft_test", "cluster_test_1", "").getContent();
         
-        assertArrayEquals(new String[] {s7, s8, s9}, new String[] {"this.is.raft_cluster=lessspring_7", "this.is.raft_cluster=lessspring_7",
-                "this.is.raft_cluster=lessspring_7"}, "The three nodes must have consistent data");
+        assertArrayEquals(new String[] {s7, s8, s9},
+                new String[] {"this.is.raft_cluster=lessspring_7", "this.is.raft_cluster=lessspring_7",
+                        "this.is.raft_cluster=lessspring_7"}, "The three nodes must have consistent data");
     }
     
     @Test
-    void test_b_publish_config() throws Exception {
+    void testPublishConfigCluster() throws Exception {
         ThreadUtils.sleep(5000);
         
         boolean result = iconfig8.publishConfig("raft_test", "cluster_test_2", "this.is.raft_cluster=lessspring_8");
@@ -114,12 +117,13 @@ class ConfigDerbyRaft_DITCase extends BaseClusterTest {
         String s8 = operate8.findConfigInfo("raft_test", "cluster_test_2", "").getContent();
         String s9 = operate9.findConfigInfo("raft_test", "cluster_test_2", "").getContent();
         
-        assertArrayEquals(new String[] {s7, s8, s9}, new String[] {"this.is.raft_cluster=lessspring_8", "this.is.raft_cluster=lessspring_8",
-                "this.is.raft_cluster=lessspring_8"}, "The three nodes must have consistent data");
+        assertArrayEquals(new String[] {s7, s8, s9},
+                new String[] {"this.is.raft_cluster=lessspring_8", "this.is.raft_cluster=lessspring_8",
+                        "this.is.raft_cluster=lessspring_8"}, "The three nodes must have consistent data");
     }
     
     @Test
-    void test_c_publish_config() throws Exception {
+    void testPublishConfigRaftClusterNew() throws Exception {
         ThreadUtils.sleep(5000);
         boolean result = iconfig9.publishConfig("raft_test", "cluster_test_2", "this.is.raft_cluster=lessspring_9");
         assertTrue(result);
@@ -138,13 +142,15 @@ class ConfigDerbyRaft_DITCase extends BaseClusterTest {
         String s8 = operate8.findConfigInfo("raft_test", "cluster_test_2", "").getContent();
         String s9 = operate9.findConfigInfo("raft_test", "cluster_test_2", "").getContent();
         
-        assertArrayEquals(new String[] {s7, s8, s9}, new String[] {"this.is.raft_cluster=lessspring_9", "this.is.raft_cluster=lessspring_9",
-                "this.is.raft_cluster=lessspring_9"}, "The three nodes must have consistent data");
+        assertArrayEquals(new String[] {s7, s8, s9},
+                new String[] {"this.is.raft_cluster=lessspring_9", "this.is.raft_cluster=lessspring_9",
+                        "this.is.raft_cluster=lessspring_9"}, "The three nodes must have consistent data");
     }
     
     @Test
-    void test_d_modify_config() throws Exception {
-        boolean result = iconfig7.publishConfig("raft_test", "cluster_test_1", "this.is.raft_cluster=lessspring_7_it_is_for_modify");
+    void testModifyConfigRaftCluster() throws Exception {
+        boolean result = iconfig7.publishConfig("raft_test", "cluster_test_1",
+                "this.is.raft_cluster=lessspring_7_it_is_for_modify");
         assertTrue(result);
         
         ThreadUtils.sleep(5000);
@@ -161,13 +167,13 @@ class ConfigDerbyRaft_DITCase extends BaseClusterTest {
         String s8 = operate8.findConfigInfo("raft_test", "cluster_test_1", "").getContent();
         String s9 = operate9.findConfigInfo("raft_test", "cluster_test_1", "").getContent();
         
-        assertArrayEquals(new String[] {s7, s8, s9},
-                new String[] {"this.is.raft_cluster=lessspring_7_it_is_for_modify", "this.is.raft_cluster=lessspring_7_it_is_for_modify",
-                        "this.is.raft_cluster=lessspring_7_it_is_for_modify"}, "The three nodes must have consistent data");
+        assertArrayEquals(new String[] {s7, s8, s9}, new String[] {"this.is.raft_cluster=lessspring_7_it_is_for_modify",
+                "this.is.raft_cluster=lessspring_7_it_is_for_modify",
+                "this.is.raft_cluster=lessspring_7_it_is_for_modify"}, "The three nodes must have consistent data");
     }
     
     @Test
-    void test_l_client_operation() throws Exception {
+    void testClientOperationConfig() throws Exception {
         final String dataId = "test_l_client_operation";
         final String groupId = "test_l_client_operation";
         String content = "test_l_client_operation" + System.currentTimeMillis();
@@ -177,13 +183,13 @@ class ConfigDerbyRaft_DITCase extends BaseClusterTest {
         assertTrue(result);
         ThreadUtils.sleep(5000);
         
-        String v1_7 = iconfig7.getConfig(dataId, groupId, 5000L);
-        String v1_8 = iconfig8.getConfig(dataId, groupId, 5000L);
-        String v1_9 = iconfig9.getConfig(dataId, groupId, 5000L);
+        String v1Config7 = iconfig7.getConfig(dataId, groupId, 5000L);
+        String v1Config8 = iconfig8.getConfig(dataId, groupId, 5000L);
+        String v1Config9 = iconfig9.getConfig(dataId, groupId, 5000L);
         
-        assertEquals(content, v1_7);
-        assertEquals(content, v1_8);
-        assertEquals(content, v1_9);
+        assertEquals(content, v1Config7);
+        assertEquals(content, v1Config8);
+        assertEquals(content, v1Config9);
         
         // publish by 8848
         content = "test_l_client_operation" + System.currentTimeMillis();
@@ -191,13 +197,13 @@ class ConfigDerbyRaft_DITCase extends BaseClusterTest {
         assertTrue(result);
         ThreadUtils.sleep(5000);
         
-        String v2_7 = iconfig7.getConfig(dataId, groupId, 5000L);
-        String v2_8 = iconfig8.getConfig(dataId, groupId, 5000L);
-        String v2_9 = iconfig9.getConfig(dataId, groupId, 5000L);
+        String v2Config7 = iconfig7.getConfig(dataId, groupId, 5000L);
+        String v2Config8 = iconfig8.getConfig(dataId, groupId, 5000L);
+        String v2Config9 = iconfig9.getConfig(dataId, groupId, 5000L);
         
-        assertEquals(content, v2_7);
-        assertEquals(content, v2_8);
-        assertEquals(content, v2_9);
+        assertEquals(content, v2Config7);
+        assertEquals(content, v2Config8);
+        assertEquals(content, v2Config9);
         
         // publish by 8849
         content = "test_l_client_operation" + System.currentTimeMillis();
@@ -205,30 +211,30 @@ class ConfigDerbyRaft_DITCase extends BaseClusterTest {
         assertTrue(result);
         ThreadUtils.sleep(5000);
         
-        String v3_7 = iconfig7.getConfig(dataId, groupId, 5000L);
-        String v3_8 = iconfig8.getConfig(dataId, groupId, 5000L);
-        String v3_9 = iconfig9.getConfig(dataId, groupId, 5000L);
+        String v3Config7 = iconfig7.getConfig(dataId, groupId, 5000L);
+        String v3Config8 = iconfig8.getConfig(dataId, groupId, 5000L);
+        String v3Config9 = iconfig9.getConfig(dataId, groupId, 5000L);
         
-        assertEquals(content, v3_7);
-        assertEquals(content, v3_8);
-        assertEquals(content, v3_9);
+        assertEquals(content, v3Config7);
+        assertEquals(content, v3Config8);
+        assertEquals(content, v3Config9);
         
         // delete by 8849
         result = iconfig9.removeConfig(dataId, groupId);
         assertTrue(result);
         ThreadUtils.sleep(5000);
         
-        String v4_7 = iconfig7.getConfig(dataId, groupId, 5000L);
-        String v4_8 = iconfig8.getConfig(dataId, groupId, 5000L);
-        String v4_9 = iconfig9.getConfig(dataId, groupId, 5000L);
+        String v4Config7 = iconfig7.getConfig(dataId, groupId, 5000L);
+        String v4Config8 = iconfig8.getConfig(dataId, groupId, 5000L);
+        String v4Config9 = iconfig9.getConfig(dataId, groupId, 5000L);
         
-        assertNull(v4_7);
-        assertNull(v4_8);
-        assertNull(v4_9);
+        assertNull(v4Config7);
+        assertNull(v4Config8);
+        assertNull(v4Config9);
     }
     
     @Test
-    void test_k_config_listener() throws Exception {
+    void testConfigListener() throws Exception {
         String dataId = "test_h_config_listener";
         String group = "test_h_config_listener";
         String content = "test_h_config_listener";
@@ -261,7 +267,7 @@ class ConfigDerbyRaft_DITCase extends BaseClusterTest {
     }
     
     @Test
-    void test_e_derby_ops() throws Exception {
+    void testDerbyOperations() throws Exception {
         String url = "http://127.0.0.1:8848/nacos/v1/cs/ops/derby";
         Query query = Query.newInstance().addParam("sql", "select * from users");
         RestResult<List<Map<String, Object>>> result = NACOS_REST_TEMPLATE.get(url, Header.EMPTY, query,
@@ -275,22 +281,24 @@ class ConfigDerbyRaft_DITCase extends BaseClusterTest {
     }
     
     @Test
-    void test_g_derby_ops_no_select() throws Exception {
+    void testDerbyOperationsNoSelect() throws Exception {
         String url = "http://127.0.0.1:8848/nacos/v1/cs/ops/derby";
         Query query = Query.newInstance().addParam("sql", "update users set username='nacos'");
-        RestResult<Object> result = NACOS_REST_TEMPLATE.get(url, Header.EMPTY, query, new GenericType<RestResult<Object>>() {
-        }.getType());
+        RestResult<Object> result = NACOS_REST_TEMPLATE.get(url, Header.EMPTY, query,
+                new GenericType<RestResult<Object>>() {
+                }.getType());
         System.out.println(result);
         assertFalse(result.ok());
         assertEquals("Only query statements are allowed to be executed", result.getMessage());
     }
     
     @Test
-    void test_h_derby_has_error() throws Exception {
+    void testDerbyWithErrorHandling() throws Exception {
         
         ThreadUtils.sleep(5000);
         
-        boolean result = iconfig7.publishConfig("raft_test_raft_error", "cluster_test_1", "this.is.raft_cluster=lessspring_7");
+        boolean result = iconfig7.publishConfig("raft_test_raft_error", "cluster_test_1",
+                "this.is.raft_cluster=lessspring_7");
         assertTrue(result);
         
         NotifyCenter.registerToPublisher(RaftDbErrorRecoverEvent.class, 8);
@@ -334,7 +342,7 @@ class ConfigDerbyRaft_DITCase extends BaseClusterTest {
     }
     
     @Test
-    void test_f_id_generator_leader_transfer() throws Exception {
+    void testIdGeneratorLeaderTransfer() throws Exception {
         ConfigurableApplicationContext context7 = applications.get("8847");
         ConfigurableApplicationContext context8 = applications.get("8848");
         ConfigurableApplicationContext context9 = applications.get("8849");
@@ -348,7 +356,6 @@ class ConfigDerbyRaft_DITCase extends BaseClusterTest {
         
         final String configGroup = PersistenceConstant.CONFIG_MODEL_RAFT_GROUP;
         long preId = -1L;
-        long currentId = -1L;
         
         if (protocol7.isLeader(configGroup)) {
             preId = manager7.nextId(CONFIG_INFO_ID);
@@ -371,7 +378,7 @@ class ConfigDerbyRaft_DITCase extends BaseClusterTest {
         TimeUnit.SECONDS.sleep(2);
         
         assertTrue(protocol7.isLeader(configGroup));
-        currentId = manager7.nextId(CONFIG_INFO_ID);
+        long currentId = manager7.nextId(CONFIG_INFO_ID);
         assertNotEquals(preId, currentId);
         preId = currentId;
         
@@ -403,7 +410,6 @@ class ConfigDerbyRaft_DITCase extends BaseClusterTest {
         assertTrue(protocol9.isLeader(configGroup));
         currentId = manager9.nextId(CONFIG_INFO_ID);
         assertNotEquals(preId, currentId);
-        
     }
     
 }

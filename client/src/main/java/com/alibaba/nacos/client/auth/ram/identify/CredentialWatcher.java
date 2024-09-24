@@ -109,10 +109,10 @@ public class CredentialWatcher {
     
     private void loadCredential(boolean init) {
         loadPropertyPath(init);
-        InputStream propertiesIS = loadPropertyPathToStream();
+        InputStream propertiesIs = loadPropertyPathToStream();
         Credentials credentials = new Credentials();
-        boolean loadResult = Objects.isNull(propertiesIS) ? loadCredentialFromEnv(init, credentials)
-                : loadCredentialFromProperties(propertiesIS, init, credentials);
+        boolean loadResult = Objects.isNull(propertiesIs) ? loadCredentialFromEnv(init, credentials)
+                : loadCredentialFromProperties(propertiesIs, init, credentials);
         if (!loadResult) {
             return;
         }
@@ -126,10 +126,10 @@ public class CredentialWatcher {
         serviceInstance.setCredential(credentials);
     }
     
-    private boolean loadCredentialFromProperties(InputStream propertiesIS, boolean init, Credentials credentials) {
+    private boolean loadCredentialFromProperties(InputStream propertiesIs, boolean init, Credentials credentials) {
         Properties properties = new Properties();
         try {
-            properties.load(propertiesIS);
+            properties.load(propertiesIs);
         } catch (IOException e) {
             SPAS_LOGGER
                     .error("[26] Unable to load credential file, appName:" + appName + "Unable to load credential file "
@@ -138,7 +138,7 @@ public class CredentialWatcher {
             return false;
         } finally {
             try {
-                propertiesIS.close();
+                propertiesIs.close();
             } catch (IOException e) {
                 SPAS_LOGGER.error("[27] Unable to close credential file, appName:" + appName
                         + "Unable to close credential file " + propertyPath, e);
@@ -226,10 +226,10 @@ public class CredentialWatcher {
     }
     
     private InputStream loadPropertyPathToStream() {
-        InputStream propertiesIS = null;
+        InputStream propertiesIs = null;
         do {
             try {
-                propertiesIS = new FileInputStream(propertyPath);
+                propertiesIs = new FileInputStream(propertyPath);
             } catch (FileNotFoundException e) {
                 if (appName != null && !appName.equals(IdentifyConstants.CREDENTIAL_DEFAULT) && propertyPath
                         .equals(IdentifyConstants.CREDENTIAL_PATH + appName)) {
@@ -243,7 +243,7 @@ public class CredentialWatcher {
             }
             break;
         } while (true);
-        return propertiesIS;
+        return propertiesIs;
     }
     
     private void setAccessKey(Credentials credentials, String accessKey) {

@@ -540,7 +540,7 @@ const request = (function(_global) {
           config.beforeSend && config.beforeSend(xhr);
         },
         headers: {
-          Authorization: localStorage.getItem('token'),
+          Authorization: localStorage.getItem('token') || undefined,
           AccessToken: accessTokenInHeader,
         },
       })

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos;
 
+import com.alibaba.nacos.console.aot.NacosRuntimeHints;
 import com.alibaba.nacos.sys.filter.NacosTypeExcludeFilter;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.AutoConfigurationExcludeFilter;
@@ -25,7 +26,7 @@ import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.FilterType;
-import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.context.annotation.ImportRuntimeHints;
 
 /**
  * Nacos starter.
@@ -36,16 +37,17 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * @author nacos
  */
 @SpringBootApplication
+@ImportRuntimeHints(NacosRuntimeHints.class)
 @ComponentScan(basePackages = "com.alibaba.nacos", excludeFilters = {
         @Filter(type = FilterType.CUSTOM, classes = {NacosTypeExcludeFilter.class}),
         @Filter(type = FilterType.CUSTOM, classes = {TypeExcludeFilter.class}),
         @Filter(type = FilterType.CUSTOM, classes = {AutoConfigurationExcludeFilter.class})})
 @ServletComponentScan
-@EnableScheduling
 public class Nacos {
     
     public static void main(String[] args) {
         SpringApplication.run(Nacos.class, args);
     }
+    
 }
 

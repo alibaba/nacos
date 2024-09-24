@@ -47,4 +47,6 @@ export const LOGINPAGE_ENABLED = 'docsite_loginpage';
 
 export const THEME = 'setting_theme';
 
+export const NAME_SHOW = 'setting_name_show';
+
 export const SERVER_GUIDE = 'SERVER_GUIDE';

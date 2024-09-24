@@ -57,7 +57,7 @@ public class PayloadRegistry {
             return;
         }
         if (REGISTRY_REQUEST.containsKey(type)) {
-            throw new RuntimeException(String.format("Fail to register, type:%s ,clazz:%s ", type, clazz.getName()));
+            throw new RuntimeException(String.format("Fail to register, type: %s, clazz: %s", type, clazz.getName()));
         }
         REGISTRY_REQUEST.put(type, clazz);
     }

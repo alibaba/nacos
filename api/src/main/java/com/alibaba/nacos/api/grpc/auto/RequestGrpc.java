@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.grpc.auto;
 
+import io.grpc.ClientCall;
+
 import static io.grpc.MethodDescriptor.generateFullMethodName;
 import static io.grpc.stub.ClientCalls.asyncUnaryCall;
 import static io.grpc.stub.ClientCalls.blockingUnaryCall;
@@ -202,8 +204,8 @@ public final class RequestGrpc {
      */
     public com.google.common.util.concurrent.ListenableFuture<com.alibaba.nacos.api.grpc.auto.Payload> request(
         com.alibaba.nacos.api.grpc.auto.Payload request) {
-      return futureUnaryCall(
-          getChannel().newCall(getRequestMethod(), getCallOptions()), request);
+      return futureUnaryCall(getChannel().newCall(getRequestMethod(),
+              getCallOptions()), request);
     }
   }
 

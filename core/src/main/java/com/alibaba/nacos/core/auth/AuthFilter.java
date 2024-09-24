@@ -32,13 +32,13 @@ import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.sys.env.Constants;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.reflect.Method;
 
@@ -64,17 +64,13 @@ public class AuthFilter implements Filter {
     }
     
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-            throws IOException, ServletException {
-        
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         if (!authConfigs.isAuthEnabled()) {
             chain.doFilter(request, response);
             return;
         }
-        
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
-        
         if (authConfigs.isEnableUserAgentAuthWhite()) {
             String userAgent = WebUtils.getUserAgent(req);
             if (StringUtils.startsWith(userAgent, Constants.NACOS_SERVER_HEADER)) {
@@ -98,22 +94,16 @@ public class AuthFilter implements Filter {
                             + " and `nacos.core.auth.server.identity.value`, or open `nacos.core.auth.enable.userAgentAuthWhite`");
             return;
         }
-        
         try {
-            
             Method method = methodsCache.getMethod(req);
-            
             if (method == null) {
                 chain.doFilter(request, response);
                 return;
             }
-            
             if (method.isAnnotationPresent(Secured.class) && authConfigs.isAuthEnabled()) {
-                
                 if (Loggers.AUTH.isDebugEnabled()) {
                     Loggers.AUTH.debug("auth start, request: {} {}", req.getMethod(), req.getRequestURI());
                 }
-                
                 Secured secured = method.getAnnotation(Secured.class);
                 if (!protocolAuthService.enableAuth(secured)) {
                     chain.doFilter(request, response);

@@ -48,12 +48,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-class ConfigDerbyImport_CITCase {
+class ConfigDerbyImportConfigITCase {
     
-    private static String SQL_SCRIPT_CONTEXT =
+    private static final String SQL_SCRIPT_CONTEXT =
             "INSERT INTO `config_info` (`id`, `data_id`, `group_id`, `content`, `md5`, `gmt_create`, `gmt_modified`, `src_user`, `src_ip`, `app_name`, `tenant_id`, `c_desc`, `c_use`, `effect`, `type`, `c_schema`) VALUES (1,'boot-test','ALIBABA','dept:123123123\\ngroup:123123123','2ca50d002a7dabf81497f666a7967e15','2020-04-13 13:44:43','2020-04-30 10:45:21',NULL,'127.0.0.1','','',NULL,NULL,NULL,NULL,NULL);\n"
                     + "INSERT INTO `config_info` (`id`, `data_id`, `group_id`, `content`, `md5`, `gmt_create`, `gmt_modified`, `src_user`, `src_ip`, `app_name`, `tenant_id`, `c_desc`, `c_use`, `effect`, `type`, `c_schema`) VALUES (2,'people','DEFAULT_GROUP','people.enable=true','d92cbf8d02080017a805b7efc4481b6c','2020-04-13 13:44:43','2020-04-30 10:45:21',NULL,'127.0.0.1','','',NULL,NULL,NULL,NULL,NULL);\n"
                     + "INSERT INTO `config_info` (`id`, `data_id`, `group_id`, `content`, `md5`, `gmt_create`, `gmt_modified`, `src_user`, `src_ip`, `app_name`, `tenant_id`, `c_desc`, `c_use`, `effect`, `type`, `c_schema`) VALUES (3,'apple','DEFAULT_GROUP','apple:\\n    list:\\n        - 1\\n        - 2\\n        - 3\\n        - 4\\n    listMap:\\n        key-1:\\n            - 1\\n            - 2\\n            - 3\\n            - 4\\n        key-2:\\n            - aa\\n            - dd\\n            - ee\\n            - rr','4eb5a2258ba6ecddd9631ec10cf36342','2020-04-13 13:44:43','2020-04-30 10:45:21',NULL,'127.0.0.1','','',NULL,NULL,NULL,NULL,NULL);\n"
@@ -78,7 +79,7 @@ class ConfigDerbyImport_CITCase {
     
     @BeforeAll
     static void beforeClass() {
-        ConfigCleanUtils.changeToNewTestNacosHome(ConfigDerbyImport_CITCase.class.getSimpleName());
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigDerbyImportConfigITCase.class.getSimpleName());
     }
     
     @BeforeEach

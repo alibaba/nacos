@@ -52,7 +52,6 @@ public class ServerStatusManager {
     }
     
     private void refreshServerStatus() {
-        
         if (StringUtils.isNotBlank(switchDomain.getOverriddenServerStatus())) {
             serverStatus = ServerStatus.valueOf(switchDomain.getOverriddenServerStatus());
             return;

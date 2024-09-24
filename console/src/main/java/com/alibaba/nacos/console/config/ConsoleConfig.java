@@ -31,6 +31,7 @@ import org.springframework.web.filter.CorsFilter;
 
 import javax.annotation.PostConstruct;
 import java.time.ZoneId;
+import java.util.Set;
 
 /**
  * Console config.
@@ -55,10 +56,13 @@ public class ConsoleConfig {
      */
     @PostConstruct
     public void init() {
-        methodsCache.initClassMethod("com.alibaba.nacos.core.controller");
-        methodsCache.initClassMethod("com.alibaba.nacos.naming.controllers");
-        methodsCache.initClassMethod("com.alibaba.nacos.config.server.controller");
-        methodsCache.initClassMethod("com.alibaba.nacos.console.controller");
+        final String graalEnv = "org.graalvm.nativeimage.imagecode";
+        final boolean isGraalEnv = System.getProperty(graalEnv) != null;
+        if (isGraalEnv) {
+            initAotPlatform();
+        } else {
+            initJavaPlatform();
+        }
     }
     
     @Bean
@@ -86,5 +90,53 @@ public class ConsoleConfig {
     
     public boolean isConsoleUiEnabled() {
         return consoleUiEnabled;
+    }
+    
+    private void initJavaPlatform() {
+        methodsCache.initClassMethod("com.alibaba.nacos.core.controller");
+        methodsCache.initClassMethod("com.alibaba.nacos.naming.controllers");
+        methodsCache.initClassMethod("com.alibaba.nacos.config.server.controller");
+        methodsCache.initClassMethod("com.alibaba.nacos.console.controller");
+    }
+    
+    private void initAotPlatform() {
+        final Set<Class<?>> classList = Set.of(
+                com.alibaba.nacos.core.controller.v2.NacosClusterControllerV2.class,
+                com.alibaba.nacos.core.controller.ServerLoaderController.class,
+                com.alibaba.nacos.core.controller.CoreOpsController.class,
+                com.alibaba.nacos.core.controller.NacosClusterController.class,
+                com.alibaba.nacos.core.controller.v2.CoreOpsV2Controller.class,
+                com.alibaba.nacos.naming.controllers.CatalogController.class,
+                com.alibaba.nacos.naming.controllers.OperatorController.class,
+                com.alibaba.nacos.naming.controllers.v2.ServiceControllerV2.class,
+                com.alibaba.nacos.naming.controllers.v2.CatalogControllerV2.class,
+                com.alibaba.nacos.naming.controllers.ClusterController.class,
+                com.alibaba.nacos.naming.controllers.HealthController.class,
+                com.alibaba.nacos.naming.controllers.v2.HealthControllerV2.class,
+                com.alibaba.nacos.naming.controllers.InstanceController.class,
+                com.alibaba.nacos.naming.controllers.v2.InstanceControllerV2.class,
+                com.alibaba.nacos.naming.controllers.v2.OperatorControllerV2.class,
+                com.alibaba.nacos.naming.controllers.v2.ClientInfoControllerV2.class,
+                com.alibaba.nacos.naming.controllers.ServiceController.class,
+                com.alibaba.nacos.config.server.controller.HistoryController.class,
+                com.alibaba.nacos.config.server.controller.v2.HistoryControllerV2.class,
+                com.alibaba.nacos.config.server.controller.CommunicationController.class,
+                com.alibaba.nacos.config.server.controller.ListenerController.class,
+                com.alibaba.nacos.config.server.controller.HealthController.class,
+                com.alibaba.nacos.config.server.controller.ConfigController.class,
+                com.alibaba.nacos.config.server.controller.CapacityController.class,
+                com.alibaba.nacos.config.server.controller.ClientMetricsController.class,
+                com.alibaba.nacos.config.server.controller.ConfigOpsController.class,
+                com.alibaba.nacos.config.server.controller.v2.ConfigControllerV2.class,
+                com.alibaba.nacos.console.controller.HealthController.class,
+                com.alibaba.nacos.console.controller.ServerStateController.class,
+                com.alibaba.nacos.console.controller.v2.HealthControllerV2.class,
+                com.alibaba.nacos.console.controller.NamespaceController.class,
+                com.alibaba.nacos.console.controller.v2.NamespaceControllerV2.class,
+                com.alibaba.nacos.plugin.auth.impl.controller.UserController.class,
+                com.alibaba.nacos.plugin.auth.impl.controller.PermissionController.class,
+                com.alibaba.nacos.plugin.auth.impl.controller.RoleController.class
+        );
+        methodsCache.initClassMethod(classList);
     }
 }

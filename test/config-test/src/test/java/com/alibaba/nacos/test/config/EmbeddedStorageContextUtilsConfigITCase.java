@@ -31,19 +31,22 @@ import java.util.concurrent.Executors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
+ * Integration test case for managing embedded storage contexts using utilities.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-class EmbeddedStorageContextUtils_CITCase {
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
+class EmbeddedStorageContextUtilsConfigITCase {
     
     @BeforeAll
     @AfterAll
     static void cleanClientCache() throws Exception {
         ConfigCleanUtils.cleanClientCache();
-        ConfigCleanUtils.changeToNewTestNacosHome(EmbeddedStorageContextUtils_CITCase.class.getSimpleName());
+        ConfigCleanUtils.changeToNewTestNacosHome(EmbeddedStorageContextUtilsConfigITCase.class.getSimpleName());
     }
     
     @Test
-    void test_multi_thread_sql_contexts() throws Exception {
+    void testMultiThreadSqlContexts() throws Exception {
         CountDownLatch latch = new CountDownLatch(3);
         
         ExecutorService service = Executors.newFixedThreadPool(3);
