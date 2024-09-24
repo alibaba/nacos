@@ -50,41 +50,4 @@ public class AotConfiguration {
         }
     }
 
-    /**
-     * To help find derby error.
-     */
-    public static void findMonitor() {
-        Class<Monitor> monitorClass = Monitor.class;
-        try {
-            Field monitorField = monitorClass.getDeclaredField("monitor");
-            monitorField.setAccessible(true);
-            Object monitorValue = monitorField.get(null);
-            Class<?> baseMonitorClass = Class.forName("org.apache.derby.impl.services.monitor.BaseMonitor");
-            if (baseMonitorClass.isInstance(monitorValue)) {
-                System.out.println("monitor value is BaseMonitor.");
-                Object baseMonitorInstance = baseMonitorClass.cast(monitorValue);
-                Field rc2Field = baseMonitorClass.getDeclaredField("rc2");
-                rc2Field.setAccessible(true);
-                Object instanceRc2Value = rc2Field.get(baseMonitorInstance);
-                if (instanceRc2Value instanceof InstanceGetter[]) {
-                    InstanceGetter[] rc2 = (InstanceGetter[]) instanceRc2Value;
-                    System.out.println("rc2 length: " + rc2.length);
-                    Set<String> instanceGetterNameSet = new HashSet<>(32);
-                    for (InstanceGetter instanceGetter : rc2) {
-                        if (instanceGetter != null) {
-                            instanceGetterNameSet.add(instanceGetter.getClass().getName() + ".class");
-                        }
-                    }
-                    instanceGetterNameSet.forEach(System.out::println);
-                }
-            } else {
-                System.out.println("monitor value is not BaseMonitor.");
-            }
-        } catch (NoSuchFieldException
-                 | IllegalAccessException
-                 | ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
 }
