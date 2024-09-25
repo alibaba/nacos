@@ -39,7 +39,6 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
-import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.env.SourceType;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
@@ -138,6 +137,8 @@ public class ClientWorker implements Closeable {
     private final String uuid = UUID.randomUUID().toString();
     
     private long timeout;
+    
+    private long requestTimeout;
     
     private final ConfigRpcTransportClient agent;
     
@@ -406,7 +407,7 @@ public class ClientWorker implements Closeable {
                 cache.setTaskId(taskId);
                 // fix issue # 1317
                 if (enableRemoteSyncConfig) {
-                    ConfigResponse response = getServerConfig(dataId, group, tenant, 3000L, false);
+                    ConfigResponse response = getServerConfig(dataId, group, tenant, requestTimeout, false);
                     cache.setEncryptedDataKey(response.getEncryptedDataKey());
                     cache.setContent(response.getContent());
                 }
@@ -510,6 +511,8 @@ public class ClientWorker implements Closeable {
     }
     
     private void init(NacosClientProperties properties) {
+        
+        requestTimeout = ConvertUtils.toLong(properties.getProperty(PropertyKeyConst.CONFIG_REQUEST_TIMEOUT, "-1"));
         
         timeout = Math.max(ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT),
                 Constants.CONFIG_LONG_POLL_TIMEOUT), Constants.MIN_CONFIG_LONG_POLL_TIMEOUT);
@@ -879,9 +882,8 @@ public class ClientWorker implements Closeable {
                 cacheData.setUseLocalConfigInfo(true);
                 cacheData.setLocalConfigInfoVersion(file.lastModified());
                 cacheData.setContent(content);
-                LOGGER.warn(
-                        "[{}] [failover-change] failover file created. dataId={}, group={}, tenant={}, md5={}, content={}",
-                        envName, dataId, group, tenant, md5, ContentUtils.truncateContent(content));
+                LOGGER.warn("[{}] [failover-change] failover file created. dataId={}, group={}, tenant={}, md5={}",
+                        envName, dataId, group, tenant, md5);
                 return;
             }
             
@@ -901,9 +903,8 @@ public class ClientWorker implements Closeable {
                 cacheData.setUseLocalConfigInfo(true);
                 cacheData.setLocalConfigInfoVersion(file.lastModified());
                 cacheData.setContent(content);
-                LOGGER.warn(
-                        "[{}] [failover-change] failover file changed. dataId={}, group={}, tenant={}, md5={}, content={}",
-                        envName, dataId, group, tenant, md5, ContentUtils.truncateContent(content));
+                LOGGER.warn("[{}] [failover-change] failover file changed. dataId={}, group={}, tenant={}, md5={}",
+                        envName, dataId, group, tenant, md5);
             }
         }
         
@@ -930,16 +931,16 @@ public class ClientWorker implements Closeable {
             try {
                 
                 ConfigResponse response = this.queryConfigInner(rpcClient, cacheData.dataId, cacheData.group,
-                        cacheData.tenant, 3000L, notify);
+                        cacheData.tenant, requestTimeout, notify);
                 cacheData.setEncryptedDataKey(response.getEncryptedDataKey());
                 cacheData.setContent(response.getContent());
                 if (null != response.getConfigType()) {
                     cacheData.setType(response.getConfigType());
                 }
                 if (notify) {
-                    LOGGER.info("[{}] [data-received] dataId={}, group={}, tenant={}, md5={}, content={}, type={}",
-                            agent.getName(), cacheData.dataId, cacheData.group, cacheData.tenant, cacheData.getMd5(),
-                            ContentUtils.truncateContent(response.getContent()), response.getConfigType());
+                    LOGGER.info("[{}] [data-received] dataId={}, group={}, tenant={}, md5={}, type={}", agent.getName(),
+                            cacheData.dataId, cacheData.group, cacheData.tenant, cacheData.getMd5(),
+                            response.getConfigType());
                 }
                 cacheData.checkListenerMd5();
             } catch (Exception e) {
@@ -1201,7 +1202,7 @@ public class ClientWorker implements Closeable {
         }
         
         private Response requestProxy(RpcClient rpcClientInner, Request request) throws NacosException {
-            return requestProxy(rpcClientInner, request, 3000L);
+            return requestProxy(rpcClientInner, request, requestTimeout);
         }
         
         private Response requestProxy(RpcClient rpcClientInner, Request request, long timeoutMills)
@@ -1219,6 +1220,9 @@ public class ClientWorker implements Closeable {
             if (limit) {
                 throw new NacosException(NacosException.CLIENT_OVER_THRESHOLD,
                         "More than client-side current limit threshold");
+            }
+            if (timeoutMills < 0) {
+                return rpcClientInner.request(request);
             }
             return rpcClientInner.request(request, timeoutMills);
         }
@@ -1268,8 +1272,8 @@ public class ClientWorker implements Closeable {
                             this.getName(), dataId, group, tenant, response.getErrorCode(), response.getMessage());
                     return false;
                 } else {
-                    LOGGER.info("[{}] [publish-single] ok, dataId={}, group={}, tenant={}, config={}", getName(),
-                            dataId, group, tenant, ContentUtils.truncateContent(content));
+                    LOGGER.info("[{}] [publish-single] ok, dataId={}, group={}, tenant={}", getName(),
+                            dataId, group, tenant);
                     return true;
                 }
             } catch (Exception e) {
