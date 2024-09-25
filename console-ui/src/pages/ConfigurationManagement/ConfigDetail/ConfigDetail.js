@@ -66,7 +66,7 @@ class ConfigDetail extends React.Component {
     this.group = getParams('group') || 'DEFAULT_GROUP';
     this.ips = '';
     this.valueMap = {}; // 存储不同版本的数据
-    this.tenant = getParams('namespace') || '';
+    this.namespaceId = getParams('namespace') || '';
     this.searchDataId = getParams('searchDataId') || '';
     this.searchGroup = getParams('searchGroup') || '';
     this.pageSize = getParams('pageSize');
@@ -147,18 +147,18 @@ class ConfigDetail extends React.Component {
     const { locale = {} } = this.props;
     const self = this;
     this.serverId = getParams('serverId') || 'center';
-    this.tenant = getParams('namespace') || '';
+    this.namespaceId = getParams('namespace') || '';
     this.edasAppName = getParams('edasAppName') || '';
     this.inApp = this.edasAppName;
-    const url = `v1/cs/configs?show=all&dataId=${this.dataId}&group=${this.group}`;
+    const url = `v3/console/cs/config?&dataId=${this.dataId}&group=${this.group}`;
     request({
       url,
       beforeSend() {
         self.openLoading();
       },
       success(result) {
-        if (result != null) {
-          const data = result;
+        if (result != null && result.code === 0) {
+          const data = result.data;
           self.valueMap.normal = data;
           self.field.setValue('dataId', data.dataId);
           self.field.setValue('content', data.content);
@@ -186,7 +186,7 @@ class ConfigDetail extends React.Component {
         serverId: this.serverId,
         group: this.searchGroup,
         dataId: this.searchDataId,
-        namespace: this.tenant,
+        namespace: this.namespaceId,
         pageNo: this.pageNo,
         pageSize: this.pageSize,
       })
@@ -226,7 +226,7 @@ class ConfigDetail extends React.Component {
     let self = this;
     const { locale = {} } = this.props;
     let leftvalue = this.monacoEditor.getValue();
-    let url = `v1/cs/history/previous?id=${this.valueMap.normal.id}&dataId=${this.dataId}&group=${this.group}`;
+    let url = `v3/console/cs/history/previous?id=${this.valueMap.normal.id}&dataId=${this.dataId}&group=${this.group}`;
     request({
       url,
       beforeSend() {
@@ -234,6 +234,7 @@ class ConfigDetail extends React.Component {
       },
       success(result) {
         if (result != null) {
+          const result = result.data;
           let rightvalue = result.content;
           leftvalue = leftvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
           rightvalue = rightvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
@@ -248,18 +249,19 @@ class ConfigDetail extends React.Component {
     });
   }
 
-  openCompare = ([dataId, group, tenant]) => {
+  openCompare = ([dataId, group, namespaceId]) => {
     let self = this;
     const { locale = {} } = this.props;
     let leftvalue = this.monacoEditor.getValue();
     const params = {
-      show: 'all',
+      // show: 'all',
       group,
       dataId,
-      tenant,
+      namespaceId,
     };
-    requestUtils.get('v1/cs/configs', { params }).then(res => {
-      if (res != null && res !== '') {
+    requestUtils.get('v3/console/cs/config', { params }).then(res => {
+      if (res != null && res !== '' && res.code === 0) {
+        res = res.data;
         let rightvalue = res.content;
         leftvalue = leftvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
         rightvalue = rightvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
@@ -319,7 +321,7 @@ class ConfigDetail extends React.Component {
           )}
           <Form inline={false} field={this.field} {...formItemLayout}>
             <FormItem label={locale.namespace} required>
-              <p>{this.tenant}</p>
+              <p>{this.namespaceId}</p>
             </FormItem>
             <FormItem label={'Data ID'} required>
               <Input htmlType={'text'} readOnly {...init('dataId')} />

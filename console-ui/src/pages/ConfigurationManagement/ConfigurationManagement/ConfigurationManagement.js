@@ -279,7 +279,7 @@ class ConfigurationManagement extends React.Component {
       config_tags: this.state.config_tags.join(','),
       pageNo: prePageNo ? prePageNo : pageNo,
       pageSize: prePageSize ? prePageSize : this.state.pageSize,
-      tenant: this.tenant,
+      namespaceId: this.tenant,
     };
     setParams('pageSize', null);
     setParams('pageNo', null);
@@ -294,6 +294,7 @@ class ConfigurationManagement extends React.Component {
       }
       props = this.props.getConfigsV2(params);
     } else {
+      console.log('Params before request:', params);
       props = this.props.getConfigs(params);
     }
     props
@@ -362,7 +363,7 @@ class ConfigurationManagement extends React.Component {
         </div>
       ),
       onOk: () => {
-        const url = `v1/cs/configs?dataId=${record.dataId}&group=${record.group}`;
+        const url = `v3/console/cs/config?dataId=${record.dataId}&group=${record.group}`;
         request({
           url,
           type: 'delete',
@@ -579,9 +580,8 @@ class ConfigurationManagement extends React.Component {
   exportData() {
     const { group, appName, dataId, openUri } = this;
     const { accessToken = '', username = '' } = JSON.parse(localStorage.token || '{}');
-    openUri('v1/cs/configs', {
-      export: 'true',
-      tenant: getParams('namespace'),
+    openUri('v3/console/cs/config/export', {
+      namespaceId: getParams('namespace'),
       group,
       appName,
       dataId,
@@ -594,9 +594,8 @@ class ConfigurationManagement extends React.Component {
   exportDataNew() {
     const { group, appName, dataId, openUri } = this;
     const { accessToken = '', username = '' } = JSON.parse(localStorage.token || '{}');
-    openUri('v1/cs/configs', {
-      exportV2: 'true',
-      tenant: getParams('namespace'),
+    openUri('v3/console/cs/config/export2', {
+      namespaceId: getParams('namespace'),
       group,
       appName,
       dataId,
@@ -619,9 +618,8 @@ class ConfigurationManagement extends React.Component {
     }
     configsTableSelected.forEach((value, key, map) => ids.push(key));
     if (newVersion) {
-      this.openUri('v1/cs/configs', {
-        exportV2: 'true',
-        tenant: getParams('namespace'),
+      this.openUri('v3/console/cs/config/export2', {
+        namespaceId: getParams('namespace'),
         group: '',
         appName: '',
         ids: ids.join(','),
@@ -629,9 +627,8 @@ class ConfigurationManagement extends React.Component {
         username,
       });
     } else {
-      this.openUri('v1/cs/configs', {
-        export: 'true',
-        tenant: getParams('namespace'),
+      this.openUri('v3/console/cs/config/export', {
+        namespaceId: getParams('namespace'),
         group: '',
         appName: '',
         ids: ids.join(','),
@@ -670,9 +667,9 @@ class ConfigurationManagement extends React.Component {
         ),
         onOk: () => {
           const url =
-            `v1/cs/configs?delType=ids&ids=${Array.from(configsTableSelected.keys()).join(
+            `v3/console/cs/config/batchDelete?&ids=${Array.from(configsTableSelected.keys()).join(
               ','
-            )}&tenant=` + self.state.nownamespace_id;
+            )}&namespaceId=` + self.state.nownamespace_id;
           request({
             url,
             type: 'delete',
@@ -699,13 +696,14 @@ class ConfigurationManagement extends React.Component {
       return;
     }
     request({
-      url: 'v1/console/namespaces?namespaceId=',
+      url: 'v3/console/core/namespace?namespaceId=',
       beforeSend() {
         self.openLoading();
       },
       success(data) {
+        data = data.data
         self.closeLoading();
-        if (!data || data.code !== 200 || !data.data) {
+        if (!data || data.code !== 0 || !data.data) {
           Dialog.alert({
             title: locale.getNamespaceFailed,
             content: locale.getNamespaceFailed,
@@ -855,7 +853,7 @@ class ConfigurationManagement extends React.Component {
                     let cloneTargetSpace = self.field.getValue('cloneTargetSpace');
                     let sameConfigPolicy = self.field.getValue('sameConfigPolicy');
                     request({
-                      url: `v1/cs/configs?clone=true&tenant=${cloneTargetSpace}&policy=${sameConfigPolicy}&namespaceId=`,
+                      url: `v3/console/cs/config/clone?namespaceId=${cloneTargetSpace}&policy=${sameConfigPolicy}&namespaceId=`,
                       method: 'post',
                       data: JSON.stringify(clonePostData),
                       contentType: 'application/json',
@@ -1037,7 +1035,7 @@ class ConfigurationManagement extends React.Component {
     const { accessToken = '', username = '' } = token;
     const uploadProps = {
       accept: 'application/zip',
-      action: `v1/cs/configs?import=true&namespace=${getParams(
+      action: `v3/console/cs/config/import?namespaceId=${getParams(
         'namespace'
       )}&accessToken=${accessToken}&username=${username}&tenant=${getParams('namespace')}`,
       headers: Object.assign({}, {}, { accessToken }),
