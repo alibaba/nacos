@@ -16,12 +16,11 @@
 
 package com.alibaba.nacos.config.server.service;
 
-import com.alibaba.nacos.config.server.model.capacity.TenantCapacity;
-import com.alibaba.nacos.config.server.service.capacity.TenantCapacityPersistService;
+import com.alibaba.nacos.config.server.constant.PropertiesConstant;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.core.namespace.injector.AbstractNamespaceDetailInjector;
 import com.alibaba.nacos.core.namespace.model.Namespace;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.stereotype.Service;
 
 /**
@@ -34,23 +33,17 @@ public class NamespaceConfigInfoService extends AbstractNamespaceDetailInjector 
     
     private final ConfigInfoPersistService configInfoPersistService;
     
-    private final TenantCapacityPersistService tenantCapacityPersistService;
-    
-    public NamespaceConfigInfoService(ConfigInfoPersistService configInfoPersistService,
-            TenantCapacityPersistService tenantCapacityPersistService) {
+    public NamespaceConfigInfoService(ConfigInfoPersistService configInfoPersistService) {
         this.configInfoPersistService = configInfoPersistService;
-        this.tenantCapacityPersistService = tenantCapacityPersistService;
     }
     
     @Override
     public void injectDetail(Namespace namespace) {
-        // set tenant quota
-        TenantCapacity tenantCapacity = tenantCapacityPersistService.getTenantCapacity(namespace.getNamespace());
-        if (tenantCapacity != null && tenantCapacity.getQuota() != null && tenantCapacity.getQuota() > 0) {
-            namespace.setQuota(tenantCapacity.getQuota());
-        } else {
-            namespace.setQuota(PropertyUtil.getDefaultTenantQuota());
+        
+        if (EnvUtil.getProperty(PropertiesConstant.DEFAULT_TENANT_QUOTA, Integer.class) != null) {
+            namespace.setQuota(EnvUtil.getProperty(PropertiesConstant.DEFAULT_TENANT_QUOTA, Integer.class));
         }
+        
         // set config count.
         int configCount = configInfoPersistService.configInfoCount(namespace.getNamespace());
         namespace.setConfigCount(configCount);

@@ -232,7 +232,7 @@ class ClientWorkerTest {
         String casMd5 = "1111";
         
         String type = "properties";
-        Mockito.when(rpcClient.request(any(ConfigPublishRequest.class), anyLong()))
+        Mockito.when(rpcClient.request(any(ConfigPublishRequest.class)))
                 .thenReturn(new ConfigPublishResponse());
         boolean b = clientWorker.publishConfig(dataId, group, tenant, appName, tag, betaIps, content, null, casMd5,
                 type);
@@ -261,7 +261,7 @@ class ClientWorkerTest {
         String casMd5 = "1111";
         
         String type = "properties";
-        Mockito.when(rpcClient.request(any(ConfigPublishRequest.class), anyLong()))
+        Mockito.when(rpcClient.request(any(ConfigPublishRequest.class)))
                 .thenReturn(ConfigPublishResponse.buildFailResponse(503, "over limit"));
         boolean b = clientWorker.publishConfig(dataId, group, tenant, appName, tag, betaIps, content, null, casMd5,
                 type);
@@ -290,7 +290,7 @@ class ClientWorkerTest {
         String casMd5 = "1111";
         
         String type = "properties";
-        Mockito.when(rpcClient.request(any(ConfigPublishRequest.class), anyLong())).thenThrow(new NacosException());
+        Mockito.when(rpcClient.request(any(ConfigPublishRequest.class))).thenThrow(new NacosException());
         boolean b = clientWorker.publishConfig(dataId, group, tenant, appName, tag, betaIps, content, null, casMd5,
                 type);
         assertFalse(b);
@@ -313,7 +313,7 @@ class ClientWorkerTest {
         
         String tag = "tag";
         try {
-            Mockito.when(rpcClient.request(any(ConfigRemoveRequest.class), anyLong()))
+            Mockito.when(rpcClient.request(any(ConfigRemoveRequest.class)))
                     .thenThrow(new NacosException(503, "overlimit"));
             
             clientWorker.removeConfig(dataId, group, tenant, tag);
@@ -562,13 +562,13 @@ class ClientWorkerTest {
                 () -> RpcClientFactory.createClient(anyString(), any(ConnectionType.class), any(Map.class),
                         any(RpcClientTlsConfig.class))).thenReturn(rpcClientInner);
         // mock listen and remove listen request
-        Mockito.when(rpcClientInner.request(any(ConfigBatchListenRequest.class), anyLong()))
+        Mockito.when(rpcClientInner.request(any(ConfigBatchListenRequest.class)))
                 .thenReturn(response, response);
         // mock query changed config
         ConfigQueryResponse configQueryResponse = new ConfigQueryResponse();
         configQueryResponse.setContent("content" + System.currentTimeMillis());
         configQueryResponse.setContentType(ConfigType.JSON.getType());
-        Mockito.when(rpcClientInner.request(any(ConfigQueryRequest.class), anyLong())).thenReturn(configQueryResponse);
+        Mockito.when(rpcClientInner.request(any(ConfigQueryRequest.class))).thenReturn(configQueryResponse);
         (clientWorker.getAgent()).executeConfigListen();
         //assert
         //use local cache.
