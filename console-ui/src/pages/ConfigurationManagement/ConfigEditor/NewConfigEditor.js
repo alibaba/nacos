@@ -264,13 +264,13 @@ class ConfigEditor extends React.Component {
     const stringify = require('qs/lib/stringify');
     this.setState({ loading: true });
     return request({
-      url: 'v1/cs/configs',
+      url: 'v3/console/cs/config',
       method: 'post',
       data: stringify(payload),
       headers,
     }).then(
       res => {
-        if (res) {
+        if (res.data) {
           if (isNewConfig) {
             this.setState({ isNewConfig: false });
           }
@@ -312,14 +312,14 @@ class ConfigEditor extends React.Component {
 
   stopBeta() {
     const { dataId, group } = this.state.form;
-    const tenant = getParams('namespace');
+    const namespaceId = getParams('namespace');
     return request
-      .delete('v1/cs/configs', {
+      .delete('v3/console/cs/config', {
         params: {
           beta: true,
           dataId,
           group,
-          tenant,
+          namespaceId,
         },
       })
       .then(res => {
@@ -398,7 +398,7 @@ class ConfigEditor extends React.Component {
     } else {
       params.show = 'all';
     }
-    return request.get('v1/cs/configs', { params }).then(res => {
+    return request.get('v3/console/cs/config', { params }).then(res => {
       const form = beta ? res.data : res;
       if (!form) return false;
       const { type, content, configTags, betaIps, md5 } = form;
@@ -424,15 +424,15 @@ class ConfigEditor extends React.Component {
       tenant: namespace,
     };
     // get subscribes of the namespace
-    return request.get('v1/cs/configs/listener', { params }).then(res => {
+    return request.get('v3/console/cs/config/listener', { params }).then(res => {
       const { subscriberDataSource } = this.state;
-      const lisentersGroupkeyIpMap = res.lisentersGroupkeyStatus;
+      const lisentersGroupkeyIpMap = res.data.lisentersGroupkeyStatus;
       if (lisentersGroupkeyIpMap) {
         this.setState({
           subscriberDataSource: subscriberDataSource.concat(Object.keys(lisentersGroupkeyIpMap)),
         });
       }
-      return res;
+      return res.data;
     });
   }
 

@@ -19,6 +19,7 @@ package com.alibaba.nacos.console.controller.v3.core;
 
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.enums.ApiType;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.console.proxy.core.ClusterProxy;
 import com.alibaba.nacos.core.cluster.Member;
@@ -61,7 +62,8 @@ public class ConsoleClusterController {
      * @return all members
      */
     @GetMapping(value = "/nodes")
-    @Secured(resource = Commons.NACOS_CORE_CONTEXT + "/cluster", action = ActionTypes.READ, signType = SignType.CONSOLE)
+    @Secured(resource = Commons.NACOS_CORE_CONTEXT
+            + "/cluster", action = ActionTypes.READ, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
     public Result<Collection<Member>> getNodeList(@RequestParam(value = "keyword", required = false) String ipKeyWord) {
         Collection<Member> result = clusterProxy.getNodeList(ipKeyWord);
         return Result.success(result);

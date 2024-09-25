@@ -84,7 +84,7 @@ class ClusterNodeList extends React.Component {
       `keyword=${keyword}`,
     ];
     request({
-      url: `v1/core/cluster/nodes?${parameter.join('&')}`,
+      url: `v3/console/core/cluster/nodes?${parameter.join('&')}`,
       beforeSend: () => this.openLoading(),
       success: ({ count = 0, data = [] } = {}) => {
         this.setState({
@@ -107,7 +107,7 @@ class ClusterNodeList extends React.Component {
     const accessToken = JSON.parse(localStorage.token || '{}').accessToken;
     this.openLoading();
     axios
-      .post(`v1/core/cluster/server/leave?accessToken=${accessToken}`, nodes)
+      .post(`v3/console/core/cluster/server/leave?accessToken=${accessToken}`, nodes)
       .then(response => {
         if (response.data.code === 200) {
           Message.success(locale.leaveSucc);

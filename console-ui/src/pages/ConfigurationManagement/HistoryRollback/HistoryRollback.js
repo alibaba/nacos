@@ -115,9 +115,10 @@ class HistoryRollback extends React.Component {
       beforeSend() {
         self.openLoading();
       },
-      url: `v1/cs/history?search=accurate&dataId=${this.state.dataId}&group=${this.state.group}&&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
-      success(data) {
-        if (data != null) {
+      url: `v3/console/cs/history/list?dataId=${this.state.dataId}&group=${this.state.group}&&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
+      success(res) {
+        if (res != null) {
+          const data = res.data
           self.setState({
             dataSource: data.pageItems || [],
             total: data.totalCount,
@@ -234,9 +235,9 @@ class HistoryRollback extends React.Component {
     return new Promise((resolve, reject) => {
       const { locale = {} } = this.props;
       const self = this;
-      this.tenant = tenant;
+      this.namespaceId = tenant;
       this.serverId = tenant;
-      const url = `v1/cs/configs?show=all&dataId=${dataId}&group=${group}`;
+      const url = `v3/console/cs/config?dataId=${dataId}&group=${group}`;
       request({
         url,
         beforeSend() {
@@ -244,7 +245,7 @@ class HistoryRollback extends React.Component {
         },
         success(result) {
           if (result != null) {
-            resolve(result);
+            resolve(result.data);
           }
         },
         complete() {
@@ -266,10 +267,10 @@ class HistoryRollback extends React.Component {
       const { locale = {} } = this.props;
       const self = this;
       request({
-        url: `v1/cs/history?dataId=${dataId}&group=${group}&nid=${nid}`,
+        url: `v3/console/cs/history?dataId=${dataId}&group=${group}&nid=${nid}`,
         success(result) {
           if (result != null) {
-            resolve(result);
+            resolve(result.data);
           }
         },
       });
@@ -291,9 +292,10 @@ class HistoryRollback extends React.Component {
     this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
     const self = this;
     request({
-      url: `v1/cs/history/configs?tenant=${this.tenant}`,
-      success(result) {
-        if (result != null) {
+      url: `v3/console/cs/history/configs?namespaceId=${this.tenant}`,
+      success(res) {
+        if (res != null) {
+          const result = res.data;
           const dataIdList = [];
           const groupList = [];
           for (let i = 0; i < result.length; i++) {

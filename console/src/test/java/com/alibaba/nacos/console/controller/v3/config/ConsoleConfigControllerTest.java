@@ -73,7 +73,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * .
+ * ConsoleConfigControllerTest.
  *
  * @author zhangyukun on:2024/8/20
  */

@@ -142,6 +142,17 @@ public class ConfigProxy {
     }
     
     /**
+     * Get subscription information based on IP, tenant, and other parameters.
+     */
+    public GroupkeyListenserStatus getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime) throws NacosException {
+        ConfigHandler configHandler = configHandlerMap.get(consoleConfig.getType());
+        if (configHandler == null) {
+            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
+        }
+        return configHandler.getAllSubClientConfigByIp(ip, all, namespaceId, sampleTime);
+    }
+    
+    /**
      * Export configuration.
      */
     public ResponseEntity<byte[]> exportConfig(String dataId, String group, String namespaceId, String appName,

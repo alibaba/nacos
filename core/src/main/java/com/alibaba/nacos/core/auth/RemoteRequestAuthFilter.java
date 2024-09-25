@@ -63,7 +63,8 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
         try {
             
             Method method = getHandleMethod(handlerClazz);
-            if (method.isAnnotationPresent(Secured.class) && (authConfigs.isConsoleAuthEnabled() || authConfigs.isAuthEnabled())) {
+            boolean isAuthEnabled = authConfigs.isConsoleAuthEnabled() || authConfigs.isAuthEnabled();
+            if (method.isAnnotationPresent(Secured.class) && isAuthEnabled) {
                 
                 if (Loggers.AUTH.isDebugEnabled()) {
                     Loggers.AUTH.debug("auth start, request: {}", request.getClass().getSimpleName());

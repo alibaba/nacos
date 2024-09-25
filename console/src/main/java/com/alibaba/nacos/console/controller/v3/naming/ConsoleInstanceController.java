@@ -27,6 +27,7 @@ import com.alibaba.nacos.api.naming.pojo.builder.InstanceBuilder;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.enums.ApiType;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.console.proxy.naming.InstanceProxy;
 import com.alibaba.nacos.core.control.TpsControl;
@@ -82,12 +83,12 @@ public class ConsoleInstanceController {
     @RequestMapping("/list")
     public Result<ObjectNode> getInstanceList(
             @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam String serviceName, @RequestParam(required = false) Boolean healthyOnly,
-            @RequestParam(required = false) Boolean enabledOnly, @RequestParam(name = "pageNo") int page,
-            @RequestParam int pageSize) {
-        String serviceNameWithoutGroup = NamingUtils.getServiceName(serviceName);
-        String groupName = NamingUtils.getGroupName(serviceName);
-        ObjectNode result = instanceProxy.listInstances(namespaceId, serviceNameWithoutGroup, groupName, page, pageSize, healthyOnly, enabledOnly);
+            @RequestParam String serviceName, @RequestParam(defaultValue = Constants.DEFAULT_GROUP) String groupName,
+            @RequestParam(required = false) Boolean healthyOnly, @RequestParam(required = false) Boolean enabledOnly,
+            @RequestParam(name = "pageNo") int page, @RequestParam int pageSize) throws NacosApiException {
+        checkServiceName(serviceName);
+        ObjectNode result = instanceProxy.listInstances(namespaceId, serviceName, groupName, page, pageSize,
+                healthyOnly, enabledOnly);
         return Result.success(result);
     }
     
@@ -133,5 +134,12 @@ public class ConsoleInstanceController {
     
     private String buildCompositeServiceName(InstanceForm instanceForm) {
         return NamingUtils.getGroupedName(instanceForm.getServiceName(), instanceForm.getGroupName());
+    }
+    
+    private void checkServiceName(String serviceName) throws NacosApiException {
+        if (StringUtils.isBlank(serviceName)) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
+                    "Required parameter 'serviceName' type String is not present");
+        }
     }
 }

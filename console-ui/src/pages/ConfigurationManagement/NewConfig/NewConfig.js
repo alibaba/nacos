@@ -297,22 +297,28 @@ class NewConfig extends React.Component {
     const { locale = {} } = this.props;
     const { addonBefore } = this.state;
     request({
-      url: 'v1/cs/configs',
+      url: 'v3/console/cs/config',
       data: {
-        show: 'all',
         dataId: addonBefore + this.field.getValue('dataId'),
         group: this.field.getValue('group'),
-        tenant: getParams('namespace') || '',
+        namespaceId: getParams('namespace') || '',
       },
       success: res => {
-        // 返回成功 说明存在就不提交配置
-        Message.error({
-          content: locale.dataIdExists,
-          align: 'cc cc',
-        });
+        // 检查 res.data 是否为 null，如果不是 null，说明存在就不提交配置
+        if (res.data !== null) {
+          console.log('Data exists, not submitting config'); // 输出提示信息
+          Message.error({
+            content: locale.dataIdExists,
+            align: 'cc cc',
+          });
+        } else {
+          console.log('Data does not exist, proceeding to publish config'); // 输出提示信息
+          // 如果 res.data 为 null，表示没有数据，可以继续处理
+          this._publishConfig(content);
+        }
       },
       error: err => {
-        // 后端接口很不规范 响应为空 说明没有数据 就可以新增
+        // 后端接口很不规范，响应为空，说明没有数据，可以新增
         const { status } = err || {};
         if (status === 403) {
           Dialog.alert({
@@ -335,13 +341,13 @@ class NewConfig extends React.Component {
       group: this.field.getValue('group'),
       content,
       desc: this.field.getValue('desc'),
-      config_tags: config_tags.join(),
+      configTags: config_tags.join(),
       type: configType,
       appName: this.inApp ? this.edasAppId : this.field.getValue('appName'),
-      tenant: this.tenant,
+      namespaceId: this.tenant,
     };
     this.serverId = getParams('serverId') || 'center';
-    const url = 'v1/cs/configs';
+    const url = 'v3/console/cs/config';
     request({
       type: 'post',
       contentType: 'application/x-www-form-urlencoded',

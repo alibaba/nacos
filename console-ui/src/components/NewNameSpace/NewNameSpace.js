@@ -111,13 +111,14 @@ class NewNameSpace extends React.Component {
       }
       request({
         type: 'get',
-        url: 'v1/console/namespaces?checkNamespaceIdExist=true',
+        url: 'v3/console/core/namespace/exist',
         contentType: 'application/x-www-form-urlencoded',
         beforeSend: () => this.openLoading(),
         data: {
           customNamespaceId,
         },
         success: res => {
+          res = res.data;
           this.disabled = false;
           this.setState({
             disabled: false,
@@ -130,7 +131,7 @@ class NewNameSpace extends React.Component {
           } else {
             request({
               type: 'post',
-              url: 'v1/console/namespaces',
+              url: 'v3/console/core/namespace',
               contentType: 'application/x-www-form-urlencoded',
               beforeSend: () => this.openLoading(),
               data: {
@@ -139,6 +140,7 @@ class NewNameSpace extends React.Component {
                 namespaceDesc: values.namespaceDesc,
               },
               success: res => {
+                res = res.data;
                 this.disabled = false;
                 this.setState({
                   disabled: false,
@@ -167,9 +169,9 @@ class NewNameSpace extends React.Component {
     setTimeout(() => {
       request({
         type: 'get',
-        url: 'v1/console/namespaces',
+        url: 'v3/console/core/namespace',
         success: res => {
-          if (res.code === 200) {
+          if (res.code === 0) {
             window.namespaceList = res.data;
           }
         },

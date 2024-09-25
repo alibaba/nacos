@@ -184,15 +184,15 @@ class ConfigEditor extends React.Component {
     const self = this;
     this.tenant = getParams('namespace') || '';
     this.serverId = getParams('serverId') || 'center';
-    const url = `v1/cs/configs?show=all&dataId=${this.dataId}&group=${this.group}`;
+    const url = `v3/console/cs/config?dataId=${this.dataId}&group=${this.group}`;
     request({
       url,
       beforeSend() {
         self.openLoading();
       },
       success(result) {
-        if (result != null) {
-          const data = result;
+        if (result != null && result.code === 0) {
+          const data = result.data;
           self.valueMap.normal = data;
           self.field.setValue('dataId', data.dataId);
           // self.field.setValue('content', data.content);
@@ -369,12 +369,12 @@ class ConfigEditor extends React.Component {
       appName: this.inApp ? this.edasAppId : this.field.getValue('appName'),
       group: this.field.getValue('group'),
       desc: this.field.getValue('desc'),
-      config_tags: this.state.config_tags.join(','),
+      configTags: this.state.config_tags.join(','),
       type: this.state.configType,
       content,
-      tenant: this.tenant,
+      namespaceId: this.tenant,
     };
-    const url = 'v1/cs/configs';
+    const url = 'v3/console/cs/config';
     request({
       type: 'post',
       contentType: 'application/x-www-form-urlencoded',

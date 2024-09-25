@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.model.v2;
 
 import java.io.Serializable;
+import org.springframework.http.HttpStatus;
 
 /**
  * Response Result.
@@ -94,6 +95,15 @@ public class Result<T> implements Serializable {
      */
     public static <T> Result<T> failure(ErrorCode errorCode, T data) {
         return new Result<>(errorCode.getCode(), errorCode.getMsg(), data);
+    }
+    
+    /**
+     * Failed return with httpStatus, message and data.
+     * @param <T> data type
+     * @return Result
+     */
+    public static <T> Result<T> failure(HttpStatus httpStatus, T data) {
+        return new Result<>(httpStatus.value(), httpStatus.getReasonPhrase(), data);
     }
     
     @Override
