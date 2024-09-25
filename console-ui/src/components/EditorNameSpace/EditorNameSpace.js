@@ -72,8 +72,9 @@ class EditorNameSpace extends React.Component {
     this.field.setValues(record);
     request({
       type: 'get',
-      url: `v1/console/namespaces?show=all&namespaceId=${record.namespace}`,
+      url: `v3/console/core/namespace?namespaceId=${record.namespace}`,
       success: res => {
+        res = res.data;
         if (res !== null) {
           this.field.setValue('namespaceDesc', res.namespaceDesc);
         } else {
@@ -101,15 +102,18 @@ class EditorNameSpace extends React.Component {
         beforeSend: () => {
           this.openLoading();
         },
-        url: 'v1/console/namespaces',
+        url: 'v3/console/core/namespace',
         contentType: 'application/x-www-form-urlencoded',
         data: {
-          namespace: values.namespace,
-          namespaceShowName: values.namespaceShowName,
+          namespaceId: values.namespace,
+          namespaceName: values.namespaceShowName,
           namespaceDesc: values.namespaceDesc,
         },
         success: res => {
-          if (res === true) {
+          // res = res.data;
+          console.log(3);
+          if (res.code === 0) {
+            res = res.data;
             this.closeDialog();
             this.props.getNameSpaces();
             this.refreshNameSpace(); // 刷新全局namespace
@@ -131,9 +135,10 @@ class EditorNameSpace extends React.Component {
     setTimeout(() => {
       request({
         type: 'get',
-        url: 'v1/console/namespaces',
+        url: 'v3/console/core/namespace',
         success: res => {
-          if (res.code === 200) {
+          console.log(res);
+          if (res.code === 0) {
             window.namespaceList = res.data;
           }
         },

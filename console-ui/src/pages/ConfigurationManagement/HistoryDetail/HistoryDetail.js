@@ -61,10 +61,10 @@ class HistoryDetail extends React.Component {
     const { locale = {} } = this.props;
     const self = this;
     request({
-      url: `v1/cs/history?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`,
+      url: `v3/console/cs/history?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`,
       success(result) {
         if (result != null) {
-          const data = result;
+          const data = result.data;
           self.field.setValue('dataId', data.dataId);
           self.field.setValue('content', data.content);
           self.field.setValue('appName', self.inApp ? self.edasAppName : data.appName);
