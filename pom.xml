@@ -152,7 +152,7 @@
         <junit5.version>5.10.2</junit5.version>
         
         <!-- override dependency version -->
-        <spring.version>5.3.39</spring.version>
+        <spring.version>5.3.40</spring.version>
         <spring-security.version>5.7.12</spring-security.version>
         <tomcat.version>9.0.93</tomcat.version>
     </properties>
