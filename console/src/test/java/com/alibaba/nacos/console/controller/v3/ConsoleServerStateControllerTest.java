@@ -84,7 +84,7 @@ public class ConsoleServerStateControllerTest {
         when(serverStateProxy.getAnnouncement(anyString())).thenReturn("Test Announcement");
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/server/announcement")
-                .param("language", "en");
+                .param("language", "zh-CN");
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
