@@ -479,15 +479,15 @@
     
     
     <!--TPS control -->
-    <appender name="tps-control"
-        class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/tps-control.log</file>
+    <appender name="plugin-control-connection"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/plugin-control-connection.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/tps-control.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/plugin-control-connection.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>2GB</maxFileSize>
             <maxHistory>7</maxHistory>
-            <totalSizeCap>7GB</totalSizeCap>
+            <totalSizeCap>2GB</totalSizeCap>
             <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
         <encoder>
@@ -495,16 +495,15 @@
             <charset>UTF-8</charset>
         </encoder>
     </appender>
-    
-    <appender name="tps-control-digest"
-        class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/tps-control-digest.log</file>
+    <appender name="plugin-control-tps"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/plugin-control-tps.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/tps-control-digest.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/plugin-control-tps.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>2GB</maxFileSize>
             <maxHistory>7</maxHistory>
-            <totalSizeCap>7GB</totalSizeCap>
+            <totalSizeCap>2GB</totalSizeCap>
             <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
         <encoder>
@@ -512,15 +511,15 @@
             <charset>UTF-8</charset>
         </encoder>
     </appender>
-    
-    <appender name="tps-control-detail"
-        class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/tps-control-detail.log</file>
+
+    <appender name="plugin-control"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/plugin-control.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/tps-control-detail.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/plugin-control.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>2GB</maxFileSize>
-            <maxHistory>7</maxHistory>
+            <maxHistory>14</maxHistory>
             <totalSizeCap>7GB</totalSizeCap>
             <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
@@ -622,21 +621,20 @@
         <level value="DEBUG"/>
         <appender-ref ref="remote-digest"/>
     </logger>
-    
+
     <!-- TPS Control-->
-    <logger name="com.alibaba.nacos.core.remote.control.digest" additivity="false">
-        <level value="DEBUG"/>
-        <appender-ref ref="tps-control-digest"/>
+    <logger name="com.alibaba.nacos.plugin.control" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="plugin-control"/>
     </logger>
-    
-    <logger name="com.alibaba.nacos.core.remote.control.detail" additivity="false">
-        <level value="DEBUG"/>
-        <appender-ref ref="tps-control-detail"/>
+    <logger name="com.alibaba.nacos.plugin.control.tps" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="plugin-control-tps"/>
     </logger>
-    
-    <logger name="com.alibaba.nacos.core.remote.control" additivity="false">
-        <level value="DEBUG"/>
-        <appender-ref ref="tps-control"/>
+
+    <logger name="com.alibaba.nacos.plugin.control.connection" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="plugin-control-connection"/>
     </logger>
     
     <logger name="com.alibaba.nacos.naming.main" additivity="false">
