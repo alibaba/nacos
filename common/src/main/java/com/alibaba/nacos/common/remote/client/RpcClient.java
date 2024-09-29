@@ -634,9 +634,7 @@ public abstract class RpcClient implements Closeable {
         int retryTimes = 0;
         Response response;
         Throwable exceptionThrow = null;
-        long start = System.currentTimeMillis();
-        while (retryTimes <= rpcClientConfig.retryTimes() && (timeoutMills <= 0
-                || System.currentTimeMillis() < timeoutMills + start)) {
+        while (retryTimes <= rpcClientConfig.retryTimes()) {
             boolean waitReconnect = false;
             try {
                 if (this.currentConnection == null || !isRunning()) {
