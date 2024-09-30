@@ -18,7 +18,6 @@
 package com.alibaba.nacos.plugin.auth.impl.controller.v3;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.AuthConfigs;
@@ -42,6 +41,7 @@ import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordGeneratorUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -135,10 +135,11 @@ public class UserControllerV3 {
         if (StringUtils.isBlank(password)) {
             password = PasswordGeneratorUtil.generateRandomPassword();
         }
-    
+        
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
             if (iAuthenticationManager.hasGlobalAdminRole()) {
-                return Result.failure(ErrorCode.CONFLICT, "have admin user cannot use it");
+                return Result.failure(HttpStatus.CONFLICT.value(), HttpStatus.CONFLICT.getReasonPhrase(),
+                        "have admin user cannot use it");
             }
             String username = AuthConstants.DEFAULT_USER;
             userDetailsService.createUser(username, PasswordEncoderUtil.encode(password));
@@ -148,7 +149,8 @@ public class UserControllerV3 {
             result.put(AuthConstants.PARAM_PASSWORD, password);
             return Result.success(result);
         } else {
-            return Result.failure(ErrorCode.NOT_IMPLEMENTED, "not support");
+            return Result.failure(HttpStatus.NOT_IMPLEMENTED.value(), HttpStatus.NOT_IMPLEMENTED.getReasonPhrase(),
+                    "not support");
         }
     }
     
@@ -201,12 +203,12 @@ public class UserControllerV3 {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "authorization failed!");
             return null;
         }
-    
+        
         User user = userDetailsService.getUserFromDatabase(username);
         if (user == null) {
             throw new IllegalArgumentException("user " + username + " not exist!");
         }
-    
+        
         userDetailsService.updateUserPassword(username, PasswordEncoderUtil.encode(newPassword));
         return Result.success("update user ok!");
         
@@ -294,11 +296,11 @@ public class UserControllerV3 {
             HttpServletRequest request) throws AccessException, IOException {
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())
                 || AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
-        
+            
             NacosUser user = iAuthenticationManager.authenticate(request);
-        
+            
             response.addHeader(AuthConstants.AUTHORIZATION_HEADER, AuthConstants.TOKEN_PREFIX + user.getToken());
-        
+            
             ObjectNode result = JacksonUtils.createEmptyJsonNode();
             result.put(Constants.ACCESS_TOKEN, user.getToken());
             result.put(Constants.TOKEN_TTL, jwtTokenManager.getTokenTtlInSeconds(user.getToken()));
@@ -306,11 +308,11 @@ public class UserControllerV3 {
             result.put(Constants.USERNAME, user.getUserName());
             return result;
         }
-    
+        
         // create Authentication class through username and password, the implement class is UsernamePasswordAuthenticationToken
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username,
                 password);
-    
+        
         try {
             // use the method authenticate of AuthenticationManager(default implement is ProviderManager) to valid Authentication
             Authentication authentication = authenticationManager.authenticate(authenticationToken);
@@ -322,7 +324,8 @@ public class UserControllerV3 {
             response.addHeader(AuthConstants.AUTHORIZATION_HEADER, "Bearer " + token);
             return Result.success("Bearer " + token);
         } catch (BadCredentialsException authentication) {
-            return Result.failure(ErrorCode.UNAUTHORIZED, "Login failed");
+            return Result.failure(HttpStatus.UNAUTHORIZED.value(), HttpStatus.UNAUTHORIZED.getReasonPhrase(),
+                    "Login failed");
         }
     }
 }

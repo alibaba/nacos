@@ -19,7 +19,6 @@ package com.alibaba.nacos.console.proxy.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.console.config.ConsoleConfig;
-import com.alibaba.nacos.console.handler.core.ClusterHandler;
 import com.alibaba.nacos.console.handler.inner.naming.ServiceInnerHandler;
 import com.alibaba.nacos.console.handler.naming.ServiceHandler;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
@@ -124,17 +123,18 @@ public class ServiceProxy {
      * @param pageSize    the size of the page
      * @param namespaceId the namespace ID
      * @param serviceName the service name
+     * @param groupName   the group name
      * @param aggregation whether to aggregate the results
      * @return a JSON node containing the list of subscribers
      * @throws Exception if an error occurs during fetching subscribers
      */
-    public ObjectNode getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName,
+    public ObjectNode getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName, String groupName,
             boolean aggregation) throws Exception {
         ServiceHandler serviceHandler = serviceHandlerMap.get(consoleConfig.getType());
         if (serviceHandler == null) {
             throw new IllegalArgumentException("Invalid deployment type");
         }
-        return serviceHandler.getSubscribers(pageNo, pageSize, namespaceId, serviceName, aggregation);
+        return serviceHandler.getSubscribers(pageNo, pageSize, namespaceId, serviceName, groupName, aggregation);
     }
     
     /**
@@ -165,18 +165,18 @@ public class ServiceProxy {
      * Retrieves the details of a specific service by delegating the operation to the appropriate handler.
      *
      * @param namespaceId             the namespace ID
-     * @param serviceNameWithoutGroup the service name without group
+     * @param serviceName the service name without group
      * @param groupName               the group name
      * @return service detail information
      * @throws NacosException if an error occurs during fetching service details
      */
-    public Object getServiceDetail(String namespaceId, String serviceNameWithoutGroup, String groupName)
+    public Object getServiceDetail(String namespaceId, String serviceName, String groupName)
             throws NacosException {
         ServiceHandler serviceHandler = serviceHandlerMap.get(consoleConfig.getType());
         if (serviceHandler == null) {
             throw new IllegalArgumentException("Invalid deployment type");
         }
-        return serviceHandler.getServiceDetail(namespaceId, serviceNameWithoutGroup, groupName);
+        return serviceHandler.getServiceDetail(namespaceId, serviceName, groupName);
     }
     
     /**

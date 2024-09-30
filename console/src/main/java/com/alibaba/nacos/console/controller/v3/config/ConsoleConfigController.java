@@ -21,7 +21,7 @@ import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
+import com.alibaba.nacos.auth.enums.ApiType;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -42,6 +42,7 @@ import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -289,6 +290,20 @@ public class ConsoleConfigController {
         ParamUtils.checkParam(dataId, group, "datumId", "content");
         
         return Result.success(configProxy.getListeners(dataId, group, namespaceId, sampleTime));
+    }
+    
+    /**
+     * Get subscribe information from client side.
+     */
+    @GetMapping("/listener/ip")
+    @Secured(resource = Constants.LISTENER_CONTROLLER_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
+    public Result<GroupkeyListenserStatus> getAllSubClientConfigByIp(@RequestParam("ip") String ip,
+            @RequestParam(value = "all", required = false) boolean all,
+            @RequestParam(value = "namespaceId", required = false) String namespaceId,
+            @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime, ModelMap modelMap)
+            throws NacosException {
+        GroupkeyListenserStatus result = configProxy.getAllSubClientConfigByIp(ip, all, namespaceId, sampleTime);
+        return Result.success(result);
     }
     
     /**

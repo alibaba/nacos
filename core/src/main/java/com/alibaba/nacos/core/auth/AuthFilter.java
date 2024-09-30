@@ -109,7 +109,8 @@ public class AuthFilter implements Filter {
                 return;
             }
             
-            if (method.isAnnotationPresent(Secured.class) && (authConfigs.isConsoleAuthEnabled() || authConfigs.isAuthEnabled())) {
+            boolean isAuthEnabled = authConfigs.isConsoleAuthEnabled() || authConfigs.isAuthEnabled();
+            if (method.isAnnotationPresent(Secured.class) && isAuthEnabled) {
                 
                 if (Loggers.AUTH.isDebugEnabled()) {
                     Loggers.AUTH.debug("auth start, request: {} {}", req.getMethod(), req.getRequestURI());
