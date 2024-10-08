@@ -80,6 +80,8 @@ public class FieldConstant {
     
     public static final String TAG_ID = "tagId";
     
+    public static final String PUBLISH_TYPE = "publishType";
+    
     public static final String GRAY_NAME = "grayName";
     
     public static final String GRAY_RULE = "grayRule";

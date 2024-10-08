@@ -17,10 +17,13 @@
 package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
+import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
+import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
@@ -41,23 +44,55 @@ public class DumpChangeGrayConfigWorker implements Runnable {
     
     ConfigInfoGrayPersistService configInfoGrayPersistService;
     
+    private final HistoryConfigInfoPersistService historyConfigInfoPersistService;
+    
     int pageSize = 100;
     
-    public DumpChangeGrayConfigWorker(ConfigInfoGrayPersistService configInfoGrayPersistService, Timestamp startTime) {
+    public DumpChangeGrayConfigWorker(ConfigInfoGrayPersistService configInfoGrayPersistService, Timestamp startTime,
+            HistoryConfigInfoPersistService historyConfigInfoPersistService) {
         this.configInfoGrayPersistService = configInfoGrayPersistService;
         this.startTime = startTime;
+        this.historyConfigInfoPersistService = historyConfigInfoPersistService;
     }
     
     @Override
     public void run() {
         try {
-            
             if (!PropertyUtil.isDumpChangeOn()) {
                 LogUtil.DEFAULT_LOG.info("DumpGrayChange task is not open");
                 return;
             }
             Timestamp currentTime = new Timestamp(System.currentTimeMillis());
             LogUtil.DEFAULT_LOG.info("DumpGrayChange start ,from time {},current time {}", startTime, currentTime);
+            
+            LogUtil.DEFAULT_LOG.info("Start to check delete configs from  time {}", startTime);
+            long startDeletedConfigTime = System.currentTimeMillis();
+            long deleteCursorId = 0L;
+            while (true) {
+                List<ConfigInfoStateWrapper> configDeleted = historyConfigInfoPersistService.findDeletedConfig(startTime,
+                        deleteCursorId, pageSize, Constants.GRAY);
+                for (ConfigInfoStateWrapper configInfo : configDeleted) {
+                    String grayName = configInfo.getGrayName();
+                    if (StringUtils.isBlank(grayName)) {
+                        continue;
+                    }
+                    
+                    ConfigInfoStateWrapper configInfoStateWrapper = configInfoGrayPersistService.findConfigInfo4GrayState(configInfo.getDataId(),
+                            configInfo.getGroup(), configInfo.getTenant(), grayName);
+                    if (configInfoStateWrapper == null) {
+                        ConfigCacheService.removeGray(configInfo.getDataId(), configInfo.getGroup(),
+                                configInfo.getTenant(), grayName);
+                        LogUtil.DEFAULT_LOG.info("[dump-gray-delete-ok], groupKey: {}, tenant: {}, grayName: {}",
+                                GroupKey2.getKey(configInfo.getDataId(), configInfo.getGroup()), configInfo.getTenant(), grayName);
+                    }
+                }
+                if (configDeleted.size() < pageSize) {
+                    break;
+                }
+                deleteCursorId = configDeleted.get(configDeleted.size() - 1).getId();
+            }
+            LogUtil.DEFAULT_LOG.info("Check delete configs finished,cost:{}",
+                    System.currentTimeMillis() - startDeletedConfigTime);
             
             LogUtil.DEFAULT_LOG.info("Check changeGrayConfig start");
             long startChangeConfigTime = System.currentTimeMillis();
