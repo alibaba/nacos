@@ -175,8 +175,24 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     
     protected abstract String getSource();
     
+    
     private boolean invokeSourceAllowCheck(Payload grpcRequest) {
         return requestHandlerRegistry.checkSourceInvokeAllowed(grpcRequest.getMetadata().getType(), getSource());
+    }
+    
+    protected void handleCommonRequest(Payload grpcRequest, StreamObserver<Payload> responseObserver) {
+        if (!invokeSourceAllowCheck(grpcRequest)) {
+            Payload payloadResponse = GrpcUtils.convert(ErrorResponse.build(NacosException.BAD_GATEWAY,
+                    String.format(" invoke %s from %s is forbidden", grpcRequest.getMetadata().getType(),
+                            this.getSource())));
+            responseObserver.onNext(payloadResponse);
+            
+            responseObserver.onCompleted();
+            MetricsMonitor.recordGrpcRequestEvent(grpcRequest.getMetadata().getType(), false,
+                    NacosException.BAD_GATEWAY, null, null, 0);
+        } else {
+            grpcCommonRequestAcceptor.request(grpcRequest, responseObserver);
+        }
     }
     
     private void addServices(MutableHandlerRegistry handlerRegistry, ServerInterceptor... serverInterceptor) {
@@ -191,11 +207,7 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         
         final ServerCallHandler<Payload, Payload> payloadHandler = ServerCalls.asyncUnaryCall(
                 (request, responseObserver) -> {
-                    if (!invokeSourceAllowCheck(request)) {
-                        sourceCheckFail(request, responseObserver);
-                    } else {
-                        grpcCommonRequestAcceptor.request(request, responseObserver);
-                    }
+                    handleCommonRequest(request, responseObserver);
                 });
         
         final ServerServiceDefinition serviceDefOfUnaryPayload = ServerServiceDefinition.builder(
@@ -217,16 +229,6 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                 GrpcServerConstants.REQUEST_BI_STREAM_SERVICE_NAME).addMethod(biStreamMethod, biStreamHandler).build();
         handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfBiStream, serverInterceptor));
         
-    }
-    
-    private void sourceCheckFail(Payload grpcRequest, StreamObserver<Payload> responseObserver) {
-        Payload payloadResponse = GrpcUtils.convert(
-                ErrorResponse.build(NacosException.BAD_GATEWAY, "Cant invoke this type of request from this source"));
-        responseObserver.onNext(payloadResponse);
-        
-        responseObserver.onCompleted();
-        MetricsMonitor.recordGrpcRequestEvent(grpcRequest.getMetadata().getType(), false, NacosException.BAD_GATEWAY,
-                null, null, 0);
     }
     
     @Override
