@@ -59,4 +59,11 @@ public class Constants {
         
     }
     
+    public static class Address {
+        
+        public static final int ENDPOINT_SERVER_LIST_PROVIDER_ORDER = 500;
+        
+        public static final int ADDRESS_SERVER_LIST_PROVIDER_ORDER = 499;
+    }
+    
 }

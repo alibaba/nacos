@@ -28,9 +28,9 @@ import com.alibaba.nacos.client.config.filter.impl.ConfigRequest;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
+import com.alibaba.nacos.client.config.impl.ConfigServerListManager;
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
 import com.alibaba.nacos.client.config.impl.LocalEncryptedDataKeyProcessor;
-import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -80,7 +80,7 @@ public class NacosConfigService implements ConfigService {
         
         initNamespace(clientProperties);
         this.configFilterChainManager = new ConfigFilterChainManager(clientProperties.asProperties());
-        ServerListManager serverListManager = new ServerListManager(clientProperties);
+        ConfigServerListManager serverListManager = new ConfigServerListManager(clientProperties);
         serverListManager.start();
         
         this.worker = new ClientWorker(this.configFilterChainManager, serverListManager, clientProperties);

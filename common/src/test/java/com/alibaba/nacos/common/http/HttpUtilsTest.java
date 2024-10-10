@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -46,6 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -310,5 +312,17 @@ class HttpUtilsTest {
         assertTrue(HttpUtils.isTimeoutException(new SocketTimeoutException()));
         assertTrue(HttpUtils.isTimeoutException(new ConnectTimeoutException()));
         assertTrue(HttpUtils.isTimeoutException(new NacosRuntimeException(0, new TimeoutException())));
+    }
+    
+    @Test
+    void testBuilderHeader() {
+        Header header = HttpUtils.builderHeader("Test");
+        assertNotNull(header);
+        assertEquals(header.getValue(HttpHeaderConsts.CLIENT_VERSION_HEADER), VersionUtils.version);
+        assertEquals(header.getValue(HttpHeaderConsts.USER_AGENT_HEADER), VersionUtils.getFullClientVersion());
+        assertEquals("gzip,deflate,sdch", header.getValue(HttpHeaderConsts.ACCEPT_ENCODING));
+        assertEquals("Keep-Alive", header.getValue(HttpHeaderConsts.CONNECTION));
+        assertNotNull(header.getValue(HttpHeaderConsts.REQUEST_ID));
+        assertEquals("Test", header.getValue(HttpHeaderConsts.REQUEST_MODULE));
     }
 }

@@ -267,4 +267,9 @@ class ParamUtilTest {
         String longParameter = "testPass";
         assertEquals("te****ss", ParamUtil.desensitiseParameter(longParameter));
     }
+    
+    @Test
+    void testGetNameSuffixByServerIps() {
+        assertEquals("1.1.1.1-2.2.2.2_8848", ParamUtil.getNameSuffixByServerIps("http://1.1.1.1", "2.2.2.2:8848"));
+    }
 }
