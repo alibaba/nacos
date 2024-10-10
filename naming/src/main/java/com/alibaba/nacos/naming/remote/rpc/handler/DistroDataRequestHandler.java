@@ -17,12 +17,14 @@
 package com.alibaba.nacos.naming.remote.rpc.handler;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.core.remote.RequestHandler;
+import com.alibaba.nacos.core.remote.grpc.InvokeSource;
 import com.alibaba.nacos.naming.cluster.remote.request.DistroDataRequest;
 import com.alibaba.nacos.naming.cluster.remote.response.DistroDataResponse;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientDataProcessor;
@@ -34,6 +36,7 @@ import org.springframework.stereotype.Component;
  *
  * @author xiweng.yy
  */
+@InvokeSource(source = {RemoteConstants.LABEL_SOURCE_CLUSTER})
 @Component
 public class DistroDataRequestHandler extends RequestHandler<DistroDataRequest, DistroDataResponse> {
     

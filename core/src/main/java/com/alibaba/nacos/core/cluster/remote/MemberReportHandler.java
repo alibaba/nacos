@@ -19,6 +19,7 @@
 package com.alibaba.nacos.core.cluster.remote;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.core.cluster.Member;
@@ -27,6 +28,7 @@ import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.remote.request.MemberReportRequest;
 import com.alibaba.nacos.core.cluster.remote.response.MemberReportResponse;
 import com.alibaba.nacos.core.remote.RequestHandler;
+import com.alibaba.nacos.core.remote.grpc.InvokeSource;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.stereotype.Component;
 
@@ -36,6 +38,7 @@ import org.springframework.stereotype.Component;
  * @author : huangtianhui
  */
 @Component
+@InvokeSource(source = {RemoteConstants.LABEL_SOURCE_CLUSTER})
 public class MemberReportHandler extends RequestHandler<MemberReportRequest, MemberReportResponse> {
     
     private final ServerMemberManager memberManager;

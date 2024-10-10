@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.remote.request.ServerReloadRequest;
 import com.alibaba.nacos.api.remote.response.ServerReloadResponse;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandler;
+import com.alibaba.nacos.core.remote.grpc.InvokeSource;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.RemoteUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +38,7 @@ import java.util.Map;
  * @author liuzunfei
  * @version $Id: ServerReloaderRequestHandler.java, v 0.1 2020年11月09日 4:38 PM liuzunfei Exp $
  */
+@InvokeSource(source = {RemoteConstants.LABEL_SOURCE_CLUSTER})
 @Component
 public class ServerReloaderRequestHandler extends RequestHandler<ServerReloadRequest, ServerReloadResponse> {
     

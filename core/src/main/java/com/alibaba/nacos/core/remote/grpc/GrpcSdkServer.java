@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.core.remote.grpc.filter.NacosGrpcServerTransportFilter;
 import com.alibaba.nacos.core.remote.grpc.filter.NacosGrpcServerTransportFilterServiceLoader;
 import com.alibaba.nacos.core.remote.grpc.interceptor.NacosGrpcServerInterceptor;
@@ -125,4 +126,8 @@ public class GrpcSdkServer extends BaseGrpcServer {
         return result;
     }
     
+    @Override
+    protected String getSource() {
+        return RemoteConstants.LABEL_SOURCE_SDK;
+    }
 }
