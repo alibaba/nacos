@@ -110,7 +110,7 @@
         
         <Logger name="com.alibaba.nacos.shaded.io.grpc" level="${nacosClientProperty:com.alibaba.nacos.config.log.level:-info}"
             additivity="false">
-            <appender-ref ref="ASYNC-REMOTE"/>
+            <appender-ref ref="ASYNC_REMOTE"/>
         </Logger>
         
         <Logger name="com.alibaba.nacos.client.config" level="${nacosClientProperty:com.alibaba.nacos.config.log.level:-info}"

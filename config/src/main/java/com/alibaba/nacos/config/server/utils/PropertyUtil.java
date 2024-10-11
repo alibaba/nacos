@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
+
 /**
  * Properties util.
  *
@@ -100,7 +102,12 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     private static int correctUsageDelay = 10 * 60;
     
     private static boolean dumpChangeOn = true;
-    
+
+    /**
+     * The number of days to retain the configuration history, the default is 30 days.
+     */
+    private static int configRententionDays = 30;
+
     /**
      * dumpChangeWorkerInterval, default 30 seconds.
      */
@@ -241,7 +248,26 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     public static void setCorrectUsageDelay(int correctUsageDelay) {
         PropertyUtil.correctUsageDelay = correctUsageDelay;
     }
-    
+
+    public static int getConfigRententionDays() {
+        return configRententionDays;
+    }
+
+    private void setConfigRententionDays() {
+        String val =  getProperty(PropertiesConstant.CONFIG_RENTENTION_DAYS);
+        if (null != val) {
+            int tmp = 0;
+            try {
+                tmp = Integer.parseInt(val);
+                if (tmp > 0) {
+                    PropertyUtil.configRententionDays = tmp;
+                }
+            } catch (NumberFormatException nfe) {
+                FATAL_LOG.error("read nacos.config.retention.days wrong", nfe);
+            }
+        }
+    }
+
     public static boolean isStandaloneMode() {
         return EnvUtil.getStandaloneMode();
     }
@@ -275,6 +301,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
             setDefaultMaxAggrSize(getInt(PropertiesConstant.DEFAULT_MAX_AGGR_SIZE, defaultMaxAggrSize));
             setCorrectUsageDelay(getInt(PropertiesConstant.CORRECT_USAGE_DELAY, correctUsageDelay));
             setInitialExpansionPercent(getInt(PropertiesConstant.INITIAL_EXPANSION_PERCENT, initialExpansionPercent));
+            setConfigRententionDays();
             setDumpChangeOn(getBoolean(PropertiesConstant.DUMP_CHANGE_ON, dumpChangeOn));
             setDumpChangeWorkerInterval(
                     getLong(PropertiesConstant.DUMP_CHANGE_WORKER_INTERVAL, dumpChangeWorkerInterval));

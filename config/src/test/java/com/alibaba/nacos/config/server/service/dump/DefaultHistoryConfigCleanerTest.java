@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -90,13 +91,20 @@ public class DefaultHistoryConfigCleanerTest {
     public void testGetRetentionDays() throws Exception {
         Method method = DefaultHistoryConfigCleaner.class.getDeclaredMethod("getRetentionDays");
         method.setAccessible(true);
+
+        Method setRetentionDaysMethod = PropertyUtil.class.getDeclaredMethod("setConfigRententionDays");
+        setRetentionDaysMethod.setAccessible(true);
+
         envUtilMockedStatic.when(() -> EnvUtil.getProperty("nacos.config.retention.days")).thenReturn("-1");
+        setRetentionDaysMethod.invoke(new PropertyUtil());
         assertEquals((int) method.invoke(defaultHistoryConfigCleaner), 30);
         
         envUtilMockedStatic.when(() -> EnvUtil.getProperty("nacos.config.retention.days")).thenReturn("30");
+        setRetentionDaysMethod.invoke(new PropertyUtil());
         assertEquals((int) method.invoke(defaultHistoryConfigCleaner), 30);
         
         envUtilMockedStatic.when(() -> EnvUtil.getProperty("nacos.config.retention.days")).thenReturn("1");
+        setRetentionDaysMethod.invoke(new PropertyUtil());
         assertEquals((int) method.invoke(defaultHistoryConfigCleaner), 1);
     }
 }
