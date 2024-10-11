@@ -19,9 +19,16 @@ package com.alibaba.nacos.core.remote.grpc;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
+/**
+ * annotation for invoke source.
+ */
 @Retention(RetentionPolicy.RUNTIME)
 public @interface InvokeSource {
     
-
+    
+    /**
+     * allowed sources.
+     * @return
+     */
     String[] source();
 }

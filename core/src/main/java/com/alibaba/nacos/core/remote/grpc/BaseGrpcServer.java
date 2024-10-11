@@ -79,7 +79,6 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     @Autowired
     private RequestHandlerRegistry requestHandlerRegistry;
     
-    
     @Override
     public ConnectionType getConnectionType() {
         return ConnectionType.GRPC;
@@ -173,8 +172,12 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         return Collections.singletonList(new AddressTransportFilter(connectionManager));
     }
     
+    /**
+     * get source for the request.
+     *
+     * @return
+     */
     protected abstract String getSource();
-    
     
     private boolean invokeSourceAllowCheck(Payload grpcRequest) {
         return requestHandlerRegistry.checkSourceInvokeAllowed(grpcRequest.getMetadata().getType(), getSource());

@@ -115,7 +115,7 @@ class GrpcServerTest {
         Mockito.when(mock.checkSourceInvokeAllowed(ConfigChangeClusterSyncRequest.class.getSimpleName(),
                 grpcSdkServer.getSource())).thenReturn(true);
         grpcSdkServer.handleCommonRequest(convert, streamObserverMock);
-        Mockito.verify(mockAcceptor, Mockito.times(1)).request(eq(convert),eq(streamObserverMock));
+        Mockito.verify(mockAcceptor, Mockito.times(1)).request(eq(convert), eq(streamObserverMock));
         
     }
 }
