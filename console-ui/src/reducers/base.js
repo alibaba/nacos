@@ -27,6 +27,7 @@ const initialState = {
   consoleUiEnable: '',
   authAdminRequest: '',
   guideMsg: '',
+  configRetentionDays: 30, // config default retention days is 30
 };
 
 /**
@@ -62,6 +63,7 @@ const getState = () => dispatch =>
           authAdminRequest: res.auth_admin_request,
           consoleUiEnable: res.console_ui_enabled,
           startupMode: res.startup_mode,
+          configRetentionDays: res.config_retention_days,
         },
       });
     })
