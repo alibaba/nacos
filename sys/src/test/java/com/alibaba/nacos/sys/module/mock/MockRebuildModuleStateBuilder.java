@@ -19,15 +19,25 @@ package com.alibaba.nacos.sys.module.mock;
 import com.alibaba.nacos.sys.module.ModuleState;
 import com.alibaba.nacos.sys.module.ModuleStateBuilder;
 
-public class ExceptionMockModuleStateBuilder implements ModuleStateBuilder {
+import java.util.concurrent.atomic.AtomicInteger;
+
+public class MockRebuildModuleStateBuilder implements ModuleStateBuilder {
+    
+    private final AtomicInteger count = new AtomicInteger();
     
     @Override
     public ModuleState build() {
-        throw new RuntimeException("test");
+        ModuleState result = new ModuleState("rebuild-mock");
+        result.newState("re-test", count.incrementAndGet()).newState("mock", true);
+        return result;
     }
     
     @Override
     public boolean isCacheable() {
         return false;
+    }
+    
+    public AtomicInteger getCount() {
+        return count;
     }
 }

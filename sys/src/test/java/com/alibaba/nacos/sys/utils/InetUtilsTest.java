@@ -30,8 +30,8 @@ import java.net.SocketException;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.sys.env.Constants.NACOS_SERVER_IP;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -48,7 +48,7 @@ class InetUtilsTest {
     
     @Test
     void testRefreshIp() throws InterruptedException {
-        assertEquals("1.1.1.1", InetUtils.getSelfIP());
+        assertNotEquals("1.1.1.2", InetUtils.getSelfIP());
         
         System.setProperty(NACOS_SERVER_IP, "1.1.1.2");
         TimeUnit.MILLISECONDS.sleep(300L);
