@@ -8,6 +8,7 @@ jobs:
   thanks-and-hint-to-document:
     runs-on: ubuntu-20.04
     permissions:
+      issues: write
       pull-requests: write
     name: Say thanks for the PR and hint to document
     steps:
