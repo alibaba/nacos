@@ -1,0 +1,20 @@
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  thanks-and-hint-to-document:
+    runs-on: ubuntu-20.04
+    name: Say thanks for the PR and hint to document
+    steps:
+      - name: comment on the pull request
+        uses: hasura/comment-progress@v2.3.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: "KomachiSion/nacos"
+          number: ${{ github.event.number }}
+          id: thank-you-comment
+          message: |
+            Thanks for your this PR.  :pray: 
+            Please check again for your PR changes whether contains any usage/api/configuration change such as `Add new API `, `Add new configuration`, `Change default value of configuration`.
+            If so, please add or update documents in `docs/next/` for repository [nacos-group/nacos-group.github.io](https://github.com/nacos-group/nacos-group.github.io/tree/develop-astro-nacos/src/content/docs/next)
