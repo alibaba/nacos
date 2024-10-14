@@ -19,6 +19,7 @@ package com.alibaba.nacos.sys.env;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.plugin.environment.CustomEnvironmentPluginManager;
 import com.alibaba.nacos.plugin.environment.spi.CustomEnvironmentPluginService;
+import com.alibaba.nacos.sys.utils.DiskUtils;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -348,6 +349,7 @@ class EnvUtilTest {
     
     @Test
     void testWriteClusterConf() throws IOException {
+        DiskUtils.forceMkdir(EnvUtil.getNacosHome() + "/conf");
         EnvUtil.writeClusterConf("127.0.0.1");
         File file = new File(EnvUtil.getNacosHome() + "/conf/cluster.conf");
         assertTrue(file.exists());
