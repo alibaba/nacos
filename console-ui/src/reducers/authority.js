@@ -51,35 +51,35 @@ const successMsg = res => {
  * @param {*} params
  */
 const getUsers = params => dispatch =>
-  request.get('v1/auth/users', { params }).then(data => dispatch({ type: USER_LIST, data }));
+  request.get('v3/auth/user/list', { params }).then(data => dispatch({ type: USER_LIST, data: data.data }));
 
 /**
  * 创建用户
  * @param {*} param0
  */
 const createUser = ([username, password]) =>
-  request.post('v1/auth/users', { username, password }).then(res => successMsg(res));
+  request.post('v3/auth/user', { username, password }).then(res => successMsg(res));
 
 /**
  * 通过username 模糊匹配
  * @param {*} param0
  */
 const searchUsers = username =>
-  request.get('v1/auth/users/search', { params: { username } }).then(res => successMsg(res));
+  request.get('v3/auth/user/search', { params: { username } }).then(res => successMsg(res.data));
 
 /**
  * 删除用户
  * @param {*} username
  */
 const deleteUser = username =>
-  request.delete('v1/auth/users', { params: { username } }).then(res => successMsg(res));
+  request.delete('v3/auth/user', { params: { username } }).then(res => successMsg(res));
 
 /**
  * 重置密码
  * @param {*} param0
  */
 const passwordReset = ([username, newPassword]) =>
-  request.put('v1/auth/users', { username, newPassword }).then(res => successMsg(res));
+  request.put('v3/auth/user', { username, newPassword }).then(res => successMsg(res));
 
 /**
  * 角色列表
@@ -87,28 +87,28 @@ const passwordReset = ([username, newPassword]) =>
  */
 
 const getRoles = params => dispatch =>
-  request.get('v1/auth/roles', { params }).then(data => dispatch({ type: ROLE_LIST, data }));
+  request.get('v3/auth/role/list', { params }).then(data => dispatch({ type: ROLE_LIST, data: data.data }));
 
 /**
  * 通过username 模糊匹配
  * @param {*} param0
  */
 const searchRoles = role =>
-  request.get('v1/auth/roles/search', { params: { role } }).then(res => successMsg(res));
+  request.get('v3/auth/role/search', { params: { role } }).then(res => successMsg(res.data));
 
 /**
  * 创建角色
  * @param {*} param0
  */
 const createRole = ([role, username]) =>
-  request.post('v1/auth/roles', { role, username }).then(res => successMsg(res));
+  request.post('v3/auth/role', { role, username }).then(res => successMsg(res));
 
 /**
  * 删除角色
  * @param {*} param0
  */
 const deleteRole = role =>
-  request.delete('v1/auth/roles', { params: role }).then(res => successMsg(res));
+  request.delete('v3/auth/role', { params: role }).then(res => successMsg(res));
 
 /**
  * 权限列表
@@ -116,22 +116,22 @@ const deleteRole = role =>
  */
 const getPermissions = params => dispatch =>
   request
-    .get('v1/auth/permissions', { params })
-    .then(data => dispatch({ type: PERMISSIONS_LIST, data }));
+    .get('v3/auth/permission/list', { params })
+    .then(data => dispatch({ type: PERMISSIONS_LIST, data: data.data }));
 
 /**
  * 给角色添加权限
  * @param {*} param0
  */
 const createPermission = ([role, resource, action]) =>
-  request.post('v1/auth/permissions', { role, resource, action }).then(res => successMsg(res));
+  request.post('v3/auth/permission', { role, resource, action }).then(res => successMsg(res));
 
 /**
  * 删除权限
  * @param {*} param0
  */
 const deletePermission = permission =>
-  request.delete('v1/auth/permissions', { params: permission }).then(res => successMsg(res));
+  request.delete('v3/auth/permission', { params: permission }).then(res => successMsg(res));
 
 export default (state = initialState, action) => {
   switch (action.type) {

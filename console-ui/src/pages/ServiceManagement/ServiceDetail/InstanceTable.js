@@ -69,7 +69,7 @@ class InstanceTable extends React.Component {
     if (!clusterName) return;
     const { pageSize, pageNum } = this.state;
     request({
-      url: 'v1/ns/catalog/instances',
+      url: 'v3/console/ns/instance/list',
       data: {
         serviceName,
         clusterName,
@@ -78,7 +78,7 @@ class InstanceTable extends React.Component {
         pageNo: pageNum,
       },
       beforeSend: () => this.openLoading(),
-      success: instance => this.setState({ instance }),
+      success: ({ data: instance }) => this.setState({ instance }),
       complete: () => this.closeLoading(),
     });
   }
@@ -93,7 +93,7 @@ class InstanceTable extends React.Component {
     const { clusterName, serviceName, groupName } = this.props;
     request({
       method: 'PUT',
-      url: 'v1/ns/instance',
+      url: 'v3/console/ns/instance',
       data: {
         serviceName,
         clusterName,
@@ -107,7 +107,7 @@ class InstanceTable extends React.Component {
       },
       dataType: 'text',
       beforeSend: () => this.openLoading(),
-      success: () => {
+      success: ({ data }) => {
         const newVal = Object.assign({}, instance);
         newVal.list[index].enabled = !enabled;
         this.setState({ instance: newVal });

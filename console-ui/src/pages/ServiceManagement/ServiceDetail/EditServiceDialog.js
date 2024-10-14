@@ -86,7 +86,7 @@ class EditServiceDialog extends React.Component {
     if (!this.validator({ name, protectThreshold })) return;
     request({
       method: isCreate ? 'POST' : 'PUT',
-      url: 'v1/ns/service',
+      url: 'v3/console/ns/service',
       data: {
         serviceName: name,
         groupName: groupName || 'DEFAULT_GROUP',
@@ -97,7 +97,7 @@ class EditServiceDialog extends React.Component {
       dataType: 'text',
       beforeSend: () => this.setState({ loading: true }),
       success: res => {
-        if (res !== 'ok') {
+        if (res.data !== 'ok') {
           Message.error(res);
           return;
         }
@@ -107,7 +107,7 @@ class EditServiceDialog extends React.Component {
           this.props.getServiceDetail();
         }
       },
-      error: res => Message.error(res.responseText || res.statusText),
+      error: res => Message.error(res.data.responseText || res.data.statusText),
       complete: () => this.setState({ loading: false }),
     });
     this.hide();
@@ -136,9 +136,9 @@ class EditServiceDialog extends React.Component {
   getSelectorTypes() {
     request({
       method: 'GET',
-      url: 'v1/ns/service/selector/types',
+      url: 'v3/console/ns/service/selector/types',
       success: response => {
-        if (response.code !== 200) {
+        if (response.code !== 0) {
           Message.error(response.message);
           return;
         }

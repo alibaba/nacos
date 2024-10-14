@@ -72,9 +72,9 @@ class ServiceDetail extends React.Component {
   getServiceDetail() {
     const { serviceName, groupName } = this.state;
     request({
-      url: `v1/ns/catalog/service?serviceName=${serviceName}&groupName=${groupName}`,
+      url: `v3/console/ns/service?serviceName=${serviceName}&groupName=${groupName}`,
       beforeSend: () => this.openLoading(),
-      success: ({ clusters = [], service = {} }) => this.setState({ service, clusters }),
+      success: ({ data: { clusters = [], service = {} } }) => this.setState({ service, clusters }),
       error: e => Message.error(e.responseText || 'error'),
       complete: () => this.closeLoading(),
     });

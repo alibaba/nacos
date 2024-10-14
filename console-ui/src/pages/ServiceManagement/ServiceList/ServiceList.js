@@ -103,8 +103,8 @@ class ServiceList extends React.Component {
     });
     this.openLoading();
     request({
-      url: `v1/ns/catalog/services?${parameter.join('&')}`,
-      success: ({ count = 0, serviceList = [] } = {}) => {
+      url: `v3/console/ns/service/list?${parameter.join('&')}`,
+      success: ({ data: { count = 0, serviceList = [] } = {} }) => {
         this.setState({
           dataSource: serviceList,
           total: count,
@@ -158,17 +158,17 @@ class ServiceList extends React.Component {
       onOk: () => {
         request({
           method: 'DELETE',
-          url: `v1/ns/service?serviceName=${service.name}&groupName=${service.groupName}`,
+          url: `v3/console/ns/service?serviceName=${service.name}&groupName=${service.groupName}`,
           dataType: 'text',
           beforeSend: () => this.openLoading(),
           success: res => {
-            if (res !== 'ok') {
+            if (res.data !== 'ok') {
               Message.error(res);
               return;
             }
             this.queryServiceList();
           },
-          error: res => Message.error(res.responseText || res.statusText),
+          error: res => Message.error(res.data.responseText || res.data.statusText),
           complete: () => this.closeLoading(),
         });
       },

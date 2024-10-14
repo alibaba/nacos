@@ -33,13 +33,13 @@ const initialState = {
  * 用户登录
  * @param {*} param0
  */
-const login = user => request.post('v1/auth/users/login', user);
-const admin = user => request.post('v1/auth/users/admin', user);
+const login = user => request.post('v3/auth/user/login', user);
+const admin = user => request.post('v3/auth/user/admin', user);
 
 /**
  * 单独在login处调用 获取提示信息
  */
-const guide = () => request.get('v1/console/server/guide');
+const guide = () => request.get('v3/console/server/guide');
 
 /**
  * 单独在login调用 判断是否可以登陆
@@ -82,7 +82,7 @@ const getState = () => dispatch =>
 
 const getNotice = () => dispatch =>
   request
-    .get('v1/console/server/announcement?language=' + localStorage.getItem(LANGUAGE_KEY))
+    .get('v3/console/server/announcement?language=' + localStorage.getItem(LANGUAGE_KEY))
     .then(res => {
       dispatch({
         type: GET_NOTICE,
@@ -102,7 +102,7 @@ const getNotice = () => dispatch =>
 
 const getGuide = () => dispatch =>
   request
-    .get('v1/console/server/guide')
+    .get('v3/console/server/guide')
     .then(res => {
       dispatch({
         type: SERVER_GUIDE,
