@@ -8,7 +8,6 @@ jobs:
   thanks-and-hint-to-document:
     runs-on: ubuntu-20.04
     permissions:
-      issues: write
       pull-requests: write
     name: Say thanks for the PR and hint to document
     steps:
@@ -18,7 +17,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: "alibaba/nacos"
           number: ${{ github.event.number }}
-          id: thank-you-comment
+          id: thanks-and-hint-to-document
           recreate: true
           message: |
             Thanks for your this PR.  :pray: 
