@@ -13,7 +13,7 @@ jobs:
         uses: hasura/comment-progress@v2.3.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          repository: "alibaba/nacos"
+          repository: "KomachiSion/nacos"
           number: ${{ github.event.number }}
           id: thank-you-comment
           recreate: true
