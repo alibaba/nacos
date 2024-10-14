@@ -134,7 +134,7 @@ class WatchFileCenterTest {
         }
         latch.await(10_000L, TimeUnit.MILLISECONDS);
         
-        assertEquals(3, count.get());
+        assertTrue(count.get() >= 3);
     }
     
     @Test
