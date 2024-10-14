@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.sys.module.mock;
+package com.alibaba.nacos.sys.filter.mock;
 
-import com.alibaba.nacos.sys.module.ModuleState;
-import com.alibaba.nacos.sys.module.ModuleStateBuilder;
+import com.alibaba.nacos.sys.filter.NacosPackageExcludeFilter;
 
-public class ExceptionMockModuleStateBuilder implements ModuleStateBuilder {
+import java.util.Set;
+
+public class MockNacosPackageExcludeFilter implements NacosPackageExcludeFilter {
     
     @Override
-    public ModuleState build() {
-        throw new RuntimeException("test");
+    public String getResponsiblePackagePrefix() {
+        return "com.alibaba.nacos.sys.filter.mock";
     }
     
     @Override
-    public boolean isCacheable() {
-        return false;
+    public boolean isExcluded(String className, Set<String> annotationNames) {
+        return className.equals(MockNacosPackageExcludeFilter.class.getCanonicalName());
     }
 }

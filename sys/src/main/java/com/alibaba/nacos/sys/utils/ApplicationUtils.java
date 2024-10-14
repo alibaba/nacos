@@ -88,7 +88,7 @@ public class ApplicationUtils implements ApplicationContextInitializer<Configura
     }
     
     public static boolean containsBeanDefinition(String beanName) {
-        return applicationContext.containsLocalBean(beanName);
+        return applicationContext.containsBeanDefinition(beanName);
     }
     
     public static int getBeanDefinitionCount() {
