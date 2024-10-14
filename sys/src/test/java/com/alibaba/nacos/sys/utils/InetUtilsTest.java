@@ -23,10 +23,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.sys.env.Constants.NACOS_SERVER_IP;
@@ -87,5 +89,50 @@ class InetUtilsTest {
         
         when(nic.isUp()).thenThrow(new SocketException());
         assertFalse(InetUtils.isUp(nic));
+    }
+    
+    @Test
+    void testIsPreferredAddress() {
+        try {
+            ReflectionTestUtils.setField(InetUtils.class, "useOnlySiteLocalInterface", true);
+            InetAddress inetAddress = mock(InetAddress.class);
+            assertFalse((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class, "isPreferredAddress", inetAddress));
+            when(inetAddress.isSiteLocalAddress()).thenReturn(true);
+            assertTrue((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class, "isPreferredAddress", inetAddress));
+        } finally {
+            ReflectionTestUtils.setField(InetUtils.class, "useOnlySiteLocalInterface", false);
+        }
+    }
+    
+    @Test
+    void testIsPreferredAddressForPreferredNetwork() {
+        List<String> preferredNetworks = (List<String>) ReflectionTestUtils.getField(InetUtils.class,
+                "PREFERRED_NETWORKS");
+        try {
+            InetAddress inetAddress = mock(InetAddress.class);
+            preferredNetworks.add("192.168.1.*");
+            preferredNetworks.add("192.168.2");
+            when(inetAddress.getHostAddress()).thenReturn("192.168.1.1");
+            assertTrue((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class, "isPreferredAddress", inetAddress));
+            when(inetAddress.getHostAddress()).thenReturn("192.168.2.1");
+            assertTrue((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class, "isPreferredAddress", inetAddress));
+            when(inetAddress.getHostAddress()).thenReturn("10.10.10.10");
+            assertFalse((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class, "isPreferredAddress", inetAddress));
+        } finally {
+            preferredNetworks.clear();
+        }
+    }
+    
+    @Test
+    void testIgnoreInterface() {
+        List<String> ignoreInterfaces = (List<String>) ReflectionTestUtils.getField(InetUtils.class,
+                "IGNORED_INTERFACES");
+        try {
+            ignoreInterfaces.add("eth.*");
+            assertTrue((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class, "ignoreInterface", "eth1"));
+            assertFalse((boolean) ReflectionTestUtils.invokeMethod(InetUtils.class, "ignoreInterface", "lo0"));
+        } finally {
+            ignoreInterfaces.clear();
+        }
     }
 }

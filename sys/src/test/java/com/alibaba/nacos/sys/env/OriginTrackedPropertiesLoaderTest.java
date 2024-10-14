@@ -63,28 +63,28 @@ class OriginTrackedPropertiesLoaderTest {
     void getSimpleProperty() {
         OriginTrackedValue value = getFromFirst("test");
         assertEquals("properties", getValue(value));
-        assertEquals("11:6", getLocation(value));
+        assertEquals("27:6", getLocation(value));
     }
     
     @Test
     void getSimplePropertyWithColonSeparator() {
         OriginTrackedValue value = getFromFirst("test-colon-separator");
         assertEquals("my-property", getValue(value));
-        assertEquals("15:23", getLocation(value));
+        assertEquals("31:23", getLocation(value));
     }
     
     @Test
     void getPropertyWithSeparatorSurroundedBySpaces() {
         OriginTrackedValue value = getFromFirst("blah");
         assertEquals("hello world", getValue(value));
-        assertEquals("2:12", getLocation(value));
+        assertEquals("18:12", getLocation(value));
     }
     
     @Test
     void getUnicodeProperty() {
         OriginTrackedValue value = getFromFirst("test-unicode");
         assertEquals("properties人&test", getValue(value));
-        assertEquals("12:14", getLocation(value));
+        assertEquals("28:14", getLocation(value));
     }
     
     @Test
@@ -97,63 +97,63 @@ class OriginTrackedPropertiesLoaderTest {
     void getEscapedProperty() {
         OriginTrackedValue value = getFromFirst("test=property");
         assertEquals("helloworld", getValue(value));
-        assertEquals("14:15", getLocation(value));
+        assertEquals("30:15", getLocation(value));
     }
     
     @Test
     void getPropertyWithTab() {
         OriginTrackedValue value = getFromFirst("test-tab-property");
         assertEquals("foo\tbar", getValue(value));
-        assertEquals("16:19", getLocation(value));
+        assertEquals("32:19", getLocation(value));
     }
     
     @Test
     void getPropertyWithBang() {
         OriginTrackedValue value = getFromFirst("test-bang-property");
         assertEquals("foo!", getValue(value));
-        assertEquals("34:20", getLocation(value));
+        assertEquals("50:20", getLocation(value));
     }
     
     @Test
     void getPropertyWithValueComment() {
         OriginTrackedValue value = getFromFirst("test-property-value-comment");
         assertEquals("foo !bar #foo", getValue(value));
-        assertEquals("36:29", getLocation(value));
+        assertEquals("52:29", getLocation(value));
     }
     
     @Test
     void getPropertyWithMultilineImmediateBang() {
         OriginTrackedValue value = getFromFirst("test-multiline-immediate-bang");
         assertEquals("!foo", getValue(value));
-        assertEquals("39:1", getLocation(value));
+        assertEquals("55:1", getLocation(value));
     }
     
     @Test
     void getPropertyWithCarriageReturn() {
         OriginTrackedValue value = getFromFirst("test-return-property");
         assertEquals("foo\rbar", getValue(value));
-        assertEquals("17:22", getLocation(value));
+        assertEquals("33:22", getLocation(value));
     }
     
     @Test
     void getPropertyWithNewLine() {
         OriginTrackedValue value = getFromFirst("test-newline-property");
         assertEquals("foo\nbar", getValue(value));
-        assertEquals("18:23", getLocation(value));
+        assertEquals("34:23", getLocation(value));
     }
     
     @Test
     void getPropertyWithFormFeed() {
         OriginTrackedValue value = getFromFirst("test-form-feed-property");
         assertEquals("foo\fbar", getValue(value));
-        assertEquals("19:25", getLocation(value));
+        assertEquals("35:25", getLocation(value));
     }
     
     @Test
     void getPropertyWithWhiteSpace() {
         OriginTrackedValue value = getFromFirst("test-whitespace-property");
         assertEquals("foo   bar", getValue(value));
-        assertEquals("20:32", getLocation(value));
+        assertEquals("36:32", getLocation(value));
     }
     
     @Test
@@ -168,14 +168,14 @@ class OriginTrackedPropertiesLoaderTest {
     void getMultiline() {
         OriginTrackedValue value = getFromFirst("test-multiline");
         assertEquals("ab\\c", getValue(value));
-        assertEquals("21:17", getLocation(value));
+        assertEquals("37:17", getLocation(value));
     }
     
     @Test
     void getImmediateMultiline() {
         OriginTrackedValue value = getFromFirst("test-multiline-immediate");
         assertEquals("foo", getValue(value));
-        assertEquals("32:1", getLocation(value));
+        assertEquals("48:1", getLocation(value));
     }
     
     @Test
@@ -256,58 +256,58 @@ class OriginTrackedPropertiesLoaderTest {
     void getPropertyWithWhitespaceAfterKey() {
         OriginTrackedValue value = getFromFirst("bar");
         assertEquals("foo=baz", getValue(value));
-        assertEquals("3:7", getLocation(value));
+        assertEquals("19:7", getLocation(value));
     }
     
     @Test
     void getPropertyWithSpaceSeparator() {
         OriginTrackedValue value = getFromFirst("hello");
         assertEquals("world", getValue(value));
-        assertEquals("4:9", getLocation(value));
+        assertEquals("20:9", getLocation(value));
     }
     
     @Test
     void getPropertyWithBackslashEscaped() {
         OriginTrackedValue value = getFromFirst("proper\\ty");
         assertEquals("test", getValue(value));
-        assertEquals("5:11", getLocation(value));
+        assertEquals("21:11", getLocation(value));
     }
     
     @Test
     void getPropertyWithEmptyValue() {
         OriginTrackedValue value = getFromFirst("foo");
         assertEquals("", getValue(value));
-        assertEquals("7:0", getLocation(value));
+        assertEquals("23:0", getLocation(value));
     }
     
     @Test
     void getPropertyWithBackslashEscapedInValue() {
         OriginTrackedValue value = getFromFirst("bat");
         assertEquals("a\\", getValue(value));
-        assertEquals("7:7", getLocation(value));
+        assertEquals("23:7", getLocation(value));
     }
     
     @Test
     void getPropertyWithSeparatorInValue() {
         OriginTrackedValue value = getFromFirst("bling");
         assertEquals("a=b", getValue(value));
-        assertEquals("8:9", getLocation(value));
+        assertEquals("24:9", getLocation(value));
     }
     
     @Test
     void getListProperty() {
         OriginTrackedValue apple = getFromFirst("foods[0]");
         assertEquals("Apple", getValue(apple));
-        assertEquals("24:9", getLocation(apple));
+        assertEquals("40:9", getLocation(apple));
         OriginTrackedValue orange = getFromFirst("foods[1]");
         assertEquals("Orange", getValue(orange));
-        assertEquals("25:1", getLocation(orange));
+        assertEquals("41:1", getLocation(orange));
         OriginTrackedValue strawberry = getFromFirst("foods[2]");
         assertEquals("Strawberry", getValue(strawberry));
-        assertEquals("26:1", getLocation(strawberry));
+        assertEquals("42:1", getLocation(strawberry));
         OriginTrackedValue mango = getFromFirst("foods[3]");
         assertEquals("Mango", getValue(mango));
-        assertEquals("27:1", getLocation(mango));
+        assertEquals("43:1", getLocation(mango));
     }
     
     @Test
