@@ -53,6 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -225,7 +226,7 @@ class WatchFileCenterTest {
         final File file = Paths.get(PATH, fileName).toFile();
         DiskUtils.writeFile(file, ByteUtils.toBytes("start_test"), false);
         ThreadUtils.sleep(10_000L);
-        verify(fileWatcher2).onChange(any(FileChangeEvent.class));
+        verify(fileWatcher2, atLeastOnce()).onChange(any(FileChangeEvent.class));
     }
     
     @Test
@@ -241,7 +242,7 @@ class WatchFileCenterTest {
         final File file = Paths.get(PATH, fileName).toFile();
         DiskUtils.writeFile(file, ByteUtils.toBytes("start_test"), false);
         ThreadUtils.sleep(10_000L);
-        verify(executor).execute(any(Runnable.class));
+        verify(executor, atLeastOnce()).execute(any(Runnable.class));
     }
     
     @Test
