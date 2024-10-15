@@ -97,6 +97,8 @@ public class PropertyKeyConst {
     
     public static final String LOG_ALL_PROPERTIES = "logAllProperties";
     
+    public static final String CLIENT_MODULE_TYPE = "clientModuleType";
+    
     /**
      * Since 2.3.3, For some situation like java agent using nacos-client which can't use env ram info.
      */
