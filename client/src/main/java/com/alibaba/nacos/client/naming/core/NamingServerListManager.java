@@ -23,6 +23,7 @@ import com.alibaba.nacos.client.address.AddressServerListProvider;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
 import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import org.slf4j.Logger;
 
@@ -46,16 +47,18 @@ public class NamingServerListManager extends AbstractServerListManager {
     
     private boolean isDomain;
     
+    @JustForTest
     public NamingServerListManager(Properties properties) throws NacosException {
-        this(NacosClientProperties.PROTOTYPE.derive(properties));
-    }
-    
-    public NamingServerListManager(NacosClientProperties properties) throws NacosException {
-        this(properties, "");
+        this(NacosClientProperties.PROTOTYPE.derive(properties), "");
     }
     
     public NamingServerListManager(NacosClientProperties properties, String namespace) throws NacosException {
         super(properties, namespace);
+    }
+    
+    @Override
+    public void start() throws NacosException {
+        super.start();
         List<String> serverList = getServerList();
         if (serverList.isEmpty()) {
             throw new NacosLoadException("serverList is empty,please check configuration");

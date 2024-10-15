@@ -80,6 +80,7 @@ public class NacosNamingMaintainService implements NamingMaintainService {
         InitUtils.initSerialization();
         InitUtils.initWebRootContext(nacosClientProperties);
         serverListManager = new NamingServerListManager(nacosClientProperties, namespace);
+        serverListManager.start();
         securityProxy = new SecurityProxy(serverListManager.getServerList(),
                 NamingHttpClientManager.getInstance().getNacosRestTemplate());
         initSecurityProxy(properties);

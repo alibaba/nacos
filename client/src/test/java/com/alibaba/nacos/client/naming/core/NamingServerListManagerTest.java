@@ -99,6 +99,7 @@ class NamingServerListManagerTest {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848,127.0.0.1:8849");
         serverListManager = new NamingServerListManager(properties);
+        serverListManager.start();
         final List<String> serverList = serverListManager.getServerList();
         assertEquals(2, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
@@ -110,6 +111,7 @@ class NamingServerListManagerTest {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848,127.0.0.1:8849");
         serverListManager = new NamingServerListManager(properties);
+        serverListManager.start();
         List<String> serverList = serverListManager.getServerList();
         assertEquals(2, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
@@ -125,6 +127,7 @@ class NamingServerListManagerTest {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.ENDPOINT, "127.0.0.1");
         serverListManager = new NamingServerListManager(properties);
+        serverListManager.start();
         List<String> serverList = serverListManager.getServerList();
         assertEquals(1, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
@@ -142,6 +145,7 @@ class NamingServerListManagerTest {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.ENDPOINT, "127.0.0.1");
         serverListManager = new NamingServerListManager(properties);
+        serverListManager.start();
         List<String> serverList = serverListManager.getServerList();
         assertEquals(1, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
@@ -157,6 +161,7 @@ class NamingServerListManagerTest {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.ENDPOINT, "127.0.0.1");
         serverListManager = new NamingServerListManager(properties);
+        serverListManager.start();
         List<String> serverList = serverListManager.getServerList();
         assertEquals(1, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
@@ -172,6 +177,7 @@ class NamingServerListManagerTest {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.ENDPOINT, "127.0.0.1");
         serverListManager = new NamingServerListManager(properties);
+        serverListManager.start();
         List<String> serverList = serverListManager.getServerList();
         assertEquals(1, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
@@ -190,7 +196,8 @@ class NamingServerListManagerTest {
         Mockito.reset(nacosRestTemplate);
         Mockito.when(nacosRestTemplate.get(eq("http://127.0.0.1:8080/aaa/bbb"), any(), any(), any()))
                 .thenReturn(httpRestResult);
-        serverListManager = new NamingServerListManager(clientProperties);
+        serverListManager = new NamingServerListManager(clientProperties, "");
+        serverListManager.start();
         List<String> serverList = serverListManager.getServerList();
         assertEquals(1, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
@@ -204,7 +211,8 @@ class NamingServerListManagerTest {
         Mockito.reset(nacosRestTemplate);
         Mockito.when(nacosRestTemplate.get(eq("http://127.0.0.1:8080/aaa/bbb"), any(), any(), any()))
                 .thenReturn(httpRestResult);
-        serverListManager = new NamingServerListManager(clientProperties);
+        serverListManager = new NamingServerListManager(clientProperties, "");
+        serverListManager.start();
         List<String> serverList = serverListManager.getServerList();
         assertEquals(1, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
@@ -219,7 +227,8 @@ class NamingServerListManagerTest {
         Mockito.reset(nacosRestTemplate);
         Mockito.when(nacosRestTemplate.get(eq("http://127.0.0.1:8080/aaa/ccc"), any(), any(), any()))
                 .thenReturn(httpRestResult);
-        serverListManager = new NamingServerListManager(clientProperties);
+        serverListManager = new NamingServerListManager(clientProperties, "");
+        serverListManager.start();
         List<String> serverList = serverListManager.getServerList();
         assertEquals(1, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
@@ -234,7 +243,8 @@ class NamingServerListManagerTest {
         Mockito.reset(nacosRestTemplate);
         Mockito.when(nacosRestTemplate.get(eq("http://127.0.0.1:8080/bbb/ccc"), any(), any(), any()))
                 .thenReturn(httpRestResult);
-        serverListManager = new NamingServerListManager(clientProperties);
+        serverListManager = new NamingServerListManager(clientProperties, "");
+        serverListManager.start();
         List<String> serverList = serverListManager.getServerList();
         assertEquals(1, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
@@ -245,6 +255,7 @@ class NamingServerListManagerTest {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
         serverListManager = new NamingServerListManager(properties);
+        serverListManager.start();
         // todo
         //assertTrue(serverListManager.isDomain());
         // assertEquals("127.0.0.1:8848", serverListManager());
@@ -255,6 +266,7 @@ class NamingServerListManagerTest {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
         final NamingServerListManager serverListManager = new NamingServerListManager(properties);
+        serverListManager.start();
         assertEquals("127.0.0.1:8848", serverListManager.getCurrentServer());
         assertEquals("127.0.0.1:8848", serverListManager.genNextServer());
     }
@@ -264,6 +276,7 @@ class NamingServerListManagerTest {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
         final NamingServerListManager serverListManager = new NamingServerListManager(properties);
+        serverListManager.start();
         Assertions.assertDoesNotThrow(() -> {
             serverListManager.shutdown();
         });

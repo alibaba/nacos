@@ -146,6 +146,7 @@ class ServerHttpAgentTest {
         when(mockedProperties.getProperty(PropertyKeyConst.ENDPOINT)).thenReturn("aaa");
         when(mockedProperties.getProperty(PropertyKeyConst.NAMESPACE)).thenReturn("namespace1");
         ConfigServerListManager server = new ConfigServerListManager(mockedProperties);
+        server.start();
         final ServerHttpAgent serverHttpAgent = new ServerHttpAgent(server, new Properties());
         
         final String appname = ServerHttpAgent.getAppname();
