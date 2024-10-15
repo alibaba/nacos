@@ -43,7 +43,7 @@ public class ConfigServerListManager extends AbstractServerListManager {
     /**
      * The name of the different environment.
      */
-    private final String name;
+    private String name;
     
     private String tenant = "";
     
@@ -53,7 +53,6 @@ public class ConfigServerListManager extends AbstractServerListManager {
     
     public ConfigServerListManager(NacosClientProperties properties) throws NacosException {
         super(properties);
-        this.name = initServerName(properties);
         String namespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         if (StringUtils.isNotBlank(namespace)) {
             this.tenant = namespace;
@@ -70,7 +69,10 @@ public class ConfigServerListManager extends AbstractServerListManager {
         return ConfigHttpClientManager.getInstance().getNacosRestTemplate();
     }
     
-    public void start() {
+    @Override
+    public void start() throws NacosException {
+        super.start();
+        this.name = initServerName(properties);
         iterator = iterator();
         currentServerAddr = iterator.next();
     }

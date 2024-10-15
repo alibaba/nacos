@@ -188,7 +188,9 @@ class NacosConfigServiceTest {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "aaa");
         final NacosClientProperties nacosProperties = NacosClientProperties.PROTOTYPE.derive(properties);
-        Mockito.when(mockWoker.getAgent()).thenReturn(new ConfigTransportClient(nacosProperties, new ConfigServerListManager(nacosProperties)) {
+        ConfigServerListManager mgr = new ConfigServerListManager(nacosProperties);
+        mgr.start();
+        ConfigTransportClient client = new ConfigTransportClient(nacosProperties, mgr) {
             @Override
             public void startInternal() throws NacosException {
                 // NOOP
@@ -235,7 +237,8 @@ class NacosConfigServiceTest {
             public boolean removeConfig(String dataId, String group, String tenant, String tag) throws NacosException {
                 return false;
             }
-        });
+        };
+        Mockito.when(mockWoker.getAgent()).thenReturn(client);
         
         final String config = nacosConfigService.getConfigAndSignListener(dataId, group, timeout, listener);
         assertEquals(content, config);

@@ -72,6 +72,7 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
         this.serviceInfoUpdateService = new ServiceInfoUpdateService(properties, serviceInfoHolder, this,
                 changeNotifier);
         this.serverListManager = new NamingServerListManager(properties, namespace);
+        this.serverListManager.start();
         this.serviceInfoHolder = serviceInfoHolder;
         this.securityProxy = new SecurityProxy(this.serverListManager.getServerList(),
                 NamingHttpClientManager.getInstance().getNacosRestTemplate());
