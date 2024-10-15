@@ -57,9 +57,8 @@ jobs:
           cp -r nacos-* nacos/
       - uses: actions/checkout@v3
         with:
-          # repository: nacos-group/nacos-e2e.git
-          repository: Wuyunfan-BUPT/nacos-e2e.git
-          ref: fix-centos-repo-error
+          repository: nacos-group/nacos-e2e.git
+          ref: main
           path: nacos-e2e
       - name: Generate image tag
         id: build-images
