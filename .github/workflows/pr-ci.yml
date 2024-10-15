@@ -4,11 +4,6 @@ on:
   pull_request:
     branches: [ develop, v1.x-develop ]
 
-env:
-  DOCKER_REPO: wuyfeedocker/nacos-ci
-  HEADER_PARAMS: "-H \"Accept: application/vnd.github+json\" -H \"Authorization: Bearer ${{ secrets.ACTION_TOKEN }}\" -H \"X-GitHub-Api-Version: 2022-11-28\""
-  BASE_URL: https://api.github.com/repos/wuyfee/nacos/actions/variables
-
 jobs:
   dist-tar:
     name: Build distribution tar
