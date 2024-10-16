@@ -97,7 +97,8 @@ class ServerHttpAgentTest {
         Map<String, NacosRestTemplate> restMap = (Map<String, NacosRestTemplate>) restMapField.get(null);
         cachedNacosRestTemplate = restMap.get(
                 "com.alibaba.nacos.client.config.impl.ConfigHttpClientManager$ConfigHttpClientFactory");
-        restMap.put("com.alibaba.nacos.client.config.impl.ConfigHttpClientManager$ConfigHttpClientFactory", nacosRestTemplate);
+        restMap.put("com.alibaba.nacos.client.config.impl.ConfigHttpClientManager$ConfigHttpClientFactory",
+                nacosRestTemplate);
         httpRestResult = new HttpRestResult<String>();
         httpRestResult.setData("127.0.0.1:8848");
         httpRestResult.setCode(200);
@@ -126,6 +127,7 @@ class ServerHttpAgentTest {
     void testConstruct() throws NacosException {
         NacosClientProperties mockedProperties = mock(NacosClientProperties.class);
         when(mockedProperties.getProperty(PropertyKeyConst.ENDPOINT)).thenReturn("aaa");
+        when(mockedProperties.derive()).thenReturn(mockedProperties);
         ConfigServerListManager server = new ConfigServerListManager(mockedProperties);
         final ServerHttpAgent serverHttpAgent1 = new ServerHttpAgent(server);
         assertNotNull(serverHttpAgent1);
@@ -145,6 +147,8 @@ class ServerHttpAgentTest {
         NacosClientProperties mockedProperties = mock(NacosClientProperties.class);
         when(mockedProperties.getProperty(PropertyKeyConst.ENDPOINT)).thenReturn("aaa");
         when(mockedProperties.getProperty(PropertyKeyConst.NAMESPACE)).thenReturn("namespace1");
+        when(mockedProperties.getProperty(PropertyKeyConst.ENDPOINT_REFRESH_INTERVAL_SECONDS, "30")).thenReturn("30");
+        when(mockedProperties.derive()).thenReturn(mockedProperties);
         ConfigServerListManager server = new ConfigServerListManager(mockedProperties);
         server.start();
         final ServerHttpAgent serverHttpAgent = new ServerHttpAgent(server, new Properties());

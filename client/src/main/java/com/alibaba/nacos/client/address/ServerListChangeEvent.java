@@ -24,4 +24,6 @@ import com.alibaba.nacos.common.notify.SlowEvent;
  * @author zongtanghu
  */
 public class ServerListChangeEvent extends SlowEvent {
+    
+    private static final long serialVersionUID = -1655577508567092395L;
 }

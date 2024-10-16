@@ -17,9 +17,11 @@
 package com.alibaba.nacos.client.address;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
@@ -44,22 +46,18 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
     
     protected NacosClientProperties properties;
     
-    public AbstractServerListManager(NacosClientProperties properties) throws NacosException {
+    public AbstractServerListManager(NacosClientProperties properties) {
         this(properties, null);
     }
     
-    public AbstractServerListManager(NacosClientProperties properties, String namespace) throws NacosException {
-        if (null == properties) {
-            LOGGER.error("properties is null");
-            return;
-        }
+    public AbstractServerListManager(NacosClientProperties properties, String namespace) {
+        // To avoid set operation affect the original properties.
+        NacosClientProperties tmpProperties = properties.derive();
         if (StringUtils.isNotBlank(namespace)) {
-            // To avoid set operation affect the original properties.
-            properties = properties.derive();
-            properties.setProperty(PropertyKeyConst.NAMESPACE, namespace);
+            tmpProperties.setProperty(PropertyKeyConst.NAMESPACE, namespace);
         }
-        properties.setProperty(PropertyKeyConst.CLIENT_MODULE_TYPE, getModuleName());
-        this.properties = properties;
+        tmpProperties.setProperty(Constants.CLIENT_MODULE_TYPE, getModuleName());
+        this.properties = tmpProperties;
     }
     
     @Override
@@ -98,14 +96,10 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
             }
         }
         if (null == serverListProvider) {
-            LOGGER.error("no server list provider found");
-            return;
+            LOGGER.error("No server list provider found, SPI load size: {}", sorted.size());
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "No server list provider found.");
         }
         this.serverListProvider.init(properties, getNacosRestTemplate());
-    }
-    
-    public NacosClientProperties getProperties() {
-        return properties;
     }
     
     public String getServerName() {
@@ -133,12 +127,17 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
      *
      * @return module name
      */
-    public abstract String getModuleName();
+    protected abstract String getModuleName();
     
     /**
      * get nacos rest template.
      *
      * @return nacos rest template
      */
-    public abstract NacosRestTemplate getNacosRestTemplate();
+    protected abstract NacosRestTemplate getNacosRestTemplate();
+    
+    @JustForTest
+    NacosClientProperties getProperties() {
+        return properties;
+    }
 }

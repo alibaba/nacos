@@ -38,6 +38,7 @@ import org.mockito.quality.Strictness;
 import java.lang.reflect.Field;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Properties;
 
 import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
@@ -45,6 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.contains;
@@ -69,7 +71,8 @@ class ConfigServerListManagerTest {
         Map<String, NacosRestTemplate> restMap = (Map<String, NacosRestTemplate>) restMapField.get(null);
         cachedNacosRestTemplate = restMap.get(
                 "com.alibaba.nacos.client.config.impl.ConfigHttpClientManager$ConfigHttpClientFactory");
-        restMap.put("com.alibaba.nacos.client.config.impl.ConfigHttpClientManager$ConfigHttpClientFactory", nacosRestTemplate);
+        restMap.put("com.alibaba.nacos.client.config.impl.ConfigHttpClientManager$ConfigHttpClientFactory",
+                nacosRestTemplate);
         httpRestResult = new HttpRestResult<>();
         httpRestResult.setData("127.0.0.1:8848");
         httpRestResult.setCode(200);
@@ -92,9 +95,29 @@ class ConfigServerListManagerTest {
         NacosClientProperties mockedProperties = mock(NacosClientProperties.class);
         when(mockedProperties.getProperty(PropertyKeyConst.ENDPOINT)).thenReturn("1.1.1.1");
         when(mockedProperties.getProperty(PropertyKeyConst.ENDPOINT_PORT)).thenReturn("9090");
+        when(mockedProperties.getProperty(PropertyKeyConst.ENDPOINT_REFRESH_INTERVAL_SECONDS, "30")).thenReturn("30");
+        when(mockedProperties.derive()).thenReturn(mockedProperties);
         final ConfigServerListManager mgr = new ConfigServerListManager(mockedProperties);
-        mgr.start();
-        mgr.shutdown();
+        try {
+            mgr.start();
+            assertEquals("Config-custom-1.1.1.1_9090_nacos_serverlist", mgr.getName());
+        } finally {
+            mgr.shutdown();
+        }
+    }
+    
+    @Test
+    void testStartWithCustomServerName() throws NacosException {
+        NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
+        properties.setProperty(PropertyKeyConst.SERVER_NAME, "test");
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "1.1.1.1");
+        final ConfigServerListManager mgr = new ConfigServerListManager(properties);
+        try {
+            mgr.start();
+            assertEquals("test", mgr.getName());
+        } finally {
+            mgr.shutdown();
+        }
     }
     
     @Test
@@ -103,6 +126,7 @@ class ConfigServerListManagerTest {
             NacosClientProperties mockedProperties = mock(NacosClientProperties.class);
             when(mockedProperties.getProperty(PropertyKeyConst.SERVER_ADDR)).thenReturn("1.1.1.1");
             when(mockedProperties.getProperty(PropertyKeyConst.NAMESPACE)).thenReturn("namespace");
+            when(mockedProperties.derive()).thenReturn(mockedProperties);
             final ConfigServerListManager mgr = new ConfigServerListManager(mockedProperties);
             mgr.start();
             assertEquals("nacos", mgr.getContextPath());
@@ -190,6 +214,7 @@ class ConfigServerListManagerTest {
         NacosClientProperties mockedProperties = mock(NacosClientProperties.class);
         when(mockedProperties.getProperty(PropertyKeyConst.SERVER_ADDR)).thenReturn("1.1.1.1:8848");
         when(mockedProperties.getProperty(PropertyKeyConst.NAMESPACE)).thenReturn("aaa");
+        when(mockedProperties.derive()).thenReturn(mockedProperties);
         final ConfigServerListManager mgr = new ConfigServerListManager(mockedProperties);
         mgr.start();
         
@@ -241,8 +266,8 @@ class ConfigServerListManagerTest {
         final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         ConfigServerListManager serverListManager = new ConfigServerListManager(clientProperties);
         serverListManager.start();
-        assertTrue(serverListManager.getAddressSource().startsWith(
-                HTTP_PREFIX + endpoint + ":" + endpointPort + endpointContextPath));
+        assertTrue(serverListManager.getAddressSource()
+                .startsWith(HTTP_PREFIX + endpoint + ":" + endpointPort + endpointContextPath));
     }
     
     @Test
@@ -326,10 +351,10 @@ class ConfigServerListManagerTest {
         
         assertTrue(addressSource.contains(testEndpointClusterName));
         assertTrue(serverListManager.getName().contains(testEndpointClusterName));
-    
+        
         assertFalse(addressSource.contains(testClusterName));
         assertFalse(serverListManager.getName().contains(testClusterName));
-    
+        
     }
     
     @Test
@@ -351,7 +376,7 @@ class ConfigServerListManagerTest {
         assertFalse(serverListManager.getName().contains("endpointContextPath"));
         assertTrue(serverListManager.getName().contains("contextPath"));
     }
-
+    
     @Test
     void testUseEndpointParsingRule() throws NacosException {
         System.setProperty("nacos.endpoint", "1.1.1.1");
@@ -364,5 +389,65 @@ class ConfigServerListManagerTest {
         serverListManager.start();
         String addressServerUrl = serverListManager.getAddressSource();
         assertTrue(addressServerUrl.startsWith("http://1.1.1.1"));
+    }
+    
+    @Test
+    void testUpdateCurrentServerAddr() throws NacosException {
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "1.1.1.1:8848,2.2.2.2:8848");
+        final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        ConfigServerListManager serverListManager = new ConfigServerListManager(clientProperties);
+        serverListManager.start();
+        assertTrue("1.1.1.1:8848,2.2.2.2:8848".contains(serverListManager.getCurrentServer()));
+        serverListManager.updateCurrentServerAddr(null);
+        assertTrue("1.1.1.1:8848,2.2.2.2:8848".contains(serverListManager.getCurrentServer()));
+        serverListManager.updateCurrentServerAddr("1.1.1.1:8848");
+        assertEquals("1.1.1.1:8848", serverListManager.getCurrentServer());
+    }
+    
+    @Test
+    void testStartWithEmptyServerList() throws NacosException {
+        Properties properties = new Properties();
+        properties.setProperty("EmptyList", "true");
+        properties.setProperty("MockTest", "true");
+        NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        final ConfigServerListManager mgr = new ConfigServerListManager(clientProperties);
+        try {
+            assertThrows(NoSuchElementException.class, mgr::start);
+        } finally {
+            mgr.shutdown();
+        }
+    }
+    
+    @Test
+    void testGenNextServer() throws NacosException {
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "1.1.1.1:8848,2.2.2.2:8848");
+        final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        ConfigServerListManager serverListManager = new ConfigServerListManager(clientProperties);
+        serverListManager.start();
+        String currentServer = serverListManager.getCurrentServer();
+        String expectedServer = "1.1.1.1:8848,2.2.2.2:8848".replace(currentServer, "");
+        expectedServer = expectedServer.replace(",", "");
+        assertEquals(expectedServer, serverListManager.genNextServer());
+        // Don't throw NoSuchElementException, re-generate server list and re-shuffle.
+        assertTrue("1.1.1.1:8848,2.2.2.2:8848".contains(serverListManager.genNextServer()));
+    }
+    
+    @Test
+    void testGenNextServerWithMockConcurrent() throws NacosException, NoSuchFieldException, IllegalAccessException {
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "1.1.1.1:8848,2.2.2.2:8848");
+        final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        ConfigServerListManager serverListManager = new ConfigServerListManager(clientProperties);
+        serverListManager.start();
+        Iterator<String> mockIterator = mock(Iterator.class);
+        Field field = ConfigServerListManager.class.getDeclaredField("iterator");
+        field.setAccessible(true);
+        field.set(serverListManager, mockIterator);
+        // Mock async call gen next server, hasNext return `ture` and item be got by other thread.
+        when(mockIterator.hasNext()).thenReturn(true);
+        when(mockIterator.next()).thenThrow(new NoSuchElementException());
+        assertNotNull(serverListManager.genNextServer());
     }
 }

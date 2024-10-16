@@ -15,5 +15,4 @@
 #
 #
 
-com.alibaba.nacos.client.address.EndpointServerListProvider
-com.alibaba.nacos.client.address.PropertiesListProvider
+com.alibaba.nacos.client.address.mock.MockServerListProvider

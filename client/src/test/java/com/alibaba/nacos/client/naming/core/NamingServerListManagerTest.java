@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosLoadException;
 import com.alibaba.nacos.client.address.AbstractServerListManager;
 import com.alibaba.nacos.client.address.EndpointServerListProvider;
 import com.alibaba.nacos.client.address.ServerListProvider;
@@ -45,12 +46,13 @@ import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 
 @ExtendWith(MockitoExtension.class)
-// todo  remove strictness lenient
 @MockitoSettings(strictness = Strictness.LENIENT)
 class NamingServerListManagerTest {
     
@@ -73,7 +75,8 @@ class NamingServerListManagerTest {
         Map<String, NacosRestTemplate> restMap = (Map<String, NacosRestTemplate>) restMapField.get(null);
         cachedNacosRestTemplate = restMap.get(
                 "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager$NamingHttpClientFactory");
-        restMap.put("com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager$NamingHttpClientFactory", nacosRestTemplate);
+        restMap.put("com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager$NamingHttpClientFactory",
+                nacosRestTemplate);
         httpRestResult = new HttpRestResult<>();
         httpRestResult.setData("127.0.0.1:8848");
         httpRestResult.setCode(200);
@@ -256,9 +259,8 @@ class NamingServerListManagerTest {
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
         serverListManager = new NamingServerListManager(properties);
         serverListManager.start();
-        // todo
-        //assertTrue(serverListManager.isDomain());
-        // assertEquals("127.0.0.1:8848", serverListManager());
+        assertTrue(serverListManager.isDomain());
+        assertEquals("127.0.0.1:8848", serverListManager.getNacosDomain());
     }
     
     @Test
@@ -280,6 +282,15 @@ class NamingServerListManagerTest {
         Assertions.assertDoesNotThrow(() -> {
             serverListManager.shutdown();
         });
+    }
+    
+    @Test
+    void testStartWithEmptyServerList() {
+        Properties properties = new Properties();
+        properties.setProperty("EmptyList", "true");
+        properties.setProperty("MockTest", "true");
+        final NamingServerListManager serverListManager = new NamingServerListManager(properties);
+        assertThrows(NacosLoadException.class, serverListManager::start);
     }
     
     private void mockThreadInvoke(NamingServerListManager serverListManager, boolean expectedInvoked)
