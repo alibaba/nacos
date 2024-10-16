@@ -1,8 +1,8 @@
 name: "Comment on PR"
 
 on:
-  pull_request:
-    types: [opened]
+  pull_request_target:
+    types: [opened, reopened]
 
 jobs:
   thanks-and-hint-to-document:
@@ -15,7 +15,7 @@ jobs:
         uses: hasura/comment-progress@v2.3.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          repository: "alibaba/nacos"
+          repository: $GITHUB_REPOSITORY
           number: ${{ github.event.number }}
           id: thanks-and-hint-to-document
           recreate: true
