@@ -20,7 +20,9 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.control.TpsControlConfig;
+import com.alibaba.nacos.core.remote.grpc.InvokeSource;
 import com.alibaba.nacos.plugin.control.ControlManagerCenter;
+import com.google.common.collect.Sets;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,7 @@ import java.lang.reflect.ParameterizedType;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * RequestHandlerRegistry.
@@ -43,6 +46,8 @@ public class RequestHandlerRegistry implements ApplicationListener<ContextRefres
     
     Map<String, RequestHandler> registryHandlers = new HashMap<>();
     
+    Map<String, Set<String>> sourceRegistry = new HashMap<>();
+    
     /**
      * Get Request Handler By request Type.
      *
@@ -51,6 +56,20 @@ public class RequestHandlerRegistry implements ApplicationListener<ContextRefres
      */
     public RequestHandler getByRequestType(String requestType) {
         return registryHandlers.get(requestType);
+    }
+    
+    /**
+     * check source invoke allowed.
+     *
+     * @param type   type.
+     * @param source source.
+     * @return
+     */
+    public boolean checkSourceInvokeAllowed(String type, String source) {
+        if (sourceRegistry.containsKey(type) && !sourceRegistry.get(type).contains(source)) {
+            return false;
+        }
+        return true;
     }
     
     @Override
@@ -71,7 +90,7 @@ public class RequestHandlerRegistry implements ApplicationListener<ContextRefres
             if (skip) {
                 continue;
             }
-            
+            //register tps control.
             try {
                 Method method = clazz.getMethod("handle", Request.class, RequestMeta.class);
                 if (method.isAnnotationPresent(TpsControl.class) && TpsControlConfig.isTpsControlEnabled()) {
@@ -82,7 +101,22 @@ public class RequestHandlerRegistry implements ApplicationListener<ContextRefres
             } catch (Exception e) {
                 //ignore.
             }
+            
             Class tClass = (Class) ((ParameterizedType) clazz.getGenericSuperclass()).getActualTypeArguments()[0];
+            
+            //register invoke source.
+            try {
+                if (clazz.isAnnotationPresent(InvokeSource.class)) {
+                    InvokeSource tpsControl = clazz.getAnnotation(InvokeSource.class);
+                    String[] sources = tpsControl.source();
+                    if (sources != null && sources.length > 0) {
+                        sourceRegistry.put(tClass.getSimpleName(), Sets.newHashSet(sources));
+                    }
+                }
+            } catch (Exception e) {
+                //ignore.
+            }
+            
             registryHandlers.putIfAbsent(tClass.getSimpleName(), requestHandler);
         }
     }

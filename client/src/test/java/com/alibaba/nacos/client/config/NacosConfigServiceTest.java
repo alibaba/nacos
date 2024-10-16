@@ -16,14 +16,15 @@
 
 package com.alibaba.nacos.client.config;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
+import com.alibaba.nacos.client.config.impl.ConfigServerListManager;
 import com.alibaba.nacos.client.config.impl.ConfigTransportClient;
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
-import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -33,6 +34,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -45,6 +48,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class NacosConfigServiceTest {
     
     private NacosConfigService nacosConfigService;
@@ -181,8 +185,12 @@ class NacosConfigServiceTest {
             }
         };
         
-        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive(new Properties());
-        Mockito.when(mockWoker.getAgent()).thenReturn(new ConfigTransportClient(properties, new ServerListManager()) {
+        Properties properties = new Properties();
+        properties.put(PropertyKeyConst.SERVER_ADDR, "aaa");
+        final NacosClientProperties nacosProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        ConfigServerListManager mgr = new ConfigServerListManager(nacosProperties);
+        mgr.start();
+        ConfigTransportClient client = new ConfigTransportClient(nacosProperties, mgr) {
             @Override
             public void startInternal() throws NacosException {
                 // NOOP
@@ -229,7 +237,8 @@ class NacosConfigServiceTest {
             public boolean removeConfig(String dataId, String group, String tenant, String tag) throws NacosException {
                 return false;
             }
-        });
+        };
+        Mockito.when(mockWoker.getAgent()).thenReturn(client);
         
         final String config = nacosConfigService.getConfigAndSignListener(dataId, group, timeout, listener);
         assertEquals(content, config);

@@ -33,7 +33,10 @@ import './index.scss';
 import DiffEditorDialog from '../../../components/DiffEditorDialog';
 import QueryResult from '../../../components/QueryResult';
 import PageTitle from '../../../components/PageTitle';
+import { connect } from 'react-redux';
+import { getState } from '../../../reducers/base';
 
+@connect(state => ({ ...state.base }), { getState })
 @ConfigProvider.config
 class HistoryRollback extends React.Component {
   static displayName = 'HistoryRollback';
@@ -41,6 +44,7 @@ class HistoryRollback extends React.Component {
   static propTypes = {
     locale: PropTypes.object,
     history: PropTypes.object,
+    configRetentionDays: PropTypes.any,
   };
 
   constructor(props) {
@@ -77,6 +81,7 @@ class HistoryRollback extends React.Component {
   componentDidMount() {
     this.field.setValue('group', this.group);
     this.field.setValue('dataId', this.dataId);
+    this.props.getState();
     // this.getData()
   }
 
@@ -337,7 +342,7 @@ class HistoryRollback extends React.Component {
           color="#333"
         >
           <PageTitle
-            title={locale.toConfigure}
+            title={locale.toConfigureBegin + this.props.configRetentionDays + locale.toConfigureEnd}
             desc={nowNamespaceDesc}
             namespaceId={nowNamespaceId}
             namespaceName={nowNamespaceName}

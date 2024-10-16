@@ -37,6 +37,9 @@ public class PropertyKeyConst {
     
     public static final String ENDPOINT_CLUSTER_NAME = "endpointClusterName";
     
+    public static final String ENDPOINT_REFRESH_INTERVAL_SECONDS = "endpointRefreshIntervalSeconds";
+    
+    @Deprecated
     public static final String SERVER_NAME = "serverName";
     
     public static final String NAMESPACE = "namespace";
@@ -55,13 +58,26 @@ public class PropertyKeyConst {
     
     public static final String CONTEXT_PATH = "contextPath";
     
+    /**
+     * Please use {@link #ENDPOINT_CLUSTER_NAME} replaced.
+     */
+    @Deprecated
     public static final String CLUSTER_NAME = "clusterName";
+    
+    /**
+     * Default is {@code "false"}, if true, and without {@link #ENDPOINT_CLUSTER_NAME}, use {@link #CLUSTER_NAME} to set
+     * endpoint cluster name.
+     */
+    @Deprecated
+    public static final String IS_ADAPT_CLUSTER_NAME_USAGE = "isAdaptClusterNameUsage";
     
     public static final String ENCODE = "encode";
     
     public static final String CONFIG_LONG_POLL_TIMEOUT = "configLongPollTimeout";
     
     public static final String CONFIG_RETRY_TIME = "configRetryTime";
+    
+    public static final String CONFIG_REQUEST_TIMEOUT = "configRequestTimeout";
     
     public static final String CLIENT_WORKER_MAX_THREAD_COUNT = "clientWorkerMaxThreadCount";
     

@@ -11,6 +11,10 @@ env:
   DOCKER_REPO: wuyfeedocker/nacos-ci
   DOCKER_REPO_B: wuyfeehub/nacos-ci
   TEST_REPO_NAME: nacos-group/nacos-e2e
+  HEADER_PARAMS: "-H \"Accept: application/vnd.github+json\" -H \"Authorization: Bearer ${{ secrets.ACTION_TOKEN }}\" -H \"X-GitHub-Api-Version: 2022-11-28\""
+  HEADER_PARAMS_WRITE_COMMENT: "-H \"Accept: application/vnd.github+json\" -H \"Authorization: Bearer ${{ secrets.ACTION_TOKEN }}\" -H \"X-GitHub-Api-Version: 2022-11-28\""
+  BASE_URL_NACOS: https://api.github.com/repos/${GITHUB_REPOSITORY}
+  BASE_URL_ROBOT: https://api.github.com/repos/wuyfee/nacos
 
 jobs:
   docker:
@@ -108,20 +112,28 @@ jobs:
       REPLICA_COUNT: 3
       DATABASE: mysql
       NODE_PORT: 30000
+      AUTH_ENABLED: false
+      ACTUAL_MODE: cluster
     strategy:
       fail-fast: false
       matrix:
-        mode: ["cluster","standalone"]
+        mode: ["cluster","standalone","standalone_auth"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
       - name: set nodeport
         run: |
           echo "NODE_PORT=$(expr $(expr $(expr $(expr ${{ strategy.job-index }} + 1) * ${{ github.run_number }}) % 30000) + 30000)" >> $GITHUB_ENV
-      - name: set cluster params
-        if: ${{ matrix.mode == 'standalone' }}
+      - name: set params values
         run: |
-          echo "REPLICA_COUNT=1" >> $GITHUB_ENV
-          echo "DATABASE=embedded" >> $GITHUB_ENV
+          if [[ ${{ matrix.mode }} == "standalone"* ]];then
+            if [[ ${{ matrix.mode }} = "standalone_auth" ]]; then
+              echo "AUTH_ENABLED=true" >> $GITHUB_ENV
+            fi
+            echo "ACTUAL_MODE=standalone" >> $GITHUB_ENV
+            echo "REPLICA_COUNT=1" >> $GITHUB_ENV
+            echo "DATABASE=embedded" >> $GITHUB_ENV
+            echo ${{ matrix.mode }}-nacos-${{ github.run_id }}-${{ strategy.job-index }}
+          fi
       - name: allocate docker repo
         run: |
           if [[ $(expr $(expr ${{ github.run_id }} + ${{ strategy.job-index }} ) % 2 ) -eq 1 ]]; then
@@ -149,12 +161,14 @@ jobs:
               values:
                 namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
                 global:
-                  mode: ${{ matrix.mode }}
+                  mode: ${{ env.ACTUAL_MODE }}
                 nacos:
                   replicaCount: ${{ env.REPLICA_COUNT }}
                   image:
                     repository: ${{ env.DOCKER_REPO_ACTUAL }}
                     tag: ${{ matrix.version }}
+                  auth:
+                    enabled: ${{ env.AUTH_ENABLED }}
                   storage:
                     type: ${{ env.DATABASE }}
                     db:
@@ -165,18 +179,27 @@ jobs:
                 service:
                   nodePort: ${{ env.NODE_PORT }}
                   type: ClusterIP
+
   e2e-java-test:
     if: ${{ success() }}
     name: Java e2e Test
     needs: [docker, deploy]
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      CODE_PATH: java/nacos-2X
     strategy:
       fail-fast: false
       matrix:
-        mode: ["cluster","standalone"]
+        mode: ["cluster","standalone","standalone_auth"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
+      - name: set code path
+        run: |
+          if [[ ${{ matrix.mode }} = "standalone_auth" ]]; then
+            echo "CODE_PATH=java/auth" >> $GITHUB_ENV
+            echo ${{ matrix.mode }}-nacos-${{ github.run_id }}-${{ strategy.job-index }}
+          fi
       - uses: apache/rocketmq-test-tool@java-dev
         name: java e2e test
         with:
@@ -192,7 +215,7 @@ jobs:
               REPO_NAME: ${{ env.TEST_REPO_NAME }}
               CODE: https://github.com/${{ env.TEST_REPO_NAME }}
               BRANCH: main
-              CODE_PATH: java/nacos-2X
+              CODE_PATH: ${{ env.CODE_PATH }}
               CMD: mvn clean test -B
               ALL_IP: null
             CONTAINER:
@@ -203,7 +226,6 @@ jobs:
               RESOURCE_REQUIRE:
                 cpu: 2
                 memory: 2Gi
-
       - uses: actions/upload-artifact@v3
         if: always()
         name: Upload test log
@@ -296,6 +318,7 @@ jobs:
               BRANCH: main
               CODE_PATH: cpp
               CMD: |
+                yum-config-manager remove centos-sclo-rh
                 cd /root/code/cpp && make install
                 echo "export LD_LIBRARY_PATH=/usr/local/lib" >> ~/.bashrc  && source ~/.bashrc
                 cd /root/code/cpp/nacoscpptest
@@ -454,7 +477,7 @@ jobs:
               BRANCH: main
               CODE_PATH: python
               CMD: |
-                cd /root/code/python 
+                cd /root/code/python
                 pip3 install -r requirements.txt
                 source ~/.bashrc
                 cd nacospythontest && pytest --junitxml ../target/surefire-reports/TEST-report.xml test/*_test.py --log-cli-level=DEBUG
@@ -480,15 +503,15 @@ jobs:
 
 
   clean:
-    if: always()
+    if: ${{ always() }}
     name: Clean
     needs: [docker, e2e-java-test, e2e-go-test, e2e-cpp-test, e2e-csharp-test, e2e-nodejs-test, e2e-python-test]
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 5
     strategy:
       fail-fast: false
       matrix:
-        mode: ["cluster","standalone"]
+        mode: ["cluster","standalone","standalone_auth"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
       - uses: apache/rocketmq-test-tool@java-dev
@@ -498,3 +521,69 @@ jobs:
             action: clean
             namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
             askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
+  write-comment:
+    if: ${{ always() }}
+    name: write comment to pr
+    needs: [docker, deploy, e2e-java-test, e2e-go-test, e2e-cpp-test, e2e-csharp-test, e2e-nodejs-test, e2e-python-test, clean]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 'Download artifact'
+        uses: actions/github-script@v3.1.0
+        with:
+          script: |
+            var artifacts = await github.actions.listWorkflowRunArtifacts({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               run_id: ${{ github.event.workflow_run.id }},
+            });
+            
+            var matchArtifactPR = artifacts.data.artifacts.filter((artifact) => {
+               return artifact.name == "pr"
+            })[0];
+            var download = await github.actions.downloadArtifact({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               artifact_id: matchArtifactPR.id,
+               archive_format: 'zip',
+            });
+            var fs = require('fs');
+            fs.writeFileSync('${{github.workspace}}/pr.zip', Buffer.from(download.data));
+      - name: unzip pr
+        run: |
+          unzip pr.zip
+          cat pr.txt
+          pr_number=`cat pr.txt`
+          echo "PR_NUMBER=${pr_number}" >> $GITHUB_ENV
+      - name: write issue comment
+        run: |
+          echo ${{ env.PR_NUMBER }}
+          job_status=""
+          if [ ${{ needs.docker.result }} = 'success' ]  && [ ${{ needs.deploy.result }} = 'success' ] && [ ${{ needs.e2e-java-test.result }} = 'success' ] && [ ${{ needs.e2e-go-test.result }} = 'success' ] && [ ${{ needs.e2e-cpp-test.result }} = 'success' ] && [ ${{ needs.e2e-csharp-test.result }} = 'success' ] && [ ${{ needs.e2e-nodejs-test.result }} = 'success' ] && [ ${{ needs.e2e-python-test.result }} = 'success' ]; then
+            jobs_status='$\\color{green}{SUCCESS}$'
+            jobs_status+="\n[DETAILS](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }})"
+          else
+            jobs_status='$\\color{red}{FAILURE}$'
+            jobs_status+="\n[DETAILS](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }})"
+          fi
+          echo ${jobs_status}
+          markdown_content="${jobs_status}"
+          generate_content() {
+             if [ $1 = "success" ];then
+               echo "\n ✅ $2  $1 "
+             else
+               echo "\n ❌ $2  $1 "
+             fi
+          }
+          markdown_content+=$(generate_content ${{ needs.docker.result }} "- docker: ")
+          markdown_content+=$(generate_content ${{ needs.deploy.result }} "- deploy (standalone & cluster & standalone_auth): ")
+          markdown_content+=$(generate_content ${{ needs.e2e-java-test.result }} "- e2e-java-test (standalone & cluster & standalone_auth): ")
+          markdown_content+=$(generate_content ${{ needs.e2e-go-test.result }} "- e2e-go-test (standalone & cluster): ")
+          markdown_content+=$(generate_content ${{ needs.e2e-cpp-test.result }} "- e2e-cpp-test (standalone & cluster): ")
+          markdown_content+=$(generate_content ${{ needs.e2e-csharp-test.result }} "- e2e-csharp-test (standalone & cluster): ")
+          markdown_content+=$(generate_content ${{ needs.e2e-nodejs-test.result }} "- e2e-nodejs-test (standalone & cluster): ")
+          markdown_content+=$(generate_content ${{ needs.e2e-python-test.result }} "- e2e-python-test (standalone & cluster): ")
+          markdown_content+=$(generate_content ${{ needs.clean.result }} "- clean (standalone & cluster & standalone_auth): ")
+          echo "markdown_content: \n ${markdown_content}"
+          payload=`echo "{\"body\": \"${markdown_content}\"}" | jq .`
+          curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${{ env.PR_NUMBER }}/comments -d "${payload}"
