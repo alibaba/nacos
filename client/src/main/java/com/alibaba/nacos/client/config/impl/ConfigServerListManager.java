@@ -80,7 +80,7 @@ public class ConfigServerListManager extends AbstractServerListManager {
     private String initServerName(NacosClientProperties properties) {
         String serverName;
         //1.user define server name.
-        if (properties != null && properties.containsKey(PropertyKeyConst.SERVER_NAME)) {
+        if (properties.containsKey(PropertyKeyConst.SERVER_NAME)) {
             serverName = properties.getProperty(PropertyKeyConst.SERVER_NAME);
         } else {
             serverName = getServerName();
@@ -106,8 +106,7 @@ public class ConfigServerListManager extends AbstractServerListManager {
         }
         try {
             return iterator.next();
-        } catch (Exception e) {
-            //No nothing.
+        } catch (Exception ignored) {
         }
         refreshCurrentServerAddr();
         return currentServerAddr;
@@ -167,31 +166,25 @@ public class ConfigServerListManager extends AbstractServerListManager {
             
             String serverIp;
             
-            int priority = 0;
-            
             int seed;
             
             public RandomizedServerAddress(String ip) {
-                try {
-                    this.serverIp = ip;
-                    /*
-                     change random scope from 32 to Integer.MAX_VALUE to fix load balance issue
-                     */
-                    this.seed = random.nextInt(Integer.MAX_VALUE);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
+                this.serverIp = ip;
+                /*
+                 change random scope from 32 to Integer.MAX_VALUE to fix load balance issue
+                 */
+                this.seed = random.nextInt(Integer.MAX_VALUE);
             }
             
             @Override
             public int compareTo(RandomizedServerAddress other) {
-                if (this.priority != other.priority) {
-                    return other.priority - this.priority;
-                } else {
-                    return other.seed - this.seed;
-                }
+                return other.seed - this.seed;
             }
         }
+        
+        final List<RandomizedServerAddress> sorted;
+        
+        final Iterator<RandomizedServerAddress> iter;
         
         public ServerAddressIterator(List<String> source) {
             sorted = new ArrayList<>();
@@ -211,14 +204,5 @@ public class ConfigServerListManager extends AbstractServerListManager {
         public String next() {
             return iter.next().serverIp;
         }
-        
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
-        
-        final List<RandomizedServerAddress> sorted;
-        
-        final Iterator<RandomizedServerAddress> iter;
     }
 }

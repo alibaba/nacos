@@ -16,4 +16,4 @@
 #
 
 com.alibaba.nacos.client.address.EndpointServerListProvider
-com.alibaba.nacos.client.address.AddressServerListProvider
+com.alibaba.nacos.client.address.PropertiesListProvider

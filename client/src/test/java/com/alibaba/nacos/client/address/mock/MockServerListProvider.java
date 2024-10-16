@@ -36,6 +36,9 @@ public class MockServerListProvider implements ServerListProvider {
     
     @Override
     public List<String> getServerList() {
+        if (properties.containsKey("EmptyList")) {
+            return Collections.emptyList();
+        }
         return Collections.singletonList("mock-server-list");
     }
     

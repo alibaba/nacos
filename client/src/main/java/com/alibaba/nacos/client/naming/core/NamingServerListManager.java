@@ -19,7 +19,7 @@ package com.alibaba.nacos.client.naming.core;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosLoadException;
 import com.alibaba.nacos.client.address.AbstractServerListManager;
-import com.alibaba.nacos.client.address.AddressServerListProvider;
+import com.alibaba.nacos.client.address.PropertiesListProvider;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -65,7 +65,7 @@ public class NamingServerListManager extends AbstractServerListManager {
         } else {
             currentIndex.set(new Random().nextInt(serverList.size()));
         }
-        if (serverListProvider instanceof AddressServerListProvider) {
+        if (serverListProvider instanceof PropertiesListProvider) {
             if (serverList.size() == 1) {
                 isDomain = true;
                 nacosDomain = serverList.get(0);
@@ -79,10 +79,6 @@ public class NamingServerListManager extends AbstractServerListManager {
     
     public boolean isDomain() {
         return isDomain;
-    }
-    
-    public void setDomain(final boolean domain) {
-        isDomain = domain;
     }
     
     @Override

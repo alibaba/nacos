@@ -33,11 +33,11 @@ import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTPS_PREFIX
 import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 
 /**
- * Address server list provider.
+ * Properties server list provider.
  * 
  * @author totalo
  */
-public class AddressServerListProvider extends AbstractServerListProvider {
+public class PropertiesListProvider extends AbstractServerListProvider {
     
     private static final String FIXED_NAME = "fixed";
     
