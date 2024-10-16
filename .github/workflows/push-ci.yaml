@@ -123,20 +123,28 @@ jobs:
       REPLICA_COUNT: 3
       DATABASE: mysql
       NODE_PORT: 30000
+      AUTH_ENABLED: false
+      ACTUAL_MODE: cluster
     strategy:
       fail-fast: false
       matrix:
-        mode: ["cluster","standalone"]
+        mode: ["cluster","standalone","standalone_auth"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
       - name: set nodeport
         run: |
           echo "NODE_PORT=$(expr $(expr $(expr $(expr ${{ strategy.job-index }} + 1) * ${{ github.run_number }}) % 30000) + 30000)" >> $GITHUB_ENV
-      - name: set cluster params
-        if: ${{ matrix.mode == 'standalone' }}
+      - name: set params values
         run: |
-          echo "REPLICA_COUNT=1" >> $GITHUB_ENV
-          echo "DATABASE=embedded" >> $GITHUB_ENV
+          if [[ ${{ matrix.mode }} == "standalone"* ]];then
+            if [[ ${{ matrix.mode }} = "standalone_auth" ]]; then
+              echo "AUTH_ENABLED=true" >> $GITHUB_ENV
+            fi
+            echo "ACTUAL_MODE=standalone" >> $GITHUB_ENV
+            echo "REPLICA_COUNT=1" >> $GITHUB_ENV
+            echo "DATABASE=embedded" >> $GITHUB_ENV
+            echo ${{ matrix.mode }}-nacos-${{ github.run_id }}-${{ strategy.job-index }}
+          fi
       - name: allocate docker repo
         run: |
           if [[ $(expr $(expr ${{ github.run_id }} + ${{ strategy.job-index }} ) % 2 ) -eq 1 ]]; then
@@ -164,12 +172,14 @@ jobs:
               values:
                 namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
                 global:
-                  mode: ${{ matrix.mode }}
+                  mode: ${{ env.ACTUAL_MODE }}
                 nacos:
                   replicaCount: ${{ env.REPLICA_COUNT }}
                   image:
                     repository: ${{ env.DOCKER_REPO_ACTUAL }}
                     tag: ${{ matrix.version }}
+                  auth:
+                    enabled: ${{ env.AUTH_ENABLED }}
                   storage:
                     type: ${{ env.DATABASE }}
                     db:
@@ -180,18 +190,27 @@ jobs:
                 service:
                   nodePort: ${{ env.NODE_PORT }}
                   type: ClusterIP
+
   e2e-java-test:
     if: ${{ success() }}
     name: Java e2e Test
     needs: [docker, deploy]
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      CODE_PATH: java/nacos-2X
     strategy:
       fail-fast: false
       matrix:
-        mode: ["cluster","standalone"]
+        mode: ["cluster","standalone","standalone_auth"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
+      - name: set code path
+        run: |
+          if [[ ${{ matrix.mode }} = "standalone_auth" ]]; then
+            echo "CODE_PATH=java/auth" >> $GITHUB_ENV
+            echo ${{ matrix.mode }}-nacos-${{ github.run_id }}-${{ strategy.job-index }}
+          fi
       - uses: apache/rocketmq-test-tool@java-dev
         name: java e2e test
         with:
@@ -207,7 +226,7 @@ jobs:
               REPO_NAME: ${{ env.TEST_REPO_NAME }}
               CODE: https://github.com/${{ env.TEST_REPO_NAME }}
               BRANCH: main
-              CODE_PATH: java/nacos-2X
+              CODE_PATH: ${{ env.CODE_PATH }}
               CMD: mvn clean test -B
               ALL_IP: null
             CONTAINER:
@@ -311,6 +330,7 @@ jobs:
               BRANCH: main
               CODE_PATH: cpp
               CMD: |
+                yum-config-manager remove centos-sclo-rh
                 cd /root/code/cpp && make install
                 echo "export LD_LIBRARY_PATH=/usr/local/lib" >> ~/.bashrc  && source ~/.bashrc
                 cd /root/code/cpp/nacoscpptest
@@ -501,7 +521,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mode: ["cluster","standalone"]
+        mode: ["cluster","standalone","standalone_auth"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
       - uses: apache/rocketmq-test-tool@java-dev
