@@ -15,7 +15,7 @@ jobs:
         uses: hasura/comment-progress@v2.3.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          repository: $GITHUB_REPOSITORY
+          repository: ${{ github.repository }}
           number: ${{ github.event.number }}
           id: thanks-and-hint-to-document
           recreate: true
