@@ -73,7 +73,7 @@ class DiffEditorDialog extends React.Component {
       theme: 'xq-light',
       highlightDifferences: true,
       connect: 'align',
-      collapseIdentical: false,
+      collapseIdentical: true,
       revertButtons: typeof this.props.publishConfig === 'function',
     });
   }

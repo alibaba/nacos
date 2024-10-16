@@ -17,9 +17,14 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
+import com.alibaba.nacos.api.config.remote.request.cluster.ConfigChangeClusterSyncRequest;
+import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
+import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import io.grpc.stub.StreamObserver;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -31,8 +36,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.mock.env.MockEnvironment;
+import org.springframework.util.ReflectionUtils;
+
+import java.lang.reflect.Field;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.eq;
 
 /**
  * {@link GrpcSdkServer} and {@link GrpcClusterServer} unit test.
@@ -81,5 +90,32 @@ class GrpcServerTest {
         assertEquals(ConnectionType.GRPC, grpcSdkServer.getConnectionType());
         assertEquals(1001, grpcSdkServer.rpcPortOffset());
         grpcSdkServer.stopServer();
+    }
+    
+    @Test
+    public void testGrpcSdkServerSourceCheck() throws Exception {
+        grpcSdkServer = new GrpcSdkServer();
+        RequestHandlerRegistry mock = Mockito.mock(RequestHandlerRegistry.class);
+        Field field = ReflectionUtils.findField(GrpcSdkServer.class, "requestHandlerRegistry");
+        field.setAccessible(true);
+        ReflectionUtils.setField(field, grpcSdkServer, mock);
+        GrpcRequestAcceptor mockAcceptor = Mockito.mock(GrpcRequestAcceptor.class);
+        Field fieldGrpcAcceptor = ReflectionUtils.findField(GrpcSdkServer.class, "grpcCommonRequestAcceptor");
+        fieldGrpcAcceptor.setAccessible(true);
+        ReflectionUtils.setField(fieldGrpcAcceptor, grpcSdkServer, mockAcceptor);
+        
+        StreamObserver streamObserverMock = Mockito.mock(StreamObserver.class);
+        Payload convert = GrpcUtils.convert(new ConfigChangeClusterSyncRequest());
+        //verify not allowed
+        Mockito.when(mock.checkSourceInvokeAllowed(ConfigChangeClusterSyncRequest.class.getSimpleName(),
+                grpcSdkServer.getSource())).thenReturn(false);
+        grpcSdkServer.handleCommonRequest(convert, streamObserverMock);
+        Mockito.verify(streamObserverMock, Mockito.times(1)).onCompleted();
+        //verify allowed
+        Mockito.when(mock.checkSourceInvokeAllowed(ConfigChangeClusterSyncRequest.class.getSimpleName(),
+                grpcSdkServer.getSource())).thenReturn(true);
+        grpcSdkServer.handleCommonRequest(convert, streamObserverMock);
+        Mockito.verify(mockAcceptor, Mockito.times(1)).request(eq(convert), eq(streamObserverMock));
+        
     }
 }

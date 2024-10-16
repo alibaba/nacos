@@ -21,12 +21,13 @@ import { Button, ConfigProvider, Radio } from '@alifd/next';
 import PageTitle from '../../components/PageTitle';
 import { changeLanguage } from '@/reducers/locale';
 import changeTheme from '../../theme';
+import changeNameShow from '../../components/NameSpaceList/show';
 import { connect } from 'react-redux';
-import { LANGUAGE_KEY, THEME } from '../../constants';
+import { LANGUAGE_KEY, NAME_SHOW, THEME } from '../../constants';
 
 const { Group: RadioGroup } = Radio;
 
-@connect(state => ({ ...state.locale }), { changeLanguage, changeTheme })
+@connect(state => ({ ...state.locale }), { changeLanguage, changeTheme, changeNameShow })
 @ConfigProvider.config
 class SettingCenter extends React.Component {
   static displayName = 'SettingCenter';
@@ -35,14 +36,18 @@ class SettingCenter extends React.Component {
     locale: PropTypes.object,
     changeLanguage: PropTypes.func,
     changeTheme: PropTypes.func,
+    changeNameShow: PropTypes.func,
   };
 
   constructor(props) {
     super(props);
     const defaultTheme = localStorage.getItem(THEME);
+    const defaultShow = localStorage.getItem(NAME_SHOW);
+    const defaultLanguage = localStorage.getItem(LANGUAGE_KEY);
     this.state = {
       theme: defaultTheme === 'dark' ? 'dark' : 'light',
-      language: localStorage.getItem(LANGUAGE_KEY),
+      language: defaultLanguage === 'en-US' ? 'en-US' : 'zh-CN',
+      nameShow: defaultShow === 'select' ? 'select' : 'label',
     };
   }
 
@@ -58,12 +63,20 @@ class SettingCenter extends React.Component {
     });
   }
 
+  newNameShow(value) {
+    this.setState({
+      nameShow: value,
+    });
+  }
+
   submit() {
-    const { changeLanguage, changeTheme } = this.props;
+    const { changeLanguage, changeTheme, changeNameShow } = this.props;
     const currentLanguage = this.state.language;
     const currentTheme = this.state.theme;
+    const currentNameShow = this.state.nameShow;
     changeLanguage(currentLanguage);
     changeTheme(currentTheme);
+    changeNameShow(currentNameShow);
   }
 
   render() {
@@ -75,6 +88,10 @@ class SettingCenter extends React.Component {
     const languageList = [
       { value: 'en-US', label: 'English' },
       { value: 'zh-CN', label: '中文' },
+    ];
+    const nameShowList = [
+      { value: 'select', label: locale.settingShowSelect },
+      { value: 'label', label: locale.settingShowLabel },
     ];
     return (
       <>
@@ -95,6 +112,14 @@ class SettingCenter extends React.Component {
                 dataSource={languageList}
                 value={this.state.language}
                 onChange={this.newLanguage.bind(this)}
+              />
+            </div>
+            <div className="setting-checkbox">
+              <div className="setting-span">{locale.settingShow}</div>
+              <RadioGroup
+                dataSource={nameShowList}
+                value={this.state.nameShow}
+                onChange={this.newNameShow.bind(this)}
               />
             </div>
           </div>

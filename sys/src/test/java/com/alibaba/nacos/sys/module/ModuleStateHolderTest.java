@@ -54,7 +54,7 @@ class ModuleStateHolderTest {
     
     @Test
     void testGetAllModuleStates() {
-        assertEquals(2, ModuleStateHolder.getInstance().getAllModuleStates().size());
+        assertEquals(3, ModuleStateHolder.getInstance().getAllModuleStates().size());
     }
     
     @Test
@@ -67,6 +67,12 @@ class ModuleStateHolderTest {
     void testGetStateValueByNameWithoutModuleState() {
         assertEquals("", ModuleStateHolder.getInstance().getStateValueByName("non-exist", "test"));
         assertEquals("aaa", ModuleStateHolder.getInstance().getStateValueByName("non-exist", "test", "aaa"));
+    }
+    
+    @Test
+    void testGetStateValueByNameForRebuildState() {
+        int lastValue = ModuleStateHolder.getInstance().getStateValueByName("rebuild-mock", "re-test", 0);
+        assertEquals(lastValue + 1, ModuleStateHolder.getInstance().getStateValueByName("rebuild-mock", "re-test", 0));
     }
     
     @Test

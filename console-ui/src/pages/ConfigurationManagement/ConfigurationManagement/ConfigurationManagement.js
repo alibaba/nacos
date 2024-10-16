@@ -28,21 +28,20 @@ import {
   Icon,
   Input,
   Menu,
+  MenuButton,
+  Message,
   Pagination,
   Select,
+  Switch,
   Table,
   Upload,
-  Message,
-  MenuButton,
-  Box,
-  Switch,
 } from '@alifd/next';
 import BatchHandle from 'components/BatchHandle';
 import RegionGroup from 'components/RegionGroup';
 import ShowCodeing from 'components/ShowCodeing';
 import DeleteDialog from 'components/DeleteDialog';
 import DashboardCard from './DashboardCard';
-import { getParams, setParams, request } from '@/globalLib';
+import { getParams, request, setParams } from '@/globalLib';
 import { goLogin } from '../../../globalLib';
 import { connect } from 'react-redux';
 import { getConfigs, getConfigsV2 } from '../../../reducers/configuration';
@@ -50,12 +49,22 @@ import PageTitle from '../../../components/PageTitle';
 import QueryResult from '../../../components/QueryResult';
 
 import './index.scss';
-import { LANGUAGE_KEY, GLOBAL_PAGE_SIZE_LIST, LOGINPAGE_ENABLED } from '../../../constants';
+import { GLOBAL_PAGE_SIZE_LIST, LANGUAGE_KEY, LOGINPAGE_ENABLED } from '../../../constants';
 import TotalRender from '../../../components/Page/TotalRender';
 
 const { Item } = MenuButton;
 const { Panel } = Collapse;
 const configsTableSelected = new Map();
+const typeMapping = [
+  { value: 'text', label: 'TEXT' },
+  { value: 'json', label: 'JSON' },
+  { value: 'xml', label: 'XML' },
+  { value: 'yaml', label: 'YAML' },
+  { value: 'html', label: 'HTML' },
+  { value: 'properties', label: 'Properties' },
+  { value: 'toml', label: 'TOML' },
+];
+
 @connect(
   state => ({
     configurations: state.configuration.configurations,
@@ -102,6 +111,7 @@ class ConfigurationManagement extends React.Component {
       appName: this.appName,
       config_detail: getParams('configDetail') || '',
       config_tags: getParams('configTags') ? getParams('configTags').split(',') : [],
+      types: getParams('types') ? getParams('types').split(',') : [],
       tagLst: getParams('tagList') ? getParams('tagList').split(',') : [],
       selectValue: [],
       loading: false,
@@ -280,6 +290,7 @@ class ConfigurationManagement extends React.Component {
       pageNo: prePageNo ? prePageNo : pageNo,
       pageSize: prePageSize ? prePageSize : this.state.pageSize,
       tenant: this.tenant,
+      types: this.state.types.join(','),
     };
     setParams('pageSize', null);
     setParams('pageNo', null);
@@ -356,7 +367,14 @@ class ConfigurationManagement extends React.Component {
             <span style={{ color: '#c7254e' }}>{record.group}</span>
           </p>
           <p>
-            <span style={{ color: '#999', marginRight: 5 }}>{locale.environment}</span>
+            <span
+              style={{
+                color: '#999',
+                marginRight: 5,
+              }}
+            >
+              {locale.environment}
+            </span>
             <span style={{ color: '#c7254e' }}>{self.serverId || ''}</span>
           </p>
         </div>
@@ -549,10 +567,27 @@ class ConfigurationManagement extends React.Component {
     );
   }
 
+  setConfigTypes(value) {
+    this.setState({
+      types: value || [],
+    });
+    if (!value) {
+      setParams('types', '');
+    } else {
+      setParams('types', value.join(','));
+    }
+  }
+
+  getLabelFromValue(labelMapping, value) {
+    const mapping = labelMapping.find(item => item.value === value);
+    return mapping ? mapping.label : value;
+  }
+
   clear = () => {
     this.setAppName('');
     this.setConfigTags([]);
     this.setConfigDetail('');
+    this.setConfigTypes([]);
   };
 
   changeAdvancedQuery = () => {
@@ -715,7 +750,16 @@ class ConfigurationManagement extends React.Component {
         let namespaceSelectData = [];
         let namespaceSelecItemRender = item => {
           if (item.isCurrent) {
-            return <span style={{ color: '#00AA00', 'font-weight': 'bold' }}>{item.label}</span>;
+            return (
+              <span
+                style={{
+                  color: '#00AA00',
+                  'font-weight': 'bold',
+                }}
+              >
+                {item.label}
+              </span>
+            );
           } else {
             return <span>{item.label}</span>;
           }
@@ -767,18 +811,47 @@ class ConfigurationManagement extends React.Component {
           content: (
             <>
               <div style={{ marginBottom: 10 }}>
-                <span style={{ color: '#999', marginRight: 5 }}>{locale.source}</span>
+                <span
+                  style={{
+                    color: '#999',
+                    marginRight: 5,
+                  }}
+                >
+                  {locale.source}
+                </span>
                 <span style={{ color: '#49D2E7' }}>{self.state.nownamespace_name} </span>|{' '}
                 {self.state.nownamespace_id}
               </div>
               <div style={{ marginBottom: 10 }}>
-                <span style={{ color: '#999', marginRight: 5 }}>{locale.configurationNumber}</span>
+                <span
+                  style={{
+                    color: '#999',
+                    marginRight: 5,
+                  }}
+                >
+                  {locale.configurationNumber}
+                </span>
                 <span style={{ color: '#49D2E7' }}>{configsTableSelected.size} </span>
                 {locale.selectedEntry}
               </div>
               <div style={{ marginBottom: 10 }}>
-                <span style={{ color: 'red', marginRight: 2, marginLeft: -10 }}>{'*'}</span>
-                <span style={{ color: '#999', marginRight: 5 }}>{locale.target}</span>
+                <span
+                  style={{
+                    color: 'red',
+                    marginRight: 2,
+                    marginLeft: -10,
+                  }}
+                >
+                  {'*'}
+                </span>
+                <span
+                  style={{
+                    color: '#999',
+                    marginRight: 5,
+                  }}
+                >
+                  {locale.target}
+                </span>
                 <Select
                   style={{ width: 450 }}
                   placeholder={locale.selectNamespace}
@@ -802,7 +875,14 @@ class ConfigurationManagement extends React.Component {
                 </span>
               </div>
               <div style={{ marginBottom: 10 }}>
-                <span style={{ color: '#999', marginRight: 5 }}>{locale.samePreparation}:</span>
+                <span
+                  style={{
+                    color: '#999',
+                    marginRight: 5,
+                  }}
+                >
+                  {locale.samePreparation}:
+                </span>
                 <Select
                   style={{ width: 130 }}
                   size={'medium'}
@@ -1074,12 +1154,26 @@ class ConfigurationManagement extends React.Component {
       content: (
         <div>
           <div style={{ marginBottom: 10 }}>
-            <span style={{ color: '#999', marginRight: 5 }}>{locale.targetNamespace}:</span>
+            <span
+              style={{
+                color: '#999',
+                marginRight: 5,
+              }}
+            >
+              {locale.targetNamespace}:
+            </span>
             <span style={{ color: '#49D2E7' }}>{this.state.nownamespace_name} </span>|{' '}
             {this.state.nownamespace_id}
           </div>
           <div style={{ marginBottom: 10 }}>
-            <span style={{ color: '#999', marginRight: 5 }}>{locale.samePreparation}:</span>
+            <span
+              style={{
+                color: '#999',
+                marginRight: 5,
+              }}
+            >
+              {locale.samePreparation}:
+            </span>
             <Select
               style={{ width: 130 }}
               size={'medium'}
@@ -1230,7 +1324,11 @@ class ConfigurationManagement extends React.Component {
                   style={
                     this.inApp
                       ? { display: 'none' }
-                      : { verticalAlign: 'middle', marginTop: 0, marginLeft: 0 }
+                      : {
+                          verticalAlign: 'middle',
+                          marginTop: 0,
+                          marginLeft: 0,
+                        }
                   }
                 >
                   <Button onClick={this.changeAdvancedQuery}>
@@ -1304,6 +1402,22 @@ class ConfigurationManagement extends React.Component {
                 </Form.Item>
                 <Form.Item
                   style={this.state.isAdvancedQuery ? {} : { display: 'none' }}
+                  label={locale.types}
+                >
+                  <Select
+                    style={{ width: 200 }}
+                    size="medium"
+                    hasArrow
+                    mode="tag"
+                    placeholder={locale.typeSelectedAlertContent}
+                    dataSource={typeMapping}
+                    value={this.state.types}
+                    onChange={this.setConfigTypes.bind(this)}
+                    hasClear
+                  />
+                </Form.Item>
+                <Form.Item
+                  style={this.state.isAdvancedQuery ? {} : { display: 'none' }}
                   label={locale.configDetailLabel}
                 >
                   <Input
@@ -1329,6 +1443,12 @@ class ConfigurationManagement extends React.Component {
             >
               <Table.Column sortable={true} title={'Data Id'} dataIndex={'dataId'} />
               <Table.Column sortable={true} title={'Group'} dataIndex={'group'} />
+              <Table.Column
+                sortable={true}
+                title={locale.types}
+                cell={this.getLabelFromValue.bind(this, typeMapping)}
+                dataIndex={'type'}
+              />
               {!this.inApp && (
                 <Table.Column sortable={true} title={locale.application} dataIndex="appName" />
               )}

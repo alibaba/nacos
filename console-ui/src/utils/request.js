@@ -82,7 +82,7 @@ const request = () => {
         if (
           auth_admin_request &&
           auth_admin_request === 'false' &&
-          window.location.href.includes('/register')
+          window.location.hash.includes('/register')
         ) {
           goLogin();
         }

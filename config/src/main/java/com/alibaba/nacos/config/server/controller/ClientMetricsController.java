@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest;
 import com.alibaba.nacos.api.config.remote.response.ClientConfigMetricResponse;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
@@ -30,6 +31,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
+import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
@@ -86,7 +88,11 @@ public class ClientMetricsController {
     public ResponseEntity metric(@RequestParam("ip") String ip,
             @RequestParam(value = "dataId", required = false) String dataId,
             @RequestParam(value = "group", required = false) String group,
-            @RequestParam(value = "tenant", required = false) String tenant) {
+            @RequestParam(value = "tenant", required = false) String tenant) throws NacosException {
+    
+        ParamUtils.checkTenant(tenant);
+        ParamUtils.checkParam(dataId, group, "default", "default");
+    
         Loggers.CORE.info("Get cluster config metrics received, ip={},dataId={},group={},tenant={}", ip, dataId, group,
                 tenant);
         Map<String, Object> responseMap = new HashMap<>(3);
@@ -168,7 +174,11 @@ public class ClientMetricsController {
     public Map<String, Object> getClientMetrics(@RequestParam("ip") String ip,
             @RequestParam(value = "dataId", required = false) String dataId,
             @RequestParam(value = "group", required = false) String group,
-            @RequestParam(value = "tenant", required = false) String tenant) {
+            @RequestParam(value = "tenant", required = false) String tenant) throws NacosException {
+    
+        ParamUtils.checkTenant(tenant);
+        ParamUtils.checkParam(dataId, group, "default", "default");
+    
         Map<String, Object> metrics = new HashMap<>(16);
         List<Connection> connectionsByIp = connectionManager.getConnectionByIp(ip);
         for (Connection connectionByIp : connectionsByIp) {

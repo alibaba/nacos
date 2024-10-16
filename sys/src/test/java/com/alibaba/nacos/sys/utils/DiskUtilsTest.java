@@ -25,28 +25,38 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DiskUtilsTest {
     
     private static File testFile;
     
+    private static File openTestFile;
+    
+    private static File testLineFile;
+    
     @BeforeAll
-    static void setup() throws IOException {
+    static void setup() throws IOException, URISyntaxException {
         testFile = DiskUtils.createTmpFile("nacostmp", ".ut");
+        testLineFile = new File(DiskUtilsTest.class.getClassLoader().getResource("line_iterator_test.txt").toURI());
+        openTestFile = new File(testLineFile.getParent(), "temp_open_file");
     }
     
     @AfterAll
     static void tearDown() throws IOException {
         testFile.deleteOnExit();
+        openTestFile.deleteOnExit();
     }
     
     @Test
@@ -236,6 +246,14 @@ class DiskUtilsTest {
     }
     
     @Test
+    void testOpenFileWithCreateFile() {
+        File file = DiskUtils.openFile(openTestFile.getParent(), openTestFile.getName(), true);
+        assertNotNull(file);
+        assertEquals(openTestFile.getPath(), file.getPath());
+        assertEquals(openTestFile.getName(), file.getName());
+    }
+    
+    @Test
     void testOpenFileWithPath() {
         File file = DiskUtils.openFile(testFile.getParent(), testFile.getName(), false);
         assertNotNull(file);
@@ -243,4 +261,51 @@ class DiskUtilsTest {
         assertEquals(testFile.getName(), file.getName());
     }
     
+    @Test
+    void testLineIteratorNextLine() throws IOException {
+        try (DiskUtils.LineIterator iterator = DiskUtils.lineIterator(testLineFile)) {
+            int lineCount = 0;
+            while (iterator.hasNext()) {
+                String lineContext = iterator.nextLine();
+                assertTrue(lineContext.contains("line"));
+                lineCount++;
+            }
+            assertEquals(3, lineCount);
+        }
+    }
+    
+    @Test
+    void testLineIteratorNext() throws IOException {
+        try (DiskUtils.LineIterator iterator = DiskUtils.lineIterator(testLineFile)) {
+            int lineCount = 0;
+            while (iterator.hasNext()) {
+                String lineContext = iterator.next();
+                assertTrue(lineContext.contains("line"));
+                lineCount++;
+            }
+            assertEquals(3, lineCount);
+        }
+    }
+    
+    @Test
+    void testLineIteratorForEachRemaining() throws IOException {
+        try (DiskUtils.LineIterator iterator = DiskUtils.lineIterator(testLineFile)) {
+            AtomicInteger lineCount = new AtomicInteger();
+            iterator.forEachRemaining(s -> {
+                if (s.contains("line")) {
+                    lineCount.incrementAndGet();
+                }
+            });
+            assertEquals(3, lineCount.get());
+        }
+    }
+    
+    @Test
+    void testLineIteratorRemove() {
+        assertThrows(UnsupportedOperationException.class, () -> {
+            try (DiskUtils.LineIterator iterator = DiskUtils.lineIterator(testLineFile, "UTF-8")) {
+                iterator.remove();
+            }
+        });
+    }
 }
