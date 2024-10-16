@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,21 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.config.impl;
+package com.alibaba.nacos.core.remote.grpc;
 
-import com.alibaba.nacos.common.notify.SlowEvent;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
- * Server List Change Event.
- *
- * @author zongtanghu
+ * annotation for invoke source.
  */
-public class ServerListChangeEvent extends SlowEvent {
+@Retention(RetentionPolicy.RUNTIME)
+public @interface InvokeSource {
+    
+    
+    /**
+     * allowed sources.
+     * @return
+     */
+    String[] source();
 }
