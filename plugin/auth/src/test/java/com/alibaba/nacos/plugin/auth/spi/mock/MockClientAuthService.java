@@ -29,6 +29,11 @@ public class MockClientAuthService extends AbstractClientAuthService {
     public Boolean login(Properties properties) {
         return true;
     }
+
+    @Override
+    public Boolean doLoginWithoutTimeCheck(Properties properties) {
+        return true;
+    }
     
     @Override
     public LoginIdentityContext getLoginIdentityContext(RequestResource resource) {

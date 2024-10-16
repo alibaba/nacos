@@ -64,6 +64,20 @@ public class SecurityProxy implements Closeable {
             clientAuthService.login(properties);
         }
     }
+
+    /**
+     * Force re-login all available ClientAuthService instance without time check.
+     *
+     * @param properties login identity information.
+     */
+    public void forceReLogin(Properties properties) {
+        if (clientAuthPluginManager.getAuthServiceSpiImplSet().isEmpty()) {
+            return;
+        }
+        for (ClientAuthService clientAuthService : clientAuthPluginManager.getAuthServiceSpiImplSet()) {
+            clientAuthService.doLoginWithoutTimeCheck(properties);
+        }
+    }
     
     /**
      * get the context of all nacosRestTemplate instance.

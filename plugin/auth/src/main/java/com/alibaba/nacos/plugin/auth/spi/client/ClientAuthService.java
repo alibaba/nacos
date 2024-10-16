@@ -38,6 +38,14 @@ public interface ClientAuthService extends Closeable {
      * @return boolean whether login success.
      */
     Boolean login(Properties properties);
+
+    /**
+     * login(request) to service and get response without time check.
+     *
+     * @param properties login auth information.
+     * @return boolean whether login success.
+     */
+    Boolean doLoginWithoutTimeCheck(Properties properties);
     
     /**
      * set login serverList.

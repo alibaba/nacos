@@ -67,7 +67,12 @@ public class RamClientAuthServiceImpl extends AbstractClientAuthService {
         loadRegionId(properties);
         return true;
     }
-    
+
+    @Override
+    public Boolean doLoginWithoutTimeCheck(Properties properties) {
+        return login(properties);
+    }
+
     private void loadRoleName(Properties properties) {
         String ramRoleName = properties.getProperty(PropertyKeyConst.RAM_ROLE_NAME);
         if (!StringUtils.isBlank(ramRoleName)) {

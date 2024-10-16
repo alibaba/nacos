@@ -73,33 +73,41 @@ public class NacosClientAuthServiceImpl extends AbstractClientAuthService {
                     .toMillis(tokenTtl - tokenRefreshWindow)) {
                 return true;
             }
-            
-            if (StringUtils.isBlank(properties.getProperty(PropertyKeyConst.USERNAME))) {
-                lastRefreshTime = System.currentTimeMillis();
-                return true;
-            }
-            
-            for (String server : this.serverList) {
-                HttpLoginProcessor httpLoginProcessor = new HttpLoginProcessor(nacosRestTemplate);
-                properties.setProperty(NacosAuthLoginConstant.SERVER, server);
-                LoginIdentityContext identityContext = httpLoginProcessor.getResponse(properties);
-                if (identityContext != null) {
-                    if (identityContext.getAllKey().contains(NacosAuthLoginConstant.ACCESSTOKEN)) {
-                        tokenTtl = Long.parseLong(identityContext.getParameter(NacosAuthLoginConstant.TOKENTTL));
-                        tokenRefreshWindow = tokenTtl / 10;
-                        lastRefreshTime = System.currentTimeMillis();
-
-                        LoginIdentityContext newCtx = new LoginIdentityContext();
-                        newCtx.setParameter(NacosAuthLoginConstant.ACCESSTOKEN,
-                                identityContext.getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
-                        this.loginIdentityContext = newCtx;
-                    }
-                    return true;
-                }
-            }
+            return doLoginWithoutTimeCheck(properties);
         } catch (Throwable throwable) {
             SECURITY_LOGGER.warn("[SecurityProxy] login failed, error: ", throwable);
             return false;
+        }
+    }
+
+    /**
+     * Login to servers without time check.
+     *
+     * @return true if login successfully
+     */
+    public Boolean doLoginWithoutTimeCheck(Properties properties) {
+        if (StringUtils.isBlank(properties.getProperty(PropertyKeyConst.USERNAME))) {
+            lastRefreshTime = System.currentTimeMillis();
+            return true;
+        }
+
+        for (String server : this.serverList) {
+            HttpLoginProcessor httpLoginProcessor = new HttpLoginProcessor(nacosRestTemplate);
+            properties.setProperty(NacosAuthLoginConstant.SERVER, server);
+            LoginIdentityContext identityContext = httpLoginProcessor.getResponse(properties);
+            if (identityContext != null) {
+                if (identityContext.getAllKey().contains(NacosAuthLoginConstant.ACCESSTOKEN)) {
+                    tokenTtl = Long.parseLong(identityContext.getParameter(NacosAuthLoginConstant.TOKENTTL));
+                    tokenRefreshWindow = tokenTtl / 10;
+                    lastRefreshTime = System.currentTimeMillis();
+
+                    LoginIdentityContext newCtx = new LoginIdentityContext();
+                    newCtx.setParameter(NacosAuthLoginConstant.ACCESSTOKEN,
+                            identityContext.getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
+                    this.loginIdentityContext = newCtx;
+                }
+                return true;
+            }
         }
         return false;
     }

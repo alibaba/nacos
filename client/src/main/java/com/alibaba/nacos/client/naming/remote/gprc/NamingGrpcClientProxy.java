@@ -92,10 +92,15 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     private final RpcClient rpcClient;
     
     private final NamingGrpcRedoService redoService;
+
+    private final NacosClientProperties properties;
+
+    public static final String INVALID_SIGNATURE = "Invalid signature";
     
     public NamingGrpcClientProxy(String namespaceId, SecurityProxy securityProxy, ServerListFactory serverListFactory,
             NacosClientProperties properties, ServiceInfoHolder serviceInfoHolder) throws NacosException {
         super(securityProxy);
+        this.properties = properties;
         this.namespaceId = namespaceId;
         this.uuid = UUID.randomUUID().toString();
         this.requestTimeout = Long.parseLong(properties.getProperty(CommonParams.NAMING_REQUEST_TIMEOUT, "-1"));
@@ -445,6 +450,12 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
             request.putAllHeader(
                     getSecurityHeaders(request.getNamespace(), request.getGroupName(), request.getServiceName()));
             response = requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
+            if (response.getMessage() != null && response.getMessage().equals(INVALID_SIGNATURE)) {
+                this.reLogin(properties.asProperties());
+                request.putAllHeader(
+                        getSecurityHeaders(request.getNamespace(), request.getGroupName(), request.getServiceName()));
+                response = requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
+            }
             if (ResponseCode.SUCCESS.getCode() != response.getResultCode()) {
                 throw new NacosException(response.getErrorCode(), response.getMessage());
             }

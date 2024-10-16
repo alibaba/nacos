@@ -24,6 +24,7 @@ import com.alibaba.nacos.common.notify.listener.Subscriber;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * Abstract Naming client proxy.
@@ -53,5 +54,9 @@ public abstract class AbstractNamingClientProxy extends Subscriber<ServerListCha
         Map<String, String> result = new HashMap<>(1);
         result.put(APP_FILED, AppNameUtils.getAppName());
         return result;
+    }
+
+    protected void reLogin(Properties properties) {
+        this.securityProxy.forceReLogin(properties);
     }
 }
