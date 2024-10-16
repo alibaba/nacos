@@ -11,7 +11,6 @@ env:
   DOCKER_REPO: wuyfeedocker/nacos-ci
   DOCKER_REPO_B: wuyfeehub/nacos-ci
   TEST_REPO_NAME: nacos-group/nacos-e2e
-  # ACTIONS_ALLOW_UNSECURE_COMMANDS: true
   HEADER_PARAMS: "-H \"Accept: application/vnd.github+json\" -H \"Authorization: Bearer ${{ secrets.ACTION_TOKEN }}\" -H \"X-GitHub-Api-Version: 2022-11-28\""
   HEADER_PARAMS_WRITE_COMMENT: "-H \"Accept: application/vnd.github+json\" -H \"Authorization: Bearer ${{ secrets.ACTION_TOKEN }}\" -H \"X-GitHub-Api-Version: 2022-11-28\""
   BASE_URL_NACOS: https://api.github.com/repos/${GITHUB_REPOSITORY}
@@ -478,7 +477,7 @@ jobs:
               BRANCH: main
               CODE_PATH: python
               CMD: |
-                cd /root/code/python 
+                cd /root/code/python
                 pip3 install -r requirements.txt
                 source ~/.bashrc
                 cd nacospythontest && pytest --junitxml ../target/surefire-reports/TEST-report.xml test/*_test.py --log-cli-level=DEBUG
@@ -529,17 +528,36 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - name: 'Download artifact'
+        uses: actions/github-script@v3.1.0
+        with:
+          script: |
+            var artifacts = await github.actions.listWorkflowRunArtifacts({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               run_id: ${{ github.event.workflow_run.id }},
+            });
+            
+            var matchArtifactPR = artifacts.data.artifacts.filter((artifact) => {
+               return artifact.name == "pr"
+            })[0];
+            var download = await github.actions.downloadArtifact({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               artifact_id: matchArtifactPR.id,
+               archive_format: 'zip',
+            });
+            var fs = require('fs');
+            fs.writeFileSync('${{github.workspace}}/pr.zip', Buffer.from(download.data));
+      - name: unzip pr
+        run: |
+          unzip pr.zip
+          cat pr.txt
+          pr_number=`cat pr.txt`
+          echo "PR_NUMBER=${pr_number}" >> $GITHUB_ENV
       - name: write issue comment
         run: |
-          number=''
-          count=10
-          while [[ "${number}" == "" && ${count} -gt 0 ]]
-          do
-            sleep 3
-            let "count--"
-            number=`curl -L ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL_ROBOT }}/actions/variables | jq -r '.variables[]? | select(.name == "VAR_${{ github.event.workflow_run.id }}") | .value'`
-            echo "number=${number}"
-          done
+          echo ${{ env.PR_NUMBER }}
           job_status=""
           if [ ${{ needs.docker.result }} = 'success' ]  && [ ${{ needs.deploy.result }} = 'success' ] && [ ${{ needs.e2e-java-test.result }} = 'success' ] && [ ${{ needs.e2e-go-test.result }} = 'success' ] && [ ${{ needs.e2e-cpp-test.result }} = 'success' ] && [ ${{ needs.e2e-csharp-test.result }} = 'success' ] && [ ${{ needs.e2e-nodejs-test.result }} = 'success' ] && [ ${{ needs.e2e-python-test.result }} = 'success' ]; then
             jobs_status='$\\color{green}{SUCCESS}$'
@@ -568,5 +586,4 @@ jobs:
           markdown_content+=$(generate_content ${{ needs.clean.result }} "- clean (standalone & cluster & standalone_auth): ")
           echo "markdown_content: \n ${markdown_content}"
           payload=`echo "{\"body\": \"${markdown_content}\"}" | jq .`
-          curl -L -X DELETE ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL_ROBOT }}/actions/variables/VAR_${{ github.event.workflow_run.id }}
-          curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${number}/comments -d "${payload}"
+          curl -L -X POST ${{ env.HEADER_PARAMS_WRITE_COMMENT }} ${{ env.BASE_URL_NACOS }}/issues/${{ env.PR_NUMBER }}/comments -d "${payload}"
