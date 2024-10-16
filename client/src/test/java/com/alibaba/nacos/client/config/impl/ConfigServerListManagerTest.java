@@ -92,6 +92,8 @@ class ConfigServerListManagerTest {
         NacosClientProperties mockedProperties = mock(NacosClientProperties.class);
         when(mockedProperties.getProperty(PropertyKeyConst.ENDPOINT)).thenReturn("1.1.1.1");
         when(mockedProperties.getProperty(PropertyKeyConst.ENDPOINT_PORT)).thenReturn("9090");
+        when(mockedProperties.getProperty(PropertyKeyConst.ENDPOINT_REFRESH_INTERVAL_SECONDS, "30")).thenReturn("30");
+        when(mockedProperties.derive()).thenReturn(mockedProperties);
         final ConfigServerListManager mgr = new ConfigServerListManager(mockedProperties);
         mgr.start();
         mgr.shutdown();
@@ -103,6 +105,7 @@ class ConfigServerListManagerTest {
             NacosClientProperties mockedProperties = mock(NacosClientProperties.class);
             when(mockedProperties.getProperty(PropertyKeyConst.SERVER_ADDR)).thenReturn("1.1.1.1");
             when(mockedProperties.getProperty(PropertyKeyConst.NAMESPACE)).thenReturn("namespace");
+            when(mockedProperties.derive()).thenReturn(mockedProperties);
             final ConfigServerListManager mgr = new ConfigServerListManager(mockedProperties);
             mgr.start();
             assertEquals("nacos", mgr.getContextPath());
@@ -190,6 +193,7 @@ class ConfigServerListManagerTest {
         NacosClientProperties mockedProperties = mock(NacosClientProperties.class);
         when(mockedProperties.getProperty(PropertyKeyConst.SERVER_ADDR)).thenReturn("1.1.1.1:8848");
         when(mockedProperties.getProperty(PropertyKeyConst.NAMESPACE)).thenReturn("aaa");
+        when(mockedProperties.derive()).thenReturn(mockedProperties);
         final ConfigServerListManager mgr = new ConfigServerListManager(mockedProperties);
         mgr.start();
         

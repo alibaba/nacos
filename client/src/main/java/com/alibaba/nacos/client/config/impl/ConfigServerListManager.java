@@ -51,7 +51,7 @@ public class ConfigServerListManager extends AbstractServerListManager {
     
     private Iterator<String> iterator;
     
-    public ConfigServerListManager(NacosClientProperties properties) throws NacosException {
+    public ConfigServerListManager(NacosClientProperties properties) {
         super(properties);
         String namespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         if (StringUtils.isNotBlank(namespace)) {
@@ -60,12 +60,12 @@ public class ConfigServerListManager extends AbstractServerListManager {
     }
     
     @Override
-    public String getModuleName() {
+    protected String getModuleName() {
         return "Config";
     }
     
     @Override
-    public NacosRestTemplate getNacosRestTemplate() {
+    protected NacosRestTemplate getNacosRestTemplate() {
         return ConfigHttpClientManager.getInstance().getNacosRestTemplate();
     }
     

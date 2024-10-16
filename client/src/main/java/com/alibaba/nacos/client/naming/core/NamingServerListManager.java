@@ -48,11 +48,11 @@ public class NamingServerListManager extends AbstractServerListManager {
     private boolean isDomain;
     
     @JustForTest
-    public NamingServerListManager(Properties properties) throws NacosException {
+    public NamingServerListManager(Properties properties) {
         this(NacosClientProperties.PROTOTYPE.derive(properties), "");
     }
     
-    public NamingServerListManager(NacosClientProperties properties, String namespace) throws NacosException {
+    public NamingServerListManager(NacosClientProperties properties, String namespace) {
         super(properties, namespace);
     }
     
@@ -86,12 +86,12 @@ public class NamingServerListManager extends AbstractServerListManager {
     }
     
     @Override
-    public String getModuleName() {
+    protected String getModuleName() {
         return "Naming";
     }
     
     @Override
-    public NacosRestTemplate getNacosRestTemplate() {
+    protected NacosRestTemplate getNacosRestTemplate() {
         return NamingHttpClientManager.getInstance().getNacosRestTemplate();
     }
     

@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.address;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.constant.Constants.Address;
 import com.alibaba.nacos.client.env.NacosClientProperties;
@@ -46,8 +47,8 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Endpoint server list provider.
- * 
- * @author totalo 
+ *
+ * @author totalo
  */
 public class EndpointServerListProvider extends AbstractServerListProvider {
     
@@ -80,7 +81,8 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
     private String moduleName = "default";
     
     @Override
-    public void init(final NacosClientProperties properties, final NacosRestTemplate nacosRestTemplate) throws NacosException {
+    public void init(final NacosClientProperties properties, final NacosRestTemplate nacosRestTemplate)
+            throws NacosException {
         super.init(properties, nacosRestTemplate);
         this.nacosRestTemplate = nacosRestTemplate;
         initEndpoint(properties);
@@ -89,7 +91,7 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
         initServerListName(properties);
         initAddressServerUrl(properties);
         initModuleName(properties);
-        startRefreshServerListTask();
+        startRefreshServerListTask(properties);
     }
     
     @Override
@@ -102,8 +104,7 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
         String contextPathTmp =
                 StringUtils.isNotBlank(this.endpointContextPath) ? this.endpointContextPath : this.contextPath;
         return CUSTOM_NAME + "-" + String.join("_", endpoint, String.valueOf(endpointPort), contextPathTmp,
-                serverListName) + (StringUtils.isNotBlank(namespace) ? ("_" + StringUtils.trim(
-                namespace)) : "");
+                serverListName) + (StringUtils.isNotBlank(namespace) ? ("_" + StringUtils.trim(namespace)) : "");
     }
     
     @Override
@@ -113,13 +114,7 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
     
     @Override
     public boolean match(final NacosClientProperties properties) {
-        String endpointTmp = properties.getProperty(PropertyKeyConst.ENDPOINT);
-        String isUseEndpointRuleParsing = properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
-                properties.getProperty(SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
-                        String.valueOf(ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE)));
-        if (Boolean.parseBoolean(isUseEndpointRuleParsing)) {
-            endpointTmp = ParamUtil.parsingEndpointRule(endpointTmp);
-        }
+        String endpointTmp = getEndPointTmp(properties);
         return StringUtils.isNotBlank(endpointTmp);
     }
     
@@ -128,12 +123,23 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
         return this.addressServerUrl;
     }
     
+    private String getEndPointTmp(NacosClientProperties properties) {
+        String endpointTmp = properties.getProperty(PropertyKeyConst.ENDPOINT);
+        String isUseEndpointRuleParsing = properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
+                properties.getProperty(SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
+                        String.valueOf(ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE)));
+        if (Boolean.parseBoolean(isUseEndpointRuleParsing)) {
+            endpointTmp = ParamUtil.parsingEndpointRule(endpointTmp);
+        }
+        return endpointTmp;
+    }
+    
     /**
      * Start refresh server list task.
      *
      * @throws NacosException nacos exception
      */
-    public void startRefreshServerListTask() throws NacosException {
+    public void startRefreshServerListTask(NacosClientProperties properties) throws NacosException {
         for (int i = 0; i < initServerListRetryTimes && getServerList().isEmpty(); ++i) {
             refreshServerListIfNeed();
             if (!serversFromEndpoint.isEmpty()) {
@@ -155,7 +161,10 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
         refreshServerListExecutor = new ScheduledThreadPoolExecutor(1,
                 new NameThreadFactory("com.alibaba.nacos.client.address.EndpointServerListProvider.refreshServerList"));
         // executor schedules the timer task
-        refreshServerListExecutor.scheduleWithFixedDelay(this::refreshServerListIfNeed, 0L, 30L, TimeUnit.SECONDS);
+        long refreshInterval = Long.parseLong(
+                properties.getProperty(PropertyKeyConst.ENDPOINT_REFRESH_INTERVAL_SECONDS, "30"));
+        refreshServerListExecutor.scheduleWithFixedDelay(this::refreshServerListIfNeed, 0L, refreshInterval,
+                TimeUnit.SECONDS);
     }
     
     private void refreshServerListIfNeed() {
@@ -168,7 +177,7 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
                 throw new Exception("Can not acquire Nacos list");
             }
             list.sort(String::compareTo);
-            if (null == serversFromEndpoint || !CollectionUtils.isEqualCollection(list, serversFromEndpoint)) {
+            if (!CollectionUtils.isEqualCollection(list, serversFromEndpoint)) {
                 LOGGER.info("[SERVER-LIST] server list is updated: {}", list);
                 serversFromEndpoint = list;
                 lastServerListRefreshTime = System.currentTimeMillis();
@@ -181,8 +190,8 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
     
     private List<String> getServerListFromEndpoint() {
         try {
-            HttpRestResult<String> httpResult = nacosRestTemplate.get(addressServerUrl, HttpUtils.builderHeader(moduleName),
-                    Query.EMPTY, String.class);
+            HttpRestResult<String> httpResult = nacosRestTemplate.get(addressServerUrl,
+                    HttpUtils.builderHeader(moduleName), Query.EMPTY, String.class);
             
             if (!httpResult.ok()) {
                 LOGGER.error("[check-serverlist] error. addressServerUrl: {}, code: {}", addressServerUrl,
@@ -192,10 +201,7 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
             List<String> lines = IoUtils.readLines(new StringReader(httpResult.getData()));
             List<String> result = new ArrayList<>(lines.size());
             for (String serverAddr : lines) {
-                if (StringUtils.isBlank(serverAddr)) {
-                    continue;
-                }
-                String[] ipPort = InternetAddressUtil.splitIPPortStr(serverAddr.trim());
+                String[] ipPort = InternetAddressUtil.splitIPPortStr(serverAddr);
                 String ip = ipPort[0].trim();
                 if (ipPort.length == 1) {
                     result.add(ip + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort());
@@ -211,15 +217,8 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
     }
     
     private void initEndpoint(NacosClientProperties properties) {
-        String endpointTmp = properties.getProperty(PropertyKeyConst.ENDPOINT);
-        // Whether to enable domain name resolution rules
-        String isUseEndpointRuleParsing = properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
-                properties.getProperty(SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
-                        String.valueOf(ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE)));
-        if (Boolean.parseBoolean(isUseEndpointRuleParsing)) {
-            endpointTmp = ParamUtil.parsingEndpointRule(endpointTmp);
-        }
-        this.endpoint = StringUtils.isNotBlank(endpointTmp) ? endpointTmp : "";
+        // Endpoint should not be null or empty, because the match has return `true`.
+        this.endpoint = getEndPointTmp(properties);
     }
     
     private void initEndpointPort(NacosClientProperties properties) {
@@ -241,8 +240,12 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
     }
     
     private void initServerListName(NacosClientProperties properties) {
-        String serverListNameTmp = properties.getProperty(PropertyKeyConst.ENDPOINT_CLUSTER_NAME,
-                properties.getProperty(PropertyKeyConst.CLUSTER_NAME));
+        String serverListNameTmp = properties.getProperty(PropertyKeyConst.ENDPOINT_CLUSTER_NAME);
+        boolean isUseClusterName = Boolean.parseBoolean(
+                properties.getProperty(PropertyKeyConst.IS_ADAPT_CLUSTER_NAME_USAGE));
+        if (StringUtils.isBlank(serverListNameTmp) && isUseClusterName) {
+            serverListNameTmp = properties.getProperty(PropertyKeyConst.CLUSTER_NAME);
+        }
         if (!StringUtils.isBlank(serverListNameTmp)) {
             this.serverListName = serverListNameTmp;
         }
@@ -259,17 +262,16 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
             addressServerUrlTem.append("?namespace=").append(namespace);
             hasQueryString = true;
         }
-        if (properties != null && properties.containsKey(PropertyKeyConst.ENDPOINT_QUERY_PARAMS)) {
-            addressServerUrlTem.append(
-                    hasQueryString ? "&" : "?" + properties.getProperty(PropertyKeyConst.ENDPOINT_QUERY_PARAMS));
-            
+        if (properties.containsKey(PropertyKeyConst.ENDPOINT_QUERY_PARAMS)) {
+            addressServerUrlTem.append(hasQueryString ? "&" : "?");
+            addressServerUrlTem.append(properties.getProperty(PropertyKeyConst.ENDPOINT_QUERY_PARAMS));
         }
         this.addressServerUrl = addressServerUrlTem.toString();
         LOGGER.info("address server url = {}", this.addressServerUrl);
     }
     
     private void initModuleName(NacosClientProperties properties) {
-        String moduleNameTmp = properties.getProperty(PropertyKeyConst.CLIENT_MODULE_TYPE);
+        String moduleNameTmp = properties.getProperty(Constants.CLIENT_MODULE_TYPE);
         if (StringUtils.isNotBlank(moduleNameTmp)) {
             this.moduleName = moduleNameTmp;
         }

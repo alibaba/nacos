@@ -37,6 +37,9 @@ public class PropertyKeyConst {
     
     public static final String ENDPOINT_CLUSTER_NAME = "endpointClusterName";
     
+    public static final String ENDPOINT_REFRESH_INTERVAL_SECONDS = "endpointRefreshIntervalSeconds";
+    
+    @Deprecated
     public static final String SERVER_NAME = "serverName";
     
     public static final String NAMESPACE = "namespace";
@@ -55,7 +58,18 @@ public class PropertyKeyConst {
     
     public static final String CONTEXT_PATH = "contextPath";
     
+    /**
+     * Please use {@link #ENDPOINT_CLUSTER_NAME} replaced.
+     */
+    @Deprecated
     public static final String CLUSTER_NAME = "clusterName";
+    
+    /**
+     * Default is {@code "false"}, if true, and without {@link #ENDPOINT_CLUSTER_NAME}, use {@link #CLUSTER_NAME} to set
+     * endpoint cluster name.
+     */
+    @Deprecated
+    public static final String IS_ADAPT_CLUSTER_NAME_USAGE = "isAdaptClusterNameUsage";
     
     public static final String ENCODE = "encode";
     
@@ -96,8 +110,6 @@ public class PropertyKeyConst {
     public static final String SIGNATURE_REGION_ID = "signatureRegionId";
     
     public static final String LOG_ALL_PROPERTIES = "logAllProperties";
-    
-    public static final String CLIENT_MODULE_TYPE = "clientModuleType";
     
     /**
      * Since 2.3.3, For some situation like java agent using nacos-client which can't use env ram info.
