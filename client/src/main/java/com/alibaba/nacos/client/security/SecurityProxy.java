@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.security;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.auth.impl.NacosAuthLoginConstant;
 import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthPluginManager;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthService;
@@ -38,6 +39,8 @@ import java.util.Properties;
 public class SecurityProxy implements Closeable {
     
     private ClientAuthPluginManager clientAuthPluginManager;
+
+    private Properties properties;
     
     /**
      * Construct from serverList, nacosRestTemplate, init client auth plugin.
@@ -57,6 +60,7 @@ public class SecurityProxy implements Closeable {
      * @param properties login identity information.
      */
     public void login(Properties properties) {
+        this.properties = properties;
         if (clientAuthPluginManager.getAuthServiceSpiImplSet().isEmpty()) {
             return;
         }
@@ -84,5 +88,20 @@ public class SecurityProxy implements Closeable {
     @Override
     public void shutdown() throws NacosException {
         clientAuthPluginManager.shutdown();
+    }
+
+    /**
+     * Log in again to refresh the accessToken
+     */
+    public void reLogin() {
+        if (clientAuthPluginManager.getAuthServiceSpiImplSet().isEmpty()) {
+            return;
+        }
+        for (ClientAuthService clientAuthService : clientAuthPluginManager.getAuthServiceSpiImplSet()) {
+            LoginIdentityContext loginIdentityContext = clientAuthService.getLoginIdentityContext(null);
+            if (loginIdentityContext != null) {
+                loginIdentityContext.setParameter(NacosAuthLoginConstant.NEXTREFRESHTIME, "0");
+            }
+        }
     }
 }

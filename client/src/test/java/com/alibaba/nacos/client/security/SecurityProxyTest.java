@@ -18,9 +18,11 @@ package com.alibaba.nacos.client.security;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.client.auth.impl.NacosAuthLoginConstant;
+import com.alibaba.nacos.client.auth.impl.NacosClientAuthServiceImpl;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthPluginManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -99,5 +101,19 @@ class SecurityProxyTest {
         securityProxy.login(new Properties());
         Map<String, String> header = securityProxy.getIdentityContext(new RequestResource());
         assertTrue(header.isEmpty());
+    }
+
+    @Test
+    void testReLogin() throws NoSuchFieldException, IllegalAccessException {
+        NacosClientAuthServiceImpl authService = new NacosClientAuthServiceImpl();
+        ClientAuthPluginManager clientAuthPluginManager = mock(ClientAuthPluginManager.class);
+        Field clientAuthPluginManagerField = SecurityProxy.class.getDeclaredField("clientAuthPluginManager");
+        clientAuthPluginManagerField.setAccessible(true);
+        clientAuthPluginManagerField.set(securityProxy, clientAuthPluginManager);
+        when(clientAuthPluginManager.getAuthServiceSpiImplSet()).thenReturn(Collections.singleton(authService));
+        securityProxy.reLogin();
+        LoginIdentityContext loginIdentityContext = authService.getLoginIdentityContext(null);
+        String nextRefreshTime = loginIdentityContext.getParameter(NacosAuthLoginConstant.NEXTREFRESHTIME);
+        assertEquals(nextRefreshTime, "0");
     }
 }

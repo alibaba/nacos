@@ -20,6 +20,8 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.utils.NumberUtils;
+import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -234,5 +236,29 @@ class NacosClientAuthServiceImplTest {
         nacosClientAuthService.setNacosRestTemplate(nacosRestTemplate);
         //when
         assertFalse(nacosClientAuthService.login(properties));
+    }
+
+    @Test
+    void testNextRefreshTime() throws Exception {
+        NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
+        HttpRestResult<Object> result = new HttpRestResult<>();
+        result.setData("{\"accessToken\":\"abc\",\"tokenTtl\":\"60\"}");
+        result.setCode(200);
+        when(nacosRestTemplate.postForm(any(), (Header) any(), any(), any(), any())).thenReturn(result);
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
+        properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
+
+        List<String> serverList = new ArrayList<>();
+        serverList.add("localhost");
+
+        NacosClientAuthServiceImpl nacosClientAuthService = new NacosClientAuthServiceImpl();
+        nacosClientAuthService.setServerList(serverList);
+        nacosClientAuthService.setNacosRestTemplate(nacosRestTemplate);
+        //when
+        nacosClientAuthService.login(properties);
+        LoginIdentityContext loginIdentityContext = nacosClientAuthService.getLoginIdentityContext(null);
+        String nextRefreshTime = loginIdentityContext.getParameter(NacosAuthLoginConstant.NEXTREFRESHTIME);
+        assertTrue(System.currentTimeMillis() < NumberUtils.toLong(nextRefreshTime, 0));
     }
 }

@@ -709,4 +709,21 @@ class NamingGrpcClientProxyTest {
         String appName = config.labels().get(Constants.APPNAME);
         assertNotNull(appName);
     }
+
+    @Test
+    void testResponseCode403Exception() throws NacosException {
+        Throwable exception = assertThrows(NacosException.class, () -> {
+
+            when(this.rpcClient.request(Mockito.any())).thenReturn(ErrorResponse.build(403, "Invalid signature"));
+
+            try {
+                client.registerService(SERVICE_NAME, GROUP_NAME, instance);
+            } catch (NacosException ex) {
+                assertNull(ex.getCause());
+
+                throw ex;
+            }
+        });
+        assertTrue(exception.getMessage().contains("Invalid signature"));
+    }
 }

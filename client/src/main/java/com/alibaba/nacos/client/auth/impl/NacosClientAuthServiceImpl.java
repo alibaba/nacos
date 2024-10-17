@@ -19,7 +19,9 @@ package com.alibaba.nacos.client.auth.impl;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.auth.impl.process.HttpLoginProcessor;
+import com.alibaba.nacos.common.utils.NumberUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.plugin.auth.spi.client.AbstractClientAuthService;
@@ -58,8 +60,8 @@ public class NacosClientAuthServiceImpl extends AbstractClientAuthService {
      * A context to take with when sending request to Nacos server.
      */
     private volatile LoginIdentityContext loginIdentityContext = new LoginIdentityContext();
-    
-    
+
+
     /**
      * Login to servers.
      *
@@ -69,16 +71,19 @@ public class NacosClientAuthServiceImpl extends AbstractClientAuthService {
     @Override
     public Boolean login(Properties properties) {
         try {
-            if ((System.currentTimeMillis() - lastRefreshTime) < TimeUnit.SECONDS
-                    .toMillis(tokenTtl - tokenRefreshWindow)) {
+
+            String nextRefreshTimeStr = loginIdentityContext.getParameter(NacosAuthLoginConstant.NEXTREFRESHTIME);
+            long nextRefreshTime = NumberUtils.toLong(nextRefreshTimeStr, 0);
+
+            if (System.currentTimeMillis() < nextRefreshTime) {
                 return true;
             }
-            
+
             if (StringUtils.isBlank(properties.getProperty(PropertyKeyConst.USERNAME))) {
-                lastRefreshTime = System.currentTimeMillis();
+                loginIdentityContext.setParameter(NacosAuthLoginConstant.NEXTREFRESHTIME, "0");
                 return true;
             }
-            
+
             for (String server : this.serverList) {
                 HttpLoginProcessor httpLoginProcessor = new HttpLoginProcessor(nacosRestTemplate);
                 properties.setProperty(NacosAuthLoginConstant.SERVER, server);
@@ -87,11 +92,11 @@ public class NacosClientAuthServiceImpl extends AbstractClientAuthService {
                     if (identityContext.getAllKey().contains(NacosAuthLoginConstant.ACCESSTOKEN)) {
                         tokenTtl = Long.parseLong(identityContext.getParameter(NacosAuthLoginConstant.TOKENTTL));
                         tokenRefreshWindow = tokenTtl / 10;
-                        lastRefreshTime = System.currentTimeMillis();
-
+                        nextRefreshTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(tokenTtl - tokenRefreshWindow);
                         LoginIdentityContext newCtx = new LoginIdentityContext();
                         newCtx.setParameter(NacosAuthLoginConstant.ACCESSTOKEN,
                                 identityContext.getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
+                        newCtx.setParameter(NacosAuthLoginConstant.NEXTREFRESHTIME, String.valueOf(nextRefreshTime));
                         this.loginIdentityContext = newCtx;
                     }
                     return true;

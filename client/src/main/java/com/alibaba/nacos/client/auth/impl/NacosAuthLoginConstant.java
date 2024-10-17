@@ -36,6 +36,8 @@ public class NacosAuthLoginConstant {
     public static final String COLON = ":";
     
     public static final String SERVER = "server";
-    
-    
+
+    public static final int RELOGIN_CODE = 403;
+
+    public static final String NEXTREFRESHTIME = "nextRefreshTime";
 }
