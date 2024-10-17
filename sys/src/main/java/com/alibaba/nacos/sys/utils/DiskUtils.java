@@ -51,6 +51,10 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import static com.alibaba.nacos.common.utils.StringUtils.FOLDER_SEPARATOR;
+import static com.alibaba.nacos.common.utils.StringUtils.TOP_PATH;
+import static com.alibaba.nacos.common.utils.StringUtils.WINDOWS_FOLDER_SEPARATOR;
+
 /**
  * IO operates on the utility class.
  *
@@ -72,8 +76,18 @@ public final class DiskUtils {
     
     private static final CharsetDecoder DECODER = CHARSET.newDecoder();
     
+    /**
+     * Touch file.
+     *
+     * @param path     path of fileName
+     * @param fileName fileName
+     * @throws IOException during touch
+     */
     public static void touch(String path, String fileName) throws IOException {
-        FileUtils.touch(Paths.get(path, fileName).toFile());
+        if (isIllegalPath(path) || isIllegalFileName(fileName)) {
+            return;
+        }
+        touch(Paths.get(path, fileName).toFile());
     }
     
     /**
@@ -97,8 +111,8 @@ public final class DiskUtils {
      *
      * <p>The details as to how the name of the file is constructed is
      * implementation dependent and therefore not specified. Where possible the {@code prefix} and {@code suffix} are
-     * used to construct candidate names in the same manner as the {@link java.io.File#createTempFile(String, String,
-     * File)} method.
+     * used to construct candidate names in the same manner as the
+     * {@link java.io.File#createTempFile(String, String, File)} method.
      *
      * @param dir    the path to directory in which to create the file
      * @param prefix the prefix string to be used in generating the file's name; may be {@code null}
@@ -148,7 +162,7 @@ public final class DiskUtils {
      */
     public static String readFile(String path, String fileName) {
         File file = openFile(path, fileName);
-        if (file.exists()) {
+        if (null != file && file.exists()) {
             return readFile(file);
         }
         return null;
@@ -217,7 +231,17 @@ public final class DiskUtils {
         return null;
     }
     
+    /**
+     * read this file content then return bytes.
+     *
+     * @param path     path of file
+     * @param fileName file name
+     * @return content bytes
+     */
     public static byte[] readFileBytes(String path, String fileName) {
+        if (isIllegalPath(path) || isIllegalFileName(fileName)) {
+            return null;
+        }
         File file = openFile(path, fileName);
         return readFileBytes(file);
     }
@@ -239,8 +263,8 @@ public final class DiskUtils {
         } catch (IOException ioe) {
             if (ioe.getMessage() != null) {
                 String errMsg = ioe.getMessage();
-                if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg) || errMsg.contains(DISK_QUOTA_CN) || errMsg
-                        .contains(DISK_QUOTA_EN)) {
+                if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg) || errMsg.contains(DISK_QUOTA_CN)
+                        || errMsg.contains(DISK_QUOTA_EN)) {
                     LOGGER.warn("磁盘满，自杀退出");
                     System.exit(0);
                 }
@@ -267,6 +291,9 @@ public final class DiskUtils {
      * @return delete success
      */
     public static boolean deleteFile(String path, String fileName) {
+        if (isIllegalPath(path) || isIllegalFileName(fileName)) {
+            return false;
+        }
         File file = Paths.get(path, fileName).toFile();
         if (file.exists()) {
             return file.delete();
@@ -312,6 +339,9 @@ public final class DiskUtils {
      * @return {@link File}
      */
     public static File openFile(String path, String fileName, boolean rewrite) {
+        if (isIllegalPath(path) || isIllegalFileName(fileName)) {
+            return null;
+        }
         File directory = new File(path);
         boolean mkdirs = true;
         if (!directory.exists()) {
@@ -395,6 +425,9 @@ public final class DiskUtils {
      */
     public static void compressIntoZipFile(final String childName, final InputStream inputStream,
             final String outputFile, final Checksum checksum) throws IOException {
+        if (isIllegalFileName(childName)) {
+            return;
+        }
         try (final FileOutputStream fileOutputStream = new FileOutputStream(outputFile);
                 final CheckedOutputStream checkedOutputStream = new CheckedOutputStream(fileOutputStream, checksum);
                 final ZipOutputStream zipStream = new ZipOutputStream(new BufferedOutputStream(checkedOutputStream))) {
@@ -428,6 +461,9 @@ public final class DiskUtils {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
                 final String fileName = entry.getName();
+                if (isIllegalFileName(fileName)) {
+                    continue;
+                }
                 final File entryFile = new File(Paths.get(outputDir, fileName).toString());
                 FileUtils.forceMkdir(entryFile.getParentFile());
                 try (final FileOutputStream fos = new FileOutputStream(entryFile);
@@ -470,12 +506,28 @@ public final class DiskUtils {
     }
     
     /**
+     * Whether is illegal file name, it should not be start with root path '/' or '\\' and should not contain top path
+     * <code>..</code>.
+     *
+     * @param fileName File name
+     * @return {@code true} when file name contain <code>..</code> or start with root path.
+     */
+    public static boolean isIllegalFileName(String fileName) {
+        return fileName.contains(TOP_PATH) || fileName.startsWith(FOLDER_SEPARATOR) || fileName.startsWith(
+                WINDOWS_FOLDER_SEPARATOR);
+    }
+    
+    public static boolean isIllegalPath(String path) {
+        return path.contains(TOP_PATH);
+    }
+    
+    /**
      * Returns an Iterator for the lines in a <code>File</code>.
      * <p>
      * This method opens an <code>InputStream</code> for the file. When you have finished with the iterator you should
-     * close the stream to free internal resources. This can be done by calling the {@link
-     * org.apache.commons.io.LineIterator#close()} or {@link org.apache.commons.io.LineIterator#closeQuietly(org.apache.commons.io.LineIterator)}
-     * method.
+     * close the stream to free internal resources. This can be done by calling the
+     * {@link org.apache.commons.io.LineIterator#close()} or
+     * {@link org.apache.commons.io.LineIterator#closeQuietly(org.apache.commons.io.LineIterator)} method.
      * </p>
      * The recommended usage pattern is:
      * <pre>
