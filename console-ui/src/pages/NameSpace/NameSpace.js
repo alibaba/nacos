@@ -214,7 +214,7 @@ class NameSpace extends React.Component {
       type: 'get',
       url: 'v3/console/core/namespace',
       success: res => {
-        if (res.code === 200) {
+        if (res.code === 0) {
           window.namespaceList = res.data;
         }
       },

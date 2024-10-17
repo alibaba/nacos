@@ -44,11 +44,11 @@ const guide = () => request.get('v3/console/server/guide');
 /**
  * 单独在login调用 判断是否可以登陆
  */
-const state = () => request.get('v1/console/server/state');
+const state = () => request.get('v3/console/server/state');
 
 const getState = () => dispatch =>
   request
-    .get('v1/console/server/state')
+    .get('v3/console/server/state')
     .then(res => {
       localStorage.setItem(LOGINPAGE_ENABLED, res.login_page_enabled);
       dispatch({

@@ -85,7 +85,7 @@ class ImportDialog extends React.Component {
   };
 
   formatter = res => {
-    if (res.code === 200) {
+    if (res.code === 0) {
       return {
         code: '0',
         retData: res,

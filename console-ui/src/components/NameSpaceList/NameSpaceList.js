@@ -61,7 +61,7 @@ class NameSpaceList extends React.Component {
           linkKey,
         },
         success: res => {
-          if (res.code === 200) {
+          if (res.code === 0) {
             window[keyName] = res.data;
             this.setState({
               [keyName]: res.data,

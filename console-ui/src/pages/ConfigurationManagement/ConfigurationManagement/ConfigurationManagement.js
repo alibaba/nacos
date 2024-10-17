@@ -915,7 +915,7 @@ class ConfigurationManagement extends React.Component {
 
   processImportAndCloneResult(ret, locale, confirm, isImport) {
     const resultCode = ret.code;
-    if (resultCode === 200) {
+    if (resultCode === 0) {
       confirm.hide();
       let failCount = ret.data.failData ? ret.data.failData.length : 0;
       let skipCount = ret.data.skipData ? ret.data.skipData.length : 0;

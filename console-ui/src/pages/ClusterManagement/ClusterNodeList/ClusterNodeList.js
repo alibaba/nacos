@@ -109,7 +109,7 @@ class ClusterNodeList extends React.Component {
     axios
       .post(`v3/console/core/cluster/server/leave?accessToken=${accessToken}`, nodes)
       .then(response => {
-        if (response.data.code === 200) {
+        if (response.data.code === 0) {
           Message.success(locale.leaveSucc);
         } else {
           const errorMessage = response.data.message || locale.leaveFail;

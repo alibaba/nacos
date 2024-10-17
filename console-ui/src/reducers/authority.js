@@ -40,7 +40,7 @@ const initialState = {
 };
 
 const successMsg = res => {
-  if (res.code === 200) {
+  if (res.code === 0) {
     Message.success(res.message);
   }
   return res;
