@@ -91,7 +91,7 @@ public class SecurityProxy implements Closeable {
     }
 
     /**
-     * Log in again to refresh the accessToken
+     * Login again to refresh the accessToken.
      */
     public void reLogin() {
         if (clientAuthPluginManager.getAuthServiceSpiImplSet().isEmpty()) {
