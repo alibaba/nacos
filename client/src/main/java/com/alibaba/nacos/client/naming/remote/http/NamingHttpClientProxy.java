@@ -74,7 +74,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     private static final int DEFAULT_SERVER_PORT = 8848;
     
     private static final String MODULE_NAME = "Naming";
-    
+
     private static final String IP_PARAM = "ip";
     
     private static final String PORT_PARAM = "port";
