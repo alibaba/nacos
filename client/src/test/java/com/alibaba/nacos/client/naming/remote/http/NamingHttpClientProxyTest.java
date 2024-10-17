@@ -645,4 +645,29 @@ class NamingHttpClientProxyTest {
         });
         
     }
+
+    @Test
+    void testCallServerFail403() throws Exception {
+        //given
+        NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
+
+        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any())).thenAnswer(invocationOnMock -> {
+            //return url
+            HttpRestResult<Object> res = new HttpRestResult<Object>();
+            res.setMessage("Invalid signature");
+            res.setCode(403);
+            return res;
+        });
+
+        final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
+        nacosRestTemplateField.setAccessible(true);
+        nacosRestTemplateField.set(clientProxy, nacosRestTemplate);
+        String api = "/api";
+        Map<String, String> params = new HashMap<>();
+        Map<String, String> body = new HashMap<>();
+        String method = HttpMethod.GET;
+        String curServer = "127.0.0.1";
+        //then
+        assertThrows(NacosException.class, () -> clientProxy.callServer(api, params, body, curServer, method));
+    }
 }

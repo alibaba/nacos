@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.naming.remote;
 
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.client.address.ServerListChangeEvent;
 import com.alibaba.nacos.client.security.SecurityProxy;
@@ -53,5 +54,9 @@ public abstract class AbstractNamingClientProxy extends Subscriber<ServerListCha
         Map<String, String> result = new HashMap<>(1);
         result.put(APP_FILED, AppNameUtils.getAppName());
         return result;
+    }
+
+    protected void reLogin() {
+        securityProxy.reLogin();
     }
 }
