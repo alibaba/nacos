@@ -446,6 +446,10 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                     getSecurityHeaders(request.getNamespace(), request.getGroupName(), request.getServiceName()));
             response = requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
             if (ResponseCode.SUCCESS.getCode() != response.getResultCode()) {
+                // If the 403 login operation is triggered, refresh the accessToken of the client
+                if (NacosException.NO_RIGHT == response.getErrorCode()) {
+                    reLogin();
+                }
                 throw new NacosException(response.getErrorCode(), response.getMessage());
             }
             if (responseClass.isAssignableFrom(response.getClass())) {
