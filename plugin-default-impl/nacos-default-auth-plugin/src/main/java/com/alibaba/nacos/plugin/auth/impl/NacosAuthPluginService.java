@@ -99,7 +99,6 @@ public class NacosAuthPluginService implements AuthPluginService {
     public Boolean validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException {
         NacosUser user = (NacosUser) identityContext.getParameter(AuthConstants.NACOS_USER_KEY);
         authenticationManager.authorize(permission, user);
-        
         return true;
     }
     

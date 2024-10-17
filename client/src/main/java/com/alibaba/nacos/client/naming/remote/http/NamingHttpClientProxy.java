@@ -28,6 +28,7 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
+import com.alibaba.nacos.client.auth.impl.NacosAuthLoginConstant;
 import com.alibaba.nacos.client.address.ServerListChangeEvent;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
@@ -440,6 +441,12 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
             if (HttpStatus.SC_NOT_MODIFIED == restResult.getCode()) {
                 return StringUtils.EMPTY;
             }
+
+            // If the 403 login operation is triggered, refresh the accessToken of the client
+            if (NacosAuthLoginConstant.RELOGIN_CODE == restResult.getCode()) {
+                reLogin();
+            }
+
             throw new NacosException(restResult.getCode(), restResult.getMessage());
         } catch (NacosException e) {
             NAMING_LOGGER.error("[NA] failed to request", e);
