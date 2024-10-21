@@ -31,7 +31,7 @@ import java.util.List;
  * @author boyan
  * @date 2010-5-6
  */
-public class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
+public class EmbeddedPaginationHelperImpl<E> implements PaginationHelper<E> {
     
     private final DatabaseOperate databaseOperate;
     
@@ -59,115 +59,25 @@ public class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
     @Override
     public Page<E> fetchPage(final String sqlCountRows, final String sqlFetchRows, Object[] args, final int pageNo,
             final int pageSize, final Long lastMaxId, final RowMapper rowMapper) {
-        if (pageNo <= 0 || pageSize <= 0) {
-            throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
-        }
-        
-        // Query the total number of current records
-        Integer rowCountInt = databaseOperate.queryOne(sqlCountRows, args, Integer.class);
-        if (rowCountInt == null) {
-            throw new IllegalArgumentException("fetchPageLimit error");
-        }
-        
-        // Count pages
-        int pageCount = rowCountInt / pageSize;
-        if (rowCountInt > pageSize * pageCount) {
-            pageCount++;
-        }
-        
-        // Create Page object
-        final Page<E> page = new Page<>();
-        page.setPageNumber(pageNo);
-        page.setPagesAvailable(pageCount);
-        page.setTotalCount(rowCountInt);
-        
-        if (pageNo > pageCount) {
-            return page;
-        }
-        
-        List<E> result = databaseOperate.queryMany(sqlFetchRows, args, rowMapper);
-        for (E item : result) {
-            page.getPageItems().add(item);
-        }
-        return page;
+        return doFetchPage(sqlCountRows, args, sqlFetchRows, args, pageNo, pageSize, rowMapper);
     }
     
     @Override
     public Page<E> fetchPageLimit(final String sqlCountRows, final String sqlFetchRows, final Object[] args,
             final int pageNo, final int pageSize, final RowMapper rowMapper) {
-        if (pageNo <= 0 || pageSize <= 0) {
-            throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
-        }
-        // Query the total number of current records
-        Integer rowCountInt = databaseOperate.queryOne(sqlCountRows, Integer.class);
-        if (rowCountInt == null) {
-            throw new IllegalArgumentException("fetchPageLimit error");
-        }
-        
-        // Count pages
-        int pageCount = rowCountInt / pageSize;
-        if (rowCountInt > pageSize * pageCount) {
-            pageCount++;
-        }
-        
-        // Create Page object
-        final Page<E> page = new Page<>();
-        page.setPageNumber(pageNo);
-        page.setPagesAvailable(pageCount);
-        page.setTotalCount(rowCountInt);
-        
-        if (pageNo > pageCount) {
-            return page;
-        }
-        
-        List<E> result = databaseOperate.queryMany(sqlFetchRows, args, rowMapper);
-        for (E item : result) {
-            page.getPageItems().add(item);
-        }
-        return page;
+        return doFetchPage(sqlCountRows, null, sqlFetchRows, args, pageNo, pageSize, rowMapper);
     }
     
     @Override
     public Page<E> fetchPageLimit(final String sqlCountRows, final Object[] args1, final String sqlFetchRows,
             final Object[] args2, final int pageNo, final int pageSize, final RowMapper rowMapper) {
-        if (pageNo <= 0 || pageSize <= 0) {
-            throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
-        }
-        // Query the total number of current records
-        Integer rowCountInt = databaseOperate.queryOne(sqlCountRows, args1, Integer.class);
-        if (rowCountInt == null) {
-            throw new IllegalArgumentException("fetchPageLimit error");
-        }
-        
-        // Count pages
-        int pageCount = rowCountInt / pageSize;
-        if (rowCountInt > pageSize * pageCount) {
-            pageCount++;
-        }
-        
-        // Create Page object
-        final Page<E> page = new Page<>();
-        page.setPageNumber(pageNo);
-        page.setPagesAvailable(pageCount);
-        page.setTotalCount(rowCountInt);
-        
-        if (pageNo > pageCount) {
-            return page;
-        }
-        
-        List<E> result = databaseOperate.queryMany(sqlFetchRows, args2, rowMapper);
-        for (E item : result) {
-            page.getPageItems().add(item);
-        }
-        return page;
+        return doFetchPage(sqlCountRows, args1, sqlFetchRows, args2, pageNo, pageSize, rowMapper);
     }
     
     @Override
     public Page<E> fetchPageLimit(final String sqlFetchRows, final Object[] args, final int pageNo, final int pageSize,
             final RowMapper rowMapper) {
-        if (pageNo <= 0 || pageSize <= 0) {
-            throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
-        }
+        checkPageInfo(pageNo, pageSize);
         // Create Page object
         final Page<E> page = new Page<>();
         
@@ -195,4 +105,46 @@ public class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
         }
     }
     
+    private void checkPageInfo(final int pageNo, final int pageSize) {
+        if (pageNo <= 0 || pageSize <= 0) {
+            throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
+        }
+    }
+    
+    private Page<E> doFetchPage(final String sqlCountRows, final Object[] countAgrs, final String sqlFetchRows,
+            final Object[] fetchArgs, final int pageNo, final int pageSize, final RowMapper rowMapper) {
+        checkPageInfo(pageNo, pageSize);
+        // Query the total number of current records
+        Integer rowCountInt = null;
+        if (null != countAgrs) {
+            rowCountInt = databaseOperate.queryOne(sqlCountRows, countAgrs, Integer.class);
+        } else {
+            rowCountInt = databaseOperate.queryOne(sqlCountRows, Integer.class);
+        }
+        if (rowCountInt == null) {
+            throw new IllegalArgumentException("fetchPageLimit error");
+        }
+        
+        // Count pages
+        int pageCount = rowCountInt / pageSize;
+        if (rowCountInt > pageSize * pageCount) {
+            pageCount++;
+        }
+        
+        // Create Page object
+        final Page<E> page = new Page<>();
+        page.setPageNumber(pageNo);
+        page.setPagesAvailable(pageCount);
+        page.setTotalCount(rowCountInt);
+        
+        if (pageNo > pageCount) {
+            return page;
+        }
+        
+        List<E> result = databaseOperate.queryMany(sqlFetchRows, fetchArgs, rowMapper);
+        for (E item : result) {
+            page.getPageItems().add(item);
+        }
+        return page;
+    }
 }
