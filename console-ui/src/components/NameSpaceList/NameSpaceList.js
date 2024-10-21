@@ -61,7 +61,7 @@ class NameSpaceList extends React.Component {
           linkKey,
         },
         success: res => {
-          if (res.code === 200) {
+          if (res.code === 0) {
             window[keyName] = res.data;
             this.setState({
               [keyName]: res.data,
@@ -111,9 +111,9 @@ class NameSpaceList extends React.Component {
     } else {
       request({
         type: 'get',
-        url: 'v1/console/namespaces',
+        url: 'v3/console/core/namespace/list',
         success: res => {
-          if (res.code === 200) {
+          if (res.code === 0) {
             this.handleNameSpaces(res.data);
           } else {
             Dialog.alert({

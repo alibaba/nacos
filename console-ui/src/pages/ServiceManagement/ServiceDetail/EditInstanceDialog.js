@@ -69,7 +69,7 @@ class EditInstanceDialog extends React.Component {
     const { ip, port, ephemeral, weight, enabled, metadataText } = this.state.editInstance;
     request({
       method: 'PUT',
-      url: 'v1/ns/instance',
+      url: 'v3/console/ns/instance',
       data: {
         serviceName,
         clusterName,
@@ -84,7 +84,7 @@ class EditInstanceDialog extends React.Component {
       dataType: 'text',
       beforeSend: () => openLoading(),
       success: res => {
-        if (res !== 'ok') {
+        if (res.data !== 'ok') {
           Message.error(res);
           return;
         }

@@ -69,7 +69,7 @@ class EditClusterDialog extends React.Component {
     } = this.state.editCluster;
     request({
       method: 'PUT',
-      url: 'v1/ns/cluster',
+      url: 'v3/console/ns/service/cluster',
       data: {
         serviceName,
         clusterName: name,
@@ -81,7 +81,7 @@ class EditClusterDialog extends React.Component {
       dataType: 'text',
       beforeSend: () => openLoading(),
       success: res => {
-        if (res !== 'ok') {
+        if (res.data !== 'ok') {
           Message.error(res);
           return;
         }
