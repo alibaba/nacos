@@ -185,7 +185,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 return result == 0;
             }
         } catch (CannotGetJdbcConnectionException e) {
-            LOGGER.error("[db-error] " + e.toString(), e);
+            LOGGER.error("[db-error] " + e, e);
             return false;
         }
         

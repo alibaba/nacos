@@ -14,27 +14,21 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.persistence.utils;
+package com.alibaba.nacos.persistence.model;
 
-import com.zaxxer.hikari.HikariDataSource;
+import org.junit.jupiter.api.Test;
 
-/**
- * DataSource Connection CheckUtil.
- *
- * @author Long Yu
- */
-public class ConnectionCheckUtil {
+import java.util.Collections;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class PageTest {
     
-    /**
-     * check HikariDataSource connection ,avoid [no datasource set] text.
-     *
-     * @param ds HikariDataSource object
-     */
-    public static void checkDataSourceConnection(HikariDataSource ds) {
-        try (java.sql.Connection connection = ds.getConnection()) {
-            connection.isClosed();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    @Test
+    void setPageItems() {
+        Page<Object> page = new Page<>();
+        assertEquals(0, page.getPageItems().size());
+        page.setPageItems(Collections.singletonList(new Object()));
+        assertEquals(1, page.getPageItems().size());
     }
 }
