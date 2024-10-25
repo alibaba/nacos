@@ -289,7 +289,7 @@ class ConfigurationManagement extends React.Component {
       config_tags: this.state.config_tags.join(','),
       pageNo: prePageNo ? prePageNo : pageNo,
       pageSize: prePageSize ? prePageSize : this.state.pageSize,
-      tenant: this.tenant,
+      namespaceId: this.tenant,
       types: this.state.types.join(','),
     };
     setParams('pageSize', null);
@@ -391,7 +391,7 @@ class ConfigurationManagement extends React.Component {
             _payload.content = '';
             _payload.dataId = record.dataId;
             _payload.group = record.group;
-            if (res === true) {
+            if (res.data === true) {
               _payload.isok = true;
             } else {
               _payload.isok = false;
@@ -653,7 +653,7 @@ class ConfigurationManagement extends React.Component {
     configsTableSelected.forEach((value, key, map) => ids.push(key));
     if (newVersion) {
       this.openUri('v3/console/cs/config/export2', {
-        tenant: getParams('namespace'),
+        namespaceId: getParams('namespace'),
         group: '',
         appName: '',
         ids: ids.join(','),
@@ -662,7 +662,7 @@ class ConfigurationManagement extends React.Component {
       });
     } else {
       this.openUri('v3/console/cs/config/export', {
-        tenant: getParams('namespace'),
+        namespaceId: getParams('namespace'),
         group: '',
         appName: '',
         ids: ids.join(','),
@@ -730,12 +730,11 @@ class ConfigurationManagement extends React.Component {
       return;
     }
     request({
-      url: 'v3/console/core/namespace?namespaceId=',
+      url: 'v3/console/core/namespace/list?namespaceId=',
       beforeSend() {
         self.openLoading();
       },
       success(data) {
-        data = data.data;
         self.closeLoading();
         if (!data || data.code !== 0 || !data.data) {
           Dialog.alert({
@@ -932,7 +931,7 @@ class ConfigurationManagement extends React.Component {
                     let cloneTargetSpace = self.field.getValue('cloneTargetSpace');
                     let sameConfigPolicy = self.field.getValue('sameConfigPolicy');
                     request({
-                      url: `v3/console/cs/config/clone?namespaceId=${cloneTargetSpace}&policy=${sameConfigPolicy}&namespaceId=`,
+                      url: `v3/console/cs/config/clone?targetNamespaceId=${cloneTargetSpace}&policy=${sameConfigPolicy}&namespaceId=`,
                       method: 'post',
                       data: JSON.stringify(clonePostData),
                       contentType: 'application/json',

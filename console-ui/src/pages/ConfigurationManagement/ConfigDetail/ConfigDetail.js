@@ -233,14 +233,13 @@ class ConfigDetail extends React.Component {
         self.openLoading();
       },
       success(result) {
-        if (result != null) {
-          const result = result.data;
-          let rightvalue = result.content;
+        if (result.code === 0 && result.data != null) {
+          let rightvalue = result.data.content;
           leftvalue = leftvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
           rightvalue = rightvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
           self.diffEditorDialog.current.getInstance().openDialog(leftvalue, rightvalue);
         } else {
-          Dialog.alert({ title: locale.error, content: result.message });
+          Dialog.alert({ title: locale.error, content: locale.configNotFind });
         }
       },
       complete() {
@@ -260,14 +259,13 @@ class ConfigDetail extends React.Component {
       namespaceId,
     };
     requestUtils.get('v3/console/cs/config', { params }).then(res => {
-      if (res != null && res !== '' && res.code === 0) {
-        res = res.data;
-        let rightvalue = res.content;
+      if (res.code === 0 && res.data != null && res.data !== '') {
+        let rightvalue = res.data.content;
         leftvalue = leftvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
         rightvalue = rightvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
         self.compareEditorDialog.current.getInstance().openDialog(leftvalue, rightvalue);
       } else {
-        Dialog.alert({ title: locale.error, content: locale.configNotFind });
+        Dialog.alert({ title: locale.error, content: locale.configNotFind  });
       }
     });
   };
