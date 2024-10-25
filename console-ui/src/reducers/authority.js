@@ -51,7 +51,9 @@ const successMsg = res => {
  * @param {*} params
  */
 const getUsers = params => dispatch =>
-  request.get('v3/auth/user/list', { params }).then(data => dispatch({ type: USER_LIST, data: data.data }));
+  request
+    .get('v3/auth/user/list', { params })
+    .then(data => dispatch({ type: USER_LIST, data: data.data }));
 
 /**
  * 创建用户
@@ -79,7 +81,7 @@ const deleteUser = username =>
  * @param {*} param0
  */
 const passwordReset = ([username, newPassword]) =>
-  request.put('v3/auth/user', { username, newPassword }).then(res => successMsg(res));
+  request.put('v3/auth/user', { username, newPassword });
 
 /**
  * 角色列表
@@ -87,7 +89,9 @@ const passwordReset = ([username, newPassword]) =>
  */
 
 const getRoles = params => dispatch =>
-  request.get('v3/auth/role/list', { params }).then(data => dispatch({ type: ROLE_LIST, data: data.data }));
+  request
+    .get('v3/auth/role/list', { params })
+    .then(data => dispatch({ type: ROLE_LIST, data: data.data }));
 
 /**
  * 通过username 模糊匹配

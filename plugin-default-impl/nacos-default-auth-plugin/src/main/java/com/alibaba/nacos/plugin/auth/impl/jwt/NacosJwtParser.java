@@ -19,6 +19,8 @@ package com.alibaba.nacos.plugin.auth.impl.jwt;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.utils.Base64Decode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.security.Key;
@@ -32,12 +34,15 @@ import java.util.concurrent.TimeUnit;
  */
 @SuppressWarnings("PMD.UndefineMagicConstantRule")
 public class NacosJwtParser {
+
+    private static final Logger LOG = LoggerFactory.getLogger(NacosJwtParser.class);
     
     private final NacosSignatureAlgorithm signatureAlgorithm;
     
     private final Key key;
     
     public NacosJwtParser(String base64edKey) {
+        this.validKey(base64edKey);
         byte[] decode = Base64Decode.decode(base64edKey);
         int bitLength = decode.length << 3;
         if (bitLength < 256) {
@@ -57,6 +62,14 @@ public class NacosJwtParser {
             this.signatureAlgorithm = NacosSignatureAlgorithm.HS512;
         }
         this.key = new SecretKeySpec(decode, signatureAlgorithm.getJcaName());
+    }
+
+    private void validKey(String base64edKey) {
+        int length = base64edKey.toCharArray().length;
+        if (length % 4 != 0) {
+            LOG.warn("The secret Key currently in use is not a standard Base64 encoding"
+                    + " and will no longer be supported in future versions;");
+        }
     }
     
     private String sign(NacosJwtPayload payload) {

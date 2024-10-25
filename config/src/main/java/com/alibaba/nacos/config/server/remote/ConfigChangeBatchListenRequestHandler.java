@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
+import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.ConfigBatchListenRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
@@ -55,7 +56,7 @@ public class ConfigChangeBatchListenRequestHandler
             throws NacosException {
         String connectionId = StringPool.get(meta.getConnectionId());
         String tag = configChangeListenRequest.getHeader(Constants.VIPSERVER_TAG);
-        
+        ParamUtils.checkParam(tag);
         ConfigChangeBatchListenResponse configChangeBatchListenResponse = new ConfigChangeBatchListenResponse();
         for (ConfigBatchListenRequest.ConfigListenContext listenContext : configChangeListenRequest
                 .getConfigListenContexts()) {

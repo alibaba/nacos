@@ -16,11 +16,13 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
+import com.alibaba.nacos.common.utils.ArrayUtils;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.mapper.ext.WhereBuilder;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
@@ -73,7 +75,7 @@ public interface ConfigInfoMapper extends Mapper {
     
     /**
      * Query configuration information based on group. <br/>The default sql: SELECT
-     * id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE tenant_id LIKE ? AND app_name=?
+     * id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE tenant_id LIKE ? AND app_name=? LIMIT startRow, pageSize
      *
      * @param context The context of startRow, pageSize
      * @return The sql of querying configration information based on group.
@@ -114,7 +116,7 @@ public interface ConfigInfoMapper extends Mapper {
     /**
      * Query all configuration information by page. The default sql: SELECT data_id,group_id,app_name  FROM ( SELECT id
      * FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT startRow, pageSize ) g, config_info t WHERE g.id = t.id
-     * "
+     *
      *
      * @param context The context of startRow, pageSize
      * @return The sql of querying all configuration information.
@@ -131,9 +133,9 @@ public interface ConfigInfoMapper extends Mapper {
     MapperResult findAllConfigInfoBaseFetchRows(MapperContext context);
     
     /**
-     * Query all config info. The default sql: SELECT
-     * id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type,encrypted_data_key FROM config_info WHERE id
-     * > ? ORDER BY id ASC LIMIT startRow,pageSize
+     * Query all config info. The default sql: "SELECT
+     * id,data_id,group_id,tenant_id,app_name,"+ (needContent ? "content," : "") + "md5,gmt_modified,type,encrypted_data_key FROM config_info WHERE id
+     * > ? ORDER BY id ASC LIMIT startRow,pageSize"
      *
      * @param context     The context of startRow, pageSize
      * @return The sql of querying all config info.
@@ -141,8 +143,8 @@ public interface ConfigInfoMapper extends Mapper {
     MapperResult findAllConfigInfoFragment(MapperContext context);
     
     /**
-     * Query change config. <br/>The default sql: SELECT data_id, group_id, tenant_id, app_name, content,
-     * gmt_modified,encrypted_data_key FROM config_info WHERE gmt_modified >=? AND gmt_modified <= ?
+     * Query change config. <br/>The default sql: SELECT id, data_id, group_id, tenant_id, app_name, md5,
+     * gmt_modified,encrypted_data_key FROM config_info WHERE gmt_modified >=? AND id > ? ORDER BY id LIMIT pageSize
      *
      * @param context sql paramMap
      * @return The sql of querying change config.
@@ -207,7 +209,7 @@ public interface ConfigInfoMapper extends Mapper {
     
     /**
      * According to the time period and configuration conditions to query the eligible configuration. The default sql:
-     * SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified FROM config_info WHERE ...
+     * SELECT id,data_id,group_id,tenant_id,app_name,type,md5,gmt_modified FROM config_info WHERE ...
      *
      * @param context The map of params, the key is the parameter name(dataId, groupId, tenantId, appName, startTime,
      *                endTime, content, startTime, endTime), the value is the key's value.
@@ -365,7 +367,7 @@ public interface ConfigInfoMapper extends Mapper {
     
     /**
      * Query configuration information based on group. The default sql: SELECT id,data_id,group_id,content FROM
-     * config_info WHERE group_id=? AND tenant_id=?
+     * config_info WHERE group_id=? AND tenant_id=? LIMIT startRow, pageSize
      *
      * @param context The context of startRow, pageSize
      * @return Query configuration information based on group.
@@ -384,30 +386,27 @@ public interface ConfigInfoMapper extends Mapper {
         final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
         final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
         final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
+        final String[] types = (String[]) context.getWhereParameter(FieldConstant.TYPE);
         
-        final List<Object> paramList = new ArrayList<>();
+        WhereBuilder where = new WhereBuilder("SELECT count(*) FROM config_info");
         
-        final String sqlCountRows = "SELECT count(*) FROM config_info";
-        StringBuilder where = new StringBuilder(" WHERE ");
-        where.append(" tenant_id LIKE ? ");
-        paramList.add(tenantId);
-        if (!StringUtils.isBlank(dataId)) {
-            where.append(" AND data_id LIKE ? ");
-            paramList.add(dataId);
+        where.like("tenant_id", tenantId);
+        if (StringUtils.isNotBlank(dataId)) {
+            where.and().like("data_id", dataId);
         }
-        if (!StringUtils.isBlank(group)) {
-            where.append(" AND group_id LIKE ? ");
-            paramList.add(group);
+        if (StringUtils.isNotBlank(group)) {
+            where.and().like("group_id", group);
         }
-        if (!StringUtils.isBlank(appName)) {
-            where.append(" AND app_name = ? ");
-            paramList.add(appName);
+        if (StringUtils.isNotBlank(appName)) {
+            where.and().eq("app_name", appName);
         }
-        if (!StringUtils.isBlank(content)) {
-            where.append(" AND content LIKE ? ");
-            paramList.add(content);
+        if (StringUtils.isNotBlank(content)) {
+            where.and().like("content", content);
         }
-        return new MapperResult(sqlCountRows + where, paramList);
+        if (!ArrayUtils.isEmpty(types)) {
+            where.and().in("type", types);
+        }
+        return where.build();
     }
     
     /**

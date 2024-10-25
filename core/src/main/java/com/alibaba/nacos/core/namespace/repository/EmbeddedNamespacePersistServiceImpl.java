@@ -162,7 +162,7 @@ public class EmbeddedNamespacePersistServiceImpl implements NamespacePersistServ
     
     @Override
     public boolean isExistTable(String tableName) {
-        String sql = String.format("SELECT 1 FROM %s FETCH FIRST ROW ONLY", tableName);
+        String sql = String.format("SELECT COUNT(*) FROM %s ", tableName);
         try {
             databaseOperate.queryOne(sql, Integer.class);
             return true;

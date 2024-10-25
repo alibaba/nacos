@@ -25,4 +25,9 @@ public class ExceptionMockModuleStateBuilder implements ModuleStateBuilder {
     public ModuleState build() {
         throw new RuntimeException("test");
     }
+    
+    @Override
+    public boolean isCacheable() {
+        return false;
+    }
 }
