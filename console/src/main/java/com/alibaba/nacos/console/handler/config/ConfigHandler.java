@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
@@ -204,4 +205,26 @@ public interface ConfigHandler {
     Result<Map<String, Object>> cloneConfig(String srcUser, String namespaceId,
             List<SameNamespaceCloneConfigBean> configBeansList, SameConfigPolicy policy, String srcIp,
             String requestIpApp) throws NacosException;
+    
+    /**
+     * Remove beta configuration based on dataId, group, and namespaceId.
+     *
+     * @param dataId       the dataId
+     * @param group        the group
+     * @param namespaceId  the namespaceId
+     * @param remoteIp     the IP address of the client making the request
+     * @param requestIpApp the name of the application making the request
+     * @return true if the beta configuration is successfully removed
+     */
+    boolean removeBetaConfig(String dataId, String group, String namespaceId, String remoteIp, String requestIpApp);
+    
+    /**
+     * Query beta configuration based on dataId, group, and namespaceId.
+     *
+     * @param dataId      the dataId
+     * @param group       the group
+     * @param namespaceId the namespaceId
+     * @return ConfigInfo4Beta containing the beta configuration details
+     */
+    Result<ConfigInfo4Beta> queryBetaConfig(String dataId, String group, String namespaceId);
 }

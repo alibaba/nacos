@@ -25,6 +25,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
@@ -67,6 +68,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -426,5 +428,53 @@ public class ConsoleConfigControllerTest {
                                 && 1L == argument.get(0).getCfgId();
                     }
                 }), eq(SameConfigPolicy.ABORT), eq("127.0.0.1"), eq(null));
+    }
+    
+    @Test
+    void testStopBeta() throws Exception {
+        // Mock configuration
+        String dataId = "testDataId";
+        String group = "testGroup";
+        String namespaceId = "testNamespaceId";
+        when(configProxy.removeBetaConfig(anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(
+                true);
+        
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.delete("/v3/console/cs/config/beta")
+                .param("dataId", dataId).param("group", group).param("namespaceId", namespaceId);
+        
+        // Execute and validate response
+        MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
+        String actualValue = response.getContentAsString();
+        
+        Result<Boolean> result = new ObjectMapper().readValue(actualValue, new TypeReference<Result<Boolean>>() {
+        });
+        
+        assertEquals(200, response.getStatus());
+    }
+    
+    @Test
+    void testQueryBetaSuccess() throws Exception {
+        // Mock configuration for successful response
+        String dataId = "testDataId";
+        String group = "testGroup";
+        
+        ConfigInfo4Beta mockConfigInfo = new ConfigInfo4Beta();
+        mockConfigInfo.setDataId(dataId);
+        mockConfigInfo.setGroup(group);
+        Result<ConfigInfo4Beta> mockResult = new Result<>();
+        when(configProxy.queryBetaConfig(anyString(), anyString(), anyString())).thenReturn(mockResult);
+        String namespaceId = "testNamespaceId";
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/config/beta")
+                .param("dataId", dataId).param("group", group).param("namespaceId", namespaceId);
+        
+        // Execute and validate response
+        MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
+        String actualValue = response.getContentAsString();
+        
+        Result<ConfigInfo4Beta> result = new ObjectMapper().readValue(actualValue,
+                new TypeReference<Result<ConfigInfo4Beta>>() {
+                });
+        
+        assertEquals(200, response.getStatus());
     }
 }

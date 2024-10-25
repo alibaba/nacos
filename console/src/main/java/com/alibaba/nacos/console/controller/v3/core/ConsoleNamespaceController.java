@@ -96,7 +96,8 @@ public class ConsoleNamespaceController {
     
     /**
      * create namespace.
-     * @param namespaceId custom namespace id
+     *
+     * @param namespaceId   custom namespace id
      * @param namespaceName custom namespace name
      * @param namespaceDesc custom namespace description
      * @return whether create ok
@@ -137,13 +138,21 @@ public class ConsoleNamespaceController {
     /**
      * edit namespace.
      *
-     * @param namespaceForm namespace params
+     * @param namespaceId   the ID of the namespace
+     * @param namespaceName the new name of the namespace
+     * @param namespaceDesc optional description of the namespace
      * @return whether edit ok
      */
     @PutMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
             + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
-    public Result<Boolean> updateNamespace(NamespaceForm namespaceForm) throws NacosException {
+    public Result<Boolean> updateNamespace(@RequestParam("customNamespaceId") String namespaceId,
+            @RequestParam("namespaceName") String namespaceName,
+            @RequestParam(value = "namespaceDesc", required = false) String namespaceDesc) throws NacosException {
+        NamespaceForm namespaceForm = new NamespaceForm();
+        namespaceForm.setNamespaceId(namespaceId);
+        namespaceForm.setNamespaceName(namespaceName);
+        namespaceForm.setNamespaceDesc(namespaceDesc);
         namespaceForm.validate();
         // contains illegal chars
         if (!namespaceNameCheckPattern.matcher(namespaceForm.getNamespaceName()).matches()) {
