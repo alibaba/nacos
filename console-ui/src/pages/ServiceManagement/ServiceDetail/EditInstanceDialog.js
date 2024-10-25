@@ -81,7 +81,7 @@ class EditInstanceDialog extends React.Component {
         enabled,
         metadata: metadataText,
       },
-      dataType: 'text',
+      dataType: 'json',
       beforeSend: () => openLoading(),
       success: res => {
         if (res.data !== 'ok') {

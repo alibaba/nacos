@@ -78,7 +78,7 @@ class EditClusterDialog extends React.Component {
         useInstancePort4Check: useIPPort4Check,
         healthChecker: JSON.stringify(healthChecker),
       },
-      dataType: 'text',
+      dataType: 'json',
       beforeSend: () => openLoading(),
       success: res => {
         if (res.data !== 'ok') {

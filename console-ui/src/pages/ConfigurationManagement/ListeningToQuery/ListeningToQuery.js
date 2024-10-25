@@ -108,10 +108,11 @@ class ListeningToQuery extends React.Component {
       beforeSend() {
         self.openLoading();
       },
-      success(res) {
-        if (res.code === 0) {
+      success(data) {
+        const res = data.data;
+        if (res.collectStatus === 200)  {
           const dataSoureTmp = [];
-          const status = res.data;
+          const status = res.lisentersGroupkeyStatus;
           for (const key in status) {
             if (type === 1) {
               const obj = {};

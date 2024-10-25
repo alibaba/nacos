@@ -94,11 +94,11 @@ class EditServiceDialog extends React.Component {
         metadata: metadataText,
         selector: JSON.stringify(selector),
       },
-      dataType: 'text',
+      dataType: 'json',
       beforeSend: () => this.setState({ loading: true }),
       success: res => {
-        if (res.data !== 'ok') {
-          Message.error(res);
+        if (res.code !== 0 || res.data !== 'ok') {
+          Message.error(res.message);
           return;
         }
         if (isCreate) {

@@ -104,7 +104,7 @@ class ConfigEditor extends React.Component {
           },
           () => {
             this.getConfig(true).then(res => {
-              if (!res) {
+              if (res.code !== 200 || !res.data) {
                 this.getConfig();
                 return;
               }
@@ -316,9 +316,8 @@ class ConfigEditor extends React.Component {
     const { dataId, group } = this.state.form;
     const namespaceId = getParams('namespace');
     return request
-      .delete('v3/console/cs/config', {
+      .delete('v3/console/cs/config/beta', {
         params: {
-          beta: true,
           dataId,
           group,
           namespaceId,
@@ -395,13 +394,9 @@ class ConfigEditor extends React.Component {
       namespaceId: namespace,
       tenant: namespace,
     };
-    if (beta) {
-      params.beta = true;
-    } else {
-      params.show = 'all';
-    }
-    return request.get('v3/console/cs/config', { params }).then(res => {
-      const form = beta ? res.data : res;
+    const url = beta ? 'v3/console/cs/config/beta' : 'v3/console/cs/config';
+    return request.get(url, { params }).then(res => {
+      const form = res.data;
       if (!form) return false;
       const { type, content, configTags, betaIps, md5 } = form;
       this.setState({ betaIps });

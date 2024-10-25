@@ -159,16 +159,19 @@ class ServiceList extends React.Component {
         request({
           method: 'DELETE',
           url: `v3/console/ns/service?serviceName=${service.name}&groupName=${service.groupName}`,
-          dataType: 'text',
+          dataType: 'json',
           beforeSend: () => this.openLoading(),
           success: res => {
-            if (res.data !== 'ok') {
-              Message.error(res);
-              return;
+            if (res.code !== 0) {
+              Message.error(res.message || '删除服务失败');
+            } else {
+              Message.success('服务删除成功');
+              this.queryServiceList();
             }
-            this.queryServiceList();
           },
-          error: res => Message.error(res.data.responseText || res.data.statusText),
+          error: res => {
+            Message.error(res.data?.responseText || res.statusText || '请求失败');
+          },
           complete: () => this.closeLoading(),
         });
       },
