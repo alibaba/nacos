@@ -28,6 +28,7 @@ import com.alibaba.nacos.config.server.controller.ConfigServletInner;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigMetadata;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
@@ -39,6 +40,7 @@ import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.GroupKey;
@@ -101,15 +103,19 @@ public class ConfigInnerHandler implements ConfigHandler {
     
     private NamespacePersistService namespacePersistService;
     
+    private ConfigInfoBetaPersistService configInfoBetaPersistService;
+    
     public ConfigInnerHandler(ConfigServletInner inner, ConfigOperationService configOperationService,
             ConfigInfoPersistService configInfoPersistService, ConfigDetailService configDetailService,
-            ConfigSubService configSubService, NamespacePersistService namespacePersistService) {
+            ConfigSubService configSubService, NamespacePersistService namespacePersistService,
+            ConfigInfoBetaPersistService configInfoBetaPersistService) {
         this.inner = inner;
         this.configOperationService = configOperationService;
         this.configInfoPersistService = configInfoPersistService;
         this.configDetailService = configDetailService;
         this.configSubService = configSubService;
         this.namespacePersistService = namespacePersistService;
+        this.configInfoBetaPersistService = configInfoBetaPersistService;
     }
     
     @Override
@@ -580,6 +586,41 @@ public class ConfigInnerHandler implements ConfigHandler {
                     configInfo.getContent());
         }
         return Result.success(saveResult);
+    }
+    
+    @Override
+    public boolean removeBetaConfig(String dataId, String group, String namespaceId, String remoteIp,
+            String requestIpApp) {
+        try {
+            configInfoBetaPersistService.removeConfigInfo4Beta(dataId, group, namespaceId);
+        } catch (Throwable e) {
+            LOGGER.error("remove beta data error", e);
+            return false;
+        }
+        ConfigTraceService.logPersistenceEvent(dataId, group, namespaceId, requestIpApp, System.currentTimeMillis(),
+                remoteIp, ConfigTraceService.PERSISTENCE_EVENT_BETA, ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
+        ConfigChangePublisher.notifyConfigChange(
+                new ConfigDataChangeEvent(true, dataId, group, namespaceId, System.currentTimeMillis()));
+        return true;
+        
+    }
+    
+    @Override
+    public Result<ConfigInfo4Beta> queryBetaConfig(String dataId, String group, String namespaceId) {
+        try {
+            ConfigInfo4Beta ci = configInfoBetaPersistService.findConfigInfo4Beta(dataId, group, namespaceId);
+        
+            if (Objects.nonNull(ci)) {
+                String encryptedDataKey = ci.getEncryptedDataKey();
+                Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey, ci.getContent());
+                ci.setContent(pair.getSecond());
+            }
+            return Result.success(ci);
+        } catch (Throwable e) {
+            LOGGER.error("query beta data error", e);
+            return Result.failure(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(), null);
+        }
     }
     
 }

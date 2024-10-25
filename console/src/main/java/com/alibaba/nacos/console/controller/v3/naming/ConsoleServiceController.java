@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.console.controller.v3.naming;
 
+import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -68,6 +69,7 @@ import java.util.Optional;
  *
  * @author zhangyukun on:2024/8/16
  */
+@NacosApi
 @RestController
 @RequestMapping("/v3/console/ns/service")
 @ExtractorManager.Extractor(httpExtractor = ConsoleDefaultHttpParamExtractor.class)
