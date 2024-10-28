@@ -17,12 +17,16 @@
 package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -287,6 +291,15 @@ class ParamUtilsTest {
         } catch (IllegalArgumentException e) {
             System.out.println(e.toString());
         }
+    }
+    
+    @Test
+    void testCheckParamWithNamespaceGroupDataId() {
+        assertThrows(NacosApiException.class, () -> ParamUtils.checkParam("../", "group", ""));
+        assertThrows(NacosApiException.class, () -> ParamUtils.checkParam("dataId", "../", ""));
+        assertThrows(NacosApiException.class, () -> ParamUtils.checkParam("dataId", "group", "../"));
+        assertDoesNotThrow(() -> ParamUtils.checkParam("dataId", "group", ""));
+        assertDoesNotThrow(() -> ParamUtils.checkParam("dataId", "group", UUID.randomUUID().toString()));
     }
     
 }

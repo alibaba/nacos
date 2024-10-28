@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
+import com.alibaba.nacos.common.utils.ArrayUtils;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -23,6 +24,7 @@ import com.alibaba.nacos.plugin.datasource.constants.ContextConstant;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
+import com.alibaba.nacos.plugin.datasource.mapper.ext.WhereBuilder;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
@@ -38,15 +40,15 @@ import java.util.List;
  **/
 
 public class ConfigInfoMapperByMySql extends AbstractMapperByMysql implements ConfigInfoMapper {
-
+    
     private static final String DATA_ID = "dataId";
-
+    
     private static final String GROUP = "group";
-
+    
     private static final String APP_NAME = "appName";
-
+    
     private static final String CONTENT = "content";
-
+    
     private static final String TENANT = "tenant";
     
     @Override
@@ -83,9 +85,10 @@ public class ConfigInfoMapperByMySql extends AbstractMapperByMysql implements Co
     
     @Override
     public MapperResult findAllConfigInfoBaseFetchRows(MapperContext context) {
-        String sql = "SELECT t.id,data_id,group_id,content,md5"
-                + " FROM ( SELECT id FROM config_info ORDER BY id LIMIT " + context.getStartRow() + ","
-                + context.getPageSize() + " )" + " g, config_info t  WHERE g.id = t.id ";
+        String sql =
+                "SELECT t.id,data_id,group_id,content,md5" + " FROM ( SELECT id FROM config_info ORDER BY id LIMIT "
+                        + context.getStartRow() + "," + context.getPageSize() + " )"
+                        + " g, config_info t  WHERE g.id = t.id ";
         return new MapperResult(sql, Collections.emptyList());
     }
     
@@ -228,33 +231,29 @@ public class ConfigInfoMapperByMySql extends AbstractMapperByMysql implements Co
         final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
         final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
         final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
+        final String[] types = (String[]) context.getWhereParameter(FieldConstant.TYPE);
         
-        List<Object> paramList = new ArrayList<>();
+        WhereBuilder where = new WhereBuilder(
+                "SELECT id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key,type FROM config_info");
+        where.like("tenant_id", tenant);
         
-        final String sqlFetchRows = "SELECT id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key FROM config_info";
-        StringBuilder where = new StringBuilder(" WHERE ");
-        where.append(" tenant_id LIKE ? ");
-        paramList.add(tenant);
-        
-        if (!StringUtils.isBlank(dataId)) {
-            where.append(" AND data_id LIKE ? ");
-            paramList.add(dataId);
-            
+        if (StringUtils.isNotBlank(dataId)) {
+            where.and().like("data_id", dataId);
         }
-        if (!StringUtils.isBlank(group)) {
-            where.append(" AND group_id LIKE ? ");
-            paramList.add(group);
+        if (StringUtils.isNotBlank(group)) {
+            where.and().like("group_id", group);
         }
-        if (!StringUtils.isBlank(appName)) {
-            where.append(" AND app_name = ? ");
-            paramList.add(appName);
+        if (StringUtils.isNotBlank(appName)) {
+            where.and().eq("app_name", appName);
         }
-        if (!StringUtils.isBlank(content)) {
-            where.append(" AND content LIKE ? ");
-            paramList.add(content);
+        if (StringUtils.isNotBlank(content)) {
+            where.and().like("content", content);
         }
-        return new MapperResult(sqlFetchRows + where + " LIMIT " + context.getStartRow() + "," + context.getPageSize(),
-                paramList);
+        if (!ArrayUtils.isEmpty(types)) {
+            where.in("type", types);
+        }
+        where.limit(context.getStartRow(), context.getPageSize());
+        return where.build();
     }
     
     @Override
