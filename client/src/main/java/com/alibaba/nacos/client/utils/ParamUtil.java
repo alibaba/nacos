@@ -58,6 +58,8 @@ public class ParamUtil {
     
     private static int connectTimeout;
     
+    private static int readTimeout;
+    
     private static double perTaskConfigSize = 3000;
     
     private static final String NACOS_CLIENT_APP_KEY = "nacos.client.appKey";
@@ -72,7 +74,11 @@ public class ParamUtil {
     
     private static final String NACOS_CONNECT_TIMEOUT_KEY = "NACOS.CONNECT.TIMEOUT";
     
+    private static final String NACOS_READ_TIMEOUT_KEY = "NACOS.READ.TIMEOUT";
+    
     private static final String DEFAULT_NACOS_CONNECT_TIMEOUT = "1000";
+    
+    private static final String DEFAULT_NACOS_READ_TIMEOUT = "3000";
     
     private static final String PER_TASK_CONFIG_SIZE_KEY = "PER_TASK_CONFIG_SIZE";
     
@@ -97,6 +103,9 @@ public class ParamUtil {
         connectTimeout = initConnectionTimeout();
         LOGGER.info("[settings] [http-client] connect timeout:{}", connectTimeout);
         
+        readTimeout = initReadTimeout();
+        LOGGER.info("[settings] [http-client] read timeout:{}", readTimeout);
+        
         clientVersion = VersionUtils.version;
         
         perTaskConfigSize = initPerTaskConfigSize();
@@ -110,6 +119,18 @@ public class ParamUtil {
             return Integer.parseInt(tmp);
         } catch (NumberFormatException e) {
             final String msg = "[http-client] invalid connect timeout:" + tmp;
+            LOGGER.error("[settings] " + msg, e);
+            throw new IllegalArgumentException(msg, e);
+        }
+    }
+    
+    private static int initReadTimeout() {
+        String tmp = DEFAULT_NACOS_READ_TIMEOUT;
+        try {
+            tmp = NacosClientProperties.PROTOTYPE.getProperty(NACOS_READ_TIMEOUT_KEY, DEFAULT_NACOS_READ_TIMEOUT);
+            return Integer.parseInt(tmp);
+        } catch (NumberFormatException e) {
+            final String msg = "[http-client] invalid read timeout:" + tmp;
             LOGGER.error("[settings] " + msg, e);
             throw new IllegalArgumentException(msg, e);
         }
@@ -163,6 +184,14 @@ public class ParamUtil {
     
     public static void setConnectTimeout(int connectTimeout) {
         ParamUtil.connectTimeout = connectTimeout;
+    }
+    
+    public static int getReadTimeout() {
+        return readTimeout;
+    }
+    
+    public static void setReadTimeout(int readTimeout) {
+        ParamUtil.readTimeout = readTimeout;
     }
     
     public static double getPerTaskConfigSize() {
@@ -332,5 +361,17 @@ public class ParamUtil {
             result.setCharAt(i, '*');
         }
         return result.toString();
+    }
+    
+    public static String getNameSuffixByServerIps(String... serverIps) {
+        StringBuilder sb = new StringBuilder();
+        String split = "";
+        for (String serverIp : serverIps) {
+            sb.append(split);
+            serverIp = serverIp.replaceAll("http(s)?://", "");
+            sb.append(serverIp.replaceAll(":", "_"));
+            split = "-";
+        }
+        return sb.toString();
     }
 }

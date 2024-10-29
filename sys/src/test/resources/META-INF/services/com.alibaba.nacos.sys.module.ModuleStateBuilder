@@ -16,3 +16,4 @@
 
 com.alibaba.nacos.sys.module.mock.MockModuleStateBuilder
 com.alibaba.nacos.sys.module.mock.ExceptionMockModuleStateBuilder
+com.alibaba.nacos.sys.module.mock.MockRebuildModuleStateBuilder

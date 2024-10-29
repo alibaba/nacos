@@ -47,6 +47,8 @@ class ParamUtilTest {
     
     private int defaultConnectTimeout;
     
+    private int defaultReadTimeout;
+    
     private double defaultPerTaskConfigSize;
     
     private String defaultNodesPath;
@@ -58,6 +60,7 @@ class ParamUtilTest {
         defaultContextPath = "nacos";
         defaultVersion = VersionUtils.version;
         defaultConnectTimeout = 1000;
+        defaultReadTimeout = 3000;
         defaultPerTaskConfigSize = 3000.0;
         defaultNodesPath = "serverlist";
     }
@@ -69,9 +72,11 @@ class ParamUtilTest {
         ParamUtil.setDefaultContextPath(defaultContextPath);
         ParamUtil.setClientVersion(defaultVersion);
         ParamUtil.setConnectTimeout(defaultConnectTimeout);
+        ParamUtil.setReadTimeout(defaultReadTimeout);
         ParamUtil.setPerTaskConfigSize(defaultPerTaskConfigSize);
         ParamUtil.setDefaultNodesPath(defaultNodesPath);
         System.clearProperty("NACOS.CONNECT.TIMEOUT");
+        System.clearProperty("NACOS_READ_TIMEOUT");
         System.clearProperty("PER_TASK_CONFIG_SIZE");
         System.clearProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
     }
@@ -127,6 +132,16 @@ class ParamUtilTest {
     }
     
     @Test
+    void testSetReadTimeout() {
+        int defaultVal = ParamUtil.getReadTimeout();
+        assertEquals(defaultReadTimeout, defaultVal);
+        
+        int expect = 3000;
+        ParamUtil.setReadTimeout(expect);
+        assertEquals(expect, ParamUtil.getReadTimeout());
+    }
+    
+    @Test
     void testGetPerTaskConfigSize() {
         double defaultVal = ParamUtil.getPerTaskConfigSize();
         assertEquals(defaultPerTaskConfigSize, defaultVal, 0.01);
@@ -176,6 +191,20 @@ class ParamUtilTest {
             Method method = ParamUtil.class.getDeclaredMethod("initConnectionTimeout");
             method.setAccessible(true);
             System.setProperty("NACOS.CONNECT.TIMEOUT", "test");
+            try {
+                method.invoke(null);
+            } catch (InvocationTargetException e) {
+                throw e.getCause();
+            }
+        });
+    }
+    
+    @Test
+    void testInitReadTimeoutWithException() throws Throwable {
+        assertThrows(IllegalArgumentException.class, () -> {
+            Method method = ParamUtil.class.getDeclaredMethod("initReadTimeout");
+            method.setAccessible(true);
+            System.setProperty("NACOS.READ.TIMEOUT", "test");
             try {
                 method.invoke(null);
             } catch (InvocationTargetException e) {
@@ -266,5 +295,10 @@ class ParamUtilTest {
         assertEquals("a*****a", ParamUtil.desensitiseParameter(middleParameter));
         String longParameter = "testPass";
         assertEquals("te****ss", ParamUtil.desensitiseParameter(longParameter));
+    }
+    
+    @Test
+    void testGetNameSuffixByServerIps() {
+        assertEquals("1.1.1.1-2.2.2.2_8848", ParamUtil.getNameSuffixByServerIps("http://1.1.1.1", "2.2.2.2:8848"));
     }
 }

@@ -18,6 +18,7 @@ package com.alibaba.nacos.auth.parser.grpc;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
+import com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.auth.annotation.Secured;
@@ -98,6 +99,23 @@ class ConfigGrpcResourceParserTest {
         assertEquals(StringUtils.EMPTY, actual.getGroup());
         assertEquals(StringUtils.EMPTY, actual.getName());
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());
+        request.getConfigListenContexts().clear();
+        actual = resourceParser.parse(request, secured);
+        assertEquals(StringUtils.EMPTY, actual.getNamespaceId());
+        assertEquals(StringUtils.EMPTY, actual.getGroup());
+        assertEquals(StringUtils.EMPTY, actual.getName());
+        assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());
+    }
+    
+    @Test
+    @Secured(signType = Constants.Config.CONFIG_MODULE)
+    void testParseWithReflectionRequest() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        Request request = ConfigChangeNotifyRequest.build("rTestD", "rTestG", "rTestNs");
+        Resource actual = resourceParser.parse(request, secured);
+        assertEquals("rTestNs", actual.getNamespaceId());
+        assertEquals("rTestG", actual.getGroup());
+        assertEquals("rTestD", actual.getName());
     }
     
     private Request mockConfigRequest(String tenant, String group, String dataId) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.config.impl;
+package com.alibaba.nacos.auth.mock;
 
-import com.alibaba.nacos.common.notify.SlowEvent;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.parser.ResourceParser;
+import com.alibaba.nacos.plugin.auth.api.Resource;
 
-/**
- * Server List Change Event.
- *
- * @author zongtanghu
- */
-public class ServerListChangeEvent extends SlowEvent {
+public class MockResourceParser implements ResourceParser<Object> {
+    
+    @Override
+    public Resource parse(Object request, Secured secured) {
+        throw new NacosRuntimeException(500);
+    }
 }
