@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
@@ -199,5 +200,28 @@ public class ConfigProxy {
             throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
         }
         return configHandler.cloneConfig(srcUser, namespaceId, configBeansList, policy, srcIp, requestIpApp);
+    }
+    
+    /**
+     * Remove beta configuration based on dataId, group, and namespaceId.
+     */
+    public boolean removeBetaConfig(String dataId, String group, String namespaceId, String remoteIp,
+            String requestIpApp) throws NacosException {
+        ConfigHandler configHandler = configHandlerMap.get(consoleConfig.getType());
+        if (configHandler == null) {
+            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
+        }
+        return configHandler.removeBetaConfig(dataId, group, namespaceId, remoteIp, requestIpApp);
+    }
+    
+    /**
+     * Query beta configuration based on dataId, group, and namespaceId.
+     */
+    public Result<ConfigInfo4Beta> queryBetaConfig(String dataId, String group, String namespaceId) throws NacosException {
+        ConfigHandler configHandler = configHandlerMap.get(consoleConfig.getType());
+        if (configHandler == null) {
+            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
+        }
+        return configHandler.queryBetaConfig(dataId, group, namespaceId);
     }
 }

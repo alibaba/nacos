@@ -28,6 +28,7 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
@@ -41,6 +42,7 @@ import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -60,6 +62,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.alibaba.nacos.config.server.utils.RequestUtil.getRemoteIp;
+
 /**
  * Controller for handling HTTP requests related to configuration operations.
  *
@@ -74,7 +78,6 @@ public class ConsoleConfigController {
     
     public ConsoleConfigController(ConfigProxy configProxy) {
         this.configProxy = configProxy;
-        
     }
     
     /**
@@ -401,15 +404,11 @@ public class ConsoleConfigController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
     public Result<Map<String, Object>> cloneConfig(HttpServletRequest request,
             @RequestParam(value = "src_user", required = false) String srcUser,
-            @RequestParam(value = "namespaceId") String namespaceId,
+            @RequestParam(value = "targetNamespaceId") String namespaceId,
             @RequestBody List<SameNamespaceCloneConfigBean> configBeansList,
             @RequestParam(value = "policy", defaultValue = "ABORT") SameConfigPolicy policy) throws NacosException {
-        
         configBeansList.removeAll(Collections.singleton(null));
-        // check namespaceId
-        ParamUtils.checkTenantV2(namespaceId);
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
-        
         if (StringUtils.isBlank(srcUser)) {
             srcUser = RequestUtil.getSrcUserName(request);
         }
@@ -417,6 +416,49 @@ public class ConsoleConfigController {
         String requestIpApp = RequestUtil.getAppName(request);
         
         return configProxy.cloneConfig(srcUser, namespaceId, configBeansList, policy, srcIp, requestIpApp);
+    }
+    
+    /**
+     * Execute to remove beta operation.
+     *
+     * @param httpServletRequest HTTP request containing client details.
+     * @param dataId             dataId string value.
+     * @param group              group string value.
+     * @param namespaceId        tenant string value.
+     * @return Result indicating the outcome of the operation.
+     * @throws NacosException If a Nacos-specific error occurs.
+     */
+    @DeleteMapping("/beta")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
+    public Result<Boolean> stopBeta(HttpServletRequest httpServletRequest,
+            @RequestParam(value = "dataId") String dataId, @RequestParam(value = "group") String group,
+            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId)
+            throws NacosException {
+        String remoteIp = getRemoteIp(httpServletRequest);
+        String requestIpApp = RequestUtil.getAppName(httpServletRequest);
+        boolean success = configProxy.removeBetaConfig(dataId, group, namespaceId, remoteIp, requestIpApp);
+        if (!success) {
+            return Result.failure(HttpStatus.INTERNAL_SERVER_ERROR.value(), HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(), false);
+        }
+        return Result.success(true);
+    }
+    
+    /**
+     * Execute to query beta operation.
+     *
+     * @param dataId      dataId string value.
+     * @param group       group string value.
+     * @param namespaceId namespaceId string value.
+     * @return Result containing the ConfigInfo4Beta details.
+     * @throws NacosException If a Nacos-specific error occurs.
+     */
+    @GetMapping("/beta")
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    public Result<ConfigInfo4Beta> queryBeta(@RequestParam(value = "dataId") String dataId,
+            @RequestParam(value = "group") String group,
+            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId)
+            throws NacosException {
+        return configProxy.queryBetaConfig(dataId, group, namespaceId);
     }
     
 }

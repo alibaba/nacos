@@ -112,16 +112,15 @@ public class ConsoleNamespaceControllerTest {
     
     @Test
     void testUpdateNamespace() throws Exception {
-        NamespaceForm namespaceForm = new NamespaceForm();
-        namespaceForm.setNamespaceId("testNamespace");
-        namespaceForm.setNamespaceName("testNamespaceName");
-        namespaceForm.setNamespaceDesc("testDesc");
+        String namespaceId = "testNamespace";
+        String namespaceName = "testNamespaceName";
+        String namespaceDesc = "testDesc";
         
         MockHttpServletRequest request = new MockHttpServletRequest();
         
         when(namespaceProxy.updateNamespace(any(NamespaceForm.class))).thenReturn(true);
         
-        Result<Boolean> result = consoleNamespaceController.updateNamespace(namespaceForm);
+        Result<Boolean> result = consoleNamespaceController.updateNamespace(namespaceId, namespaceName, namespaceDesc);
         
         verify(namespaceProxy).updateNamespace(any(NamespaceForm.class));
         

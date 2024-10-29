@@ -78,7 +78,14 @@ class InstanceTable extends React.Component {
         pageNo: pageNum,
       },
       beforeSend: () => this.openLoading(),
-      success: ({ data: instance }) => this.setState({ instance }),
+      success: ({ data }) => {
+        const instance = {
+          list: data.instances || [],
+          count: data.count || 0,
+        };
+        this.setState({ instance });
+      },
+      error: e => Message.error(e.responseText || 'error'),
       complete: () => this.closeLoading(),
     });
   }
@@ -105,7 +112,7 @@ class InstanceTable extends React.Component {
         enabled: !enabled,
         metadata: JSON.stringify(metadata),
       },
-      dataType: 'text',
+      dataType: 'json',
       beforeSend: () => this.openLoading(),
       success: ({ data }) => {
         const newVal = Object.assign({}, instance);
