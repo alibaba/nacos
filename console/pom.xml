@@ -150,12 +150,6 @@
             </properties>
         </profile>
         <profile>
-            <id>native-linux32-musl</id>
-            <properties>
-                <hints.os.rocksdb>linux32-musl.so</hints.os.rocksdb>
-            </properties>
-        </profile>
-        <profile>
             <id>native-linux64</id>
             <activation>
                 <os>
@@ -166,12 +160,6 @@
             </activation>
             <properties>
                 <hints.os.rocksdb>linux64.so</hints.os.rocksdb>
-            </properties>
-        </profile>
-        <profile>
-            <id>native-linux64-musl</id>
-            <properties>
-                <hints.os.rocksdb>linux64-musl.so</hints.os.rocksdb>
             </properties>
         </profile>
         <profile>
@@ -188,12 +176,6 @@
             </properties>
         </profile>
         <profile>
-            <id>native-linux-aarch64-musl</id>
-            <properties>
-                <hints.os.rocksdb>linux-aarch64-musl.so</hints.os.rocksdb>
-            </properties>
-        </profile>
-        <profile>
             <id>native-linux-ppc64le</id>
             <activation>
                 <os>
@@ -204,12 +186,6 @@
             </activation>
             <properties>
                 <hints.os.rocksdb>linux-ppc64le.so</hints.os.rocksdb>
-            </properties>
-        </profile>
-        <profile>
-            <id>native-linux-ppc64le-musl</id>
-            <properties>
-                <hints.os.rocksdb>linux-ppc64le-musl.so</hints.os.rocksdb>
             </properties>
         </profile>
         <profile>
@@ -224,22 +200,6 @@
             <properties>
                 <hints.os.rocksdb>linux-s390x.so</hints.os.rocksdb>
             </properties>
-        </profile>
-        <profile>
-            <id>native-linux-s390x-musl</id>
-            <properties>
-                <hints.os.rocksdb>linux-s390x-musl.so</hints.os.rocksdb>
-            </properties>
-            <build>
-                <resources>
-                    <resource>
-                        <directory>src/main/resources</directory>
-                        <includes>
-                            <include>librocksdbjni-${hints.os.rocksdb}</include>
-                        </includes>
-                    </resource>
-                </resources>
-            </build>
         </profile>
         <profile>
             <id>native-osx-arm64</id>

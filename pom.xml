@@ -154,7 +154,6 @@
         <!-- override dependency version -->
         <spring.version>6.1.10</spring.version>
         <spring-security.version>6.3.1</spring-security.version>
-        <tomcat.version>9.0.93</tomcat.version>
         <micrometer.version>1.12.8</micrometer.version>
         
         <!-- native -->
@@ -694,42 +693,6 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <!-- override dependencies version due to spring boot 2 is not maintained-->
-            <dependency>
-                <groupId>org.apache.tomcat</groupId>
-                <artifactId>tomcat-annotations-api</artifactId>
-                <version>${tomcat.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.tomcat</groupId>
-                <artifactId>tomcat-jdbc</artifactId>
-                <version>${tomcat.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.tomcat</groupId>
-                <artifactId>tomcat-jsp-api</artifactId>
-                <version>${tomcat.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.tomcat.embed</groupId>
-                <artifactId>tomcat-embed-core</artifactId>
-                <version>${tomcat.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.tomcat.embed</groupId>
-                <artifactId>tomcat-embed-el</artifactId>
-                <version>${tomcat.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.tomcat.embed</groupId>
-                <artifactId>tomcat-embed-jasper</artifactId>
-                <version>${tomcat.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.tomcat.embed</groupId>
-                <artifactId>tomcat-embed-websocket</artifactId>
-                <version>${tomcat.version}</version>
-            </dependency>
             
             <!-- Internal libs -->
             <dependency>
@@ -874,11 +837,17 @@
                 <version>${project.version}</version>
             </dependency>
             
-            <!-- issue#12028 switch javax.servlet to jakarta.servlet -->
+            <!-- Jakarta -->
             <dependency>
                 <groupId>jakarta.servlet</groupId>
-                <artifactId>servlet-api</artifactId>
+                <artifactId>jakarta.servlet-api</artifactId>
                 <version>${servlet-api.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>javax.servlet</groupId>
+                <artifactId>servlet-api</artifactId>
+                <version>3.0</version>
                 <scope>provided</scope>
             </dependency>
             
@@ -890,7 +859,6 @@
             </dependency>
             
             <!-- hessian -->
-            
             <dependency>
                 <groupId>com.caucho</groupId>
                 <artifactId>hessian</artifactId>

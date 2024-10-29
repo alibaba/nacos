@@ -16,13 +16,9 @@
 
 package com.alibaba.nacos.console.aot;
 
-import org.apache.derby.iapi.services.loader.InstanceGetter;
-import org.apache.derby.iapi.services.monitor.Monitor;
 import org.rocksdb.NativeLibraryLoader;
 
 import java.lang.reflect.Field;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Help graalvm and spring-aot find specific native file from jar like rocksdb.

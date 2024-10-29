@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
  * @author nacos
  */
 @Component
+@SuppressWarnings("PMD")
 public class SwitchDomain implements Record, Cloneable {
     
     private static final long serialVersionUID = 7619505097145337232L;
@@ -74,7 +75,7 @@ public class SwitchDomain implements Record, Cloneable {
     
     private long serviceStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(5);
     
-    private boolean disableAddIp = false;
+    private boolean disableAddIP = false;
     
     private boolean sendBeatOnly = false;
     
@@ -90,11 +91,11 @@ public class SwitchDomain implements Record, Cloneable {
     /**
      * since which version, push can be enabled.
      */
-    private String pushGoVersion = "0.1.0";
+    private String pushVersionOfGo = "0.1.0";
     
-    private String pushJavaVersion = "0.1.0";
+    private String pushVersionOfJava = "0.1.0";
     
-    private String pushPythonVersion = "0.4.3";
+    private String pushVersionOfPython = "0.4.3";
     
     private String pushVersionOfC = "1.0.12";
     
@@ -301,12 +302,12 @@ public class SwitchDomain implements Record, Cloneable {
         this.serviceStatusSynchronizationPeriodMillis = serviceStatusSynchronizationPeriodMillis;
     }
     
-    public boolean isDisableAddIp() {
-        return disableAddIp;
+    public boolean isDisableAddIP() {
+        return disableAddIP;
     }
     
-    public void setDisableAddIp(boolean disableAddIp) {
-        this.disableAddIp = disableAddIp;
+    public void setDisableAddIP(boolean disableAddIP) {
+        this.disableAddIP = disableAddIP;
     }
     
     public Map<String, Integer> getLimitedUrlMap() {
@@ -325,44 +326,44 @@ public class SwitchDomain implements Record, Cloneable {
         this.distroServerExpiredMillis = distroServerExpiredMillis;
     }
     
-    public String getPushGoVersion() {
-        return pushGoVersion;
+    public String getPushVersionOfGo() {
+        return pushVersionOfGo;
     }
     
     public void setPushGoVersion(String pushGoVersion) {
-        this.pushGoVersion = pushGoVersion;
+        this.pushVersionOfGo = pushGoVersion;
     }
     
     public String getPushVersionOfCsharp() {
         return pushVersionOfCsharp;
     }
     
-    public void setPushVersionOfCsharp(String pushVersionOfCsharp) {
-        this.pushVersionOfCsharp = pushVersionOfCsharp;
+    public void setPushCSharpVersion(String pushCSharpVersion) {
+        this.pushVersionOfCsharp = pushCSharpVersion;
     }
     
-    public String getPushJavaVersion() {
-        return pushJavaVersion;
+    public String getPushVersionOfJava() {
+        return pushVersionOfJava;
     }
     
     public void setPushJavaVersion(String pushJavaVersion) {
-        this.pushJavaVersion = pushJavaVersion;
+        this.pushVersionOfJava = pushJavaVersion;
     }
     
-    public String getPushPythonVersion() {
-        return pushPythonVersion;
+    public String getPushVersionOfPython() {
+        return pushVersionOfPython;
     }
     
     public void setPushPythonVersion(String pushPythonVersion) {
-        this.pushPythonVersion = pushPythonVersion;
+        this.pushVersionOfPython = pushPythonVersion;
     }
     
     public String getPushVersionOfC() {
         return pushVersionOfC;
     }
     
-    public void setPushVersionOfC(String pushVersionOfC) {
-        this.pushVersionOfC = pushVersionOfC;
+    public void setPushCVersion(String pushCVersion) {
+        this.pushVersionOfC = pushCVersion;
     }
     
     public String getOverriddenServerStatus() {

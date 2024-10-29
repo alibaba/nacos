@@ -176,8 +176,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             Class.forName("org.apache.derby.impl.services.monitor.TopService"),
             Class.forName("org.apache.derby.iapi.services.cache.ClassSizeCatalogImpl"),
 
-            com.alibaba.nacos.persistence.datasource.ExternalDataSourceProperties.class,
-            com.mysql.cj.jdbc.Driver.class
+            com.alibaba.nacos.persistence.datasource.ExternalDataSourceProperties.class
     };
     // endregion
     
@@ -538,7 +537,6 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             ConcurrentHashMap.class,
             com.alibaba.nacos.api.grpc.auto.Metadata.class,
             com.alibaba.nacos.api.grpc.auto.Payload.class,
-            com.alibaba.nacos.naming.core.v2.client.ClientSyncData.class,
             com.alibaba.nacos.naming.core.v2.client.ClientSyncData.class,
             com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata.class,
             com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo.class,
