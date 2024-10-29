@@ -54,6 +54,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.mock.env.MockEnvironment;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -96,6 +97,8 @@ class JRaftServerTest {
     
     private JRaftServer server;
     
+    private RaftConfig config;
+    
     @Mock
     private RequestProcessor4CP mockProcessor4CP;
     
@@ -133,7 +136,7 @@ class JRaftServerTest {
     @BeforeEach
     void before() throws NoSuchFieldException, IllegalAccessException {
         initPeersAndConfiguration();
-        RaftConfig config = new RaftConfig();
+        config = new RaftConfig();
         Collection<Member> initEvent = Collections.singletonList(Member.builder().ip("1.1.1.1").port(7848).build());
         config.setMembers("1.1.1.1:7848", ProtocolManager.toCPMembersInfo(initEvent));
         
@@ -148,7 +151,8 @@ class JRaftServerTest {
         server.init(config);
         
         Map<String, JRaftServer.RaftGroupTuple> map = new HashMap<>();
-        map.put("test_nacos", new JRaftServer.RaftGroupTuple(node, requestProcessor, raftGroupService, nacosStateMachine));
+        map.put("test_nacos",
+                new JRaftServer.RaftGroupTuple(node, requestProcessor, raftGroupService, nacosStateMachine));
         server.mockMultiRaftGroup(map);
         
         mockcliClientService();
@@ -221,19 +225,21 @@ class JRaftServerTest {
         when(cliClientServiceMock.getRpcClient()).thenReturn(rpcClient);
         setLeaderAs(peerId1);
         int timeout = 3000;
-        Method invokeToLeaderMethod = JRaftServer.class.getDeclaredMethod("invokeToLeader", String.class, Message.class, int.class,
-                FailoverClosure.class);
+        Method invokeToLeaderMethod = JRaftServer.class.getDeclaredMethod("invokeToLeader", String.class, Message.class,
+                int.class, FailoverClosure.class);
         invokeToLeaderMethod.setAccessible(true);
         invokeToLeaderMethod.invoke(server, groupId, this.readRequest, timeout, null);
         verify(cliClientServiceMock).getRpcClient();
-        verify(rpcClient).invokeAsync(eq(peerId1.getEndpoint()), eq(readRequest), any(InvokeCallback.class), any(long.class));
+        verify(rpcClient).invokeAsync(eq(peerId1.getEndpoint()), eq(readRequest), any(InvokeCallback.class),
+                any(long.class));
     }
     
     @Test
     void testRefreshRouteTable() {
         server.refreshRouteTable(groupId);
         verify(cliClientServiceMock, times(1)).connect(peerId1.getEndpoint());
-        verify(cliClientServiceMock).getLeader(eq(peerId1.getEndpoint()), any(CliRequests.GetLeaderRequest.class), eq(null));
+        verify(cliClientServiceMock).getLeader(eq(peerId1.getEndpoint()), any(CliRequests.GetLeaderRequest.class),
+                eq(null));
     }
     
     @Test
@@ -322,6 +328,16 @@ class JRaftServerTest {
         server.peerChange(service, ProtocolManager.toCPMembersInfo(fiveEvent));
         assertFalse(changed.get());
         changed.set(false);
+    }
+    
+    @Test
+    void testIsReady() {
+        assertTrue(server.isReady());
+        config.setStrictMode(true);
+        ((Collection<RequestProcessor4CP>) ReflectionTestUtils.getField(server, "processors")).add(mockProcessor4CP);
+        assertTrue(server.isReady());
+        setLeaderAs(null);
+        assertFalse(server.isReady());
     }
     
     @AfterEach

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.pojo;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 
 import java.io.Serializable;
@@ -94,6 +95,11 @@ public class Service implements Serializable {
     
     public String getGroupedServiceName() {
         return NamingUtils.getGroupedName(name, group);
+    }
+
+    public String getNameSpaceGroupedServiceName() {
+        //do not String.intern
+        return namespace + Constants.SERVICE_INFO_SPLITER + NamingUtils.getGroupedName(name, group);
     }
     
     @Override

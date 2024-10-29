@@ -305,15 +305,6 @@ public class EnvUtil {
         EnvUtil.nacosHomePath = nacosHomePath;
     }
     
-    public static List<String> getIPsBySystemEnv(String key) {
-        String env = getSystemEnv(key);
-        List<String> ips = new ArrayList<>();
-        if (StringUtils.isNotEmpty(env)) {
-            ips = Arrays.asList(env.split(","));
-        }
-        return ips;
-    }
-    
     public static String getSystemEnv(String key) {
         return System.getenv(key);
     }
@@ -328,7 +319,7 @@ public class EnvUtil {
     
     public static float getMem() {
         return (float) (1
-                - OperatingSystemBeanManager.getFreePhysicalMem() / OperatingSystemBeanManager.getTotalPhysicalMem());
+                - (double) OperatingSystemBeanManager.getFreePhysicalMem() / (double) OperatingSystemBeanManager.getTotalPhysicalMem());
     }
     
     public static String getConfPath() {

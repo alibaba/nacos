@@ -1,0 +1,31 @@
+name: "Comment on PR"
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+jobs:
+  thanks-and-hint-to-document:
+    runs-on: ubuntu-20.04
+    permissions:
+      pull-requests: write
+    name: Say thanks for the PR and hint to document
+    steps:
+      - name: comment on the pull request
+        uses: hasura/comment-progress@v2.3.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          number: ${{ github.event.number }}
+          id: thanks-and-hint-to-document
+          recreate: true
+          message: |
+            Thanks for your this PR.  :pray: 
+            Please check again for your PR changes whether contains any usage/api/configuration change such as `Add new API `, `Add new configuration`, `Change default value of configuration`.
+            If so, please add or update documents(markdown type) in `docs/next/` for repository [nacos-group/nacos-group.github.io](https://github.com/nacos-group/nacos-group.github.io/tree/develop-astro-nacos/src/content/docs/next)
+            
+            ---
+            
+            感谢您提交的PR。 :pray: 
+            请再次查看您的PR内容，确认是否包含任何使用方式/API/配置参数的变更，如：`新增API`、`新增配置参数`、`修改默认配置`等操作。
+            如果是，请确保在提交之前，在仓库[nacos-group/nacos-group.github.io](https://github.com/nacos-group/nacos-group.github.io/tree/develop-astro-nacos/src/content/docs/next)中的`docs/next/`目录下添加或更新文档（markdown格式）。
