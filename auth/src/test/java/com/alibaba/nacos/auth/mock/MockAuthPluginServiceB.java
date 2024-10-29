@@ -48,7 +48,7 @@ public class MockAuthPluginServiceB implements AuthPluginService {
     
     @Override
     public Boolean validateAuthority(IdentityContext identityContext, Permission permission) {
-        return false;
+        return Boolean.FALSE;
     }
     
     @Override

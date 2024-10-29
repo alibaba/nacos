@@ -74,7 +74,7 @@ public class SwitchDomain implements Record, Cloneable {
     
     private long serviceStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(5);
     
-    private boolean disableAddIP = false;
+    private boolean disableAddIp = false;
     
     private boolean sendBeatOnly = false;
     
@@ -96,9 +96,9 @@ public class SwitchDomain implements Record, Cloneable {
     
     private String pushPythonVersion = "0.4.3";
     
-    private String pushCVersion = "1.0.12";
+    private String pushVersionOfC = "1.0.12";
     
-    private String pushCSharpVersion = "0.9.0";
+    private String pushVersionOfCsharp = "0.9.0";
     
     private boolean enableAuthentication = false;
     
@@ -301,12 +301,12 @@ public class SwitchDomain implements Record, Cloneable {
         this.serviceStatusSynchronizationPeriodMillis = serviceStatusSynchronizationPeriodMillis;
     }
     
-    public boolean isDisableAddIP() {
-        return disableAddIP;
+    public boolean isDisableAddIp() {
+        return disableAddIp;
     }
     
-    public void setDisableAddIP(boolean disableAddIP) {
-        this.disableAddIP = disableAddIP;
+    public void setDisableAddIp(boolean disableAddIp) {
+        this.disableAddIp = disableAddIp;
     }
     
     public Map<String, Integer> getLimitedUrlMap() {
@@ -333,12 +333,12 @@ public class SwitchDomain implements Record, Cloneable {
         this.pushGoVersion = pushGoVersion;
     }
     
-    public String getPushCSharpVersion() {
-        return pushCSharpVersion;
+    public String getPushVersionOfCsharp() {
+        return pushVersionOfCsharp;
     }
     
-    public void setPushCSharpVersion(String pushCSharpVersion) {
-        this.pushCSharpVersion = pushCSharpVersion;
+    public void setPushVersionOfCsharp(String pushVersionOfCsharp) {
+        this.pushVersionOfCsharp = pushVersionOfCsharp;
     }
     
     public String getPushJavaVersion() {
@@ -357,12 +357,12 @@ public class SwitchDomain implements Record, Cloneable {
         this.pushPythonVersion = pushPythonVersion;
     }
     
-    public String getPushCVersion() {
-        return pushCVersion;
+    public String getPushVersionOfC() {
+        return pushVersionOfC;
     }
     
-    public void setPushCVersion(String pushCVersion) {
-        this.pushCVersion = pushCVersion;
+    public void setPushVersionOfC(String pushVersionOfC) {
+        this.pushVersionOfC = pushVersionOfC;
     }
     
     public String getOverriddenServerStatus() {

@@ -138,7 +138,7 @@ public class InetUtils {
             nacosIp = EnvUtil.getProperty(IP_ADDRESS);
         }
         if (!StringUtils.isBlank(nacosIp)) {
-            if (!(InternetAddressUtil.isIP(nacosIp) || InternetAddressUtil.isDomain(nacosIp))) {
+            if (!(InternetAddressUtil.isIp(nacosIp) || InternetAddressUtil.isDomain(nacosIp))) {
                 throw new RuntimeException("nacos address " + nacosIp + " is not ip");
             }
         }

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.http.client.response;
 
 import com.alibaba.nacos.common.http.param.Header;
+import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -24,6 +25,8 @@ import java.io.InputStream;
 
 /**
  * Represents a client-side HTTP response.
+ * In new version of Apache Http Components, {@code HttpResponse} has been replaced by {@link SimpleHttpResponse}.
+ * Cause in this class body content no longer be {@link InputStream} anymore, we don't need to close it anymore.
  *
  * @author mai.jh
  */

@@ -31,6 +31,7 @@ import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -38,9 +39,11 @@ import org.springframework.security.config.BeanIds;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.authentication.configuration.GlobalAuthenticationConfigurerAdapter;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -55,7 +58,8 @@ import javax.annotation.PostConstruct;
  *
  * @author Nacos
  */
-@EnableGlobalMethodSecurity(prePostEnabled = true)
+@Configuration
+@EnableMethodSecurity
 public class NacosAuthConfig {
     
     private static final String SECURITY_IGNORE_URLS_SPILT_CHAR = ",";
@@ -123,7 +127,8 @@ public class NacosAuthConfig {
             }
             if (StringUtils.isNotBlank(ignoreUrls)) {
                 for (String each : ignoreUrls.trim().split(SECURITY_IGNORE_URLS_SPILT_CHAR)) {
-                    web.ignoring().antMatchers(each.trim());
+                    // switch this to springboot3 syntax
+                    web.ignoring().requestMatchers(each.trim());
                 }
             }
         };
@@ -146,14 +151,19 @@ public class NacosAuthConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         if (StringUtils.isBlank(authConfigs.getNacosAuthSystemType())) {
-            http.csrf().disable().cors()// We don't need CSRF for JWT based authentication
-                    .and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
-                    .authorizeRequests().requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
-                    .antMatchers(LOGIN_ENTRY_POINT).permitAll().and().authorizeRequests()
-                    .antMatchers(TOKEN_BASED_AUTH_ENTRY_POINT).authenticated().and().exceptionHandling()
-                    .authenticationEntryPoint(new JwtAuthenticationEntryPoint());
+            // switch this to springboot3 syntax
+            http.csrf(AbstractHttpConfigurer::disable)
+                    // We don't need CSRF for JWT based authentication
+                    .cors(AbstractHttpConfigurer::disable)
+                    .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                    .authorizeHttpRequests(auth -> {
+                        auth.requestMatchers(CorsUtils::isPreFlightRequest).permitAll();
+                        auth.requestMatchers(LOGIN_ENTRY_POINT).permitAll();
+                        auth.requestMatchers(TOKEN_BASED_AUTH_ENTRY_POINT).authenticated();
+                    })
+                    .exceptionHandling(exp -> exp.authenticationEntryPoint(new JwtAuthenticationEntryPoint()));
             // disable cache
-            http.headers().cacheControl();
+            http.headers(headers -> headers.cacheControl(HeadersConfigurer.CacheControlConfig::disable));
             
             http.addFilterBefore(new JwtAuthenticationTokenFilter(tokenProvider),
                     UsernamePasswordAuthenticationFilter.class);
