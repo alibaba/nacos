@@ -735,7 +735,6 @@ class ConfigurationManagement extends React.Component {
         self.openLoading();
       },
       success(data) {
-        data = data.data;
         self.closeLoading();
         if (!data || data.code !== 0 || !data.data) {
           Dialog.alert({
