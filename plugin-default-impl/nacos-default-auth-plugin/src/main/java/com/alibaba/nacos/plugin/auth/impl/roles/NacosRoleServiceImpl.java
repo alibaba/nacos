@@ -370,5 +370,28 @@ public class NacosRoleServiceImpl {
         authConfigs.setHasGlobalAdminRole(hasGlobalAdminRole);
         return hasGlobalAdminRole;
     }
+
+    /**
+     * judge whether the permission is duplicate.
+     *
+     * @param role role name
+     * @param resource resource
+     * @param action action
+     * @return true if duplicate, false otherwise
+     */
+    public Boolean isDuplicatePermission(String role, String resource, String action) {
+        List<PermissionInfo> permissionInfos = getPermissions(role);
+        if (CollectionUtils.isEmpty(permissionInfos)) {
+            return Boolean.FALSE;
+        }
+        for (PermissionInfo permissionInfo : permissionInfos) {
+            boolean resourceMatch = StringUtils.equals(resource, permissionInfo.getResource());
+            boolean actionMatch = StringUtils.equals(action, permissionInfo.getAction()) || "rw".equals(permissionInfo.getAction());
+            if (resourceMatch && actionMatch) {
+                return Boolean.TRUE;
+            }
+        }
+        return Boolean.FALSE;
+    }
     
 }

@@ -105,4 +105,18 @@ public class PermissionController {
         nacosRoleService.deletePermission(role, resource, action);
         return RestResultUtils.success("delete permission ok!");
     }
+
+    /**
+     * Judge whether a permission is duplicate.
+     *
+     * @param role     the role
+     * @param resource the related resource
+     * @param action   the related action
+     * @return true if duplicate, false otherwise
+     */
+    @GetMapping
+    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.READ)
+    public Boolean isDuplicatePermission(@RequestParam String role, @RequestParam String resource, @RequestParam String action) {
+        return nacosRoleService.isDuplicatePermission(role, resource, action);
+    }
 }
