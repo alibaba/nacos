@@ -119,7 +119,8 @@ public class NacosAuthPluginService implements AuthPluginService {
      */
     @Override
     public boolean isAdminRequest() {
-        boolean authEnabled = ApplicationUtils.getBean(AuthConfigs.class).isAuthEnabled();
+        AuthConfigs authConfigs = ApplicationUtils.getBean(AuthConfigs.class);
+        boolean authEnabled = authConfigs.isConsoleAuthEnabled() || authConfigs.isAuthEnabled();
         boolean hasGlobalAdminRole = ApplicationUtils.getBean(IAuthenticationManager.class).hasGlobalAdminRole();
         return authEnabled && !hasGlobalAdminRole;
     }
