@@ -30,7 +30,6 @@ import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
-import com.alibaba.nacos.config.server.service.AggrWhitelist;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
@@ -52,7 +51,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -74,15 +72,12 @@ class ConfigPublishRequestHandlerTest {
     @Mock
     ConfigInfoGrayPersistService configInfoGrayPersistService;
     
-    MockedStatic<AggrWhitelist> aggrWhitelistMockedStatic;
-    
     MockedStatic<EnvUtil> envUtilMockedStatic;
     
     private ConfigPublishRequestHandler configPublishRequestHandler;
     
     @BeforeEach
     void setUp() {
-        aggrWhitelistMockedStatic = Mockito.mockStatic(AggrWhitelist.class);
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
         ConfigOperationService configOperationService = new ConfigOperationService(configInfoPersistService,
                 configInfoTagPersistService, configInfoBetaPersistService, configInfoGrayPersistService);
@@ -93,7 +88,6 @@ class ConfigPublishRequestHandlerTest {
     
     @AfterEach
     void after() {
-        aggrWhitelistMockedStatic.close();
         envUtilMockedStatic.close();
     }
     
@@ -156,8 +150,6 @@ class ConfigPublishRequestHandlerTest {
         assertEquals(group, reference.get().group);
         assertEquals(tenant, reference.get().tenant);
         assertEquals(timestamp, reference.get().lastModifiedTs);
-        assertFalse(reference.get().isBatch);
-        assertFalse(reference.get().isBeta);
         
     }
     
@@ -221,8 +213,6 @@ class ConfigPublishRequestHandlerTest {
         assertEquals(group, reference.get().group);
         assertEquals(tenant, reference.get().tenant);
         assertEquals(timestamp, reference.get().lastModifiedTs);
-        assertFalse(reference.get().isBatch);
-        assertFalse(reference.get().isBeta);
     }
     
     /**
@@ -288,48 +278,6 @@ class ConfigPublishRequestHandlerTest {
         Thread.sleep(500L);
         assertTrue(reference.get() == null);
         
-    }
-    
-    @Test
-    void testPublishAggrCheckFail() throws NacosException, InterruptedException {
-        
-        RequestMeta requestMeta = new RequestMeta();
-        String clientIp = "127.0.0.1";
-        requestMeta.setClientIp(clientIp);
-        
-        String dataId = "testPublishAggrCheckFail";
-        String group = "group";
-        String tenant = "tenant";
-        String content = "content";
-        ConfigPublishRequest configPublishRequest = new ConfigPublishRequest();
-        configPublishRequest.setDataId(dataId);
-        configPublishRequest.setGroup(group);
-        configPublishRequest.setTenant(tenant);
-        configPublishRequest.setContent(content);
-        when(AggrWhitelist.isAggrDataId(eq(dataId))).thenReturn(Boolean.TRUE);
-        
-        AtomicReference<ConfigDataChangeEvent> reference = new AtomicReference<>();
-        NotifyCenter.registerSubscriber(new Subscriber() {
-            
-            @Override
-            public void onEvent(Event event) {
-                ConfigDataChangeEvent event1 = (ConfigDataChangeEvent) event;
-                if (event1.dataId.equals(dataId)) {
-                    reference.set((ConfigDataChangeEvent) event);
-                }
-            }
-            
-            @Override
-            public Class<? extends Event> subscribeType() {
-                return ConfigDataChangeEvent.class;
-            }
-        });
-        ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
-        
-        assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
-        assertTrue(response.getMessage().contains("is aggr"));
-        Thread.sleep(500L);
-        assertTrue(reference.get() == null);
     }
     
     @Test

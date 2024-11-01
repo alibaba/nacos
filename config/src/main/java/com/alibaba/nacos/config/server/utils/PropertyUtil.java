@@ -238,6 +238,10 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
         PropertyUtil.defaultMaxAggrCount = defaultMaxAggrCount;
     }
     
+    /**
+     * control whether persist beta and tag to old model.
+     * @return
+     */
     public static boolean isGrayCompatibleModel() {
         return grayCompatibleModel;
     }

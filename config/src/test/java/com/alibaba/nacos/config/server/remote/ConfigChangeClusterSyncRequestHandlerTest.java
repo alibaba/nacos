@@ -30,10 +30,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
-import static com.alibaba.nacos.api.ability.constant.AbilityKey.SUPPORT_NEW_GRAY_MODEL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -67,27 +64,6 @@ class ConfigChangeClusterSyncRequestHandlerTest {
         meta.setClientIp("1.1.1.1");
         ConfigChangeClusterSyncResponse configChangeClusterSyncResponse = configChangeClusterSyncRequestHandler.handle(
                 configChangeSyncRequest, meta);
-        assertEquals(configChangeClusterSyncResponse.getResultCode(), ResponseCode.SUCCESS.getCode());
-    }
-    
-    @Test
-    void testHandleBetaCompatibleFromNewServer() throws NacosException {
-        ConfigChangeClusterSyncRequest configChangeSyncRequest = new ConfigChangeClusterSyncRequest();
-        configChangeSyncRequest.setRequestId("");
-        configChangeSyncRequest.setDataId("dataId");
-        configChangeSyncRequest.setGroup("group123");
-        configChangeSyncRequest.setTenant("tenant...");
-        configChangeSyncRequest.setLastModified(1L);
-        configChangeSyncRequest.setBeta(true);
-        RequestMeta meta = new RequestMeta();
-        meta.setClientIp("1.1.1.1");
-        Map<String, Boolean> abilityTable = new HashMap<>();
-        abilityTable.put(SUPPORT_NEW_GRAY_MODEL.getName(), true);
-        meta.setAbilityTable(abilityTable);
-        ConfigChangeClusterSyncResponse configChangeClusterSyncResponse = configChangeClusterSyncRequestHandler.handle(
-                configChangeSyncRequest, meta);
-        verify(configGrayModelMigrateService, times(0)).checkMigrateBeta(configChangeSyncRequest.getDataId(),
-                configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant());
         assertEquals(configChangeClusterSyncResponse.getResultCode(), ResponseCode.SUCCESS.getCode());
     }
     

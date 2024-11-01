@@ -93,12 +93,6 @@ public class ConfigOperationService {
         Map<String, Object> configAdvanceInfo = getConfigAdvanceInfo(configForm);
         ParamUtils.checkParam(configAdvanceInfo);
         
-        if (AggrWhitelist.isAggrDataId(configForm.getDataId())) {
-            LOGGER.warn("[aggr-conflict] {} attempt to publish single data, {}, {}", configRequestInfo.getSrcIp(),
-                    configForm.getDataId(), configForm.getGroup());
-            throw new NacosApiException(HttpStatus.FORBIDDEN.value(), ErrorCode.INVALID_DATA_ID,
-                    "dataId:" + configForm.getDataId() + " is aggr");
-        }
         configForm.setEncryptedDataKey(encryptedDataKey);
         ConfigInfo configInfo = new ConfigInfo(configForm.getDataId(), configForm.getGroup(),
                 configForm.getNamespaceId(), configForm.getAppName(), configForm.getContent());
@@ -116,6 +110,7 @@ public class ConfigOperationService {
             configForm.setGrayRuleExp(configRequestInfo.getBetaIps());
             configForm.setGrayVersion(BetaGrayRule.VERSION);
             persistBeta(configForm, configInfo, configRequestInfo);
+            configForm.setGrayPriority(Integer.MAX_VALUE);
             publishConfigGray(BetaGrayRule.TYPE_BETA, configForm, configRequestInfo);
             return Boolean.TRUE;
         }
@@ -124,6 +119,7 @@ public class ConfigOperationService {
             configForm.setGrayName(TagGrayRule.TYPE_TAG + "_" + configForm.getTag());
             configForm.setGrayRuleExp(configForm.getTag());
             configForm.setGrayVersion(TagGrayRule.VERSION);
+            configForm.setGrayPriority(Integer.MAX_VALUE - 1);
             persistTagv1(configForm, configInfo, configRequestInfo);
             publishConfigGray(TagGrayRule.TYPE_TAG, configForm, configRequestInfo);
             return Boolean.TRUE;
@@ -145,8 +141,8 @@ public class ConfigOperationService {
                     configForm.getSrcUser(), configInfo, configAdvanceInfo);
         }
         ConfigChangePublisher.notifyConfigChange(
-                new ConfigDataChangeEvent(false, configForm.getDataId(), configForm.getGroup(),
-                        configForm.getNamespaceId(), configOperateResult.getLastModified()));
+                new ConfigDataChangeEvent(configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId(),
+                        configOperateResult.getLastModified()));
         ConfigTraceService.logPersistenceEvent(configForm.getDataId(), configForm.getGroup(),
                 configForm.getNamespaceId(), configRequestInfo.getRequestIpApp(), configOperateResult.getLastModified(),
                 InetUtils.getSelfIP(), ConfigTraceService.PERSISTENCE_EVENT, ConfigTraceService.PERSISTENCE_TYPE_PUB,
@@ -175,9 +171,6 @@ public class ConfigOperationService {
             configOperateResult = configInfoTagPersistService.insertOrUpdateTag(configInfo, configForm.getTag(),
                     configRequestInfo.getSrcIp(), configForm.getSrcUser());
         }
-        ConfigChangePublisher.notifyConfigChange(
-                new ConfigDataChangeEvent(false, configForm.getDataId(), configForm.getGroup(),
-                        configForm.getNamespaceId(), configForm.getTag(), configOperateResult.getLastModified()));
     }
     
     private void persistBeta(ConfigForm configForm, ConfigInfo configInfo, ConfigRequestInfo configRequestInfo)
@@ -198,12 +191,10 @@ public class ConfigOperationService {
                         "Cas publish beta config fail, server md5 may have changed.");
             }
         } else {
-            configOperateResult = configInfoBetaPersistService.insertOrUpdateBeta(configInfo,
+            configInfoBetaPersistService.insertOrUpdateBeta(configInfo,
                     configRequestInfo.getBetaIps(), configRequestInfo.getSrcIp(), configForm.getSrcUser());
         }
-        ConfigChangePublisher.notifyConfigChange(
-                new ConfigDataChangeEvent(true, configForm.getDataId(), configForm.getGroup(),
-                        configForm.getNamespaceId(), configOperateResult.getLastModified()));
+
     }
     
     /**
@@ -269,7 +260,7 @@ public class ConfigOperationService {
         
         ConfigChangePublisher.notifyConfigChange(
                 new ConfigDataChangeEvent(configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId(),
-                        null, configForm.getGrayName(), configOperateResult.getLastModified()));
+                        configForm.getGrayName(), configOperateResult.getLastModified()));
         
         String eventType = ConfigTraceService.PERSISTENCE_EVENT + "-" + configForm.getGrayName();
         
@@ -317,7 +308,7 @@ public class ConfigOperationService {
         ConfigTraceService.logPersistenceEvent(dataId, group, namespaceId, null, time.getTime(), clientIp, persistEvent,
                 ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
         ConfigChangePublisher.notifyConfigChange(
-                new ConfigDataChangeEvent(dataId, group, namespaceId, null, grayName, time.getTime()));
+                new ConfigDataChangeEvent(dataId, group, namespaceId, grayName, time.getTime()));
         
         return true;
     }
@@ -326,8 +317,6 @@ public class ConfigOperationService {
             String srcUser) {
         if (PropertyUtil.isGrayCompatibleModel()) {
             configInfoTagPersistService.removeConfigInfoTag(dataId, group, namespaceId, tag, clientIp, srcUser);
-            ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(false, dataId, group, namespaceId, tag, System.currentTimeMillis()));
         }
     }
     

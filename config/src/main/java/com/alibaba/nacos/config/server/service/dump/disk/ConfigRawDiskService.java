@@ -18,13 +18,10 @@ package com.alibaba.nacos.config.server.service.dump.disk;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.utils.StringUtils;
 import com.alibaba.nacos.common.pathencoder.PathEncoderManager;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.io.FileUtils;
@@ -99,7 +96,7 @@ public class ConfigRawDiskService implements ConfigDiskService {
         dataId = PathEncoderManager.getInstance().encode(dataId);
         group = PathEncoderManager.getInstance().encode(group);
         tenant = PathEncoderManager.getInstance().encode(tenant);
-    
+        
         File file = null;
         if (StringUtils.isBlank(tenant)) {
             file = new File(EnvUtil.getNacosHome(), GRAY_DIR);

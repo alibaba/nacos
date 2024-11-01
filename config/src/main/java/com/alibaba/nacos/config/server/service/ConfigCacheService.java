@@ -217,6 +217,10 @@ public class ConfigCacheService {
             GrayRule localGrayRule = ConfigCacheService.getGrayRule(groupKey, grayName);
             GrayRule grayRuleNew = GrayRuleManager.constructGrayRule(
                     GrayRuleManager.deserializeConfigGrayPersistInfo(grayRule));
+            if (grayRuleNew == null) {
+                DUMP_LOG.warn("[dump-gray-exception] . " + groupKey + ",  unknown gray rule for  gray name" + grayName);
+                return false;
+            }
             
             boolean grayRuleChanged = !grayRuleNew.equals(localGrayRule);
             
@@ -288,6 +292,8 @@ public class ConfigCacheService {
                 ci.getConfigCacheGray().remove(grayName);
                 if (ci.getConfigCacheGray().isEmpty()) {
                     ci.clearConfigGrays();
+                } else {
+                    ci.sortConfigGray();
                 }
             }
             

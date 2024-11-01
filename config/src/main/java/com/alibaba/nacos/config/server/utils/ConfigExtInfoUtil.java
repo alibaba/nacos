@@ -74,7 +74,8 @@ public class ConfigExtInfoUtil {
                 String key = entry.getKey();
                 String mappedKey = entry.getValue();
                 Object advanceConfigInfoValue = advanceConfigInfoMap.get(key);
-                if (advanceConfigInfoValue instanceof String && StringUtils.isNotBlank((String) advanceConfigInfoValue)) {
+                if (advanceConfigInfoValue instanceof String && StringUtils.isNotBlank(
+                        (String) advanceConfigInfoValue)) {
                     node.put(mappedKey, ((String) advanceConfigInfoValue).trim());
                 }
             }
@@ -89,7 +90,7 @@ public class ConfigExtInfoUtil {
     /**
      * Extract the extInfo from all config info.
      */
-    public static String getExtraInfoFromAllInfo(ConfigAllInfo configAllInfo) {
+    public static String getExtInfoFromAllInfo(ConfigAllInfo configAllInfo) {
         ObjectNode node = OBJECT_MAPPER.createObjectNode();
         
         if (StringUtils.isNotBlank(configAllInfo.getType())) {
@@ -125,12 +126,12 @@ public class ConfigExtInfoUtil {
     /**
      * Extract the extInfo from gray config info.
      */
-    public static String getExtraInfoFromGrayInfo(String grayNameTmp, String grayRuleTmp, String oldSrcUser) {
+    public static String getExtInfoFromGrayInfo(String grayName, String grayRuleTmp, String oldSrcUser) {
         ObjectNode node = OBJECT_MAPPER.createObjectNode();
         ObjectNode grayRuleNode = OBJECT_MAPPER.createObjectNode();
         
-        if (StringUtils.isNotBlank(grayNameTmp)) {
-            node.put("gray_name", grayNameTmp);
+        if (StringUtils.isNotBlank(grayName)) {
+            node.put("gray_name", grayName);
         }
         
         if (StringUtils.isNotBlank(oldSrcUser)) {
@@ -141,25 +142,27 @@ public class ConfigExtInfoUtil {
             try {
                 JsonNode parsedGrayRuleNode = OBJECT_MAPPER.readTree(grayRuleTmp);
                 if (parsedGrayRuleNode.has(Constants.GRAY_RULE_TYPE)) {
-                    grayRuleNode.put(Constants.GRAY_RULE_TYPE, parsedGrayRuleNode.get(Constants.GRAY_RULE_TYPE).asText());
+                    grayRuleNode.put(Constants.GRAY_RULE_TYPE,
+                            parsedGrayRuleNode.get(Constants.GRAY_RULE_TYPE).asText());
                 }
                 if (parsedGrayRuleNode.has(Constants.GRAY_RULE_EXPR)) {
-                    grayRuleNode.put(Constants.GRAY_RULE_EXPR, parsedGrayRuleNode.get(Constants.GRAY_RULE_EXPR).asText());
+                    grayRuleNode.put(Constants.GRAY_RULE_EXPR,
+                            parsedGrayRuleNode.get(Constants.GRAY_RULE_EXPR).asText());
                 }
                 if (parsedGrayRuleNode.has(Constants.GRAY_RULE_VERSION)) {
-                    grayRuleNode.put(Constants.GRAY_RULE_VERSION, parsedGrayRuleNode.get(Constants.GRAY_RULE_VERSION).asText());
+                    grayRuleNode.put(Constants.GRAY_RULE_VERSION,
+                            parsedGrayRuleNode.get(Constants.GRAY_RULE_VERSION).asText());
                 }
                 if (parsedGrayRuleNode.has(Constants.GRAY_RULE_PRIORITY)) {
-                    grayRuleNode.put(Constants.GRAY_RULE_PRIORITY, parsedGrayRuleNode.get(Constants.GRAY_RULE_PRIORITY).asText());
+                    grayRuleNode.put(Constants.GRAY_RULE_PRIORITY,
+                            parsedGrayRuleNode.get(Constants.GRAY_RULE_PRIORITY).asText());
                 }
-                node.set("gray_rule", grayRuleNode);
+                node.put("gray_rule", grayRuleNode.toString());
             } catch (Exception ex) {
                 LOGGER.error("Failed to parse gray rule as json", ex);
                 return null;
             }
         }
-        
-        node.put("type", "json");
         
         try {
             return OBJECT_MAPPER.writeValueAsString(node);
@@ -175,7 +178,8 @@ public class ConfigExtInfoUtil {
     public static String extractGrayName(String extraInfo) {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
-            Map<String, String> dataMap = objectMapper.readValue(extraInfo, new TypeReference<Map<String, String>>() { });
+            Map<String, String> dataMap = objectMapper.readValue(extraInfo, new TypeReference<Map<String, String>>() {
+            });
             return dataMap.get("gray_name");
         } catch (Exception e) {
             LogUtil.DEFAULT_LOG.error("Error extracting gray_name from extraInfo", e);

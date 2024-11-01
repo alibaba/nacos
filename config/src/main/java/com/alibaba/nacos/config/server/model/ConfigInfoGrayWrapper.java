@@ -18,13 +18,20 @@ package com.alibaba.nacos.config.server.model;
 
 /**
  * ConfigInfoGrayWrapper.
+ *
  * @author rong
  */
-public class ConfigInfoGrayWrapper extends ConfigInfo4Gray {
+public class ConfigInfoGrayWrapper extends ConfigInfo  {
     
     private static final long serialVersionUID = 4511997591465712505L;
     
     private long lastModified;
+    
+    private String grayName;
+    
+    private String grayRule;
+    
+    private String srcUser;
     
     public ConfigInfoGrayWrapper() {
     }
@@ -35,6 +42,30 @@ public class ConfigInfoGrayWrapper extends ConfigInfo4Gray {
     
     public void setLastModified(long lastModified) {
         this.lastModified = lastModified;
+    }
+    
+    public String getGrayName() {
+        return grayName;
+    }
+    
+    public void setGrayName(String grayName) {
+        this.grayName = grayName;
+    }
+    
+    public String getGrayRule() {
+        return grayRule;
+    }
+    
+    public void setGrayRule(String grayRule) {
+        this.grayRule = grayRule;
+    }
+    
+    public String getSrcUser() {
+        return srcUser;
+    }
+    
+    public void setSrcUser(String srcUser) {
+        this.srcUser = srcUser;
     }
     
     @Override

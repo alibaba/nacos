@@ -22,10 +22,10 @@ import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Tag;
-import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
+import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
@@ -55,8 +55,8 @@ class ConfigRowMapperInjectorTest {
     @Test
     void testInit() {
         ConfigRowMapperInjector configRowMapperInjector = new ConfigRowMapperInjector();
-        assertEquals(ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER,
-                RowMapperManager.getRowMapper(ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER.getClass().getCanonicalName()));
+        assertEquals(ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER, RowMapperManager.getRowMapper(
+                ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER.getClass().getCanonicalName()));
     }
     
     @Test
@@ -319,26 +319,38 @@ class ConfigRowMapperInjectorTest {
     }
     
     @Test
-    void testConfigInfoAggrRowMapper() throws SQLException {
+    void testConfigInfoGrayRowMapper() throws SQLException {
         
-        ConfigInfoAggr preConfig = new ConfigInfoAggr();
+        ConfigInfoGrayWrapper preConfig = new ConfigInfoGrayWrapper();
         preConfig.setDataId("testDataId");
         preConfig.setGroup("group_id11");
         preConfig.setContent("content1123434t");
-        preConfig.setDatumId("datum4567890");
+        preConfig.setGrayName("grayName");
+        preConfig.setGrayRule("rule12345");
         preConfig.setTenant("tenang34567890");
         preConfig.setAppName("app3456789");
+        preConfig.setEncryptedDataKey("key12345");
+        Timestamp timestamp = Timestamp.valueOf("2024-12-12 12:34:34");
         ResultSetImpl resultSet = Mockito.mock(ResultSetImpl.class);
         Mockito.when(resultSet.getString(eq("data_id"))).thenReturn(preConfig.getDataId());
         Mockito.when(resultSet.getString(eq("group_id"))).thenReturn(preConfig.getGroup());
         Mockito.when(resultSet.getString(eq("tenant_id"))).thenReturn(preConfig.getTenant());
-        Mockito.when(resultSet.getString(eq("datum_id"))).thenReturn(preConfig.getDatumId());
+        Mockito.when(resultSet.getString(eq("gray_name"))).thenReturn(preConfig.getGrayName());
+        Mockito.when(resultSet.getString(eq("app_name"))).thenReturn(preConfig.getAppName());
+        
+        Mockito.when(resultSet.getString(eq("gray_rule"))).thenReturn(preConfig.getGrayRule());
+        Mockito.when(resultSet.getTimestamp(eq("gmt_modified"))).thenReturn(timestamp);
+        
         Mockito.when(resultSet.getString(eq("content"))).thenReturn(preConfig.getContent());
         Mockito.when(resultSet.getString(eq("app"))).thenReturn(preConfig.getAppName());
-        ConfigRowMapperInjector.ConfigInfoAggrRowMapper configInfoWrapperRowMapper = new ConfigRowMapperInjector.ConfigInfoAggrRowMapper();
+        Mockito.when(resultSet.getString(eq("encrypted_data_key"))).thenReturn(preConfig.getEncryptedDataKey());
         
-        ConfigInfoAggr configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
+        ConfigRowMapperInjector.ConfigInfoGrayWrapperRowMapper configInfoWrapperRowMapper =
+                new ConfigRowMapperInjector.ConfigInfoGrayWrapperRowMapper();
+        
+        ConfigInfoGrayWrapper configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
         assertEquals(preConfig, configInfoWrapper);
+        assertEquals(timestamp.getTime(), configInfoWrapper.getLastModified());
         
     }
     
