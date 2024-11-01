@@ -27,7 +27,6 @@ import com.alibaba.nacos.api.naming.pojo.builder.InstanceBuilder;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.enums.ApiType;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.proxy.naming.InstanceProxy;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.model.form.PageForm;
@@ -138,10 +137,4 @@ public class ConsoleInstanceController {
         return NamingUtils.getGroupedName(instanceForm.getServiceName(), instanceForm.getGroupName());
     }
     
-    private void checkServiceName(String serviceName) throws NacosApiException {
-        if (StringUtils.isBlank(serviceName)) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'serviceName' type String is not present");
-        }
-    }
 }
