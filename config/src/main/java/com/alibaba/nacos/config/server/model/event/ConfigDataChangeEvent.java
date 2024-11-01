@@ -28,8 +28,6 @@ public class ConfigDataChangeEvent extends Event {
     
     public final boolean isBeta;
     
-    public final boolean isBatch;
-    
     public final String dataId;
     
     public final String group;
@@ -55,7 +53,6 @@ public class ConfigDataChangeEvent extends Event {
         this.group = group;
         this.tenant = tenant;
         this.tag = null;
-        this.isBatch = false;
         this.lastModifiedTs = gmtModified;
         this.grayName = null;
     }
@@ -74,7 +71,6 @@ public class ConfigDataChangeEvent extends Event {
         this.group = group;
         this.tenant = tenant;
         this.tag = tag;
-        this.isBatch = false;
         this.grayName = null;
         this.lastModifiedTs = gmtModified;
     }
@@ -89,7 +85,6 @@ public class ConfigDataChangeEvent extends Event {
         this.group = group;
         this.tenant = tenant;
         this.tag = tag;
-        this.isBatch = false;
         this.grayName = grayName;
         this.lastModifiedTs = gmtModified;
     }

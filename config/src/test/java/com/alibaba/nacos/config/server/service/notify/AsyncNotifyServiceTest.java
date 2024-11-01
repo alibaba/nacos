@@ -97,11 +97,10 @@ class AsyncNotifyServiceTest {
         String dataId = "testDataId" + timeStamp;
         String group = "testGroup";
         AsyncNotifyService.NotifySingleRpcTask notifySingleRpcTask = new AsyncNotifyService.NotifySingleRpcTask(dataId, group, null, null,
-                0, false, false, member1);
+                0, false,  member1);
         configExecutorMocked.when(() -> ConfigExecutor.scheduleAsyncNotify(any(Runnable.class), anyLong(), any(TimeUnit.class)))
                 .thenAnswer(invocation -> null);
         
-        notifySingleRpcTask.setBatch(true);
         notifySingleRpcTask.setTag("test");
         notifySingleRpcTask.setBeta(false);
         AsyncRpcNotifyCallBack asyncRpcNotifyCallBack = new AsyncRpcNotifyCallBack(asyncNotifyService, notifySingleRpcTask);
@@ -184,7 +183,7 @@ class AsyncNotifyServiceTest {
         
         for (Member member : memberList) {
             // grpc report data change only
-            rpcQueue.add(new AsyncNotifyService.NotifySingleRpcTask(dataId, group, null, null, System.currentTimeMillis(), false, false,
+            rpcQueue.add(new AsyncNotifyService.NotifySingleRpcTask(dataId, group, null, null, System.currentTimeMillis(), false,
                     member));
         }
         

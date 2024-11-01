@@ -147,7 +147,7 @@ public class ConfigGrayModelMigrateService {
             }
         }
         
-        rowCount = configInfoBetaPersistService.configInfoBetaCount();
+        rowCount = configInfoTagPersistService.configInfoTagCount();
         pageCount = (int) Math.ceil(rowCount * 1.0 / pageSize);
         actualRowCount = 0;
         for (int pageNo = 1; pageNo <= pageCount; pageNo++) {

@@ -26,10 +26,12 @@ import com.alibaba.nacos.api.config.remote.request.AbstractConfigRequest;
  */
 public class ConfigChangeClusterSyncRequest extends AbstractConfigRequest {
     
+    @Deprecated
     String tag;
     
     long lastModified;
     
+    @Deprecated
     boolean isBeta;
     
     String grayName;

@@ -116,7 +116,7 @@ public class AsyncNotifyService {
             for (Member member : ipList) {
                 // grpc report data change only
                 rpcQueue.add(
-                        new NotifySingleRpcTask(dataId, group, tenant, tag, dumpTs, evt.isBeta, evt.isBatch, member));
+                        new NotifySingleRpcTask(dataId, group, tenant, tag, dumpTs, evt.isBeta,  member));
             }
             if (!rpcQueue.isEmpty()) {
                 ConfigExecutor.executeAsyncNotify(new AsyncRpcTask(rpcQueue));
@@ -138,7 +138,6 @@ public class AsyncNotifyService {
             syncRequest.setBeta(task.isBeta());
             syncRequest.setLastModified(task.getLastModified());
             syncRequest.setTag(task.getTag());
-            syncRequest.setBatch(task.isBatch());
             syncRequest.setTenant(task.getTenant());
             Member member = task.member;
             
@@ -204,15 +203,12 @@ public class AsyncNotifyService {
         
         private String tag;
         
-        private boolean isBatch;
-        
         public NotifySingleRpcTask(String dataId, String group, String tenant, String tag, long lastModified,
-                boolean isBeta, boolean isBatch, Member member) {
+                boolean isBeta, Member member) {
             this(dataId, group, tenant, lastModified);
             this.member = member;
             this.isBeta = isBeta;
             this.tag = tag;
-            this.isBatch = isBatch;
         }
         
         private NotifySingleRpcTask(String dataId, String group, String tenant, long lastModified) {
@@ -237,14 +233,6 @@ public class AsyncNotifyService {
         
         public void setTag(String tag) {
             this.tag = tag;
-        }
-        
-        public boolean isBatch() {
-            return isBatch;
-        }
-        
-        public void setBatch(boolean batch) {
-            isBatch = batch;
         }
         
         public String getDataId() {
@@ -293,8 +281,6 @@ public class AsyncNotifyService {
             event = ConfigTraceService.NOTIFY_EVENT_BETA;
         } else if (!StringUtils.isBlank(task.tag)) {
             event = ConfigTraceService.NOTIFY_EVENT_TAG + "-" + task.tag;
-        } else if (task.isBatch()) {
-            event = ConfigTraceService.NOTIFY_EVENT_BATCH;
         }
         return event;
     }
