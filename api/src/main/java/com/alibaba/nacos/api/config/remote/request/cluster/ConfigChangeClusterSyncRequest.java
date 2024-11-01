@@ -32,8 +32,6 @@ public class ConfigChangeClusterSyncRequest extends AbstractConfigRequest {
     
     boolean isBeta;
     
-    boolean isBatch;
-    
     String grayName;
     
     public boolean isBeta() {
@@ -42,14 +40,6 @@ public class ConfigChangeClusterSyncRequest extends AbstractConfigRequest {
     
     public void setBeta(boolean beta) {
         isBeta = beta;
-    }
-    
-    public boolean isBatch() {
-        return isBatch;
-    }
-    
-    public void setBatch(boolean batch) {
-        isBatch = batch;
     }
     
     /**

@@ -30,7 +30,6 @@ import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
-import com.alibaba.nacos.config.server.service.AggrWhitelist;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
@@ -74,15 +73,12 @@ class ConfigPublishRequestHandlerTest {
     @Mock
     ConfigInfoGrayPersistService configInfoGrayPersistService;
     
-    MockedStatic<AggrWhitelist> aggrWhitelistMockedStatic;
-    
     MockedStatic<EnvUtil> envUtilMockedStatic;
     
     private ConfigPublishRequestHandler configPublishRequestHandler;
     
     @BeforeEach
     void setUp() {
-        aggrWhitelistMockedStatic = Mockito.mockStatic(AggrWhitelist.class);
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
         ConfigOperationService configOperationService = new ConfigOperationService(configInfoPersistService,
                 configInfoTagPersistService, configInfoBetaPersistService, configInfoGrayPersistService);
@@ -93,7 +89,6 @@ class ConfigPublishRequestHandlerTest {
     
     @AfterEach
     void after() {
-        aggrWhitelistMockedStatic.close();
         envUtilMockedStatic.close();
     }
     
@@ -306,7 +301,6 @@ class ConfigPublishRequestHandlerTest {
         configPublishRequest.setGroup(group);
         configPublishRequest.setTenant(tenant);
         configPublishRequest.setContent(content);
-        when(AggrWhitelist.isAggrDataId(eq(dataId))).thenReturn(Boolean.TRUE);
         
         AtomicReference<ConfigDataChangeEvent> reference = new AtomicReference<>();
         NotifyCenter.registerSubscriber(new Subscriber() {

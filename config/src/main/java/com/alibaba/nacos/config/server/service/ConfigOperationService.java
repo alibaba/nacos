@@ -93,12 +93,6 @@ public class ConfigOperationService {
         Map<String, Object> configAdvanceInfo = getConfigAdvanceInfo(configForm);
         ParamUtils.checkParam(configAdvanceInfo);
         
-        if (AggrWhitelist.isAggrDataId(configForm.getDataId())) {
-            LOGGER.warn("[aggr-conflict] {} attempt to publish single data, {}, {}", configRequestInfo.getSrcIp(),
-                    configForm.getDataId(), configForm.getGroup());
-            throw new NacosApiException(HttpStatus.FORBIDDEN.value(), ErrorCode.INVALID_DATA_ID,
-                    "dataId:" + configForm.getDataId() + " is aggr");
-        }
         configForm.setEncryptedDataKey(encryptedDataKey);
         ConfigInfo configInfo = new ConfigInfo(configForm.getDataId(), configForm.getGroup(),
                 configForm.getNamespaceId(), configForm.getAppName(), configForm.getContent());

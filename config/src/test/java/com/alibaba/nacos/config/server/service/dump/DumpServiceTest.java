@@ -17,11 +17,8 @@
 package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.config.server.manager.TaskManager;
-import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.dump.task.DumpTask;
-import com.alibaba.nacos.config.server.service.merge.MergeDatumService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
@@ -76,15 +73,10 @@ class DumpServiceTest {
     @Mock
     HistoryConfigInfoPersistService historyConfigInfoPersistService;
     
-    @Mock
-    ConfigInfoAggrPersistService configInfoAggrPersistService;
-    
+
     @Mock
     ConfigInfoGrayPersistService configInfoGrayPersistService;
-    
-    @Mock
-    MergeDatumService mergeDatumService;
-    
+
     @Mock
     ServerMemberManager memberManager;
     
@@ -113,8 +105,7 @@ class DumpServiceTest {
         
         ReflectionTestUtils.setField(DynamicDataSource.getInstance(), "localDataSourceService", dataSourceService);
         ReflectionTestUtils.setField(DynamicDataSource.getInstance(), "basicDataSourceService", dataSourceService);
-        dumpService = new ExternalDumpService(configInfoPersistService, namespacePersistService, historyConfigInfoPersistService,
-                configInfoAggrPersistService, configInfoGrayPersistService, mergeDatumService, memberManager);
+        dumpService = new ExternalDumpService(configInfoPersistService, namespacePersistService, historyConfigInfoPersistService, configInfoGrayPersistService, memberManager);
         configExecutorMocked = Mockito.mockStatic(ConfigExecutor.class);
         historyConfigCleanerManagerMockedStatic = Mockito.mockStatic(HistoryConfigCleanerManager.class);
         historyConfigCleanerManagerMockedStatic.when(() -> HistoryConfigCleanerManager.getHistoryConfigCleaner(anyString()))
@@ -158,23 +149,8 @@ class DumpServiceTest {
                 .thenAnswer(invocation -> null);
         Mockito.when(namespacePersistService.isExistTable(BETA_TABLE_NAME)).thenReturn(true);
         Mockito.when(namespacePersistService.isExistTable(TAG_TABLE_NAME)).thenReturn(true);
-        ConfigInfoChanged hasDatum = new ConfigInfoChanged();
-        hasDatum.setDataId("hasDatumdataId1");
-        hasDatum.setTenant("tenant1");
-        hasDatum.setGroup("group1");
-        ConfigInfoChanged noDatum = new ConfigInfoChanged();
-        noDatum.setDataId("dataId1");
-        noDatum.setTenant("tenant1");
-        noDatum.setGroup("group1");
-        List<ConfigInfoChanged> configList = configInfoAggrPersistService.findAllAggrGroup();
-        configList.add(hasDatum);
-        configList.add(noDatum);
-        Mockito.when(configInfoAggrPersistService.findAllAggrGroup()).thenReturn(configList);
-        List<List<ConfigInfoChanged>> result = new ArrayList<>();
-        result.add(Arrays.asList(hasDatum));
-        result.add(Arrays.asList(noDatum));
-        Mockito.when(mergeDatumService.splitList(anyList(), anyInt())).thenReturn(result);
-        Mockito.doNothing().when(mergeDatumService).executeConfigsMerge(anyList());
+   
+        
         Mockito.when(configInfoPersistService.findConfigMaxId()).thenReturn(300L);
         dumpService.dumpOperate();
         
@@ -182,8 +158,6 @@ class DumpServiceTest {
         Mockito.verify(configInfoPersistService, times(1)).findAllConfigInfoFragment(0, 100, true);
         Mockito.verify(configInfoPersistService, times(1)).findConfigMaxId();
         Mockito.verify(configInfoGrayPersistService, times(1)).configInfoGrayCount();
-        
-        Mockito.verify(mergeDatumService, times(2)).executeConfigsMerge(anyList());
         
         // expect dump formal,beta,tag,history clear,config change task to be scheduled.
         // expect config clear history task be scheduled.

@@ -20,7 +20,6 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.config.server.model.event.ConfigDumpEvent;
-import com.alibaba.nacos.config.server.service.AggrWhitelist;
 import com.alibaba.nacos.config.server.service.ClientIpWhiteList;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.SwitchService;
@@ -68,11 +67,6 @@ public class DumpConfigHandler extends Subscriber<ConfigDumpEvent> {
             }
         
             return result;
-        }
-    
-        //default
-        if (dataId.equals(AggrWhitelist.AGGRIDS_METADATA)) {
-            AggrWhitelist.load(content);
         }
         
         if (dataId.equals(ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA)) {

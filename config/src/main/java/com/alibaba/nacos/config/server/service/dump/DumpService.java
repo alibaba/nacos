@@ -33,8 +33,6 @@ import com.alibaba.nacos.config.server.service.dump.task.DumpAllGrayTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpAllTagTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpAllTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpTask;
-import com.alibaba.nacos.config.server.service.merge.MergeDatumService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
@@ -79,11 +77,7 @@ public abstract class DumpService {
     
     protected HistoryConfigInfoPersistService historyConfigInfoPersistService;
     
-    protected ConfigInfoAggrPersistService configInfoAggrPersistService;
-    
     protected ConfigInfoGrayPersistService configInfoGrayPersistService;
-    
-    protected MergeDatumService mergeDatumService;
     
     protected final ServerMemberManager memberManager;
     
@@ -114,15 +108,12 @@ public abstract class DumpService {
     public DumpService(ConfigInfoPersistService configInfoPersistService,
             NamespacePersistService namespacePersistService,
             HistoryConfigInfoPersistService historyConfigInfoPersistService,
-            ConfigInfoAggrPersistService configInfoAggrPersistService,
-            ConfigInfoGrayPersistService configInfoGrayPersistService, MergeDatumService mergeDatumService,
+            ConfigInfoGrayPersistService configInfoGrayPersistService,
             ServerMemberManager memberManager) {
         this.configInfoPersistService = configInfoPersistService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
         this.namespacePersistService = namespacePersistService;
         this.historyConfigInfoPersistService = historyConfigInfoPersistService;
-        this.configInfoAggrPersistService = configInfoAggrPersistService;
-        this.mergeDatumService = mergeDatumService;
         this.memberManager = memberManager;
         this.processor = new DumpProcessor(this.configInfoPersistService, this.configInfoGrayPersistService);
         this.dumpAllProcessor = new DumpAllProcessor(this.configInfoPersistService);
@@ -233,17 +224,6 @@ public abstract class DumpService {
                 ConfigDiskServiceFactory.getInstance().clearAllGray();
                 dumpAllGrayProcessor.process(new DumpAllGrayTask());
                 
-                // add to dump aggr
-                List<ConfigInfoChanged> configList = configInfoAggrPersistService.findAllAggrGroup();
-                if (configList != null && !configList.isEmpty()) {
-                    total = configList.size();
-                    List<List<ConfigInfoChanged>> splitList = mergeDatumService.splitList(configList,
-                            INIT_THREAD_COUNT);
-                    for (List<ConfigInfoChanged> list : splitList) {
-                        mergeDatumService.executeConfigsMerge(list);
-                    }
-                    LOGGER.info("server start, schedule merge end.");
-                }
             } catch (Exception e) {
                 LogUtil.FATAL_LOG.error(
                         "Nacos Server did not start because dumpservice bean construction failure :\n" + e);

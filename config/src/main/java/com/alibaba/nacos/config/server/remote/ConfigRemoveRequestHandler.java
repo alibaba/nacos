@@ -23,7 +23,9 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
+import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
@@ -51,12 +53,12 @@ public class ConfigRemoveRequestHandler extends RequestHandler<ConfigRemoveReque
     
     private final ConfigInfoPersistService configInfoPersistService;
     
-    private final ConfigInfoTagPersistService configInfoTagPersistService;
+    private final ConfigInfoGrayPersistService configInfoGrayPersistService;
     
     public ConfigRemoveRequestHandler(ConfigInfoPersistService configInfoPersistService,
-            ConfigInfoTagPersistService configInfoTagPersistService) {
+            ConfigInfoGrayPersistService configInfoGrayPersistService) {
         this.configInfoPersistService = configInfoPersistService;
-        this.configInfoTagPersistService = configInfoTagPersistService;
+        this.configInfoGrayPersistService = configInfoGrayPersistService;
     }
     
     @Override
@@ -79,11 +81,13 @@ public class ConfigRemoveRequestHandler extends RequestHandler<ConfigRemoveReque
             
             String clientIp = meta.getClientIp();
             if (StringUtils.isBlank(tag)) {
+                
                 configInfoPersistService.removeConfigInfo(dataId, group, tenant, clientIp, null);
             } else {
                 persistEvent = ConfigTraceService.PERSISTENCE_EVENT_TAG + "-" + tag;
-                
-                configInfoTagPersistService.removeConfigInfoTag(dataId, group, tenant, tag, clientIp, null);
+    
+                String tayGrayName=TagGrayRule.TYPE_TAG + "_" + tag;
+                configInfoGrayPersistService.removeConfigInfoGray(dataId, group, tenant, tayGrayName, clientIp, null);
             }
             final Timestamp time = TimeUtils.getCurrentTime();
             ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), clientIp, persistEvent,
