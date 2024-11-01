@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.console.controller.v3.config;
 
+import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
@@ -45,6 +46,7 @@ import java.util.List;
  *
  * @author zhangyukun on:2024/8/16
  */
+@NacosApi
 @RestController
 @RequestMapping("/v3/console/cs/history")
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
