@@ -40,4 +40,21 @@ class PersistenceExecutorTest {
         
     }
     
+    @Test
+    void testScheduleTask() throws InterruptedException {
+        final AtomicInteger count = new AtomicInteger(0);
+        Runnable runnable = count::incrementAndGet;
+        PersistenceExecutor.scheduleTask(runnable, 0, 300, TimeUnit.MILLISECONDS);
+        TimeUnit.MILLISECONDS.sleep(200);
+        assertEquals(1, count.get());
+    }
+    
+    @Test
+    void testExecuteSnapshot() throws InterruptedException {
+        final AtomicInteger count = new AtomicInteger(0);
+        Runnable runnable = count::incrementAndGet;
+        PersistenceExecutor.executeSnapshot(runnable);
+        TimeUnit.MILLISECONDS.sleep(200);
+        assertEquals(1, count.get());
+    }
 }

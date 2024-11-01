@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.core.remote.grpc.filter.NacosGrpcServerTransportFilter;
 import com.alibaba.nacos.core.remote.grpc.filter.NacosGrpcServerTransportFilterServiceLoader;
 import com.alibaba.nacos.core.remote.grpc.interceptor.NacosGrpcServerInterceptor;
@@ -125,5 +126,10 @@ public class GrpcClusterServer extends BaseGrpcServer {
         result.addAll(NacosGrpcServerTransportFilterServiceLoader.loadServerTransportFilters(
                 NacosGrpcServerTransportFilter.CLUSTER_FILTER));
         return result;
+    }
+    
+    @Override
+    protected String getSource() {
+        return RemoteConstants.LABEL_SOURCE_CLUSTER;
     }
 }

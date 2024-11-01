@@ -154,7 +154,7 @@ public class WatchFileCenter {
         return false;
     }
     
-    private static class WatchDirJob extends Thread {
+    static class WatchDirJob extends Thread {
         
         private final ExecutorService callBackExecutor;
         

@@ -254,6 +254,8 @@ public class Constants {
      */
     public static final String DEFAULT_USE_RAM_INFO_PARSING = "true";
     
+    public static final String CLIENT_MODULE_TYPE = "clientModuleType";
+    
     /**
      * The constants in config directory.
      */

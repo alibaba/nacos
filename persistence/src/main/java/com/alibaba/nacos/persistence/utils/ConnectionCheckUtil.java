@@ -17,8 +17,6 @@
 package com.alibaba.nacos.persistence.utils;
 
 import com.zaxxer.hikari.HikariDataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * DataSource Connection CheckUtil.
@@ -27,28 +25,16 @@ import org.slf4j.LoggerFactory;
  */
 public class ConnectionCheckUtil {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionCheckUtil.class);
-    
     /**
      * check HikariDataSource connection ,avoid [no datasource set] text.
      *
      * @param ds HikariDataSource object
      */
     public static void checkDataSourceConnection(HikariDataSource ds) {
-        java.sql.Connection connection = null;
-        try {
-            connection = ds.getConnection();
+        try (java.sql.Connection connection = ds.getConnection()) {
+            connection.isClosed();
         } catch (Exception e) {
             throw new RuntimeException(e);
-        } finally {
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (Exception e) {
-                    LOGGER.error(e.getMessage(), e);
-                }
-            }
         }
     }
-    
 }

@@ -34,6 +34,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Filter incoming traffic to refuse or revise unexpected requests.
@@ -98,8 +99,9 @@ public class TrafficReviseFilter implements Filter {
         }
         
         final String statusMsg = "server is " + serverStatusManager.getServerStatus().name() + "now";
-        if (serverStatusManager.getErrorMsg().isPresent()) {
-            resp.getWriter().write(statusMsg + ", detailed error message: " + serverStatusManager.getErrorMsg());
+        Optional<String> errorMsg = serverStatusManager.getErrorMsg();
+        if (errorMsg.isPresent()) {
+            resp.getWriter().write(statusMsg + ", detailed error message: " + errorMsg.get());
         } else {
             resp.getWriter().write(statusMsg  + ", please try again later!");
         }

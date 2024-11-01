@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.dump.disk;
 
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -26,6 +27,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ConfigRawDiskServiceTest {
     
@@ -48,7 +50,7 @@ class ConfigRawDiskServiceTest {
         Method method = ConfigRawDiskService.class.getDeclaredMethod("targetFile", String.class, String.class,
                 String.class);
         method.setAccessible(true);
-        File result = (File) method.invoke(null, "aaaa?dsaknkf", "aaaa*dsaknkf", "aaaa:dsaknkf");
+        File result = (File) method.invoke(null, "aaaa-dsaknkf", "aaaa.dsaknkf", "aaaa:dsaknkf");
         // 分解路径
         Path path = Paths.get(result.getPath());
         Path parent = path.getParent();
@@ -57,9 +59,16 @@ class ConfigRawDiskServiceTest {
         String lastSegment = path.getFileName().toString();
         String secondLastSegment = parent.getFileName().toString();
         String thirdLastSegment = grandParent.getFileName().toString();
-        assertEquals(isWindows() ? "aaaa%A3%dsaknkf" : thirdLastSegment, thirdLastSegment);
-        assertEquals(isWindows() ? "aaaa%A4%dsaknkf" : secondLastSegment, secondLastSegment);
+        assertEquals(isWindows() ? "aaaa-dsaknkf" : thirdLastSegment, thirdLastSegment);
+        assertEquals(isWindows() ? "aaaa.dsaknkf" : secondLastSegment, secondLastSegment);
         assertEquals(isWindows() ? "aaaa%A5%dsaknkf" : lastSegment, lastSegment);
+    }
+    
+    @Test
+    void testTargetFileWithInvalidParam() {
+        assertThrows(NacosRuntimeException.class, () -> ConfigRawDiskService.targetFile("../aaa", "testG", "testNS"));
+        assertThrows(NacosRuntimeException.class, () -> ConfigRawDiskService.targetFile("testD", "../aaa", "testNS"));
+        assertThrows(NacosRuntimeException.class, () -> ConfigRawDiskService.targetFile("testD", "testG", "../aaa"));
     }
     
     /**
@@ -81,11 +90,11 @@ class ConfigRawDiskServiceTest {
         String fourthLastSegment = grand2Parent.getFileName().toString();
         assertEquals(fourthLastSegment, "tenant1234");
         String thirdLastSegment = grandParent.getFileName().toString();
-        assertEquals(isWindows() ? "aaaa%A3%dsaknkf" : thirdLastSegment, "group3456");
+        assertEquals(isWindows() ? "aaaa-dsaknkf" : thirdLastSegment, "group3456");
         String secondLastSegment = parent.getFileName().toString();
-        assertEquals(isWindows() ? "aaaa%A4%dsaknkf" : secondLastSegment, "data345678");
+        assertEquals(isWindows() ? "aaaa-dsaknkf" : secondLastSegment, "data345678");
         String lastSegment = path.getFileName().toString();
-        assertEquals(isWindows() ? "aaaa%A5%dsaknkf" : lastSegment, "graynem4567");
+        assertEquals(isWindows() ? "aaaa-dsaknkf" : lastSegment, "graynem4567");
         
     }
     

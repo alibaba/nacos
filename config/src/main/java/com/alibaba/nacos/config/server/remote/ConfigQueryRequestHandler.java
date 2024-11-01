@@ -32,6 +32,7 @@ import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactor
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
@@ -88,7 +89,8 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                 configQueryRequest.getTenant());
         String requestIpApp = meta.getLabels().get(CLIENT_APPNAME_HEADER);
         String acceptCharset = ENCODE_UTF8;
-        
+        ParamUtils.checkParam(tag);
+        ParamUtils.checkParam(autoTag);
         int lockResult = ConfigCacheService.tryConfigReadLock(groupKey);
         String pullEvent = ConfigTraceService.PULL_EVENT;
         String pullType = ConfigTraceService.PULL_TYPE_OK;

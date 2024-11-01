@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.auth.mock.MockAuthPluginService;
+import com.alibaba.nacos.auth.mock.MockResourceParser;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
@@ -85,13 +86,22 @@ class GrpcProtocolAuthServiceTest {
         assertEquals(SignType.SPECIFIED, actual.getType());
         assertNull(actual.getNamespaceId());
         assertNull(actual.getGroup());
-        assertNull(actual.getProperties());
+        assertNotNull(actual.getProperties());
+        assertTrue(actual.getProperties().isEmpty());
     }
     
     @Test
     @Secured(signType = "non-exist")
     void testParseResourceWithNonExistType() throws NoSuchMethodException {
         Secured secured = getMethodSecure("testParseResourceWithNonExistType");
+        Resource actual = protocolAuthService.parseResource(namingRequest, secured);
+        assertEquals(Resource.EMPTY_RESOURCE, actual);
+    }
+    
+    @Test
+    @Secured(signType = "non-exist", parser = MockResourceParser.class)
+    void testParseResourceWithNonExistTypeException() throws NoSuchMethodException {
+        Secured secured = getMethodSecure("testParseResourceWithNonExistTypeException");
         Resource actual = protocolAuthService.parseResource(namingRequest, secured);
         assertEquals(Resource.EMPTY_RESOURCE, actual);
     }
@@ -150,6 +160,22 @@ class GrpcProtocolAuthServiceTest {
         Mockito.when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
         assertFalse(protocolAuthService.validateAuthority(new IdentityContext(),
                 new Permission(Resource.EMPTY_RESOURCE, "")));
+    }
+    
+    @Test
+    @Secured(signType = SignType.CONFIG)
+    void testEnabledAuthWithPlugin() throws NoSuchMethodException {
+        Mockito.when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
+        Secured secured = getMethodSecure("testEnabledAuthWithPlugin");
+        assertTrue(protocolAuthService.enableAuth(secured));
+    }
+    
+    @Test
+    @Secured(signType = SignType.CONFIG)
+    void testEnabledAuthWithoutPlugin() throws NoSuchMethodException {
+        Mockito.when(authConfigs.getNacosAuthSystemType()).thenReturn("non-exist-plugin");
+        Secured secured = getMethodSecure("testEnabledAuthWithoutPlugin");
+        assertFalse(protocolAuthService.enableAuth(secured));
     }
     
     private Secured getMethodSecure(String methodName) throws NoSuchMethodException {

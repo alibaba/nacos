@@ -66,7 +66,7 @@ class HistoryConfigInfoMapperByDerbyTest {
     void testRemoveConfigHistory() {
         MapperResult mapperResult = historyConfigInfoMapperByDerby.removeConfigHistory(context);
         assertEquals(mapperResult.getSql(),
-                "DELETE FROM his_config_info WHERE id IN( SELECT id FROM his_config_info WHERE gmt_modified < ? "
+                "DELETE FROM his_config_info WHERE nid IN( SELECT nid FROM his_config_info WHERE gmt_modified < ? "
                         + "OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY)");
         assertArrayEquals(new Object[] {startTime, limitSize}, mapperResult.getParamList().toArray());
     }

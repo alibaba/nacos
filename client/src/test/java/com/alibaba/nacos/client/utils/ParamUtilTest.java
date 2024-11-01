@@ -47,6 +47,8 @@ class ParamUtilTest {
     
     private int defaultConnectTimeout;
     
+    private int defaultReadTimeout;
+    
     private double defaultPerTaskConfigSize;
     
     private String defaultNodesPath;
@@ -58,6 +60,7 @@ class ParamUtilTest {
         defaultContextPath = "nacos";
         defaultVersion = VersionUtils.version;
         defaultConnectTimeout = 1000;
+        defaultReadTimeout = 3000;
         defaultPerTaskConfigSize = 3000.0;
         defaultNodesPath = "serverlist";
     }
@@ -69,9 +72,11 @@ class ParamUtilTest {
         ParamUtil.setDefaultContextPath(defaultContextPath);
         ParamUtil.setClientVersion(defaultVersion);
         ParamUtil.setConnectTimeout(defaultConnectTimeout);
+        ParamUtil.setReadTimeout(defaultReadTimeout);
         ParamUtil.setPerTaskConfigSize(defaultPerTaskConfigSize);
         ParamUtil.setDefaultNodesPath(defaultNodesPath);
         System.clearProperty("NACOS.CONNECT.TIMEOUT");
+        System.clearProperty("NACOS_READ_TIMEOUT");
         System.clearProperty("PER_TASK_CONFIG_SIZE");
         System.clearProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
     }
@@ -124,6 +129,16 @@ class ParamUtilTest {
         int expect = 50;
         ParamUtil.setConnectTimeout(expect);
         assertEquals(expect, ParamUtil.getConnectTimeout());
+    }
+    
+    @Test
+    void testSetReadTimeout() {
+        int defaultVal = ParamUtil.getReadTimeout();
+        assertEquals(defaultReadTimeout, defaultVal);
+        
+        int expect = 3000;
+        ParamUtil.setReadTimeout(expect);
+        assertEquals(expect, ParamUtil.getReadTimeout());
     }
     
     @Test
@@ -185,6 +200,20 @@ class ParamUtilTest {
     }
     
     @Test
+    void testInitReadTimeoutWithException() throws Throwable {
+        assertThrows(IllegalArgumentException.class, () -> {
+            Method method = ParamUtil.class.getDeclaredMethod("initReadTimeout");
+            method.setAccessible(true);
+            System.setProperty("NACOS.READ.TIMEOUT", "test");
+            try {
+                method.invoke(null);
+            } catch (InvocationTargetException e) {
+                throw e.getCause();
+            }
+        });
+    }
+    
+    @Test
     void testInitPerTaskConfigSizeWithException() throws Throwable {
         assertThrows(IllegalArgumentException.class, () -> {
             Method method = ParamUtil.class.getDeclaredMethod("initPerTaskConfigSize");
@@ -235,7 +264,8 @@ class ParamUtilTest {
         properties.setProperty(PropertyKeyConst.LOG_ALL_PROPERTIES, "true");
         NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         String actual = ParamUtil.getInputParameters(clientProperties.asProperties());
-        assertTrue(actual.startsWith("Log nacos client init properties with Full mode, This mode is only used for debugging and troubleshooting."));
+        assertTrue(actual.startsWith(
+                "Log nacos client init properties with Full mode, This mode is only used for debugging and troubleshooting."));
         assertTrue(actual.contains("\ttestKey=testValue\n"));
         Properties envProperties = clientProperties.getProperties(SourceType.ENV);
         String envCaseKey = envProperties.stringPropertyNames().iterator().next();
@@ -248,8 +278,27 @@ class ParamUtilTest {
         Properties properties = new Properties();
         properties.setProperty("testKey", "testValue");
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, "localhost:8848");
+        properties.setProperty(PropertyKeyConst.PASSWORD, "testPassword");
         NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         String actual = ParamUtil.getInputParameters(clientProperties.asProperties());
-        assertEquals("Nacos client key init properties: \n\tserverAddr=localhost:8848\n", actual);
+        assertEquals("Nacos client key init properties: \n\tserverAddr=localhost:8848\n\tpassword=te********rd\n",
+                actual);
+    }
+    
+    @Test
+    void testDesensitiseParameter() {
+        String shortParameter = "aa";
+        assertEquals(shortParameter, ParamUtil.desensitiseParameter(shortParameter));
+        String middleParameter = "aaa";
+        assertEquals("a*a", ParamUtil.desensitiseParameter(middleParameter));
+        middleParameter = "aaaaaaa";
+        assertEquals("a*****a", ParamUtil.desensitiseParameter(middleParameter));
+        String longParameter = "testPass";
+        assertEquals("te****ss", ParamUtil.desensitiseParameter(longParameter));
+    }
+    
+    @Test
+    void testGetNameSuffixByServerIps() {
+        assertEquals("1.1.1.1-2.2.2.2_8848", ParamUtil.getNameSuffixByServerIps("http://1.1.1.1", "2.2.2.2:8848"));
     }
 }

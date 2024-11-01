@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.auth.mock.MockAuthPluginService;
+import com.alibaba.nacos.auth.mock.MockResourceParser;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
@@ -56,12 +57,12 @@ class HttpProtocolAuthServiceTest {
     @Mock
     private HttpServletRequest request;
     
-    private HttpProtocolAuthService httpProtocolAuthService;
+    private HttpProtocolAuthService protocolAuthService;
     
     @BeforeEach
     void setUp() throws Exception {
-        httpProtocolAuthService = new HttpProtocolAuthService(authConfigs);
-        httpProtocolAuthService.initialize();
+        protocolAuthService = new HttpProtocolAuthService(authConfigs);
+        protocolAuthService.initialize();
         Mockito.when(request.getParameter(eq(CommonParams.NAMESPACE_ID))).thenReturn("testNNs");
         Mockito.when(request.getParameter(eq(CommonParams.GROUP_NAME))).thenReturn("testNG");
         Mockito.when(request.getParameter(eq(CommonParams.SERVICE_NAME))).thenReturn("testS");
@@ -71,22 +72,32 @@ class HttpProtocolAuthServiceTest {
     }
     
     @Test
-    @Secured(resource = "testResource")
+    @Secured(resource = "testResource", tags = {"testTag"})
     void testParseResourceWithSpecifiedResource() throws NoSuchMethodException {
         Secured secured = getMethodSecure("testParseResourceWithSpecifiedResource");
-        Resource actual = httpProtocolAuthService.parseResource(request, secured);
+        Resource actual = protocolAuthService.parseResource(request, secured);
         assertEquals("testResource", actual.getName());
         assertEquals(SignType.SPECIFIED, actual.getType());
         assertNull(actual.getNamespaceId());
         assertNull(actual.getGroup());
-        assertNull(actual.getProperties());
+        assertNotNull(actual.getProperties());
+        assertEquals(1, actual.getProperties().size());
+        assertEquals("testTag", actual.getProperties().get("testTag"));
     }
     
     @Test
     @Secured(signType = "non-exist")
     void testParseResourceWithNonExistType() throws NoSuchMethodException {
         Secured secured = getMethodSecure("testParseResourceWithNonExistType");
-        Resource actual = httpProtocolAuthService.parseResource(request, secured);
+        Resource actual = protocolAuthService.parseResource(request, secured);
+        assertEquals(Resource.EMPTY_RESOURCE, actual);
+    }
+    
+    @Test
+    @Secured(signType = "non-exist", parser = MockResourceParser.class)
+    void testParseResourceWithNonExistTypeException() throws NoSuchMethodException {
+        Secured secured = getMethodSecure("testParseResourceWithNonExistTypeException");
+        Resource actual = protocolAuthService.parseResource(request, secured);
         assertEquals(Resource.EMPTY_RESOURCE, actual);
     }
     
@@ -94,7 +105,7 @@ class HttpProtocolAuthServiceTest {
     @Secured()
     void testParseResourceWithNamingType() throws NoSuchMethodException {
         Secured secured = getMethodSecure("testParseResourceWithNamingType");
-        Resource actual = httpProtocolAuthService.parseResource(request, secured);
+        Resource actual = protocolAuthService.parseResource(request, secured);
         assertEquals(SignType.NAMING, actual.getType());
         assertEquals("testS", actual.getName());
         assertEquals("testNNs", actual.getNamespaceId());
@@ -106,7 +117,7 @@ class HttpProtocolAuthServiceTest {
     @Secured(signType = SignType.CONFIG)
     void testParseResourceWithConfigType() throws NoSuchMethodException {
         Secured secured = getMethodSecure("testParseResourceWithConfigType");
-        Resource actual = httpProtocolAuthService.parseResource(request, secured);
+        Resource actual = protocolAuthService.parseResource(request, secured);
         assertEquals(SignType.CONFIG, actual.getType());
         assertEquals("testD", actual.getName());
         assertEquals("testNNs", actual.getNamespaceId());
@@ -116,34 +127,50 @@ class HttpProtocolAuthServiceTest {
     
     @Test
     void testParseIdentity() {
-        IdentityContext actual = httpProtocolAuthService.parseIdentity(request);
+        IdentityContext actual = protocolAuthService.parseIdentity(request);
         assertNotNull(actual);
     }
     
     @Test
     void testValidateIdentityWithoutPlugin() throws AccessException {
         IdentityContext identityContext = new IdentityContext();
-        assertTrue(httpProtocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE));
+        assertTrue(protocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE));
     }
     
     @Test
     void testValidateIdentityWithPlugin() throws AccessException {
         Mockito.when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
         IdentityContext identityContext = new IdentityContext();
-        assertFalse(httpProtocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE));
+        assertFalse(protocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE));
     }
     
     @Test
     void testValidateAuthorityWithoutPlugin() throws AccessException {
-        assertTrue(httpProtocolAuthService.validateAuthority(new IdentityContext(),
+        assertTrue(protocolAuthService.validateAuthority(new IdentityContext(),
                 new Permission(Resource.EMPTY_RESOURCE, "")));
     }
     
     @Test
     void testValidateAuthorityWithPlugin() throws AccessException {
         Mockito.when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
-        assertFalse(httpProtocolAuthService.validateAuthority(new IdentityContext(),
+        assertFalse(protocolAuthService.validateAuthority(new IdentityContext(),
                 new Permission(Resource.EMPTY_RESOURCE, "")));
+    }
+    
+    @Test
+    @Secured(signType = SignType.CONFIG)
+    void testEnabledAuthWithPlugin() throws NoSuchMethodException {
+        Mockito.when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
+        Secured secured = getMethodSecure("testEnabledAuthWithPlugin");
+        assertTrue(protocolAuthService.enableAuth(secured));
+    }
+    
+    @Test
+    @Secured(signType = SignType.CONFIG)
+    void testEnabledAuthWithoutPlugin() throws NoSuchMethodException {
+        Mockito.when(authConfigs.getNacosAuthSystemType()).thenReturn("non-exist-plugin");
+        Secured secured = getMethodSecure("testEnabledAuthWithoutPlugin");
+        assertFalse(protocolAuthService.enableAuth(secured));
     }
     
     private Secured getMethodSecure(String methodName) throws NoSuchMethodException {

@@ -16,9 +16,16 @@
 
 package com.alibaba.nacos.config.server.service.dump.disk;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.utils.StringUtils;
+import com.alibaba.nacos.common.pathencoder.PathEncoderManager;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.config.server.utils.ParamUtils;
+import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.io.FileUtils;
 
@@ -56,7 +63,16 @@ public class ConfigRawDiskService implements ConfigDiskService {
     /**
      * Returns the path of the server cache file.
      */
-    private static File targetFile(String dataId, String group, String tenant) {
+    static File targetFile(String dataId, String group, String tenant) {
+        try {
+            ParamUtils.checkParam(dataId, group, tenant);
+        } catch (Exception e) {
+            throw new NacosRuntimeException(NacosException.CLIENT_INVALID_PARAM, "parameter is invalid.");
+        }
+        // fix https://github.com/alibaba/nacos/issues/10067
+        dataId = PathEncoderManager.getInstance().encode(dataId);
+        group = PathEncoderManager.getInstance().encode(group);
+        tenant = PathEncoderManager.getInstance().encode(tenant);
         File file = null;
         if (StringUtils.isBlank(tenant)) {
             file = new File(EnvUtil.getNacosHome(), BASE_DIR);
@@ -73,6 +89,17 @@ public class ConfigRawDiskService implements ConfigDiskService {
      * Returns the path of the gray cache file in server.
      */
     private static File targetGrayFile(String dataId, String group, String tenant, String grayName) {
+        try {
+            ParamUtils.checkParam(grayName);
+            ParamUtils.checkParam(dataId, group, tenant);
+        } catch (Exception e) {
+            throw new NacosRuntimeException(NacosException.CLIENT_INVALID_PARAM, "parameter is invalid.");
+        }
+        // fix https://github.com/alibaba/nacos/issues/10067
+        dataId = PathEncoderManager.getInstance().encode(dataId);
+        group = PathEncoderManager.getInstance().encode(group);
+        tenant = PathEncoderManager.getInstance().encode(tenant);
+    
         File file = null;
         if (StringUtils.isBlank(tenant)) {
             file = new File(EnvUtil.getNacosHome(), GRAY_DIR);
