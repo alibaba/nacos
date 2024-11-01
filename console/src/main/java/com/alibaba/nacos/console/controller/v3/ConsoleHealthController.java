@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.console.controller.v3;
 
+import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
@@ -31,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * @author zhangyukun on:2024/8/27
  */
+@NacosApi
 @RestController()
 @RequestMapping("/v3/console/health")
 @ExtractorManager.Extractor(httpExtractor = ConsoleDefaultHttpParamExtractor.class)

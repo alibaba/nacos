@@ -103,13 +103,13 @@ public class ConsoleInstanceControllerTest {
         instance.setIp("127.0.0.1");
         instance.setPort(8080);
         instance.setWeight(1.0);
-
+        
         doNothing().when(instanceProxy).updateInstance(any(InstanceForm.class), any(Instance.class));
-
+        
         Result<String> result = consoleInstanceController.updateInstance(instanceForm);
-
+        
         verify(instanceProxy).updateInstance(any(InstanceForm.class), any(Instance.class));
-
+        
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("ok", result.getData());
     }

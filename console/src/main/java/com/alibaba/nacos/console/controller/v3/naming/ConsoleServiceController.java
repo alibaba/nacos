@@ -29,7 +29,6 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.enums.ApiType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
 import com.alibaba.nacos.console.proxy.naming.ServiceProxy;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.model.form.AggregationForm;
@@ -42,6 +41,7 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.ServiceForm;
 import com.alibaba.nacos.naming.model.form.ServiceListForm;
 import com.alibaba.nacos.naming.model.form.UpdateClusterForm;
+import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
@@ -68,7 +68,7 @@ import java.util.Optional;
 @NacosApi
 @RestController
 @RequestMapping("/v3/console/ns/service")
-@ExtractorManager.Extractor(httpExtractor = ConsoleDefaultHttpParamExtractor.class)
+@ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)
 public class ConsoleServiceController {
     
     private final ServiceProxy serviceProxy;

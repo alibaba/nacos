@@ -17,7 +17,7 @@
 
 package com.alibaba.nacos.console.controller.v3.naming;
 
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -28,13 +28,15 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.enums.ApiType;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.console.proxy.naming.InstanceProxy;
 import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.InstanceForm;
+import com.alibaba.nacos.naming.model.form.ServiceForm;
+import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -49,11 +51,12 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * @author zhangyukun on:2024/8/16
  */
+@NacosApi
 @RestController
 @RequestMapping("/v3/console/ns/instance")
-@ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
+@ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)
 public class ConsoleInstanceController {
-
+    
     private final SwitchDomain switchDomain;
     
     private final InstanceProxy instanceProxy;
@@ -71,24 +74,23 @@ public class ConsoleInstanceController {
     /**
      * List instances of special service.
      *
-     * @param namespaceId namespace id
-     * @param serviceName service name
-     * @param healthyOnly instance health only
-     * @param enabledOnly instance enabled
-     * @param page        number of page
-     * @param pageSize    size of each page
+     * @param serviceForm service form
+     * @param pageForm Page form
+     * @param healthyOnly whether only return health instance
+     * @param enabledOnly wheter only return enabled instance
      * @return instances information
      */
     @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)
     @RequestMapping("/list")
-    public Result<ObjectNode> getInstanceList(
-            @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam String serviceName, @RequestParam(defaultValue = Constants.DEFAULT_GROUP) String groupName,
-            @RequestParam(required = false) Boolean healthyOnly, @RequestParam(required = false) Boolean enabledOnly,
-            @RequestParam(name = "pageNo") int page, @RequestParam int pageSize) throws NacosApiException {
-        checkServiceName(serviceName);
-        ObjectNode result = instanceProxy.listInstances(namespaceId, serviceName, groupName, page, pageSize,
-                healthyOnly, enabledOnly);
+    public Result<ObjectNode> getInstanceList(ServiceForm serviceForm, PageForm pageForm,
+            @RequestParam(required = false) Boolean healthyOnly, @RequestParam(required = false) Boolean enabledOnly)
+            throws NacosApiException {
+        serviceForm.validate();
+        String namespaceId = serviceForm.getNamespaceId();
+        String groupName = serviceForm.getGroupName();
+        String serviceName = serviceForm.getServiceName();
+        ObjectNode result = instanceProxy.listInstances(namespaceId, serviceName, groupName, pageForm.getPageNo(),
+                pageForm.getPageSize(), healthyOnly, enabledOnly);
         return Result.success(result);
     }
     
