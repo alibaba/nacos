@@ -412,7 +412,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 removeConfigInfoAtomic(dataId, group, tenantTmp, srcIp, srcUser);
                 removeTagByIdAtomic(oldConfigAllInfo.getId());
                 historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo.getId(), oldConfigAllInfo, srcIp,
-                        srcUser, time, "D", Constants.FORMAL, ConfigExtInfoUtil.getExtraInfoFromAllInfo(oldConfigAllInfo));
+                        srcUser, time, "D", Constants.FORMAL, ConfigExtInfoUtil.getExtInfoFromAllInfo(oldConfigAllInfo));
                 
                 EmbeddedStorageContextUtils.onDeleteConfigInfo(tenantTmp, group, dataId, srcIp, time);
                 
@@ -442,7 +442,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                     removeTagByIdAtomic(configAllInfo.getId());
                     historyConfigInfoPersistService.insertConfigHistoryAtomic(configAllInfo.getId(), configAllInfo,
                             srcIp, srcUser, time, "D", Constants.FORMAL,
-                            ConfigExtInfoUtil.getExtraInfoFromAllInfo(configAllInfo));
+                            ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfo));
                 }
             }
             
@@ -535,7 +535,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             
             Timestamp time = new Timestamp(System.currentTimeMillis());
             historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo.getId(), oldConfigAllInfo, srcIp,
-                    srcUser, time, "U", Constants.FORMAL, ConfigExtInfoUtil.getExtraInfoFromAllInfo(oldConfigAllInfo));
+                    srcUser, time, "U", Constants.FORMAL, ConfigExtInfoUtil.getExtInfoFromAllInfo(oldConfigAllInfo));
             EmbeddedStorageContextUtils.onModifyConfigInfo(configInfo, srcIp, time);
             databaseOperate.blockUpdate();
             return getConfigInfoOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
@@ -581,7 +581,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             
             Timestamp time = new Timestamp(System.currentTimeMillis());
             historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo.getId(), oldConfigAllInfo, srcIp,
-                    srcUser, time, "U", Constants.FORMAL, ConfigExtInfoUtil.getExtraInfoFromAllInfo(oldConfigAllInfo));
+                    srcUser, time, "U", Constants.FORMAL, ConfigExtInfoUtil.getExtInfoFromAllInfo(oldConfigAllInfo));
             EmbeddedStorageContextUtils.onModifyConfigInfo(configInfo, srcIp, time);
             boolean success = databaseOperate.blockUpdate();
             if (success) {

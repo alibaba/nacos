@@ -88,7 +88,7 @@ class DumpAllProcessorTest {
         
         when(dynamicDataSource.getDataSource()).thenReturn(dataSourceService);
         
-        dumpService = new ExternalDumpService(configInfoPersistService, null, null, null, configInfoGrayPersistService, null, null);
+        dumpService = new ExternalDumpService(configInfoPersistService, null, null, configInfoGrayPersistService, null);
         
         dumpAllProcessor = new DumpAllProcessor(configInfoPersistService);
         envUtilMockedStatic.when(() -> EnvUtil.getProperty(eq("memory_limit_file_path"), eq("/sys/fs/cgroup/memory/memory.limit_in_bytes")))

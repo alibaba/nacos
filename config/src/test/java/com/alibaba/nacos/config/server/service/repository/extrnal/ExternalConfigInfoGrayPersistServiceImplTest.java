@@ -17,7 +17,6 @@
 package com.alibaba.nacos.config.server.service.repository.extrnal;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
-import com.alibaba.nacos.config.server.model.ConfigAllInfo4Gray;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
@@ -48,7 +47,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.alibaba.nacos.config.server.constant.Constants.ENCODE;
-import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_ALL_INFO_GRAY_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -131,7 +129,7 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         mockedConfigInfoStateWrapper.setLastModified(System.currentTimeMillis());
         
         //mock exist config info
-        ConfigAllInfo4Gray configAllInfo4Gray = new ConfigAllInfo4Gray();
+        ConfigInfoGrayWrapper configAllInfo4Gray = new ConfigInfoGrayWrapper();
         configAllInfo4Gray.setDataId(dataId);
         configAllInfo4Gray.setGroup(group);
         configAllInfo4Gray.setTenant(tenant);
@@ -140,7 +138,7 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
                 eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(mockedConfigInfoStateWrapper);
         when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_ALL_INFO_GRAY_ROW_MAPPER))).thenReturn(configAllInfo4Gray);
+                eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(configAllInfo4Gray);
         
         String srcIp = "srcUp...";
         String srcUser = "srcUser...";
@@ -303,14 +301,14 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
                 eq(grayName), eq(configInfo.getMd5()))).thenReturn(1);
         
         //mock exist config info
-        ConfigAllInfo4Gray configAllInfo4Gray = new ConfigAllInfo4Gray();
+        ConfigInfoGrayWrapper configAllInfo4Gray = new ConfigInfoGrayWrapper();
         configAllInfo4Gray.setDataId(dataId);
         configAllInfo4Gray.setGroup(group);
         configAllInfo4Gray.setTenant(tenant);
         configAllInfo4Gray.setMd5("old_md5");
         String grayName1 = "grayName1...";
         when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_ALL_INFO_GRAY_ROW_MAPPER))).thenReturn(configAllInfo4Gray);
+                eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(configAllInfo4Gray);
         
         ConfigOperateResult configOperateResult = externalConfigInfoGrayPersistService.insertOrUpdateGrayCas(configInfo,
                 grayName, grayRule, srcIp, srcUser);
@@ -443,14 +441,14 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         final String grayName = "grayName1";
         
         //mock exist config info
-        ConfigAllInfo4Gray configAllInfo4Gray = new ConfigAllInfo4Gray();
+        ConfigInfoGrayWrapper configAllInfo4Gray = new ConfigInfoGrayWrapper();
         configAllInfo4Gray.setDataId(dataId);
         configAllInfo4Gray.setGroup(group);
         configAllInfo4Gray.setTenant(tenant);
         configAllInfo4Gray.setMd5("old_md5");
         
         Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                        eq(CONFIG_ALL_INFO_GRAY_ROW_MAPPER)))
+                        eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER)))
                 .thenReturn(configAllInfo4Gray);
         Mockito.when(databaseOperate.update(any())).thenReturn(true);
         

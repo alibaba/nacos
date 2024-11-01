@@ -34,37 +34,38 @@ import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigMetadata;
+import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
-import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
-import com.alibaba.nacos.config.server.paramcheck.ConfigBlurSearchHttpParamExtractor;
-import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
-import com.alibaba.nacos.config.server.paramcheck.ConfigListenerHttpParamExtractor;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.core.paramcheck.ExtractorManager;
-import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
-import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
+import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
+import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
+import com.alibaba.nacos.config.server.paramcheck.ConfigBlurSearchHttpParamExtractor;
+import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
+import com.alibaba.nacos.config.server.paramcheck.ConfigListenerHttpParamExtractor;
 import com.alibaba.nacos.config.server.result.code.ResultCodeEnum;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
-import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
@@ -321,8 +322,8 @@ public class ConfigController {
         }
         for (ConfigAllInfo configInfo : configInfoList) {
             ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
-                            configInfo.getTenant(), time.getTime()));
+                    new ConfigDataChangeEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
+                            time.getTime()));
             
             ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant(), null, time.getTime(), clientIp, ConfigTraceService.PERSISTENCE_EVENT,
@@ -426,8 +427,8 @@ public class ConfigController {
             @RequestParam("group") String group, @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "config_tags", required = false) String configTags,
-            @RequestParam(value = "types", required = false) String types,
-            @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) {
+            @RequestParam(value = "types", required = false) String types, @RequestParam("pageNo") int pageNo,
+            @RequestParam("pageSize") int pageSize) {
         MetricsMonitor.getFuzzySearchMonitor().incrementAndGet();
         Map<String, Object> configAdvanceInfo = new HashMap<>(50);
         if (StringUtils.isNotBlank(appName)) {
@@ -465,7 +466,7 @@ public class ConfigController {
         String remoteIp = getRemoteIp(httpServletRequest);
         String requestIpApp = RequestUtil.getAppName(httpServletRequest);
         try {
-            configInfoGrayPersistService.removeConfigInfoGray(dataId, group, tenant, "beta", remoteIp,
+            configInfoGrayPersistService.removeConfigInfoGray(dataId, group, tenant, BetaGrayRule.TYPE_BETA, remoteIp,
                     RequestUtil.getSrcUserName(httpServletRequest));
         } catch (Throwable e) {
             LOGGER.error("remove beta data error", e);
@@ -473,14 +474,12 @@ public class ConfigController {
         }
         ConfigTraceService.logPersistenceEvent(dataId, group, tenant, requestIpApp, System.currentTimeMillis(),
                 remoteIp, ConfigTraceService.PERSISTENCE_EVENT_BETA, ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
-        ConfigChangePublisher.notifyConfigChange(
-                new ConfigDataChangeEvent(dataId, group, tenant, null, "beta", System.currentTimeMillis()));
         
         if (PropertyUtil.isGrayCompatibleModel()) {
             configInfoBetaPersistService.removeConfigInfo4Beta(dataId, group, tenant);
-            ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(true, dataId, group, tenant, System.currentTimeMillis()));
         }
+        ConfigChangePublisher.notifyConfigChange(
+                new ConfigDataChangeEvent(dataId, group, tenant, BetaGrayRule.TYPE_BETA, System.currentTimeMillis()));
         
         return RestResultUtils.success("stop beta ok", true);
     }
@@ -687,8 +686,8 @@ public class ConfigController {
                 null, policy);
         for (ConfigInfo configInfo : configInfoList) {
             ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
-                            configInfo.getTenant(), time.getTime()));
+                    new ConfigDataChangeEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
+                            time.getTime()));
             ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant(), requestIpApp, time.getTime(), InetUtils.getSelfIP(),
                     ConfigTraceService.PERSISTENCE_EVENT, ConfigTraceService.PERSISTENCE_TYPE_PUB,
@@ -939,8 +938,8 @@ public class ConfigController {
                 srcIp, null, policy);
         for (ConfigInfo configInfo : configInfoList4Clone) {
             ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
-                            configInfo.getTenant(), time.getTime()));
+                    new ConfigDataChangeEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
+                            time.getTime()));
             ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant(), requestIpApp, time.getTime(), InetUtils.getSelfIP(),
                     ConfigTraceService.PERSISTENCE_EVENT, ConfigTraceService.PERSISTENCE_TYPE_PUB,

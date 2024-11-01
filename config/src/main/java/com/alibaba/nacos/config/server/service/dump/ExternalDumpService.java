@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.config.server.service.dump;
 
-import com.alibaba.nacos.config.server.service.merge.MergeDatumService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
@@ -49,11 +47,9 @@ public class ExternalDumpService extends DumpService {
     public ExternalDumpService(ConfigInfoPersistService configInfoPersistService,
             NamespacePersistService namespacePersistService,
             HistoryConfigInfoPersistService historyConfigInfoPersistService,
-            ConfigInfoAggrPersistService configInfoAggrPersistService,
-            ConfigInfoGrayPersistService configInfoGrayPersistService, MergeDatumService mergeDatumService,
+            ConfigInfoGrayPersistService configInfoGrayPersistService,
             ServerMemberManager memberManager) {
-        super(configInfoPersistService, namespacePersistService, historyConfigInfoPersistService,
-                configInfoAggrPersistService, configInfoGrayPersistService, mergeDatumService, memberManager);
+        super(configInfoPersistService, namespacePersistService, historyConfigInfoPersistService, configInfoGrayPersistService, memberManager);
     }
     
     @PostConstruct

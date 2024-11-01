@@ -47,8 +47,6 @@ public enum AbilityKey {
      */
     SERVER_TEST_2("test_2", "just for junit test", AbilityMode.SERVER),
     
-    SUPPORT_NEW_GRAY_MODEL("support_new_gray_model", "support_new_gray_model", AbilityMode.SERVER),
-    
     /**
      * For Test temporarily.
      */

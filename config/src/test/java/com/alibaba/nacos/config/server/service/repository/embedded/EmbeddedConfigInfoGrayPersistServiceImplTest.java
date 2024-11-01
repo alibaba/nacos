@@ -18,7 +18,6 @@ package com.alibaba.nacos.config.server.service.repository.embedded;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.model.ConfigAllInfo4Gray;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
@@ -46,7 +45,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_ALL_INFO_GRAY_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -177,14 +175,14 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
                 .thenReturn(configInfoStateWrapper);
         
         //mock exist config info
-        ConfigAllInfo4Gray configAllInfo4Gray = new ConfigAllInfo4Gray();
+        ConfigInfoGrayWrapper configAllInfo4Gray = new ConfigInfoGrayWrapper();
         configAllInfo4Gray.setDataId(dataId);
         configAllInfo4Gray.setGroup(group);
         configAllInfo4Gray.setTenant(tenant);
         configAllInfo4Gray.setMd5("old_md5");
         configAllInfo4Gray.setSrcUser("user");
         when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_ALL_INFO_GRAY_ROW_MAPPER))).thenReturn(configAllInfo4Gray);
+                eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(configAllInfo4Gray);
         
         String srcIp = "ip345678";
         String srcUser = "user1234567";
@@ -266,14 +264,14 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
                 .thenReturn(configInfoStateWrapper);
         
         //mock exist config info
-        ConfigAllInfo4Gray configAllInfo4Gray = new ConfigAllInfo4Gray();
+        ConfigInfoGrayWrapper configAllInfo4Gray = new ConfigInfoGrayWrapper();
         configAllInfo4Gray.setDataId(dataId);
         configAllInfo4Gray.setGroup(group);
         configAllInfo4Gray.setTenant(tenant);
         configAllInfo4Gray.setMd5("old_md5");
         configAllInfo4Gray.setSrcUser("user");
         when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_ALL_INFO_GRAY_ROW_MAPPER))).thenReturn(configAllInfo4Gray);
+                eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(configAllInfo4Gray);
         
         String srcIp = "ip345678";
         String srcUser = "user1234567";
@@ -305,14 +303,14 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
         final String grayName = "grayName...";
         
         //mock exist config info
-        ConfigAllInfo4Gray configAllInfo4Gray = new ConfigAllInfo4Gray();
+        ConfigInfoGrayWrapper configAllInfo4Gray = new ConfigInfoGrayWrapper();
         configAllInfo4Gray.setDataId(dataId);
         configAllInfo4Gray.setGroup(group);
         configAllInfo4Gray.setTenant(tenant);
         configAllInfo4Gray.setMd5("old_md5");
         
         when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, grayName}),
-                eq(CONFIG_ALL_INFO_GRAY_ROW_MAPPER))).thenReturn(configAllInfo4Gray);
+                eq(CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER))).thenReturn(configAllInfo4Gray);
         
         embeddedConfigInfoGrayPersistService.removeConfigInfoGray(dataId, group, tenant, grayName, srcIp, srcUser);
         

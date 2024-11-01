@@ -16,11 +16,9 @@
 
 package com.alibaba.nacos.config.server.service.repository;
 
-import com.alibaba.nacos.config.server.model.ConfigAllInfo4Gray;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
-import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
@@ -160,21 +158,9 @@ public interface ConfigInfoGrayPersistService {
      * @param group    group
      * @param tenant   tenant
      * @param grayName gray name
-     * @return {@link com.alibaba.nacos.config.server.model.ConfigInfo4Gray}
+     * @return ConfigInfoGrayWrapper gray model instance.
      */
     ConfigInfoGrayWrapper findConfigInfo4Gray(final String dataId, final String group, final String tenant,
-            final String grayName);
-    
-    /**
-     * Query all gray configuration information based on dataId and group.
-     *
-     * @param dataId   dataId
-     * @param group    group
-     * @param tenant   tenant
-     * @param grayName gray name
-     * @return all gray config info
-     */
-    ConfigAllInfo4Gray findConfigAllInfo4Gray(final String dataId, final String group, final String tenant,
             final String grayName);
     
     /**
@@ -189,7 +175,7 @@ public interface ConfigInfoGrayPersistService {
      *
      * @param pageNo   page numbser
      * @param pageSize page sizxe
-     * @return {@link Page} with {@link ConfigInfoWrapper} generation
+     * @return {@link Page} with {@link ConfigInfoGrayWrapper} generation
      */
     Page<ConfigInfoGrayWrapper> findAllConfigInfoGrayForDumpAll(final int pageNo, final int pageSize);
     
@@ -199,7 +185,7 @@ public interface ConfigInfoGrayPersistService {
      * @param startTime startTime
      * @param lastMaxId lastMaxId
      * @param pageSize  pageSize
-     * @return {@link Page} with {@link ConfigInfoWrapper} generation
+     * @return {@link Page} with {@link ConfigInfoGrayWrapper} generation
      */
     List<ConfigInfoGrayWrapper> findChangeConfig(final Timestamp startTime, long lastMaxId, final int pageSize);
     

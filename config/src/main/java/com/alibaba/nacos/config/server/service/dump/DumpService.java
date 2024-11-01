@@ -23,18 +23,14 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.manager.TaskManager;
-import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.service.dump.processor.DumpAllGrayProcessor;
 import com.alibaba.nacos.config.server.service.dump.processor.DumpAllProcessor;
 import com.alibaba.nacos.config.server.service.dump.processor.DumpProcessor;
 import com.alibaba.nacos.config.server.service.dump.task.DumpAllGrayTask;
-import com.alibaba.nacos.config.server.service.dump.task.DumpAllTagTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpAllTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpTask;
-import com.alibaba.nacos.config.server.service.merge.MergeDatumService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
@@ -51,7 +47,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Timestamp;
-import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -79,11 +74,7 @@ public abstract class DumpService {
     
     protected HistoryConfigInfoPersistService historyConfigInfoPersistService;
     
-    protected ConfigInfoAggrPersistService configInfoAggrPersistService;
-    
     protected ConfigInfoGrayPersistService configInfoGrayPersistService;
-    
-    protected MergeDatumService mergeDatumService;
     
     protected final ServerMemberManager memberManager;
     
@@ -114,15 +105,11 @@ public abstract class DumpService {
     public DumpService(ConfigInfoPersistService configInfoPersistService,
             NamespacePersistService namespacePersistService,
             HistoryConfigInfoPersistService historyConfigInfoPersistService,
-            ConfigInfoAggrPersistService configInfoAggrPersistService,
-            ConfigInfoGrayPersistService configInfoGrayPersistService, MergeDatumService mergeDatumService,
-            ServerMemberManager memberManager) {
+            ConfigInfoGrayPersistService configInfoGrayPersistService, ServerMemberManager memberManager) {
         this.configInfoPersistService = configInfoPersistService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
         this.namespacePersistService = namespacePersistService;
         this.historyConfigInfoPersistService = historyConfigInfoPersistService;
-        this.configInfoAggrPersistService = configInfoAggrPersistService;
-        this.mergeDatumService = mergeDatumService;
         this.memberManager = memberManager;
         this.processor = new DumpProcessor(this.configInfoPersistService, this.configInfoGrayPersistService);
         this.dumpAllProcessor = new DumpAllProcessor(this.configInfoPersistService);
@@ -214,7 +201,7 @@ public abstract class DumpService {
         
         @Override
         public void run() {
-            dumpAllTaskMgr.addTask(DumpAllTagTask.TASK_ID, new DumpAllGrayTask());
+            dumpAllTaskMgr.addTask(DumpAllGrayTask.TASK_ID, new DumpAllGrayTask());
         }
     }
     
@@ -233,17 +220,6 @@ public abstract class DumpService {
                 ConfigDiskServiceFactory.getInstance().clearAllGray();
                 dumpAllGrayProcessor.process(new DumpAllGrayTask());
                 
-                // add to dump aggr
-                List<ConfigInfoChanged> configList = configInfoAggrPersistService.findAllAggrGroup();
-                if (configList != null && !configList.isEmpty()) {
-                    total = configList.size();
-                    List<List<ConfigInfoChanged>> splitList = mergeDatumService.splitList(configList,
-                            INIT_THREAD_COUNT);
-                    for (List<ConfigInfoChanged> list : splitList) {
-                        mergeDatumService.executeConfigsMerge(list);
-                    }
-                    LOGGER.info("server start, schedule merge end.");
-                }
             } catch (Exception e) {
                 LogUtil.FATAL_LOG.error(
                         "Nacos Server did not start because dumpservice bean construction failure :\n" + e);
@@ -267,7 +243,8 @@ public abstract class DumpService {
                                 currentTime), random.nextInt((int) PropertyUtil.getDumpChangeWorkerInterval()),
                         TimeUnit.MILLISECONDS);
                 ConfigExecutor.scheduleConfigChangeTask(
-                        new DumpChangeGrayConfigWorker(this.configInfoGrayPersistService, currentTime, this.historyConfigInfoPersistService),
+                        new DumpChangeGrayConfigWorker(this.configInfoGrayPersistService, currentTime,
+                                this.historyConfigInfoPersistService),
                         random.nextInt((int) PropertyUtil.getDumpChangeWorkerInterval()), TimeUnit.MILLISECONDS);
             }
             

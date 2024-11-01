@@ -324,7 +324,7 @@ class ExternalConfigInfoPersistServiceImplTest {
         //mock insert his config info
         Mockito.doNothing().when(historyConfigInfoPersistService)
                 .insertConfigHistoryAtomic(eq(configAllInfo.getId()), eq(configInfo), eq(srcIp), eq(srcUser),
-                        any(Timestamp.class), eq("I"), eq("formal"), eq(ConfigExtInfoUtil.getExtraInfoFromAllInfo(configAllInfo)));
+                        any(Timestamp.class), eq("I"), eq("formal"), eq(ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfo)));
         
         externalConfigInfoPersistService.insertOrUpdate(srcIp, srcUser, configInfo, configAdvanceInfo);
         
@@ -343,7 +343,7 @@ class ExternalConfigInfoPersistServiceImplTest {
         //expect insert history info
         Mockito.verify(historyConfigInfoPersistService, times(1))
                 .insertConfigHistoryAtomic(eq(configAllInfo.getId()), any(ConfigInfo.class), eq(srcIp),
-                        eq(srcUser), any(Timestamp.class), eq("U"), eq("formal"), eq(ConfigExtInfoUtil.getExtraInfoFromAllInfo(configAllInfo)));
+                        eq(srcUser), any(Timestamp.class), eq("U"), eq("formal"), eq(ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfo)));
         
     }
     
@@ -399,7 +399,7 @@ class ExternalConfigInfoPersistServiceImplTest {
         //mock insert his config info
         Mockito.doNothing().when(historyConfigInfoPersistService)
                 .insertConfigHistoryAtomic(eq(configAllInfo.getId()), eq(configInfo), eq(srcIp), eq(srcUser),
-                        any(Timestamp.class), eq("I"), eq("formal"), eq(ConfigExtInfoUtil.getExtraInfoFromAllInfo(configAllInfo)));
+                        any(Timestamp.class), eq("I"), eq("formal"), eq(ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfo)));
         
         externalConfigInfoPersistService.insertOrUpdateCas(srcIp, srcUser, configInfo, configAdvanceInfo);
         //expect update config cas
@@ -424,7 +424,7 @@ class ExternalConfigInfoPersistServiceImplTest {
         //expect insert history info
         Mockito.verify(historyConfigInfoPersistService, times(1))
                 .insertConfigHistoryAtomic(eq(configAllInfo.getId()), any(ConfigInfo.class), eq(srcIp), eq(srcUser),
-                        any(Timestamp.class), eq("U"), eq("formal"), eq(ConfigExtInfoUtil.getExtraInfoFromAllInfo(configAllInfo)));
+                        any(Timestamp.class), eq("U"), eq("formal"), eq(ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfo)));
         
     }
     
@@ -486,7 +486,7 @@ class ExternalConfigInfoPersistServiceImplTest {
         //expect insert delete history
         Mockito.verify(historyConfigInfoPersistService, times(1))
                 .insertConfigHistoryAtomic(eq(configAllInfo.getId()), eq(configAllInfo), eq(srcIp),
-                        eq(srcUser), any(), eq("D"), eq("formal"), eq(ConfigExtInfoUtil.getExtraInfoFromAllInfo(configAllInfo)));
+                        eq(srcUser), any(), eq("D"), eq("formal"), eq(ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfo)));
         
     }
     
@@ -524,10 +524,10 @@ class ExternalConfigInfoPersistServiceImplTest {
         //expect insert delete history
         Mockito.verify(historyConfigInfoPersistService, times(1))
                 .insertConfigHistoryAtomic(eq(configAllInfos.get(0).getId()), eq(configAllInfos.get(0)), eq(srcIp), eq(srcUser),
-                any(), eq("D"), eq("formal"), eq(ConfigExtInfoUtil.getExtraInfoFromAllInfo(configAllInfos.get(0))));
+                any(), eq("D"), eq("formal"), eq(ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfos.get(0))));
         Mockito.verify(historyConfigInfoPersistService, times(1))
                 .insertConfigHistoryAtomic(eq(configAllInfos.get(1).getId()), eq(configAllInfos.get(1)),
-                        eq(srcIp), eq(srcUser), any(), eq("D"), eq("formal"), eq(ConfigExtInfoUtil.getExtraInfoFromAllInfo(configAllInfos.get(0))));
+                        eq(srcIp), eq(srcUser), any(), eq("D"), eq("formal"), eq(ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfos.get(0))));
         
     }
     
