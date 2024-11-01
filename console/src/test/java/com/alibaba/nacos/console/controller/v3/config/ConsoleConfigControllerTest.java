@@ -410,7 +410,7 @@ public class ConsoleConfigControllerTest {
         )).thenReturn(expectedResult);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post("/v3/console/cs/config/clone")
-                .param("src_user", "testUser").param("namespaceId", "testNamespace").param("policy", "ABORT")
+                .param("src_user", "testUser").param("targetNamespaceId", "testNamespace").param("policy", "ABORT")
                 .content(new ObjectMapper().writeValueAsString(configBeansList)).contentType(MediaType.APPLICATION_JSON)
                 .header("X-Real-IP", "127.0.0.1").header("X-Forwarded-For", "127.0.0.1");
         
