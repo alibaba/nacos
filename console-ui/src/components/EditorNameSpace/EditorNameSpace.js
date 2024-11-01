@@ -105,7 +105,7 @@ class EditorNameSpace extends React.Component {
         url: 'v3/console/core/namespace',
         contentType: 'application/x-www-form-urlencoded',
         data: {
-          customNamespaceId: values.namespace,
+          namespaceId: values.namespace,
           namespaceName: values.namespaceShowName,
           namespaceDesc: values.namespaceDesc,
         },

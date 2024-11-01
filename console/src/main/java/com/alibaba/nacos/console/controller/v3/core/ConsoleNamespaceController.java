@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.console.controller.v3.core;
 
+import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -27,6 +28,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
 import com.alibaba.nacos.console.proxy.core.NamespaceProxy;
 import com.alibaba.nacos.core.namespace.model.Namespace;
+import com.alibaba.nacos.core.namespace.model.form.CreateNamespaceForm;
 import com.alibaba.nacos.core.namespace.model.form.NamespaceForm;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
@@ -43,14 +45,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.UUID;
-import java.util.regex.Pattern;
 
 /**
  * Controller for handling HTTP requests related to namespace operations.
  *
  * @author zhangyukun on:2024/8/27
  */
+@NacosApi
 @RestController
 @RequestMapping("/v3/console/core/namespace")
 @ExtractorManager.Extractor(httpExtractor = ConsoleDefaultHttpParamExtractor.class)
@@ -64,12 +65,6 @@ public class ConsoleNamespaceController {
         this.namespaceProxy = namespaceProxy;
         this.namespacePersistService = namespacePersistService;
     }
-    
-    private final Pattern namespaceIdCheckPattern = Pattern.compile("^[\\w-]+");
-    
-    private final Pattern namespaceNameCheckPattern = Pattern.compile("^[^@#$%^&*]+$");
-    
-    private static final int NAMESPACE_ID_MAX_LENGTH = 128;
     
     /**
      * Get namespace list.
@@ -97,68 +92,36 @@ public class ConsoleNamespaceController {
     /**
      * create namespace.
      *
-     * @param namespaceId   custom namespace id
-     * @param namespaceName custom namespace name
-     * @param namespaceDesc custom namespace description
+     * @param namespaceForm create namespace form.
      * @return whether create ok
      */
     @PostMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
             + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
-    public Result<Boolean> createNamespace(@RequestParam("customNamespaceId") String namespaceId,
-            @RequestParam("namespaceName") String namespaceName,
-            @RequestParam(value = "namespaceDesc", required = false) String namespaceDesc) throws NacosException {
-        
-        if (StringUtils.isBlank(namespaceId)) {
-            namespaceId = UUID.randomUUID().toString();
-        } else {
-            namespaceId = namespaceId.trim();
-            if (!namespaceIdCheckPattern.matcher(namespaceId).matches()) {
-                throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.ILLEGAL_NAMESPACE,
-                        "namespaceId [" + namespaceId + "] mismatch the pattern");
-            }
-            if (namespaceId.length() > NAMESPACE_ID_MAX_LENGTH) {
-                throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.ILLEGAL_NAMESPACE,
-                        "too long namespaceId, over " + NAMESPACE_ID_MAX_LENGTH);
-            }
-            // check unique
-            if (namespacePersistService.tenantInfoCountByTenantId(namespaceId) > 0) {
-                throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.ILLEGAL_NAMESPACE,
-                        "the namespaceId is existed, namespaceId: " + namespaceId);
-            }
-        }
-        // contains illegal chars
-        if (!namespaceNameCheckPattern.matcher(namespaceName).matches()) {
+    public Result<Boolean> createNamespace(CreateNamespaceForm namespaceForm) throws NacosException {
+        namespaceForm.validate();
+        String namespaceId = namespaceForm.getCustomNamespaceId();
+        // TODO sink to proxy - handler
+        if (namespacePersistService.tenantInfoCountByTenantId(namespaceId) > 0) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.ILLEGAL_NAMESPACE,
-                    "namespaceName [" + namespaceName + "] contains illegal char");
+                    "the namespaceId is existed, namespaceId: " + namespaceId);
         }
+        String namespaceName = namespaceForm.getNamespaceName();
+        String namespaceDesc = namespaceForm.getNamespaceDesc();
         return Result.success(namespaceProxy.createNamespace(namespaceId, namespaceName, namespaceDesc));
     }
     
     /**
      * edit namespace.
      *
-     * @param namespaceId   the ID of the namespace
-     * @param namespaceName the new name of the namespace
-     * @param namespaceDesc optional description of the namespace
+     * @param namespaceForm namespace form
      * @return whether edit ok
      */
     @PutMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
             + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
-    public Result<Boolean> updateNamespace(@RequestParam("customNamespaceId") String namespaceId,
-            @RequestParam("namespaceName") String namespaceName,
-            @RequestParam(value = "namespaceDesc", required = false) String namespaceDesc) throws NacosException {
-        NamespaceForm namespaceForm = new NamespaceForm();
-        namespaceForm.setNamespaceId(namespaceId);
-        namespaceForm.setNamespaceName(namespaceName);
-        namespaceForm.setNamespaceDesc(namespaceDesc);
+    public Result<Boolean> updateNamespace(NamespaceForm namespaceForm) throws NacosException {
         namespaceForm.validate();
-        // contains illegal chars
-        if (!namespaceNameCheckPattern.matcher(namespaceForm.getNamespaceName()).matches()) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.ILLEGAL_NAMESPACE,
-                    "namespaceName [" + namespaceForm.getNamespaceName() + "] contains illegal char");
-        }
         return Result.success(namespaceProxy.updateNamespace(namespaceForm));
     }
     
@@ -184,6 +147,7 @@ public class ConsoleNamespaceController {
     @GetMapping("/exist")
     public Result<Boolean> checkNamespaceIdExist(@RequestParam("customNamespaceId") String namespaceId)
             throws NacosException {
+        // customNamespaceId if blank means create new namespace with uuid.
         if (StringUtils.isBlank(namespaceId)) {
             return Result.success(false);
         }
