@@ -140,25 +140,24 @@ public class ServiceProxy {
     /**
      * Retrieves the list of services and their details by delegating the operation to the appropriate handler.
      *
-     * @param withInstances     whether to include instances
-     * @param namespaceId       the namespace ID
-     * @param pageNo            the page number
-     * @param pageSize          the size of the page
-     * @param serviceName       the service name
-     * @param groupName         the group name
-     * @param containedInstance instance name pattern which will be contained in detail
-     * @param hasIpCount        whether to filter services with empty instances
+     * @param withInstances whether to include instances
+     * @param namespaceId   the namespace ID
+     * @param pageNo        the page number
+     * @param pageSize      the size of the page
+     * @param serviceName   the service name
+     * @param groupName     the group name
+     * @param hasIpCount    whether to filter services with empty instances
      * @return service detail information
      * @throws NacosException if an error occurs during fetching service details
      */
     public Object getServiceList(boolean withInstances, String namespaceId, int pageNo, int pageSize,
-            String serviceName, String groupName, String containedInstance, boolean hasIpCount) throws NacosException {
+            String serviceName, String groupName, boolean hasIpCount) throws NacosException {
         ServiceHandler serviceHandler = serviceHandlerMap.get(consoleConfig.getType());
         if (serviceHandler == null) {
             throw new IllegalArgumentException("Invalid deployment type");
         }
         return serviceHandler.getServiceList(withInstances, namespaceId, pageNo, pageSize, serviceName, groupName,
-                containedInstance, hasIpCount);
+                hasIpCount);
     }
     
     /**

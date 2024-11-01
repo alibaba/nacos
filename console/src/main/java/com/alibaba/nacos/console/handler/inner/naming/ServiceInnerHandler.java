@@ -23,6 +23,7 @@ import com.alibaba.nacos.common.trace.event.naming.DeregisterServiceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.RegisterServiceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.UpdateServiceTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.handler.naming.ServiceHandler;
 import com.alibaba.nacos.naming.core.CatalogServiceV2Impl;
 import com.alibaba.nacos.naming.core.ClusterOperatorV2Impl;
@@ -138,12 +139,12 @@ public class ServiceInnerHandler implements ServiceHandler {
     
     @Override
     public Object getServiceList(boolean withInstances, String namespaceId, int pageNo, int pageSize,
-            String serviceName, String groupName, String containedInstance, boolean hasIpCount) throws NacosException {
+            String serviceName, String groupName, boolean hasIpCount) throws NacosException {
         if (withInstances) {
             return catalogServiceV2.pageListServiceDetail(namespaceId, groupName, serviceName, pageNo, pageSize);
         }
         return catalogServiceV2.pageListService(namespaceId, groupName, serviceName, pageNo, pageSize,
-                containedInstance, hasIpCount);
+                StringUtils.EMPTY, hasIpCount);
     }
     
     @Override
