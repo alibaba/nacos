@@ -151,7 +151,6 @@ class ConfigPublishRequestHandlerTest {
         assertEquals(group, reference.get().group);
         assertEquals(tenant, reference.get().tenant);
         assertEquals(timestamp, reference.get().lastModifiedTs);
-        assertFalse(reference.get().isBatch);
         assertFalse(reference.get().isBeta);
         
     }
@@ -216,7 +215,6 @@ class ConfigPublishRequestHandlerTest {
         assertEquals(group, reference.get().group);
         assertEquals(tenant, reference.get().tenant);
         assertEquals(timestamp, reference.get().lastModifiedTs);
-        assertFalse(reference.get().isBatch);
         assertFalse(reference.get().isBeta);
     }
     
@@ -283,47 +281,6 @@ class ConfigPublishRequestHandlerTest {
         Thread.sleep(500L);
         assertTrue(reference.get() == null);
         
-    }
-    
-    @Test
-    void testPublishAggrCheckFail() throws NacosException, InterruptedException {
-        
-        RequestMeta requestMeta = new RequestMeta();
-        String clientIp = "127.0.0.1";
-        requestMeta.setClientIp(clientIp);
-        
-        String dataId = "testPublishAggrCheckFail";
-        String group = "group";
-        String tenant = "tenant";
-        String content = "content";
-        ConfigPublishRequest configPublishRequest = new ConfigPublishRequest();
-        configPublishRequest.setDataId(dataId);
-        configPublishRequest.setGroup(group);
-        configPublishRequest.setTenant(tenant);
-        configPublishRequest.setContent(content);
-        
-        AtomicReference<ConfigDataChangeEvent> reference = new AtomicReference<>();
-        NotifyCenter.registerSubscriber(new Subscriber() {
-            
-            @Override
-            public void onEvent(Event event) {
-                ConfigDataChangeEvent event1 = (ConfigDataChangeEvent) event;
-                if (event1.dataId.equals(dataId)) {
-                    reference.set((ConfigDataChangeEvent) event);
-                }
-            }
-            
-            @Override
-            public Class<? extends Event> subscribeType() {
-                return ConfigDataChangeEvent.class;
-            }
-        });
-        ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
-        
-        assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
-        assertTrue(response.getMessage().contains("is aggr"));
-        Thread.sleep(500L);
-        assertTrue(reference.get() == null);
     }
     
     @Test

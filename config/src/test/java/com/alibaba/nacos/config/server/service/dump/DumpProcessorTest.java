@@ -83,8 +83,8 @@ class DumpProcessorTest {
         
         when(dynamicDataSource.getDataSource()).thenReturn(dataSourceService);
         
-        dumpService = new ExternalDumpService(configInfoPersistService, null, null, null,
-                configInfoGrayPersistService, null, null);
+        dumpService = new ExternalDumpService(configInfoPersistService, null, null,
+                configInfoGrayPersistService, null);
         dumpProcessor = new DumpProcessor(configInfoPersistService, configInfoGrayPersistService);
         Field[] declaredFields = ConfigDiskServiceFactory.class.getDeclaredFields();
         for (Field filed : declaredFields) {
