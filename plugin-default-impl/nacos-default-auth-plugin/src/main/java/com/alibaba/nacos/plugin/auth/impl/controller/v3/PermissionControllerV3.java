@@ -69,7 +69,7 @@ public class PermissionControllerV3 {
      */
     @PostMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.WRITE)
-    public Object createPermission(@RequestParam String role, @RequestParam String resource, @RequestParam String action) {
+    public Result<String> createPermission(@RequestParam String role, @RequestParam String resource, @RequestParam String action) {
         nacosRoleService.addPermission(role, resource, action);
         return Result.success("add permission ok!");
     }
@@ -85,7 +85,7 @@ public class PermissionControllerV3 {
      */
     @DeleteMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.WRITE)
-    public Object deletePermission(@RequestParam String role, @RequestParam String resource,
+    public Result<String> deletePermission(@RequestParam String role, @RequestParam String resource,
             @RequestParam String action) {
         nacosRoleService.deletePermission(role, resource, action);
         return Result.success("delete permission ok!");
