@@ -189,7 +189,7 @@ class UserControllerV3Test {
         when(authConfigs.getNacosAuthSystemType()).thenReturn(AuthSystemTypes.NACOS.name());
         when(iAuthenticationManager.hasGlobalAdminRole()).thenReturn(false);
         
-        Result<ObjectNode> result = (Result<ObjectNode>) userControllerV3.createAdminUser("testAdminPass");
+        Result<User> result = userControllerV3.createAdminUser("testAdminPass");
         
         ArgumentCaptor<String> usernameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> passwordCaptor = ArgumentCaptor.forClass(String.class);
@@ -198,9 +198,9 @@ class UserControllerV3Test {
         
         assertEquals(AuthConstants.DEFAULT_USER, usernameCaptor.getValue());
         
-        ObjectNode data = result.getData();
-        assertEquals(AuthConstants.DEFAULT_USER, data.get(AuthConstants.PARAM_USERNAME).asText());
-        assertEquals("testAdminPass", data.get(AuthConstants.PARAM_PASSWORD).asText());
+        User data = result.getData();
+        assertEquals(AuthConstants.DEFAULT_USER, data.getUsername());
+        assertEquals("testAdminPass", data.getPassword());
         
         assertTrue(passwordCaptor.getValue().startsWith("$2a$10$"));
     }
@@ -210,7 +210,7 @@ class UserControllerV3Test {
         when(authConfigs.getNacosAuthSystemType()).thenReturn(AuthSystemTypes.NACOS.name());
         when(iAuthenticationManager.hasGlobalAdminRole()).thenReturn(true);
         
-        Result<String> result = (Result<String>) userControllerV3.createAdminUser("adminPass");
+        Result<User> result = userControllerV3.createAdminUser("adminPass");
         
         assertEquals(HttpStatus.CONFLICT.value(), result.getCode());
     }

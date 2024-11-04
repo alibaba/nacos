@@ -117,7 +117,7 @@ public class UserControllerV3 {
      */
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
     @PostMapping
-    public Object createUser(@RequestParam String username, @RequestParam String password) {
+    public Result<String> createUser(@RequestParam String username, @RequestParam String password) {
         User user = userDetailsService.getUserFromDatabase(username);
         if (user != null) {
             throw new IllegalArgumentException("user '" + username + "' already exist!");
@@ -130,7 +130,7 @@ public class UserControllerV3 {
      * Create a admin user only not exist admin user can use.
      */
     @PostMapping("/admin")
-    public Object createAdminUser(@RequestParam(required = false) String password) {
+    public Result<User> createAdminUser(@RequestParam(required = false) String password) {
         
         if (StringUtils.isBlank(password)) {
             password = PasswordGeneratorUtil.generateRandomPassword();
@@ -138,19 +138,18 @@ public class UserControllerV3 {
         
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
             if (iAuthenticationManager.hasGlobalAdminRole()) {
-                return Result.failure(HttpStatus.CONFLICT.value(), HttpStatus.CONFLICT.getReasonPhrase(),
-                        "have admin user cannot use it");
+                return Result.failure(HttpStatus.CONFLICT.value(), "have admin user cannot use it.", null);
             }
             String username = AuthConstants.DEFAULT_USER;
             userDetailsService.createUser(username, PasswordEncoderUtil.encode(password));
             roleService.addAdminRole(username);
-            ObjectNode result = JacksonUtils.createEmptyJsonNode();
-            result.put(AuthConstants.PARAM_USERNAME, username);
-            result.put(AuthConstants.PARAM_PASSWORD, password);
+            User result = new User();
+            result.setUsername(username);
+            result.setPassword(password);
             return Result.success(result);
         } else {
-            return Result.failure(HttpStatus.NOT_IMPLEMENTED.value(), HttpStatus.NOT_IMPLEMENTED.getReasonPhrase(),
-                    "not support");
+            return Result.failure(HttpStatus.NOT_IMPLEMENTED.value(),
+                    "Current auth type not supported create admin user.", null);
         }
     }
     
@@ -163,7 +162,7 @@ public class UserControllerV3 {
      */
     @DeleteMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
-    public Object deleteUser(@RequestParam String username) {
+    public Result<String> deleteUser(@RequestParam String username) {
         List<RoleInfo> roleInfoList = roleService.getRoles(username);
         if (roleInfoList != null) {
             for (RoleInfo roleInfo : roleInfoList) {
@@ -189,7 +188,7 @@ public class UserControllerV3 {
      */
     @PutMapping
     @Secured(resource = AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, action = ActionTypes.WRITE)
-    public Object updateUser(@RequestParam String username, @RequestParam String newPassword,
+    public Result<String> updateUser(@RequestParam String username, @RequestParam String newPassword,
             HttpServletResponse response, HttpServletRequest request) throws IOException {
         try {
             if (!hasPermission(username, request)) {
@@ -240,7 +239,6 @@ public class UserControllerV3 {
         // same user
         return user.getUserName().equals(username);
     }
-    
     
     /**
      * Get paged users with the option for accurate or fuzzy search.

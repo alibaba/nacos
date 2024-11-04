@@ -65,7 +65,7 @@ public class RoleControllerV3 {
      */
     @PostMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.WRITE)
-    public Object createRole(@RequestParam String role, @RequestParam String username) {
+    public Result<String> createRole(@RequestParam String role, @RequestParam String username) {
         roleService.addRole(role, username);
         return Result.success("add role ok!");
     }
@@ -79,7 +79,7 @@ public class RoleControllerV3 {
      */
     @DeleteMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.WRITE)
-    public Object deleteRole(@RequestParam String role,
+    public Result<String> deleteRole(@RequestParam String role,
             @RequestParam(name = "username", defaultValue = StringUtils.EMPTY) String username) {
         if (StringUtils.isBlank(username)) {
             roleService.deleteRole(role);
