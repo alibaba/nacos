@@ -54,9 +54,9 @@ CREATE TABLE his_config_info (
                                  gmt_modified timestamp NOT NULL DEFAULT '2010-05-05 00:00:00.000',
                                  src_user varchar(128),
                                  src_ip varchar(50) DEFAULT NULL,
+                                 publish_type varchar(50)  DEFAULT 'formal',
+                                 ext_info CLOB,
                                  op_type char(10) DEFAULT NULL,
-                                 publish_type varchar(128) DEFAULT 'formal',
-                                 ext_info LONG VARCHAR DEFAULT NULL,
                                  encrypted_data_key LONG VARCHAR DEFAULT NULL,
                                  constraint hisconfiginfo_nid_key PRIMARY KEY (nid));
 
@@ -237,14 +237,15 @@ CREATE TABLE permissions (
 /******************************************/
 /*   ipv6 support   */
 /******************************************/
-ALTER TABLE `config_info_tag`
-    MODIFY COLUMN `src_ip` varchar(50) CHARACTER SET utf8 COLLATE utf8_bin NULL DEFAULT NULL COMMENT 'source ip' AFTER `src_user`;
 
-ALTER TABLE `his_config_info`
-    MODIFY COLUMN `src_ip` varchar(50) CHARACTER SET utf8 COLLATE utf8_bin NULL DEFAULT NULL AFTER `src_user`;
+ALTER TABLE config_info_tag ADD src_ip varchar(50)    DEFAULT NULL;
 
-ALTER TABLE `config_info`
-    MODIFY COLUMN `src_ip` varchar(50) CHARACTER SET utf8 COLLATE utf8_bin NULL DEFAULT NULL COMMENT 'source ip' AFTER `src_user`;
+ALTER TABLE his_config_info ADD  src_ip varchar(50)  DEFAULT NULL  ;
 
-ALTER TABLE `config_info_beta`
-    MODIFY COLUMN `src_ip` varchar(50) CHARACTER SET utf8 COLLATE utf8_bin NULL DEFAULT NULL COMMENT 'source ip' AFTER `src_user`;
+ALTER TABLE config_info  ADD src_ip varchar(50)  DEFAULT NULL ;
+
+ALTER TABLE config_info_beta ADD  src_ip varchar(50)  DEFAULT NULL  ;
+
+
+ALTER TABLE his_config_info ADD publish_type varchar(50)  DEFAULT 'formal';
+ALTER TABLE his_config_info ADD ext_info CLOB   DEFAULT NULL ;
