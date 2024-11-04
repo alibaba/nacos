@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.console.controller.v3;
 
+import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
@@ -26,13 +27,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
-
 /**
  * Controller class for handling health check operations.
  *
  * @author zhangyukun on:2024/8/27
  */
+@NacosApi
 @RestController()
 @RequestMapping("/v3/console/health")
 @ExtractorManager.Extractor(httpExtractor = ConsoleDefaultHttpParamExtractor.class)
@@ -62,7 +62,7 @@ public class ConsoleHealthController {
      * ready.
      */
     @GetMapping("/readiness")
-    public Result<String> readiness(HttpServletRequest request) throws NacosException {
+    public Result<String> readiness() throws NacosException {
         return healthProxy.checkReadiness();
     }
     

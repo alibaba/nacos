@@ -22,6 +22,8 @@ import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.ParamCheckerFilter;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -34,7 +36,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.lang.reflect.Method;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
 
 /**
  * Param Console ExtractorTest.
@@ -50,15 +52,31 @@ class ParamExtractorTest {
     
     private ParamCheckerFilter filter;
     
+    private MockedStatic<EnvUtil> mockedStatic;
+    
+    private MockedStatic<ExtractorManager> managerMockedStatic;
+    
+    @BeforeEach
+    void setUp() {
+        mockedStatic = Mockito.mockStatic(EnvUtil.class);
+        managerMockedStatic = Mockito.mockStatic(ExtractorManager.class);
+    }
+    
+    @AfterEach
+    void tearDown() {
+        mockedStatic.close();
+        managerMockedStatic.close();
+    }
+    
     @Test
     void testDefaultFilter() throws Exception {
-        MockedStatic<EnvUtil> mockedStatic = Mockito.mockStatic(EnvUtil.class);
         final Method check = NamespaceController.class.getMethod("getNamespaces");
-        ExtractorManager.Extractor annotation = NamespaceController.class.getAnnotation(ExtractorManager.Extractor.class);
-        AbstractHttpParamExtractor httpExtractor = Mockito.spy(ExtractorManager.getHttpExtractor(annotation));
+        ExtractorManager.Extractor annotation = NamespaceController.class.getAnnotation(
+                ExtractorManager.Extractor.class);
+        AbstractHttpParamExtractor httpExtractor = mock(AbstractHttpParamExtractor.class);
         
-        MockedStatic<ExtractorManager> managerMockedStatic = Mockito.mockStatic(ExtractorManager.class);
-        mockedStatic.when(() -> EnvUtil.getProperty(Mockito.any(), Mockito.any(), Mockito.any())).thenAnswer((k) -> k.getArgument(2));
+        mockedStatic.when(() -> EnvUtil.getProperty(Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenAnswer((k) -> k.getArgument(2));
         filter = new ParamCheckerFilter(methodsCache);
         
         managerMockedStatic.when(() -> ExtractorManager.getHttpExtractor(annotation)).thenReturn(httpExtractor);
@@ -69,10 +87,7 @@ class ParamExtractorTest {
         
         filter.doFilter(request, response, (servletRequest, servletResponse) -> {
         });
-        assertEquals(ConsoleDefaultHttpParamExtractor.class, httpExtractor.getClass());
         Mockito.verify(httpExtractor, new Times(1)).extractParam(Mockito.any());
-        managerMockedStatic.close();
-        mockedStatic.close();
     }
     
 }

@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.console.controller.v3;
 
+import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.model.v2.SupportedLanguage;
 import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
@@ -35,6 +36,7 @@ import java.util.Map;
  *
  * @author zhangyukun on:2024/8/27
  */
+@NacosApi
 @RestController
 @RequestMapping("/v3/console/server")
 @ExtractorManager.Extractor(httpExtractor = ConsoleDefaultHttpParamExtractor.class)

@@ -120,7 +120,7 @@ class HistoryRollback extends React.Component {
       beforeSend() {
         self.openLoading();
       },
-      url: `v3/console/cs/history/list?dataId=${this.state.dataId}&group=${this.state.group}&&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
+      url: `v3/console/cs/history/list?dataId=${this.state.dataId}&groupName=${this.state.group}&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
       success(res) {
         if (res != null) {
           const data = res.data;
@@ -242,7 +242,7 @@ class HistoryRollback extends React.Component {
       const self = this;
       this.namespaceId = tenant;
       this.serverId = tenant;
-      const url = `v3/console/cs/config?dataId=${dataId}&group=${group}`;
+      const url = `v3/console/cs/config?dataId=${dataId}&groupName=${group}`;
       request({
         url,
         beforeSend() {
@@ -272,7 +272,7 @@ class HistoryRollback extends React.Component {
       const { locale = {} } = this.props;
       const self = this;
       request({
-        url: `v3/console/cs/history?dataId=${dataId}&group=${group}&nid=${nid}`,
+        url: `v3/console/cs/history?dataId=${dataId}&groupName=${group}&nid=${nid}`,
         success(result) {
           if (result != null) {
             resolve(result.data);

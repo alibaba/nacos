@@ -20,10 +20,14 @@ package com.alibaba.nacos.console.controller.v3.naming;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.console.proxy.naming.ServiceProxy;
+import com.alibaba.nacos.core.model.form.AggregationForm;
+import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.model.form.ServiceForm;
+import com.alibaba.nacos.naming.model.form.ServiceListForm;
+import com.alibaba.nacos.naming.model.form.UpdateClusterForm;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,13 +39,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.omg.CORBA.ServiceDetail;
-import org.springframework.mock.web.MockHttpServletRequest;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -49,7 +53,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
 
 /**
  * ConsoleServiceControllerTest.
@@ -96,7 +99,11 @@ public class ConsoleServiceControllerTest {
     
     @Test
     void testDeleteService() throws Exception {
-        Result<String> actual = consoleServiceController.deleteService("testNamespace", "testService", "testGroup");
+        ServiceForm serviceForm = new ServiceForm();
+        serviceForm.setNamespaceId("testNamespace");
+        serviceForm.setServiceName("testService");
+        serviceForm.setGroupName("testGroup");
+        Result<String> actual = consoleServiceController.deleteService(serviceForm);
         
         verify(serviceProxy).deleteService(eq("testNamespace"), eq("testService"), eq("testGroup"));
         
@@ -133,9 +140,11 @@ public class ConsoleServiceControllerTest {
         
         when(serviceProxy.getServiceDetail(any(String.class), any(String.class), any(String.class))).thenReturn(
                 serviceDetail);
-        
-        Result<ServiceDetail> actual = (Result<ServiceDetail>) consoleServiceController.getServiceDetail(
-                "testNamespace", "testService", "testGroup");
+        ServiceForm serviceForm = new ServiceForm();
+        serviceForm.setServiceName("testService");
+        serviceForm.setNamespaceId("testNamespace");
+        serviceForm.setGroupName("testGroup");
+        Result<ServiceDetail> actual = (Result<ServiceDetail>) consoleServiceController.getServiceDetail(serviceForm);
         
         verify(serviceProxy).getServiceDetail(any(String.class), any(String.class), any(String.class));
         
@@ -161,18 +170,19 @@ public class ConsoleServiceControllerTest {
         ObjectNode subscribers = new ObjectMapper().createObjectNode();
         subscribers.put("subscriber", "testSubscriber");
         
-        when(serviceProxy.getSubscribers(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyBoolean())).thenReturn(
-                subscribers);
+        when(serviceProxy.getSubscribers(anyInt(), anyInt(), anyString(), anyString(), anyString(),
+                anyBoolean())).thenReturn(subscribers);
         
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.addParameter("pageNo", "1");
-        request.addParameter("pageSize", "10");
-        request.addParameter("namespaceId", "testNamespace");
-        request.addParameter("serviceName", "testService");
-        request.addParameter("groupName", "testGroup");
-        request.addParameter("aggregation", "true");
+        PageForm pageForm = new PageForm();
+        pageForm.setPageNo(1);
+        pageForm.setPageSize(10);
+        ServiceForm serviceForm = new ServiceForm();
+        serviceForm.setNamespaceId("testNamespace");
+        serviceForm.setServiceName("testService");
+        serviceForm.setGroupName("testGroup");
+        AggregationForm aggregationForm = new AggregationForm();
         
-        Result<ObjectNode> actual = consoleServiceController.subscribers(request);
+        Result<ObjectNode> actual = consoleServiceController.subscribers(serviceForm, pageForm, aggregationForm);
         
         verify(serviceProxy).getSubscribers(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyBoolean());
         
@@ -183,34 +193,46 @@ public class ConsoleServiceControllerTest {
     @Test
     void testGetServiceList() throws Exception {
         when(serviceProxy.getServiceList(anyBoolean(), anyString(), anyInt(), anyInt(), anyString(), anyString(),
-                anyString(), anyBoolean())).thenReturn(Collections.singletonList(new ServiceDetail()));
-        
-        Result<List<ServiceDetail>> actual = (Result<List<ServiceDetail>>) consoleServiceController.getServiceList(true,
-                "testNamespace", 1, 10, "testService", "testGroup", "instance", true);
+                anyBoolean())).thenReturn(Collections.singletonList(new ServiceDetail()));
+        PageForm pageForm = new PageForm();
+        pageForm.setPageNo(1);
+        pageForm.setPageSize(10);
+        ServiceListForm serviceForm = new ServiceListForm();
+        serviceForm.setNamespaceId("testNamespace");
+        serviceForm.setServiceNameParam("testService");
+        serviceForm.setGroupNameParam("testGroup");
+        Result<Object> actual = consoleServiceController.getServiceList(serviceForm, pageForm);
         
         verify(serviceProxy).getServiceList(anyBoolean(), anyString(), anyInt(), anyInt(), anyString(), anyString(),
-                anyString(), anyBoolean());
+                anyBoolean());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
-        assertEquals(1, actual.getData().size());
+        assertInstanceOf(List.class, actual.getData());
+        assertEquals(1, ((List<?>) actual.getData()).size());
     }
     
     @Test
     void testUpdateCluster() throws Exception {
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.addParameter("namespaceId", "testNamespace");
-        request.addParameter("serviceName", "testService");
-        request.addParameter("clusterName", "testCluster");
-        request.addParameter("checkPort", "8080");
-        request.addParameter("useInstancePort4Check", "true");
-        request.addParameter("healthChecker", "{\"type\":\"TCP\"}");
-        request.addParameter("metadata", "{\"key\":\"value\"}");
+        UpdateClusterForm updateClusterForm = getUpdateClusterForm();
         
-        Result<String> actual = consoleServiceController.updateCluster(request);
+        Result<String> actual = consoleServiceController.updateCluster(updateClusterForm);
         
         verify(serviceProxy).updateClusterMetadata(anyString(), anyString(), anyString(), any(ClusterMetadata.class));
         
         assertEquals("ok", actual.getData());
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
+    }
+    
+    private static UpdateClusterForm getUpdateClusterForm() {
+        UpdateClusterForm updateClusterForm = new UpdateClusterForm();
+        updateClusterForm.setNamespaceId("testNamespace");
+        updateClusterForm.setGroupName("testGroup");
+        updateClusterForm.setClusterName("testCluster");
+        updateClusterForm.setServiceName("testService");
+        updateClusterForm.setCheckPort(8080);
+        updateClusterForm.setUseInstancePort4Check(true);
+        updateClusterForm.setHealthChecker("{\"type\":\"TCP\"}");
+        updateClusterForm.setMetadata("{\"key\":\"value\"}");
+        return updateClusterForm;
     }
 }

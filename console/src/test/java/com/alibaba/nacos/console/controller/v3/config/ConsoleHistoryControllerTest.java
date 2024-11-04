@@ -75,7 +75,7 @@ public class ConsoleHistoryControllerTest {
         when(historyProxy.getConfigHistoryInfo("testDataId", "testGroup", "", 1L)).thenReturn(configHistoryInfo);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/history")
-                .param("dataId", "testDataId").param("group", "testGroup").param("nid", "1");
+                .param("dataId", "testDataId").param("groupName", "testGroup").param("nid", "1");
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
@@ -103,7 +103,7 @@ public class ConsoleHistoryControllerTest {
         when(historyProxy.listConfigHistory("testDataId", "testGroup", "", 1, 100)).thenReturn(page);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/history/list")
-                .param("dataId", "testDataId").param("group", "testGroup").param("pageNo", "1")
+                .param("dataId", "testDataId").param("groupName", "testGroup").param("pageNo", "1")
                 .param("pageSize", "100");
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
@@ -129,7 +129,7 @@ public class ConsoleHistoryControllerTest {
                 configHistoryInfo);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/history/previous")
-                .param("dataId", "testDataId").param("group", "testGroup").param("id", "1");
+                .param("dataId", "testDataId").param("groupName", "testGroup").param("id", "1");
         
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();

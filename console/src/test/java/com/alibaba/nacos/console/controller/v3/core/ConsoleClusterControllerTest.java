@@ -23,6 +23,7 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -58,14 +59,21 @@ public class ConsoleClusterControllerTest {
     @InjectMocks
     private ConsoleClusterController consoleClusterController;
     
+    private MockedStatic<EnvUtil> mockedEnvUtil;
+    
     private MockMvc mockMvc;
     
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(consoleClusterController).build();
         
-        MockedStatic<EnvUtil> mockedEnvUtil = mockStatic(EnvUtil.class);
+        mockedEnvUtil = mockStatic(EnvUtil.class);
         mockedEnvUtil.when(() -> EnvUtil.getProperty(anyString())).thenReturn("default_value");
+    }
+    
+    @AfterEach
+    void tearDown() {
+        mockedEnvUtil.close();
     }
     
     @Test

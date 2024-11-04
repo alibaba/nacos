@@ -30,7 +30,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -112,15 +111,11 @@ public class ConsoleNamespaceControllerTest {
     
     @Test
     void testUpdateNamespace() throws Exception {
-        String namespaceId = "testNamespace";
-        String namespaceName = "testNamespaceName";
-        String namespaceDesc = "testDesc";
-        
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        
         when(namespaceProxy.updateNamespace(any(NamespaceForm.class))).thenReturn(true);
         
-        Result<Boolean> result = consoleNamespaceController.updateNamespace(namespaceId, namespaceName, namespaceDesc);
+        NamespaceForm namespaceForm = new NamespaceForm("testNamespace", "testNamespaceName", "testDesc");
+        
+        Result<Boolean> result = consoleNamespaceController.updateNamespace(namespaceForm);
         
         verify(namespaceProxy).updateNamespace(any(NamespaceForm.class));
         

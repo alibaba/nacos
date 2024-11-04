@@ -284,13 +284,13 @@ class ConfigurationManagement extends React.Component {
     this.pageSize = prePageSize ? prePageSize : this.state.pageSize;
     const params = {
       dataId: this.dataId,
-      group: this.group,
+      groupName: this.group,
       appName: this.appName,
-      config_tags: this.state.config_tags.join(','),
+      configTags: this.state.config_tags.join(','),
       pageNo: prePageNo ? prePageNo : pageNo,
       pageSize: prePageSize ? prePageSize : this.state.pageSize,
       namespaceId: this.tenant,
-      types: this.state.types.join(','),
+      type: this.state.types.join(','),
     };
     setParams('pageSize', null);
     setParams('pageNo', null);
@@ -299,9 +299,9 @@ class ConfigurationManagement extends React.Component {
     let props = null;
     if (this.state.config_detail && this.state.config_detail !== '') {
       if (this.state.defaultFuzzySearch) {
-        params.config_detail = '*' + this.state.config_detail + '*';
+        params.configDetail = '*' + this.state.config_detail + '*';
       } else {
-        params.config_detail = this.state.config_detail;
+        params.configDetail = this.state.config_detail;
       }
       props = this.props.getConfigsV2(params);
     } else {
@@ -380,7 +380,7 @@ class ConfigurationManagement extends React.Component {
         </div>
       ),
       onOk: () => {
-        const url = `v3/console/cs/config?dataId=${record.dataId}&group=${record.group}`;
+        const url = `v3/console/cs/config?dataId=${record.dataId}&groupName=${record.group}`;
         request({
           url,
           type: 'delete',
@@ -616,7 +616,7 @@ class ConfigurationManagement extends React.Component {
     const { accessToken = '', username = '' } = JSON.parse(localStorage.token || '{}');
     openUri('v3/console/cs/config/export', {
       namespaceId: getParams('namespace'),
-      group,
+      groupName: group,
       appName,
       dataId,
       ids: '',
@@ -630,7 +630,7 @@ class ConfigurationManagement extends React.Component {
     const { accessToken = '', username = '' } = JSON.parse(localStorage.token || '{}');
     openUri('v3/console/cs/config/export2', {
       namespaceId: getParams('namespace'),
-      group,
+      groupName: group,
       appName,
       dataId,
       ids: '',
@@ -654,7 +654,7 @@ class ConfigurationManagement extends React.Component {
     if (newVersion) {
       this.openUri('v3/console/cs/config/export2', {
         namespaceId: getParams('namespace'),
-        group: '',
+        groupName: '',
         appName: '',
         ids: ids.join(','),
         accessToken,
@@ -663,7 +663,7 @@ class ConfigurationManagement extends React.Component {
     } else {
       this.openUri('v3/console/cs/config/export', {
         namespaceId: getParams('namespace'),
-        group: '',
+        groupName: '',
         appName: '',
         ids: ids.join(','),
         accessToken,
@@ -1115,7 +1115,7 @@ class ConfigurationManagement extends React.Component {
       accept: 'application/zip',
       action: `v3/console/cs/config/import?namespaceId=${getParams(
         'namespace'
-      )}&accessToken=${accessToken}&username=${username}&tenant=${getParams('namespace')}`,
+      )}&accessToken=${accessToken}&username=${username}`,
       headers: Object.assign({}, {}, { accessToken }),
       data: {
         policy: self.field.getValue('sameConfigPolicy'),

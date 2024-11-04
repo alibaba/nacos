@@ -17,13 +17,12 @@
 
 package com.alibaba.nacos.console.controller.v3.core;
 
+import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.enums.ApiType;
-import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.console.proxy.core.ClusterProxy;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
@@ -39,9 +38,9 @@ import java.util.Collection;
  *
  * @author zhangyukun on:2024/8/16
  */
+@NacosApi
 @RestController
 @RequestMapping("/v3/console/core/cluster")
-@ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
 public class ConsoleClusterController {
     
     private final ClusterProxy clusterProxy;

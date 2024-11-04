@@ -90,19 +90,18 @@ public interface ServiceHandler {
     /**
      * List service detail information.
      *
-     * @param withInstances     whether to include instances
-     * @param namespaceId       the namespace ID
-     * @param pageNo            the page number
-     * @param pageSize          the size of the page
-     * @param serviceName       the service name
-     * @param groupName         the group name
-     * @param containedInstance instance name pattern which will be contained in detail
-     * @param hasIpCount        whether to filter services with empty instances
+     * @param withInstances whether to include instances
+     * @param namespaceId   the namespace ID
+     * @param pageNo        the page number
+     * @param pageSize      the size of the page
+     * @param serviceName   the service name
+     * @param groupName     the group name
+     * @param hasIpCount    whether to filter services with empty instances
      * @return service detail information
      * @throws NacosException if an error occurs during fetching service details
      */
     Object getServiceList(boolean withInstances, String namespaceId, int pageNo, int pageSize, String serviceName,
-            String groupName, String containedInstance, boolean hasIpCount) throws NacosException;
+            String groupName, boolean hasIpCount) throws NacosException;
     
     /**
      * Get the detail of a specific service.

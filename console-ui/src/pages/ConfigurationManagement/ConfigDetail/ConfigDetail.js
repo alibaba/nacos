@@ -150,7 +150,7 @@ class ConfigDetail extends React.Component {
     this.namespaceId = getParams('namespace') || '';
     this.edasAppName = getParams('edasAppName') || '';
     this.inApp = this.edasAppName;
-    const url = `v3/console/cs/config?&dataId=${this.dataId}&group=${this.group}`;
+    const url = `v3/console/cs/config?&dataId=${this.dataId}&groupName=${this.group}`;
     request({
       url,
       beforeSend() {
@@ -226,7 +226,7 @@ class ConfigDetail extends React.Component {
     let self = this;
     const { locale = {} } = this.props;
     let leftvalue = this.monacoEditor.getValue();
-    let url = `v3/console/cs/history/previous?id=${this.valueMap.normal.id}&dataId=${this.dataId}&group=${this.group}`;
+    let url = `v3/console/cs/history/previous?id=${this.valueMap.normal.id}&dataId=${this.dataId}&groupName=${this.group}`;
     request({
       url,
       beforeSend() {
@@ -254,7 +254,7 @@ class ConfigDetail extends React.Component {
     let leftvalue = this.monacoEditor.getValue();
     const params = {
       // show: 'all',
-      group,
+      groupName: group,
       dataId,
       namespaceId,
     };
@@ -265,7 +265,7 @@ class ConfigDetail extends React.Component {
         rightvalue = rightvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
         self.compareEditorDialog.current.getInstance().openDialog(leftvalue, rightvalue);
       } else {
-        Dialog.alert({ title: locale.error, content: locale.configNotFind  });
+        Dialog.alert({ title: locale.error, content: locale.configNotFind });
       }
     });
   };

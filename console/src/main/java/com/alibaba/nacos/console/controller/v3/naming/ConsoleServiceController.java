@@ -18,46 +18,42 @@
 package com.alibaba.nacos.console.controller.v3.naming;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
-import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckerFactory;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.enums.ApiType;
-import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.common.utils.NumberUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
 import com.alibaba.nacos.console.proxy.naming.ServiceProxy;
 import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.model.form.AggregationForm;
+import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
-import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.ServiceForm;
+import com.alibaba.nacos.naming.model.form.ServiceListForm;
+import com.alibaba.nacos.naming.model.form.UpdateClusterForm;
+import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
 import java.net.URLDecoder;
 import java.util.List;
 import java.util.Map;
@@ -72,7 +68,7 @@ import java.util.Optional;
 @NacosApi
 @RestController
 @RequestMapping("/v3/console/ns/service")
-@ExtractorManager.Extractor(httpExtractor = ConsoleDefaultHttpParamExtractor.class)
+@ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)
 public class ConsoleServiceController {
     
     private final ServiceProxy serviceProxy;
@@ -108,13 +104,10 @@ public class ConsoleServiceController {
     @DeleteMapping()
     @TpsControl(pointName = "NamingServiceDeregister", name = "HttpNamingServiceDeregister")
     @Secured(action = ActionTypes.WRITE, apiType = ApiType.CONSOLE_API)
-    public Result<String> deleteService(
-            @RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam("serviceName") String serviceName,
-            @RequestParam(value = "groupName", defaultValue = Constants.DEFAULT_GROUP) String groupName)
-            throws Exception {
-        checkServiceName(serviceName);
-        serviceProxy.deleteService(namespaceId, serviceName, groupName);
+    public Result<String> deleteService(ServiceForm serviceForm) throws Exception {
+        serviceForm.validate();
+        serviceProxy.deleteService(serviceForm.getNamespaceId(), serviceForm.getServiceName(),
+                serviceForm.getGroupName());
         return Result.success("ok");
     }
     
@@ -152,25 +145,90 @@ public class ConsoleServiceController {
     /**
      * get subscriber list.
      *
-     * @param request http request
-     * @return Jackson object node
+     * @param serviceForm service form data
+     * @param pageForm   page form data
+     * @param aggregationForm whether aggregation form data
+     * @return subscribes result data.
+     * @throws Exception any exception during get subscriber list.
      */
     @GetMapping("/subscribers")
     @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)
-    public Result<ObjectNode> subscribers(HttpServletRequest request) throws Exception {
-        
-        int pageNo = NumberUtils.toInt(WebUtils.optional(request, "pageNo", "1"));
-        int pageSize = NumberUtils.toInt(WebUtils.optional(request, "pageSize", "1000"));
-        
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        String groupName = WebUtils.optional(request, CommonParams.GROUP_NAME, Constants.DEFAULT_GROUP);
-        
-        boolean aggregation = Boolean.parseBoolean(
-                WebUtils.optional(request, "aggregation", String.valueOf(Boolean.TRUE)));
+    public Result<ObjectNode> subscribers(ServiceForm serviceForm, PageForm pageForm, AggregationForm aggregationForm)
+            throws Exception {
+        serviceForm.validate();
+        pageForm.validate();
+        int pageNo = pageForm.getPageNo();
+        int pageSize = pageForm.getPageSize();
+        String namespaceId = serviceForm.getNamespaceId();
+        String serviceName = serviceForm.getServiceName();
+        String groupName = serviceForm.getGroupName();
+        boolean aggregation = aggregationForm.isAggregation();
         
         return Result.success(
                 serviceProxy.getSubscribers(pageNo, pageSize, namespaceId, serviceName, groupName, aggregation));
+    }
+    
+    /**
+     * List service detail information.
+     *
+     * @param serviceListForm service list form
+     * @param pageForm page form
+     * @return list service detail, depend on withInstances parameters, return ServiceDetailInfo or ServiceView.
+     */
+    @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)
+    @GetMapping("/list")
+    public Result<Object> getServiceList(ServiceListForm serviceListForm, PageForm pageForm) throws NacosException {
+        serviceListForm.validate();
+        pageForm.validate();
+        String namespaceId = serviceListForm.getNamespaceId();
+        String serviceName = serviceListForm.getServiceNameParam();
+        String groupName = serviceListForm.getGroupNameParam();
+        boolean hasIpCount = serviceListForm.isHasIpCount();
+        boolean withInstances = serviceListForm.isWithInstances();
+        return Result.success(
+                serviceProxy.getServiceList(withInstances, namespaceId, pageForm.getPageNo(), pageForm.getPageSize(),
+                        serviceName, groupName, hasIpCount));
+    }
+    
+    /**
+     * Get service detail.
+     *
+     * @param serviceForm service form data
+     * @return service detail information
+     * @throws NacosException nacos exception
+     */
+    @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)
+    @GetMapping()
+    public Object getServiceDetail(ServiceForm serviceForm) throws NacosException {
+        serviceForm.validate();
+        return Result.success(serviceProxy.getServiceDetail(serviceForm.getNamespaceId(), serviceForm.getServiceName(),
+                serviceForm.getGroupName()));
+    }
+    
+    /**
+     * Update cluster.
+     *
+     * @param updateClusterForm update cluster form.
+     * @return 'ok' if success
+     * @throws Exception if failed
+     */
+    @PutMapping("/cluster")
+    @Secured(action = ActionTypes.WRITE, apiType = ApiType.CONSOLE_API)
+    public Result<String> updateCluster(UpdateClusterForm updateClusterForm) throws Exception {
+        updateClusterForm.validate();
+        final String namespaceId = updateClusterForm.getNamespaceId();
+        final String clusterName = updateClusterForm.getClusterName();
+        final String serviceName = updateClusterForm.getServiceName();
+        ClusterMetadata clusterMetadata = new ClusterMetadata();
+        clusterMetadata.setHealthyCheckPort(updateClusterForm.getCheckPort());
+        clusterMetadata.setUseInstancePortForCheck(updateClusterForm.isUseInstancePort4Check());
+        AbstractHealthChecker healthChecker = HealthCheckerFactory.deserialize(updateClusterForm.getHealthChecker());
+        clusterMetadata.setHealthChecker(healthChecker);
+        clusterMetadata.setHealthyCheckType(healthChecker.getType());
+        clusterMetadata.setExtendData(UtilsAndCommons.parseMetadata(updateClusterForm.getMetadata()));
+        
+        serviceProxy.updateClusterMetadata(namespaceId, serviceName, clusterName, clusterMetadata);
+        return Result.success("ok");
     }
     
     private Selector parseSelector(String selectorJsonString) throws Exception {
@@ -190,87 +248,4 @@ public class ConsoleServiceController {
         }
         return selector;
     }
-    
-    
-    /**
-     * List service detail information.
-     *
-     * @param withInstances     whether return instances
-     * @param namespaceId       namespace id
-     * @param pageNo            number of page
-     * @param pageSize          size of each page
-     * @param serviceName       service name
-     * @param groupName         group name
-     * @param containedInstance instance name pattern which will be contained in detail
-     * @param hasIpCount        whether filter services with empty instance
-     * @return list service detail
-     */
-    @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)
-    @GetMapping("/list")
-    public Object getServiceList(@RequestParam(required = false) boolean withInstances,
-            @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam(required = false) int pageNo, @RequestParam(required = false) int pageSize,
-            @RequestParam(name = "serviceNameParam", defaultValue = StringUtils.EMPTY) String serviceName,
-            @RequestParam(name = "groupNameParam", defaultValue = StringUtils.EMPTY) String groupName,
-            @RequestParam(name = "instance", defaultValue = StringUtils.EMPTY) String containedInstance,
-            @RequestParam(required = false) boolean hasIpCount) throws NacosException {
-        return Result.success(
-                serviceProxy.getServiceList(withInstances, namespaceId, pageNo, pageSize, serviceName, groupName,
-                        containedInstance, hasIpCount));
-    }
-    
-    /**
-     * Get service detail.
-     *
-     * @param namespaceId namespace id
-     * @param serviceName service name
-     * @return service detail information
-     * @throws NacosException nacos exception
-     */
-    @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)
-    @GetMapping()
-    public Object getServiceDetail(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam("serviceName") String serviceName,
-            @RequestParam(value = "groupName", defaultValue = Constants.DEFAULT_GROUP) String groupName)
-            throws NacosException {
-        checkServiceName(serviceName);
-        return Result.success(serviceProxy.getServiceDetail(namespaceId, serviceName, groupName));
-    }
-    
-    /**
-     * Update cluster.
-     *
-     * @param request http request
-     * @return 'ok' if success
-     * @throws Exception if failed
-     */
-    @PutMapping("/cluster")
-    @Secured(action = ActionTypes.WRITE, apiType = ApiType.CONSOLE_API)
-    public Result<String> updateCluster(HttpServletRequest request) throws Exception {
-        final String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-                Constants.DEFAULT_NAMESPACE_ID);
-        final String clusterName = WebUtils.required(request, CommonParams.CLUSTER_NAME);
-        final String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        ClusterMetadata clusterMetadata = new ClusterMetadata();
-        clusterMetadata.setHealthyCheckPort(NumberUtils.toInt(WebUtils.required(request, "checkPort")));
-        clusterMetadata.setUseInstancePortForCheck(
-                ConvertUtils.toBoolean(WebUtils.required(request, "useInstancePort4Check")));
-        AbstractHealthChecker healthChecker = HealthCheckerFactory.deserialize(
-                WebUtils.required(request, "healthChecker"));
-        clusterMetadata.setHealthChecker(healthChecker);
-        clusterMetadata.setHealthyCheckType(healthChecker.getType());
-        clusterMetadata.setExtendData(
-                UtilsAndCommons.parseMetadata(WebUtils.optional(request, "metadata", StringUtils.EMPTY)));
-        
-        serviceProxy.updateClusterMetadata(namespaceId, serviceName, clusterName, clusterMetadata);
-        return Result.success("ok");
-    }
-    
-    private void checkServiceName(String serviceName) throws NacosApiException {
-        if (StringUtils.isBlank(serviceName)) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'serviceName' type String is not present");
-        }
-    }
-    
 }

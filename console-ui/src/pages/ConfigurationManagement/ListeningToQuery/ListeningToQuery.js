@@ -101,7 +101,7 @@ class ListeningToQuery extends React.Component {
       const dataId = this.getValue('dataId');
       const group = this.getValue('group');
       if (!dataId || !group) return false;
-      queryUrl = `v3/console/cs/config/listener?dataId=${dataId}&group=${group}`;
+      queryUrl = `v3/console/cs/config/listener?dataId=${dataId}&groupName=${group}`;
     }
     request({
       url: queryUrl,
@@ -110,7 +110,7 @@ class ListeningToQuery extends React.Component {
       },
       success(data) {
         const res = data.data;
-        if (res.collectStatus === 200)  {
+        if (res.collectStatus === 200) {
           const dataSoureTmp = [];
           const status = res.lisentersGroupkeyStatus;
           for (const key in status) {

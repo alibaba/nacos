@@ -17,17 +17,18 @@
 
 package com.alibaba.nacos.console.controller.v3.config;
 
+import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.enums.ApiType;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
+import com.alibaba.nacos.config.server.model.form.ConfigFormV3;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
-import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.console.proxy.config.HistoryProxy;
+import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
@@ -45,13 +46,14 @@ import java.util.List;
  *
  * @author zhangyukun on:2024/8/16
  */
+@NacosApi
 @RestController
 @RequestMapping("/v3/console/cs/history")
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
 public class ConsoleHistoryController {
     
     private final HistoryProxy historyProxy;
-
+    
     @Autowired
     public ConsoleHistoryController(HistoryProxy historyProxy) {
         this.historyProxy = historyProxy;
@@ -61,76 +63,59 @@ public class ConsoleHistoryController {
      * Query the detailed configuration history information. notes:
      *
      * @param nid         history_config_info nid
-     * @param dataId      dataId
-     * @param group       groupId
-     * @param namespaceId namespaceId
+     * @param configForm  config form
      * @return history config info
      */
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
-    public Result<ConfigHistoryInfo> getConfigHistoryInfo(@RequestParam("dataId") String dataId,
-            @RequestParam("group") String group,
-            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
-            @RequestParam("nid") Long nid) throws NacosException {
-        // check namespaceId
-        ParamUtils.checkTenantV2(namespaceId);
-        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
-        // check params
-        ParamUtils.checkParam(dataId, group, "datumId", "content");
+    public Result<ConfigHistoryInfo> getConfigHistoryInfo(ConfigFormV3 configForm, @RequestParam("nid") Long nid)
+            throws NacosException {
+        configForm.validate();
+        String dataId = configForm.getDataId();
+        String groupName = configForm.getGroupName();
+        String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
         
-        return Result.success(historyProxy.getConfigHistoryInfo(dataId, group, namespaceId, nid));
+        return Result.success(historyProxy.getConfigHistoryInfo(dataId, groupName, namespaceId, nid));
     }
-
+    
     /**
      * Query the list history config. notes:
      *
-     * @param dataId      dataId string value [required].
-     * @param group       group string value [required].
-     * @param namespaceId namespaceId.
-     * @param pageNo      pageNo integer value.
-     * @param pageSize    pageSize integer value.
+     * @param configForm  config form
+     * @param pageForm    page form
      * @return the page of history config.
      */
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
-    public Result<Page<ConfigHistoryInfo>> listConfigHistory(@RequestParam("dataId") String dataId,
-            @RequestParam("group") String group,
-            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
-            @RequestParam(value = "pageNo", required = false, defaultValue = "1") Integer pageNo,
-            @RequestParam(value = "pageSize", required = false, defaultValue = "100") Integer pageSize)
+    public Result<Page<ConfigHistoryInfo>> listConfigHistory(ConfigFormV3 configForm, PageForm pageForm)
             throws NacosException {
-        pageSize = Math.min(500, pageSize);
-        // check namespaceId
-        ParamUtils.checkTenantV2(namespaceId);
-        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
-        // check params
-        ParamUtils.checkParam(dataId, group, "datumId", "content");
-    
-        return Result.success(historyProxy.listConfigHistory(dataId, group, namespaceId, pageNo, pageSize));
+        configForm.validate();
+        pageForm.validate();
+        int pageSize = Math.min(500, pageForm.getPageSize());
+        int pageNo = pageForm.getPageNo();
+        String dataId = configForm.getDataId();
+        String groupName = configForm.getGroupName();
+        String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
+        
+        return Result.success(historyProxy.listConfigHistory(dataId, groupName, namespaceId, pageNo, pageSize));
     }
     
     /**
      * Query previous config history information. notes:
      *
      * @param id          config_info id
-     * @param dataId      dataId
-     * @param group       groupId
-     * @param namespaceId namespaceId
+     * @param configForm  config form
      * @return history config info
      */
     @GetMapping(value = "/previous")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
-    public Result<ConfigHistoryInfo> getPreviousConfigHistoryInfo(@RequestParam("dataId") String dataId,
-            @RequestParam("group") String group,
-            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
-            @RequestParam("id") Long id) throws NacosException {
-        // check namespaceId
-        ParamUtils.checkTenantV2(namespaceId);
-        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
-        // check params
-        ParamUtils.checkParam(dataId, group, "datumId", "content");
-        
-        return Result.success(historyProxy.getPreviousConfigHistoryInfo(dataId, group, namespaceId, id));
+    public Result<ConfigHistoryInfo> getPreviousConfigHistoryInfo(ConfigFormV3 configForm, @RequestParam("id") Long id)
+            throws NacosException {
+        configForm.validate();
+        String dataId = configForm.getDataId();
+        String groupName = configForm.getGroupName();
+        String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
+        return Result.success(historyProxy.getPreviousConfigHistoryInfo(dataId, groupName, namespaceId, id));
     }
     
     /**
@@ -143,11 +128,9 @@ public class ConsoleHistoryController {
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
     public Result<List<ConfigInfoWrapper>> getConfigsByTenant(@RequestParam("namespaceId") String namespaceId)
             throws NacosException {
-        // check namespaceId
-        ParamUtils.checkTenantV2(namespaceId);
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         
         return Result.success(historyProxy.getConfigsByTenant(namespaceId));
     }
-
+    
 }
