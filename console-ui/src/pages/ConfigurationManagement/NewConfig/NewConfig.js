@@ -300,7 +300,7 @@ class NewConfig extends React.Component {
       url: 'v3/console/cs/config',
       data: {
         dataId: addonBefore + this.field.getValue('dataId'),
-        group: this.field.getValue('group'),
+        groupName: this.field.getValue('group'),
         namespaceId: getParams('namespace') || '',
       },
       success: res => {
@@ -338,7 +338,7 @@ class NewConfig extends React.Component {
     this.tenant = getParams('namespace') || '';
     const payload = {
       dataId: addonBefore + this.field.getValue('dataId'),
-      group: this.field.getValue('group'),
+      groupName: this.field.getValue('group'),
       content,
       desc: this.field.getValue('desc'),
       configTags: config_tags.join(),

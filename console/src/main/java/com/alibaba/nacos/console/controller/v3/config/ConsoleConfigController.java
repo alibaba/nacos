@@ -26,6 +26,7 @@ import com.alibaba.nacos.auth.enums.ApiType;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.constant.ParametersField;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -33,12 +34,13 @@ import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
-import com.alibaba.nacos.config.server.model.form.ConfigForm;
+import com.alibaba.nacos.config.server.model.form.ConfigFormV3;
 import com.alibaba.nacos.config.server.paramcheck.ConfigBlurSearchHttpParamExtractor;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.console.proxy.config.ConfigProxy;
+import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
@@ -85,25 +87,18 @@ public class ConsoleConfigController {
     /**
      * Get the specific configuration information.
      *
-     * @param dataId      Data ID string value.
-     * @param group       Group string value.
-     * @param namespaceId Namespace string value.
+     * @param configForm config form
      * @return Result containing detailed configuration information.
      * @throws NacosException If a Nacos-specific error occurs.
      */
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
-    public Result<ConfigAllInfo> getConfigDetail(@RequestParam("dataId") String dataId,
-            @RequestParam("group") String group,
-            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId)
-            throws NacosException {
-        // check namespaceId
-        ParamUtils.checkTenantV2(namespaceId);
-        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
-        // check params
-        ParamUtils.checkParam(dataId, group, "datumId", "content");
-        
-        return Result.success(configProxy.getConfigDetail(dataId, group, namespaceId));
+    public Result<ConfigAllInfo> getConfigDetail(ConfigFormV3 configForm) throws NacosException {
+        configForm.validate();
+        String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
+        String dataId = configForm.getDataId();
+        String groupName = configForm.getGroupName();
+        return Result.success(configProxy.getConfigDetail(dataId, groupName, namespaceId));
     }
     
     /**
@@ -116,13 +111,12 @@ public class ConsoleConfigController {
      */
     @PostMapping()
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
-    public Result<Boolean> publishConfig(HttpServletRequest request, ConfigForm configForm) throws NacosException {
+    public Result<Boolean> publishConfig(HttpServletRequest request, ConfigFormV3 configForm) throws NacosException {
         // check required field
-        configForm.validate();
-        //fix issue #9783
+        configForm.validateWithContent();
         configForm.setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
+        
         // check param
-        ParamUtils.checkTenantV2(configForm.getNamespaceId());
         ParamUtils.checkParam(configForm.getDataId(), configForm.getGroup(), "datumId", configForm.getContent());
         ParamUtils.checkParamV2(configForm.getTag());
         
@@ -142,35 +136,29 @@ public class ConsoleConfigController {
         return Result.success(configProxy.publishConfig(configForm, configRequestInfo));
     }
     
-    
     /**
      * Delete configuration.
      *
      * @param request     HTTP servlet request.
-     * @param dataId      Data ID string value.
-     * @param group       Group string value.
-     * @param namespaceId Namespace string value.
-     * @param tag         Tag string value.
+     * @param configForm  Config form.
      * @return Result containing success status.
      * @throws NacosException If a Nacos-specific error occurs.
      */
     @DeleteMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
-    public Result<Boolean> deleteConfig(HttpServletRequest request, @RequestParam("dataId") String dataId,
-            @RequestParam("group") String group,
-            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
-            @RequestParam(value = "tag", required = false) String tag) throws NacosException {
+    public Result<Boolean> deleteConfig(HttpServletRequest request, ConfigFormV3 configForm) throws NacosException {
+        configForm.validate();
         //fix issue #9783
-        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
-        // check namespaceId
-        ParamUtils.checkTenantV2(namespaceId);
-        ParamUtils.checkParam(dataId, group, "datumId", "rm");
-        ParamUtils.checkParamV2(tag);
+        String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
+        ParamUtils.checkParamV2(configForm.getTag());
         
+        String dataId = configForm.getDataId();
+        String groupName = configForm.getGroupName();
+        String tag = configForm.getTag();
         String clientIp = RequestUtil.getRemoteIp(request);
         String srcUser = RequestUtil.getSrcUserName(request);
         
-        return Result.success(configProxy.deleteConfig(dataId, group, namespaceId, tag, clientIp, srcUser));
+        return Result.success(configProxy.deleteConfig(dataId, groupName, namespaceId, tag, clientIp, srcUser));
     }
     
     /**
@@ -194,13 +182,8 @@ public class ConsoleConfigController {
     /**
      * Get configure information list.
      *
-     * @param dataId      Data ID string value.
-     * @param group       Group string value.
-     * @param namespaceId Namespace string value.
-     * @param configTags  Configuration tags.
-     * @param appName     Application name string value.
-     * @param pageNo      Page number.
-     * @param pageSize    Page size.
+     * @param configForm config form
+     * @param pageForm   page form
      * @return Result containing the configuration information.
      * @throws ServletException If a servlet-specific error occurs.
      * @throws IOException      If an I/O error occurs.
@@ -208,93 +191,90 @@ public class ConsoleConfigController {
      */
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
-    public Result<Page<ConfigInfo>> getConfigList(@RequestParam("dataId") String dataId,
-            @RequestParam("group") String group,
-            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
-            @RequestParam(value = "config_tags", required = false) String configTags,
-            @RequestParam(value = "appName", required = false) String appName, @RequestParam("pageNo") int pageNo,
-            @RequestParam("pageSize") int pageSize) throws IOException, ServletException, NacosException {
-        // check tenant
-        ParamUtils.checkTenant(namespaceId);
-        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
+    @ExtractorManager.Extractor(httpExtractor = ConfigBlurSearchHttpParamExtractor.class)
+    public Result<Page<ConfigInfo>> getConfigList(ConfigFormV3 configForm, PageForm pageForm)
+            throws IOException, ServletException, NacosException {
+        configForm.blurSearchValidate();
+        pageForm.validate();
         Map<String, Object> configAdvanceInfo = new HashMap<>(100);
-        if (StringUtils.isNotBlank(appName)) {
-            configAdvanceInfo.put("appName", appName);
+        if (StringUtils.isNotBlank(configForm.getAppName())) {
+            configAdvanceInfo.put("appName", configForm.getAppName());
         }
-        if (StringUtils.isNotBlank(configTags)) {
-            configAdvanceInfo.put("config_tags", configTags);
+        if (StringUtils.isNotBlank(configForm.getConfigTags())) {
+            configAdvanceInfo.put("config_tags", configForm.getConfigTags());
         }
+        if (StringUtils.isNotBlank(configForm.getType())) {
+            configAdvanceInfo.put(ParametersField.TYPES, configForm.getType());
+        }
+        int pageNo = pageForm.getPageNo();
+        int pageSize = pageForm.getPageSize();
+        String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
+        String dataId = configForm.getDataId();
+        String groupName = configForm.getGroupName();
         
         return Result.success(
-                configProxy.getConfigList(pageNo, pageSize, dataId, group, namespaceId, configAdvanceInfo));
+                configProxy.getConfigList(pageNo, pageSize, dataId, groupName, namespaceId, configAdvanceInfo));
     }
     
     /**
      * Search config list by config detail.
      *
-     * @param dataId       Data ID string value.
-     * @param group        Group string value.
-     * @param appName      Application name string value.
-     * @param namespaceId  Namespace string value.
-     * @param configTags   Configuration tags.
+     * @param configForm   config form
+     * @param pageForm     page form
      * @param configDetail Configuration detail string value.
      * @param search       Search type.
-     * @param pageNo       Page number.
-     * @param pageSize     Page size.
      * @return Result containing the configuration list by content.
      * @throws NacosException If a Nacos-specific error occurs.
      */
     @GetMapping("/searchDetail")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
     @ExtractorManager.Extractor(httpExtractor = ConfigBlurSearchHttpParamExtractor.class)
-    public Result<Page<ConfigInfo>> getConfigListByContent(@RequestParam("dataId") String dataId,
-            @RequestParam("group") String group, @RequestParam(value = "appName", required = false) String appName,
-            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
-            @RequestParam(value = "config_tags", required = false) String configTags,
-            @RequestParam(value = "config_detail") String configDetail,
-            @RequestParam(value = "search", defaultValue = "blur", required = false) String search,
-            @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) throws NacosException {
+    public Result<Page<ConfigInfo>> getConfigListByContent(ConfigFormV3 configForm, PageForm pageForm,
+            String configDetail, @RequestParam(defaultValue = "blur") String search) throws NacosException {
+        configForm.blurSearchValidate();
+        pageForm.validate();
         Map<String, Object> configAdvanceInfo = new HashMap<>(100);
-        if (StringUtils.isNotBlank(appName)) {
-            configAdvanceInfo.put("appName", appName);
+        if (StringUtils.isNotBlank(configForm.getAppName())) {
+            configAdvanceInfo.put("appName", configForm.getAppName());
         }
-        if (StringUtils.isNotBlank(configTags)) {
-            configAdvanceInfo.put("config_tags", configTags);
+        if (StringUtils.isNotBlank(configForm.getConfigTags())) {
+            configAdvanceInfo.put("config_tags", configForm.getConfigTags());
+        }
+        if (StringUtils.isNotBlank(configForm.getType())) {
+            configAdvanceInfo.put(ParametersField.TYPES, configForm.getType());
         }
         if (StringUtils.isNotBlank(configDetail)) {
             configAdvanceInfo.put("content", configDetail);
         }
+        int pageNo = pageForm.getPageNo();
+        int pageSize = pageForm.getPageSize();
+        String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
+        String dataId = configForm.getDataId();
+        String groupName = configForm.getGroupName();
         
-        return Result.success(configProxy.getConfigListByContent(search, pageNo, pageSize, dataId, group, namespaceId,
-                configAdvanceInfo));
+        return Result.success(
+                configProxy.getConfigListByContent(search, pageNo, pageSize, dataId, groupName, namespaceId,
+                        configAdvanceInfo));
     }
     
     /**
      * Subscribe to configured client information.
      *
-     * @param dataId      Data ID string value.
-     * @param group       Group string value.
-     * @param namespaceId Namespace string value.
+     * @param configForm  config form
      * @param sampleTime  Sample time value.
      * @return Result containing listener status.
      * @throws Exception If an error occurs during the operation.
      */
     @GetMapping("/listener")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
-    public Result<GroupkeyListenserStatus> getListeners(@RequestParam("dataId") String dataId,
-            @RequestParam("group") String group,
-            @RequestParam(value = "namespaceId", required = false) String namespaceId,
+    public Result<GroupkeyListenserStatus> getListeners(ConfigFormV3 configForm,
             @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime) throws Exception {
+        configForm.validate();
+        String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
         
-        // check namespaceId
-        ParamUtils.checkTenantV2(namespaceId);
-        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
-        
-        // check params
-        group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group;
-        ParamUtils.checkParam(dataId, group, "datumId", "content");
-        
-        return Result.success(configProxy.getListeners(dataId, group, namespaceId, sampleTime));
+        String groupName = configForm.getGroupName();
+        String dataId = configForm.getDataId();
+        return Result.success(configProxy.getListeners(dataId, groupName, namespaceId, sampleTime));
     }
     
     /**
@@ -314,51 +294,45 @@ public class ConsoleConfigController {
     /**
      * Export configuration.
      *
-     * @param dataId      Data ID string value.
-     * @param group       Group string value.
-     * @param appName     Application name string value.
-     * @param namespaceId Namespace string value.
+     * @param configForm  config form
      * @param ids         List of config IDs.
      * @return ResponseEntity containing the exported configuration.
      * @throws Exception If an error occurs during the export.
      */
     @GetMapping("/export")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
-    public ResponseEntity<byte[]> exportConfig(@RequestParam(value = "dataId", required = false) String dataId,
-            @RequestParam(value = "group", required = false) String group,
-            @RequestParam(value = "appName", required = false) String appName,
-            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
+    public ResponseEntity<byte[]> exportConfig(ConfigFormV3 configForm,
             @RequestParam(value = "ids", required = false) List<Long> ids) throws Exception {
+        configForm.blurSearchValidate();
         ids.removeAll(Collections.singleton(null));
-        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
-        
-        return configProxy.exportConfig(dataId, group, namespaceId, appName, ids);
+        String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
+        String dataId = configForm.getDataId();
+        String groupName = configForm.getGroupName();
+        String appName = configForm.getAppName();
+        return configProxy.exportConfig(dataId, groupName, namespaceId, appName, ids);
     }
     
     /**
      * New version export config adds metadata.yml file to record config metadata.
      *
-     * @param dataId      Data ID string value.
-     * @param group       Group string value.
-     * @param appName     Application name string value.
-     * @param namespaceId Namespace string value.
+     * @param configForm  config form
      * @param ids         List of config IDs.
      * @return ResponseEntity containing the exported configuration.
      * @throws Exception If an error occurs during the export.
      */
     @GetMapping("/export2")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
-    public ResponseEntity<byte[]> exportConfigV2(@RequestParam(value = "dataId", required = false) String dataId,
-            @RequestParam(value = "group", required = false) String group,
-            @RequestParam(value = "appName", required = false) String appName,
-            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
+    public ResponseEntity<byte[]> exportConfigV2(ConfigFormV3 configForm,
             @RequestParam(value = "ids", required = false) List<Long> ids) throws Exception {
+        configForm.blurSearchValidate();
         ids.removeAll(Collections.singleton(null));
-        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
+        String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
+        String dataId = configForm.getDataId();
+        String groupName = configForm.getGroupName();
+        String appName = configForm.getAppName();
         
-        return configProxy.exportConfigV2(dataId, group, namespaceId, appName, ids);
+        return configProxy.exportConfigV2(dataId, groupName, namespaceId, appName, ids);
     }
-    
     
     /**
      * Import and publish configuration.
@@ -374,12 +348,10 @@ public class ConsoleConfigController {
     @PostMapping("/import")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
     public Result<Map<String, Object>> importAndPublishConfig(HttpServletRequest request,
-            @RequestParam(value = "src_user", required = false) String srcUser,
+            @RequestParam(required = false) String srcUser,
             @RequestParam(value = "namespaceId", required = false) String namespaceId,
             @RequestParam(value = "policy", defaultValue = "ABORT") SameConfigPolicy policy, MultipartFile file)
             throws NacosException {
-        // check namespaceId
-        ParamUtils.checkTenantV2(namespaceId);
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         
         if (StringUtils.isBlank(srcUser)) {
@@ -405,7 +377,7 @@ public class ConsoleConfigController {
     @PostMapping("/clone")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
     public Result<Map<String, Object>> cloneConfig(HttpServletRequest request,
-            @RequestParam(value = "src_user", required = false) String srcUser,
+            @RequestParam(required = false) String srcUser,
             @RequestParam(value = "targetNamespaceId") String namespaceId,
             @RequestBody List<SameNamespaceCloneConfigBean> configBeansList,
             @RequestParam(value = "policy", defaultValue = "ABORT") SameConfigPolicy policy) throws NacosException {
@@ -424,23 +396,24 @@ public class ConsoleConfigController {
      * Execute to remove beta operation.
      *
      * @param httpServletRequest HTTP request containing client details.
-     * @param dataId             dataId string value.
-     * @param group              group string value.
-     * @param namespaceId        tenant string value.
+     * @param configForm         config form
      * @return Result indicating the outcome of the operation.
      * @throws NacosException If a Nacos-specific error occurs.
      */
     @DeleteMapping("/beta")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
-    public Result<Boolean> stopBeta(HttpServletRequest httpServletRequest,
-            @RequestParam(value = "dataId") String dataId, @RequestParam(value = "group") String group,
-            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId)
+    public Result<Boolean> stopBeta(HttpServletRequest httpServletRequest, ConfigFormV3 configForm)
             throws NacosException {
+        configForm.validate();
         String remoteIp = getRemoteIp(httpServletRequest);
         String requestIpApp = RequestUtil.getAppName(httpServletRequest);
-        boolean success = configProxy.removeBetaConfig(dataId, group, namespaceId, remoteIp, requestIpApp);
+        String dataId = configForm.getDataId();
+        String groupName = configForm.getGroupName();
+        String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
+        boolean success = configProxy.removeBetaConfig(dataId, groupName, namespaceId, remoteIp, requestIpApp);
         if (!success) {
-            return Result.failure(HttpStatus.INTERNAL_SERVER_ERROR.value(), HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(), false);
+            return Result.failure(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(), false);
         }
         return Result.success(true);
     }
@@ -448,19 +421,18 @@ public class ConsoleConfigController {
     /**
      * Execute to query beta operation.
      *
-     * @param dataId      dataId string value.
-     * @param group       group string value.
-     * @param namespaceId namespaceId string value.
+     * @param configForm  config form
      * @return Result containing the ConfigInfo4Beta details.
      * @throws NacosException If a Nacos-specific error occurs.
      */
     @GetMapping("/beta")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    public Result<ConfigInfo4Beta> queryBeta(@RequestParam(value = "dataId") String dataId,
-            @RequestParam(value = "group") String group,
-            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId)
-            throws NacosException {
-        return configProxy.queryBetaConfig(dataId, group, namespaceId);
+    public Result<ConfigInfo4Beta> queryBeta(ConfigFormV3 configForm) throws NacosException {
+        configForm.validate();
+        String dataId = configForm.getDataId();
+        String groupName = configForm.getGroupName();
+        String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
+        return configProxy.queryBetaConfig(dataId, groupName, namespaceId);
     }
     
 }

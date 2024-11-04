@@ -257,9 +257,10 @@ class ConfigEditor extends React.Component {
     Object.keys(form).forEach(key => {
       payload[key] = form[key];
     });
+    payload.groupName = form.group;
     let configTags = this.state.form.config_tags;
     if (configTags.length > 0) {
-      payload.config_tags = configTags.join(',');
+      payload.configTags = configTags.join(',');
     }
     // #12046 console-ui should not offer encryptedDataKey field to API
     payload.encryptedDataKey = '';
@@ -319,7 +320,7 @@ class ConfigEditor extends React.Component {
       .delete('v3/console/cs/config/beta', {
         params: {
           dataId,
-          group,
+          groupName: group,
           namespaceId,
         },
       })
@@ -390,7 +391,7 @@ class ConfigEditor extends React.Component {
     const { dataId, group } = this.state.form;
     const params = {
       dataId,
-      group,
+      groupName: group,
       namespaceId: namespace,
       tenant: namespace,
     };
@@ -416,7 +417,7 @@ class ConfigEditor extends React.Component {
     const { dataId, group } = this.state.form;
     const params = {
       dataId,
-      group,
+      groupName: group,
       namespaceId: namespace,
       tenant: namespace,
     };

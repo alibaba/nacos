@@ -161,9 +161,9 @@ class ConfigEditor extends React.Component {
     this.serverId = getParams('serverId') || '';
     this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
     this.props.history.push(
-      `${url}?serverId=${this.serverId || ''}&dataId=${this.dataId}&group=${this.group}&namespace=${
-        this.tenant
-      }`
+      `${url}?serverId=${this.serverId || ''}&dataId=${this.dataId}&groupName=${
+        this.group
+      }&namespace=${this.tenant}`
     );
   }
 
@@ -184,7 +184,7 @@ class ConfigEditor extends React.Component {
     const self = this;
     this.tenant = getParams('namespace') || '';
     this.serverId = getParams('serverId') || 'center';
-    const url = `v3/console/cs/config?dataId=${this.dataId}&group=${this.group}`;
+    const url = `v3/console/cs/config?dataId=${this.dataId}&groupName=${this.group}`;
     request({
       url,
       beforeSend() {
@@ -367,7 +367,7 @@ class ConfigEditor extends React.Component {
     const payload = {
       dataId: this.field.getValue('dataId'),
       appName: this.inApp ? this.edasAppId : this.field.getValue('appName'),
-      group: this.field.getValue('group'),
+      groupName: this.field.getValue('group'),
       desc: this.field.getValue('desc'),
       configTags: this.state.config_tags.join(','),
       type: this.state.configType,

@@ -61,7 +61,7 @@ class HistoryDetail extends React.Component {
     const { locale = {} } = this.props;
     const self = this;
     request({
-      url: `v3/console/cs/history?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`,
+      url: `v3/console/cs/history?dataId=${this.dataId}&groupName=${this.group}&nid=${this.nid}`,
       success(result) {
         if (result != null) {
           const data = result.data;

@@ -29,6 +29,7 @@ import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
+import com.alibaba.nacos.config.server.model.form.ConfigFormV3;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.console.proxy.config.ConfigProxy;
 import com.alibaba.nacos.core.auth.AuthFilter;
@@ -124,7 +125,7 @@ public class ConsoleConfigControllerTest {
         when(configProxy.getConfigDetail("testDataId", "testGroup", "testNamespace")).thenReturn(configAllInfo);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/config")
-                .param("dataId", "testDataId").param("group", "testGroup").param("namespaceId", "testNamespace");
+                .param("dataId", "testDataId").param("groupName", "testGroup").param("namespaceId", "testNamespace");
         
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
@@ -141,9 +142,9 @@ public class ConsoleConfigControllerTest {
     @Test
     void testPublishConfig() throws Exception {
         
-        ConfigForm configForm = new ConfigForm();
+        ConfigFormV3 configForm = new ConfigFormV3();
         configForm.setDataId(TEST_DATA_ID);
-        configForm.setGroup(TEST_GROUP);
+        configForm.setGroupName(TEST_GROUP);
         configForm.setNamespaceId(TEST_NAMESPACE_ID);
         configForm.setContent(TEST_CONTENT);
         MockHttpServletRequest request = new MockHttpServletRequest();
@@ -161,13 +162,16 @@ public class ConsoleConfigControllerTest {
     @Test
     void testDeleteConfig() throws Exception {
         
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        
         when(configProxy.deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG), any(),
                 any())).thenReturn(true);
         
-        Result<Boolean> booleanResult = consoleConfigController.deleteConfig(request, TEST_DATA_ID, TEST_GROUP,
-                TEST_NAMESPACE_ID, TEST_TAG);
+        ConfigFormV3 configForm = new ConfigFormV3();
+        configForm.setDataId(TEST_DATA_ID);
+        configForm.setGroupName(TEST_GROUP);
+        configForm.setNamespaceId(TEST_NAMESPACE_ID);
+        configForm.setTag(TEST_TAG);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        Result<Boolean> booleanResult = consoleConfigController.deleteConfig(request, configForm);
         
         verify(configProxy).deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG), any(),
                 any());
@@ -223,17 +227,11 @@ public class ConsoleConfigControllerTest {
         configAdvanceInfo.put("appName", "testApp");
         configAdvanceInfo.put("config_tags", "testTag");
         
-        when(configProxy.getConfigList(1,
-                10,
-                "testDataId",
-                "testGroup",
-                "",
-                configAdvanceInfo
-        )).thenReturn(page);
+        when(configProxy.getConfigList(1, 10, "testDataId", "testGroup", "", configAdvanceInfo)).thenReturn(page);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/config/list")
-                .param("dataId", "testDataId").param("group", "testGroup").param("appName", "testApp")
-                .param("namespaceId", "").param("config_tags", "testTag").param("pageNo", "1").param("pageSize", "10");
+                .param("dataId", "testDataId").param("groupName", "testGroup").param("appName", "testApp")
+                .param("namespaceId", "").param("configTags", "testTag").param("pageNo", "1").param("pageSize", "10");
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         
@@ -268,8 +266,8 @@ public class ConsoleConfigControllerTest {
         when(configProxy.getConfigListByContent("blur", 1, 10, "test", "test", "", configAdvanceInfo)).thenReturn(page);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/config/searchDetail")
-                .param("dataId", "test").param("group", "test").param("appName", "").param("namespaceId", "")
-                .param("config_tags", "").param("config_detail", "server.port").param("search", "blur")
+                .param("dataId", "test").param("groupName", "test").param("appName", "").param("namespaceId", "")
+                .param("configTags", "").param("configDetail", "server.port").param("search", "blur")
                 .param("pageNo", "1").param("pageSize", "10");
         
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
@@ -304,20 +302,20 @@ public class ConsoleConfigControllerTest {
         configAllInfo.setAppName(appname);
         List<ConfigAllInfo> dataList = new ArrayList<>();
         dataList.add(configAllInfo);
-    
+        
         byte[] serializedData = new ObjectMapper().writeValueAsBytes(dataList);
         ResponseEntity<byte[]> responseEntity = new ResponseEntity<>(serializedData, HttpStatus.OK);
-    
+        
         Mockito.when(
                         configProxy.exportConfig(eq(dataId), eq(group), eq(tenant), eq(appname), eq(Arrays.asList(1L, 2L))))
                 .thenReturn(responseEntity);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/config/export")
-                .param("dataId", dataId).param("group", group).param("tenant", tenant).param("appName", appname)
+                .param("dataId", dataId).param("groupName", group).param("tenant", tenant).param("appName", appname)
                 .param("ids", "1,2");
-    
+        
         int actualValue = mockmvc.perform(builder).andReturn().getResponse().getStatus();
         assertEquals(200, actualValue);
-    
+        
     }
     
     @Test
@@ -342,7 +340,7 @@ public class ConsoleConfigControllerTest {
                         configProxy.exportConfigV2(eq(dataId), eq(group), eq(tenant), eq(appname), eq(Arrays.asList(1L, 2L))))
                 .thenReturn(responseEntity);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/config/export2")
-                .param("exportV2", "true").param("dataId", dataId).param("group", group).param("tenant", tenant)
+                .param("exportV2", "true").param("dataId", dataId).param("groupName", group).param("tenant", tenant)
                 .param("appName", appname).param("ids", "1,2");
         
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
@@ -372,7 +370,7 @@ public class ConsoleConfigControllerTest {
                         eq(requestIpApp))).thenReturn(expectedResult);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart("/v3/console/cs/config/import")
-                .file(mockFile).param("src_user", srcUser).param("namespaceId", namespaceId)
+                .file(mockFile).param("srcUser", srcUser).param("namespaceId", namespaceId)
                 .param("policy", policy.toString()).header("X-Real-IP", srcIp).header("X-Forwarded-For", srcIp)
                 .header("X-App-Name", requestIpApp != null ? requestIpApp : "");
         
@@ -384,7 +382,7 @@ public class ConsoleConfigControllerTest {
         verify(configProxy).importAndPublishConfig(eq(srcUser), eq(namespaceId), eq(policy), eq(mockFile), eq(srcIp),
                 eq(requestIpApp));
     }
-
+    
     @Test
     void testCloneConfig() throws Exception {
         SameNamespaceCloneConfigBean sameNamespaceCloneConfigBean = new SameNamespaceCloneConfigBean();
@@ -410,7 +408,7 @@ public class ConsoleConfigControllerTest {
         )).thenReturn(expectedResult);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post("/v3/console/cs/config/clone")
-                .param("src_user", "testUser").param("targetNamespaceId", "testNamespace").param("policy", "ABORT")
+                .param("srcUser", "testUser").param("targetNamespaceId", "testNamespace").param("policy", "ABORT")
                 .content(new ObjectMapper().writeValueAsString(configBeansList)).contentType(MediaType.APPLICATION_JSON)
                 .header("X-Real-IP", "127.0.0.1").header("X-Forwarded-For", "127.0.0.1");
         
@@ -440,7 +438,7 @@ public class ConsoleConfigControllerTest {
                 true);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.delete("/v3/console/cs/config/beta")
-                .param("dataId", dataId).param("group", group).param("namespaceId", namespaceId);
+                .param("dataId", dataId).param("groupName", group).param("namespaceId", namespaceId);
         
         // Execute and validate response
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
@@ -465,7 +463,7 @@ public class ConsoleConfigControllerTest {
         when(configProxy.queryBetaConfig(anyString(), anyString(), anyString())).thenReturn(mockResult);
         String namespaceId = "testNamespaceId";
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/config/beta")
-                .param("dataId", dataId).param("group", group).param("namespaceId", namespaceId);
+                .param("dataId", dataId).param("groupName", group).param("namespaceId", namespaceId);
         
         // Execute and validate response
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();

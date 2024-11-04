@@ -117,7 +117,7 @@ public class ConfigControllerV2 {
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
     public Result<Boolean> publishConfig(ConfigForm configForm, HttpServletRequest request) throws NacosException {
         // check required field
-        configForm.validate();
+        configForm.validateWithContent();
         String encryptedDataKeyFinal = configForm.getEncryptedDataKey();
         if (StringUtils.isBlank(encryptedDataKeyFinal)) {
             // encrypted

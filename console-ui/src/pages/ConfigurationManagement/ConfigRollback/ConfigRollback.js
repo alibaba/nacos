@@ -75,7 +75,7 @@ class ConfigRollback extends React.Component {
     const self = this;
     this.namespaceId = getParams('namespace') || '';
     this.serverId = getParams('serverId') || 'center';
-    const url = `v3/console/cs/history?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`;
+    const url = `v3/console/cs/history?dataId=${this.dataId}&groupName=${this.group}&nid=${this.nid}`;
     request({
       url,
       success(result) {
@@ -141,14 +141,14 @@ class ConfigRollback extends React.Component {
         let postData = {
           appName: self.field.getValue('appName'),
           dataId: self.dataId,
-          group: self.group,
+          groupName: self.group,
           content: self.field.getValue('content'),
           namespaceId: self.tenant,
         };
 
         let url = 'v3/console/cs/config';
         if (self.opType.trim() === 'I') {
-          url = `v3/console/cs/config?dataId=${self.dataId}&group=${self.group}`;
+          url = `v3/console/cs/config?dataId=${self.dataId}&groupName=${self.group}`;
           postData = {};
         }
 
