@@ -110,6 +110,7 @@ public class ConfigOperationService {
             configForm.setGrayRuleExp(configRequestInfo.getBetaIps());
             configForm.setGrayVersion(BetaGrayRule.VERSION);
             persistBeta(configForm, configInfo, configRequestInfo);
+            configForm.setGrayPriority(Integer.MAX_VALUE);
             publishConfigGray(BetaGrayRule.TYPE_BETA, configForm, configRequestInfo);
             return Boolean.TRUE;
         }
@@ -118,6 +119,7 @@ public class ConfigOperationService {
             configForm.setGrayName(TagGrayRule.TYPE_TAG + "_" + configForm.getTag());
             configForm.setGrayRuleExp(configForm.getTag());
             configForm.setGrayVersion(TagGrayRule.VERSION);
+            configForm.setGrayPriority(Integer.MAX_VALUE-1);
             persistTagv1(configForm, configInfo, configRequestInfo);
             publishConfigGray(TagGrayRule.TYPE_TAG, configForm, configRequestInfo);
             return Boolean.TRUE;

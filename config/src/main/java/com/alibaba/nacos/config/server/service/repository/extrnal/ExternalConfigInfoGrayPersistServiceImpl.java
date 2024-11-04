@@ -155,14 +155,15 @@ public class ExternalConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
         String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
         String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
-        
+        final String encryptedDataKey =
+                configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY : configInfo.getEncryptedDataKey();
         ConfigInfoGrayMapper configInfoGrayMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO_GRAY);
         jt.update(configInfoGrayMapper.insert(
                         Arrays.asList("data_id", "group_id", "tenant_id", "gray_name", "gray_rule", "app_name", "content",
                                 "encrypted_data_key", "md5", "src_ip", "src_user", "gmt_create@NOW()", "gmt_modified@NOW()")),
                 configInfo.getDataId(), configInfo.getGroup(), tenantTmp, grayName, grayRule, appNameTmp,
-                configInfo.getContent(), configInfo.getEncryptedDataKey(), md5, srcIp, srcUser);
+                configInfo.getContent(), encryptedDataKey, md5, srcIp, srcUser);
     }
     
     @Override
