@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
@@ -120,8 +121,7 @@ public class NacosRoleServiceImpl {
      * @return true if granted, false otherwise
      */
     public boolean hasPermission(NacosUser nacosUser, Permission permission) {
-        //update password
-        if (AuthConstants.UPDATE_PASSWORD_ENTRY_POINT.equals(permission.getResource().getName())) {
+        if (isUpdatePasswordPermission(permission)) {
             return true;
         }
         
@@ -159,6 +159,14 @@ public class NacosRoleServiceImpl {
             }
         }
         return false;
+    }
+    
+    /**
+     * If API is update user password, don't do permission check, because there is permission check in API logic.
+     */
+    private boolean isUpdatePasswordPermission(Permission permission) {
+        Properties properties = permission.getResource().getProperties();
+        return null != properties && properties.contains(AuthConstants.UPDATE_PASSWORD_ENTRY_POINT);
     }
     
     public List<RoleInfo> getRoles(String username) {

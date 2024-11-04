@@ -14,27 +14,22 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.persistence.utils;
+package com.alibaba.nacos.persistence.repository.embedded.sql;
 
-import com.zaxxer.hikari.HikariDataSource;
+import org.junit.jupiter.api.Test;
 
-/**
- * DataSource Connection CheckUtil.
- *
- * @author Long Yu
- */
-public class ConnectionCheckUtil {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class ModifyRequestTest {
     
-    /**
-     * check HikariDataSource connection ,avoid [no datasource set] text.
-     *
-     * @param ds HikariDataSource object
-     */
-    public static void checkDataSourceConnection(HikariDataSource ds) {
-        try (java.sql.Connection connection = ds.getConnection()) {
-            connection.isClosed();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    @Test
+    void testToString() {
+        ModifyRequest request = new ModifyRequest();
+        assertEquals("SQL{executeNo=0, sql='null', args=null}", request.toString());
+        request.setRollBackOnUpdateFail(true);
+        request.setArgs(new Object[] {1, "test"});
+        request.setSql("SELECT 1");
+        request.setExecuteNo(1);
+        assertEquals("SQL{executeNo=1, sql='SELECT 1', args=[1, test]}", request.toString());
     }
 }
