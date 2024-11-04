@@ -24,6 +24,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Cache item.
@@ -109,9 +110,15 @@ public class CacheItem {
             sortedConfigCacheGrayList = null;
             return;
         }
-        sortedConfigCacheGrayList = configCacheGray.entrySet().stream()
-                .sorted(Comparator.comparingInt(o -> o.getValue().getPriority()))
-                .collect(ArrayList::new, (list, item) -> list.add(item.getValue()), ArrayList::addAll);
+    
+        sortedConfigCacheGrayList = configCacheGray.values().stream().sorted((o1, o2) -> {
+            if (o1.getPriority() != o2.getPriority()) {
+                return Integer.compare(o1.getPriority(), o2.getPriority()) * -1;
+            } else {
+                return o1.getGrayName().compareTo(o2.getGrayName());
+            }
+        
+        }).collect(Collectors.toList());
     }
     
     public Map<String, ConfigCacheGray> getConfigCacheGray() {

@@ -340,6 +340,11 @@ public class ConfigRowMapperInjector {
                 info.setMd5(rs.getString("md5"));
             } catch (SQLException ignore) {
             }
+            try {
+                info.setEncryptedDataKey(rs.getString("encrypted_data_key"));
+            } catch (SQLException ignore) {
+            }
+    
             return info;
         }
     }

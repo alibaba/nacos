@@ -292,6 +292,8 @@ public class ConfigCacheService {
                 ci.getConfigCacheGray().remove(grayName);
                 if (ci.getConfigCacheGray().isEmpty()) {
                     ci.clearConfigGrays();
+                } else {
+                    ci.sortConfigGray();
                 }
             }
             
