@@ -49,4 +49,8 @@ public class NJdbcException extends DataAccessException {
     public NJdbcException(Throwable cause) {
         super("", cause);
     }
+    
+    public String getOriginExceptionName() {
+        return originExceptionName;
+    }
 }

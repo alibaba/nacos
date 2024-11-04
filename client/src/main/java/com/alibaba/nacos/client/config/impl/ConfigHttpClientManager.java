@@ -56,7 +56,7 @@ public class ConfigHttpClientManager implements Closeable {
     
     private static final int CON_TIME_OUT_MILLIS = ParamUtil.getConnectTimeout();
     
-    private static final int READ_TIME_OUT_MILLIS = 3000;
+    private static final int READ_TIME_OUT_MILLIS = ParamUtil.getReadTimeout();
     
     private final LimiterHttpClientRequestInterceptor limiterHttpClientRequestInterceptor = new LimiterHttpClientRequestInterceptor();
     

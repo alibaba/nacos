@@ -91,6 +91,7 @@ class DiskUtilsZipTest {
         Path path = Paths.get(rootPath, "test.zip");
         try (InputStream inputStream = new ByteArrayInputStream("test".getBytes())) {
             DiskUtils.compressIntoZipFile("test", inputStream, path.toString(), new CRC32());
+            DiskUtils.compressIntoZipFile("../test", inputStream, path.toString(), new CRC32());
             byte[] actual = DiskUtils.decompress(path.toString(), new CRC32());
             assertEquals("test", new String(actual));
         } finally {

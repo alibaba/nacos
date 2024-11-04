@@ -31,7 +31,7 @@ import java.util.List;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 
-public class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
+public class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper<E> {
     
     private final JdbcTemplate jdbcTemplate;
     
@@ -59,72 +59,13 @@ public class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper 
     @Override
     public Page<E> fetchPage(final String sqlCountRows, final String sqlFetchRows, Object[] args, final int pageNo,
             final int pageSize, final Long lastMaxId, final RowMapper rowMapper) {
-        if (pageNo <= 0 || pageSize <= 0) {
-            throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
-        }
-        
-        // Query the total number of current records.
-        Integer rowCountInt = jdbcTemplate.queryForObject(sqlCountRows, args, Integer.class);
-        if (rowCountInt == null) {
-            throw new IllegalArgumentException("fetchPageLimit error");
-        }
-        
-        // Compute pages count
-        int pageCount = rowCountInt / pageSize;
-        if (rowCountInt > pageSize * pageCount) {
-            pageCount++;
-        }
-        
-        // Create Page object
-        final Page<E> page = new Page<>();
-        page.setPageNumber(pageNo);
-        page.setPagesAvailable(pageCount);
-        page.setTotalCount(rowCountInt);
-        
-        if (pageNo > pageCount) {
-            return page;
-        }
-        
-        List<E> result = jdbcTemplate.query(sqlFetchRows, args, rowMapper);
-        for (E item : result) {
-            page.getPageItems().add(item);
-        }
-        return page;
+        return doFetchPage(sqlCountRows, args, sqlFetchRows, args, pageNo, pageSize, rowMapper);
     }
     
     @Override
     public Page<E> fetchPageLimit(final String sqlCountRows, final String sqlFetchRows, final Object[] args,
             final int pageNo, final int pageSize, final RowMapper rowMapper) {
-        if (pageNo <= 0 || pageSize <= 0) {
-            throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
-        }
-        // Query the total number of current records
-        Integer rowCountInt = jdbcTemplate.queryForObject(sqlCountRows, Integer.class);
-        if (rowCountInt == null) {
-            throw new IllegalArgumentException("fetchPageLimit error");
-        }
-        
-        // Compute pages count
-        int pageCount = rowCountInt / pageSize;
-        if (rowCountInt > pageSize * pageCount) {
-            pageCount++;
-        }
-        
-        // Create Page object
-        final Page<E> page = new Page<>();
-        page.setPageNumber(pageNo);
-        page.setPagesAvailable(pageCount);
-        page.setTotalCount(rowCountInt);
-        
-        if (pageNo > pageCount) {
-            return page;
-        }
-        
-        List<E> result = jdbcTemplate.query(sqlFetchRows, args, rowMapper);
-        for (E item : result) {
-            page.getPageItems().add(item);
-        }
-        return page;
+        return doFetchPage(sqlCountRows, null, sqlFetchRows, args, pageNo, pageSize, rowMapper);
     }
     
     @Override
@@ -137,43 +78,13 @@ public class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper 
     @Override
     public Page<E> fetchPageLimit(final String sqlCountRows, final Object[] args1, final String sqlFetchRows,
             final Object[] args2, final int pageNo, final int pageSize, final RowMapper rowMapper) {
-        if (pageNo <= 0 || pageSize <= 0) {
-            throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
-        }
-        // Query the total number of current records
-        Integer rowCountInt = jdbcTemplate.queryForObject(sqlCountRows, args1, Integer.class);
-        if (rowCountInt == null) {
-            throw new IllegalArgumentException("fetchPageLimit error");
-        }
-        
-        // Compute pages count
-        int pageCount = rowCountInt / pageSize;
-        if (rowCountInt > pageSize * pageCount) {
-            pageCount++;
-        }
-        
-        // Create Page object
-        final Page<E> page = new Page<>();
-        page.setPageNumber(pageNo);
-        page.setPagesAvailable(pageCount);
-        page.setTotalCount(rowCountInt);
-        
-        if (pageNo > pageCount) {
-            return page;
-        }
-        List<E> result = jdbcTemplate.query(sqlFetchRows, args2, rowMapper);
-        for (E item : result) {
-            page.getPageItems().add(item);
-        }
-        return page;
+        return doFetchPage(sqlCountRows, args1, sqlFetchRows, args2, pageNo, pageSize, rowMapper);
     }
     
     @Override
     public Page<E> fetchPageLimit(final String sqlFetchRows, final Object[] args, final int pageNo, final int pageSize,
             final RowMapper rowMapper) {
-        if (pageNo <= 0 || pageSize <= 0) {
-            throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
-        }
+        checkPageInfo(pageNo, pageSize);
         // Create Page object
         final Page<E> page = new Page<>();
         List<E> result = jdbcTemplate.query(sqlFetchRows, args, rowMapper);
@@ -192,21 +103,45 @@ public class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper 
         }
     }
     
-    /**
-     * Update limit with response.
-     *
-     * @param sql  sql
-     * @param args args
-     * @return update row count
-     */
-    public int updateLimitWithResponse(final String sql, final Object[] args) {
-        String sqlUpdate = sql;
-        
-        try {
-            return jdbcTemplate.update(sqlUpdate, args);
-        } finally {
-            EmbeddedStorageContextHolder.cleanAllContext();
+    private void checkPageInfo(final int pageNo, final int pageSize) {
+        if (pageNo <= 0 || pageSize <= 0) {
+            throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
         }
     }
     
+    private Page<E> doFetchPage(final String sqlCountRows, final Object[] countAgrs, final String sqlFetchRows,
+            final Object[] fetchArgs, final int pageNo, final int pageSize, final RowMapper rowMapper) {
+        checkPageInfo(pageNo, pageSize);
+        // Query the total number of current records
+        Integer rowCountInt = null;
+        if (null != countAgrs) {
+            rowCountInt = jdbcTemplate.queryForObject(sqlCountRows, countAgrs, Integer.class);
+        } else {
+            rowCountInt = jdbcTemplate.queryForObject(sqlCountRows, Integer.class);
+        }
+        if (null == rowCountInt) {
+            throw new IllegalArgumentException("fetchPageLimit error");
+        }
+        
+        // Compute pages count
+        int pageCount = rowCountInt / pageSize;
+        if (rowCountInt > pageSize * pageCount) {
+            pageCount++;
+        }
+        
+        // Create Page object
+        final Page<E> page = new Page<>();
+        page.setPageNumber(pageNo);
+        page.setPagesAvailable(pageCount);
+        page.setTotalCount(rowCountInt);
+        
+        if (pageNo > pageCount) {
+            return page;
+        }
+        List<E> result = jdbcTemplate.query(sqlFetchRows, fetchArgs, rowMapper);
+        for (E item : result) {
+            page.getPageItems().add(item);
+        }
+        return page;
+    }
 }

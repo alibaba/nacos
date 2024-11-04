@@ -14,27 +14,17 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.persistence.utils;
+package com.alibaba.nacos.auth.mock;
 
-import com.zaxxer.hikari.HikariDataSource;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.parser.ResourceParser;
+import com.alibaba.nacos.plugin.auth.api.Resource;
 
-/**
- * DataSource Connection CheckUtil.
- *
- * @author Long Yu
- */
-public class ConnectionCheckUtil {
+public class MockResourceParser implements ResourceParser<Object> {
     
-    /**
-     * check HikariDataSource connection ,avoid [no datasource set] text.
-     *
-     * @param ds HikariDataSource object
-     */
-    public static void checkDataSourceConnection(HikariDataSource ds) {
-        try (java.sql.Connection connection = ds.getConnection()) {
-            connection.isClosed();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    @Override
+    public Resource parse(Object request, Secured secured) {
+        throw new NacosRuntimeException(500);
     }
 }

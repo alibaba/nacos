@@ -175,7 +175,8 @@ public class UserController {
      * @since 1.2.0
      */
     @PutMapping
-    @Secured(resource = AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, action = ActionTypes.WRITE)
+    @Secured(resource = AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, action = ActionTypes.WRITE, tags = {
+            AuthConstants.UPDATE_PASSWORD_ENTRY_POINT})
     public Object updateUser(@RequestParam String username, @RequestParam String newPassword,
             HttpServletResponse response, HttpServletRequest request) throws IOException {
         // admin or same user
