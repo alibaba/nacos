@@ -76,7 +76,7 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
             this.jwtParser = new NacosJwtParser(encodedSecretKey);
         } catch (Exception e) {
             this.jwtParser = null;
-            if (authConfigs.isAuthEnabled()) {
+            if (authConfigs.isAuthEnabled() || authConfigs.isConsoleAuthEnabled()) {
                 throw new IllegalArgumentException(
                         "the length of secret key must great than or equal 32 bytes; And the secret key  must be encoded by base64."
                                 + "Please see https://nacos.io/zh-cn/docs/v2/guide/user/auth.html", e);
