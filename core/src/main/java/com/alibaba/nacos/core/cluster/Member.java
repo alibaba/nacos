@@ -66,6 +66,14 @@ public class Member implements Comparable<Member>, Cloneable, Serializable {
                 EnvUtil.getProperty(prefix + MemberMetaDataConstants.AD_WEIGHT, "0"));
         extendInfo
                 .put(MemberMetaDataConstants.WEIGHT, EnvUtil.getProperty(prefix + MemberMetaDataConstants.WEIGHT, "1"));
+    
+        /**
+         * works  for gray model upgrade,can delete after compatibility period.
+         * see isGrayCompatibleModel
+         */
+        extendInfo
+                .put(MemberMetaDataConstants.SUPPORT_GRAY_MODEL, true);
+        
     }
     
     public boolean isGrpcReportEnabled() {

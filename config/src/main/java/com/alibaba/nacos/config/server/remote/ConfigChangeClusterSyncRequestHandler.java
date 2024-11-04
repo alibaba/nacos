@@ -64,18 +64,29 @@ public class ConfigChangeClusterSyncRequestHandler
     public ConfigChangeClusterSyncResponse handle(ConfigChangeClusterSyncRequest configChangeSyncRequest,
             RequestMeta meta) throws NacosException {
         
+        checkCompatity(configChangeSyncRequest);
+        
         ParamUtils.checkParam(configChangeSyncRequest.getTag());
         DumpRequest dumpRequest = DumpRequest.create(configChangeSyncRequest.getDataId(),
                 configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant(),
                 configChangeSyncRequest.getLastModified(), meta.getClientIp());
+        
+        dumpRequest.setGrayName(configChangeSyncRequest.getGrayName());
+        dumpService.dump(dumpRequest);
+        return new ConfigChangeClusterSyncResponse();
+    }
+    
+    /**
+     * if notified from old server,try to migrate and transfer gray model.
+     * @param configChangeSyncRequest
+     * @return
+     */
+    private void checkCompatity(ConfigChangeClusterSyncRequest configChangeSyncRequest){
         if (PropertyUtil.isGrayCompatibleModel()) {
             if (configChangeSyncRequest.isBeta() || StringUtils.isNotBlank(configChangeSyncRequest.getTag())) {
-                if (supportNewGrayModel(meta)) {
-                    //capability model from new server,ignore.
-                    return new ConfigChangeClusterSyncResponse();
-                } else {
+                
                     String grayName = null;
-                    //from old server ,try migrate and transfer gray model.
+                    //from old server ,beta or tag persist into old model,try migrate and transfer gray model.
                     if (configChangeSyncRequest.isBeta()) {
                         configGrayModelMigrateService.checkMigrateBeta(configChangeSyncRequest.getDataId(),
                                 configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant());
@@ -87,15 +98,9 @@ public class ConfigChangeClusterSyncRequestHandler
                         grayName = TagGrayRule.TYPE_TAG + "_" + configChangeSyncRequest.getTag();
                     }
                     configChangeSyncRequest.setGrayName(grayName);
-                }
+                
             }
         }
-        dumpRequest.setGrayName(configChangeSyncRequest.getGrayName());
-        dumpService.dump(dumpRequest);
-        return new ConfigChangeClusterSyncResponse();
     }
     
-    private boolean supportNewGrayModel(RequestMeta meta) {
-        return AbilityStatus.SUPPORTED.equals(meta.getConnectionAbility(AbilityKey.SUPPORT_NEW_GRAY_MODEL));
-    }
 }

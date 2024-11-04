@@ -33,13 +33,14 @@ public class ConfigDataChangeEvent extends Event {
     
     public  String tenant;
     
-    
     public  String grayName;
     
     public final long lastModifiedTs;
     
+    @Deprecated
     public  String tag;
     
+    @Deprecated
     public  boolean isBeta;
     
     public ConfigDataChangeEvent(String dataId, String group,String tenant, long gmtModified) {
