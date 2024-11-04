@@ -188,7 +188,7 @@ class DumpServiceTest {
     
     @Test
     void testHandleConfigDataChange() {
-        ConfigDataChangeEvent configDataChangeEvent = new ConfigDataChangeEvent("dataId", "group", System.currentTimeMillis());
+        ConfigDataChangeEvent configDataChangeEvent = new ConfigDataChangeEvent("dataId", "group",null, System.currentTimeMillis());
         ReflectionTestUtils.setField(dumpService, "dumpTaskMgr", dumpTaskMgr);
         Mockito.doNothing().when(dumpTaskMgr).addTask(any(), any());
         

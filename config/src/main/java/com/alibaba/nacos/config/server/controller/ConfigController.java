@@ -321,7 +321,7 @@ public class ConfigController {
         }
         for (ConfigAllInfo configInfo : configInfoList) {
             ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
+                    new ConfigDataChangeEvent(configInfo.getDataId(), configInfo.getGroup(),
                             configInfo.getTenant(), time.getTime()));
             
             ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
@@ -474,12 +474,12 @@ public class ConfigController {
         ConfigTraceService.logPersistenceEvent(dataId, group, tenant, requestIpApp, System.currentTimeMillis(),
                 remoteIp, ConfigTraceService.PERSISTENCE_EVENT_BETA, ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
         ConfigChangePublisher.notifyConfigChange(
-                new ConfigDataChangeEvent(dataId, group, tenant, null, "beta", System.currentTimeMillis()));
+                new ConfigDataChangeEvent(dataId, group, tenant, "beta", System.currentTimeMillis()));
         
         if (PropertyUtil.isGrayCompatibleModel()) {
             configInfoBetaPersistService.removeConfigInfo4Beta(dataId, group, tenant);
             ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(true, dataId, group, tenant, System.currentTimeMillis()));
+                    new ConfigDataChangeEvent( dataId, group, tenant,true,null, System.currentTimeMillis()));
         }
         
         return RestResultUtils.success("stop beta ok", true);
@@ -687,7 +687,7 @@ public class ConfigController {
                 null, policy);
         for (ConfigInfo configInfo : configInfoList) {
             ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
+                    new ConfigDataChangeEvent( configInfo.getDataId(), configInfo.getGroup(),
                             configInfo.getTenant(), time.getTime()));
             ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant(), requestIpApp, time.getTime(), InetUtils.getSelfIP(),
@@ -939,7 +939,7 @@ public class ConfigController {
                 srcIp, null, policy);
         for (ConfigInfo configInfo : configInfoList4Clone) {
             ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
+                    new ConfigDataChangeEvent( configInfo.getDataId(), configInfo.getGroup(),
                             configInfo.getTenant(), time.getTime()));
             ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant(), requestIpApp, time.getTime(), InetUtils.getSelfIP(),

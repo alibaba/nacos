@@ -27,7 +27,6 @@ import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
@@ -93,7 +92,7 @@ public class ConfigRemoveRequestHandler extends RequestHandler<ConfigRemoveReque
             ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), clientIp, persistEvent,
                     ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
             ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
+                    new ConfigDataChangeEvent( dataId, group, tenant, false,tag, time.getTime()));
             return ConfigRemoveResponse.buildSuccessResponse();
             
         } catch (Exception e) {

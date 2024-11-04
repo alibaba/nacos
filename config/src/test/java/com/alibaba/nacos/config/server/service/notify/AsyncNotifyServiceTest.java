@@ -150,7 +150,7 @@ class AsyncNotifyServiceTest {
         String dataId = "testDataId" + timeStamp;
         String group = "testGroup";
         AsyncNotifyService asyncNotifyService = new AsyncNotifyService(serverMemberManager);
-        asyncNotifyService.handleConfigDataChangeEvent(new ConfigDataChangeEvent(dataId, group, System.currentTimeMillis()));
+        asyncNotifyService.handleConfigDataChangeEvent(new ConfigDataChangeEvent(dataId, group, null,System.currentTimeMillis()));
         
         // expect schedule twice fail or exception response.
         configExecutorMocked.verify(() -> ConfigExecutor.executeAsyncNotify(any(AsyncNotifyService.AsyncRpcTask.class)), times(1));
