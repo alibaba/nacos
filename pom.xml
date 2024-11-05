@@ -88,7 +88,7 @@
     </issueManagement>
     
     <properties>
-        <revision>2.5.0-SNAPSHOT</revision>
+        <revision>3.0.0-SNAPSHOT</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Compiler settings properties -->
@@ -149,6 +149,7 @@
         <jraft-core.version>1.3.14</jraft-core.version>
         <rpc-grpc-impl.version>${jraft-core.version}</rpc-grpc-impl.version>
         <SnakeYaml.version>2.0</SnakeYaml.version>
+        <kubernetes.client.version>14.0.0</kubernetes.client.version>
         <junit5.version>5.10.2</junit5.version>
         
         <!-- override dependency version -->
@@ -621,6 +622,7 @@
         <module>prometheus</module>
         <module>persistence</module>
         <module>logger-adapter-impl</module>
+        <module>k8s-sync</module>
     </modules>
     
     <!-- Default dependencies in all subprojects -->
@@ -809,6 +811,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-istio</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-k8s-sync</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -1065,6 +1072,18 @@
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
                 <version>${SnakeYaml.version}</version>
+            </dependency>
+            
+            <dependency>
+                <groupId>io.kubernetes</groupId>
+                <artifactId>client-java-api</artifactId>
+                <version>${kubernetes.client.version}</version>
+            </dependency>
+            
+            <dependency>
+                <groupId>io.kubernetes</groupId>
+                <artifactId>client-java</artifactId>
+                <version>${kubernetes.client.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

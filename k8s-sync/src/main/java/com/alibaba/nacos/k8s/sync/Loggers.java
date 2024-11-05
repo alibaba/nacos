@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.istio.common;
+package com.alibaba.nacos.k8s.sync;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * @author special.fy
+ * Loggers Holder.
+ *
+ * @author EmanuelGi
  */
-public enum EventType {
-
-    /**
-     * The service info of nacos changes.
-     */
-    Service,
-
-    /**
-     * The endpoints of service change.
-     */
-    Endpoint;
+public class Loggers {
+    
+    public static final Logger MAIN = LoggerFactory.getLogger("com.alibaba.nacos.k8s.sync.main");
 }
