@@ -18,6 +18,11 @@ package com.alibaba.nacos.config.server.utils;
 
 import java.util.Arrays;
 
+/**
+ * Config Tag util.
+ *
+ * @author PoisonGravity
+ */
 public class ConfigTagUtil {
     
     public static final String VIRTUAL_SERVICE = "virtual-service";

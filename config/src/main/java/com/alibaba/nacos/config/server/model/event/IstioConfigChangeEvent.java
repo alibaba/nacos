@@ -16,7 +16,14 @@
 
 package com.alibaba.nacos.config.server.model.event;
 
+/**
+ * XDS config change event.
+ *
+ * @author PoisonGravity
+ */
 public class IstioConfigChangeEvent extends ConfigDataChangeEvent {
+    
+    private static final long serialVersionUID = -2618455009648617192L;
     
     public final String content;
     
