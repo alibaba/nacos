@@ -119,7 +119,7 @@ public class ConfigOperationService {
             configForm.setGrayName(TagGrayRule.TYPE_TAG + "_" + configForm.getTag());
             configForm.setGrayRuleExp(configForm.getTag());
             configForm.setGrayVersion(TagGrayRule.VERSION);
-            configForm.setGrayPriority(Integer.MAX_VALUE-1);
+            configForm.setGrayPriority(Integer.MAX_VALUE - 1);
             persistTagv1(configForm, configInfo, configRequestInfo);
             publishConfigGray(TagGrayRule.TYPE_TAG, configForm, configRequestInfo);
             return Boolean.TRUE;
@@ -141,8 +141,8 @@ public class ConfigOperationService {
                     configForm.getSrcUser(), configInfo, configAdvanceInfo);
         }
         ConfigChangePublisher.notifyConfigChange(
-                new ConfigDataChangeEvent( configForm.getDataId(), configForm.getGroup(),
-                        configForm.getNamespaceId(), configOperateResult.getLastModified()));
+                new ConfigDataChangeEvent(configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId(),
+                        configOperateResult.getLastModified()));
         ConfigTraceService.logPersistenceEvent(configForm.getDataId(), configForm.getGroup(),
                 configForm.getNamespaceId(), configRequestInfo.getRequestIpApp(), configOperateResult.getLastModified(),
                 InetUtils.getSelfIP(), ConfigTraceService.PERSISTENCE_EVENT, ConfigTraceService.PERSISTENCE_TYPE_PUB,
@@ -172,8 +172,8 @@ public class ConfigOperationService {
                     configRequestInfo.getSrcIp(), configForm.getSrcUser());
         }
         ConfigChangePublisher.notifyConfigChange(
-                new ConfigDataChangeEvent( configForm.getDataId(), configForm.getGroup(),
-                        configForm.getNamespaceId(), false,configForm.getTag(), configOperateResult.getLastModified()));
+                new ConfigDataChangeEvent(configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId(),
+                        false, configForm.getTag(), configOperateResult.getLastModified()));
     }
     
     private void persistBeta(ConfigForm configForm, ConfigInfo configInfo, ConfigRequestInfo configRequestInfo)
@@ -198,8 +198,8 @@ public class ConfigOperationService {
                     configRequestInfo.getBetaIps(), configRequestInfo.getSrcIp(), configForm.getSrcUser());
         }
         ConfigChangePublisher.notifyConfigChange(
-                new ConfigDataChangeEvent( configForm.getDataId(), configForm.getGroup(),
-                        configForm.getNamespaceId(), true,null,configOperateResult.getLastModified()));
+                new ConfigDataChangeEvent(configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId(),
+                        true, null, configOperateResult.getLastModified()));
     }
     
     /**
@@ -265,7 +265,7 @@ public class ConfigOperationService {
         
         ConfigChangePublisher.notifyConfigChange(
                 new ConfigDataChangeEvent(configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId(),
-                         configForm.getGrayName(), configOperateResult.getLastModified()));
+                        configForm.getGrayName(), configOperateResult.getLastModified()));
         
         String eventType = ConfigTraceService.PERSISTENCE_EVENT + "-" + configForm.getGrayName();
         
@@ -313,7 +313,7 @@ public class ConfigOperationService {
         ConfigTraceService.logPersistenceEvent(dataId, group, namespaceId, null, time.getTime(), clientIp, persistEvent,
                 ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
         ConfigChangePublisher.notifyConfigChange(
-                new ConfigDataChangeEvent(dataId, group, namespaceId,  grayName, time.getTime()));
+                new ConfigDataChangeEvent(dataId, group, namespaceId, grayName, time.getTime()));
         
         return true;
     }
@@ -323,7 +323,7 @@ public class ConfigOperationService {
         if (PropertyUtil.isGrayCompatibleModel()) {
             configInfoTagPersistService.removeConfigInfoTag(dataId, group, namespaceId, tag, clientIp, srcUser);
             ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent( dataId, group, namespaceId,false, tag, System.currentTimeMillis()));
+                    new ConfigDataChangeEvent(dataId, group, namespaceId, false, tag, System.currentTimeMillis()));
         }
     }
     

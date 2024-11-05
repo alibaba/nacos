@@ -115,11 +115,10 @@ public class AsyncNotifyService {
             for (Member member : ipList) {
                 // grpc report data change only
                 NotifySingleRpcTask notifySingleRpcTask = generateTask(evt, member);
-                if(notifySingleRpcTask!=null){
-                    rpcQueue.add(
-                            notifySingleRpcTask);
+                if (notifySingleRpcTask != null) {
+                    rpcQueue.add(notifySingleRpcTask);
                 }
-               
+                
             }
             if (!rpcQueue.isEmpty()) {
                 ConfigExecutor.executeAsyncNotify(new AsyncRpcTask(rpcQueue));
@@ -129,26 +128,25 @@ public class AsyncNotifyService {
     
     private NotifySingleRpcTask generateTask(ConfigDataChangeEvent configDataChangeEvent, Member member) {
         
-        if (PropertyUtil.isGrayCompatibleModel()){
+        if (PropertyUtil.isGrayCompatibleModel()) {
             if (configDataChangeEvent.isBeta || StringUtils.isNotBlank(configDataChangeEvent.tag)) {
-    
+                
                 // member support gray model ,no need to duplicated notify
-                if ((Boolean)member.getExtendInfo().getOrDefault(SUPPORT_GRAY_MODEL,Boolean.FALSE)) {
+                if ((Boolean) member.getExtendInfo().getOrDefault(SUPPORT_GRAY_MODEL, Boolean.FALSE)) {
                     return null;
                 }
             }
         }
         
-        NotifySingleRpcTask task= new NotifySingleRpcTask(configDataChangeEvent.dataId, configDataChangeEvent.group,
-                configDataChangeEvent.tenant,configDataChangeEvent.grayName,  configDataChangeEvent.lastModifiedTs
-                , member);
+        NotifySingleRpcTask task = new NotifySingleRpcTask(configDataChangeEvent.dataId, configDataChangeEvent.group,
+                configDataChangeEvent.tenant, configDataChangeEvent.grayName, configDataChangeEvent.lastModifiedTs,
+                member);
         
         // compatible with gray model
         task.setBeta(configDataChangeEvent.isBeta);
         task.setTag(configDataChangeEvent.tag);
         return task;
     }
-    
     
     private boolean isUnHealthy(String targetIp) {
         return !memberManager.stateCheck(targetIp, HEALTHY_CHECK_STATUS);
@@ -225,24 +223,25 @@ public class AsyncNotifyService {
         private int failCount;
         
         private Member member;
-    
+        
         private String grayName;
-    
+        
         @Deprecated
         private boolean isBeta;
         
         @Deprecated
         private String tag;
         
-        public NotifySingleRpcTask(String dataId, String group, String tenant, String grayName, long lastModified, Member member) {
+        public NotifySingleRpcTask(String dataId, String group, String tenant, String grayName, long lastModified,
+                Member member) {
             this.dataId = dataId;
             this.group = group;
             this.tenant = tenant;
             this.lastModified = lastModified;
             this.member = member;
-            this.grayName=grayName;
+            this.grayName = grayName;
             setTaskInterval(3000L);
-           
+            
         }
         
         public boolean isBeta() {
@@ -260,15 +259,15 @@ public class AsyncNotifyService {
         public void setTag(String tag) {
             this.tag = tag;
         }
-    
+        
         public String getGrayName() {
             return grayName;
         }
-    
+        
         public void setGrayName(String grayName) {
             this.grayName = grayName;
         }
-    
+        
         public String getDataId() {
             return dataId;
         }

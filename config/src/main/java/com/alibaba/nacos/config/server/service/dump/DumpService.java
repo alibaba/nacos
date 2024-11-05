@@ -23,7 +23,6 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.manager.TaskManager;
-import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.service.dump.processor.DumpAllGrayProcessor;
@@ -49,7 +48,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Timestamp;
-import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -108,8 +106,7 @@ public abstract class DumpService {
     public DumpService(ConfigInfoPersistService configInfoPersistService,
             NamespacePersistService namespacePersistService,
             HistoryConfigInfoPersistService historyConfigInfoPersistService,
-            ConfigInfoGrayPersistService configInfoGrayPersistService,
-            ServerMemberManager memberManager) {
+            ConfigInfoGrayPersistService configInfoGrayPersistService, ServerMemberManager memberManager) {
         this.configInfoPersistService = configInfoPersistService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
         this.namespacePersistService = namespacePersistService;
@@ -247,7 +244,8 @@ public abstract class DumpService {
                                 currentTime), random.nextInt((int) PropertyUtil.getDumpChangeWorkerInterval()),
                         TimeUnit.MILLISECONDS);
                 ConfigExecutor.scheduleConfigChangeTask(
-                        new DumpChangeGrayConfigWorker(this.configInfoGrayPersistService, currentTime, this.historyConfigInfoPersistService),
+                        new DumpChangeGrayConfigWorker(this.configInfoGrayPersistService, currentTime,
+                                this.historyConfigInfoPersistService),
                         random.nextInt((int) PropertyUtil.getDumpChangeWorkerInterval()), TimeUnit.MILLISECONDS);
             }
             

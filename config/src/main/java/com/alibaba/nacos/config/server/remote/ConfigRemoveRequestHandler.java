@@ -30,10 +30,10 @@ import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistServi
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
+import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.ConfigRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
-import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
@@ -84,15 +84,15 @@ public class ConfigRemoveRequestHandler extends RequestHandler<ConfigRemoveReque
                 configInfoPersistService.removeConfigInfo(dataId, group, tenant, clientIp, null);
             } else {
                 persistEvent = ConfigTraceService.PERSISTENCE_EVENT_TAG + "-" + tag;
-    
-                String tayGrayName=TagGrayRule.TYPE_TAG + "_" + tag;
+                
+                String tayGrayName = TagGrayRule.TYPE_TAG + "_" + tag;
                 configInfoGrayPersistService.removeConfigInfoGray(dataId, group, tenant, tayGrayName, clientIp, null);
             }
             final Timestamp time = TimeUtils.getCurrentTime();
             ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), clientIp, persistEvent,
                     ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
             ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent( dataId, group, tenant, false,tag, time.getTime()));
+                    new ConfigDataChangeEvent(dataId, group, tenant, false, tag, time.getTime()));
             return ConfigRemoveResponse.buildSuccessResponse();
             
         } catch (Exception e) {

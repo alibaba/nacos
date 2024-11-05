@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.config.server.remote;
 
-import com.alibaba.nacos.api.ability.constant.AbilityKey;
-import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.config.remote.request.cluster.ConfigChangeClusterSyncRequest;
 import com.alibaba.nacos.api.config.remote.response.cluster.ConfigChangeClusterSyncResponse;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -37,6 +35,7 @@ import com.alibaba.nacos.core.paramcheck.impl.ConfigRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.remote.grpc.InvokeSource;
 import org.springframework.stereotype.Component;
+
 /**
  * handller to handler config change from other servers.
  *
@@ -78,26 +77,27 @@ public class ConfigChangeClusterSyncRequestHandler
     
     /**
      * if notified from old server,try to migrate and transfer gray model.
-     * @param configChangeSyncRequest
+     *
+     * @param configChangeSyncRequest request.
      * @return
      */
-    private void checkCompatity(ConfigChangeClusterSyncRequest configChangeSyncRequest){
+    private void checkCompatity(ConfigChangeClusterSyncRequest configChangeSyncRequest) {
         if (PropertyUtil.isGrayCompatibleModel()) {
             if (configChangeSyncRequest.isBeta() || StringUtils.isNotBlank(configChangeSyncRequest.getTag())) {
                 
-                    String grayName = null;
-                    //from old server ,beta or tag persist into old model,try migrate and transfer gray model.
-                    if (configChangeSyncRequest.isBeta()) {
-                        configGrayModelMigrateService.checkMigrateBeta(configChangeSyncRequest.getDataId(),
-                                configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant());
-                        grayName = BetaGrayRule.TYPE_BETA;
-                    } else {
-                        configGrayModelMigrateService.checkMigrateTag(configChangeSyncRequest.getDataId(),
-                                configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant(),
-                                configChangeSyncRequest.getTag());
-                        grayName = TagGrayRule.TYPE_TAG + "_" + configChangeSyncRequest.getTag();
-                    }
-                    configChangeSyncRequest.setGrayName(grayName);
+                String grayName = null;
+                //from old server ,beta or tag persist into old model,try migrate and transfer gray model.
+                if (configChangeSyncRequest.isBeta()) {
+                    configGrayModelMigrateService.checkMigrateBeta(configChangeSyncRequest.getDataId(),
+                            configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant());
+                    grayName = BetaGrayRule.TYPE_BETA;
+                } else {
+                    configGrayModelMigrateService.checkMigrateTag(configChangeSyncRequest.getDataId(),
+                            configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant(),
+                            configChangeSyncRequest.getTag());
+                    grayName = TagGrayRule.TYPE_TAG + "_" + configChangeSyncRequest.getTag();
+                }
+                configChangeSyncRequest.setGrayName(grayName);
                 
             }
         }

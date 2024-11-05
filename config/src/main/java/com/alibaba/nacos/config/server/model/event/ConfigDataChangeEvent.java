@@ -17,7 +17,6 @@
 package com.alibaba.nacos.config.server.model.event;
 
 import com.alibaba.nacos.common.notify.Event;
-import com.alibaba.nacos.common.utils.StringUtils;
 
 /**
  * ConfigDataChangeEvent.
@@ -26,42 +25,42 @@ import com.alibaba.nacos.common.utils.StringUtils;
  */
 public class ConfigDataChangeEvent extends Event {
     
+    public String dataId;
     
-    public  String dataId;
+    public String group;
     
-    public  String group;
+    public String tenant;
     
-    public  String tenant;
-    
-    public  String grayName;
+    public String grayName;
     
     public final long lastModifiedTs;
     
     @Deprecated
-    public  String tag;
+    public String tag;
     
     @Deprecated
-    public  boolean isBeta;
+    public boolean isBeta;
     
-    public ConfigDataChangeEvent(String dataId, String group,String tenant, long gmtModified) {
+    public ConfigDataChangeEvent(String dataId, String group, String tenant, long gmtModified) {
         if (null == dataId || null == group) {
             throw new IllegalArgumentException("dataId is null or group is null");
         }
-        this.dataId=dataId;
-        this.group=group;
-        this.tenant=tenant;
-        this.lastModifiedTs=gmtModified;
+        this.dataId = dataId;
+        this.group = group;
+        this.tenant = tenant;
+        this.lastModifiedTs = gmtModified;
     }
     
-    public ConfigDataChangeEvent(String dataId, String group,String tenant,String grayName, long gmtModified) {
-        this(dataId,group,tenant,gmtModified);
-        this.grayName=grayName;
+    public ConfigDataChangeEvent(String dataId, String group, String tenant, String grayName, long gmtModified) {
+        this(dataId, group, tenant, gmtModified);
+        this.grayName = grayName;
     }
     
-    public ConfigDataChangeEvent(String dataId, String group,String tenant,boolean isBeta,String tag, long gmtModified) {
-        this(dataId, group,tenant, gmtModified);
-        this.isBeta=isBeta;
-        this.tag=tag;
+    public ConfigDataChangeEvent(String dataId, String group, String tenant, boolean isBeta, String tag,
+            long gmtModified) {
+        this(dataId, group, tenant, gmtModified);
+        this.isBeta = isBeta;
+        this.tag = tag;
     }
     
 }
