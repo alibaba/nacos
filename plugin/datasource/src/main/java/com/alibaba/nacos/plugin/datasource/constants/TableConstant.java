@@ -26,8 +26,6 @@ public class TableConstant {
     
     public static final String CONFIG_INFO = "config_info";
     
-    public static final String CONFIG_INFO_AGGR = "config_info_aggr";
-    
     public static final String CONFIG_INFO_BETA = "config_info_beta";
     
     public static final String CONFIG_INFO_TAG = "config_info_tag";

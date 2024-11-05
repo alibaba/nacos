@@ -73,8 +73,6 @@ public class ConfigRowMapperInjector {
     
     public static final ConfigInfoBaseRowMapper CONFIG_INFO_BASE_ROW_MAPPER = new ConfigInfoBaseRowMapper();
     
-    public static final ConfigInfoAggrRowMapper CONFIG_INFO_AGGR_ROW_MAPPER = new ConfigInfoAggrRowMapper();
-    
     public static final ConfigInfoChangedRowMapper CONFIG_INFO_CHANGED_ROW_MAPPER = new ConfigInfoChangedRowMapper();
     
     public static final ConfigHistoryRowMapper HISTORY_LIST_ROW_MAPPER = new ConfigHistoryRowMapper();
@@ -151,12 +149,6 @@ public class ConfigRowMapperInjector {
         RowMapperManager.registerRowMapper(
                 ConfigRowMapperInjector.CONFIG_INFO_BASE_ROW_MAPPER.getClass().getCanonicalName(),
                 ConfigRowMapperInjector.CONFIG_INFO_BASE_ROW_MAPPER);
-        
-        // CONFIG_INFO_AGGR_ROW_MAPPER
-        
-        RowMapperManager.registerRowMapper(
-                ConfigRowMapperInjector.CONFIG_INFO_AGGR_ROW_MAPPER.getClass().getCanonicalName(),
-                ConfigRowMapperInjector.CONFIG_INFO_AGGR_ROW_MAPPER);
         
         // CONFIG_INFO_CHANGED_ROW_MAPPER
         
@@ -566,21 +558,6 @@ public class ConfigRowMapperInjector {
                 info.setId(rs.getLong("id"));
             } catch (SQLException ignore) {
             }
-            return info;
-        }
-    }
-    
-    public static final class ConfigInfoAggrRowMapper implements RowMapper<ConfigInfoAggr> {
-        
-        @Override
-        public ConfigInfoAggr mapRow(ResultSet rs, int rowNum) throws SQLException {
-            ConfigInfoAggr info = new ConfigInfoAggr();
-            info.setDataId(rs.getString("data_id"));
-            info.setGroup(rs.getString("group_id"));
-            info.setDatumId(rs.getString("datum_id"));
-            info.setTenant(rs.getString("tenant_id"));
-            info.setAppName(rs.getString("app_name"));
-            info.setContent(rs.getString("content"));
             return info;
         }
     }
