@@ -101,7 +101,7 @@ public class RequestMeta {
         HashMap<String, String> applabelsMap = new HashMap<String, String>(8) {
             {
                 put(Constants.APPNAME, labels.get(Constants.APPNAME));
-                put(Constants.CONFIG_VERSION, clientVersion);
+                put(Constants.CLIENT_VERSION_KEY, clientVersion);
                 put(Constants.CLIENT_IP, clientIp);
             }
         };
