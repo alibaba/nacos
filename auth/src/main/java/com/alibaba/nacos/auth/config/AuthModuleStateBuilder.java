@@ -47,7 +47,7 @@ public class AuthModuleStateBuilder implements ModuleStateBuilder {
     public ModuleState build() {
         ModuleState result = new ModuleState(AUTH_MODULE);
         AuthConfigs authConfigs = ApplicationUtils.getBean(AuthConfigs.class);
-        result.newState(AUTH_ENABLED, authConfigs.isAuthEnabled());
+        result.newState(AUTH_ENABLED, authConfigs.isConsoleAuthEnabled());
         result.newState(LOGIN_PAGE_ENABLED, isLoginPageEnabled(authConfigs));
         result.newState(AUTH_SYSTEM_TYPE, authConfigs.getNacosAuthSystemType());
         result.newState(AUTH_ADMIN_REQUEST, isAdminRequest(authConfigs));

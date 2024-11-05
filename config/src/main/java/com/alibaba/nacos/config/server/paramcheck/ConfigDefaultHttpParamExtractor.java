@@ -60,7 +60,10 @@ public class ConfigDefaultHttpParamExtractor extends AbstractHttpParamExtractor 
     }
     
     private String getAliasGroup(HttpServletRequest request) {
-        String group = request.getParameter("group");
+        String group = request.getParameter("groupName");
+        if (StringUtils.isBlank(group)) {
+            group = request.getParameter("group");
+        }
         return group;
     }
     

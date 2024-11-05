@@ -79,7 +79,7 @@ class ConfigSync extends React.Component {
     request({
       url: '/diamond-ops/env/domain',
       success(data) {
-        if (data.code === 200) {
+        if (data.code === 0) {
           const { envGroups } = data.data;
 
           self.setState({
@@ -105,7 +105,7 @@ class ConfigSync extends React.Component {
         self.openLoading();
       },
       success(result) {
-        if (result.code === 200) {
+        if (result.code === 0) {
           const { data = {} } = result;
 
           self.field.setValue('dataId', data.dataId);
@@ -177,7 +177,7 @@ class ConfigSync extends React.Component {
         _payload.content = '';
         _payload.dataId = payload.dataId;
         _payload.group = payload.group;
-        _payload.isok = res.code === 200;
+        _payload.isok = res.code === 0;
         if (!_payload.isok) {
           _payload.isok = false;
           _payload.message = res.message;

@@ -73,14 +73,14 @@ class ConfigRollback extends React.Component {
 
   getDataDetail() {
     const self = this;
-    this.tenant = getParams('namespace') || '';
+    this.namespaceId = getParams('namespace') || '';
     this.serverId = getParams('serverId') || 'center';
-    const url = `v1/cs/history?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`;
+    const url = `v3/console/cs/history?dataId=${this.dataId}&groupName=${this.group}&nid=${this.nid}`;
     request({
       url,
       success(result) {
         if (result != null) {
-          const data = result;
+          const data = result.data;
           const envName = self.serverId;
           self.id = data.id; // 详情的id
           self.field.setValue('dataId', data.dataId);
@@ -141,14 +141,14 @@ class ConfigRollback extends React.Component {
         let postData = {
           appName: self.field.getValue('appName'),
           dataId: self.dataId,
-          group: self.group,
+          groupName: self.group,
           content: self.field.getValue('content'),
-          tenant: self.tenant,
+          namespaceId: self.tenant,
         };
 
-        let url = 'v1/cs/configs';
+        let url = 'v3/console/cs/config';
         if (self.opType.trim() === 'I') {
-          url = `v1/cs/configs?dataId=${self.dataId}&group=${self.group}`;
+          url = `v3/console/cs/config?dataId=${self.dataId}&groupName=${self.group}`;
           postData = {};
         }
 
@@ -158,8 +158,8 @@ class ConfigRollback extends React.Component {
           contentType: 'application/x-www-form-urlencoded',
           url,
           data: postData,
-          success(data) {
-            if (data === true) {
+          success(res) {
+            if (res.data === true) {
               Dialog.alert({ content: locale.rollbackSuccessful });
             }
           },
