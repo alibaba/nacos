@@ -97,7 +97,7 @@ class AbilityKeyTest {
     @Test
     void testGetAllValues() {
         Collection<AbilityKey> actual = AbilityKey.getAllValues(AbilityMode.SERVER);
-        assertEquals(4, actual.size());
+        assertEquals(3, actual.size());
         actual = AbilityKey.getAllValues(AbilityMode.SDK_CLIENT);
         assertEquals(1, actual.size());
         actual = AbilityKey.getAllValues(AbilityMode.CLUSTER_CLIENT);
@@ -107,7 +107,7 @@ class AbilityKeyTest {
     @Test
     void testGetAllNames() {
         Collection<String> actual = AbilityKey.getAllNames(AbilityMode.SERVER);
-        assertEquals(4, actual.size());
+        assertEquals(3, actual.size());
         actual = AbilityKey.getAllNames(AbilityMode.SDK_CLIENT);
         assertEquals(1, actual.size());
         actual = AbilityKey.getAllNames(AbilityMode.CLUSTER_CLIENT);
