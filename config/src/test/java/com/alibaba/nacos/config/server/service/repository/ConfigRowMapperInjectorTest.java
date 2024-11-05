@@ -345,7 +345,8 @@ class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getString(eq("app"))).thenReturn(preConfig.getAppName());
         Mockito.when(resultSet.getString(eq("encrypted_data_key"))).thenReturn(preConfig.getEncryptedDataKey());
         
-        ConfigRowMapperInjector.ConfigInfoGrayWrapperRowMapper configInfoWrapperRowMapper = new ConfigRowMapperInjector.ConfigInfoGrayWrapperRowMapper();
+        ConfigRowMapperInjector.ConfigInfoGrayWrapperRowMapper configInfoWrapperRowMapper =
+                new ConfigRowMapperInjector.ConfigInfoGrayWrapperRowMapper();
         
         ConfigInfoGrayWrapper configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
         assertEquals(preConfig, configInfoWrapper);
