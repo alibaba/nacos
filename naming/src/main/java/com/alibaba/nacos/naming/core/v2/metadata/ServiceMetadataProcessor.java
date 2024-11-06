@@ -130,9 +130,11 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
             ServiceMetadata newMetadata = mergeMetadata(currentMetadata.get(), op.getMetadata());
             Service singleton = ServiceManager.getInstance().getSingleton(service);
             namingMetadataManager.updateServiceMetadata(singleton, newMetadata);
+            serviceStorage.removeData(service);
         } else {
             Service singleton = ServiceManager.getInstance().getSingleton(service);
             namingMetadataManager.updateServiceMetadata(singleton, op.getMetadata());
+            serviceStorage.removeData(service);
         }
     }
     
