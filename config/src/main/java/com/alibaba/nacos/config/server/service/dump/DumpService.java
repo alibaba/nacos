@@ -29,7 +29,6 @@ import com.alibaba.nacos.config.server.service.dump.processor.DumpAllGrayProcess
 import com.alibaba.nacos.config.server.service.dump.processor.DumpAllProcessor;
 import com.alibaba.nacos.config.server.service.dump.processor.DumpProcessor;
 import com.alibaba.nacos.config.server.service.dump.task.DumpAllGrayTask;
-import com.alibaba.nacos.config.server.service.dump.task.DumpAllTagTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpAllTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpTask;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
@@ -202,7 +201,7 @@ public abstract class DumpService {
         
         @Override
         public void run() {
-            dumpAllTaskMgr.addTask(DumpAllTagTask.TASK_ID, new DumpAllGrayTask());
+            dumpAllTaskMgr.addTask(DumpAllGrayTask.TASK_ID, new DumpAllGrayTask());
         }
     }
     

@@ -38,7 +38,7 @@ public class TagGrayRule extends AbstractGrayRule {
     
     public static final String VERSION = "1.0.0";
     
-    public static final int PROPRITY = -999;
+    public static final int PRIOPRITY = Integer.MAX_VALUE-1;
     
     public TagGrayRule() {
         super();

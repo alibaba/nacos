@@ -53,7 +53,9 @@ public class DumpAllProcessor implements NacosTaskProcessor {
     @Override
     public boolean process(NacosTask task) {
         if (!(task instanceof DumpAllTask)) {
-            DEFAULT_LOG.error("[all-dump-error] ,invalid task type,DumpAllProcessor should process DumpAllTask type.");
+            DEFAULT_LOG.error(
+                    "[all-dump-error] ,invalid task type {},DumpAllProcessor should process DumpAllTask type.",
+                    task.getClass().getSimpleName());
             return false;
         }
         DumpAllTask dumpAllTask = (DumpAllTask) task;
