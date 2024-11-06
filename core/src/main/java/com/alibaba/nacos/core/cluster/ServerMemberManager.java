@@ -164,6 +164,9 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         this.localAddress = InetUtils.getSelfIP() + ":" + port;
         this.self = MemberUtil.singleParse(this.localAddress);
         this.self.setExtendVal(MemberMetaDataConstants.VERSION, VersionUtils.version);
+        //works  for gray model upgrade,can delete after compatibility period.
+        this.self
+                .setExtendVal(MemberMetaDataConstants.SUPPORT_GRAY_MODEL, true);
         this.self.setGrpcReportEnabled(true);
 
         // init abilities.

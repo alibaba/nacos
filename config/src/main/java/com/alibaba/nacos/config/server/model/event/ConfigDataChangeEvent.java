@@ -35,11 +35,6 @@ public class ConfigDataChangeEvent extends Event {
     
     public final long lastModifiedTs;
     
-    @Deprecated
-    public String tag;
-    
-    @Deprecated
-    public boolean isBeta;
     
     public ConfigDataChangeEvent(String dataId, String group, String tenant, long gmtModified) {
         if (null == dataId || null == group) {
@@ -54,13 +49,6 @@ public class ConfigDataChangeEvent extends Event {
     public ConfigDataChangeEvent(String dataId, String group, String tenant, String grayName, long gmtModified) {
         this(dataId, group, tenant, gmtModified);
         this.grayName = grayName;
-    }
-    
-    public ConfigDataChangeEvent(String dataId, String group, String tenant, boolean isBeta, String tag,
-            long gmtModified) {
-        this(dataId, group, tenant, gmtModified);
-        this.isBeta = isBeta;
-        this.tag = tag;
     }
     
 }

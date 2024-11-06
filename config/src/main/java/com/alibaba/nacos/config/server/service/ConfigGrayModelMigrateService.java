@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.api.utils.NetUtils;
+import com.alibaba.nacos.config.server.model.ConfigAllInfo4Gray;
 import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
@@ -35,8 +36,7 @@ import javax.annotation.PostConstruct;
 import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 
 /**
- * migrate beta and tag to gray model.
- * should only invoked from config sync notify.
+ * migrate beta and tag to gray model. should only invoked from config sync notify.
  *
  * @author shiyiyue
  */
@@ -75,6 +75,11 @@ public class ConfigGrayModelMigrateService {
     public void checkMigrateBeta(String dataId, String group, String tenant) {
         ConfigInfoBetaWrapper configInfo4Beta = configInfoBetaPersistService.findConfigInfo4Beta(dataId, group, tenant);
         if (configInfo4Beta == null) {
+            ConfigAllInfo4Gray configAllInfo4Gray = configInfoGrayPersistService.findConfigAllInfo4Gray(dataId, group,
+                    tenant, BetaGrayRule.TYPE_BETA);
+            if (configAllInfo4Gray == null) {
+                return;
+            }
             configInfoGrayPersistService.removeConfigInfoGray(dataId, group, tenant, BetaGrayRule.TYPE_BETA,
                     NetUtils.localIP(), "nacos_auto_migrate");
             return;
@@ -106,6 +111,11 @@ public class ConfigGrayModelMigrateService {
         ConfigInfoTagWrapper configInfo4Tag = configInfoTagPersistService.findConfigInfo4Tag(dataId, group, tenant,
                 tag);
         if (configInfo4Tag == null) {
+            ConfigInfoGrayWrapper configInfo4Gray = configInfoGrayPersistService.findConfigInfo4Gray(dataId, group,
+                    tenant, TagGrayRule.TYPE_TAG + "_" + tag);
+            if (configInfo4Gray == null) {
+                return;
+            }
             configInfoGrayPersistService.removeConfigInfoGray(dataId, group, tenant, TagGrayRule.TYPE_TAG + "_" + tag,
                     NetUtils.localIP(), "nacos_auto_migrate");
             return;

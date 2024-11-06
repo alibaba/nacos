@@ -26,6 +26,7 @@ import static com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG;
 
 /**
  * Tag gray rule.
+ *
  * @author shiyiyue
  */
 public class TagGrayRule extends AbstractGrayRule {
@@ -38,7 +39,7 @@ public class TagGrayRule extends AbstractGrayRule {
     
     public static final String VERSION = "1.0.0";
     
-    public static final int PRIOPRITY = Integer.MAX_VALUE-1;
+    public static final int PRIOPRITY = Integer.MAX_VALUE - 1;
     
     public TagGrayRule() {
         super();

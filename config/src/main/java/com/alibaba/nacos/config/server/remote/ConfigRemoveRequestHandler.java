@@ -79,20 +79,21 @@ public class ConfigRemoveRequestHandler extends RequestHandler<ConfigRemoveReque
             String persistEvent = ConfigTraceService.PERSISTENCE_EVENT;
             
             String clientIp = meta.getClientIp();
+            String grayName=null;
             if (StringUtils.isBlank(tag)) {
                 
                 configInfoPersistService.removeConfigInfo(dataId, group, tenant, clientIp, null);
             } else {
                 persistEvent = ConfigTraceService.PERSISTENCE_EVENT_TAG + "-" + tag;
-                
-                String tayGrayName = TagGrayRule.TYPE_TAG + "_" + tag;
-                configInfoGrayPersistService.removeConfigInfoGray(dataId, group, tenant, tayGrayName, clientIp, null);
+    
+                grayName = TagGrayRule.TYPE_TAG + "_" + tag;
+                configInfoGrayPersistService.removeConfigInfoGray(dataId, group, tenant, grayName, clientIp, null);
             }
             final Timestamp time = TimeUtils.getCurrentTime();
             ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), clientIp, persistEvent,
                     ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
             ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(dataId, group, tenant, false, tag, time.getTime()));
+                    new ConfigDataChangeEvent(dataId, group, tenant, grayName, time.getTime()));
             return ConfigRemoveResponse.buildSuccessResponse();
             
         } catch (Exception e) {

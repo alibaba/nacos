@@ -171,9 +171,6 @@ public class ConfigOperationService {
             configOperateResult = configInfoTagPersistService.insertOrUpdateTag(configInfo, configForm.getTag(),
                     configRequestInfo.getSrcIp(), configForm.getSrcUser());
         }
-        ConfigChangePublisher.notifyConfigChange(
-                new ConfigDataChangeEvent(configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId(),
-                        false, configForm.getTag(), configOperateResult.getLastModified()));
     }
     
     private void persistBeta(ConfigForm configForm, ConfigInfo configInfo, ConfigRequestInfo configRequestInfo)
@@ -194,12 +191,10 @@ public class ConfigOperationService {
                         "Cas publish beta config fail, server md5 may have changed.");
             }
         } else {
-            configOperateResult = configInfoBetaPersistService.insertOrUpdateBeta(configInfo,
+            configInfoBetaPersistService.insertOrUpdateBeta(configInfo,
                     configRequestInfo.getBetaIps(), configRequestInfo.getSrcIp(), configForm.getSrcUser());
         }
-        ConfigChangePublisher.notifyConfigChange(
-                new ConfigDataChangeEvent(configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId(),
-                        true, null, configOperateResult.getLastModified()));
+
     }
     
     /**
@@ -322,8 +317,6 @@ public class ConfigOperationService {
             String srcUser) {
         if (PropertyUtil.isGrayCompatibleModel()) {
             configInfoTagPersistService.removeConfigInfoTag(dataId, group, namespaceId, tag, clientIp, srcUser);
-            ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(dataId, group, namespaceId, false, tag, System.currentTimeMillis()));
         }
     }
     

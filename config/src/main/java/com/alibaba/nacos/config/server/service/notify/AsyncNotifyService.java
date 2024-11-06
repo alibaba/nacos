@@ -25,6 +25,8 @@ import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
+import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
+import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.remote.ConfigClusterRpcClientProxy;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
@@ -128,23 +130,25 @@ public class AsyncNotifyService {
     
     private NotifySingleRpcTask generateTask(ConfigDataChangeEvent configDataChangeEvent, Member member) {
         
-        if (PropertyUtil.isGrayCompatibleModel()) {
-            if (configDataChangeEvent.isBeta || StringUtils.isNotBlank(configDataChangeEvent.tag)) {
-                
-                // member support gray model ,no need to duplicated notify
-                if ((Boolean) member.getExtendInfo().getOrDefault(SUPPORT_GRAY_MODEL, Boolean.FALSE)) {
-                    return null;
-                }
-            }
-        }
-        
         NotifySingleRpcTask task = new NotifySingleRpcTask(configDataChangeEvent.dataId, configDataChangeEvent.group,
                 configDataChangeEvent.tenant, configDataChangeEvent.grayName, configDataChangeEvent.lastModifiedTs,
                 member);
         
+        if (PropertyUtil.isGrayCompatibleModel() && StringUtils.isNotBlank(configDataChangeEvent.grayName)) {
+            
+            // old server should set beta or tag flag
+            if (!(Boolean) member.getExtendInfo().getOrDefault(SUPPORT_GRAY_MODEL, Boolean.FALSE)) {
+                
+                task.setBeta(BetaGrayRule.TYPE_BETA.equals(configDataChangeEvent.grayName));
+                if (configDataChangeEvent.grayName.startsWith(TagGrayRule.TYPE_TAG + "_")) {
+                    task.setTag(configDataChangeEvent.grayName.substring(
+                            configDataChangeEvent.grayName.indexOf(TagGrayRule.TYPE_TAG + "_")));
+                }
+                
+            }
+        }
+        
         // compatible with gray model
-        task.setBeta(configDataChangeEvent.isBeta);
-        task.setTag(configDataChangeEvent.tag);
         return task;
     }
     

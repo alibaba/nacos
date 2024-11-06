@@ -200,10 +200,7 @@ public class ExternalConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
                     ConfigAllInfo4Gray oldConfigAllInfo4Gray = findConfigAllInfo4Gray(dataId, group,
                             tenantTmp, grayNameTmp);
                     if (oldConfigAllInfo4Gray == null) {
-                        if (LogUtil.FATAL_LOG.isWarnEnabled()) {
-                            LogUtil.FATAL_LOG.warn("expected config info[dataid:{}, group:{}, tenent:{}] but not found.",
-                                    dataId, group, tenant);
-                        }
+                        return;
                     }
                     
                     ConfigInfoGrayMapper configInfoGrayMapper = mapperManager.findMapper(

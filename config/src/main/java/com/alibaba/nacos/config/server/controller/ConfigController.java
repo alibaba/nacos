@@ -40,6 +40,7 @@ import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
+import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.paramcheck.ConfigBlurSearchHttpParamExtractor;
@@ -465,7 +466,7 @@ public class ConfigController {
         String remoteIp = getRemoteIp(httpServletRequest);
         String requestIpApp = RequestUtil.getAppName(httpServletRequest);
         try {
-            configInfoGrayPersistService.removeConfigInfoGray(dataId, group, tenant, "beta", remoteIp,
+            configInfoGrayPersistService.removeConfigInfoGray(dataId, group, tenant, BetaGrayRule.TYPE_BETA, remoteIp,
                     RequestUtil.getSrcUserName(httpServletRequest));
         } catch (Throwable e) {
             LOGGER.error("remove beta data error", e);
@@ -473,14 +474,12 @@ public class ConfigController {
         }
         ConfigTraceService.logPersistenceEvent(dataId, group, tenant, requestIpApp, System.currentTimeMillis(),
                 remoteIp, ConfigTraceService.PERSISTENCE_EVENT_BETA, ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
-        ConfigChangePublisher.notifyConfigChange(
-                new ConfigDataChangeEvent(dataId, group, tenant, "beta", System.currentTimeMillis()));
         
         if (PropertyUtil.isGrayCompatibleModel()) {
             configInfoBetaPersistService.removeConfigInfo4Beta(dataId, group, tenant);
-            ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(dataId, group, tenant, true, null, System.currentTimeMillis()));
         }
+        ConfigChangePublisher.notifyConfigChange(
+                new ConfigDataChangeEvent(dataId, group, tenant, BetaGrayRule.TYPE_BETA, System.currentTimeMillis()));
         
         return RestResultUtils.success("stop beta ok", true);
     }
