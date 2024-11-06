@@ -44,8 +44,9 @@ public class ApiCompatibilityFilter implements Filter {
     private static final String MESSAGE_NO_REPLACED_API = "Current API will be deprecated, If wanted continue to use, "
             + "please set `%s=true` in application.properties.";
     
-    private static final String MESSAGE_REPLACED_API = "Current API will be deprecated, please use API(s) %s instead, "
-            + "or set `%s=true` in application.properties.";
+    private static final String MESSAGE_REPLACED_API =
+            "Current API will be deprecated, please use API(s) `%s` instead, "
+                    + "or set `%s=true` in application.properties.";
     
     private final ControllerMethodsCache methodsCache;
     
@@ -93,9 +94,9 @@ public class ApiCompatibilityFilter implements Filter {
             }
             filterChain.doFilter(servletRequest, servletResponse);
         } catch (Exception e) {
-            Loggers.CORE.error("");
-            // TODO, return with Result
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Server failed, " + e.getMessage());
+            Loggers.CORE.error("Filter for API {} Compatibility failed.", request.getRequestURI(), e);
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                    "Handle API Compatibility failed, please see log for detail.");
         }
     }
     
