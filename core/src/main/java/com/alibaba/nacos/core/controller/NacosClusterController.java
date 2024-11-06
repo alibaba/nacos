@@ -25,9 +25,11 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -56,6 +58,7 @@ public class NacosClusterController {
     
     @GetMapping(value = "/self")
     @Secured(resource = Commons.NACOS_CORE_CONTEXT + "/cluster", action = ActionTypes.READ, signType = SignType.CONSOLE)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public RestResult<Member> self() {
         return RestResultUtils.success(memberManager.getSelf());
     }
@@ -68,6 +71,7 @@ public class NacosClusterController {
      */
     @GetMapping(value = "/nodes")
     @Secured(resource = Commons.NACOS_CORE_CONTEXT + "/cluster", action = ActionTypes.READ, signType = SignType.CONSOLE)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/core/cluster/nodes")
     public RestResult<Collection<Member>> listNodes(
             @RequestParam(value = "keyword", required = false) String ipKeyWord) {
         Collection<Member> members = memberManager.allMembers();
@@ -92,12 +96,14 @@ public class NacosClusterController {
     
     @GetMapping(value = "/simple/nodes")
     @Secured(resource = Commons.NACOS_CORE_CONTEXT + "/cluster", action = ActionTypes.READ, signType = SignType.CONSOLE)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public RestResult<Collection<String>> listSimpleNodes() {
         return RestResultUtils.success(memberManager.getMemberAddressInfos());
     }
     
     @GetMapping("/health")
     @Secured(resource = Commons.NACOS_CORE_CONTEXT + "/cluster", action = ActionTypes.READ, signType = SignType.CONSOLE)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public RestResult<String> getHealth() {
         return RestResultUtils.success(memberManager.getSelf().getState().name());
     }
@@ -111,6 +117,7 @@ public class NacosClusterController {
     @Deprecated
     @PostMapping(value = {"/report"})
     @Secured(resource = Commons.NACOS_CORE_CONTEXT + "/cluster", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
+    @Compatibility(apiType = ApiType.INNER_API)
     public RestResult<String> report(@RequestBody Member node) {
         if (!node.check()) {
             return RestResultUtils.failedWithMsg(400, "Node information is illegal");
@@ -130,6 +137,7 @@ public class NacosClusterController {
      */
     @PostMapping(value = "/switch/lookup")
     @Secured(resource = Commons.NACOS_CORE_CONTEXT + "/cluster", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public RestResult<String> switchLookup(@RequestParam(name = "type") String type) {
         try {
             memberManager.switchLookup(type);
@@ -148,6 +156,7 @@ public class NacosClusterController {
      */
     @PostMapping("/server/leave")
     @Secured(resource = Commons.NACOS_CORE_CONTEXT + "/cluster", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
+    @Compatibility(apiType = ApiType.CONSOLE_API)
     public RestResult<String> leave(@RequestBody Collection<String> params,
             @RequestParam(defaultValue = "true") Boolean notifyOtherMembers) throws Exception {
         return RestResultUtils.failed(405, null, "/v1/core/cluster/server/leave API not allow to use temporarily.");
