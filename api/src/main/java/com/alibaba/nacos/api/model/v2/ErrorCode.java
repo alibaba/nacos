@@ -186,6 +186,11 @@ public enum ErrorCode {
     SERVER_ERROR(30000, "server error"),
     
     /**
+     * API will be deprecated.
+     */
+    API_DEPRECATED(40000, "API deprecated."),
+    
+    /**
      * Config use 100001 ~ 100999.
      **/
     METADATA_ILLEGAL(100002, "导入的元数据非法"),
