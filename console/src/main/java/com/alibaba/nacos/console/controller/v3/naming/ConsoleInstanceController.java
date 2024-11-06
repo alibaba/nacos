@@ -76,7 +76,7 @@ public class ConsoleInstanceController {
      * @param serviceForm service form
      * @param pageForm Page form
      * @param healthyOnly whether only return health instance
-     * @param enabledOnly wheter only return enabled instance
+     * @param enabledOnly whether only return enabled instance
      * @return instances information
      */
     @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)

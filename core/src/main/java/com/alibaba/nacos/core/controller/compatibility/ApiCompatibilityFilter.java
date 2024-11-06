@@ -66,6 +66,10 @@ public class ApiCompatibilityFilter implements Filter {
                 return;
             }
             Compatibility compatibility = method.getAnnotation(Compatibility.class);
+            if (null == compatibility) {
+                filterChain.doFilter(servletRequest, servletResponse);
+                return;
+            }
             ApiType apiType = compatibility.apiType();
             switch (apiType) {
                 case ADMIN_API:

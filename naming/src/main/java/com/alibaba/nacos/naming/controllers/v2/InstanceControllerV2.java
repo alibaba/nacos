@@ -37,6 +37,7 @@ import com.alibaba.nacos.common.trace.event.naming.UpdateInstanceTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
 import com.alibaba.nacos.naming.core.InstancePatchObject;
@@ -59,6 +60,7 @@ import com.alibaba.nacos.naming.pojo.instance.BeatInfoInstanceBuilder;
 import com.alibaba.nacos.naming.utils.NamingRequestUtil;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -107,6 +109,7 @@ public class InstanceControllerV2 {
     @PostMapping
     @TpsControl(pointName = "NamingInstanceRegister", name = "HttpNamingInstanceRegister")
     @Secured(action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<String> register(InstanceForm instanceForm) throws NacosException {
         // check param
         instanceForm.validate();
@@ -129,6 +132,7 @@ public class InstanceControllerV2 {
     @DeleteMapping
     @TpsControl(pointName = "NamingInstanceDeregister", name = "HttpNamingInstanceDeregister")
     @Secured(action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<String> deregister(InstanceForm instanceForm) throws NacosException {
         // check param
         instanceForm.validate();
@@ -151,6 +155,7 @@ public class InstanceControllerV2 {
     @PutMapping
     @TpsControl(pointName = "NamingInstanceUpdate", name = "HttpNamingInstanceUpdate")
     @Secured(action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<String> update(InstanceForm instanceForm) throws NacosException {
         // check param
         instanceForm.validate();
@@ -174,6 +179,7 @@ public class InstanceControllerV2 {
     @TpsControl(pointName = "NamingInstanceMetadataUpdate", name = "HttpNamingInstanceMetadataBatchUpdate")
     @Secured(action = ActionTypes.WRITE)
     @ExtractorManager.Extractor(httpExtractor = NamingInstanceMetadataBatchHttpParamExtractor.class)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<InstanceMetadataBatchOperationVo> batchUpdateInstanceMetadata(InstanceMetadataBatchOperationForm form)
             throws NacosException {
         form.validate();
@@ -198,6 +204,7 @@ public class InstanceControllerV2 {
     @TpsControl(pointName = "NamingInstanceMetadataUpdate", name = "HttpNamingInstanceMetadataBatchUpdate")
     @Secured(action = ActionTypes.WRITE)
     @ExtractorManager.Extractor(httpExtractor = NamingInstanceMetadataBatchHttpParamExtractor.class)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<InstanceMetadataBatchOperationVo> batchDeleteInstanceMetadata(InstanceMetadataBatchOperationForm form)
             throws NacosException {
         form.validate();
@@ -250,6 +257,7 @@ public class InstanceControllerV2 {
     @CanDistro
     @PatchMapping
     @Secured(action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public String patch(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName, @RequestParam String ip,
             @RequestParam(defaultValue = UtilsAndCommons.DEFAULT_CLUSTER_NAME) String cluster,
@@ -290,6 +298,7 @@ public class InstanceControllerV2 {
     @TpsControl(pointName = "NamingServiceSubscribe", name = "HttpNamingServiceSubscribe")
     @Secured(action = ActionTypes.READ)
     @ExtractorManager.Extractor(httpExtractor = NamingInstanceListHttpParamExtractor.class)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<ServiceInfo> list(
             @RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam(value = "groupName", defaultValue = Constants.DEFAULT_GROUP) String groupName,
@@ -325,6 +334,7 @@ public class InstanceControllerV2 {
     @GetMapping
     @TpsControl(pointName = "NamingInstanceQuery", name = "HttpNamingInstanceQuery")
     @Secured(action = ActionTypes.READ)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<InstanceDetailInfoVo> detail(
             @RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam(value = "groupName", defaultValue = Constants.DEFAULT_GROUP) String groupName,
@@ -365,6 +375,7 @@ public class InstanceControllerV2 {
     @TpsControl(pointName = "HttpHealthCheck", name = "HttpHealthCheck")
     @Secured(action = ActionTypes.WRITE)
     @ExtractorManager.Extractor(httpExtractor = NamingInstanceBeatHttpParamExtractor.class)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public ObjectNode beat(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName, @RequestParam(defaultValue = StringUtils.EMPTY) String ip,
             @RequestParam(defaultValue = UtilsAndCommons.DEFAULT_CLUSTER_NAME) String clusterName,
@@ -409,6 +420,7 @@ public class InstanceControllerV2 {
      * @throws NacosException any error during handle
      */
     @RequestMapping("/statuses/{key}")
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public ObjectNode listWithHealthStatus(@PathVariable String key) throws NacosException {
         
         String serviceName;
