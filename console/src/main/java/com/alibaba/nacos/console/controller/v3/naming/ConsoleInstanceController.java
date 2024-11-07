@@ -26,7 +26,7 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.builder.InstanceBuilder;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.enums.ApiType;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.console.proxy.naming.InstanceProxy;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.model.form.PageForm;
@@ -76,7 +76,7 @@ public class ConsoleInstanceController {
      * @param serviceForm service form
      * @param pageForm Page form
      * @param healthyOnly whether only return health instance
-     * @param enabledOnly wheter only return enabled instance
+     * @param enabledOnly whether only return enabled instance
      * @return instances information
      */
     @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)

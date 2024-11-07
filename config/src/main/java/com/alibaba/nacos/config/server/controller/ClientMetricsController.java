@@ -34,12 +34,14 @@ import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.http.ResponseEntity;
@@ -85,6 +87,7 @@ public class ClientMetricsController {
      */
     @GetMapping("/cluster")
     @Secured(resource = Constants.METRICS_CONTROLLER_PATH, action = ActionTypes.READ, signType = SignType.CONFIG)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public ResponseEntity metric(@RequestParam("ip") String ip,
             @RequestParam(value = "dataId", required = false) String dataId,
             @RequestParam(value = "group", required = false) String group,
@@ -171,6 +174,7 @@ public class ClientMetricsController {
      */
     @GetMapping("/current")
     @Secured(resource = Constants.METRICS_CONTROLLER_PATH, action = ActionTypes.READ, signType = SignType.CONFIG)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Map<String, Object> getClientMetrics(@RequestParam("ip") String ip,
             @RequestParam(value = "dataId", required = false) String dataId,
             @RequestParam(value = "group", required = false) String group,

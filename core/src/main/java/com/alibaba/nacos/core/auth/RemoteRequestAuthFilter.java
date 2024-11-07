@@ -23,7 +23,7 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.auth.GrpcProtocolAuthService;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.AuthConfigs;
-import com.alibaba.nacos.auth.enums.ApiType;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.context.RequestContext;
 import com.alibaba.nacos.core.context.RequestContextHolder;

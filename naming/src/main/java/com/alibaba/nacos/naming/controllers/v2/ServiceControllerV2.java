@@ -31,6 +31,7 @@ import com.alibaba.nacos.common.trace.event.naming.UpdateServiceTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
@@ -44,6 +45,7 @@ import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -85,6 +87,7 @@ public class ServiceControllerV2 {
     @PostMapping()
     @TpsControl(pointName = "NamingServiceRegister", name = "HttpNamingServiceRegister")
     @Secured(action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<String> create(ServiceForm serviceForm) throws Exception {
         serviceForm.validate();
         ServiceMetadata serviceMetadata = new ServiceMetadata();
@@ -106,6 +109,7 @@ public class ServiceControllerV2 {
     @DeleteMapping()
     @TpsControl(pointName = "NamingServiceDeregister", name = "HttpNamingServiceDeregister")
     @Secured(action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<String> remove(
             @RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam("serviceName") String serviceName,
@@ -123,6 +127,7 @@ public class ServiceControllerV2 {
     @GetMapping()
     @TpsControl(pointName = "NamingServiceQuery", name = "HttpNamingServiceQuery")
     @Secured(action = ActionTypes.READ)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<ServiceDetailInfo> detail(
             @RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam("serviceName") String serviceName,
@@ -139,6 +144,7 @@ public class ServiceControllerV2 {
     @GetMapping("/list")
     @TpsControl(pointName = "NamingServiceListQuery", name = "HttpNamingServiceListQuery")
     @Secured(action = ActionTypes.READ)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<ServiceNameView> list(
             @RequestParam(value = "namespaceId", required = false, defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam(value = "groupName", required = false, defaultValue = Constants.DEFAULT_GROUP) String groupName,
@@ -160,6 +166,7 @@ public class ServiceControllerV2 {
     @PutMapping()
     @TpsControl(pointName = "NamingServiceUpdate", name = "HttpNamingServiceUpdate")
     @Secured(action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<String> update(ServiceForm serviceForm) throws Exception {
         serviceForm.validate();
         Map<String, String> metadata = UtilsAndCommons.parseMetadata(serviceForm.getMetadata());

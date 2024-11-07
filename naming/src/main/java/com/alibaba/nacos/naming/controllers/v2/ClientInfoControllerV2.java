@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
@@ -39,6 +40,7 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -82,6 +84,7 @@ public class ClientInfoControllerV2 {
      */
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, resource = "nacos/admin")
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<List<String>> getClientList() {
         return Result.success(new ArrayList<>(clientManager.allClientId()));
     }
@@ -93,6 +96,7 @@ public class ClientInfoControllerV2 {
      */
     @GetMapping()
     @Secured(action = ActionTypes.READ, resource = "nacos/admin")
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<ObjectNode> getClientDetail(@RequestParam("clientId") String clientId) throws NacosApiException {
         checkClientId(clientId);
         Client client = clientManager.getClient(clientId);
@@ -131,6 +135,7 @@ public class ClientInfoControllerV2 {
      */
     @GetMapping("/publish/list")
     @Secured(action = ActionTypes.READ, resource = "nacos/admin")
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<List<ObjectNode>> getPublishedServiceList(@RequestParam("clientId") String clientId)
             throws NacosApiException {
         checkClientId(clientId);
@@ -175,6 +180,7 @@ public class ClientInfoControllerV2 {
      */
     @GetMapping("/subscribe/list")
     @Secured(action = ActionTypes.READ, resource = "nacos/admin")
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<List<ObjectNode>> getSubscribeServiceList(@RequestParam("clientId") String clientId)
             throws NacosApiException {
         checkClientId(clientId);
@@ -210,6 +216,7 @@ public class ClientInfoControllerV2 {
      */
     @GetMapping("/service/publisher/list")
     @Secured(action = ActionTypes.READ, resource = "nacos/admin")
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<List<ObjectNode>> getPublishedClientList(
             @RequestParam(value = "namespaceId", required = false, defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam(value = "groupName", required = false, defaultValue = Constants.DEFAULT_GROUP) String groupName,
@@ -256,6 +263,7 @@ public class ClientInfoControllerV2 {
      */
     @GetMapping("/service/subscriber/list")
     @Secured(action = ActionTypes.READ, resource = "nacos/admin")
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<List<ObjectNode>> getSubscribeClientList(
             @RequestParam(value = "namespaceId", required = false, defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam(value = "groupName", required = false, defaultValue = Constants.DEFAULT_GROUP) String groupName,

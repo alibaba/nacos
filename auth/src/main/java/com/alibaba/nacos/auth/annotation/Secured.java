@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.auth.annotation;
 
-import com.alibaba.nacos.auth.enums.ApiType;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.auth.parser.DefaultResourceParser;
 import com.alibaba.nacos.auth.parser.ResourceParser;
 import com.alibaba.nacos.common.utils.StringUtils;

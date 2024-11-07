@@ -24,12 +24,14 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.namespace.model.Namespace;
 import com.alibaba.nacos.core.namespace.model.form.NamespaceForm;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import org.springframework.http.HttpStatus;
@@ -78,6 +80,7 @@ public class NamespaceControllerV2 {
      * @return namespace list
      */
     @GetMapping("/list")
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/core/namespace/list")
     public Result<List<Namespace>> getNamespaceList() {
         return Result.success(namespaceOperationService.getNamespaceList());
     }
@@ -91,6 +94,7 @@ public class NamespaceControllerV2 {
     @GetMapping()
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
             + "namespaces", action = ActionTypes.READ, signType = SignType.CONSOLE)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/core/namespace")
     public Result<Namespace> getNamespace(@RequestParam("namespaceId") String namespaceId) throws NacosException {
         return Result.success(namespaceOperationService.getNamespace(namespaceId));
     }
@@ -104,6 +108,7 @@ public class NamespaceControllerV2 {
     @PostMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
             + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "POST ${contextPath:nacos}/v3/console/core/namespace")
     public Result<Boolean> createNamespace(NamespaceForm namespaceForm) throws NacosException {
         
         namespaceForm.validate();
@@ -147,6 +152,7 @@ public class NamespaceControllerV2 {
     @PutMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
             + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "PUT ${contextPath:nacos}/v3/console/core/namespace")
     public Result<Boolean> editNamespace(NamespaceForm namespaceForm) throws NacosException {
         namespaceForm.validate();
         // contains illegal chars
@@ -168,6 +174,7 @@ public class NamespaceControllerV2 {
     @DeleteMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
             + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "DELETE ${contextPath:nacos}/v3/console/core/namespace")
     public Result<Boolean> deleteNamespace(@RequestParam("namespaceId") String namespaceId) {
         return Result.success(namespaceOperationService.removeNamespace(namespaceId));
     }

@@ -26,6 +26,7 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
@@ -34,6 +35,7 @@ import com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.persistence.model.event.DerbyImportEvent;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.slf4j.Logger;
@@ -76,6 +78,7 @@ public class ConfigOpsController {
      */
     @PostMapping(value = "/localCache")
     @Secured(resource = Constants.OPS_CONTROLLER_PATH, action = ActionTypes.WRITE, signType = SignType.CONSOLE)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public String updateLocalCacheFromStore() {
         LOGGER.info("start to dump all data from store.");
         dumpService.dumpAll();
@@ -85,6 +88,7 @@ public class ConfigOpsController {
     
     @PutMapping(value = "/log")
     @Secured(resource = Constants.OPS_CONTROLLER_PATH, action = ActionTypes.WRITE, signType = SignType.CONSOLE)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public String setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
         LogUtil.setLogLevel(logName, logLevel);
         return HttpServletResponse.SC_OK + "";
@@ -99,6 +103,7 @@ public class ConfigOpsController {
      */
     @GetMapping(value = "/derby")
     @Secured(action = ActionTypes.READ, resource = "nacos/admin")
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public RestResult<Object> derbyOps(@RequestParam(value = "sql") String sql) {
         String selectSign = "SELECT";
         String limitSign = "ROWS FETCH NEXT";
@@ -138,6 +143,7 @@ public class ConfigOpsController {
      */
     @PostMapping(value = "/data/removal")
     @Secured(action = ActionTypes.WRITE, resource = "nacos/admin")
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public DeferredResult<RestResult<String>> importDerby(@RequestParam(value = "file") MultipartFile multipartFile) {
         DeferredResult<RestResult<String>> response = new DeferredResult<>();
         if (!DatasourceConfiguration.isEmbeddedStorage()) {
