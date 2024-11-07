@@ -71,7 +71,7 @@ public class ConfigRemoveRequestHandler extends RequestHandler<ConfigRemoveReque
         String dataId = configRemoveRequest.getDataId();
         String group = configRemoveRequest.getGroup();
         String tag = configRemoveRequest.getTag();
-        
+        String underLine = "_";
         try {
             ParamUtils.checkTenant(tenant);
             ParamUtils.checkParam(dataId, group, "datumId", "rm");
@@ -79,14 +79,14 @@ public class ConfigRemoveRequestHandler extends RequestHandler<ConfigRemoveReque
             String persistEvent = ConfigTraceService.PERSISTENCE_EVENT;
             
             String clientIp = meta.getClientIp();
-            String grayName=null;
+            String grayName = null;
             if (StringUtils.isBlank(tag)) {
                 
                 configInfoPersistService.removeConfigInfo(dataId, group, tenant, clientIp, null);
             } else {
-                persistEvent = ConfigTraceService.PERSISTENCE_EVENT_TAG + "-" + tag;
-    
-                grayName = TagGrayRule.TYPE_TAG + "_" + tag;
+                persistEvent = ConfigTraceService.PERSISTENCE_EVENT_TAG + underLine + tag;
+                
+                grayName = TagGrayRule.TYPE_TAG + underLine + tag;
                 configInfoGrayPersistService.removeConfigInfoGray(dataId, group, tenant, grayName, clientIp, null);
             }
             final Timestamp time = TimeUtils.getCurrentTime();

@@ -82,7 +82,7 @@ public class ConfigChangeClusterSyncRequestHandler
      * @return
      */
     private void checkCompatity(ConfigChangeClusterSyncRequest configChangeSyncRequest) {
-        if (PropertyUtil.isGrayCompatibleModel()) {
+        if (PropertyUtil.isGrayCompatibleModel() && StringUtils.isBlank(configChangeSyncRequest.getGrayName())) {
             if (configChangeSyncRequest.isBeta() || StringUtils.isNotBlank(configChangeSyncRequest.getTag())) {
                 
                 String grayName = null;

@@ -66,7 +66,6 @@ public class Member implements Comparable<Member>, Cloneable, Serializable {
                 EnvUtil.getProperty(prefix + MemberMetaDataConstants.AD_WEIGHT, "0"));
         extendInfo
                 .put(MemberMetaDataConstants.WEIGHT, EnvUtil.getProperty(prefix + MemberMetaDataConstants.WEIGHT, "1"));
-        
     }
     
     public boolean isGrpcReportEnabled() {

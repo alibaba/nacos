@@ -138,11 +138,11 @@ public class AsyncNotifyService {
             
             // old server should set beta or tag flag
             if (!(Boolean) member.getExtendInfo().getOrDefault(SUPPORT_GRAY_MODEL, Boolean.FALSE)) {
-                
+                String underLine = "_";
                 task.setBeta(BetaGrayRule.TYPE_BETA.equals(configDataChangeEvent.grayName));
-                if (configDataChangeEvent.grayName.startsWith(TagGrayRule.TYPE_TAG + "_")) {
+                if (configDataChangeEvent.grayName.startsWith(TagGrayRule.TYPE_TAG + underLine)) {
                     task.setTag(configDataChangeEvent.grayName.substring(
-                            configDataChangeEvent.grayName.indexOf(TagGrayRule.TYPE_TAG + "_")));
+                            configDataChangeEvent.grayName.indexOf(TagGrayRule.TYPE_TAG + underLine) + 4));
                 }
                 
             }
@@ -318,6 +318,8 @@ public class AsyncNotifyService {
             event = ConfigTraceService.NOTIFY_EVENT_BETA;
         } else if (!StringUtils.isBlank(task.tag)) {
             event = ConfigTraceService.NOTIFY_EVENT_TAG + "-" + task.tag;
+        } else if (StringUtils.isNotBlank(task.grayName)) {
+            event = ConfigTraceService.NOTIFY_EVENT + "-" + task.grayName;
         }
         return event;
     }

@@ -152,7 +152,7 @@ public class ConfigExtInfoUtil {
                 if (parsedGrayRuleNode.has(Constants.GRAY_RULE_PRIORITY)) {
                     grayRuleNode.put(Constants.GRAY_RULE_PRIORITY, parsedGrayRuleNode.get(Constants.GRAY_RULE_PRIORITY).asText());
                 }
-                node.set("gray_rule", grayRuleNode);
+                node.put("gray_rule", grayRuleNode.toString());
             } catch (Exception ex) {
                 LOGGER.error("Failed to parse gray rule as json", ex);
                 return null;

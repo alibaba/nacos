@@ -35,7 +35,6 @@ public class ConfigDataChangeEvent extends Event {
     
     public final long lastModifiedTs;
     
-    
     public ConfigDataChangeEvent(String dataId, String group, String tenant, long gmtModified) {
         if (null == dataId || null == group) {
             throw new IllegalArgumentException("dataId is null or group is null");
