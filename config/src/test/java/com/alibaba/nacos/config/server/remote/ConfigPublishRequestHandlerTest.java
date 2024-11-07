@@ -151,7 +151,6 @@ class ConfigPublishRequestHandlerTest {
         assertEquals(group, reference.get().group);
         assertEquals(tenant, reference.get().tenant);
         assertEquals(timestamp, reference.get().lastModifiedTs);
-        assertFalse(reference.get().isBeta);
         
     }
     
@@ -215,7 +214,6 @@ class ConfigPublishRequestHandlerTest {
         assertEquals(group, reference.get().group);
         assertEquals(tenant, reference.get().tenant);
         assertEquals(timestamp, reference.get().lastModifiedTs);
-        assertFalse(reference.get().isBeta);
     }
     
     /**
