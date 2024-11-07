@@ -91,7 +91,7 @@ public class ConfigGrayModelMigrateService {
                     configInfo4Beta.getDataId(), configInfo4Beta.getGroup(), configInfo4Beta.getTenant(),
                     configInfo4Beta.getMd5());
             ConfigGrayPersistInfo localConfigGrayPersistInfo = new ConfigGrayPersistInfo(BetaGrayRule.TYPE_BETA,
-                    BetaGrayRule.VERSION, configInfo4Beta.getBetaIps(), BetaGrayRule.PRIOPRITY);
+                    BetaGrayRule.VERSION, configInfo4Beta.getBetaIps(), BetaGrayRule.PRIORITY);
             configInfoGrayPersistService.insertOrUpdateGray(configInfo4Beta, BetaGrayRule.TYPE_BETA,
                     GrayRuleManager.serializeConfigGrayPersistInfo(localConfigGrayPersistInfo), NetUtils.localIP(),
                     "nacos_auto_migrate");
@@ -127,7 +127,7 @@ public class ConfigGrayModelMigrateService {
                     configInfo4Tag.getDataId(), configInfo4Tag.getGroup(), configInfo4Tag.getTenant(),
                     configInfo4Tag.getMd5());
             ConfigGrayPersistInfo localConfigGrayPersistInfo = new ConfigGrayPersistInfo(TagGrayRule.TYPE_TAG,
-                    TagGrayRule.VERSION, configInfo4Tag.getTag(), TagGrayRule.PRIOPRITY);
+                    TagGrayRule.VERSION, configInfo4Tag.getTag(), TagGrayRule.PRIORITY);
             configInfoGrayPersistService.insertOrUpdateGray(configInfo4Tag, TagGrayRule.TYPE_TAG,
                     GrayRuleManager.serializeConfigGrayPersistInfo(localConfigGrayPersistInfo), NetUtils.localIP(),
                     "nacos_auto_migrate");
@@ -151,7 +151,7 @@ public class ConfigGrayModelMigrateService {
                         DEFAULT_LOG.info("[migrate beta to gray] dataId={}, group={}, tenant={},  md5={}",
                                 cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getMd5());
                         ConfigGrayPersistInfo localConfigGrayPersistInfo = new ConfigGrayPersistInfo(
-                                BetaGrayRule.TYPE_BETA, BetaGrayRule.VERSION, cf.getBetaIps(), BetaGrayRule.PRIOPRITY);
+                                BetaGrayRule.TYPE_BETA, BetaGrayRule.VERSION, cf.getBetaIps(), BetaGrayRule.PRIORITY);
                         configInfoGrayPersistService.insertOrUpdateGray(cf, BetaGrayRule.TYPE_BETA,
                                 GrayRuleManager.serializeConfigGrayPersistInfo(localConfigGrayPersistInfo),
                                 NetUtils.localIP(), "nacos_auto_migrate");
@@ -176,7 +176,7 @@ public class ConfigGrayModelMigrateService {
                         DEFAULT_LOG.info("[migrate tag to gray] dataId={}, group={}, tenant={},  md5={}",
                                 cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getMd5());
                         ConfigGrayPersistInfo localConfigGrayPersistInfo = new ConfigGrayPersistInfo(
-                                TagGrayRule.TYPE_TAG, TagGrayRule.VERSION, cf.getTag(), TagGrayRule.PRIOPRITY);
+                                TagGrayRule.TYPE_TAG, TagGrayRule.VERSION, cf.getTag(), TagGrayRule.PRIORITY);
                         configInfoGrayPersistService.insertOrUpdateGray(cf, TagGrayRule.TYPE_TAG + "_" + cf.getTag(),
                                 GrayRuleManager.serializeConfigGrayPersistInfo(localConfigGrayPersistInfo),
                                 NetUtils.localIP(), "nacos_auto_migrate");
