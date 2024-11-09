@@ -68,6 +68,9 @@ class HistoryDetail extends React.Component {
       success(result) {
         if (result != null) {
           const data = result;
+          const extInfo = data.extInfo ? JSON.parse(data.extInfo) : {};
+          const grayRule = extInfo.gray_rule ? JSON.parse(extInfo.gray_rule) : {};
+
           self.field.setValue('dataId', data.dataId);
           self.field.setValue('content', data.content);
           self.field.setValue('appName', self.inApp ? self.edasAppName : data.appName);
@@ -80,8 +83,8 @@ class HistoryDetail extends React.Component {
           self.setState({
             currentPublishType: data.publishType,
             ...(data.publishType === 'gray' && {
-              grayVersion: JSON.parse(data.extraInfo || '{}').version || '',
-              grayRule: JSON.parse(data.extraInfo || '{}').expr || '',
+              grayVersion: grayRule.version || '',
+              grayRule: grayRule.expr || '',
             }),
           });
         }
