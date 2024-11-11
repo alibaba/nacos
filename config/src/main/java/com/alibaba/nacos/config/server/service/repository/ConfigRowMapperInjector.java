@@ -18,7 +18,6 @@ package com.alibaba.nacos.config.server.service.repository;
 
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
-import com.alibaba.nacos.config.server.model.ConfigAllInfo4Gray;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
@@ -57,8 +56,6 @@ public class ConfigRowMapperInjector {
     public static final ConfigInfoTagWrapperRowMapper CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER = new ConfigInfoTagWrapperRowMapper();
     
     public static final ConfigInfoGrayWrapperRowMapper CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER = new ConfigInfoGrayWrapperRowMapper();
-    
-    public static final ConfigAllInfoGrayRowMapper CONFIG_ALL_INFO_GRAY_ROW_MAPPER = new ConfigAllInfoGrayRowMapper();
     
     public static final ConfigInfoRowMapper CONFIG_INFO_ROW_MAPPER = new ConfigInfoRowMapper();
     
@@ -335,45 +332,11 @@ public class ConfigRowMapperInjector {
                 info.setEncryptedDataKey(rs.getString("encrypted_data_key"));
             } catch (SQLException ignore) {
             }
-            
-            return info;
-        }
-    }
     
-    public static final class ConfigAllInfoGrayRowMapper implements RowMapper<ConfigAllInfo4Gray> {
-        
-        @Override
-        public ConfigAllInfo4Gray mapRow(ResultSet rs, int rowNum) throws SQLException {
-            ConfigAllInfo4Gray info = new ConfigAllInfo4Gray();
-            
-            info.setDataId(rs.getString("data_id"));
-            info.setGroup(rs.getString("group_id"));
-            info.setTenant(rs.getString("tenant_id"));
-            info.setGrayName(rs.getString("gray_name"));
-            info.setGrayRule(rs.getString("gray_rule"));
-            info.setAppName(rs.getString("app_name"));
-            info.setSrcUser(rs.getString("src_user"));
-            info.setSrcIp(rs.getString("src_ip"));
-            info.setGmtCreate(rs.getTimestamp("gmt_create").getTime());
-            info.setGmtModified(rs.getTimestamp("gmt_modified").getTime());
-            
             try {
-                info.setContent(rs.getString("content"));
+                info.setSrcUser(rs.getString("src_user"));
             } catch (SQLException ignore) {
             }
-            try {
-                info.setId(rs.getLong("id"));
-            } catch (SQLException ignore) {
-            }
-            try {
-                info.setMd5(rs.getString("md5"));
-            } catch (SQLException ignore) {
-            }
-            try {
-                info.setEncryptedDataKey(rs.getString("encrypted_data_key"));
-            } catch (SQLException ignore) {
-            }
-            
             return info;
         }
     }

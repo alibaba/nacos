@@ -17,7 +17,6 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.api.utils.NetUtils;
-import com.alibaba.nacos.config.server.model.ConfigAllInfo4Gray;
 import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
@@ -75,9 +74,9 @@ public class ConfigGrayModelMigrateService {
     public void checkMigrateBeta(String dataId, String group, String tenant) {
         ConfigInfoBetaWrapper configInfo4Beta = configInfoBetaPersistService.findConfigInfo4Beta(dataId, group, tenant);
         if (configInfo4Beta == null) {
-            ConfigAllInfo4Gray configAllInfo4Gray = configInfoGrayPersistService.findConfigAllInfo4Gray(dataId, group,
+            ConfigInfoGrayWrapper configInfoGrayWrapper = configInfoGrayPersistService.findConfigInfo4Gray(dataId, group,
                     tenant, BetaGrayRule.TYPE_BETA);
-            if (configAllInfo4Gray == null) {
+            if (configInfoGrayWrapper == null) {
                 return;
             }
             configInfoGrayPersistService.removeConfigInfoGray(dataId, group, tenant, BetaGrayRule.TYPE_BETA,
