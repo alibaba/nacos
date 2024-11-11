@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.repository.embedded;
 
+import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -298,7 +299,7 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         //expect insert history info of U
         Mockito.verify(historyConfigInfoPersistService, times(1))
                 .insertConfigHistoryAtomic(eq(configAllInfo.getId()), any(ConfigInfo.class), eq(srcIp), eq(srcUser),
-                        any(Timestamp.class), eq("U"), eq("formal"), eq(ConfigExtInfoUtil.getExtraInfoFromAllInfo(configAllInfo)));
+                        any(Timestamp.class), eq("U"), eq("formal"), eq(ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfo)));
         
     }
     
@@ -366,7 +367,7 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         //expect insert history info of U
         Mockito.verify(historyConfigInfoPersistService, times(1))
                 .insertConfigHistoryAtomic(eq(configAllInfo.getId()), any(ConfigInfo.class), eq(srcIp), eq(srcUser), any(Timestamp.class),
-                        eq("U"), eq("formal"), eq(ConfigExtInfoUtil.getExtraInfoFromAllInfo(configAllInfo)));
+                        eq("U"), eq("formal"), eq(ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfo)));
         
     }
     
@@ -384,7 +385,12 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         configAllInfo.setAppName("old_app");
         configAllInfo.setMd5("old_md5");
         configAllInfo.setId(12345678765L);
-        
+        configAllInfo.setType(ConfigType.JSON.getType());
+        configAllInfo.setSchema("testschema");
+        configAllInfo.setCreateUser("testuser");
+        configAllInfo.setEffect("online");
+        configAllInfo.setDesc("desc");
+        configAllInfo.setUse("use124");
         Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}), eq(CONFIG_ALL_INFO_ROW_MAPPER)))
                 .thenReturn(configAllInfo);
         String srcIp = "srcIp1234";
@@ -401,7 +407,7 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         //expect insert delete history
         Mockito.verify(historyConfigInfoPersistService, times(1))
                 .insertConfigHistoryAtomic(eq(configAllInfo.getId()), eq(configAllInfo), eq(srcIp), eq(srcUser), any(),
-                        eq("D"), eq("formal"), eq(ConfigExtInfoUtil.getExtraInfoFromAllInfo(configAllInfo)));
+                        eq("D"), eq("formal"), eq(ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfo)));
         
     }
     
@@ -445,11 +451,11 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         //expect insert delete history
         Mockito.verify(historyConfigInfoPersistService, times(1)).insertConfigHistoryAtomic(eq(configAllInfos.get(0).getId()),
                 eq(configAllInfos.get(0)), eq(srcIp), eq(srcUser), any(), eq("D"), eq("formal"),
-                eq(ConfigExtInfoUtil.getExtraInfoFromAllInfo(configAllInfos.get(0))));
+                eq(ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfos.get(0))));
         Mockito.verify(historyConfigInfoPersistService, times(1))
                 .insertConfigHistoryAtomic(eq(configAllInfos.get(1).getId()),
                         eq(configAllInfos.get(1)), eq(srcIp), eq(srcUser), any(), eq("D"), eq("formal"),
-                        eq(ConfigExtInfoUtil.getExtraInfoFromAllInfo(configAllInfos.get(1))));
+                        eq(ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfos.get(1))));
         
     }
     

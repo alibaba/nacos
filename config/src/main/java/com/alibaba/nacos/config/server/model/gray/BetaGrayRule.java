@@ -43,8 +43,8 @@ public class BetaGrayRule extends AbstractGrayRule {
         super();
     }
     
-    public BetaGrayRule(String rawGrayRuleExp, int priority) {
-        super(rawGrayRuleExp, priority);
+    public BetaGrayRule(String betaIps, int priority) {
+        super(betaIps, priority);
     }
     
     /**

@@ -138,7 +138,7 @@ public class ExternalConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
                 
                 Timestamp now = new Timestamp(System.currentTimeMillis());
                 historyConfigInfoPersistService.insertConfigHistoryAtomic(0, configInfo, srcIp, srcUser, now, "I",
-                        Constants.GRAY, ConfigExtInfoUtil.getExtraInfoFromGrayInfo(grayNameTmp, grayRuleTmp, srcUser));
+                        Constants.GRAY, ConfigExtInfoUtil.getExtInfoFromGrayInfo(grayNameTmp, grayRuleTmp, srcUser));
                 
                 return getGrayOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp, grayNameTmp);
             } catch (Exception e) {
@@ -211,7 +211,7 @@ public class ExternalConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
                     Timestamp now = new Timestamp(System.currentTimeMillis());
                     historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo4Gray.getId(),
                             oldConfigAllInfo4Gray, srcIp, srcUser, now, "D", Constants.GRAY,
-                            ConfigExtInfoUtil.getExtraInfoFromGrayInfo(oldConfigAllInfo4Gray.getGrayName(),
+                            ConfigExtInfoUtil.getExtInfoFromGrayInfo(oldConfigAllInfo4Gray.getGrayName(),
                                     oldConfigAllInfo4Gray.getGrayRule(), oldConfigAllInfo4Gray.getSrcUser()));
                 } catch (CannotGetJdbcConnectionException e) {
                     LogUtil.FATAL_LOG.error("[db-error] " + e, e);
@@ -252,7 +252,7 @@ public class ExternalConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
                 Timestamp now = new Timestamp(System.currentTimeMillis());
                 historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo4Gray.getId(),
                         oldConfigAllInfo4Gray, srcIp, srcUser, now, "U", Constants.GRAY,
-                        ConfigExtInfoUtil.getExtraInfoFromGrayInfo(oldConfigAllInfo4Gray.getGrayName(),
+                        ConfigExtInfoUtil.getExtInfoFromGrayInfo(oldConfigAllInfo4Gray.getGrayName(),
                                 oldConfigAllInfo4Gray.getGrayRule(), oldConfigAllInfo4Gray.getSrcUser()));
                 
                 return getGrayOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp, grayNameTmp);
@@ -306,7 +306,7 @@ public class ExternalConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
                 Timestamp now = new Timestamp(System.currentTimeMillis());
                 historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo4Gray.getId(),
                         oldConfigAllInfo4Gray, srcIp, srcUser, now, "U", Constants.GRAY,
-                        ConfigExtInfoUtil.getExtraInfoFromGrayInfo(oldConfigAllInfo4Gray.getGrayName(),
+                        ConfigExtInfoUtil.getExtInfoFromGrayInfo(oldConfigAllInfo4Gray.getGrayName(),
                                 oldConfigAllInfo4Gray.getGrayRule(), oldConfigAllInfo4Gray.getSrcUser()));
                 
                 if (success) {

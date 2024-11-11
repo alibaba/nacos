@@ -150,7 +150,7 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
             
             Timestamp now = new Timestamp(System.currentTimeMillis());
             historyConfigInfoPersistService.insertConfigHistoryAtomic(hisId, configInfo, srcIp, srcUser, now, "I",
-                    Constants.GRAY, ConfigExtInfoUtil.getExtraInfoFromGrayInfo(grayNameTmp, grayRuleTmp, srcUser));
+                    Constants.GRAY, ConfigExtInfoUtil.getExtInfoFromGrayInfo(grayNameTmp, grayRuleTmp, srcUser));
             
             EmbeddedStorageContextUtils.onModifyConfigGrayInfo(configInfo, grayNameTmp, grayRuleTmp, srcIp, now);
             databaseOperate.blockUpdate();
@@ -227,7 +227,7 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
         Timestamp now = new Timestamp(System.currentTimeMillis());
         historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo4Gray.getId(), oldConfigAllInfo4Gray,
                 srcIp, srcUser, now, "D", Constants.GRAY,
-                ConfigExtInfoUtil.getExtraInfoFromGrayInfo(oldConfigAllInfo4Gray.getGrayName(),
+                ConfigExtInfoUtil.getExtInfoFromGrayInfo(oldConfigAllInfo4Gray.getGrayName(),
                         oldConfigAllInfo4Gray.getGrayRule(), oldConfigAllInfo4Gray.getSrcUser()));
         
         EmbeddedStorageContextUtils.onDeleteConfigGrayInfo(tenantTmp, group, dataId, grayNameTmp, srcIp);
@@ -273,7 +273,7 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
             Timestamp now = new Timestamp(System.currentTimeMillis());
             historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo4Gray.getId(),
                     oldConfigAllInfo4Gray, srcIp, srcUser, now, "U", Constants.GRAY,
-                    ConfigExtInfoUtil.getExtraInfoFromGrayInfo(oldConfigAllInfo4Gray.getGrayName(),
+                    ConfigExtInfoUtil.getExtInfoFromGrayInfo(oldConfigAllInfo4Gray.getGrayName(),
                             oldConfigAllInfo4Gray.getGrayRule(), oldConfigAllInfo4Gray.getSrcUser()));
             
             EmbeddedStorageContextUtils.onModifyConfigGrayInfo(configInfo, grayNameTmp, grayRuleTmp, srcIp, time);
@@ -332,7 +332,7 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
             Timestamp now = new Timestamp(System.currentTimeMillis());
             historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo4Gray.getId(),
                     oldConfigAllInfo4Gray, srcIp, srcUser, now, "U", Constants.GRAY,
-                    ConfigExtInfoUtil.getExtraInfoFromGrayInfo(oldConfigAllInfo4Gray.getGrayName(),
+                    ConfigExtInfoUtil.getExtInfoFromGrayInfo(oldConfigAllInfo4Gray.getGrayName(),
                             oldConfigAllInfo4Gray.getGrayRule(), oldConfigAllInfo4Gray.getSrcUser()));
             
             EmbeddedStorageContextUtils.onModifyConfigGrayInfo(configInfo, grayNameTmp, grayRuleTmp, srcIp, time);
