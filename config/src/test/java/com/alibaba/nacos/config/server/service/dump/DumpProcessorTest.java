@@ -78,13 +78,17 @@ class DumpProcessorTest {
         dynamicDataSourceMockedStatic = Mockito.mockStatic(DynamicDataSource.class);
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
         when(EnvUtil.getNacosHome()).thenReturn(System.getProperty("user.home"));
-        when(EnvUtil.getProperty(eq(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG), eq(Boolean.class), eq(false))).thenReturn(false);
+        when(EnvUtil.getProperty(eq(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG), eq(Boolean.class),
+                eq(false))).thenReturn(false);
+        when(EnvUtil.getProperty(eq("memory_limit_file_path"),
+                eq("/sys/fs/cgroup/memory/memory.limit_in_bytes"))).thenReturn(
+                "/sys/fs/cgroup/memory/memory.limit_in_bytes");
+        
         dynamicDataSourceMockedStatic.when(DynamicDataSource::getInstance).thenReturn(dynamicDataSource);
         
         when(dynamicDataSource.getDataSource()).thenReturn(dataSourceService);
         
-        dumpService = new ExternalDumpService(configInfoPersistService, null, null,
-                configInfoGrayPersistService, null);
+        dumpService = new ExternalDumpService(configInfoPersistService, null, null, configInfoGrayPersistService, null);
         dumpProcessor = new DumpProcessor(configInfoPersistService, configInfoGrayPersistService);
         Field[] declaredFields = ConfigDiskServiceFactory.class.getDeclaredFields();
         for (Field filed : declaredFields) {
@@ -123,7 +127,8 @@ class DumpProcessorTest {
         configInfoWrapper.setContent(content);
         configInfoWrapper.setLastModified(time);
         
-        Mockito.when(configInfoPersistService.findConfigInfo(eq(dataId), eq(group), eq(tenant))).thenReturn(configInfoWrapper);
+        Mockito.when(configInfoPersistService.findConfigInfo(eq(dataId), eq(group), eq(tenant)))
+                .thenReturn(configInfoWrapper);
         
         String handlerIp = "127.0.0.1";
         long lastModified = System.currentTimeMillis();
