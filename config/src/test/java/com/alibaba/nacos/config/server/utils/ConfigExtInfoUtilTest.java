@@ -11,7 +11,6 @@ import static com.alibaba.nacos.config.server.model.gray.BetaGrayRule.PRIORITY;
 
 public class ConfigExtInfoUtilTest {
     
-    
     @Test
     void testExt4Formal() {
         
@@ -36,7 +35,6 @@ public class ConfigExtInfoUtilTest {
         configAllInfo.setConfigTags("ctag1,ctag2");
         String extraInfoFromAllInfo = ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfo);
         System.out.println(extraInfoFromAllInfo);
-        
         
     }
     
