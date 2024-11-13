@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.dump.disk;
 
+import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -32,6 +33,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
+import static com.alibaba.nacos.config.server.constant.Constants.NULL;
 
 /**
  * config rocks db disk service.
@@ -45,11 +47,7 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
     
     private static final String BASE_DIR = ROCKSDB_DATA + "config-data";
     
-    private static final String BETA_DIR = ROCKSDB_DATA + "beta-data";
-    
-    private static final String TAG_DIR = ROCKSDB_DATA + "tag-data";
-    
-    private static final String BATCH_DIR = ROCKSDB_DATA + "batch-data";
+    private static final String GRAY_DIR = ROCKSDB_DATA + "gray-data";
     
     private static final long DEFAULT_WRITE_BUFFER_MB = 32;
     
@@ -79,13 +77,19 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
     
     public ConfigRocksDbDiskService() {
         createDirIfNotExist(BASE_DIR);
-        createDirIfNotExist(BETA_DIR);
-        createDirIfNotExist(TAG_DIR);
-        createDirIfNotExist(BATCH_DIR);
+        createDirIfNotExist(GRAY_DIR);
+        
     }
     
     private byte[] getKeyByte(String dataId, String group, String tenant, String tag) throws IOException {
         String[] keys = new String[] {dataId, group, tenant, tag};
+        return getKeyByte(keys);
+    }
+    
+    private byte[] getKeyByte(String... keys) throws IOException {
+        if (keys == null || keys.length == 0) {
+            return NULL.getBytes(ENCODE_UTF8);
+        }
         StringBuilder stringBuilder = new StringBuilder();
         for (String key : keys) {
             if (StringUtils.isBlank(key)) {
@@ -134,6 +138,18 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
     }
     
     /**
+     * save config to disk.
+     */
+    public void saveGrayToDiskInner(String type, String dataId, String group, String tenant, String grayName,
+            String content) throws IOException {
+        try {
+            initAndGetDB(type).put(getKeyByte(dataId, group, tenant, grayName), content.getBytes(ENCODE_UTF8));
+        } catch (RocksDBException e) {
+            throw new IOException(e);
+        }
+    }
+    
+    /**
      * Save configuration information to disk.
      */
     public void saveToDisk(String dataId, String group, String tenant, String content) throws IOException {
@@ -141,19 +157,11 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
     }
     
     /**
-     * Save beta information to disk.
-     */
-    public void saveBetaToDisk(String dataId, String group, String tenant, String content) throws IOException {
-        saveToDiskInner(BETA_DIR, dataId, group, tenant, content);
-        
-    }
-    
-    /**
      * Save tag information to disk.
      */
-    public void saveTagToDisk(String dataId, String group, String tenant, String tag, String content)
+    public void saveGrayToDisk(String dataId, String group, String tenant, String grayName, String content)
             throws IOException {
-        saveToDiskInner(TAG_DIR, dataId, group, tenant, tag, content);
+        saveGrayToDiskInner(GRAY_DIR, dataId, group, tenant, grayName, content);
         
     }
     
@@ -165,17 +173,10 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
     }
     
     /**
-     * Deletes beta configuration files on disk.
+     * Deletes gray configuration files on disk.
      */
-    public void removeConfigInfo4Beta(String dataId, String group, String tenant) {
-        removeContentInner(BETA_DIR, dataId, group, tenant, null);
-    }
-    
-    /**
-     * Deletes tag configuration files on disk.
-     */
-    public void removeConfigInfo4Tag(String dataId, String group, String tenant, String tag) {
-        removeContentInner(TAG_DIR, dataId, group, tenant, tag);
+    public void removeConfigInfo4Gray(String dataId, String group, String tenant, String grayName) {
+        removeGrayInner(GRAY_DIR, dataId, group, tenant, grayName);
         
     }
     
@@ -186,7 +187,7 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
         return new String(bytes, ENCODE_UTF8);
     }
     
-    RocksDB initAndGetDB(String dir) throws RocksDBException {
+    RocksDB initAndGetDB(String dir) throws IOException, RocksDBException {
         if (rocksDbMap.containsKey(dir)) {
             return rocksDbMap.get(dir);
         } else {
@@ -220,11 +221,11 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
         }
     }
     
-    private String getTagContentInner(String type, String dataId, String group, String tenant, String tag)
+    private String getGrayInner(String type, String dataId, String group, String tenant, String grayName)
             throws IOException {
         byte[] bytes = null;
         try {
-            bytes = initAndGetDB(type).get(getKeyByte(dataId, group, tenant, tag));
+            bytes = initAndGetDB(type).get(getKeyByte(dataId, group, tenant, grayName));
             return byte2String(bytes);
         } catch (RocksDBException e) {
             throw new IOException(e);
@@ -240,22 +241,28 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
         }
     }
     
-    /**
-     * Returns the path of cache file in server.
-     */
-    public String getBetaContent(String dataId, String group, String tenant) throws IOException {
-        return getContentInner(BETA_DIR, dataId, group, tenant);
+    private void removeGrayInner(String type, String dataId, String group, String tenant, String grayName) {
+        try {
+            initAndGetDB(type).delete(getKeyByte(dataId, group, tenant, grayName));
+        } catch (Exception e) {
+            LogUtil.DEFAULT_LOG.warn("Remove dir=[{}] config fail,dataId={},group={},tenant={},error={}", type, dataId,
+                    group, tenant, e.getCause());
+        }
     }
     
     /**
-     * Returns the path of the tag cache file in server.
+     * Returns the path of the gray content cache file in server.
      */
-    public String getTagContent(String dataId, String group, String tenant, String tag) throws IOException {
-        return getTagContentInner(TAG_DIR, dataId, group, tenant, tag);
+    public String getGrayContent(String dataId, String group, String tenant, String grayName) throws IOException {
+        return getGrayInner(GRAY_DIR, dataId, group, tenant, grayName);
     }
     
     public String getContent(String dataId, String group, String tenant) throws IOException {
         return getContentInner(BASE_DIR, dataId, group, tenant);
+    }
+    
+    public String getLocalConfigMd5(String dataId, String group, String tenant, String encode) throws IOException {
+        return MD5Utils.md5Hex(getContentInner(BASE_DIR, dataId, group, tenant), encode);
     }
     
     Options createOptions(String dir) {
@@ -326,35 +333,19 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
     }
     
     /**
-     * Clear all beta config file.
+     * Clear all gray config file.
      */
-    public void clearAllBeta() {
-        try {
-            if (rocksDbMap.containsKey(BETA_DIR)) {
-                rocksDbMap.get(BETA_DIR).close();
-                RocksDB.destroyDB(EnvUtil.getNacosHome() + BETA_DIR, new Options());
-            }
-            deleteDirIfExist(BETA_DIR);
-            LogUtil.DEFAULT_LOG.info("clear all config-info-beta success.");
-        } catch (RocksDBException e) {
-            LogUtil.DEFAULT_LOG.warn("clear all config-info-beta failed.", e);
-        }
-    }
-    
-    /**
-     * Clear all tag config file.
-     */
-    public void clearAllTag() {
+    public void clearAllGray() {
         
         try {
-            if (rocksDbMap.containsKey(TAG_DIR)) {
-                rocksDbMap.get(TAG_DIR).close();
-                RocksDB.destroyDB(EnvUtil.getNacosHome() + TAG_DIR, new Options());
+            if (rocksDbMap.containsKey(GRAY_DIR)) {
+                rocksDbMap.get(GRAY_DIR).close();
+                RocksDB.destroyDB(EnvUtil.getNacosHome() + GRAY_DIR, new Options());
             }
-            deleteDirIfExist(TAG_DIR);
-            LogUtil.DEFAULT_LOG.info("clear all config-info-tag success.");
+            deleteDirIfExist(GRAY_DIR);
+            LogUtil.DEFAULT_LOG.info("clear all config-info-gray success.");
         } catch (RocksDBException e) {
-            LogUtil.DEFAULT_LOG.warn("clear all config-info-tag failed.", e);
+            LogUtil.DEFAULT_LOG.warn("clear all config-info-gray failed.", e);
         }
     }
     

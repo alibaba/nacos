@@ -49,14 +49,4 @@ class DumpProcessorUserRwaDiskTest extends DumpProcessorTest {
         super.testDumpNormalAndRemove();
         
     }
-    
-    @Test
-    public void testDumpBetaAndRemove() throws IOException {
-        super.testDumpBetaAndRemove();
-    }
-    
-    @Test
-    public void testDumpTagAndRemove() throws IOException {
-        super.testDumpTagAndRemove();
-    }
 }

@@ -43,8 +43,8 @@ class PropertyUtilTest {
     @BeforeEach
     void setUp() {
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
-        envUtilMockedStatic.when(() -> EnvUtil.getProperty(eq("memory_limit_file_path"), eq("/sys/fs/cgroup/memory/memory.limit_in_bytes")))
-                .thenReturn(mockMem);
+        envUtilMockedStatic.when(() -> EnvUtil.getProperty(eq("memory_limit_file_path"),
+                eq("/sys/fs/cgroup/memory/memory.limit_in_bytes"))).thenReturn(mockMem);
         
     }
     
@@ -76,6 +76,10 @@ class PropertyUtilTest {
         Field allDumpPageSizeFiled = FieldUtils.getField(PropertyUtil.class, "allDumpPageSize");
         allDumpPageSizeFiled.setAccessible(true);
         allDumpPageSizeFiled.set(null, null);
+        
+        Field limitMemoryFileFiled = FieldUtils.getField(PropertyUtil.class, "limitMemoryFile");
+        limitMemoryFileFiled.setAccessible(true);
+        limitMemoryFileFiled.set(null, null);
     }
     
     @Test

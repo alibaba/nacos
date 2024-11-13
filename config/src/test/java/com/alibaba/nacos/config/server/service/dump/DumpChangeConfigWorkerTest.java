@@ -105,8 +105,7 @@ class DumpChangeConfigWorkerTest {
         dynamicDataSourceMockedStatic.close();
         envUtilMockedStatic.close();
         ConfigDiskServiceFactory.getInstance().clearAll();
-        ConfigDiskServiceFactory.getInstance().clearAllBeta();
-        ConfigDiskServiceFactory.getInstance().clearAllTag();
+        ConfigDiskServiceFactory.getInstance().clearAllGray();
         
         Field[] declaredFields = ConfigDiskServiceFactory.class.getDeclaredFields();
         for (Field filed : declaredFields) {
@@ -121,7 +120,7 @@ class DumpChangeConfigWorkerTest {
     void testDumpChangeIfOff() {
         PropertyUtil.setDumpChangeOn(false);
         dumpChangeConfigWorker.run();
-        Mockito.verify(historyConfigInfoPersistService, times(0)).findDeletedConfig(any(), anyLong(), anyInt());
+        Mockito.verify(historyConfigInfoPersistService, times(0)).findDeletedConfig(any(), anyLong(), anyInt(), any());
     }
     
     @Test
@@ -141,7 +140,7 @@ class DumpChangeConfigWorkerTest {
         assertEquals("encrykey" + 1,
                 ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataIdPrefix + 1, "group" + 1, "tenant" + 1)).getConfigCache()
                         .getEncryptedDataKey());
-        Mockito.when(historyConfigInfoPersistService.findDeletedConfig(eq(startTime), eq(0L), eq(3))).thenReturn(firstPageDeleted);
+        Mockito.when(historyConfigInfoPersistService.findDeletedConfig(eq(startTime), eq(0L), eq(3), eq("formal"))).thenReturn(firstPageDeleted);
         //mock delete config query is null
         Mockito.when(configInfoPersistService.findConfigInfoState(eq(dataIdPrefix + 1), eq("group" + 1), eq("tenant" + 1)))
                 .thenReturn(null);
@@ -150,7 +149,7 @@ class DumpChangeConfigWorkerTest {
         dumpChangeConfigWorker.run();
         
         //expect delete page return pagesize and will select second page
-        Mockito.verify(historyConfigInfoPersistService, times(1)).findDeletedConfig(eq(startTime), eq(3L), eq(3));
+        Mockito.verify(historyConfigInfoPersistService, times(1)).findDeletedConfig(eq(startTime), eq(3L), eq(3), eq("formal"));
         //expect cache to be cleared.
         assertNull(ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataIdPrefix + 1, "group" + 1, "tenant" + 1)));
     }
