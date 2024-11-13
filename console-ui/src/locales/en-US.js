@@ -261,6 +261,9 @@ const I18N_CONF = {
     historyCompareTitle: 'History Compare',
     historyCompareLastVersion: 'Lasted Release Version',
     historyCompareSelectedVersion: 'Selected Version',
+    publishType: 'Publish Type',
+    formal: 'Formal Version',
+    gray: 'Gray Version',
   },
   HistoryDetail: {
     historyDetails: 'History Details',

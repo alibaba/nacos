@@ -69,6 +69,7 @@ class ConfigRollback extends React.Component {
   toggleMore() {
     this.setState({
       showmore: !this.state.showmore,
+      extraInfo: data.extraInfo ? JSON.parse(data.extraInfo) : {},
     });
   }
 
