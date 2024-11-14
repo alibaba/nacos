@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.service.sql;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.event.ConfigDumpEvent;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
@@ -106,6 +107,29 @@ public class EmbeddedStorageContextUtils {
      * In the case of the in-cluster storage mode, the logic of horizontal notification is implemented asynchronously
      * via the raft state machine, along with the information.
      *
+     * @param configInfo {@link ConfigInfo}
+     * @param grayName gray name
+     * @param grayRule gray rule
+     * @param srcIp      The IP of the operator
+     * @param time       Operating time
+     */
+    public static void onModifyConfigGrayInfo(ConfigInfo configInfo, String grayName, String grayRule, String srcIp, Timestamp time) {
+        if (!EnvUtil.getStandaloneMode()) {
+            ConfigDumpEvent event = ConfigDumpEvent.builder().remove(false).namespaceId(configInfo.getTenant())
+                    .dataId(configInfo.getDataId()).group(configInfo.getGroup()).isBeta(false).grayName(grayName)
+                    .grayRule(grayRule).content(configInfo.getContent()).type(configInfo.getType()).handleIp(srcIp)
+                    .lastModifiedTs(time.getTime()).build();
+            
+            Map<String, String> extendInfo = new HashMap<>(2);
+            extendInfo.put(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT, JacksonUtils.toJson(event));
+            EmbeddedStorageContextHolder.putAllExtendInfo(extendInfo);
+        }
+    }
+    
+    /**
+     * In the case of the in-cluster storage mode, the logic of horizontal notification is implemented asynchronously
+     * via the raft state machine, along with the information.
+     *
      * @param namespaceId namespaceId
      * @param group       groupName
      * @param dataId      dataId
@@ -128,12 +152,12 @@ public class EmbeddedStorageContextUtils {
      * In the case of the in-cluster storage mode, the logic of horizontal notification is implemented asynchronously
      * via the raft state machine, along with the information.
      *
-     * @param configInfos {@link ConfigInfo} list
+     * @param configInfos {@link ConfigAllInfo} list
      */
-    public static void onBatchDeleteConfigInfo(List<ConfigInfo> configInfos) {
+    public static void onBatchDeleteConfigInfo(List<ConfigAllInfo> configInfos) {
         if (!EnvUtil.getStandaloneMode()) {
             List<ConfigDumpEvent> events = new ArrayList<>();
-            for (ConfigInfo configInfo : configInfos) {
+            for (ConfigAllInfo configInfo : configInfos) {
                 String namespaceId =
                         StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
                 ConfigDumpEvent event = ConfigDumpEvent.builder().remove(true).namespaceId(namespaceId)
@@ -190,4 +214,25 @@ public class EmbeddedStorageContextUtils {
         }
     }
     
+    /**
+     * In the case of the in-cluster storage mode, the logic of horizontal notification is implemented asynchronously
+     * via the raft state machine, along with the information.
+     *
+     * @param namespaceId namespaceId
+     * @param group       group
+     * @param dataId      dataId
+     * @param grayName gray name
+     * @param srcIp       The IP of the operator
+     */
+    public static void onDeleteConfigGrayInfo(String namespaceId, String group, String dataId, String grayName,
+            String srcIp) {
+        if (!EnvUtil.getStandaloneMode()) {
+            ConfigDumpEvent event = ConfigDumpEvent.builder().remove(true).namespaceId(namespaceId).group(group)
+                    .dataId(dataId).isBeta(true).grayName(grayName).handleIp(srcIp).build();
+            
+            Map<String, String> extendInfo = new HashMap<>(2);
+            extendInfo.put(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT, JacksonUtils.toJson(event));
+            EmbeddedStorageContextHolder.putAllExtendInfo(extendInfo);
+        }
+    }
 }

@@ -17,7 +17,6 @@
 package com.alibaba.nacos.config.server.model.event;
 
 import com.alibaba.nacos.common.notify.Event;
-import com.alibaba.nacos.common.utils.StringUtils;
 
 /**
  * ConfigDataChangeEvent.
@@ -26,66 +25,29 @@ import com.alibaba.nacos.common.utils.StringUtils;
  */
 public class ConfigDataChangeEvent extends Event {
     
-    public final boolean isBeta;
+    public String dataId;
     
-    public final boolean isBatch;
+    public String group;
     
-    public final String dataId;
+    public String tenant;
     
-    public final String group;
-    
-    public final String tenant;
-    
-    public final String tag;
+    public String grayName;
     
     public final long lastModifiedTs;
     
-    public ConfigDataChangeEvent(String dataId, String group, long gmtModified) {
-        this(false, dataId, group, gmtModified);
-    }
-    
-    public ConfigDataChangeEvent(boolean isBeta, String dataId, String group, String tenant, long gmtModified) {
+    public ConfigDataChangeEvent(String dataId, String group, String tenant, long gmtModified) {
         if (null == dataId || null == group) {
             throw new IllegalArgumentException("dataId is null or group is null");
         }
-        this.isBeta = isBeta;
         this.dataId = dataId;
         this.group = group;
         this.tenant = tenant;
-        this.tag = null;
-        this.isBatch = false;
         this.lastModifiedTs = gmtModified;
     }
     
-    public ConfigDataChangeEvent(boolean isBeta, String dataId, String group, long gmtModified) {
-        this(isBeta, dataId, group, StringUtils.EMPTY, gmtModified);
-    }
-    
-    public ConfigDataChangeEvent(boolean isBeta, String dataId, String group, String tenant, String tag,
-            long gmtModified) {
-        if (null == dataId || null == group) {
-            throw new IllegalArgumentException("dataId is null or group is null");
-        }
-        this.isBeta = isBeta;
-        this.dataId = dataId;
-        this.group = group;
-        this.tenant = tenant;
-        this.tag = tag;
-        this.isBatch = false;
-        this.lastModifiedTs = gmtModified;
-    }
-    
-    public ConfigDataChangeEvent(String dataId, String group, String tenant, boolean isBatch, long gmtModified) {
-        if (null == dataId || null == group) {
-            throw new IllegalArgumentException();
-        }
-        this.isBeta = false;
-        this.dataId = dataId;
-        this.group = group;
-        this.tenant = tenant;
-        this.tag = null;
-        this.isBatch = isBatch;
-        this.lastModifiedTs = gmtModified;
+    public ConfigDataChangeEvent(String dataId, String group, String tenant, String grayName, long gmtModified) {
+        this(dataId, group, tenant, gmtModified);
+        this.grayName = grayName;
     }
     
 }

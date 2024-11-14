@@ -96,15 +96,16 @@ class AsyncNotifyServiceTest {
         ReflectionTestUtils.setField(asyncNotifyService, "configClusterRpcClientProxy", configClusterRpcClientProxy);
         String dataId = "testDataId" + timeStamp;
         String group = "testGroup";
-        AsyncNotifyService.NotifySingleRpcTask notifySingleRpcTask = new AsyncNotifyService.NotifySingleRpcTask(dataId, group, null, null,
-                0, false, false, member1);
-        configExecutorMocked.when(() -> ConfigExecutor.scheduleAsyncNotify(any(Runnable.class), anyLong(), any(TimeUnit.class)))
+        AsyncNotifyService.NotifySingleRpcTask notifySingleRpcTask = new AsyncNotifyService.NotifySingleRpcTask(dataId,
+                group, null, null, 0, member1);
+        configExecutorMocked.when(
+                () -> ConfigExecutor.scheduleAsyncNotify(any(Runnable.class), anyLong(), any(TimeUnit.class)))
                 .thenAnswer(invocation -> null);
         
-        notifySingleRpcTask.setBatch(true);
         notifySingleRpcTask.setTag("test");
         notifySingleRpcTask.setBeta(false);
-        AsyncRpcNotifyCallBack asyncRpcNotifyCallBack = new AsyncRpcNotifyCallBack(asyncNotifyService, notifySingleRpcTask);
+        AsyncRpcNotifyCallBack asyncRpcNotifyCallBack = new AsyncRpcNotifyCallBack(asyncNotifyService,
+                notifySingleRpcTask);
         ConfigChangeClusterSyncResponse successResponse = new ConfigChangeClusterSyncResponse();
         //1. success response
         asyncRpcNotifyCallBack.onResponse(successResponse);
@@ -116,8 +117,8 @@ class AsyncNotifyServiceTest {
         
         // expect schedule twice fail or exception response.
         configExecutorMocked.verify(
-                () -> ConfigExecutor.scheduleAsyncNotify(any(AsyncNotifyService.AsyncRpcTask.class), anyLong(), any(TimeUnit.class)),
-                times(2));
+                () -> ConfigExecutor.scheduleAsyncNotify(any(AsyncNotifyService.AsyncRpcTask.class), anyLong(),
+                        any(TimeUnit.class)), times(2));
     }
     
     /**
@@ -146,15 +147,18 @@ class AsyncNotifyServiceTest {
         
         Mockito.when(serverMemberManager.allMembersWithoutSelf()).thenReturn(memberList);
         
-        configExecutorMocked.when(() -> ConfigExecutor.scheduleAsyncNotify(any(Runnable.class), anyLong(), any(TimeUnit.class)))
+        configExecutorMocked.when(
+                () -> ConfigExecutor.scheduleAsyncNotify(any(Runnable.class), anyLong(), any(TimeUnit.class)))
                 .thenAnswer(invocation -> null);
         String dataId = "testDataId" + timeStamp;
         String group = "testGroup";
         AsyncNotifyService asyncNotifyService = new AsyncNotifyService(serverMemberManager);
-        asyncNotifyService.handleConfigDataChangeEvent(new ConfigDataChangeEvent(dataId, group, System.currentTimeMillis()));
+        asyncNotifyService.handleConfigDataChangeEvent(
+                new ConfigDataChangeEvent(dataId, group, null, System.currentTimeMillis()));
         
         // expect schedule twice fail or exception response.
-        configExecutorMocked.verify(() -> ConfigExecutor.executeAsyncNotify(any(AsyncNotifyService.AsyncRpcTask.class)), times(1));
+        configExecutorMocked.verify(() -> ConfigExecutor.executeAsyncNotify(any(AsyncNotifyService.AsyncRpcTask.class)),
+                times(1));
         
     }
     
@@ -184,8 +188,9 @@ class AsyncNotifyServiceTest {
         
         for (Member member : memberList) {
             // grpc report data change only
-            rpcQueue.add(new AsyncNotifyService.NotifySingleRpcTask(dataId, group, null, null, System.currentTimeMillis(), false, false,
-                    member));
+            rpcQueue.add(
+                    new AsyncNotifyService.NotifySingleRpcTask(dataId, group, null, null, System.currentTimeMillis(),
+                            member));
         }
         
         AsyncNotifyService asyncNotifyService = new AsyncNotifyService(serverMemberManager);
@@ -195,14 +200,18 @@ class AsyncNotifyServiceTest {
         Mockito.when(serverMemberManager.hasMember(eq(member1.getAddress()))).thenReturn(true);
         Mockito.when(serverMemberManager.hasMember(eq(member2.getAddress()))).thenReturn(true);
         Mockito.when(serverMemberManager.hasMember(eq(member3.getAddress()))).thenReturn(true);
-        Mockito.when(serverMemberManager.stateCheck(eq(member1.getAddress()), eq(HEALTHY_CHECK_STATUS))).thenReturn(true);
-        Mockito.when(serverMemberManager.stateCheck(eq(member2.getAddress()), eq(HEALTHY_CHECK_STATUS))).thenReturn(true);
+        Mockito.when(serverMemberManager.stateCheck(eq(member1.getAddress()), eq(HEALTHY_CHECK_STATUS)))
+                .thenReturn(true);
+        Mockito.when(serverMemberManager.stateCheck(eq(member2.getAddress()), eq(HEALTHY_CHECK_STATUS)))
+                .thenReturn(true);
         // mock stateCheck fail before notify member3
-        Mockito.when(serverMemberManager.stateCheck(eq(member3.getAddress()), eq(HEALTHY_CHECK_STATUS))).thenReturn(false);
+        Mockito.when(serverMemberManager.stateCheck(eq(member3.getAddress()), eq(HEALTHY_CHECK_STATUS)))
+                .thenReturn(false);
         //mock syncConfigChange exception when notify member2
         Mockito.doThrow(new NacosException()).when(configClusterRpcClientProxy)
                 .syncConfigChange(eq(member2), any(ConfigChangeClusterSyncRequest.class), any(RequestCallBack.class));
-        configExecutorMocked.when(() -> ConfigExecutor.scheduleAsyncNotify(any(Runnable.class), anyLong(), any(TimeUnit.class)))
+        configExecutorMocked.when(
+                () -> ConfigExecutor.scheduleAsyncNotify(any(Runnable.class), anyLong(), any(TimeUnit.class)))
                 .thenAnswer(invocation -> null);
         
         asyncNotifyService.executeAsyncRpcTask(rpcQueue);
@@ -216,8 +225,8 @@ class AsyncNotifyServiceTest {
         
         //verify scheduleAsyncNotify member2 & member3 in task when syncConfigChange fail
         configExecutorMocked.verify(
-                () -> ConfigExecutor.scheduleAsyncNotify(any(AsyncNotifyService.AsyncRpcTask.class), anyLong(), any(TimeUnit.class)),
-                times(2));
+                () -> ConfigExecutor.scheduleAsyncNotify(any(AsyncNotifyService.AsyncRpcTask.class), anyLong(),
+                        any(TimeUnit.class)), times(2));
         
     }
 }

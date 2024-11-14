@@ -58,17 +58,17 @@ public class ConfigChangeBatchListenRequestHandler
         String tag = configChangeListenRequest.getHeader(Constants.VIPSERVER_TAG);
         ParamUtils.checkParam(tag);
         ConfigChangeBatchListenResponse configChangeBatchListenResponse = new ConfigChangeBatchListenResponse();
-        for (ConfigBatchListenRequest.ConfigListenContext listenContext : configChangeListenRequest
-                .getConfigListenContexts()) {
-            String groupKey = GroupKey2
-                    .getKey(listenContext.getDataId(), listenContext.getGroup(), listenContext.getTenant());
+        for (ConfigBatchListenRequest.ConfigListenContext listenContext : configChangeListenRequest.getConfigListenContexts()) {
+            String groupKey = GroupKey2.getKey(listenContext.getDataId(), listenContext.getGroup(),
+                    listenContext.getTenant());
             groupKey = StringPool.get(groupKey);
             
             String md5 = StringPool.get(listenContext.getMd5());
             
             if (configChangeListenRequest.isListen()) {
                 configChangeListenContext.addListen(groupKey, md5, connectionId);
-                boolean isUptoDate = ConfigCacheService.isUptodate(groupKey, md5, meta.getClientIp(), tag);
+                boolean isUptoDate = ConfigCacheService.isUptodate(groupKey, md5, meta.getClientIp(), tag,
+                        meta.getAppLabels());
                 if (!isUptoDate) {
                     configChangeBatchListenResponse.addChangeConfig(listenContext.getDataId(), listenContext.getGroup(),
                             listenContext.getTenant());

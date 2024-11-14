@@ -35,29 +35,40 @@ public interface ConfigDiskService {
      * @throws IOException io exception.
      */
     void saveToDisk(String dataId, String group, String tenant, String content) throws IOException;
-    
-    /**
-     * Save beta information to disk.
-     *
-     * @param dataId  dataId.
-     * @param group   group.
-     * @param tenant  tenant.
-     * @param content content.
-     * @throws IOException io exception.
-     */
-    void saveBetaToDisk(String dataId, String group, String tenant, String content) throws IOException;
 
     /**
-     * Save tag information to disk.
+     * Save gray information to disk.
      *
      * @param dataId  dataId.
      * @param group   group.
      * @param tenant  tenant.
-     * @param tag     tag.
+     * @param grayName grayName.
      * @param content content.
      * @throws IOException io exception.
      */
-    void saveTagToDisk(String dataId, String group, String tenant, String tag, String content) throws IOException;
+    void saveGrayToDisk(String dataId, String group, String tenant, String grayName, String content) throws IOException;
+    
+    /**
+     * Deletes gray configuration files on disk.
+     *
+     * @param dataId dataId.
+     * @param group  group.
+     * @param tenant tenant.
+     * @param grayName grayName.
+     */
+    void removeConfigInfo4Gray(String dataId, String group, String tenant, String grayName);
+    
+    /**
+     * Returns the content of the gray cache file in server.
+     *
+     * @param dataId dataId.
+     * @param group  group.
+     * @param tenant tenant.
+     * @param grayName grayName.
+     * @return gray content, null if not exist.
+     * @throws IOException io exception.
+     */
+    String getGrayContent(String dataId, String group, String tenant, String grayName) throws IOException;
     
     /**
      * Deletes configuration files on disk.
@@ -67,25 +78,6 @@ public interface ConfigDiskService {
      * @param tenant tenant.
      */
     void removeConfigInfo(String dataId, String group, String tenant);
-    
-    /**
-     * Deletes beta configuration files on disk.
-     *
-     * @param dataId dataId.
-     * @param group  group.
-     * @param tenant tenant.
-     */
-    void removeConfigInfo4Beta(String dataId, String group, String tenant);
-    
-    /**
-     * Deletes tag configuration files on disk.
-     *
-     * @param dataId dataId.
-     * @param group  group.
-     * @param tenant tenant.
-     * @param tag    tag.
-     */
-    void removeConfigInfo4Tag(String dataId, String group, String tenant, String tag);
     
     /**
      * Returns the content of the  cache file in server.
@@ -99,41 +91,13 @@ public interface ConfigDiskService {
     String getContent(String dataId, String group, String tenant) throws IOException;
     
     /**
-     * Returns the beta content of cache file in server.
-     *
-     * @param dataId dataId.
-     * @param group  group.
-     * @param tenant tenant.
-     * @return content, null if not exist.
-     * @throws IOException io exception.
-     */
-    String getBetaContent(String dataId, String group, String tenant) throws IOException;
-    
-    /**
-     * Returns the path of the tag cache file in server.
-     *
-     * @param dataId dataId.
-     * @param group  group.
-     * @param tenant tenant.
-     * @param tag    tag.
-     * @return tag content, null if not exist.
-     * @throws IOException io exception.
-     */
-    String getTagContent(String dataId, String group, String tenant, String tag) throws IOException;
-    
-    /**
      * Clear all config file.
      */
     void clearAll();
     
     /**
-     * Clear all beta config file.
+     * Clear all gray config file.
      */
-    void clearAllBeta();
-    
-    /**
-     * Clear all tag config file.
-     */
-    void clearAllTag();
+    void clearAllGray();
     
 }

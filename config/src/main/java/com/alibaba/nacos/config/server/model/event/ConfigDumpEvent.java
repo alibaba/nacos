@@ -45,6 +45,10 @@ public class ConfigDumpEvent extends Event {
     
     private String tag;
     
+    private String grayName;
+    
+    private String grayRule;
+    
     private String content;
     
     private String betaIps;
@@ -167,6 +171,22 @@ public class ConfigDumpEvent extends Event {
         this.encryptedDataKey = encryptedDataKey;
     }
     
+    public String getGrayName() {
+        return grayName;
+    }
+    
+    public void setGrayName(String grayName) {
+        this.grayName = grayName;
+    }
+    
+    public String getGrayRule() {
+        return grayRule;
+    }
+    
+    public void setGrayRule(String grayRule) {
+        this.grayRule = grayRule;
+    }
+    
     public static ConfigDumpEventBuilder builder() {
         return new ConfigDumpEventBuilder();
     }
@@ -188,6 +208,10 @@ public class ConfigDumpEvent extends Event {
         private int delimiter;
         
         private String tag;
+        
+        private String grayName;
+        
+        private String grayRule;
         
         private String encryptedDataKey;
         
@@ -236,6 +260,16 @@ public class ConfigDumpEvent extends Event {
         
         public ConfigDumpEventBuilder tag(String tag) {
             this.tag = tag;
+            return this;
+        }
+        
+        public ConfigDumpEventBuilder grayName(String grayName) {
+            this.grayName = grayName;
+            return this;
+        }
+        
+        public ConfigDumpEventBuilder grayRule(String grayRule) {
+            this.grayRule = grayRule;
             return this;
         }
         
@@ -294,6 +328,8 @@ public class ConfigDumpEvent extends Event {
             configDumpEvent.setBatch(isBatch);
             configDumpEvent.setDelimiter(delimiter);
             configDumpEvent.setLastModifiedTs(lastModifiedTs);
+            configDumpEvent.setGrayName(grayName);
+            configDumpEvent.setGrayRule(grayRule);
             configDumpEvent.isBeta = this.isBeta;
             return configDumpEvent;
         }

@@ -160,12 +160,13 @@ public class ConfigSubService {
         List<T> runJobs() {
             Collection<Member> ipList = serverMemberManager.allMembers();
             List<T> collectionResult = new ArrayList<>(ipList.size());
+            
             // Submit query task.
             for (Member ip : ipList) {
                 try {
                     completionService.submit(new Job<T>(ip.getAddress()) {
                     });
-                } catch (Exception e) { // Send request failed.
+                } catch (Throwable e) { // Send request failed.
                     LogUtil.DEFAULT_LOG.warn("invoke to {} with exception: {} during submit job", ip, e.getMessage());
                 }
             }
