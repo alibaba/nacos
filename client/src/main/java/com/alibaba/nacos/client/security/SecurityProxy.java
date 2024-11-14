@@ -100,7 +100,7 @@ public class SecurityProxy implements Closeable {
         }
         for (ClientAuthService clientAuthService : clientAuthPluginManager.getAuthServiceSpiImplSet()) {
             try {
-                LoginIdentityContext loginIdentityContext = clientAuthService.getLoginIdentityContext(null);
+                LoginIdentityContext loginIdentityContext = clientAuthService.getLoginIdentityContext(new RequestResource());
                 if (loginIdentityContext != null) {
                     loginIdentityContext.setParameter(NacosAuthLoginConstant.RELOGINFLAG, "true");
                 }
