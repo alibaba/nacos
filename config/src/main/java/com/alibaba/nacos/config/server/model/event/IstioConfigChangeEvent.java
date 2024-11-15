@@ -29,36 +29,9 @@ public class IstioConfigChangeEvent extends ConfigDataChangeEvent {
     
     public final String type;
     
-    public IstioConfigChangeEvent(String dataId, String group, long gmtModified, String content, String type) {
-        super(dataId, group, gmtModified);
-        this.content = content;
-        this.type = type;
-    }
-    
-    public IstioConfigChangeEvent(boolean isBeta, String dataId, String group, String tenant, long gmtModified,
-            String content, String type) {
-        super(isBeta, dataId, group, tenant, gmtModified);
-        this.content = content;
-        this.type = type;
-    }
-    
-    public IstioConfigChangeEvent(boolean isBeta, String dataId, String group, long gmtModified, String content,
+    public IstioConfigChangeEvent(String dataId, String group, String tenant, long gmtModified, String content,
             String type) {
-        super(isBeta, dataId, group, gmtModified);
-        this.content = content;
-        this.type = type;
-    }
-    
-    public IstioConfigChangeEvent(boolean isBeta, String dataId, String group, String tenant, String tag,
-            long gmtModified, String content, String type) {
-        super(isBeta, dataId, group, tenant, tag, gmtModified);
-        this.content = content;
-        this.type = type;
-    }
-    
-    public IstioConfigChangeEvent(String dataId, String group, String tenant, boolean isBatch, long gmtModified,
-            String content, String type) {
-        super(dataId, group, tenant, isBatch, gmtModified);
+        super(dataId, group, tenant, gmtModified);
         this.content = content;
         this.type = type;
     }

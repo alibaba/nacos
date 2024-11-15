@@ -124,12 +124,6 @@ public class ConfigOperationService {
             configForm.setGrayPriority(Integer.MAX_VALUE - 1);
             persistTagv1(configForm, configInfo, configRequestInfo);
             publishConfigGray(TagGrayRule.TYPE_TAG, configForm, configRequestInfo);
-            if (ConfigTagUtil.isIstio(configForm.getConfigTags())) {
-                ConfigChangePublisher.notifyConfigChange(
-                        new IstioConfigChangeEvent(configForm.getDataId(), configForm.getGroup(),
-                                configOperateResult.getLastModified(), configForm.getContent(),
-                                ConfigTagUtil.getIstioType(configForm.getConfigTags())));
-            }
             return Boolean.TRUE;
         }
         
@@ -151,6 +145,12 @@ public class ConfigOperationService {
         ConfigChangePublisher.notifyConfigChange(
                 new ConfigDataChangeEvent(configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId(),
                         configOperateResult.getLastModified()));
+        if (ConfigTagUtil.isIstio(configForm.getConfigTags())) {
+            ConfigChangePublisher.notifyConfigChange(
+                    new IstioConfigChangeEvent(configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId(),
+                            configOperateResult.getLastModified(), configForm.getContent(),
+                            ConfigTagUtil.getIstioType(configForm.getConfigTags())));
+        }
         ConfigTraceService.logPersistenceEvent(configForm.getDataId(), configForm.getGroup(),
                 configForm.getNamespaceId(), configRequestInfo.getRequestIpApp(), configOperateResult.getLastModified(),
                 InetUtils.getSelfIP(), ConfigTraceService.PERSISTENCE_EVENT, ConfigTraceService.PERSISTENCE_TYPE_PUB,

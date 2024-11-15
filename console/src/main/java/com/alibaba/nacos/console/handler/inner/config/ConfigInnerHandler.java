@@ -36,6 +36,7 @@ import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
+import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
@@ -66,7 +67,6 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -160,14 +160,14 @@ public class ConfigInnerHandler implements ConfigHandler {
     @Override
     public Boolean batchDeleteConfigs(List<Long> ids, String clientIp, String srcUser) {
         final Timestamp time = TimeUtils.getCurrentTime();
-        List<ConfigInfo> configInfoList = configInfoPersistService.removeConfigInfoByIds(ids, clientIp, srcUser);
+        List<ConfigAllInfo> configInfoList = configInfoPersistService.removeConfigInfoByIds(ids, clientIp, srcUser);
         if (CollectionUtils.isEmpty(configInfoList)) {
             return true;
         }
         for (ConfigInfo configInfo : configInfoList) {
             ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
-                            configInfo.getTenant(), time.getTime()));
+                    new ConfigDataChangeEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
+                            time.getTime()));
             
             ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant(), null, time.getTime(), clientIp, ConfigTraceService.PERSISTENCE_EVENT,
@@ -203,7 +203,8 @@ public class ConfigInnerHandler implements ConfigHandler {
     }
     
     @Override
-    public GroupkeyListenserStatus getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime) {
+    public GroupkeyListenserStatus getAllSubClientConfigByIp(String ip, boolean all, String namespaceId,
+            int sampleTime) {
         SampleResult collectSampleResult = configSubService.getCollectSampleResultByIp(ip, sampleTime);
         GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
         gls.setCollectStatus(200);
@@ -346,8 +347,8 @@ public class ConfigInnerHandler implements ConfigHandler {
                 null, policy);
         for (ConfigInfo configInfo : configInfoList) {
             ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
-                            configInfo.getTenant(), time.getTime()));
+                    new ConfigDataChangeEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
+                            time.getTime()));
             ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant(), requestIpApp, time.getTime(), InetUtils.getSelfIP(),
                     ConfigTraceService.PERSISTENCE_EVENT, ConfigTraceService.PERSISTENCE_TYPE_PUB,
@@ -578,7 +579,7 @@ public class ConfigInnerHandler implements ConfigHandler {
                 srcIp, null, policy);
         for (ConfigInfo configInfo : configInfoList4Clone) {
             ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
+                    new ConfigDataChangeEvent(configInfo.getDataId(), configInfo.getGroup(),
                             configInfo.getTenant(), time.getTime()));
             ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant(), requestIpApp, time.getTime(), InetUtils.getSelfIP(),
@@ -600,7 +601,7 @@ public class ConfigInnerHandler implements ConfigHandler {
         ConfigTraceService.logPersistenceEvent(dataId, group, namespaceId, requestIpApp, System.currentTimeMillis(),
                 remoteIp, ConfigTraceService.PERSISTENCE_EVENT_BETA, ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
         ConfigChangePublisher.notifyConfigChange(
-                new ConfigDataChangeEvent(true, dataId, group, namespaceId, System.currentTimeMillis()));
+                new ConfigDataChangeEvent(dataId, group, namespaceId, BetaGrayRule.TYPE_BETA, System.currentTimeMillis()));
         return true;
         
     }
@@ -609,7 +610,7 @@ public class ConfigInnerHandler implements ConfigHandler {
     public Result<ConfigInfo4Beta> queryBetaConfig(String dataId, String group, String namespaceId) {
         try {
             ConfigInfo4Beta ci = configInfoBetaPersistService.findConfigInfo4Beta(dataId, group, namespaceId);
-        
+            
             if (Objects.nonNull(ci)) {
                 String encryptedDataKey = ci.getEncryptedDataKey();
                 Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey, ci.getContent());
