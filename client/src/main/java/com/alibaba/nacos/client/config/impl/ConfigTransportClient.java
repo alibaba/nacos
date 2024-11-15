@@ -136,6 +136,10 @@ public abstract class ConfigTransportClient {
         startInternal();
     }
     
+    public void reLogin() {
+        securityProxy.reLogin();
+    }
+    
     /**
      * start client inner.
      *
