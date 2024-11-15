@@ -48,6 +48,16 @@ public class ConfigForm implements NacosForm {
     
     private String configTags;
     
+    private String encryptedDataKey;
+    
+    private String grayName;
+    
+    private String grayRuleExp;
+    
+    private String grayVersion;
+    
+    private int grayPriority;
+    
     private String desc;
     
     private String use;
@@ -58,14 +68,11 @@ public class ConfigForm implements NacosForm {
     
     private String schema;
     
-    private String encryptedDataKey;
-    
     public ConfigForm() {
     }
     
     public ConfigForm(String dataId, String group, String namespaceId, String content, String tag, String appName,
-            String srcUser, String configTags, String desc, String use, String effect, String type, String schema,
-            String encryptedDataKey) {
+            String srcUser, String configTags, String desc, String use, String effect, String type, String schema) {
         this.dataId = dataId;
         this.group = group;
         this.namespaceId = namespaceId;
@@ -79,7 +86,6 @@ public class ConfigForm implements NacosForm {
         this.effect = effect;
         this.type = type;
         this.schema = schema;
-        this.encryptedDataKey = encryptedDataKey;
     }
     
     public String getDataId() {
@@ -192,6 +198,38 @@ public class ConfigForm implements NacosForm {
     
     public void setEncryptedDataKey(String encryptedDataKey) {
         this.encryptedDataKey = encryptedDataKey;
+    }
+    
+    public String getGrayName() {
+        return grayName;
+    }
+    
+    public void setGrayName(String grayName) {
+        this.grayName = grayName;
+    }
+    
+    public String getGrayRuleExp() {
+        return grayRuleExp;
+    }
+    
+    public void setGrayRuleExp(String grayRuleExp) {
+        this.grayRuleExp = grayRuleExp;
+    }
+    
+    public String getGrayVersion() {
+        return grayVersion;
+    }
+    
+    public void setGrayVersion(String grayVersion) {
+        this.grayVersion = grayVersion;
+    }
+    
+    public int getGrayPriority() {
+        return grayPriority;
+    }
+    
+    public void setGrayPriority(int grayPriority) {
+        this.grayPriority = grayPriority;
     }
     
     @Override

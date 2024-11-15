@@ -104,7 +104,7 @@ class ConfigEditor extends React.Component {
           },
           () => {
             this.getConfig(true).then(res => {
-              if (res.code !== 200 || !res.data) {
+              if (res.code !== 0 || !res.data) {
                 this.getConfig();
                 return;
               }

@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.remote.ability.ServerRemoteAbility;
 import com.alibaba.nacos.api.remote.request.HealthCheckRequest;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
@@ -70,6 +71,9 @@ class ClusterRpcClientProxyTest {
     private ServerMemberManager serverMemberManager;
     
     @Mock
+    private AuthConfigs authConfigs;
+    
+    @Mock
     private RpcClient client;
     
     private Member member;
@@ -96,6 +100,8 @@ class ClusterRpcClientProxyTest {
         clientMap.remove("Cluster-" + member.getAddress()).shutdown();
         clientMap.put("Cluster-" + member.getAddress(), client);
         when(client.getConnectionType()).thenReturn(ConnectionType.GRPC);
+        when(authConfigs.getServerIdentityKey()).thenReturn("MockIdentityKey");
+        when(authConfigs.getServerIdentityValue()).thenReturn("MockIdentityValue");
     }
     
     @Test

@@ -23,9 +23,8 @@ import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.dump.ExternalDumpService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.service.dump.task.DumpAllTask;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
@@ -63,10 +62,7 @@ class DumpAllProcessorTest {
     DataSourceService dataSourceService;
     
     @Mock
-    ConfigInfoBetaPersistService configInfoBetaPersistService;
-    
-    @Mock
-    ConfigInfoTagPersistService configInfoTagPersistService;
+    ConfigInfoGrayPersistService configInfoGrayPersistService;
     
     DumpAllProcessor dumpAllProcessor;
     
@@ -92,8 +88,7 @@ class DumpAllProcessorTest {
         
         when(dynamicDataSource.getDataSource()).thenReturn(dataSourceService);
         
-        dumpService = new ExternalDumpService(configInfoPersistService, null, null, null, configInfoBetaPersistService,
-                configInfoTagPersistService, null, null);
+        dumpService = new ExternalDumpService(configInfoPersistService, null, null, configInfoGrayPersistService, null);
         
         dumpAllProcessor = new DumpAllProcessor(configInfoPersistService);
         envUtilMockedStatic.when(() -> EnvUtil.getProperty(eq("memory_limit_file_path"), eq("/sys/fs/cgroup/memory/memory.limit_in_bytes")))
