@@ -26,7 +26,9 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.model.CacheItem;
-import com.alibaba.nacos.config.server.model.ConfigCache;
+import com.alibaba.nacos.config.server.model.ConfigCacheGray;
+import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
+import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
@@ -49,6 +51,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -149,9 +152,6 @@ public class ConfigServletInner {
         if (lockResult > 0 && cacheItem != null) {
             try {
                 long lastModified;
-                boolean isBeta =
-                        cacheItem.isBeta() && cacheItem.getConfigCacheBeta() != null && cacheItem.getIps4Beta() != null
-                                && cacheItem.getIps4Beta().contains(clientIp);
                 
                 final String configType =
                         (null != cacheItem.getType()) ? cacheItem.getType() : FileTypeEnum.TEXT.getFileType();
@@ -160,46 +160,62 @@ public class ConfigServletInner {
                 String contentTypeHeader = fileTypeEnum.getContentType();
                 response.setHeader(HttpHeaderConsts.CONTENT_TYPE,
                         isV2 ? MediaType.APPLICATION_JSON : contentTypeHeader);
+                
+                ConfigCacheGray matchedGray = null;
+                Map<String, String> appLabels = new HashMap(4);
+                appLabels.put(BetaGrayRule.CLIENT_IP_LABEL, clientIp);
+                boolean specificTag = StringUtils.isNotBlank(tag);
+                
+                if (specificTag) {
+                    appLabels.put(TagGrayRule.VIP_SERVER_TAG_LABEL, tag);
+                } else if (StringUtils.isNotBlank(autoTag)) {
+                    appLabels.put(TagGrayRule.VIP_SERVER_TAG_LABEL, autoTag);
+                }
+                
+                if (cacheItem.getSortConfigGrays() != null && !cacheItem.getSortConfigGrays().isEmpty()) {
+                    for (ConfigCacheGray configCacheGray : cacheItem.getSortConfigGrays()) {
+                        if (configCacheGray.match(appLabels)) {
+                            matchedGray = configCacheGray;
+                            break;
+                        }
+                    }
+                }
+                
                 String pullEvent;
                 String content;
                 String md5;
                 String encryptedDataKey;
-                if (isBeta) {
-                    ConfigCache configCacheBeta = cacheItem.getConfigCacheBeta();
-                    pullEvent = ConfigTraceService.PULL_EVENT_BETA;
-                    md5 = configCacheBeta.getMd5(acceptCharset);
-                    lastModified = configCacheBeta.getLastModifiedTs();
-                    encryptedDataKey = configCacheBeta.getEncryptedDataKey();
-                    content = ConfigDiskServiceFactory.getInstance().getBetaContent(dataId, group, tenant);
-                    response.setHeader("isBeta", "true");
-                } else {
-                    if (StringUtils.isBlank(tag)) {
-                        if (isUseTag(cacheItem, autoTag)) {
-                            
-                            ConfigCache configCacheTag = cacheItem.getConfigCacheTags().get(autoTag);
-                            md5 = configCacheTag.getMd5(acceptCharset);
-                            lastModified = configCacheTag.getLastModifiedTs();
-                            encryptedDataKey = configCacheTag.getEncryptedDataKey();
-                            content = ConfigDiskServiceFactory.getInstance()
-                                    .getTagContent(dataId, group, tenant, autoTag);
-                            pullEvent = ConfigTraceService.PULL_EVENT_TAG + "-" + autoTag;
-                            response.setHeader(com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG,
-                                    URLEncoder.encode(autoTag, StandardCharsets.UTF_8.displayName()));
-                        } else {
-                            pullEvent = ConfigTraceService.PULL_EVENT;
-                            md5 = cacheItem.getConfigCache().getMd5(acceptCharset);
-                            lastModified = cacheItem.getConfigCache().getLastModifiedTs();
-                            encryptedDataKey = cacheItem.getConfigCache().getEncryptedDataKey();
-                            content = ConfigDiskServiceFactory.getInstance().getContent(dataId, group, tenant);
-                        }
-                    } else {
-                        md5 = cacheItem.getTagMd5(tag, acceptCharset);
-                        lastModified = cacheItem.getTagLastModified(tag);
-                        encryptedDataKey = cacheItem.getTagEncryptedDataKey(tag);
-                        
-                        content = ConfigDiskServiceFactory.getInstance().getTagContent(dataId, group, tenant, tag);
-                        pullEvent = ConfigTraceService.PULL_EVENT_TAG + "-" + tag;
+                
+                if (matchedGray != null) {
+                    md5 = matchedGray.getMd5(acceptCharset);
+                    lastModified = matchedGray.getLastModifiedTs();
+                    encryptedDataKey = matchedGray.getEncryptedDataKey();
+                    content = ConfigDiskServiceFactory.getInstance()
+                            .getGrayContent(dataId, group, tenant, matchedGray.getGrayName());
+                    pullEvent = ConfigTraceService.PULL_EVENT + "-" + matchedGray.getGrayName();
+                    if (BetaGrayRule.TYPE_BETA.equals(matchedGray.getGrayName())) {
+                        response.setHeader("isBeta", "true");
                     }
+                    if (TagGrayRule.TYPE_TAG.equals(matchedGray.getGrayRule().getType())) {
+                        response.setHeader(com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG,
+                                URLEncoder.encode(matchedGray.getGrayRule().getRawGrayRuleExp(),
+                                        StandardCharsets.UTF_8.displayName()));
+                    }
+                } else if (specificTag) {
+                    //specific tag is not found
+                    md5 = null;
+                    lastModified = 0L;
+                    encryptedDataKey = null;
+                    content = null;
+                    pullEvent = ConfigTraceService.PULL_EVENT + "-" + TagGrayRule.TYPE_TAG + "-" + tag;
+                    response.setHeader(com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG,
+                            URLEncoder.encode(tag, StandardCharsets.UTF_8.displayName()));
+                } else {
+                    md5 = cacheItem.getConfigCache().getMd5(acceptCharset);
+                    lastModified = cacheItem.getConfigCache().getLastModifiedTs();
+                    encryptedDataKey = cacheItem.getConfigCache().getEncryptedDataKey();
+                    content = ConfigDiskServiceFactory.getInstance().getContent(dataId, group, tenant);
+                    pullEvent = ConfigTraceService.PULL_EVENT;
                 }
                 
                 if (content == null) {
@@ -276,10 +292,4 @@ public class ConfigServletInner {
         }
         return HttpServletResponse.SC_CONFLICT + "";
     }
-    
-    private static boolean isUseTag(CacheItem cacheItem, String tag) {
-        return cacheItem != null && cacheItem.getConfigCacheTags() != null && cacheItem.getConfigCacheTags()
-                .containsKey(tag);
-    }
-    
 }

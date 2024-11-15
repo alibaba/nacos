@@ -16,23 +16,20 @@
 
 package com.alibaba.nacos.config.server.remote;
 
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.common.utils.MapUtil;
+import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigOperateResult;
-import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
-import com.alibaba.nacos.config.server.service.AggrWhitelist;
-import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
-import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
+import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
+import com.alibaba.nacos.config.server.model.form.ConfigForm;
+import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
@@ -41,10 +38,8 @@ import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import org.springframework.stereotype.Component;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * request handler to publish config.
@@ -55,18 +50,10 @@ import java.util.Map;
 @Component
 public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishRequest, ConfigPublishResponse> {
     
-    private final ConfigInfoPersistService configInfoPersistService;
+    private ConfigOperationService configOperationService;
     
-    private final ConfigInfoTagPersistService configInfoTagPersistService;
-    
-    private final ConfigInfoBetaPersistService configInfoBetaPersistService;
-    
-    public ConfigPublishRequestHandler(ConfigInfoPersistService configInfoPersistService,
-            ConfigInfoTagPersistService configInfoTagPersistService,
-            ConfigInfoBetaPersistService configInfoBetaPersistService) {
-        this.configInfoPersistService = configInfoPersistService;
-        this.configInfoTagPersistService = configInfoTagPersistService;
-        this.configInfoBetaPersistService = configInfoBetaPersistService;
+    public ConfigPublishRequestHandler(ConfigOperationService configOperationService) {
+        this.configOperationService = configOperationService;
     }
     
     @Override
@@ -82,7 +69,6 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
             final String tenant = request.getTenant();
             
             final String srcIp = meta.getClientIp();
-            final String requestIpApp = request.getAdditionParam("requestIpApp");
             final String tag = request.getAdditionParam("tag");
             final String appName = request.getAdditionParam("appName");
             final String type = request.getAdditionParam("type");
@@ -92,82 +78,49 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
             // check tenant
             ParamUtils.checkParam(dataId, group, "datumId", content);
             ParamUtils.checkParam(tag);
-            Map<String, Object> configAdvanceInfo = new HashMap<>(10);
-            MapUtil.putIfValNoNull(configAdvanceInfo, "config_tags", request.getAdditionParam("config_tags"));
-            MapUtil.putIfValNoNull(configAdvanceInfo, "desc", request.getAdditionParam("desc"));
-            MapUtil.putIfValNoNull(configAdvanceInfo, "use", request.getAdditionParam("use"));
-            MapUtil.putIfValNoNull(configAdvanceInfo, "effect", request.getAdditionParam("effect"));
-            MapUtil.putIfValNoNull(configAdvanceInfo, "type", type);
-            MapUtil.putIfValNoNull(configAdvanceInfo, "schema", request.getAdditionParam("schema"));
-            ParamUtils.checkParam(configAdvanceInfo);
             
-            if (AggrWhitelist.isAggrDataId(dataId)) {
-                Loggers.REMOTE_DIGEST.warn("[aggr-conflict] {} attempt to publish single data, {}, {}", srcIp, dataId,
-                        group);
-                throw new NacosException(NacosException.NO_RIGHT, "dataId:" + dataId + " is aggr");
+            ConfigForm configForm = new ConfigForm();
+            configForm.setDataId(dataId);
+            configForm.setGroup(group);
+            configForm.setNamespaceId(tenant);
+            configForm.setContent(content);
+            configForm.setTag(tag);
+            configForm.setAppName(appName);
+            configForm.setSrcUser(srcUser);
+            configForm.setConfigTags(request.getAdditionParam("config_tags"));
+            configForm.setDesc(request.getAdditionParam("desc"));
+            configForm.setUse(request.getAdditionParam("use"));
+            configForm.setEffect(request.getAdditionParam("effect"));
+            configForm.setType(type);
+            configForm.setSchema(request.getAdditionParam("schema"));
+            
+            if (!ConfigType.isValidType(type)) {
+                configForm.setType(ConfigType.getDefaultType().getType());
             }
             
-            ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
-            configInfo.setMd5(request.getCasMd5());
-            configInfo.setType(type);
-            configInfo.setEncryptedDataKey(encryptedDataKey);
-            String betaIps = request.getAdditionParam("betaIps");
-            ConfigOperateResult configOperateResult = null;
-            String persistEvent = ConfigTraceService.PERSISTENCE_EVENT;
-            if (StringUtils.isBlank(betaIps)) {
-                if (StringUtils.isBlank(tag)) {
-                    if (StringUtils.isNotBlank(request.getCasMd5())) {
-                        configOperateResult = configInfoPersistService.insertOrUpdateCas(srcIp, srcUser, configInfo,
-                                configAdvanceInfo);
-                        if (!configOperateResult.isSuccess()) {
-                            return ConfigPublishResponse.buildFailResponse(ResponseCode.FAIL.getCode(),
-                                    "Cas publish fail,server md5 may have changed.");
-                        }
-                    } else {
-                        configOperateResult = configInfoPersistService.insertOrUpdate(srcIp, srcUser, configInfo,
-                                configAdvanceInfo);
-                    }
-                    ConfigChangePublisher.notifyConfigChange(new ConfigDataChangeEvent(false, dataId, group, tenant,
-                            configOperateResult.getLastModified()));
-                } else {
-                    if (StringUtils.isNotBlank(request.getCasMd5())) {
-                        configOperateResult = configInfoTagPersistService.insertOrUpdateTagCas(configInfo, tag, srcIp,
-                                srcUser);
-                        if (!configOperateResult.isSuccess()) {
-                            return ConfigPublishResponse.buildFailResponse(ResponseCode.FAIL.getCode(),
-                                    "Cas publish tag config fail,server md5 may have changed.");
-                        }
-                    } else {
-                        configOperateResult = configInfoTagPersistService.insertOrUpdateTag(configInfo, tag, srcIp,
-                                srcUser);
-                    }
-                    persistEvent = ConfigTraceService.PERSISTENCE_EVENT_TAG + "-" + tag;
-                    ConfigChangePublisher.notifyConfigChange(
-                            new ConfigDataChangeEvent(false, dataId, group, tenant, tag,
-                                    configOperateResult.getLastModified()));
-                }
+            ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+            configRequestInfo.setSrcIp(srcIp);
+            configRequestInfo.setRequestIpApp(meta.getLabels().get(Constants.APPNAME));
+            configRequestInfo.setBetaIps(request.getAdditionParam("betaIps"));
+            configRequestInfo.setCasMd5(request.getCasMd5());
+            
+            String encryptedDataKeyFinal = null;
+            if (StringUtils.isNotBlank(encryptedDataKey)) {
+                encryptedDataKeyFinal = encryptedDataKey;
             } else {
-                // beta publish
-                if (StringUtils.isNotBlank(request.getCasMd5())) {
-                    configOperateResult = configInfoBetaPersistService.insertOrUpdateBetaCas(configInfo, betaIps, srcIp,
-                            srcUser);
-                    if (!configOperateResult.isSuccess()) {
-                        return ConfigPublishResponse.buildFailResponse(ResponseCode.FAIL.getCode(),
-                                "Cas publish beta config fail,server md5 may have changed.");
-                    }
-                } else {
-                    configOperateResult = configInfoBetaPersistService.insertOrUpdateBeta(configInfo, betaIps, srcIp,
-                            srcUser);
-                }
-                persistEvent = ConfigTraceService.PERSISTENCE_EVENT_BETA;
-                
-                ConfigChangePublisher.notifyConfigChange(
-                        new ConfigDataChangeEvent(true, dataId, group, tenant, configOperateResult.getLastModified()));
+                Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
+                content = pair.getSecond();
+                encryptedDataKeyFinal = pair.getFirst();
+                configForm.setContent(content);
             }
-            ConfigTraceService.logPersistenceEvent(dataId, group, tenant, requestIpApp,
-                    configOperateResult.getLastModified(), srcIp, persistEvent, ConfigTraceService.PERSISTENCE_TYPE_PUB,
-                    content);
-            return ConfigPublishResponse.buildSuccessResponse();
+            try {
+                configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal);
+                return ConfigPublishResponse.buildSuccessResponse();
+            } catch (NacosApiException nacosApiException) {
+                return ConfigPublishResponse.buildFailResponse(ResponseCode.FAIL.getCode(),
+                        nacosApiException.getErrMsg());
+            }
+            
         } catch (Exception e) {
             Loggers.REMOTE_DIGEST.error("[ConfigPublishRequestHandler] publish config error ,request ={}", request, e);
             return ConfigPublishResponse.buildFailResponse(

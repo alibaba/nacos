@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.repository.embedded;
 
+import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -28,6 +29,7 @@ import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
+import com.alibaba.nacos.config.server.utils.ConfigExtInfoUtil;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
@@ -153,8 +155,8 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         String srcIp = "srcIp";
         String srcUser = "srcUser";
         //mock insert config info
-        Mockito.doNothing().when(historyConfigInfoPersistService)
-                .insertConfigHistoryAtomic(eq(0), eq(configInfo), eq(srcIp), eq(srcUser), any(Timestamp.class), eq("I"));
+        Mockito.doNothing().when(historyConfigInfoPersistService).insertConfigHistoryAtomic(eq(0), eq(configInfo), eq(srcIp), eq(srcUser),
+                any(Timestamp.class), eq("I"), eq("formal"), eq(ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser)));
         
         ConfigOperateResult configOperateResult = embeddedConfigInfoPersistService.insertOrUpdate(srcIp, srcUser, configInfo,
                 configAdvanceInfo);
@@ -176,7 +178,8 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         
         //expect insert history info
         Mockito.verify(historyConfigInfoPersistService, times(1))
-                .insertConfigHistoryAtomic(eq(0L), eq(configInfo), eq(srcIp), eq(srcUser), any(Timestamp.class), eq("I"));
+                .insertConfigHistoryAtomic(eq(0L), eq(configInfo), eq(srcIp), eq(srcUser), any(Timestamp.class), eq("I"),
+                        eq("formal"), eq(ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser)));
         
     }
     
@@ -233,7 +236,8 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         
         //expect insert history info
         Mockito.verify(historyConfigInfoPersistService, times(1))
-                .insertConfigHistoryAtomic(eq(0L), eq(configInfo), eq(srcIp), eq(srcUser), any(Timestamp.class), eq("I"));
+                .insertConfigHistoryAtomic(eq(0L), eq(configInfo), eq(srcIp), eq(srcUser), any(Timestamp.class), eq("I"), eq("formal"),
+                        eq(ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser)));
     }
     
     @Test
@@ -266,15 +270,15 @@ class EmbeddedConfigInfoPersistServiceImplTest {
                 .thenReturn(new ConfigInfoStateWrapper(), new ConfigInfoStateWrapper());
         
         //mock select config info before update
-        ConfigInfoWrapper configInfoWrapperOld = new ConfigInfoWrapper();
-        configInfoWrapperOld.setDataId(dataId);
-        configInfoWrapperOld.setGroup(group);
-        configInfoWrapperOld.setTenant(tenant);
-        configInfoWrapperOld.setAppName("old_app");
-        configInfoWrapperOld.setMd5("old_md5");
-        configInfoWrapperOld.setId(12345678765L);
-        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}), eq(CONFIG_INFO_WRAPPER_ROW_MAPPER)))
-                .thenReturn(configInfoWrapperOld);
+        ConfigAllInfo configAllInfo = new ConfigAllInfo();
+        configAllInfo.setDataId(dataId);
+        configAllInfo.setGroup(group);
+        configAllInfo.setTenant(tenant);
+        configAllInfo.setAppName("old_app");
+        configAllInfo.setMd5("old_md5");
+        configAllInfo.setId(12345678765L);
+        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}), eq(CONFIG_ALL_INFO_ROW_MAPPER)))
+                .thenReturn(configAllInfo);
         String srcIp = "srcIp";
         String srcUser = "srcUser";
         embeddedConfigInfoPersistService.insertOrUpdate(srcIp, srcUser, configInfo, configAdvanceInfo);
@@ -294,8 +298,8 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         
         //expect insert history info of U
         Mockito.verify(historyConfigInfoPersistService, times(1))
-                .insertConfigHistoryAtomic(eq(configInfoWrapperOld.getId()), any(ConfigInfo.class), eq(srcIp), eq(srcUser),
-                        any(Timestamp.class), eq("U"));
+                .insertConfigHistoryAtomic(eq(configAllInfo.getId()), any(ConfigInfo.class), eq(srcIp), eq(srcUser),
+                        any(Timestamp.class), eq("U"), eq("formal"), eq(ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfo)));
         
     }
     
@@ -331,15 +335,16 @@ class EmbeddedConfigInfoPersistServiceImplTest {
                 .thenReturn(new ConfigInfoStateWrapper(), new ConfigInfoStateWrapper());
         
         //mock select config info before update
-        ConfigInfoWrapper configInfoWrapperOld = new ConfigInfoWrapper();
-        configInfoWrapperOld.setDataId(dataId);
-        configInfoWrapperOld.setGroup(group);
-        configInfoWrapperOld.setTenant(tenant);
-        configInfoWrapperOld.setAppName("old_app11");
-        configInfoWrapperOld.setMd5("old_md5");
-        configInfoWrapperOld.setId(123456799L);
-        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}), eq(CONFIG_INFO_WRAPPER_ROW_MAPPER)))
-                .thenReturn(configInfoWrapperOld);
+        ConfigAllInfo configAllInfo = new ConfigAllInfo();
+        configAllInfo.setDataId(dataId);
+        configAllInfo.setGroup(group);
+        configAllInfo.setTenant(tenant);
+        configAllInfo.setAppName("old_app");
+        configAllInfo.setMd5("old_md5");
+        configAllInfo.setId(12345678765L);
+        
+        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}), eq(CONFIG_ALL_INFO_ROW_MAPPER)))
+                .thenReturn(configAllInfo);
         String srcIp = "srcIp";
         String srcUser = "srcUser";
         
@@ -361,8 +366,8 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         
         //expect insert history info of U
         Mockito.verify(historyConfigInfoPersistService, times(1))
-                .insertConfigHistoryAtomic(eq(configInfoWrapperOld.getId()), any(ConfigInfo.class), eq(srcIp), eq(srcUser),
-                        any(Timestamp.class), eq("U"));
+                .insertConfigHistoryAtomic(eq(configAllInfo.getId()), any(ConfigInfo.class), eq(srcIp), eq(srcUser), any(Timestamp.class),
+                        eq("U"), eq("formal"), eq(ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfo)));
         
     }
     
@@ -373,17 +378,21 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         String tenant = "tenant4567890";
         
         //mock exist config info
-        ConfigInfoWrapper configInfoWrapperOld = new ConfigInfoWrapper();
-        configInfoWrapperOld.setDataId(dataId);
-        configInfoWrapperOld.setGroup(group);
-        configInfoWrapperOld.setTenant(tenant);
-        configInfoWrapperOld.setAppName("old_app");
-        configInfoWrapperOld.setContent("old content");
-        configInfoWrapperOld.setMd5("old_md5");
-        configInfoWrapperOld.setId(12345678765L);
-        configInfoWrapperOld.setEncryptedDataKey("key3456");
-        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}), eq(CONFIG_INFO_WRAPPER_ROW_MAPPER)))
-                .thenReturn(configInfoWrapperOld);
+        ConfigAllInfo configAllInfo = new ConfigAllInfo();
+        configAllInfo.setDataId(dataId);
+        configAllInfo.setGroup(group);
+        configAllInfo.setTenant(tenant);
+        configAllInfo.setAppName("old_app");
+        configAllInfo.setMd5("old_md5");
+        configAllInfo.setId(12345678765L);
+        configAllInfo.setType(ConfigType.JSON.getType());
+        configAllInfo.setSchema("testschema");
+        configAllInfo.setCreateUser("testuser");
+        configAllInfo.setEffect("online");
+        configAllInfo.setDesc("desc");
+        configAllInfo.setUse("use124");
+        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}), eq(CONFIG_ALL_INFO_ROW_MAPPER)))
+                .thenReturn(configAllInfo);
         String srcIp = "srcIp1234";
         String srcUser = "srcUser";
         Mockito.when(databaseOperate.update(any())).thenReturn(true);
@@ -394,11 +403,11 @@ class EmbeddedConfigInfoPersistServiceImplTest {
                 () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(dataId), eq(group), eq(tenant)), times(1));
         //expect delete config tag to be invoked
         embeddedStorageContextHolderMockedStatic.verify(
-                () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(configInfoWrapperOld.getId())), times(1));
+                () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(configAllInfo.getId())), times(1));
         //expect insert delete history
         Mockito.verify(historyConfigInfoPersistService, times(1))
-                .insertConfigHistoryAtomic(eq(configInfoWrapperOld.getId()), eq(configInfoWrapperOld), eq(srcIp), eq(srcUser), any(),
-                        eq("D"));
+                .insertConfigHistoryAtomic(eq(configAllInfo.getId()), eq(configAllInfo), eq(srcIp), eq(srcUser), any(),
+                        eq("D"), eq("formal"), eq(ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfo)));
         
     }
     
@@ -406,13 +415,23 @@ class EmbeddedConfigInfoPersistServiceImplTest {
     void testRemoveConfigInfoByIds() {
         
         //mock exist config info
-        List<ConfigInfo> configInfos = new ArrayList<>();
-        configInfos.add(new ConfigInfo("data1", "group", "tenant", "app", "content"));
-        configInfos.add(new ConfigInfo("data2", "grou2", "tenan2", "app2", "content2"));
+        final List<ConfigAllInfo> configAllInfos = new ArrayList<>();
+        final ConfigAllInfo configAllInfo1 = new ConfigAllInfo();
+        final ConfigAllInfo configAllInfo2 = new ConfigAllInfo();
+        configAllInfo1.setDataId("dataId1");
+        configAllInfo1.setGroup("group1");
+        configAllInfo1.setTenant("tenant1");
+        configAllInfo1.setAppName("app1");
+        configAllInfo2.setDataId("dataId2");
+        configAllInfo2.setGroup("group2");
+        configAllInfo2.setTenant("tenant2");
+        configAllInfo2.setAppName("app2");
+        configAllInfos.add(configAllInfo1);
+        configAllInfos.add(configAllInfo2);
         List<Long> deleteIds = Arrays.asList(12344L, 3456789L);
-        configInfos.get(0).setId(12344L);
-        configInfos.get(1).setId(3456789L);
-        Mockito.when(databaseOperate.queryMany(anyString(), eq(deleteIds.toArray()), eq(CONFIG_INFO_ROW_MAPPER))).thenReturn(configInfos);
+        configAllInfos.get(0).setId(12344L);
+        configAllInfos.get(1).setId(3456789L);
+        Mockito.when(databaseOperate.queryMany(anyString(), eq(deleteIds.toArray()), eq(CONFIG_ALL_INFO_ROW_MAPPER))).thenReturn(configAllInfos);
         String srcIp = "srcIp1234";
         String srcUser = "srcUser";
         Mockito.when(databaseOperate.update(any())).thenReturn(true);
@@ -430,10 +449,13 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         embeddedStorageContextHolderMockedStatic.verify(() -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(deleteId1)),
                 times(1));
         //expect insert delete history
+        Mockito.verify(historyConfigInfoPersistService, times(1)).insertConfigHistoryAtomic(eq(configAllInfos.get(0).getId()),
+                eq(configAllInfos.get(0)), eq(srcIp), eq(srcUser), any(), eq("D"), eq("formal"),
+                eq(ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfos.get(0))));
         Mockito.verify(historyConfigInfoPersistService, times(1))
-                .insertConfigHistoryAtomic(eq(configInfos.get(0).getId()), eq(configInfos.get(0)), eq(srcIp), eq(srcUser), any(), eq("D"));
-        Mockito.verify(historyConfigInfoPersistService, times(1))
-                .insertConfigHistoryAtomic(eq(configInfos.get(1).getId()), eq(configInfos.get(1)), eq(srcIp), eq(srcUser), any(), eq("D"));
+                .insertConfigHistoryAtomic(eq(configAllInfos.get(1).getId()),
+                        eq(configAllInfos.get(1)), eq(srcIp), eq(srcUser), any(), eq("D"), eq("formal"),
+                        eq(ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfos.get(1))));
         
     }
     
