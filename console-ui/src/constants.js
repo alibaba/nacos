@@ -24,6 +24,8 @@ export const REDUX_DEVTOOLS = '__REDUX_DEVTOOLS_EXTENSION__';
 
 export const GET_STATE = 'GET_STATE';
 
+export const GET_NOTICE = 'GET_NOTICE';
+
 export const GET_SUBSCRIBERS = 'GET_SUBSCRIBERS';
 export const REMOVE_SUBSCRIBERS = 'REMOVE_SUBSCRIBERS';
 
@@ -40,3 +42,11 @@ export const GET_NAMESPACES = 'GET_NAMESPACES';
 export const GET_CONFIGURATION = 'GET_CONFIGURATION';
 
 export const GLOBAL_PAGE_SIZE_LIST = [10, 20, 30, 50, 100];
+
+export const LOGINPAGE_ENABLED = 'docsite_loginpage';
+
+export const THEME = 'setting_theme';
+
+export const NAME_SHOW = 'setting_name_show';
+
+export const SERVER_GUIDE = 'SERVER_GUIDE';

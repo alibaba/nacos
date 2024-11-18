@@ -18,18 +18,18 @@ package com.alibaba.nacos.plugin.control;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.connection.ConnectionControlManager;
-import com.alibaba.nacos.plugin.control.connection.nacos.NacosConnectionControlManager;
+import com.alibaba.nacos.plugin.control.connection.DefaultConnectionControlManager;
 import com.alibaba.nacos.plugin.control.event.ConnectionLimitRuleChangeEvent;
 import com.alibaba.nacos.plugin.control.event.TpsControlRuleChangeEvent;
-import com.alibaba.nacos.plugin.control.ruleactivator.RuleParser;
-import com.alibaba.nacos.plugin.control.ruleactivator.RuleParserProxy;
-import com.alibaba.nacos.plugin.control.ruleactivator.RuleStorageProxy;
+import com.alibaba.nacos.plugin.control.rule.storage.RuleStorageProxy;
+import com.alibaba.nacos.plugin.control.spi.ControlManagerBuilder;
 import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
-import com.alibaba.nacos.plugin.control.tps.nacos.NacosTpsControlManager;
+import com.alibaba.nacos.plugin.control.tps.DefaultTpsControlManager;
 
-import java.util.Collection;
+import java.util.Optional;
 
 /**
  * control manager center.
@@ -38,67 +38,70 @@ import java.util.Collection;
  */
 public class ControlManagerCenter {
     
-    static ControlManagerCenter instance = null;
+    static volatile ControlManagerCenter instance = null;
+    
+    private final RuleStorageProxy ruleStorageProxy;
     
     private TpsControlManager tpsControlManager;
     
     private ConnectionControlManager connectionControlManager;
     
-    private RuleStorageProxy ruleStorageProxy;
-    
-    private void initConnectionManager() {
-        
-        Collection<ConnectionControlManager> connectionControlManagers = NacosServiceLoader
-                .load(ConnectionControlManager.class);
-        String connectionManagerName = ControlConfigs.getInstance().getConnectionManager();
-        
-        for (ConnectionControlManager connectionControlManagerInternal : connectionControlManagers) {
-            if (connectionControlManagerInternal.getName().equalsIgnoreCase(connectionManagerName)) {
-                Loggers.CONTROL.info("Found  connection control manager of name={},class={}", connectionManagerName,
-                        connectionControlManagerInternal.getClass().getSimpleName());
-                connectionControlManager = connectionControlManagerInternal;
-                break;
-            }
-        }
-        if (connectionControlManager == null) {
-            Loggers.CONTROL.warn("Fail to connection control manager of name ：" + connectionManagerName);
-            connectionControlManager = new NacosConnectionControlManager();
-        }
-        
-    }
-    
-    private void initTpsControlManager() {
-        
-        Collection<TpsControlManager> tpsControlManagers = NacosServiceLoader.load(TpsControlManager.class);
-        String tpsManagerName = ControlConfigs.getInstance().getTpsManager();
-        
-        for (TpsControlManager tpsControlManagerInternal : tpsControlManagers) {
-            if (tpsControlManagerInternal.getName().equalsIgnoreCase(tpsManagerName)) {
-                Loggers.CONTROL.info("Found  tps control manager of name={},class={}", tpsManagerName,
-                        tpsControlManagerInternal.getClass().getSimpleName());
-                tpsControlManager = tpsControlManagerInternal;
-                break;
-            }
-        }
-        if (tpsControlManager == null) {
-            Loggers.CONTROL.warn("Fail to found tps control manager of name ：" + tpsManagerName);
-            tpsControlManager = new NacosTpsControlManager();
-        }
-        
-    }
-    
     private ControlManagerCenter() {
-        initTpsControlManager();
-        initConnectionManager();
-        ruleStorageProxy = new RuleStorageProxy();
+        ruleStorageProxy = RuleStorageProxy.getInstance();
+        Optional<ControlManagerBuilder> controlManagerBuilder = findTargetControlManagerBuilder();
+        if (controlManagerBuilder.isPresent()) {
+            initConnectionManager(controlManagerBuilder.get());
+            initTpsControlManager(controlManagerBuilder.get());
+        } else {
+            buildNoLimitControlManagers();
+        }
+    }
+    
+    private void initConnectionManager(ControlManagerBuilder controlManagerBuilder) {
+        try {
+            connectionControlManager = controlManagerBuilder.buildConnectionControlManager();
+            Loggers.CONTROL.info("Build connection control manager, class={}",
+                    connectionControlManager.getClass().getCanonicalName());
+        } catch (Exception e) {
+            Loggers.CONTROL.warn("Build connection control manager failed, use no limit manager replaced.", e);
+            connectionControlManager = new DefaultConnectionControlManager();
+        }
+    }
+    
+    private void initTpsControlManager(ControlManagerBuilder controlManagerBuilder) {
+        try {
+            tpsControlManager = controlManagerBuilder.buildTpsControlManager();
+            Loggers.CONTROL
+                    .info("Build tps control manager, class={}", tpsControlManager.getClass().getCanonicalName());
+        } catch (Exception e) {
+            Loggers.CONTROL.warn("Build tps control manager failed, use no limit manager replaced.", e);
+            tpsControlManager = new DefaultTpsControlManager();
+        }
+    }
+    
+    private Optional<ControlManagerBuilder> findTargetControlManagerBuilder() {
+        String controlManagerType = ControlConfigs.getInstance().getControlManagerType();
+        if (StringUtils.isEmpty(controlManagerType)) {
+            Loggers.CONTROL.info("Not configure type of control plugin, no limit control for current node.");
+            return Optional.empty();
+        }
+        for (ControlManagerBuilder each : NacosServiceLoader.load(ControlManagerBuilder.class)) {
+            Loggers.CONTROL.info("Found control manager plugin of name={}", each.getName());
+            if (controlManagerType.equalsIgnoreCase(each.getName())) {
+                return Optional.of(each);
+            }
+        }
+        Loggers.CONTROL.warn("Not found control manager plugin of name");
+        return Optional.empty();
+    }
+    
+    private void buildNoLimitControlManagers() {
+        connectionControlManager = new DefaultConnectionControlManager();
+        tpsControlManager = new DefaultTpsControlManager();
     }
     
     public RuleStorageProxy getRuleStorageProxy() {
         return ruleStorageProxy;
-    }
-    
-    public RuleParser getRuleParser() {
-        return RuleParserProxy.getInstance();
     }
     
     public TpsControlManager getTpsControlManager() {
@@ -109,7 +112,7 @@ public class ControlManagerCenter {
         return connectionControlManager;
     }
     
-    public static final ControlManagerCenter getInstance() {
+    public static ControlManagerCenter getInstance() {
         if (instance == null) {
             synchronized (ControlManagerCenter.class) {
                 if (instance == null) {

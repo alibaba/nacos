@@ -17,21 +17,22 @@
 package com.alibaba.nacos.consistency;
 
 import com.alibaba.nacos.consistency.serialize.JacksonSerializer;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-public class SerializeFactoryTest {
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class SerializeFactoryTest {
     
     @Test
-    public void testListSerialize() {
+    void testListSerialize() {
         Serializer serializer = SerializeFactory.getDefault();
         
         List<Integer> logsList = new ArrayList<>();
@@ -39,27 +40,27 @@ public class SerializeFactoryTest {
             logsList.add(i);
         }
         byte[] data = serializer.serialize(logsList);
-        Assert.assertNotEquals(0, data.length);
+        assertNotEquals(0, data.length);
         
         ArrayList<Integer> list = serializer.deserialize(data, ArrayList.class);
         System.out.println(list);
     }
     
     @Test
-    public void testMapSerialize() {
+    void testMapSerialize() {
         Serializer serializer = SerializeFactory.getDefault();
         Map<Integer, Integer> logsMap = new HashMap<>();
         for (int i = 0; i < 4; i++) {
             logsMap.put(i, i);
         }
         byte[] data = serializer.serialize(logsMap);
-        Assert.assertNotEquals(0, data.length);
+        assertNotEquals(0, data.length);
         Map<Integer, Integer> result = serializer.deserialize(data, HashMap.class);
         System.out.println(result);
     }
     
     @Test
-    public void testSetSerialize() {
+    void testSetSerialize() {
         Serializer serializer = SerializeFactory.getDefault();
         Set<Integer> logsMap = new CopyOnWriteArraySet<>();
         for (int i = 0; i < 4; i++) {
@@ -67,14 +68,14 @@ public class SerializeFactoryTest {
         }
         
         byte[] data = serializer.serialize(logsMap);
-        Assert.assertNotEquals(0, data.length);
-        Set<Integer> result = serializer.deserialize(data, HashSet.class);
+        assertNotEquals(0, data.length);
+        Set<Integer> result = serializer.deserialize(data, CopyOnWriteArraySet.class);
         System.out.println(result);
     }
     
     @Test
-    public void testGetSerializer() {
+    void testGetSerializer() {
         Serializer serializer = SerializeFactory.getSerializer("JSON");
-        Assert.assertTrue(serializer instanceof JacksonSerializer);
+        assertTrue(serializer instanceof JacksonSerializer);
     }
 }

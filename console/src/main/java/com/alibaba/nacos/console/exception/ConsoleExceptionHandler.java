@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.exception;
 
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
@@ -26,6 +27,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.util.HtmlUtils;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -50,6 +52,12 @@ public class ConsoleExceptionHandler {
     private ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ExceptionUtil.getAllExceptionMsg(e));
     }
+
+    @ExceptionHandler(NacosRuntimeException.class)
+    private ResponseEntity<String> handleNacosRuntimeException(NacosRuntimeException e) {
+        LOGGER.error("got exception. {}", e.getMessage());
+        return ResponseEntity.status(e.getErrCode()).body(ExceptionUtil.getAllExceptionMsg(e));
+    }
     
     @ExceptionHandler(Exception.class)
     private ResponseEntity<Object> handleException(HttpServletRequest request, Exception e) {
@@ -57,8 +65,9 @@ public class ConsoleExceptionHandler {
         LOGGER.error("CONSOLE {}", uri, e);
         if (uri.contains(Commons.NACOS_SERVER_VERSION_V2)) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RestResultUtils.failed(ExceptionUtil.getAllExceptionMsg(e)));
+                    .body(RestResultUtils.failed(HtmlUtils.htmlEscape(ExceptionUtil.getAllExceptionMsg(e), "utf-8")));
         }
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ExceptionUtil.getAllExceptionMsg(e));
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(HtmlUtils.htmlEscape(ExceptionUtil.getAllExceptionMsg(e), "utf-8"));
     }
 }

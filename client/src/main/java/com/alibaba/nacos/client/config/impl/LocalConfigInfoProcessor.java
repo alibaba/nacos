@@ -17,7 +17,7 @@
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.client.config.utils.ConcurrentDiskUtil;
+import com.alibaba.nacos.client.utils.ConcurrentDiskUtil;
 import com.alibaba.nacos.client.config.utils.JvmUtil;
 import com.alibaba.nacos.client.config.utils.SnapShotSwitch;
 import com.alibaba.nacos.client.env.NacosClientProperties;
@@ -30,6 +30,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+
+import static com.alibaba.nacos.client.utils.ParamUtil.simplyEnvNameIfOverLimit;
 
 /**
  * Local Disaster Recovery Directory Tool.
@@ -189,6 +191,7 @@ public class LocalConfigInfoProcessor {
     }
     
     static File getFailoverFile(String serverName, String dataId, String group, String tenant) {
+        serverName = simplyEnvNameIfOverLimit(serverName);
         File tmp = new File(LOCAL_SNAPSHOT_PATH, serverName + SUFFIX);
         tmp = new File(tmp, FAILOVER_FILE_CHILD_1);
         if (StringUtils.isBlank(tenant)) {
@@ -201,6 +204,7 @@ public class LocalConfigInfoProcessor {
     }
     
     static File getSnapshotFile(String envName, String dataId, String group, String tenant) {
+        envName = simplyEnvNameIfOverLimit(envName);
         File tmp = new File(LOCAL_SNAPSHOT_PATH, envName + SUFFIX);
         if (StringUtils.isBlank(tenant)) {
             tmp = new File(tmp, SNAPSHOT_FILE_CHILD_1);

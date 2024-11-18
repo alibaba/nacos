@@ -16,16 +16,19 @@
 
 package com.alibaba.nacos.plugin.datasource.impl.derby;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
-import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.GroupCapacityMapper;
+import com.alibaba.nacos.plugin.datasource.model.MapperContext;
+import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
 /**
  * The derby implementation of {@link GroupCapacityMapper}.
  *
  * @author lixiaoshuang
  */
-public class GroupCapacityMapperByDerby extends AbstractMapper implements GroupCapacityMapper {
+public class GroupCapacityMapperByDerby extends AbstractMapperByDerby implements GroupCapacityMapper {
 
     @Override
     public String getDataSource() {
@@ -33,7 +36,9 @@ public class GroupCapacityMapperByDerby extends AbstractMapper implements GroupC
     }
 
     @Override
-    public String selectGroupInfoBySize() {
-        return "SELECT id, group_id FROM group_capacity WHERE id > ? OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY";
+    public MapperResult selectGroupInfoBySize(MapperContext context) {
+        String sql = "SELECT id, group_id FROM group_capacity WHERE id > ? OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY";
+        return new MapperResult(sql,
+                CollectionUtils.list(context.getWhereParameter(FieldConstant.ID), context.getPageSize()));
     }
 }

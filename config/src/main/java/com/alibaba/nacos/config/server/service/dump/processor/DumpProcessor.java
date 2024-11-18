@@ -18,18 +18,16 @@ package com.alibaba.nacos.config.server.service.dump.processor;
 
 import com.alibaba.nacos.common.task.NacosTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Tag;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
+import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.event.ConfigDumpEvent;
 import com.alibaba.nacos.config.server.service.dump.DumpConfigHandler;
-import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.service.dump.task.DumpTask;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
-import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.utils.LogUtil;
 
 import java.util.Objects;
 
@@ -41,19 +39,14 @@ import java.util.Objects;
  */
 public class DumpProcessor implements NacosTaskProcessor {
     
-    final DumpService dumpService;
-    
     final ConfigInfoPersistService configInfoPersistService;
     
-    final ConfigInfoBetaPersistService configInfoBetaPersistService;
+    final ConfigInfoGrayPersistService configInfoGrayPersistService;
     
-    final ConfigInfoTagPersistService configInfoTagPersistService;
-    
-    public DumpProcessor(DumpService dumpService) {
-        this.dumpService = dumpService;
-        this.configInfoPersistService = dumpService.getConfigInfoPersistService();
-        this.configInfoBetaPersistService = dumpService.getConfigInfoBetaPersistService();
-        this.configInfoTagPersistService = dumpService.getConfigInfoTagPersistService();
+    public DumpProcessor(ConfigInfoPersistService configInfoPersistService,
+            ConfigInfoGrayPersistService configInfoGrayPersistService) {
+        this.configInfoPersistService = configInfoPersistService;
+        this.configInfoGrayPersistService = configInfoGrayPersistService;
     }
     
     @Override
@@ -63,39 +56,38 @@ public class DumpProcessor implements NacosTaskProcessor {
         String dataId = pair[0];
         String group = pair[1];
         String tenant = pair[2];
-        long lastModified = dumpTask.getLastModified();
+        long lastModifiedOut = dumpTask.getLastModified();
         String handleIp = dumpTask.getHandleIp();
-        boolean isBeta = dumpTask.isBeta();
-        String tag = dumpTask.getTag();
+        String grayName = dumpTask.getGrayName();
         
         ConfigDumpEvent.ConfigDumpEventBuilder build = ConfigDumpEvent.builder().namespaceId(tenant).dataId(dataId)
-                .group(group).isBeta(isBeta).tag(tag).lastModifiedTs(lastModified).handleIp(handleIp);
-        
-        if (isBeta) {
-            // if publish beta, then dump config, update beta cache
-            ConfigInfo4Beta cf = configInfoBetaPersistService.findConfigInfo4Beta(dataId, group, tenant);
-            
-            build.remove(Objects.isNull(cf));
-            build.betaIps(Objects.isNull(cf) ? null : cf.getBetaIps());
-            build.content(Objects.isNull(cf) ? null : cf.getContent());
-            build.encryptedDataKey(Objects.isNull(cf) ? null : cf.getEncryptedDataKey());
-            
-            return DumpConfigHandler.configDump(build.build());
+                .group(group).grayName(grayName).handleIp(handleIp);
+        String type = "formal";
+        if (StringUtils.isNotBlank(grayName)) {
+            type = grayName;
         }
-        if (StringUtils.isBlank(tag)) {
-            ConfigInfo cf = configInfoPersistService.findConfigInfo(dataId, group, tenant);
-            
+        LogUtil.DUMP_LOG.info("[dump] process {} task. groupKey={}", type, dumpTask.getGroupKey());
+        
+        if (StringUtils.isNotBlank(grayName)) {
+            ConfigInfoGrayWrapper cf = configInfoGrayPersistService.findConfigInfo4Gray(dataId, group, tenant,
+                    grayName);
             build.remove(Objects.isNull(cf));
             build.content(Objects.isNull(cf) ? null : cf.getContent());
             build.type(Objects.isNull(cf) ? null : cf.getType());
             build.encryptedDataKey(Objects.isNull(cf) ? null : cf.getEncryptedDataKey());
-        } else {
-            ConfigInfo4Tag cf = configInfoTagPersistService.findConfigInfo4Tag(dataId, group, tenant, tag);
-            
-            build.remove(Objects.isNull(cf));
-            build.content(Objects.isNull(cf) ? null : cf.getContent());
-            
+            build.lastModifiedTs(Objects.isNull(cf) ? lastModifiedOut : cf.getLastModified());
+            build.grayName(grayName);
+            build.grayRule(Objects.isNull(cf) ? null : cf.getGrayRule());
+            return DumpConfigHandler.configDump(build.build());
         }
+        
+        ConfigInfoWrapper cf = configInfoPersistService.findConfigInfo(dataId, group, tenant);
+        build.remove(Objects.isNull(cf));
+        build.content(Objects.isNull(cf) ? null : cf.getContent());
+        build.type(Objects.isNull(cf) ? null : cf.getType());
+        build.encryptedDataKey(Objects.isNull(cf) ? null : cf.getEncryptedDataKey());
+        build.lastModifiedTs(Objects.isNull(cf) ? lastModifiedOut : cf.getLastModified());
         return DumpConfigHandler.configDump(build.build());
+        
     }
 }

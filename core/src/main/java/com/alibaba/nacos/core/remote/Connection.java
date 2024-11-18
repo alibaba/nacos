@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.remote;
 
-import com.alibaba.nacos.api.ability.ClientAbilities;
 import com.alibaba.nacos.api.remote.Requester;
 
 import java.util.Map;
@@ -32,7 +31,7 @@ public abstract class Connection implements Requester {
     
     private boolean traced = false;
     
-    private ClientAbilities abilities;
+    private Map<String, Boolean> abilityTable;
     
     private final ConnectionMeta metaInfo;
     
@@ -44,6 +43,10 @@ public abstract class Connection implements Requester {
         return metaInfo.getLabels();
     }
     
+    public Map<String, String> getAppLabels() {
+        return metaInfo.getAppLabels();
+    }
+    
     public boolean isTraced() {
         return traced;
     }
@@ -52,22 +55,12 @@ public abstract class Connection implements Requester {
         this.traced = traced;
     }
     
-    /**
-     * get abilities.
-     *
-     * @return
-     */
-    public ClientAbilities getAbilities() {
-        return abilities;
+    public void setAbilityTable(Map<String, Boolean> abilityTable) {
+        this.abilityTable = abilityTable;
     }
     
-    /**
-     * set abilities.
-     *
-     * @param abilities abilities.
-     */
-    public void setAbilities(ClientAbilities abilities) {
-        this.abilities = abilities;
+    public Map<String, Boolean> getAbilityTable() {
+        return this.abilityTable;
     }
     
     /**
@@ -95,7 +88,7 @@ public abstract class Connection implements Requester {
     
     @Override
     public String toString() {
-        return "Connection{" + "traced=" + traced + ", abilities=" + abilities + ", metaInfo=" + metaInfo + '}';
+        return "Connection{" + "traced=" + traced + ", abilities=" + abilityTable + ", metaInfo=" + metaInfo + '}';
     }
 }
 

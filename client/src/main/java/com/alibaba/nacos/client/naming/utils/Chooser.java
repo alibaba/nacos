@@ -32,6 +32,17 @@ public class Chooser<K, T> {
     
     private volatile Ref<T> ref;
     
+    public Chooser(K uniqueKey) {
+        this(uniqueKey, new ArrayList<>());
+    }
+    
+    public Chooser(K uniqueKey, List<Pair<T>> pairs) {
+        Ref<T> ref = new Ref<>(pairs);
+        ref.refresh();
+        this.uniqueKey = uniqueKey;
+        this.ref = ref;
+    }
+    
     /**
      * Random get one item.
      *
@@ -79,17 +90,6 @@ public class Chooser<K, T> {
         return ref.items.get(ref.items.size() - 1);
     }
     
-    public Chooser(K uniqueKey) {
-        this(uniqueKey, new ArrayList<Pair<T>>());
-    }
-    
-    public Chooser(K uniqueKey, List<Pair<T>> pairs) {
-        Ref<T> ref = new Ref<>(pairs);
-        ref.refresh();
-        this.uniqueKey = uniqueKey;
-        this.ref = ref;
-    }
-    
     public K getUniqueKey() {
         return uniqueKey;
     }
@@ -130,7 +130,7 @@ public class Chooser<K, T> {
          * Refresh.
          */
         public void refresh() {
-            Double originWeightSum = (double) 0;
+            double originWeightSum = 0;
             int size = 0;
             for (Pair<T> item : itemsWithWeight) {
                 
@@ -193,19 +193,8 @@ public class Chooser<K, T> {
             if (getClass() != other.getClass()) {
                 return false;
             }
-            if (!(other.getClass().getGenericInterfaces()[0].equals(this.getClass().getGenericInterfaces()[0]))) {
-                return false;
-            }
             Ref<T> otherRef = (Ref<T>) other;
-            if (itemsWithWeight == null) {
-                return otherRef.itemsWithWeight == null;
-            } else {
-                if (otherRef.itemsWithWeight == null) {
-                    return false;
-                } else {
-                    return this.itemsWithWeight.equals(otherRef.itemsWithWeight);
-                }
-            }
+            return this.itemsWithWeight.equals(otherRef.itemsWithWeight);
         }
     }
     
@@ -239,15 +228,6 @@ public class Chooser<K, T> {
             }
             
         }
-        
-        if (this.ref == null) {
-            return otherChooser.getRef() == null;
-        } else {
-            if (otherChooser.getRef() == null) {
-                return false;
-            } else {
-                return this.ref.equals(otherChooser.getRef());
-            }
-        }
+        return this.ref.equals(otherChooser.getRef());
     }
 }

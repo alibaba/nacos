@@ -29,6 +29,7 @@ import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
 
 import java.util.Optional;
+import java.util.Properties;
 
 /**
  * Abstract protocol auth service.
@@ -84,7 +85,11 @@ public abstract class AbstractProtocolAuthService<R> implements ProtocolAuthServ
      * @return resource
      */
     protected Resource parseSpecifiedResource(Secured secured) {
-        return new Resource(null, null, secured.resource(), SignType.SPECIFIED, null);
+        Properties properties = new Properties();
+        for (String each : secured.tags()) {
+            properties.put(each, each);
+        }
+        return new Resource(null, null, secured.resource(), SignType.SPECIFIED, properties);
     }
     
     /**

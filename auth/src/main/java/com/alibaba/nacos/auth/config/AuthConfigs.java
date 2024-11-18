@@ -16,20 +16,25 @@
 
 package com.alibaba.nacos.auth.config;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ConvertUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.module.ModuleState;
+import com.alibaba.nacos.sys.module.ModuleStateHolder;
 import com.alibaba.nacos.sys.utils.PropertiesUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
+import javax.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -73,6 +78,8 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     @Value("${" + Constants.Auth.NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE + ":false}")
     private boolean enableUserAgentAuthWhite;
     
+    private boolean hasGlobalAdminRole;
+    
     private Map<String, Properties> authPluginProperties = new HashMap<>();
     
     public AuthConfigs() {
@@ -80,21 +87,52 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
         refreshPluginProperties();
     }
     
+    /**
+     * Validate auth config.
+     *
+     * @throws NacosException If the config is not valid.
+     */
+    @PostConstruct
+    public void validate() throws NacosException {
+        if (!authEnabled) {
+            return;
+        }
+        if (StringUtils.isEmpty(nacosAuthSystemType)) {
+            throw new NacosException(AuthErrorCode.INVALID_TYPE.getCode(), AuthErrorCode.INVALID_TYPE.getMsg());
+        }
+        if (EnvUtil.getStandaloneMode()) {
+            return;
+        }
+        if (StringUtils.isEmpty(serverIdentityKey) || StringUtils.isEmpty(serverIdentityValue)) {
+            throw new NacosException(AuthErrorCode.EMPTY_IDENTITY.getCode(), AuthErrorCode.EMPTY_IDENTITY.getMsg());
+        }
+    }
+    
     private void refreshPluginProperties() {
         try {
             Map<String, Properties> newProperties = new HashMap<>(1);
             Properties properties = PropertiesUtil.getPropertiesWithPrefix(EnvUtil.getEnvironment(), PREFIX);
-            for (String each : properties.stringPropertyNames()) {
-                int typeIndex = each.indexOf('.');
-                String type = each.substring(0, typeIndex);
-                String subKey = each.substring(typeIndex + 1);
-                newProperties.computeIfAbsent(type, key -> new Properties())
-                        .setProperty(subKey, properties.getProperty(each));
+            if (properties != null) {
+                for (String each : properties.stringPropertyNames()) {
+                    int typeIndex = each.indexOf('.');
+                    String type = each.substring(0, typeIndex);
+                    String subKey = each.substring(typeIndex + 1);
+                    newProperties.computeIfAbsent(type, key -> new Properties())
+                            .setProperty(subKey, properties.getProperty(each));
+                }
             }
             authPluginProperties = newProperties;
         } catch (Exception e) {
             LOGGER.warn("Refresh plugin properties failed ", e);
         }
+    }
+    
+    public boolean isHasGlobalAdminRole() {
+        return hasGlobalAdminRole;
+    }
+    
+    public void setHasGlobalAdminRole(boolean hasGlobalAdminRole) {
+        this.hasGlobalAdminRole = hasGlobalAdminRole;
     }
     
     public String getNacosAuthSystemType() {
@@ -154,10 +192,15 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
             cachingEnabled = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_CACHING_ENABLED, Boolean.class, true);
             serverIdentityKey = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "");
             serverIdentityValue = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "");
-            enableUserAgentAuthWhite = EnvUtil
-                    .getProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE, Boolean.class, false);
+            enableUserAgentAuthWhite = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE,
+                    Boolean.class, false);
             nacosAuthSystemType = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "");
             refreshPluginProperties();
+            ModuleStateHolder.getInstance().getModuleState(AuthModuleStateBuilder.AUTH_MODULE)
+                    .ifPresent(moduleState -> {
+                        ModuleState temp = new AuthModuleStateBuilder().build();
+                        moduleState.getStates().putAll(temp.getStates());
+                    });
         } catch (Exception e) {
             LOGGER.warn("Upgrade auth config from env failed, use old value", e);
         }

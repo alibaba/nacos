@@ -1,0 +1,2817 @@
+[
+{
+  "name":"[B"
+},
+{
+  "name":"[C"
+},
+{
+  "name":"[D"
+},
+{
+  "name":"[F"
+},
+{
+  "name":"[I"
+},
+{
+  "name":"[J"
+},
+{
+  "name":"[Ljava.lang.String;"
+},
+{
+  "name":"[Ljavax.management.openmbean.CompositeData;"
+},
+{
+  "name":"[Lorg.apache.logging.log4j.core.Appender;"
+},
+{
+  "name":"[Lorg.apache.logging.log4j.core.appender.rolling.TriggeringPolicy;"
+},
+{
+  "name":"[Lorg.apache.logging.log4j.core.appender.rolling.action.Action;"
+},
+{
+  "name":"[Lorg.apache.logging.log4j.core.appender.rolling.action.PathCondition;"
+},
+{
+  "name":"[Lorg.apache.logging.log4j.core.config.AppenderRef;"
+},
+{
+  "name":"[Lorg.apache.logging.log4j.core.config.LoggerConfig;"
+},
+{
+  "name":"[Lorg.apache.logging.log4j.core.config.Property;"
+},
+{
+  "name":"[S"
+},
+{
+  "name":"[Z"
+},
+{
+  "name":"ch.qos.logback.classic.AsyncAppender",
+  "queryAllPublicMethods":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"ch.qos.logback.classic.Logger"
+},
+{
+  "name":"ch.qos.logback.classic.LoggerContext"
+},
+{
+  "name":"ch.qos.logback.classic.encoder.PatternLayoutEncoder",
+  "queryAllPublicMethods":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"ch.qos.logback.classic.pattern.DateConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"ch.qos.logback.classic.pattern.LevelConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"ch.qos.logback.classic.pattern.LineSeparatorConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"ch.qos.logback.classic.pattern.LoggerConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"ch.qos.logback.classic.pattern.MessageConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"ch.qos.logback.classic.pattern.ThreadConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"ch.qos.logback.core.AsyncAppenderBase",
+  "methods":[
+    {"name":"setDiscardingThreshold","parameterTypes":["int"] },
+    {"name":"setNeverBlock","parameterTypes":["boolean"] },
+    {"name":"setQueueSize","parameterTypes":["int"] }
+  ]
+},
+{
+  "name":"ch.qos.logback.core.OutputStreamAppender",
+  "methods":[{"name":"setEncoder","parameterTypes":["ch.qos.logback.core.encoder.Encoder"] }]
+},
+{
+  "name":"ch.qos.logback.core.encoder.LayoutWrappingEncoder",
+  "methods":[{"name":"setParent","parameterTypes":["ch.qos.logback.core.spi.ContextAware"] }]
+},
+{
+  "name":"ch.qos.logback.core.pattern.PatternLayoutEncoderBase",
+  "methods":[{"name":"setPattern","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"ch.qos.logback.core.rolling.FixedWindowRollingPolicy",
+  "queryAllPublicMethods":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"setMaxIndex","parameterTypes":["int"] }
+  ]
+},
+{
+  "name":"ch.qos.logback.core.rolling.RollingFileAppender",
+  "queryAllPublicMethods":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"setFile","parameterTypes":["java.lang.String"] },
+    {"name":"setRollingPolicy","parameterTypes":["ch.qos.logback.core.rolling.RollingPolicy"] },
+    {"name":"setTriggeringPolicy","parameterTypes":["ch.qos.logback.core.rolling.TriggeringPolicy"] }
+  ]
+},
+{
+  "name":"ch.qos.logback.core.rolling.RollingPolicyBase",
+  "methods":[
+    {"name":"setFileNamePattern","parameterTypes":["java.lang.String"] },
+    {"name":"setParent","parameterTypes":["ch.qos.logback.core.FileAppender"] }
+  ]
+},
+{
+  "name":"ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy",
+  "queryAllPublicMethods":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"setMaxFileSize","parameterTypes":["ch.qos.logback.core.util.FileSize"] }
+  ]
+},
+{
+  "name":"ch.qos.logback.core.rolling.helper.IntegerTokenConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"ch.qos.logback.core.util.FileSize",
+  "methods":[{"name":"valueOf","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"com.alibaba.nacos.api.ability.ClientAbilities",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getConfigAbility","parameterTypes":[] },
+    {"name":"getNamingAbility","parameterTypes":[] },
+    {"name":"getRemoteAbility","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.ability.ServerAbilities",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"getConfigAbility","parameterTypes":[] },
+    {"name":"getNamingAbility","parameterTypes":[] },
+    {"name":"getRemoteAbility","parameterTypes":[] },
+    {"name":"setConfigAbility","parameterTypes":["com.alibaba.nacos.api.config.ability.ServerConfigAbility"] },
+    {"name":"setNamingAbility","parameterTypes":["com.alibaba.nacos.api.naming.ability.ServerNamingAbility"] },
+    {"name":"setRemoteAbility","parameterTypes":["com.alibaba.nacos.api.remote.ability.ServerRemoteAbility"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.config.ability.ClientConfigAbility",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"isSupportRemoteMetrics","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.api.config.ability.ServerConfigAbility",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"isSupportRemoteMetrics","parameterTypes":[] },
+    {"name":"setSupportRemoteMetrics","parameterTypes":["boolean"] }
+  ]
+},
+{
+	"name": "com.alibaba.nacos.api.config.remote.request.AbstractConfigRequest",
+	"allDeclaredFields": true,
+	"allDeclaredConstructors": true,
+	"methods": [
+		{"name": "getDataId","parameterTypes": [ ]},
+		{"name": "getGroup","parameterTypes": [ ]},
+		{"name": "getModule","parameterTypes": [ ]},
+		{"name": "getTenant","parameterTypes": [ ]},
+		{"name": "setDataId","parameterTypes": ["java.lang.String"]},
+		{"name": "setGroup","parameterTypes": ["java.lang.String"]},
+		{"name": "setTenant","parameterTypes": ["java.lang.String"]}
+	]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getMetricsKeys","parameterTypes":[] },
+    {"name":"getModule","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest$MetricsKey",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getKey","parameterTypes":[] },
+    {"name":"getType","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"getConfigListenContexts","parameterTypes":[] },
+    {"name":"isListen","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest$ConfigListenContext",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"getDataId","parameterTypes":[] },
+    {"name":"getGroup","parameterTypes":[] },
+    {"name":"getMd5","parameterTypes":[] },
+    {"name":"getTenant","parameterTypes":[] }
+  ]
+},
+{
+	"name": "com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest",
+	"allDeclaredConstructors": true,
+	"allDeclaredFields": true,
+	"methods": [
+		{"name": "setGroup","parameterTypes": ["java.lang.String"]},
+		{"name": "getTenant","parameterTypes": [ ]},
+		{"name": "setTenant","parameterTypes": ["java.lang.String"]},
+		{"name": "setDataId","parameterTypes": ["java.lang.String"]},
+		{"name": "getGroup","parameterTypes": [ ]},
+		{"name": "getDataId","parameterTypes": [ ]},
+		{"name": "getModule","parameterTypes": [ ]}
+	]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"getAdditionMap","parameterTypes":[] },
+    {"name":"getCasMd5","parameterTypes":[] },
+    {"name":"getContent","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"getTag","parameterTypes":[] },
+    {"name":"isNotify","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"getTag","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.request.cluster.ConfigChangeClusterSyncRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getLastModified","parameterTypes":[] },
+    {"name":"getTag","parameterTypes":[] },
+    {"name":"isBatch","parameterTypes":[] },
+    {"name":"isBeta","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.response.ClientConfigMetricResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"setMetrics","parameterTypes":["java.util.Map"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"setChangedConfigs","parameterTypes":["java.util.List"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenResponse$ConfigContext",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"setDataId","parameterTypes":["java.lang.String"] },
+    {"name":"setGroup","parameterTypes":["java.lang.String"] },
+    {"name":"setTenant","parameterTypes":["java.lang.String"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.response.ConfigChangeNotifyResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"setBeta","parameterTypes":["boolean"] },
+    {"name":"setContent","parameterTypes":["java.lang.String"] },
+    {"name":"setContentType","parameterTypes":["java.lang.String"] },
+    {"name":"setEncryptedDataKey","parameterTypes":["java.lang.String"] },
+    {"name":"setLastModified","parameterTypes":["long"] },
+    {"name":"setMd5","parameterTypes":["java.lang.String"] },
+    {"name":"setTag","parameterTypes":["java.lang.String"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.response.cluster.ConfigChangeClusterSyncResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.api.grpc.auto.Metadata",
+  "methods":[
+    {"name":"getClientIp","parameterTypes":[] },
+    {"name":"getClientIpBytes","parameterTypes":[] },
+    {"name":"getDefaultInstance","parameterTypes":[] },
+    {"name":"getType","parameterTypes":[] },
+    {"name":"getTypeBytes","parameterTypes":[] },
+    {"name":"newBuilder","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.grpc.auto.Metadata$Builder",
+  "methods":[
+    {"name":"clearClientIp","parameterTypes":[] },
+    {"name":"clearType","parameterTypes":[] },
+    {"name":"getClientIp","parameterTypes":[] },
+    {"name":"getClientIpBytes","parameterTypes":[] },
+    {"name":"getType","parameterTypes":[] },
+    {"name":"getTypeBytes","parameterTypes":[] },
+    {"name":"setClientIp","parameterTypes":["java.lang.String"] },
+    {"name":"setClientIpBytes","parameterTypes":["com.google.protobuf.ByteString"] },
+    {"name":"setType","parameterTypes":["java.lang.String"] },
+    {"name":"setTypeBytes","parameterTypes":["com.google.protobuf.ByteString"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.grpc.auto.Payload",
+  "methods":[
+    {"name":"getBody","parameterTypes":[] },
+    {"name":"getMetadata","parameterTypes":[] },
+    {"name":"hasBody","parameterTypes":[] },
+    {"name":"hasMetadata","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.grpc.auto.Payload$Builder",
+  "methods":[
+    {"name":"clearBody","parameterTypes":[] },
+    {"name":"clearMetadata","parameterTypes":[] },
+    {"name":"getBody","parameterTypes":[] },
+    {"name":"getBodyBuilder","parameterTypes":[] },
+    {"name":"getMetadata","parameterTypes":[] },
+    {"name":"getMetadataBuilder","parameterTypes":[] },
+    {"name":"hasBody","parameterTypes":[] },
+    {"name":"hasMetadata","parameterTypes":[] },
+    {"name":"setBody","parameterTypes":["com.google.protobuf.Any"] },
+    {"name":"setMetadata","parameterTypes":["com.alibaba.nacos.api.grpc.auto.Metadata"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.naming.ability.ClientNamingAbility",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"isSupportDeltaPush","parameterTypes":[] },
+    {"name":"isSupportRemoteMetric","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.naming.ability.ServerNamingAbility",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"isSupportJraft","parameterTypes":[] },
+    {"name":"setSupportJraft","parameterTypes":["boolean"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.naming.listener.EventListener",
+  "methods":[{"name":"onEvent","parameterTypes":["com.alibaba.nacos.api.naming.listener.Event"] }]
+},
+{
+  "name":"com.alibaba.nacos.api.naming.pojo.Instance",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] }, 
+    {"name":"getClusterName","parameterTypes":[] }, 
+    {"name":"getInstanceHeartBeatInterval","parameterTypes":[] }, 
+    {"name":"getInstanceHeartBeatTimeOut","parameterTypes":[] }, 
+    {"name":"getInstanceId","parameterTypes":[] }, 
+    {"name":"getInstanceIdGenerator","parameterTypes":[] }, 
+    {"name":"getIp","parameterTypes":[] }, 
+    {"name":"getIpDeleteTimeout","parameterTypes":[] }, 
+    {"name":"getMetadata","parameterTypes":[] }, 
+    {"name":"getPort","parameterTypes":[] }, 
+    {"name":"getServiceName","parameterTypes":[] }, 
+    {"name":"getWeight","parameterTypes":[] }, 
+    {"name":"isEnabled","parameterTypes":[] }, 
+    {"name":"isEphemeral","parameterTypes":[] }, 
+    {"name":"isHealthy","parameterTypes":[] }, 
+    {"name":"setClusterName","parameterTypes":["java.lang.String"] }, 
+    {"name":"setEnabled","parameterTypes":["boolean"] }, 
+    {"name":"setEphemeral","parameterTypes":["boolean"] }, 
+    {"name":"setHealthy","parameterTypes":["boolean"] }, 
+    {"name":"setInstanceId","parameterTypes":["java.lang.String"] }, 
+    {"name":"setIp","parameterTypes":["java.lang.String"] }, 
+    {"name":"setMetadata","parameterTypes":["java.util.Map"] }, 
+    {"name":"setPort","parameterTypes":["int"] }, 
+    {"name":"setServiceName","parameterTypes":["java.lang.String"] }, 
+    {"name":"setWeight","parameterTypes":["double"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.naming.pojo.ServiceInfo",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] }, 
+    {"name":"getCacheMillis","parameterTypes":[] }, 
+    {"name":"getChecksum","parameterTypes":[] }, 
+    {"name":"getClusters","parameterTypes":[] }, 
+    {"name":"getGroupName","parameterTypes":[] }, 
+    {"name":"getHosts","parameterTypes":[] }, 
+    {"name":"getLastRefTime","parameterTypes":[] }, 
+    {"name":"getName","parameterTypes":[] }, 
+    {"name":"isAllIPs","parameterTypes":[] }, 
+    {"name":"isReachProtectionThreshold","parameterTypes":[] }, 
+    {"name":"isValid","parameterTypes":[] }, 
+    {"name":"setAllIPs","parameterTypes":["boolean"] }, 
+    {"name":"setCacheMillis","parameterTypes":["long"] }, 
+    {"name":"setChecksum","parameterTypes":["java.lang.String"] }, 
+    {"name":"setClusters","parameterTypes":["java.lang.String"] }, 
+    {"name":"setGroupName","parameterTypes":["java.lang.String"] }, 
+    {"name":"setHosts","parameterTypes":["java.util.List"] }, 
+    {"name":"setLastRefTime","parameterTypes":["long"] }, 
+    {"name":"setName","parameterTypes":["java.lang.String"] }, 
+    {"name":"setReachProtectionThreshold","parameterTypes":["boolean"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "methods":[
+    {"name":"getGroupName","parameterTypes":[] },
+    {"name":"getModule","parameterTypes":[] },
+    {"name":"getNamespace","parameterTypes":[] },
+    {"name":"getServiceName","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.naming.remote.request.BatchInstanceRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getInstances","parameterTypes":[] },
+    {"name":"getType","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.naming.remote.request.InstanceRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getInstance","parameterTypes":[] },
+    {"name":"getType","parameterTypes":[] }
+  ]
+},
+{
+	"name": "com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest",
+	"allDeclaredFields": true,
+	"allDeclaredConstructors": true,
+	"methods": [
+		{"name": "getGroupName","parameterTypes": [ ]},
+		{"name": "getModule","parameterTypes": [ ]},
+		{"name": "getNamespace","parameterTypes": [ ]},
+		{"name": "getServiceInfo","parameterTypes": [ ]},
+		{"name": "getServiceName","parameterTypes": [ ]},
+		{"name": "setGroupName","parameterTypes": ["java.lang.String"]},
+		{"name": "setNamespace","parameterTypes": ["java.lang.String"]},
+		{"name": "setServiceInfo","parameterTypes": ["com.alibaba.nacos.api.naming.pojo.ServiceInfo"]},
+		{"name": "setServiceName","parameterTypes": ["java.lang.String"]}
+	]
+},
+{
+  "name":"com.alibaba.nacos.api.naming.remote.request.PersistentInstanceRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getInstance","parameterTypes":[] },
+    {"name":"getType","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.naming.remote.request.ServiceListRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getPageNo","parameterTypes":[] },
+    {"name":"getPageSize","parameterTypes":[] },
+    {"name":"getSelector","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.naming.remote.request.ServiceQueryRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getCluster","parameterTypes":[] },
+    {"name":"getUdpPort","parameterTypes":[] },
+    {"name":"isHealthyOnly","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.naming.remote.request.SubscribeServiceRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getClusters","parameterTypes":[] },
+    {"name":"isSubscribe","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.naming.remote.response.BatchInstanceResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.api.naming.remote.response.InstanceResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"setType","parameterTypes":["java.lang.String"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.naming.remote.response.NotifySubscriberResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"setServiceInfo","parameterTypes":["com.alibaba.nacos.api.naming.pojo.ServiceInfo"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.naming.remote.response.ServiceListResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"setCount","parameterTypes":["int"] },
+    {"name":"setServiceNames","parameterTypes":["java.util.List"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"setServiceInfo","parameterTypes":["com.alibaba.nacos.api.naming.pojo.ServiceInfo"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.remote.Payload",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.alibaba.nacos.api.remote.ability.ClientRemoteAbility",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"isSupportRemoteConnection","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.api.remote.ability.ServerRemoteAbility",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"isGrpcReportEnabled","parameterTypes":[] },
+    {"name":"isSupportRemoteConnection","parameterTypes":[] },
+    {"name":"setGrpcReportEnabled","parameterTypes":["boolean"] },
+    {"name":"setSupportRemoteConnection","parameterTypes":["boolean"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.remote.request.ClientDetectionRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"getModule","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.api.remote.request.ConnectResetRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getConnectionId","parameterTypes":[] },
+    {"name":"getModule","parameterTypes":[] },
+    {"name":"getServerIp","parameterTypes":[] },
+    {"name":"getServerPort","parameterTypes":[] }
+  ]
+},
+{
+	"name": "com.alibaba.nacos.api.remote.request.ConnectionSetupRequest",
+	"allDeclaredFields": true,
+	"allDeclaredConstructors": true,
+	"methods": [
+		{"name": "getAbilityTable","parameterTypes": [ ]},
+		{"name": "getClientVersion","parameterTypes": [ ]},
+		{"name": "getLabels","parameterTypes": [ ]},
+		{"name": "getTenant","parameterTypes": [ ]},
+		{"name": "setAbilityTable","parameterTypes": ["java.util.Map"]},
+		{"name": "setClientVersion","parameterTypes": ["java.lang.String"]},
+		{"name": "setLabels","parameterTypes": ["java.util.Map"]},
+		{"name": "setTenant","parameterTypes": ["java.lang.String"]}
+	]
+},
+{
+  "name":"com.alibaba.nacos.api.remote.request.HealthCheckRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"com.alibaba.nacos.api.remote.request.InternalRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"getModule","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.api.remote.request.PushAckRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getException","parameterTypes":[] },
+    {"name":"getRequestId","parameterTypes":[] },
+    {"name":"isSuccess","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.remote.request.Request",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "methods":[
+    {"name":"getHeaders","parameterTypes":[] }, 
+    {"name":"getRequestId","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.remote.request.ServerCheckRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"com.alibaba.nacos.api.remote.request.ServerLoaderInfoRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"com.alibaba.nacos.api.remote.request.ServerReloadRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getReloadCount","parameterTypes":[] },
+    {"name":"getReloadServer","parameterTypes":[] }
+  ]
+},
+  {
+    "name":"com.alibaba.nacos.api.remote.request.ServerRequest",
+    "allDeclaredFields":true,
+    "queryAllDeclaredMethods":true
+  },
+{
+  "name":"com.alibaba.nacos.api.remote.request.SetupAckRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getAbilityTable","parameterTypes":[] },
+    {"name":"getModule","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.remote.response.ClientDetectionResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.api.remote.response.ConnectResetResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.api.remote.response.ErrorResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.api.remote.response.HealthCheckResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.api.remote.response.Response",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "methods":[
+    {"name":"setErrorCode","parameterTypes":["int"] }, 
+    {"name":"setRequestId","parameterTypes":["java.lang.String"] },
+    {"name":"setResultCode","parameterTypes":["int"] },
+    {"name":"setMessage","parameterTypes":["java.lang.String"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.remote.response.ServerCheckResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] }, 
+    {"name":"setConnectionId","parameterTypes":["java.lang.String"] },
+    {"name":"setSupportAbilityNegotiation","parameterTypes":["boolean"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.remote.response.ServerLoaderInfoResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"setLoaderMetrics","parameterTypes":["java.util.Map"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.remote.response.ServerReloadResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.api.remote.response.SetupAckResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.client.auth.impl.NacosClientAuthServiceImpl",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.client.auth.ram.RamClientAuthServiceImpl",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.client.auth.ram.identify.CredentialListener",
+  "methods":[{"name":"onUpdateCredential","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.client.auth.ram.identify.CredentialWatcher",
+  "methods":[{"name":"stop","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.client.auth.ram.identify.StsCredentialHolder"
+},
+  {
+    "name":"com.alibaba.nacos.client.config.NacosConfigService",
+    "methods":[{"name":"<init>","parameterTypes":["java.util.Properties"] }]
+  },
+  {
+    "name":"com.alibaba.nacos.client.naming.NacosNamingService",
+    "methods":[{"name":"<init>","parameterTypes":["java.util.Properties"] }]
+  },
+{
+  "name":"com.alibaba.nacos.client.config.impl.ClientWorker",
+  "methods":[
+    {"name":"addTenantListeners","parameterTypes":["java.lang.String","java.lang.String","java.util.List"] }, 
+    {"name":"addTenantListenersWithContent","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.util.List"] }, 
+    {"name":"getAgent","parameterTypes":[] }, 
+    {"name":"getAgentName","parameterTypes":[] }, 
+    {"name":"getServerConfig","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","long","boolean"] }, 
+    {"name":"isHealthServer","parameterTypes":[] }, 
+    {"name":"publishConfig","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String"] }, 
+    {"name":"removeConfig","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","java.lang.String"] }, 
+    {"name":"removeTenantListener","parameterTypes":["java.lang.String","java.lang.String","com.alibaba.nacos.api.config.listener.Listener"] }, 
+    {"name":"shutdown","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.client.config.impl.ClientWorker$ConfigRpcTransportClient",
+  "methods":[{"name":"isHealthServer","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.client.config.impl.ServerListManager",
+  "methods":[
+    {"name":"getName","parameterTypes":[] }, 
+    {"name":"getNextServerAddr","parameterTypes":[] }, 
+    {"name":"getServerUrls","parameterTypes":[] }, 
+    {"name":"shutdown","parameterTypes":[] }, 
+    {"name":"start","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.client.logging.AbstractNacosLogging",
+  "methods":[{"name":"loadConfiguration","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.client.logging.log4j2.Log4J2NacosLogging"
+},
+{
+  "name":"com.alibaba.nacos.client.logging.log4j2.NacosClientPropertiesLookup",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.client.naming.cache.ServiceInfoHolder",
+  "methods":[
+    {"name":"getServiceInfoMap","parameterTypes":[] }, 
+    {"name":"processServiceInfo","parameterTypes":["com.alibaba.nacos.api.naming.pojo.ServiceInfo"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.client.naming.core.ServerListManager",
+  "methods":[{"name":"shutdown","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.client.naming.event.InstancesChangeEvent",
+  "methods":[
+    {"name":"getClusters","parameterTypes":[] }, 
+    {"name":"getGroupName","parameterTypes":[] }, 
+    {"name":"getHosts","parameterTypes":[] }, 
+    {"name":"getServiceName","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.client.naming.event.InstancesChangeNotifier",
+  "methods":[
+    {"name":"deregisterListener","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","com.alibaba.nacos.api.naming.listener.EventListener"] }, 
+    {"name":"getSubscribeServices","parameterTypes":[] }, 
+    {"name":"isSubscribed","parameterTypes":["java.lang.String","java.lang.String","java.lang.String"] }, 
+    {"name":"registerListener","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","com.alibaba.nacos.api.naming.listener.EventListener"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.client.naming.remote.NamingClientProxy",
+  "methods":[
+    {"name":"batchDeregisterService","parameterTypes":["java.lang.String","java.lang.String","java.util.List"] }, 
+    {"name":"batchRegisterService","parameterTypes":["java.lang.String","java.lang.String","java.util.List"] }, 
+    {"name":"createService","parameterTypes":["com.alibaba.nacos.api.naming.pojo.Service","com.alibaba.nacos.api.selector.AbstractSelector"] }, 
+    {"name":"deleteService","parameterTypes":["java.lang.String","java.lang.String"] }, 
+    {"name":"deregisterService","parameterTypes":["java.lang.String","java.lang.String","com.alibaba.nacos.api.naming.pojo.Instance"] }, 
+    {"name":"getServiceList","parameterTypes":["int","int","java.lang.String","com.alibaba.nacos.api.selector.AbstractSelector"] }, 
+    {"name":"isSubscribed","parameterTypes":["java.lang.String","java.lang.String","java.lang.String"] }, 
+    {"name":"queryInstancesOfService","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","int","boolean"] }, 
+    {"name":"queryService","parameterTypes":["java.lang.String","java.lang.String"] }, 
+    {"name":"registerService","parameterTypes":["java.lang.String","java.lang.String","com.alibaba.nacos.api.naming.pojo.Instance"] }, 
+    {"name":"serverHealthy","parameterTypes":[] }, 
+    {"name":"subscribe","parameterTypes":["java.lang.String","java.lang.String","java.lang.String"] }, 
+    {"name":"unsubscribe","parameterTypes":["java.lang.String","java.lang.String","java.lang.String"] }, 
+    {"name":"updateInstance","parameterTypes":["java.lang.String","java.lang.String","com.alibaba.nacos.api.naming.pojo.Instance"] }, 
+    {"name":"updateService","parameterTypes":["com.alibaba.nacos.api.naming.pojo.Service","com.alibaba.nacos.api.selector.AbstractSelector"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy",
+  "methods":[
+    {"name":"batchRegisterService","parameterTypes":["java.lang.String","java.lang.String","java.util.List"] }, 
+    {"name":"deregisterService","parameterTypes":["java.lang.String","java.lang.String","com.alibaba.nacos.api.naming.pojo.Instance"] }, 
+    {"name":"getServiceList","parameterTypes":["int","int","java.lang.String","com.alibaba.nacos.api.selector.AbstractSelector"] }, 
+    {"name":"queryInstancesOfService","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","int","boolean"] }, 
+    {"name":"registerService","parameterTypes":["java.lang.String","java.lang.String","com.alibaba.nacos.api.naming.pojo.Instance"] }, 
+    {"name":"serverHealthy","parameterTypes":[] }, 
+    {"name":"shutdown","parameterTypes":[] }, 
+    {"name":"subscribe","parameterTypes":["java.lang.String","java.lang.String","java.lang.String"] }, 
+    {"name":"unsubscribe","parameterTypes":["java.lang.String","java.lang.String","java.lang.String"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy",
+  "methods":[
+    {"name":"batchDeregisterService","parameterTypes":["java.lang.String","java.lang.String","java.util.List"] }, 
+    {"name":"batchRegisterService","parameterTypes":["java.lang.String","java.lang.String","java.util.List"] }, 
+    {"name":"createService","parameterTypes":["com.alibaba.nacos.api.naming.pojo.Service","com.alibaba.nacos.api.selector.AbstractSelector"] }, 
+    {"name":"deleteService","parameterTypes":["java.lang.String","java.lang.String"] }, 
+    {"name":"deregisterService","parameterTypes":["java.lang.String","java.lang.String","com.alibaba.nacos.api.naming.pojo.Instance"] }, 
+    {"name":"getServiceList","parameterTypes":["int","int","java.lang.String","com.alibaba.nacos.api.selector.AbstractSelector"] }, 
+    {"name":"queryInstancesOfService","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","int","boolean"] }, 
+    {"name":"queryService","parameterTypes":["java.lang.String","java.lang.String"] }, 
+    {"name":"registerService","parameterTypes":["java.lang.String","java.lang.String","com.alibaba.nacos.api.naming.pojo.Instance"] }, 
+    {"name":"serverHealthy","parameterTypes":[] }, 
+    {"name":"shutdown","parameterTypes":[] }, 
+    {"name":"subscribe","parameterTypes":["java.lang.String","java.lang.String","java.lang.String"] }, 
+    {"name":"unsubscribe","parameterTypes":["java.lang.String","java.lang.String","java.lang.String"] }, 
+    {"name":"updateInstance","parameterTypes":["java.lang.String","java.lang.String","com.alibaba.nacos.api.naming.pojo.Instance"] }, 
+    {"name":"updateService","parameterTypes":["com.alibaba.nacos.api.naming.pojo.Service","com.alibaba.nacos.api.selector.AbstractSelector"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.common.http.HttpRestResult",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"getHeader","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.common.http.client.InterceptingHttpClientRequest"
+},
+{
+  "name":"com.alibaba.nacos.common.http.client.NacosRestTemplate",
+  "methods":[{"name":"postForm","parameterTypes":["java.lang.String","com.alibaba.nacos.common.http.param.Header","com.alibaba.nacos.common.http.param.Query","java.util.Map","java.lang.reflect.Type"] }]
+},
+{
+  "name":"com.alibaba.nacos.common.http.client.request.HttpClientRequest",
+  "methods":[{"name":"execute","parameterTypes":["java.net.URI","java.lang.String","com.alibaba.nacos.common.model.RequestHttpEntity"] }]
+},
+{
+  "name":"com.alibaba.nacos.common.lifecycle.Closeable",
+  "methods":[{"name":"shutdown","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.common.model.RestResult",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "methods":[
+    {"name":"getCode","parameterTypes":[] }, 
+    {"name":"getData","parameterTypes":[] }, 
+    {"name":"getMessage","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.common.notify.DefaultPublisher",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.common.remote.TlsConfig",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "methods":[
+    {"name":"getCertChainFile","parameterTypes":[] }, 
+    {"name":"getCertPrivateKey","parameterTypes":[] }, 
+    {"name":"getCertPrivateKeyPassword","parameterTypes":[] }, 
+    {"name":"getCiphers","parameterTypes":[] }, 
+    {"name":"getEnableTls","parameterTypes":[] }, 
+    {"name":"getMutualAuthEnable","parameterTypes":[] }, 
+    {"name":"getProtocols","parameterTypes":[] }, 
+    {"name":"getSslProvider","parameterTypes":[] }, 
+    {"name":"getTrustAll","parameterTypes":[] }, 
+    {"name":"getTrustCollectionCertFile","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.common.remote.client.RpcClient"
+},
+{
+  "name":"com.alibaba.nacos.common.remote.client.RpcClientTlsConfig",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"com.alibaba.nacos.core.cluster.Member",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"getAbilities","parameterTypes":[] },
+    {"name":"getAddress","parameterTypes":[] },
+    {"name":"getExtendInfo","parameterTypes":[] },
+    {"name":"getFailAccessCnt","parameterTypes":[] },
+    {"name":"getIp","parameterTypes":[] },
+    {"name":"getPort","parameterTypes":[] },
+    {"name":"getState","parameterTypes":[] },
+    {"name":"isGrpcReportEnabled","parameterTypes":[] },
+    {"name":"setAbilities","parameterTypes":["com.alibaba.nacos.api.ability.ServerAbilities"] },
+    {"name":"setAddress","parameterTypes":["java.lang.String"] },
+    {"name":"setExtendInfo","parameterTypes":["java.util.Map"] },
+    {"name":"setFailAccessCnt","parameterTypes":["boolean"] },
+    {"name":"setGrpcReportEnabled","parameterTypes":["boolean"] },
+    {"name":"setIp","parameterTypes":["java.lang.String"] },
+    {"name":"setPort","parameterTypes":["int"] },
+    {"name":"setState","parameterTypes":["com.alibaba.nacos.core.cluster.NodeState"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.core.cluster.remote.request.AbstractClusterRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"getModule","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.core.cluster.remote.request.MemberReportRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"getNode","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.core.cluster.remote.response.MemberReportResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"setNode","parameterTypes":["com.alibaba.nacos.core.cluster.Member"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.core.distributed.distro.entity.DistroData",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"getContent","parameterTypes":[] },
+    {"name":"getDistroKey","parameterTypes":[] },
+    {"name":"getType","parameterTypes":[] },
+    {"name":"setContent","parameterTypes":["byte[]"] },
+    {"name":"setDistroKey","parameterTypes":["com.alibaba.nacos.core.distributed.distro.entity.DistroKey"] },
+    {"name":"setType","parameterTypes":["com.alibaba.nacos.consistency.DataOperation"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.core.distributed.distro.entity.DistroKey",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"getResourceKey","parameterTypes":[] },
+    {"name":"getResourceType","parameterTypes":[] },
+    {"name":"getTargetServer","parameterTypes":[] },
+    {"name":"setResourceKey","parameterTypes":["java.lang.String"] },
+    {"name":"setResourceType","parameterTypes":["java.lang.String"] },
+    {"name":"setTargetServer","parameterTypes":["java.lang.String"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.naming.cluster.remote.request.DistroDataRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getDataOperation","parameterTypes":[] },
+    {"name":"getDistroData","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.naming.cluster.remote.response.DistroDataResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"setDistroData","parameterTypes":["com.alibaba.nacos.core.distributed.distro.entity.DistroData"] }
+  ]
+},
+{
+  "name":"com.fasterxml.jackson.core.JsonParser"
+},
+{
+  "name":"com.fasterxml.jackson.databind.JsonNode"
+},
+{
+  "name":"com.fasterxml.jackson.databind.ObjectMapper"
+},
+{
+  "name":"com.fasterxml.jackson.databind.ext.Java7HandlersImpl",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.fasterxml.jackson.databind.ext.Java7SupportImpl",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.google.common.util.concurrent.AbstractFuture",
+  "fields":[
+    {"name":"listeners"}, 
+    {"name":"value"}, 
+    {"name":"waiters"}
+  ]
+},
+{
+  "name":"com.google.common.util.concurrent.AbstractFuture$Waiter",
+  "fields":[
+    {"name":"next"}, 
+    {"name":"thread"}
+  ]
+},
+{
+  "name":"com.google.protobuf.ExtensionRegistry",
+  "methods":[{"name":"getEmptyRegistry","parameterTypes":[] }]
+},
+{
+  "name":"com.intellij.junit4.JUnit4IdeaTestRunner",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.intellij.rt.execution.application.AppMainV2$Agent",
+  "methods":[{"name":"premain","parameterTypes":["java.lang.String","java.lang.instrument.Instrumentation"] }]
+},
+{
+  "name":"com.sun.crypto.provider.HmacSHA1",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.sun.jndi.dns.DnsContextFactory"
+},
+{
+  "name":"com.sun.management.GarbageCollectorMXBean",
+  "queryAllPublicMethods":true
+},
+{
+  "name":"com.sun.management.GcInfo",
+  "queryAllPublicMethods":true
+},
+{
+  "name":"com.sun.management.HotSpotDiagnosticMXBean",
+  "queryAllPublicMethods":true
+},
+{
+  "name":"com.sun.management.OperatingSystemMXBean",
+  "queryAllPublicMethods":true
+},
+{
+  "name":"com.sun.management.ThreadMXBean",
+  "queryAllPublicMethods":true
+},
+{
+  "name":"com.sun.management.VMOption",
+  "queryAllPublicMethods":true
+},
+{
+  "name":"com.sun.management.internal.GarbageCollectorExtImpl",
+  "queryAllPublicConstructors":true
+},
+{
+  "name":"com.sun.management.internal.HotSpotDiagnostic",
+  "queryAllPublicConstructors":true
+},
+{
+  "name":"com.sun.management.internal.HotSpotThreadImpl",
+  "queryAllPublicConstructors":true
+},
+{
+  "name":"com.sun.management.internal.OperatingSystemImpl",
+  "queryAllPublicConstructors":true
+},
+{
+  "name":"com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"double",
+  "queryAllDeclaredMethods":true
+},
+  {
+    "name":"com.alibaba.nacos.shaded.com.google.common.util.concurrent.AbstractFuture",
+    "fields":[
+      {"name":"listeners"},
+      {"name":"value"},
+      {"name":"waiters"}
+    ]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.com.google.common.util.concurrent.AbstractFuture$Waiter",
+    "fields":[
+      {"name":"next"},
+      {"name":"thread"}
+    ]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.com.google.protobuf.Any",
+    "methods":[
+      {"name":"getTypeUrl","parameterTypes":[] },
+      {"name":"getTypeUrlBytes","parameterTypes":[] },
+      {"name":"getValue","parameterTypes":[] },
+      {"name":"newBuilder","parameterTypes":[] }
+    ]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.com.google.protobuf.Any$Builder",
+    "methods":[
+      {"name":"clearTypeUrl","parameterTypes":[] },
+      {"name":"clearValue","parameterTypes":[] },
+      {"name":"getTypeUrl","parameterTypes":[] },
+      {"name":"getTypeUrlBytes","parameterTypes":[] },
+      {"name":"getValue","parameterTypes":[] },
+      {"name":"setTypeUrl","parameterTypes":["java.lang.String"] },
+      {"name":"setTypeUrlBytes","parameterTypes":["com.alibaba.nacos.shaded.com.google.protobuf.ByteString"] },
+      {"name":"setValue","parameterTypes":["com.alibaba.nacos.shaded.com.google.protobuf.ByteString"] }
+    ]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.com.google.protobuf.ExtensionRegistry",
+    "methods":[{"name":"getEmptyRegistry","parameterTypes":[] }]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.internal.DnsNameResolverProvider"
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.internal.PickFirstLoadBalancerProvider"
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.grpc.netty.AbstractNettyHandler",
+    "methods":[
+      {"name":"channelActive","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"exceptionCaught","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Throwable"] }
+    ]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.grpc.netty.NettyClientHandler",
+    "methods":[
+      {"name":"channelInactive","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"close","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] },
+      {"name":"write","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object","com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }
+    ]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.grpc.netty.ProtocolNegotiators$GrpcNegotiationHandler",
+    "methods":[{"name":"userEventTriggered","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object"] }]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.grpc.netty.ProtocolNegotiators$ProtocolNegotiationHandler",
+    "methods":[{"name":"userEventTriggered","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object"] }]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.grpc.netty.ProtocolNegotiators$WaitUntilActiveHandler",
+    "methods":[{"name":"channelActive","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.grpc.netty.WriteBufferingAndExceptionHandler",
+    "methods":[
+      {"name":"channelInactive","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"channelRead","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object"] },
+      {"name":"close","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] },
+      {"name":"connect","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.net.SocketAddress","java.net.SocketAddress","com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] },
+      {"name":"exceptionCaught","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Throwable"] },
+      {"name":"flush","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"write","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object","com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }
+    ]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.buffer.AbstractByteBufAllocator",
+    "queryAllDeclaredMethods":true
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.buffer.AbstractReferenceCountedByteBuf",
+    "fields":[{"name":"refCnt"}]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelDuplexHandler",
+    "methods":[
+      {"name":"bind","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.net.SocketAddress","com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] },
+      {"name":"close","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] },
+      {"name":"connect","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.net.SocketAddress","java.net.SocketAddress","com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] },
+      {"name":"deregister","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] },
+      {"name":"disconnect","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] },
+      {"name":"flush","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"read","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"write","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object","com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }
+    ]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelInboundHandlerAdapter",
+    "methods":[
+      {"name":"channelActive","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"channelInactive","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"channelRead","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object"] },
+      {"name":"channelReadComplete","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"channelRegistered","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"channelUnregistered","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"channelWritabilityChanged","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"exceptionCaught","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Throwable"] },
+      {"name":"userEventTriggered","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object"] }
+    ]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.DefaultChannelPipeline$HeadContext",
+    "methods":[
+      {"name":"bind","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.net.SocketAddress","com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] },
+      {"name":"channelActive","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"channelInactive","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"channelRead","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object"] },
+      {"name":"channelReadComplete","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"channelRegistered","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"channelUnregistered","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"channelWritabilityChanged","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"close","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] },
+      {"name":"connect","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.net.SocketAddress","java.net.SocketAddress","com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] },
+      {"name":"deregister","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] },
+      {"name":"disconnect","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] },
+      {"name":"exceptionCaught","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Throwable"] },
+      {"name":"flush","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"read","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"userEventTriggered","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object"] },
+      {"name":"write","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object","com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }
+    ]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.DefaultChannelPipeline$TailContext",
+    "methods":[
+      {"name":"channelActive","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"channelInactive","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"channelRead","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object"] },
+      {"name":"channelReadComplete","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"channelRegistered","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"channelUnregistered","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"channelWritabilityChanged","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"exceptionCaught","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Throwable"] },
+      {"name":"userEventTriggered","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object"] }
+    ]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.socket.nio.NioSocketChannel",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.handler.codec.ByteToMessageDecoder",
+    "methods":[
+      {"name":"channelRead","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object"] },
+      {"name":"userEventTriggered","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object"] }
+    ]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2ConnectionHandler",
+    "methods":[
+      {"name":"bind","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.net.SocketAddress","com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] },
+      {"name":"channelReadComplete","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"channelWritabilityChanged","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"connect","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.net.SocketAddress","java.net.SocketAddress","com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] },
+      {"name":"deregister","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] },
+      {"name":"disconnect","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] },
+      {"name":"flush","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] },
+      {"name":"read","parameterTypes":["com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }
+    ]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.ReferenceCountUtil",
+    "queryAllDeclaredMethods":true
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueueColdProducerFields",
+    "fields":[{"name":"producerLimit"}]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueueConsumerFields",
+    "fields":[{"name":"consumerIndex"}]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueueProducerFields",
+    "fields":[{"name":"producerIndex"}]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueueConsumerIndexField",
+    "fields":[{"name":"consumerIndex"}]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueueProducerIndexField",
+    "fields":[{"name":"producerIndex"}]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueueProducerLimitField",
+    "fields":[{"name":"producerLimit"}]
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.util.SecretRoundRobinLoadBalancerProvider$Provider"
+  },
+{
+  "name":"io.grpc.internal.DnsNameResolverProvider"
+},
+{
+  "name":"io.grpc.internal.JndiResourceResolverFactory",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"io.grpc.internal.PickFirstLoadBalancerProvider"
+},
+{
+  "name":"io.grpc.netty.shaded.io.grpc.netty.AbstractNettyHandler",
+  "methods":[
+    {"name":"channelActive","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"exceptionCaught","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Throwable"] }
+  ]
+},
+{
+  "name":"io.grpc.netty.shaded.io.grpc.netty.NettyClientHandler",
+  "methods":[
+    {"name":"channelInactive","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"close","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }, 
+    {"name":"write","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object","io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }
+  ]
+},
+{
+  "name":"io.grpc.netty.shaded.io.grpc.netty.ProtocolNegotiators$GrpcNegotiationHandler",
+  "methods":[{"name":"userEventTriggered","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object"] }]
+},
+{
+  "name":"io.grpc.netty.shaded.io.grpc.netty.ProtocolNegotiators$ProtocolNegotiationHandler",
+  "methods":[{"name":"userEventTriggered","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object"] }]
+},
+{
+  "name":"io.grpc.netty.shaded.io.grpc.netty.ProtocolNegotiators$WaitUntilActiveHandler",
+  "methods":[{"name":"channelActive","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }]
+},
+{
+  "name":"io.grpc.netty.shaded.io.grpc.netty.WriteBufferingAndExceptionHandler",
+  "methods":[
+    {"name":"channelInactive","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"channelRead","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object"] }, 
+    {"name":"close","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }, 
+    {"name":"connect","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.net.SocketAddress","java.net.SocketAddress","io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }, 
+    {"name":"exceptionCaught","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Throwable"] }, 
+    {"name":"flush","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"write","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object","io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }
+  ]
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.buffer.AbstractByteBufAllocator",
+  "queryAllDeclaredMethods":true
+},
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.epoll.Epoll"
+  },
+  {
+    "name":"com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.AbstractReferenceCounted"
+  },
+{
+  "name":"io.grpc.netty.shaded.io.netty.buffer.AbstractReferenceCountedByteBuf",
+  "fields":[{"name":"refCnt"}]
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.channel.ChannelDuplexHandler",
+  "methods":[
+    {"name":"bind","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.net.SocketAddress","io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }, 
+    {"name":"close","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }, 
+    {"name":"connect","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.net.SocketAddress","java.net.SocketAddress","io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }, 
+    {"name":"deregister","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }, 
+    {"name":"disconnect","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }, 
+    {"name":"flush","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"read","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"write","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object","io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }
+  ]
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.channel.ChannelInboundHandlerAdapter",
+  "methods":[
+    {"name":"channelActive","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"channelInactive","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"channelRead","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object"] }, 
+    {"name":"channelReadComplete","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"channelRegistered","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"channelUnregistered","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"channelWritabilityChanged","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"exceptionCaught","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Throwable"] }, 
+    {"name":"userEventTriggered","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object"] }
+  ]
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.channel.DefaultChannelPipeline$HeadContext",
+  "methods":[
+    {"name":"bind","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.net.SocketAddress","io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }, 
+    {"name":"channelActive","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"channelInactive","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"channelRead","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object"] }, 
+    {"name":"channelReadComplete","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"channelRegistered","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"channelUnregistered","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"channelWritabilityChanged","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"close","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }, 
+    {"name":"connect","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.net.SocketAddress","java.net.SocketAddress","io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }, 
+    {"name":"deregister","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }, 
+    {"name":"disconnect","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }, 
+    {"name":"exceptionCaught","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Throwable"] }, 
+    {"name":"flush","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"read","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"userEventTriggered","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object"] }, 
+    {"name":"write","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object","io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }
+  ]
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.channel.DefaultChannelPipeline$TailContext",
+  "methods":[
+    {"name":"channelActive","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"channelInactive","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"channelRead","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object"] }, 
+    {"name":"channelReadComplete","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"channelRegistered","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"channelUnregistered","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"channelWritabilityChanged","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"exceptionCaught","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Throwable"] }, 
+    {"name":"userEventTriggered","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object"] }
+  ]
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.channel.DefaultFileRegion"
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.channel.epoll.Epoll",
+  "methods":[
+    {"name":"isAvailable","parameterTypes":[] }, 
+    {"name":"unavailabilityCause","parameterTypes":[] }
+  ]
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.channel.epoll.NativeDatagramPacketArray$NativeDatagramPacket"
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.channel.socket.nio.NioSocketChannel",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.channel.unix.PeerCredentials"
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.handler.codec.ByteToMessageDecoder",
+  "methods":[
+    {"name":"channelRead","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object"] }, 
+    {"name":"userEventTriggered","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.lang.Object"] }
+  ]
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2ConnectionHandler",
+  "methods":[
+    {"name":"bind","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.net.SocketAddress","io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }, 
+    {"name":"channelReadComplete","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"channelWritabilityChanged","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"connect","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","java.net.SocketAddress","java.net.SocketAddress","io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }, 
+    {"name":"deregister","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }, 
+    {"name":"disconnect","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext","io.grpc.netty.shaded.io.netty.channel.ChannelPromise"] }, 
+    {"name":"flush","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }, 
+    {"name":"read","parameterTypes":["io.grpc.netty.shaded.io.netty.channel.ChannelHandlerContext"] }
+  ]
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.util.AbstractReferenceCounted",
+  "fields":[{"name":"refCnt"}]
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.util.ReferenceCountUtil",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueueColdProducerFields",
+  "fields":[{"name":"producerLimit"}]
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueueConsumerFields",
+  "fields":[{"name":"consumerIndex"}]
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueueProducerFields",
+  "fields":[{"name":"producerIndex"}]
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueueConsumerIndexField",
+  "fields":[{"name":"consumerIndex"}]
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueueProducerIndexField",
+  "fields":[{"name":"producerIndex"}]
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueueProducerLimitField",
+  "fields":[{"name":"producerLimit"}]
+},
+{
+  "name":"io.grpc.util.SecretRoundRobinLoadBalancerProvider$Provider"
+},
+{
+  "name":"java.io.Closeable",
+  "methods":[{"name":"close","parameterTypes":[] }]
+},
+{
+  "name":"java.io.FileDescriptor"
+},
+{
+  "name":"java.io.ObjectInputStream",
+  "queryAllPublicMethods":true
+},
+{
+  "name":"java.io.Serializable",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"java.lang.Boolean",
+  "fields":[{"name":"TYPE"}]
+},
+{
+  "name":"java.lang.Byte",
+  "fields":[{"name":"TYPE"}]
+},
+{
+  "name":"java.lang.Character",
+  "fields":[{"name":"TYPE"}]
+},
+{
+  "name":"java.lang.Deprecated",
+  "queryAllPublicMethods":true
+},
+{
+  "name":"java.lang.Double",
+  "fields":[{"name":"TYPE"}]
+},
+{
+  "name":"java.lang.Float",
+  "fields":[{"name":"TYPE"}]
+},
+{
+  "name":"java.lang.Integer",
+  "fields":[{"name":"TYPE"}]
+},
+{
+  "name":"java.lang.Long",
+  "fields":[{"name":"TYPE"}]
+},
+{
+  "name":"java.lang.Object",
+  "allDeclaredFields":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] }, 
+    {"name":"clone","parameterTypes":[] }, 
+    {"name":"toString","parameterTypes":[] }
+  ]
+},
+{
+  "name":"java.lang.ProcessHandle",
+  "methods":[
+    {"name":"current","parameterTypes":[] }, 
+    {"name":"pid","parameterTypes":[] }
+  ]
+},
+{
+  "name":"java.lang.Short",
+  "fields":[{"name":"TYPE"}]
+},
+{
+  "name":"java.lang.StackTraceElement",
+  "queryAllPublicMethods":true
+},
+{
+  "name":"java.lang.String"
+},
+{
+  "name":"java.lang.Void",
+  "fields":[{"name":"TYPE"}]
+},
+{
+  "name":"java.lang.reflect.Method"
+},
+{
+  "name":"java.math.BigDecimal"
+},
+{
+  "name":"java.math.BigInteger"
+},
+{
+  "name":"java.net.InetSocketAddress",
+  "methods":[{"name":"getHostString","parameterTypes":[] }]
+},
+{
+  "name":"java.nio.Bits",
+  "fields":[{"name":"UNALIGNED"}]
+},
+{
+  "name":"java.nio.Buffer",
+  "fields":[{"name":"address"}]
+},
+{
+  "name":"java.nio.ByteBuffer",
+  "methods":[{"name":"alignedSlice","parameterTypes":["int"] }]
+},
+{
+  "name":"java.nio.DirectByteBuffer",
+  "methods":[{"name":"<init>","parameterTypes":["long","int"] }]
+},
+{
+  "name":"java.nio.channels.FileChannel"
+},
+{
+  "name":"java.nio.channels.spi.SelectorProvider",
+  "methods":[{"name":"openSocketChannel","parameterTypes":["java.net.ProtocolFamily"] }]
+},
+{
+  "name":"java.security.SecureRandomParameters"
+},
+{
+  "name":"java.sql.Date"
+},
+{
+  "name":"java.sql.Timestamp"
+},
+{
+  "name":"java.util.Date"
+},
+{
+  "name":"java.util.PropertyPermission",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String"] }]
+},
+{
+  "name":"java.util.concurrent.atomic.LongAdder",
+  "queryAllPublicConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] }, 
+    {"name":"add","parameterTypes":["long"] }, 
+    {"name":"sum","parameterTypes":[] }
+  ]
+},
+{
+  "name":"java.util.logging.LogManager",
+  "methods":[{"name":"getLoggingMXBean","parameterTypes":[] }]
+},
+{
+  "name":"java.util.logging.LoggingMXBean",
+  "queryAllPublicMethods":true
+},
+{
+  "name":"javax.management.MBeanOperationInfo",
+  "queryAllPublicMethods":true,
+  "methods":[{"name":"getSignature","parameterTypes":[] }]
+},
+{
+  "name":"javax.management.MBeanServerBuilder",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"javax.management.NotificationBroadcasterSupport",
+  "methods":[{"name":"getNotificationInfo","parameterTypes":[] }]
+},
+{
+  "name":"javax.management.ObjectName"
+},
+{
+  "name":"javax.management.openmbean.CompositeData"
+},
+{
+  "name":"javax.management.openmbean.OpenMBeanOperationInfoSupport"
+},
+{
+  "name":"javax.management.openmbean.TabularData"
+},
+{
+  "name":"javax.naming.directory.InitialDirContext"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.AbstractAppender$Builder",
+  "allDeclaredFields":true
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.AbstractOutputStreamAppender$Builder",
+  "allDeclaredFields":true
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.AppenderSet"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.AsyncAppender",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"newBuilder","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.AsyncAppender$Builder",
+  "allDeclaredFields":true
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.ConsoleAppender"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.CountingNoOpAppender"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.FailoverAppender"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.FailoversPlugin"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.FileAppender"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.HttpAppender"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.MemoryMappedFileAppender"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.NullAppender"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.OutputStreamAppender"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.RandomAccessFileAppender"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.RollingFileAppender",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"newBuilder","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.RollingFileAppender$Builder",
+  "allDeclaredFields":true
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.RollingRandomAccessFileAppender"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.ScriptAppenderSelector"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.SmtpAppender"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.SocketAppender"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.SyslogAppender"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.WriterAppender"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.db.ColumnMapping"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.db.jdbc.ColumnConfig"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.db.jdbc.DataSourceConnectionSource"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.db.jdbc.DriverManagerConnectionSource"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.db.jdbc.FactoryMethodConnectionSource"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.db.jdbc.JdbcAppender"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.mom.JmsAppender"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.mom.jeromq.JeroMqAppender"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.mom.kafka.KafkaAppender"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.nosql.NoSqlAppender"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.rewrite.LoggerNameLevelRewritePolicy"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.rewrite.MapRewritePolicy"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.rewrite.PropertiesRewritePolicy"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.rewrite.RewriteAppender"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.rolling.CompositeTriggeringPolicy",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"createPolicy","parameterTypes":["org.apache.logging.log4j.core.appender.rolling.TriggeringPolicy[]"] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.rolling.CronTriggeringPolicy"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.rolling.DefaultRolloverStrategy",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"newBuilder","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.rolling.DefaultRolloverStrategy$Builder",
+  "allDeclaredFields":true
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.rolling.DirectWriteRolloverStrategy"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.rolling.NoOpTriggeringPolicy"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.rolling.OnStartupTriggeringPolicy"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.rolling.SizeBasedTriggeringPolicy",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"createPolicy","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.rolling.TimeBasedTriggeringPolicy",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"newBuilder","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.rolling.TimeBasedTriggeringPolicy$Builder",
+  "allDeclaredFields":true
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.rolling.action.DeleteAction",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"createDeleteAction","parameterTypes":["java.lang.String","boolean","int","boolean","org.apache.logging.log4j.core.appender.rolling.action.PathSorter","org.apache.logging.log4j.core.appender.rolling.action.PathCondition[]","org.apache.logging.log4j.core.appender.rolling.action.ScriptCondition","org.apache.logging.log4j.core.config.Configuration"] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.rolling.action.IfAccumulatedFileCount"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.rolling.action.IfAccumulatedFileSize"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.rolling.action.IfAll"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.rolling.action.IfAny"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.rolling.action.IfFileName",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"createNameCondition","parameterTypes":["java.lang.String","java.lang.String","org.apache.logging.log4j.core.appender.rolling.action.PathCondition[]"] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.rolling.action.IfLastModified",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"createAgeCondition","parameterTypes":["org.apache.logging.log4j.core.appender.rolling.action.Duration","org.apache.logging.log4j.core.appender.rolling.action.PathCondition[]"] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.rolling.action.IfNot"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.rolling.action.PathSortByModificationTime"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.rolling.action.PosixViewAttributeAction"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.rolling.action.ScriptCondition"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.routing.IdlePurgePolicy"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.routing.Route"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.routing.Routes"
+},
+{
+  "name":"org.apache.logging.log4j.core.appender.routing.RoutingAppender"
+},
+{
+  "name":"org.apache.logging.log4j.core.async.ArrayBlockingQueueFactory"
+},
+{
+  "name":"org.apache.logging.log4j.core.async.AsyncLoggerConfig"
+},
+{
+  "name":"org.apache.logging.log4j.core.async.AsyncLoggerConfig$RootLogger"
+},
+{
+  "name":"org.apache.logging.log4j.core.async.DisruptorBlockingQueueFactory"
+},
+{
+  "name":"org.apache.logging.log4j.core.async.JCToolsBlockingQueueFactory"
+},
+{
+  "name":"org.apache.logging.log4j.core.async.LinkedTransferQueueFactory"
+},
+{
+  "name":"org.apache.logging.log4j.core.config.AppenderRef",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"createAppenderRef","parameterTypes":["java.lang.String","org.apache.logging.log4j.Level","org.apache.logging.log4j.core.Filter"] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.AppendersPlugin",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"createAppenders","parameterTypes":["org.apache.logging.log4j.core.Appender[]"] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.CustomLevelConfig"
+},
+{
+  "name":"org.apache.logging.log4j.core.config.CustomLevels"
+},
+{
+  "name":"org.apache.logging.log4j.core.config.DefaultAdvertiser"
+},
+{
+  "name":"org.apache.logging.log4j.core.config.HttpWatcher"
+},
+{
+  "name":"org.apache.logging.log4j.core.config.LoggerConfig",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"createLogger","parameterTypes":["boolean","org.apache.logging.log4j.Level","java.lang.String","java.lang.String","org.apache.logging.log4j.core.config.AppenderRef[]","org.apache.logging.log4j.core.config.Property[]","org.apache.logging.log4j.core.config.Configuration","org.apache.logging.log4j.core.Filter"] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.LoggerConfig$RootLogger"
+},
+{
+  "name":"org.apache.logging.log4j.core.config.LoggersPlugin",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"createLoggers","parameterTypes":["org.apache.logging.log4j.core.config.LoggerConfig[]"] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.PropertiesPlugin",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"configureSubstitutor","parameterTypes":["org.apache.logging.log4j.core.config.Property[]","org.apache.logging.log4j.core.config.Configuration"] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.Property",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"createProperty","parameterTypes":["java.lang.String","java.lang.String"] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.ScriptsPlugin"
+},
+{
+  "name":"org.apache.logging.log4j.core.config.arbiters.ClassArbiter"
+},
+{
+  "name":"org.apache.logging.log4j.core.config.arbiters.DefaultArbiter"
+},
+{
+  "name":"org.apache.logging.log4j.core.config.arbiters.ScriptArbiter"
+},
+{
+  "name":"org.apache.logging.log4j.core.config.arbiters.SelectArbiter"
+},
+{
+  "name":"org.apache.logging.log4j.core.config.arbiters.SystemPropertyArbiter"
+},
+{
+  "name":"org.apache.logging.log4j.core.config.json.JsonConfigurationFactory",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.convert.TypeConverters$BigDecimalConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.convert.TypeConverters$BigIntegerConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.convert.TypeConverters$BooleanConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.convert.TypeConverters$ByteArrayConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.convert.TypeConverters$ByteConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.convert.TypeConverters$CharArrayConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.convert.TypeConverters$CharacterConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.convert.TypeConverters$CharsetConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.convert.TypeConverters$ClassConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.convert.TypeConverters$CronExpressionConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.convert.TypeConverters$DoubleConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.convert.TypeConverters$DurationConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.convert.TypeConverters$FileConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.convert.TypeConverters$FloatConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.convert.TypeConverters$InetAddressConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.convert.TypeConverters$IntegerConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.convert.TypeConverters$LevelConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.convert.TypeConverters$LongConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.convert.TypeConverters$PathConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.convert.TypeConverters$PatternConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.convert.TypeConverters$SecurityProviderConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.convert.TypeConverters$ShortConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.convert.TypeConverters$StringConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.convert.TypeConverters$UriConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.convert.TypeConverters$UrlConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.convert.TypeConverters$UuidConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.validation.validators.RequiredValidator",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.visitors.PluginAttributeVisitor",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.visitors.PluginBuilderAttributeVisitor",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.visitors.PluginConfigurationVisitor",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.visitors.PluginElementVisitor",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.plugins.visitors.PluginValueVisitor",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.properties.PropertiesConfigurationFactory",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.xml.XmlConfigurationFactory",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.config.yaml.YamlConfigurationFactory",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.filter.AbstractFilterable$Builder",
+  "allDeclaredFields":true
+},
+{
+  "name":"org.apache.logging.log4j.core.filter.BurstFilter"
+},
+{
+  "name":"org.apache.logging.log4j.core.filter.CompositeFilter"
+},
+{
+  "name":"org.apache.logging.log4j.core.filter.DenyAllFilter"
+},
+{
+  "name":"org.apache.logging.log4j.core.filter.DynamicThresholdFilter"
+},
+{
+  "name":"org.apache.logging.log4j.core.filter.LevelMatchFilter"
+},
+{
+  "name":"org.apache.logging.log4j.core.filter.LevelRangeFilter"
+},
+{
+  "name":"org.apache.logging.log4j.core.filter.MapFilter"
+},
+{
+  "name":"org.apache.logging.log4j.core.filter.MarkerFilter"
+},
+{
+  "name":"org.apache.logging.log4j.core.filter.NoMarkerFilter"
+},
+{
+  "name":"org.apache.logging.log4j.core.filter.RegexFilter"
+},
+{
+  "name":"org.apache.logging.log4j.core.filter.ScriptFilter"
+},
+{
+  "name":"org.apache.logging.log4j.core.filter.StringMatchFilter"
+},
+{
+  "name":"org.apache.logging.log4j.core.filter.StructuredDataFilter"
+},
+{
+  "name":"org.apache.logging.log4j.core.filter.ThreadContextMapFilter"
+},
+{
+  "name":"org.apache.logging.log4j.core.filter.ThresholdFilter"
+},
+{
+  "name":"org.apache.logging.log4j.core.filter.TimeFilter"
+},
+{
+  "name":"org.apache.logging.log4j.core.impl.Log4jContextFactory",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.jmx.AppenderAdmin",
+  "queryAllPublicConstructors":true
+},
+{
+  "name":"org.apache.logging.log4j.core.jmx.AppenderAdminMBean",
+  "queryAllPublicMethods":true
+},
+{
+  "name":"org.apache.logging.log4j.core.jmx.ContextSelectorAdmin",
+  "queryAllPublicConstructors":true
+},
+{
+  "name":"org.apache.logging.log4j.core.jmx.ContextSelectorAdminMBean",
+  "queryAllPublicMethods":true
+},
+{
+  "name":"org.apache.logging.log4j.core.jmx.LoggerContextAdmin",
+  "queryAllPublicConstructors":true
+},
+{
+  "name":"org.apache.logging.log4j.core.jmx.LoggerContextAdminMBean",
+  "queryAllPublicMethods":true
+},
+{
+  "name":"org.apache.logging.log4j.core.jmx.StatusLoggerAdmin",
+  "queryAllPublicConstructors":true
+},
+{
+  "name":"org.apache.logging.log4j.core.jmx.StatusLoggerAdminMBean",
+  "queryAllPublicMethods":true
+},
+{
+  "name":"org.apache.logging.log4j.core.layout.CsvLogEventLayout"
+},
+{
+  "name":"org.apache.logging.log4j.core.layout.CsvParameterLayout"
+},
+{
+  "name":"org.apache.logging.log4j.core.layout.GelfLayout"
+},
+{
+  "name":"org.apache.logging.log4j.core.layout.HtmlLayout"
+},
+{
+  "name":"org.apache.logging.log4j.core.layout.JsonLayout"
+},
+{
+  "name":"org.apache.logging.log4j.core.layout.LevelPatternSelector"
+},
+{
+  "name":"org.apache.logging.log4j.core.layout.LoggerFields"
+},
+{
+  "name":"org.apache.logging.log4j.core.layout.MarkerPatternSelector"
+},
+{
+  "name":"org.apache.logging.log4j.core.layout.MessageLayout"
+},
+{
+  "name":"org.apache.logging.log4j.core.layout.PatternLayout",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"newBuilder","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.layout.PatternLayout$Builder",
+  "allDeclaredFields":true
+},
+{
+  "name":"org.apache.logging.log4j.core.layout.PatternMatch"
+},
+{
+  "name":"org.apache.logging.log4j.core.layout.Rfc5424Layout"
+},
+{
+  "name":"org.apache.logging.log4j.core.layout.ScriptPatternSelector"
+},
+{
+  "name":"org.apache.logging.log4j.core.layout.SerializedLayout"
+},
+{
+  "name":"org.apache.logging.log4j.core.layout.SyslogLayout"
+},
+{
+  "name":"org.apache.logging.log4j.core.layout.XmlLayout"
+},
+{
+  "name":"org.apache.logging.log4j.core.layout.YamlLayout"
+},
+{
+  "name":"org.apache.logging.log4j.core.lookup.ContextMapLookup",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.lookup.DateLookup",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.lookup.EnvironmentLookup",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.lookup.EventLookup",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.lookup.JavaLookup",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.lookup.JmxRuntimeInputArgumentsLookup",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.lookup.JndiLookup"
+},
+{
+  "name":"org.apache.logging.log4j.core.lookup.Log4jLookup",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.lookup.LowerLookup",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.lookup.MainMapLookup",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.lookup.MapLookup",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.lookup.MarkerLookup",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.lookup.ResourceBundleLookup",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.lookup.StructuredDataLookup",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.lookup.SystemPropertiesLookup",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.lookup.UpperLookup",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.net.MulticastDnsAdvertiser"
+},
+{
+  "name":"org.apache.logging.log4j.core.net.SocketAddress"
+},
+{
+  "name":"org.apache.logging.log4j.core.net.SocketOptions"
+},
+{
+  "name":"org.apache.logging.log4j.core.net.SocketPerformancePreferences"
+},
+{
+  "name":"org.apache.logging.log4j.core.net.ssl.KeyStoreConfiguration"
+},
+{
+  "name":"org.apache.logging.log4j.core.net.ssl.SslConfiguration"
+},
+{
+  "name":"org.apache.logging.log4j.core.net.ssl.TrustStoreConfiguration"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.AbstractStyleNameConverter$Black"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.AbstractStyleNameConverter$Blue"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.AbstractStyleNameConverter$Cyan"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.AbstractStyleNameConverter$Green"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.AbstractStyleNameConverter$Magenta"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.AbstractStyleNameConverter$Red"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.AbstractStyleNameConverter$White"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.AbstractStyleNameConverter$Yellow"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.ClassNamePatternConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.DatePatternConverter",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"newInstance","parameterTypes":["java.lang.String[]"] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.EncodingPatternConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.EndOfBatchPatternConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.EqualsIgnoreCaseReplacementConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.EqualsReplacementConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.ExtendedThrowablePatternConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.FileDatePatternConverter",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"newInstance","parameterTypes":["java.lang.String[]"] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.FileLocationPatternConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.FullLocationPatternConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.HighlightConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.IntegerPatternConverter",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"newInstance","parameterTypes":["java.lang.String[]"] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.LevelPatternConverter",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"newInstance","parameterTypes":["java.lang.String[]"] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.LineLocationPatternConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.LineSeparatorPatternConverter",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"newInstance","parameterTypes":["java.lang.String[]"] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.LoggerFqcnPatternConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.LoggerPatternConverter",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"newInstance","parameterTypes":["java.lang.String[]"] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.MapPatternConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.MarkerPatternConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.MarkerSimpleNamePatternConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.MaxLengthConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.MdcPatternConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.MessagePatternConverter",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"newInstance","parameterTypes":["org.apache.logging.log4j.core.config.Configuration","java.lang.String[]"] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.MethodLocationPatternConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.NanoTimePatternConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.NdcPatternConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.ProcessIdPatternConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.RegexReplacement"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.RegexReplacementConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.RelativeTimePatternConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.RepeatPatternConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.RootThrowablePatternConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.SequenceNumberPatternConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.StyleConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.ThreadIdPatternConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.ThreadNamePatternConverter",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"newInstance","parameterTypes":["java.lang.String[]"] }]
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.ThreadPriorityPatternConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.ThrowablePatternConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.UuidPatternConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.pattern.VariablesNotEmptyReplacementConverter"
+},
+{
+  "name":"org.apache.logging.log4j.core.script.Script"
+},
+{
+  "name":"org.apache.logging.log4j.core.script.ScriptFile"
+},
+{
+  "name":"org.apache.logging.log4j.core.script.ScriptRef"
+},
+{
+  "name":"org.apache.logging.log4j.core.util.ExecutorServices"
+},
+{
+  "name":"org.apache.logging.log4j.core.util.KeyValuePair"
+},
+{
+  "name":"org.apache.logging.log4j.message.DefaultFlowMessageFactory",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.message.ReusableMessageFactory",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.logging.log4j.util.internal.DefaultObjectInputFilter",
+  "queryAllPublicMethods":true
+},
+{
+  "name":"sun.management.ClassLoadingImpl",
+  "queryAllPublicConstructors":true
+},
+{
+  "name":"sun.management.CompilationImpl",
+  "queryAllPublicConstructors":true
+},
+{
+  "name":"sun.management.ManagementFactoryHelper$1",
+  "queryAllPublicConstructors":true
+},
+{
+  "name":"sun.management.ManagementFactoryHelper$PlatformLoggingImpl",
+  "queryAllPublicConstructors":true
+},
+{
+  "name":"sun.management.MemoryImpl",
+  "queryAllPublicConstructors":true
+},
+{
+  "name":"sun.management.MemoryManagerImpl",
+  "queryAllPublicConstructors":true
+},
+{
+  "name":"sun.management.MemoryPoolImpl",
+  "queryAllPublicConstructors":true
+},
+{
+  "name":"sun.management.RuntimeImpl",
+  "queryAllPublicConstructors":true
+},
+{
+  "name":"sun.misc.Unsafe",
+  "allDeclaredFields":true,
+  "methods":[
+    {"name":"arrayBaseOffset","parameterTypes":["java.lang.Class"] }, 
+    {"name":"arrayIndexScale","parameterTypes":["java.lang.Class"] }, 
+    {"name":"copyMemory","parameterTypes":["long","long","long"] }, 
+    {"name":"copyMemory","parameterTypes":["java.lang.Object","long","java.lang.Object","long","long"] }, 
+    {"name":"getAndAddLong","parameterTypes":["java.lang.Object","long","long"] }, 
+    {"name":"getAndSetObject","parameterTypes":["java.lang.Object","long","java.lang.Object"] }, 
+    {"name":"getBoolean","parameterTypes":["java.lang.Object","long"] }, 
+    {"name":"getByte","parameterTypes":["long"] }, 
+    {"name":"getByte","parameterTypes":["java.lang.Object","long"] }, 
+    {"name":"getDouble","parameterTypes":["java.lang.Object","long"] }, 
+    {"name":"getFloat","parameterTypes":["java.lang.Object","long"] }, 
+    {"name":"getInt","parameterTypes":["long"] }, 
+    {"name":"getInt","parameterTypes":["java.lang.Object","long"] }, 
+    {"name":"getLong","parameterTypes":["long"] }, 
+    {"name":"getLong","parameterTypes":["java.lang.Object","long"] }, 
+    {"name":"getObject","parameterTypes":["java.lang.Object","long"] }, 
+    {"name":"invokeCleaner","parameterTypes":["java.nio.ByteBuffer"] }, 
+    {"name":"objectFieldOffset","parameterTypes":["java.lang.reflect.Field"] }, 
+    {"name":"putBoolean","parameterTypes":["java.lang.Object","long","boolean"] }, 
+    {"name":"putByte","parameterTypes":["long","byte"] }, 
+    {"name":"putByte","parameterTypes":["java.lang.Object","long","byte"] }, 
+    {"name":"putDouble","parameterTypes":["java.lang.Object","long","double"] }, 
+    {"name":"putFloat","parameterTypes":["java.lang.Object","long","float"] }, 
+    {"name":"putInt","parameterTypes":["long","int"] }, 
+    {"name":"putInt","parameterTypes":["java.lang.Object","long","int"] }, 
+    {"name":"putLong","parameterTypes":["long","long"] }, 
+    {"name":"putLong","parameterTypes":["java.lang.Object","long","long"] }, 
+    {"name":"putObject","parameterTypes":["java.lang.Object","long","java.lang.Object"] }, 
+    {"name":"storeFence","parameterTypes":[] }
+  ]
+},
+{
+  "name":"sun.nio.ch.SelectorImpl",
+  "fields":[
+    {"name":"publicSelectedKeys"}, 
+    {"name":"selectedKeys"}
+  ]
+},
+{
+  "name":"sun.reflect.ReflectionFactory",
+  "methods":[
+    {"name":"getReflectionFactory","parameterTypes":[] }, 
+    {"name":"newConstructorForSerialization","parameterTypes":["java.lang.Class","java.lang.reflect.Constructor"] }
+  ]
+},
+{
+  "name":"sun.security.provider.DRBG",
+  "methods":[{"name":"<init>","parameterTypes":["java.security.SecureRandomParameters"] }]
+},
+{
+  "name":"sun.security.provider.MD5",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"sun.security.provider.SHA",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"sun.security.provider.SHA2$SHA256",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+}
+]

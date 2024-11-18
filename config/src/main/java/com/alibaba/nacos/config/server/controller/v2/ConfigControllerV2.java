@@ -29,7 +29,10 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.ConfigServletInner;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
-import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.config.server.paramcheck.ConfigBlurSearchHttpParamExtractor;
+import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
@@ -64,6 +67,7 @@ import java.util.Map;
 @NacosApi
 @RestController
 @RequestMapping(Constants.CONFIG_CONTROLLER_V2_PATH)
+@ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
 public class ConfigControllerV2 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigControllerV2.class);
     
@@ -114,9 +118,13 @@ public class ConfigControllerV2 {
     public Result<Boolean> publishConfig(ConfigForm configForm, HttpServletRequest request) throws NacosException {
         // check required field
         configForm.validate();
-        // encrypted
-        Pair<String, String> pair = EncryptionHandler.encryptHandler(configForm.getDataId(), configForm.getContent());
-        configForm.setContent(pair.getSecond());
+        String encryptedDataKeyFinal = configForm.getEncryptedDataKey();
+        if (StringUtils.isBlank(encryptedDataKeyFinal)) {
+            // encrypted
+            Pair<String, String> pair = EncryptionHandler.encryptHandler(configForm.getDataId(), configForm.getContent());
+            configForm.setContent(pair.getSecond());
+            encryptedDataKeyFinal = pair.getFirst();
+        }
         //fix issue #9783
         configForm.setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
         // check param
@@ -130,15 +138,14 @@ public class ConfigControllerV2 {
         if (!ConfigType.isValidType(configForm.getType())) {
             configForm.setType(ConfigType.getDefaultType().getType());
         }
-    
+        
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
         configRequestInfo.setSrcIp(RequestUtil.getRemoteIp(request));
         configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
         configRequestInfo.setBetaIps(request.getHeader("betaIps"));
-    
-        String encryptedDataKey = pair.getFirst();
-    
-        return Result.success(configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKey));
+        configRequestInfo.setCasMd5(request.getHeader("casMd5"));
+        
+        return Result.success(configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal));
     }
     
     /**
@@ -170,6 +177,7 @@ public class ConfigControllerV2 {
      */
     @GetMapping("/searchDetail")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    @ExtractorManager.Extractor(httpExtractor = ConfigBlurSearchHttpParamExtractor.class)
     public Page<ConfigInfo> searchConfigByDetails(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,

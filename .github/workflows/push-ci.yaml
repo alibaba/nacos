@@ -1,0 +1,533 @@
+name: PUSH-CI
+
+on:
+  push:
+    branches: [master, develop, v1.x-develop, v1.X]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nacos-${{ github.ref }}
+
+env:
+  DOCKER_REPO: wuyfeedocker/nacos-ci
+  DOCKER_REPO_B: wuyfeehub/nacos-ci
+  TEST_REPO_NAME: nacos-group/nacos-e2e
+
+jobs:
+  dist-tar:
+    name: Build dist tar
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: "8"
+          cache: "maven"
+      - name: Build distribution tar
+        run: |
+          mvn -Prelease-nacos -DskipTests clean install -U -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+      - uses: actions/upload-artifact@v4
+        name: Upload distribution tar
+        with:
+          name: nacos
+          path: distribution/target/nacos-server-*.tar.gz
+
+  docker:
+    if: ${{ success() }}
+    name: Docker images
+    needs: [dist-tar]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DOCKERHUB_USER_ACTUAL: ${{ secrets.DOCKERHUB_USER }}
+      DOCKERHUB_TOKEN_ACTUAL: ${{ secrets.DOCKERHUB_TOKEN }}
+    strategy:
+      matrix:
+        base-image: ["centos"]
+        java-version: ["8"]
+    outputs:
+      version-json: ${{ steps.show_versions.outputs.version-json }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: nacos-group/nacos-e2e.git
+          ref: main
+          path: nacos-e2e
+      - uses: actions/download-artifact@v4.1.7
+        name: Download distribution tar
+        with:
+          name: nacos
+          path: ./
+      - name: Generate image tag
+        id: build-images
+        run: |
+          mv nacos-server-*.tar.gz nacos-e2e/cicd/build/
+          cd nacos-e2e/cicd/build
+          version=${{ github.event.pull_request.number || github.ref_name }}-$(uuidgen)
+          mkdir versionlist
+          touch versionlist/"${version}-`echo ${{ matrix.java-version }} | sed -e "s/:/-/g"`"
+          ls versionlist/
+          echo TAG=${version}-$(echo ${{ matrix.java-version }} | sed -e "s/:/-/g") >> $GITHUB_ENV
+      - name: docker-login-1
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: save docker_1 images
+        run: |
+          mkdir build_backup
+          cp -rf nacos-e2e/cicd/build/* ./build_backup/
+          cd nacos-e2e/cicd/build
+          docker build --no-cache -f Dockerfile -t ${DOCKER_REPO}:${{ env.TAG }} .
+          docker push ${DOCKER_REPO}:${{ env.TAG }}
+      - name: docker-login-2
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKERHUB_USER_B }}
+          password: ${{ secrets.DOCKERHUB_TOKEN_B }}
+      - name: save docker_2 images
+        run: |
+          rm -rf nacos-e2e/cicd/build/*
+          mv ./build_backup/*  nacos-e2e/cicd/build/
+          cd nacos-e2e/cicd/build
+          docker build --no-cache -f Dockerfile -t ${DOCKER_REPO_B}:${{ env.TAG }} .
+          docker push ${DOCKER_REPO_B}:${{ env.TAG }}
+      - name: Show versions
+        id: show_versions
+        run: | 
+          a=(`ls nacos-e2e/cicd/build/versionlist`)
+          printf '%s\n' "${a[@]}" | jq -R . | jq -s .
+          echo version-json=`printf '%s\n' "${a[@]}" | jq -R . | jq -s .` >> $GITHUB_OUTPUT
+
+  deploy:
+    if: ${{ success() }}
+    name: Deploy nacos
+    needs: [docker]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      REPLICA_COUNT: 3
+      DATABASE: mysql
+      NODE_PORT: 30000
+      AUTH_ENABLED: false
+      ACTUAL_MODE: cluster
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: ["cluster","standalone","standalone_auth"]
+        version: ${{ fromJSON(needs.docker.outputs.version-json) }}
+    steps:
+      - name: set nodeport
+        run: |
+          echo "NODE_PORT=$(expr $(expr $(expr $(expr ${{ strategy.job-index }} + 1) * ${{ github.run_number }}) % 30000) + 30000)" >> $GITHUB_ENV
+      - name: set params values
+        run: |
+          if [[ ${{ matrix.mode }} == "standalone"* ]];then
+            if [[ ${{ matrix.mode }} = "standalone_auth" ]]; then
+              echo "AUTH_ENABLED=true" >> $GITHUB_ENV
+            fi
+            echo "ACTUAL_MODE=standalone" >> $GITHUB_ENV
+            echo "REPLICA_COUNT=1" >> $GITHUB_ENV
+            echo "DATABASE=embedded" >> $GITHUB_ENV
+            echo ${{ matrix.mode }}-nacos-${{ github.run_id }}-${{ strategy.job-index }}
+          fi
+      - name: allocate docker repo
+        run: |
+          if [[ $(expr $(expr ${{ github.run_id }} + ${{ strategy.job-index }} ) % 2 ) -eq 1 ]]; then
+            echo "DOCKER_REPO_ACTUAL=${{ env.DOCKER_REPO }}" >> $GITHUB_ENV
+          else
+            echo "DOCKER_REPO_ACTUAL=${{ env.DOCKER_REPO_B }}" >> $GITHUB_ENV
+          fi
+      - uses: apache/rocketmq-test-tool@java-dev
+        name: Deploy nacos
+        with:
+          yamlString: |
+            action: deploy
+            namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
+            askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
+            waitTimes: 2000
+            velaAppDescription: nacos-${{ env.GITHUB_WORKFLOW }}-${{ github.run_id }}@${{ matrix.version }}
+            repoName: nacos
+            helm:
+              chart: ./cicd/helm
+              git:
+                branch: main
+              repoType: git
+              retries: 3
+              url: https://ghproxy.com/https://github.com/nacos-group/nacos-e2e.git
+              values:
+                namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
+                global:
+                  mode: ${{ env.ACTUAL_MODE }}
+                nacos:
+                  replicaCount: ${{ env.REPLICA_COUNT }}
+                  image:
+                    repository: ${{ env.DOCKER_REPO_ACTUAL }}
+                    tag: ${{ matrix.version }}
+                  auth:
+                    enabled: ${{ env.AUTH_ENABLED }}
+                  storage:
+                    type: ${{ env.DATABASE }}
+                    db:
+                      port: 3306
+                      username: nacos
+                      password: nacos
+                      param: characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useSSL=false
+                service:
+                  nodePort: ${{ env.NODE_PORT }}
+                  type: ClusterIP
+
+  e2e-java-test:
+    if: ${{ success() }}
+    name: Java e2e Test
+    needs: [docker, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CODE_PATH: java/nacos-2X
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: ["cluster","standalone","standalone_auth"]
+        version: ${{ fromJSON(needs.docker.outputs.version-json) }}
+    steps:
+      - name: set code path
+        run: |
+          if [[ ${{ matrix.mode }} = "standalone_auth" ]]; then
+            echo "CODE_PATH=java/auth" >> $GITHUB_ENV
+            echo ${{ matrix.mode }}-nacos-${{ github.run_id }}-${{ strategy.job-index }}
+          fi
+      - uses: apache/rocketmq-test-tool@java-dev
+        name: java e2e test
+        with:
+          yamlString: |
+            action: test
+            namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
+            askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
+            API_VERSION: v1
+            KIND: Pod
+            RESTART_POLICY: Never
+            ENV:
+              WAIT_TIME: 900
+              REPO_NAME: ${{ env.TEST_REPO_NAME }}
+              CODE: https://github.com/${{ env.TEST_REPO_NAME }}
+              BRANCH: main
+              CODE_PATH: ${{ env.CODE_PATH }}
+              CMD: mvn clean test -B
+              ALL_IP: null
+            CONTAINER:
+              IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
+              RESOURCE_LIMITS:
+                cpu: 2
+                memory: 2Gi
+              RESOURCE_REQUIRE:
+                cpu: 2
+                memory: 2Gi
+
+      - uses: actions/upload-artifact@v3
+        if: always()
+        name: Upload test log
+        with:
+          name: testlog-${{ matrix.mode }}-java.txt
+          path: testlog.txt
+      - name: add markdown
+        if: always()
+        run: |
+          cat result.md >> $GITHUB_STEP_SUMMARY
+
+
+  e2e-go-test:
+    if: ${{ success() }}
+    name: GO E2E Test
+    needs: [docker, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: ["cluster","standalone"]
+        version: ${{ fromJSON(needs.docker.outputs.version-json) }}
+    steps:
+      - uses: apache/rocketmq-test-tool@java-dev
+        name: go e2e test
+        with:
+          yamlString: |
+            action: test
+            namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
+            askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
+            API_VERSION: v1
+            KIND: Pod
+            RESTART_POLICY: Never
+            ENV:
+              WAIT_TIME: 900
+              REPO_NAME: ${{ env.TEST_REPO_NAME }}
+              CODE: https://github.com/${{ env.TEST_REPO_NAME }}
+              BRANCH: main
+              CODE_PATH: golang
+              CMD: |
+                cd /root/code/golang && go mod init nacos_go_test && go mod tidy
+                gotestsum --junitfile ./target/surefire-reports/TEST-report.xml ./nacosgotest
+              ALL_IP: null
+            CONTAINER:
+              IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
+              RESOURCE_LIMITS:
+                cpu: 2
+                memory: 2Gi
+              RESOURCE_REQUIRE:
+                cpu: 2
+                memory: 2Gi
+      - uses: actions/upload-artifact@v3
+        if: always()
+        name: Upload test log
+        with:
+          name: testlog-${{ matrix.mode }}-go.txt
+          path: testlog.txt
+      - name: add markdown
+        if: always()
+        run: |
+          cat result.md >> $GITHUB_STEP_SUMMARY
+
+  e2e-cpp-test:
+    if: ${{ success() }}
+    name: Cpp E2E Test
+    needs: [docker, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: ["cluster","standalone"]
+        version: ${{ fromJSON(needs.docker.outputs.version-json) }}
+    steps:
+      - uses: apache/rocketmq-test-tool@java-dev
+        name: cpp e2e test
+        with:
+          yamlString: |
+            action: test
+            namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
+            askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
+            API_VERSION: v1
+            KIND: Pod
+            RESTART_POLICY: Never
+            ENV:
+              WAIT_TIME: 900
+              REPO_NAME: ${{ env.TEST_REPO_NAME }}
+              CODE: https://github.com/${{ env.TEST_REPO_NAME }}
+              BRANCH: main
+              CODE_PATH: cpp
+              CMD: |
+                yum-config-manager remove centos-sclo-rh
+                cd /root/code/cpp && make install
+                echo "export LD_LIBRARY_PATH=/usr/local/lib" >> ~/.bashrc  && source ~/.bashrc
+                cd /root/code/cpp/nacoscpptest
+                g++ nacos_test.cpp -o nacos_test -lgtest -lpthread -I/usr/local/include/nacos/ -L/usr/local/lib/  -lnacos-cli
+                chmod 777 nacos_test && ./nacos_test --gtest_output="xml:../target/surefire-reports/TEST-gtestresults.xml"
+              ALL_IP: null
+            CONTAINER:
+              IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
+              RESOURCE_LIMITS:
+                cpu: 2
+                memory: 2Gi
+              RESOURCE_REQUIRE:
+                cpu: 2
+                memory: 2Gi
+      - uses: actions/upload-artifact@v3
+        if: always()
+        name: Upload test log
+        with:
+          name: testlog-${{ matrix.mode }}-cpp.txt
+          path: testlog.txt
+      - name: add markdown
+        if: always()
+        run: |
+          cat result.md >> $GITHUB_STEP_SUMMARY
+
+  e2e-csharp-test:
+    if: ${{ success() }}
+    name: Csharp E2E Test
+    needs: [docker, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: ["cluster","standalone"]
+        version: ${{ fromJSON(needs.docker.outputs.version-json) }}
+    steps:
+      - uses: apache/rocketmq-test-tool@java-dev
+        name: csharp e2e test
+        with:
+          yamlString: |
+            action: test
+            namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
+            askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
+            API_VERSION: v1
+            KIND: Pod
+            RESTART_POLICY: Never
+            ENV:
+              WAIT_TIME: 900
+              REPO_NAME: ${{ env.TEST_REPO_NAME }}
+              CODE: https://github.com/${{ env.TEST_REPO_NAME }}
+              BRANCH: main
+              CODE_PATH: csharp
+              CMD: |
+                rpm -Uvh https://packages.microsoft.com/config/centos/7/packages-microsoft-prod.rpm
+                yum -y install dotnet-sdk-3.1 && yum -y install aspnetcore-runtime-7.0
+                cd /root/code/csharp/nacos-csharp-sdk-test && dotnet restore
+                dotnet test --logger:"junit;LogFilePath=../target/surefire-reports/TEST-result.xml"
+              ALL_IP: null
+            CONTAINER:
+              IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
+              RESOURCE_LIMITS:
+                cpu: 2
+                memory: 2Gi
+              RESOURCE_REQUIRE:
+                cpu: 2
+                memory: 2Gi
+      - uses: actions/upload-artifact@v3
+        if: always()
+        name: Upload test log
+        with:
+          name: testlog-${{ matrix.mode }}-csharp.txt
+          path: testlog.txt
+      - name: add markdown
+        if: always()
+        run: |
+          cat result.md >> $GITHUB_STEP_SUMMARY
+
+  e2e-nodejs-test:
+    if: ${{ success() }}
+    name: Nodejs E2E Test
+    needs: [docker, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: ["cluster","standalone"]
+        version: ${{ fromJSON(needs.docker.outputs.version-json) }}
+    steps:
+      - uses: apache/rocketmq-test-tool@java-dev
+        name: nodejs e2e test
+        with:
+          yamlString: |
+            action: test
+            namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
+            askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
+            API_VERSION: v1
+            KIND: Pod
+            RESTART_POLICY: Never
+            ENV:
+              WAIT_TIME: 900
+              REPO_NAME: ${{ env.TEST_REPO_NAME }}
+              CODE: https://github.com/${{ env.TEST_REPO_NAME }}
+              BRANCH: main
+              CODE_PATH: nodejs
+              CMD: |
+                cd /root/code/nodejs/nacosnodejstest && npm install
+                mocha test --reporter mocha-junit-reporter --reporter-options mochaFile=../target/surefire-reports/TEST-report.xml
+              ALL_IP: null
+            CONTAINER:
+              IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
+              RESOURCE_LIMITS:
+                cpu: 2
+                memory: 2Gi
+              RESOURCE_REQUIRE:
+                cpu: 2
+                memory: 2Gi
+      - uses: actions/upload-artifact@v3
+        if: always()
+        name: Upload test log
+        with:
+          name: testlog-${{ matrix.mode }}-nodejs.txt
+          path: testlog.txt
+      - name: add markdown
+        if: always()
+        run: |
+          cat result.md >> $GITHUB_STEP_SUMMARY
+
+  e2e-python-test:
+    if: ${{ success() }}
+    name: Python E2E Test
+    needs: [docker, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: ["cluster","standalone"]
+        version: ${{ fromJSON(needs.docker.outputs.version-json) }}
+    steps:
+      - uses: apache/rocketmq-test-tool@java-dev
+        name: python e2e test
+        with:
+          yamlString: |
+            action: test
+            namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
+            askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
+            API_VERSION: v1
+            KIND: Pod
+            RESTART_POLICY: Never
+            ENV:
+              WAIT_TIME: 900
+              REPO_NAME: ${{ env.TEST_REPO_NAME }}
+              CODE: https://github.com/${{ env.TEST_REPO_NAME }}
+              BRANCH: main
+              CODE_PATH: python
+              CMD: |
+                cd /root/code/python && pip3 install -r requirements.txt && source ~/.bashrc
+                cd nacospythontest && pytest --junitxml ../target/surefire-reports/TEST-report.xml test/*_test.py --log-cli-level=DEBUG
+              ALL_IP: null
+            CONTAINER:
+              IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
+              RESOURCE_LIMITS:
+                cpu: 2
+                memory: 2Gi
+              RESOURCE_REQUIRE:
+                cpu: 2
+                memory: 2Gi
+      - uses: actions/upload-artifact@v3
+        if: always()
+        name: Upload test log
+        with:
+          name: testlog-${{ matrix.mode }}-python.txt
+          path: testlog.txt
+      - name: add markdown
+        if: always()
+        run: |
+          cat result.md >> $GITHUB_STEP_SUMMARY
+
+
+  clean:
+    if: always()
+    name: Clean
+    needs: [docker, e2e-java-test, e2e-go-test, e2e-cpp-test, e2e-csharp-test, e2e-nodejs-test, e2e-python-test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: ["cluster","standalone","standalone_auth"]
+        version: ${{ fromJSON(needs.docker.outputs.version-json) }}
+    steps:
+      - uses: apache/rocketmq-test-tool@java-dev
+        name: clean
+        with:
+          yamlString: |
+            action: clean
+            namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
+            askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}

@@ -26,9 +26,10 @@
     <modelVersion>4.0.0</modelVersion>
     
     
-    <artifactId>nacos-contrl-plugin</artifactId>
+    <artifactId>nacos-control-plugin</artifactId>
     <name>nacos-control-plugin ${project.version}</name>
     <url>https://nacos.io</url>
+    <description>Nacos control plugin pom.xml file</description>
     
     <dependencies>
         <dependency>
@@ -36,7 +37,7 @@
             <artifactId>nacos-common</artifactId>
             <scope>provided</scope>
         </dependency>
-        
+    
     </dependencies>
 
 </project>

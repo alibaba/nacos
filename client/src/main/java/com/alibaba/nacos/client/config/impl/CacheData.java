@@ -28,18 +28,22 @@ import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListene
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.TenantUtil;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.NumberUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -51,14 +55,42 @@ public class CacheData {
     
     private static final Logger LOGGER = LogUtils.logger(CacheData.class);
     
-    static final int CONCURRENCY = 5;
+    private static final long DEFAULT_NOTIF_WARN_TIMEOUTS = 60000;
     
-    static ThreadFactory internalNotifierFactory = r -> {
-        Thread t = new Thread(r);
-        t.setName("nacos.client.cachedata.internal.notifier");
-        t.setDaemon(true);
-        return t;
-    };
+    private static long notifyWarnTimeout = DEFAULT_NOTIF_WARN_TIMEOUTS;
+    
+    static {
+        initNotifyWarnTimeout();
+    }
+    
+    static long initNotifyWarnTimeout() {
+        String notifyTimeouts = System.getProperty("nacos.listener.notify.warn.timeout");
+        if (StringUtils.isNotBlank(notifyTimeouts) && NumberUtils.isDigits(notifyTimeouts)) {
+            notifyWarnTimeout = Long.valueOf(notifyTimeouts);
+            LOGGER.info("config listener notify warn timeout millis is set to {}", notifyWarnTimeout);
+        } else {
+            LOGGER.info("config listener notify warn timeout millis use default {} millis ",
+                    DEFAULT_NOTIF_WARN_TIMEOUTS);
+            notifyWarnTimeout = DEFAULT_NOTIF_WARN_TIMEOUTS;
+        }
+        return notifyWarnTimeout;
+    }
+    
+    static ScheduledThreadPoolExecutor scheduledExecutor;
+    
+    static ScheduledThreadPoolExecutor getNotifyBlockMonitor() {
+        if (scheduledExecutor == null) {
+            synchronized (CacheData.class) {
+                if (scheduledExecutor == null) {
+                    scheduledExecutor = new ScheduledThreadPoolExecutor(1,
+                            new NameThreadFactory("com.alibaba.nacos.client.notify.block.monitor"),
+                            new ThreadPoolExecutor.DiscardPolicy());
+                    scheduledExecutor.setRemoveOnCancelPolicy(true);
+                }
+            }
+        }
+        return scheduledExecutor;
+    }
     
     static boolean initSnapshot;
     
@@ -67,10 +99,7 @@ public class CacheData {
         LOGGER.info("nacos.cache.data.init.snapshot = {} ", initSnapshot);
     }
     
-    static final ThreadPoolExecutor INTERNAL_NOTIFIER = new ThreadPoolExecutor(0, CONCURRENCY, 60L, TimeUnit.SECONDS,
-            new SynchronousQueue<>(), internalNotifierFactory);
-    
-    private final String name;
+    public final String envName;
     
     private final ConfigFilterChainManager configFilterChainManager;
     
@@ -99,9 +128,15 @@ public class CacheData {
     private volatile String encryptedDataKey;
     
     /**
-     * local cache change timestamp,for concurrent control.
+     * local cache change timestamp.
      */
-    private volatile AtomicLong lastModifiedTs = new AtomicLong(0);
+    private final AtomicLong lastModifiedTs = new AtomicLong(0);
+    
+    /**
+     * notify change flag,for notify&sync concurrent control. 1.reset to false if starting to sync with server. 2.update
+     * to true if receive config change notification.
+     */
+    private final AtomicBoolean receiveNotifyChanged = new AtomicBoolean(false);
     
     private int taskId;
     
@@ -110,7 +145,7 @@ public class CacheData {
     /**
      * if is cache data md5 sync with the server.
      */
-    private volatile boolean isSyncWithServer = false;
+    private final AtomicBoolean isConsistentWithServer = new AtomicBoolean();
     
     /**
      * if is cache data is discard,need to remove.
@@ -141,7 +176,11 @@ public class CacheData {
     
     public void setContent(String content) {
         this.content = content;
-        this.md5 = getMd5String();
+        this.md5 = getMd5String(this.content);
+    }
+    
+    public AtomicBoolean getReceiveNotifyChanged() {
+        return receiveNotifyChanged;
     }
     
     /**
@@ -194,8 +233,8 @@ public class CacheData {
         }
         
         if (listeners.addIfAbsent(wrap)) {
-            LOGGER.info("[{}] [add-listener] ok, tenant={}, dataId={}, group={}, cnt={}", name, tenant, dataId, group,
-                    listeners.size());
+            LOGGER.info("[{}] [add-listener] ok, tenant={}, dataId={}, group={}, cnt={}", envName, tenant, dataId,
+                    group, listeners.size());
         }
     }
     
@@ -210,8 +249,8 @@ public class CacheData {
         }
         ManagerListenerWrap wrap = new ManagerListenerWrap(listener);
         if (listeners.remove(wrap)) {
-            LOGGER.info("[{}] [remove-listener] ok, dataId={}, group={}, cnt={}", name, dataId, group,
-                    listeners.size());
+            LOGGER.info("[{}] [remove-listener] ok, dataId={}, group={},tenant={}, cnt={}", envName, dataId, group,
+                    tenant, listeners.size());
         }
     }
     
@@ -299,93 +338,173 @@ public class CacheData {
         return true;
     }
     
+    class LongNotifyHandler implements Runnable {
+        
+        public LongNotifyHandler(String listenerClass, String dataId, String group, String tenant, String md5,
+                long timeoutMills, Thread thread) {
+            this.listenerClass = listenerClass;
+            this.dataId = dataId;
+            this.group = group;
+            this.tenant = tenant;
+            this.md5 = md5;
+            this.timeoutMills = timeoutMills;
+            this.thread = thread;
+        }
+        
+        String listenerClass;
+        
+        long startTime = System.currentTimeMillis();
+        
+        long timeoutMills;
+        
+        String dataId;
+        
+        String group;
+        
+        String tenant;
+        
+        String md5;
+        
+        Thread thread;
+        
+        @Override
+        public void run() {
+            String blockTrace = getTrace(thread.getStackTrace(), 5);
+            LOGGER.warn("[{}] [notify-block-monitor] dataId={}, group={},tenant={}, md5={}, "
+                            + "receiveConfigInfo execute over {} mills，thread trace block : {}", envName, dataId, group, tenant,
+                    md5, timeoutMills, blockTrace);
+            NotifyCenter.publishEvent(
+                    new ChangeNotifyBlockEvent(this.listenerClass, dataId, group, tenant, this.startTime,
+                            System.currentTimeMillis(), blockTrace));
+        }
+        
+    }
+    
+    private static String getTrace(StackTraceElement[] stackTrace, int traceDeep) {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("\n");
+        int deep = 0;
+        for (StackTraceElement element : stackTrace) {
+            stringBuilder.append("\tat " + element + "\n");
+            deep++;
+            if (traceDeep > 0 && deep > traceDeep) {
+                stringBuilder.append("\tat ... \n");
+                break;
+            }
+        }
+        return stringBuilder.toString();
+    }
+    
     private void safeNotifyListener(final String dataId, final String group, final String content, final String type,
             final String md5, final String encryptedDataKey, final ManagerListenerWrap listenerWrap) {
         final Listener listener = listenerWrap.listener;
         if (listenerWrap.inNotifying) {
             LOGGER.warn(
-                    "[{}] [notify-currentSkip] dataId={}, group={}, md5={}, listener={}, listener is not finish yet,will try next time.",
-                    name, dataId, group, md5, listener);
+                    "[{}] [notify-currentSkip] dataId={}, group={},tenant={}, md5={}, listener={}, listener is not finish yet,will try next time.",
+                    envName, dataId, group, tenant, md5, listener);
             return;
         }
-        Runnable job = () -> {
-            long start = System.currentTimeMillis();
-            ClassLoader myClassLoader = Thread.currentThread().getContextClassLoader();
-            ClassLoader appClassLoader = listener.getClass().getClassLoader();
-            try {
-                if (listener instanceof AbstractSharedListener) {
-                    AbstractSharedListener adapter = (AbstractSharedListener) listener;
-                    adapter.fillContext(dataId, group);
-                    LOGGER.info("[{}] [notify-context] dataId={}, group={}, md5={}", name, dataId, group, md5);
-                }
-                // Before executing the callback, set the thread classloader to the classloader of
-                // the specific webapp to avoid exceptions or misuses when calling the spi interface in
-                // the callback method (this problem occurs only in multi-application deployment).
-                Thread.currentThread().setContextClassLoader(appClassLoader);
+        NotifyTask job = new NotifyTask() {
+            
+            @Override
+            public void run() {
+                long start = System.currentTimeMillis();
+                ClassLoader myClassLoader = Thread.currentThread().getContextClassLoader();
+                ClassLoader appClassLoader = listener.getClass().getClassLoader();
+                ScheduledFuture<?> timeSchedule = null;
                 
-                ConfigResponse cr = new ConfigResponse();
-                cr.setDataId(dataId);
-                cr.setGroup(group);
-                cr.setContent(content);
-                cr.setEncryptedDataKey(encryptedDataKey);
-                configFilterChainManager.doFilter(null, cr);
-                String contentTmp = cr.getContent();
-                listenerWrap.inNotifying = true;
-                listener.receiveConfigInfo(contentTmp);
-                // compare lastContent and content
-                if (listener instanceof AbstractConfigChangeListener) {
-                    Map<String, ConfigChangeItem> data = ConfigChangeHandler.getInstance()
-                            .parseChangeData(listenerWrap.lastContent, contentTmp, type);
-                    ConfigChangeEvent event = new ConfigChangeEvent(data);
-                    ((AbstractConfigChangeListener) listener).receiveConfigChange(event);
-                    listenerWrap.lastContent = contentTmp;
+                try {
+                    if (listener instanceof AbstractSharedListener) {
+                        AbstractSharedListener adapter = (AbstractSharedListener) listener;
+                        adapter.fillContext(dataId, group);
+                        LOGGER.info("[{}] [notify-context] dataId={}, group={},tenant={}, md5={}", envName, dataId,
+                                group, tenant, md5);
+                    }
+                    // Before executing the callback, set the thread classloader to the classloader of
+                    // the specific webapp to avoid exceptions or misuses when calling the spi interface in
+                    // the callback method (this problem occurs only in multi-application deployment).
+                    Thread.currentThread().setContextClassLoader(appClassLoader);
+                    
+                    ConfigResponse cr = new ConfigResponse();
+                    cr.setDataId(dataId);
+                    cr.setGroup(group);
+                    cr.setContent(content);
+                    cr.setEncryptedDataKey(encryptedDataKey);
+                    configFilterChainManager.doFilter(null, cr);
+                    String contentTmp = cr.getContent();
+                    timeSchedule = getNotifyBlockMonitor().schedule(
+                            new LongNotifyHandler(listener.getClass().getSimpleName(), dataId, group, tenant, md5,
+                                    notifyWarnTimeout, Thread.currentThread()), notifyWarnTimeout,
+                            TimeUnit.MILLISECONDS);
+                    listenerWrap.inNotifying = true;
+                    listener.receiveConfigInfo(contentTmp);
+                    // compare lastContent and content
+                    if (listener instanceof AbstractConfigChangeListener) {
+                        Map<String, ConfigChangeItem> data = ConfigChangeHandler.getInstance()
+                                .parseChangeData(listenerWrap.lastContent, contentTmp, type);
+                        ConfigChangeEvent event = new ConfigChangeEvent(data);
+                        ((AbstractConfigChangeListener) listener).receiveConfigChange(event);
+                        listenerWrap.lastContent = contentTmp;
+                    }
+                    
+                    listenerWrap.lastCallMd5 = md5;
+                    LOGGER.info(
+                            "[{}] [notify-ok] dataId={}, group={},tenant={}, md5={}, listener={} ,job run cost={} millis.",
+                            envName, dataId, group, tenant, md5, listener, (System.currentTimeMillis() - start));
+                } catch (NacosException ex) {
+                    LOGGER.error(
+                            "[{}] [notify-error] dataId={}, group={},tenant={},md5={}, listener={} errCode={} errMsg={},stackTrace :{}",
+                            envName, dataId, group, tenant, md5, listener, ex.getErrCode(), ex.getErrMsg(),
+                            getTrace(ex.getStackTrace(), 3));
+                } catch (Throwable t) {
+                    LOGGER.error("[{}] [notify-error] dataId={}, group={},tenant={}, md5={}, listener={} tx={}",
+                            envName, dataId, group, tenant, md5, listener, getTrace(t.getStackTrace(), 3));
+                } finally {
+                    listenerWrap.inNotifying = false;
+                    Thread.currentThread().setContextClassLoader(myClassLoader);
+                    if (timeSchedule != null) {
+                        timeSchedule.cancel(true);
+                    }
                 }
-                
-                listenerWrap.lastCallMd5 = md5;
-                LOGGER.info("[{}] [notify-ok] dataId={}, group={}, md5={}, listener={} ,cost={} millis.", name, dataId,
-                        group, md5, listener, (System.currentTimeMillis() - start));
-            } catch (NacosException ex) {
-                LOGGER.error("[{}] [notify-error] dataId={}, group={}, md5={}, listener={} errCode={} errMsg={}", name,
-                        dataId, group, md5, listener, ex.getErrCode(), ex.getErrMsg());
-            } catch (Throwable t) {
-                LOGGER.error("[{}] [notify-error] dataId={}, group={}, md5={}, listener={}", name, dataId, group, md5,
-                        listener, t);
-            } finally {
-                listenerWrap.inNotifying = false;
-                Thread.currentThread().setContextClassLoader(myClassLoader);
             }
         };
         
-        final long startNotify = System.currentTimeMillis();
         try {
             if (null != listener.getExecutor()) {
+                LOGGER.info(
+                        "[{}] [notify-listener] task submitted to user executor, dataId={}, group={},tenant={}, md5={}, listener={} ",
+                        envName, dataId, group, tenant, md5, listener);
+                job.async = true;
                 listener.getExecutor().execute(job);
             } else {
-                try {
-                    INTERNAL_NOTIFIER.submit(job);
-                } catch (RejectedExecutionException rejectedExecutionException) {
-                    LOGGER.warn(
-                            "[{}] [notify-blocked] dataId={}, group={}, md5={}, listener={}, no available internal notifier,will sync notifier ",
-                            name, dataId, group, md5, listener);
-                    job.run();
-                } catch (Throwable throwable) {
-                    LOGGER.error(
-                            "[{}] [notify-blocked] dataId={}, group={}, md5={}, listener={}, submit internal async task fail,throwable= ",
-                            name, dataId, group, md5, listener, throwable);
-                    job.run();
-                }
+                LOGGER.info(
+                        "[{}] [notify-listener] task execute in nacos thread, dataId={}, group={},tenant={}, md5={}, listener={} ",
+                        envName, dataId, group, tenant, md5, listener);
+                job.run();
             }
         } catch (Throwable t) {
-            LOGGER.error("[{}] [notify-error] dataId={}, group={}, md5={}, listener={} throwable={}", name, dataId,
-                    group, md5, listener, t.getCause());
+            LOGGER.error("[{}] [notify-listener-error] dataId={}, group={},tenant={}, md5={}, listener={} throwable={}",
+                    envName, dataId, group, tenant, md5, listener, t.getCause());
         }
-        final long finishNotify = System.currentTimeMillis();
-        LOGGER.info("[{}] [notify-listener] time cost={}ms in ClientWorker, dataId={}, group={}, md5={}, listener={} ",
-                name, (finishNotify - startNotify), dataId, group, md5, listener);
     }
     
-    public String getMd5String() {
-        return (null == content) ? Constants.NULL : MD5Utils.md5Hex(content, Constants.ENCODE);
+    @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
+    abstract class NotifyTask implements Runnable {
+        
+        boolean async = false;
+        
+        public boolean isAsync() {
+            return async;
+        }
+        
+        public void setAsync(boolean async) {
+            this.async = async;
+        }
+        
+    }
+    
+    public static String getMd5String(String config) {
+        return (null == config) ? Constants.NULL : MD5Utils.md5Hex(config, Constants.ENCODE);
     }
     
     private String loadCacheContentFromDiskLocal(String name, String dataId, String group, String tenant) {
@@ -398,14 +517,14 @@ public class CacheData {
      * 1.first add listener.default is false;need to check. 2.receive config change notify,set false;need to check.
      * 3.last listener is remove,set to false;need to check
      *
-     * @return the flag if sync with server
+     * @return
      */
-    public boolean isSyncWithServer() {
-        return isSyncWithServer;
+    public boolean isConsistentWithServer() {
+        return isConsistentWithServer.get();
     }
     
-    public void setSyncWithServer(boolean syncWithServer) {
-        isSyncWithServer = syncWithServer;
+    public void setConsistentWithServer(boolean consistentWithServer) {
+        isConsistentWithServer.set(consistentWithServer);
     }
     
     public boolean isDiscard() {
@@ -416,26 +535,26 @@ public class CacheData {
         isDiscard = discard;
     }
     
-    public CacheData(ConfigFilterChainManager configFilterChainManager, String name, String dataId, String group) {
-        this(configFilterChainManager, name, dataId, group, TenantUtil.getUserTenantForAcm());
+    public CacheData(ConfigFilterChainManager configFilterChainManager, String envName, String dataId, String group) {
+        this(configFilterChainManager, envName, dataId, group, TenantUtil.getUserTenantForAcm());
     }
     
-    public CacheData(ConfigFilterChainManager configFilterChainManager, String name, String dataId, String group,
+    public CacheData(ConfigFilterChainManager configFilterChainManager, String envName, String dataId, String group,
             String tenant) {
         if (null == dataId || null == group) {
             throw new IllegalArgumentException("dataId=" + dataId + ", group=" + group);
         }
         this.configFilterChainManager = configFilterChainManager;
-        this.name = name;
+        this.envName = envName;
         this.dataId = dataId;
         this.group = group;
         this.tenant = tenant;
         this.listeners = new CopyOnWriteArrayList<>();
         this.isInitializing = true;
         if (initSnapshot) {
-            this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
-            this.encryptedDataKey = loadEncryptedDataKeyFromDiskLocal(name, dataId, group, tenant);
-            this.md5 = getMd5String();
+            this.content = loadCacheContentFromDiskLocal(envName, dataId, group, tenant);
+            this.encryptedDataKey = loadEncryptedDataKeyFromDiskLocal(envName, dataId, group, tenant);
+            this.md5 = getMd5String(this.content);
         }
     }
     
@@ -449,14 +568,15 @@ public class CacheData {
         this.encryptedDataKey = encryptedDataKey;
     }
     
-    private String loadEncryptedDataKeyFromDiskLocal(String name, String dataId, String group, String tenant) {
-        String encryptedDataKey = LocalEncryptedDataKeyProcessor.getEncryptDataKeyFailover(name, dataId, group, tenant);
+    private String loadEncryptedDataKeyFromDiskLocal(String envName, String dataId, String group, String tenant) {
+        String encryptedDataKey = LocalEncryptedDataKeyProcessor.getEncryptDataKeyFailover(envName, dataId, group,
+                tenant);
         
         if (encryptedDataKey != null) {
             return encryptedDataKey;
         }
         
-        return LocalEncryptedDataKeyProcessor.getEncryptDataKeySnapshot(name, dataId, group, tenant);
+        return LocalEncryptedDataKeyProcessor.getEncryptDataKeySnapshot(envName, dataId, group, tenant);
     }
     
     private static class ManagerListenerWrap {
@@ -482,8 +602,7 @@ public class CacheData {
         }
         
         ManagerListenerWrap(Listener listener, String md5, String lastContent) {
-            this.listener = listener;
-            this.lastCallMd5 = md5;
+            this(listener, md5);
             this.lastContent = lastContent;
         }
         

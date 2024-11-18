@@ -17,82 +17,132 @@
 package com.alibaba.nacos.plugin.datasource.impl.derby;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import com.alibaba.nacos.plugin.datasource.model.MapperContext;
+import com.alibaba.nacos.plugin.datasource.model.MapperResult;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-public class TenantCapacityMapperByDerbyTest {
+import java.sql.Timestamp;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class TenantCapacityMapperByDerbyTest {
+    
+    String tenantId = "tenantId";
+    
+    MapperContext context;
     
     private TenantCapacityMapperByDerby tenantCapacityMapperByDerby;
     
-    @Before
-    public void setUp() throws Exception {
+    private Object modified = new Timestamp(System.currentTimeMillis());
+    
+    private Object oldModified = new Timestamp(System.currentTimeMillis());
+    
+    private Object usage = 1;
+    
+    @BeforeEach
+    void setUp() throws Exception {
         tenantCapacityMapperByDerby = new TenantCapacityMapperByDerby();
+        context = new MapperContext();
+        context.putUpdateParameter(FieldConstant.GMT_MODIFIED, modified);
+        context.putWhereParameter(FieldConstant.GMT_MODIFIED, oldModified);
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
+        context.putWhereParameter(FieldConstant.USAGE, usage);
+        
     }
     
     @Test
-    public void testGetTableName() {
+    void testGetTableName() {
         String tableName = tenantCapacityMapperByDerby.getTableName();
-        Assert.assertEquals(tableName, TableConstant.TENANT_CAPACITY);
+        assertEquals(TableConstant.TENANT_CAPACITY, tableName);
     }
     
     @Test
-    public void testGetDataSource() {
+    void testGetDataSource() {
         String dataSource = tenantCapacityMapperByDerby.getDataSource();
-        Assert.assertEquals(dataSource, DataSourceConstant.DERBY);
+        assertEquals(DataSourceConstant.DERBY, dataSource);
     }
     
     @Test
-    public void testIncrementUsageWithDefaultQuotaLimit() {
-        String sql = tenantCapacityMapperByDerby.incrementUsageWithDefaultQuotaLimit();
-        Assert.assertEquals(sql,
-                "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ? AND usage <"
-                        + " ? AND quota = 0");
+    void testIncrementUsageWithDefaultQuotaLimit() {
+        MapperResult mapperResult = tenantCapacityMapperByDerby.incrementUsageWithDefaultQuotaLimit(context);
+        assertEquals(mapperResult.getSql(),
+                "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ? AND usage <" + " ? AND quota = 0");
+        assertArrayEquals(new Object[] {modified, tenantId, usage}, mapperResult.getParamList().toArray());
     }
     
     @Test
-    public void testIncrementUsageWithQuotaLimit() {
-        String sql = tenantCapacityMapperByDerby.incrementUsageWithQuotaLimit();
-        Assert.assertEquals(sql,
-                "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ? AND usage < "
-                        + "quota AND quota != 0");
+    void testIncrementUsageWithQuotaLimit() {
+        MapperResult mapperResult = tenantCapacityMapperByDerby.incrementUsageWithQuotaLimit(context);
+        assertEquals(mapperResult.getSql(),
+                "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ? AND usage < " + "quota AND quota != 0");
+        assertArrayEquals(new Object[] {modified, tenantId}, mapperResult.getParamList().toArray());
     }
     
     @Test
-    public void testIncrementUsage() {
-        String sql = tenantCapacityMapperByDerby.incrementUsage();
-        Assert.assertEquals(sql,
-                "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ?");
+    void testIncrementUsage() {
+        MapperResult mapperResult = tenantCapacityMapperByDerby.incrementUsage(context);
+        assertEquals("UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ?", mapperResult.getSql());
+        assertArrayEquals(new Object[] {modified, tenantId}, mapperResult.getParamList().toArray());
     }
     
     @Test
-    public void testDecrementUsage() {
-        String sql = tenantCapacityMapperByDerby.decrementUsage();
-        Assert.assertEquals(sql,
-                "UPDATE tenant_capacity SET usage = usage - 1, gmt_modified = ? WHERE tenant_id = ? AND usage > 0");
+    void testDecrementUsage() {
+        MapperResult mapperResult = tenantCapacityMapperByDerby.decrementUsage(context);
+        assertEquals("UPDATE tenant_capacity SET usage = usage - 1, gmt_modified = ? WHERE tenant_id = ? AND usage > 0",
+                mapperResult.getSql());
+        assertArrayEquals(new Object[] {modified, tenantId}, mapperResult.getParamList().toArray());
     }
     
     @Test
-    public void testCorrectUsage() {
-        String sql = tenantCapacityMapperByDerby.correctUsage();
-        Assert.assertEquals(sql,
-                "UPDATE tenant_capacity SET usage = (SELECT count(*) FROM config_info WHERE tenant_id = ?), "
-                        + "gmt_modified = ? WHERE tenant_id = ?");
+    void testCorrectUsage() {
+        MapperResult mapperResult = tenantCapacityMapperByDerby.correctUsage(context);
+        assertEquals(mapperResult.getSql(), "UPDATE tenant_capacity SET usage = (SELECT count(*) FROM config_info WHERE tenant_id = ?), "
+                + "gmt_modified = ? WHERE tenant_id = ?");
+        assertArrayEquals(new Object[] {tenantId, modified, tenantId}, mapperResult.getParamList().toArray());
+        
     }
     
     @Test
-    public void testGetCapacityList4CorrectUsage() {
-        String sql = tenantCapacityMapperByDerby.getCapacityList4CorrectUsage();
-        Assert.assertEquals(sql,
-                "SELECT id, tenant_id FROM tenant_capacity WHERE id>? OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
+    void testGetCapacityList4CorrectUsage() {
+        Object id = 1;
+        Object limit = 10;
+        context.putWhereParameter(FieldConstant.ID, id);
+        context.putWhereParameter(FieldConstant.LIMIT_SIZE, limit);
+        MapperResult mapperResult = tenantCapacityMapperByDerby.getCapacityList4CorrectUsage(context);
+        assertEquals("SELECT id, tenant_id FROM tenant_capacity WHERE id>? OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY", mapperResult.getSql());
+        assertArrayEquals(new Object[] {id, limit}, mapperResult.getParamList().toArray());
     }
     
     @Test
-    public void testInsertTenantCapacity() {
-        String sql = tenantCapacityMapperByDerby.insertTenantCapacity();
-        Assert.assertEquals(sql,
+    void testInsertTenantCapacity() {
+        Object group = "group";
+        Object quota = "quota";
+        Object maxAggrSize = 10;
+        Object maxAggrCount = 3;
+        Object maxSize = 1;
+        Object createTime = new Timestamp(System.currentTimeMillis());
+        
+        context.putUpdateParameter(FieldConstant.TENANT_ID, tenantId);
+        context.putUpdateParameter(FieldConstant.GROUP_ID, group);
+        context.putUpdateParameter(FieldConstant.QUOTA, quota);
+        context.putUpdateParameter(FieldConstant.MAX_SIZE, maxSize);
+        context.putUpdateParameter(FieldConstant.MAX_AGGR_SIZE, maxAggrSize);
+        context.putUpdateParameter(FieldConstant.MAX_AGGR_COUNT, maxAggrCount);
+        context.putUpdateParameter(FieldConstant.GMT_MODIFIED, modified);
+        
+        context.putUpdateParameter(FieldConstant.GMT_CREATE, createTime);
+        
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
+        
+        MapperResult mapperResult = tenantCapacityMapperByDerby.insertTenantCapacity(context);
+        assertEquals(mapperResult.getSql(),
                 "INSERT INTO tenant_capacity (tenant_id, quota, usage, max_size, max_aggr_count, max_aggr_size, "
                         + "gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE tenant_id=?;");
+        assertArrayEquals(new Object[] {tenantId, quota, maxSize, maxAggrCount, maxAggrSize, createTime, modified, tenantId},
+                mapperResult.getParamList().toArray());
     }
 }

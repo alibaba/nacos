@@ -34,7 +34,7 @@ import java.util.Set;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Component
-@ConfigurationProperties(prefix = "nacos.core.protocol.raft")
+@ConfigurationProperties(prefix = RaftSysConstants.RAFT_CONFIG_PREFIX)
 public class RaftConfig implements Config<RequestProcessor4CP> {
     
     private static final long serialVersionUID = 9174789390266064002L;
@@ -44,6 +44,8 @@ public class RaftConfig implements Config<RequestProcessor4CP> {
     private String selfAddress;
     
     private Set<String> members = Collections.synchronizedSet(new HashSet<>());
+    
+    private boolean strictMode;
     
     @Override
     public void setMembers(String self, Set<String> members) {
@@ -95,10 +97,18 @@ public class RaftConfig implements Config<RequestProcessor4CP> {
         return data.getOrDefault(key, defaultVal);
     }
     
+    public void setStrictMode(boolean strictMode) {
+        this.strictMode = strictMode;
+    }
+    
+    public boolean isStrictMode() {
+        return strictMode;
+    }
+    
     @Override
     public String toString() {
         try {
-            return JacksonUtils.toJson(data);
+            return JacksonUtils.toJson(this);
         } catch (Exception e) {
             return String.valueOf(data);
         }

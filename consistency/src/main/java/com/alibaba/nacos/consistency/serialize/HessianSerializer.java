@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.consistency.serialize;
 
+import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.consistency.Serializer;
 import com.caucho.hessian.io.Hessian2Input;
@@ -37,7 +38,7 @@ public class HessianSerializer implements Serializer {
     
     private static final String NAME = "Hessian";
     
-    private SerializerFactory serializerFactory = new SerializerFactory();
+    private SerializerFactory serializerFactory = new NacosHessianSerializerFactory();
     
     public HessianSerializer() {
     }
@@ -49,7 +50,15 @@ public class HessianSerializer implements Serializer {
     
     @Override
     public <T> T deserialize(byte[] data, Class<T> cls) {
-        return deserialize(data);
+        T result = deserialize(data);
+        if (result == null) {
+            return null;
+        }
+        if (cls.isAssignableFrom(result.getClass())) {
+            return result;
+        }
+        throw new NacosDeserializationException(cls, new ClassCastException(
+                "%s cannot be cast to %s".format(result.getClass().getCanonicalName(), cls.getCanonicalName())));
     }
     
     @Override
@@ -61,7 +70,7 @@ public class HessianSerializer implements Serializer {
         if (ByteUtils.isEmpty(data)) {
             return null;
         }
-    
+        
         Hessian2Input input = new Hessian2Input(new ByteArrayInputStream(data));
         input.setSerializerFactory(serializerFactory);
         Object resultObject;

@@ -50,6 +50,16 @@ public class ConfigForm implements Serializable {
     
     private String configTags;
     
+    private String encryptedDataKey;
+    
+    private String grayName;
+    
+    private String grayRuleExp;
+    
+    private String grayVersion;
+    
+    private int grayPriority;
+    
     private String desc;
     
     private String use;
@@ -184,6 +194,46 @@ public class ConfigForm implements Serializable {
         this.schema = schema;
     }
     
+    public String getEncryptedDataKey() {
+        return encryptedDataKey;
+    }
+    
+    public void setEncryptedDataKey(String encryptedDataKey) {
+        this.encryptedDataKey = encryptedDataKey;
+    }
+    
+    public String getGrayName() {
+        return grayName;
+    }
+    
+    public void setGrayName(String grayName) {
+        this.grayName = grayName;
+    }
+    
+    public String getGrayRuleExp() {
+        return grayRuleExp;
+    }
+    
+    public void setGrayRuleExp(String grayRuleExp) {
+        this.grayRuleExp = grayRuleExp;
+    }
+    
+    public String getGrayVersion() {
+        return grayVersion;
+    }
+    
+    public void setGrayVersion(String grayVersion) {
+        this.grayVersion = grayVersion;
+    }
+    
+    public int getGrayPriority() {
+        return grayPriority;
+    }
+    
+    public void setGrayPriority(int grayPriority) {
+        this.grayPriority = grayPriority;
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -198,13 +248,16 @@ public class ConfigForm implements Serializable {
                 .equals(appName, configForm.appName) && Objects.equals(srcUser, configForm.srcUser) && Objects
                 .equals(configTags, configForm.configTags) && Objects.equals(desc, configForm.desc) && Objects
                 .equals(use, configForm.use) && Objects.equals(effect, configForm.effect) && Objects
-                .equals(type, configForm.type) && Objects.equals(schema, configForm.schema);
+                .equals(type, configForm.type) && Objects.equals(schema, configForm.schema) && Objects
+                .equals(encryptedDataKey, configForm.encryptedDataKey) && Objects
+                .equals(grayName, configForm.grayName) && Objects.equals(grayVersion, configForm.grayVersion) && Objects
+                .equals(grayPriority, configForm.grayPriority);
     }
     
     @Override
     public int hashCode() {
         return Objects.hash(dataId, group, namespaceId, content, tag, appName, srcUser, configTags, desc, use, effect, type,
-                schema);
+                schema, encryptedDataKey, grayName, grayVersion, grayPriority);
     }
     
     @Override
@@ -213,7 +266,9 @@ public class ConfigForm implements Serializable {
                 + ", content='" + content + '\'' + ", tag='" + tag + '\'' + ", appName='" + appName + '\''
                 + ", srcUser='" + srcUser + '\'' + ", configTags='" + configTags + '\'' + ", desc='" + desc + '\''
                 + ", use='" + use + '\'' + ", effect='" + effect + '\'' + ", type='" + type + '\'' + ", schema='"
-                + schema + '\'' + '}';
+                + schema + '\'' + "encryptedDataKey" + encryptedDataKey + '\'' + ", grayName='" + grayName + '\''
+                + ", grayRule='" + grayRuleExp + '\'' + ", grayVersion='" + grayVersion + '\'' + ", grayPriority="
+                + grayPriority + '}';
     }
     
     /**

@@ -18,21 +18,23 @@
 
 package com.alibaba.nacos.client.config.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class SnapShotSwitchTest {
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class SnapShotSwitchTest {
     
     @Test
-    public void testGetIsSnapShot() {
+    void testGetIsSnapShot() {
         Boolean isSnapShot = SnapShotSwitch.getIsSnapShot();
-        Assert.assertTrue(isSnapShot);
+        assertTrue(isSnapShot);
         
         SnapShotSwitch.setIsSnapShot(false);
-        Assert.assertFalse(SnapShotSwitch.getIsSnapShot());
+        assertFalse(SnapShotSwitch.getIsSnapShot());
         
         SnapShotSwitch.setIsSnapShot(true);
-        Assert.assertTrue(SnapShotSwitch.getIsSnapShot());
+        assertTrue(SnapShotSwitch.getIsSnapShot());
     }
     
 }

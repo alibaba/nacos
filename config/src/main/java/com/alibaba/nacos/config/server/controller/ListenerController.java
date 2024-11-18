@@ -16,12 +16,17 @@
 
 package com.alibaba.nacos.config.server.controller;
 
+import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.model.SampleResult;
+import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,6 +43,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping(Constants.LISTENER_CONTROLLER_PATH)
+@ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
 public class ListenerController {
     
     private final ConfigSubService configSubService;
@@ -50,6 +56,7 @@ public class ListenerController {
      * Get subscribe information from client side.
      */
     @GetMapping
+    @Secured(resource = Constants.LISTENER_CONTROLLER_PATH, action = ActionTypes.READ, signType = SignType.CONFIG)
     public GroupkeyListenserStatus getAllSubClientConfigByIp(@RequestParam("ip") String ip,
             @RequestParam(value = "all", required = false) boolean all,
             @RequestParam(value = "tenant", required = false) String tenant,

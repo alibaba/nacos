@@ -17,21 +17,25 @@
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.model.event.DerbyImportEvent;
-import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
-import com.alibaba.nacos.config.server.service.datasource.LocalDataSourceServiceImpl;
-import com.alibaba.nacos.config.server.service.dump.DumpService;
-import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
-import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.configuration.ConfigCommonConfig;
+import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
+import com.alibaba.nacos.config.server.service.dump.DumpService;
+import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.core.utils.WebUtils;
+import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
+import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
+import com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl;
+import com.alibaba.nacos.persistence.model.event.DerbyImportEvent;
+import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -56,6 +60,7 @@ import java.util.Objects;
  */
 @RestController
 @RequestMapping(Constants.OPS_CONTROLLER_PATH)
+@ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
 public class ConfigOpsController {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigOpsController.class);
@@ -70,6 +75,7 @@ public class ConfigOpsController {
      * Manually trigger dump of a local configuration file.
      */
     @PostMapping(value = "/localCache")
+    @Secured(resource = Constants.OPS_CONTROLLER_PATH, action = ActionTypes.WRITE, signType = SignType.CONSOLE)
     public String updateLocalCacheFromStore() {
         LOGGER.info("start to dump all data from store.");
         dumpService.dumpAll();
@@ -78,6 +84,7 @@ public class ConfigOpsController {
     }
     
     @PutMapping(value = "/log")
+    @Secured(resource = Constants.OPS_CONTROLLER_PATH, action = ActionTypes.WRITE, signType = SignType.CONSOLE)
     public String setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
         LogUtil.setLogLevel(logName, logLevel);
         return HttpServletResponse.SC_OK + "";
@@ -97,11 +104,15 @@ public class ConfigOpsController {
         String limitSign = "ROWS FETCH NEXT";
         String limit = " OFFSET 0 ROWS FETCH NEXT 1000 ROWS ONLY";
         try {
-            if (!PropertyUtil.isEmbeddedStorage()) {
+            if (!DatasourceConfiguration.isEmbeddedStorage()) {
                 return RestResultUtils.failed("The current storage mode is not Derby");
             }
-            LocalDataSourceServiceImpl dataSourceService = (LocalDataSourceServiceImpl) DynamicDataSource
-                    .getInstance().getDataSource();
+            if (!ConfigCommonConfig.getInstance().isDerbyOpsEnabled()) {
+                return RestResultUtils.failed(
+                        "Derby ops is disabled, please set `nacos.config.derby.ops.enabled=true` to enabled this feature.");
+            }
+            LocalDataSourceServiceImpl dataSourceService = (LocalDataSourceServiceImpl) DynamicDataSource.getInstance()
+                    .getDataSource();
             if (StringUtils.startsWithIgnoreCase(sql, selectSign)) {
                 if (!StringUtils.containsIgnoreCase(sql, limitSign)) {
                     sql += limit;
@@ -129,8 +140,13 @@ public class ConfigOpsController {
     @Secured(action = ActionTypes.WRITE, resource = "nacos/admin")
     public DeferredResult<RestResult<String>> importDerby(@RequestParam(value = "file") MultipartFile multipartFile) {
         DeferredResult<RestResult<String>> response = new DeferredResult<>();
-        if (!PropertyUtil.isEmbeddedStorage()) {
+        if (!DatasourceConfiguration.isEmbeddedStorage()) {
             response.setResult(RestResultUtils.failed("Limited to embedded storage mode"));
+            return response;
+        }
+        if (!ConfigCommonConfig.getInstance().isDerbyOpsEnabled()) {
+            response.setResult(RestResultUtils.failed(
+                    "Derby ops is disabled, please set `nacos.config.derby.ops.enabled=true` to enabled this feature."));
             return response;
         }
         DatabaseOperate databaseOperate = ApplicationUtils.getBean(DatabaseOperate.class);

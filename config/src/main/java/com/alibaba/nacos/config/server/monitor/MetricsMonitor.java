@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.config.server.monitor;
 
-import com.alibaba.nacos.common.utils.TopnCounterMetricsContainer;
 import com.alibaba.nacos.core.monitor.NacosMeterRegistryCenter;
+import com.alibaba.nacos.core.monitor.topn.StringTopNCounter;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.ImmutableTag;
 import io.micrometer.core.instrument.Tag;
@@ -73,7 +73,7 @@ public class MetricsMonitor {
     /**
      * config change count.
      */
-    private static TopnCounterMetricsContainer configChangeCount = new TopnCounterMetricsContainer();
+    private static StringTopNCounter configChangeCount = new StringTopNCounter();
     
     static {
         ImmutableTag immutableTag = new ImmutableTag("module", "config");
@@ -102,7 +102,7 @@ public class MetricsMonitor {
         tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "notifyTask"));
         NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor", tags, notifyTask);
-    
+        
         tags = new ArrayList<>();
         tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "notifyClientTask"));
@@ -112,7 +112,7 @@ public class MetricsMonitor {
         tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "dumpTask"));
         NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor", tags, dumpTask);
-    
+        
         tags = new ArrayList<>();
         tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "fuzzySearch"));
@@ -124,7 +124,7 @@ public class MetricsMonitor {
         tags = new ArrayList<>();
         tags.add(new ImmutableTag("version", "v1"));
         NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_config_subscriber", tags, configSubscriber.get("v1"));
-    
+        
         tags = new ArrayList<>();
         tags.add(new ImmutableTag("version", "v2"));
         NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_config_subscriber", tags, configSubscriber.get("v2"));
@@ -166,48 +166,55 @@ public class MetricsMonitor {
         return configSubscriber.get(version);
     }
     
-    public static TopnCounterMetricsContainer getConfigChangeCount() {
+    public static StringTopNCounter getConfigChangeCount() {
         return configChangeCount;
     }
     
     public static Timer getReadConfigRtTimer() {
-        return NacosMeterRegistryCenter.timer(METER_REGISTRY, "nacos_timer", "module", "config", "name", "readConfigRt");
+        return NacosMeterRegistryCenter
+                .timer(METER_REGISTRY, "nacos_timer", "module", "config", "name", "readConfigRt");
     }
     
     public static Timer getReadConfigRpcRtTimer() {
-        return NacosMeterRegistryCenter.timer(METER_REGISTRY, "nacos_timer", "module", "config", "name", "readConfigRpcRt");
+        return NacosMeterRegistryCenter
+                .timer(METER_REGISTRY, "nacos_timer", "module", "config", "name", "readConfigRpcRt");
     }
     
     public static Timer getWriteConfigRtTimer() {
-        return NacosMeterRegistryCenter.timer(METER_REGISTRY, "nacos_timer", "module", "config", "name", "writeConfigRt");
+        return NacosMeterRegistryCenter
+                .timer(METER_REGISTRY, "nacos_timer", "module", "config", "name", "writeConfigRt");
     }
     
     public static Timer getWriteConfigRpcRtTimer() {
-        return NacosMeterRegistryCenter.timer(METER_REGISTRY, "nacos_timer", "module", "config", "name", "writeConfigRpcRt");
+        return NacosMeterRegistryCenter
+                .timer(METER_REGISTRY, "nacos_timer", "module", "config", "name", "writeConfigRpcRt");
     }
     
     public static Timer getNotifyRtTimer() {
         return NacosMeterRegistryCenter.timer(METER_REGISTRY, "nacos_timer", "module", "config", "name", "notifyRt");
     }
     
+    public static Timer getDumpRtTimer() {
+        return NacosMeterRegistryCenter.timer(METER_REGISTRY, "nacos_timer", "module", "config", "name", "dumpRt");
+    }
+    
     public static Counter getIllegalArgumentException() {
-        return NacosMeterRegistryCenter.counter(METER_REGISTRY, "nacos_exception", "module", "config", "name", "illegalArgument");
+        return NacosMeterRegistryCenter
+                .counter(METER_REGISTRY, "nacos_exception", "module", "config", "name", "illegalArgument");
     }
     
     public static Counter getNacosException() {
         return NacosMeterRegistryCenter.counter(METER_REGISTRY, "nacos_exception", "module", "config", "name", "nacos");
     }
     
-    public static Counter getDbException() {
-        return NacosMeterRegistryCenter.counter(METER_REGISTRY, "nacos_exception", "module", "config", "name", "db");
-    }
-    
     public static Counter getConfigNotifyException() {
-        return NacosMeterRegistryCenter.counter(METER_REGISTRY, "nacos_exception", "module", "config", "name", "configNotify");
+        return NacosMeterRegistryCenter
+                .counter(METER_REGISTRY, "nacos_exception", "module", "config", "name", "configNotify");
     }
     
     public static Counter getUnhealthException() {
-        return NacosMeterRegistryCenter.counter(METER_REGISTRY, "nacos_exception", "module", "config", "name", "unhealth");
+        return NacosMeterRegistryCenter
+                .counter(METER_REGISTRY, "nacos_exception", "module", "config", "name", "unhealth");
     }
     
     public static void incrementConfigChangeCount(String tenant, String group, String dataId) {

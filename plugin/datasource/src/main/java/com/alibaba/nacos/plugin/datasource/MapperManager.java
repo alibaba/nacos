@@ -64,12 +64,10 @@ public class MapperManager {
     /**
      * The init method.
      */
-    public void loadInitial() {
+    public synchronized void loadInitial() {
         Collection<Mapper> mappers = NacosServiceLoader.load(Mapper.class);
         for (Mapper mapper : mappers) {
-            Map<String, Mapper> mapperMap = MAPPER_SPI_MAP.getOrDefault(mapper.getDataSource(), new HashMap<>(16));
-            mapperMap.put(mapper.getTableName(), mapper);
-            MAPPER_SPI_MAP.put(mapper.getDataSource(), mapperMap);
+            putMapper(mapper);
             LOGGER.info("[MapperManager] Load Mapper({}) datasource({}) tableName({}) successfully.",
                     mapper.getClass(), mapper.getDataSource(), mapper.getTableName());
         }
@@ -83,10 +81,14 @@ public class MapperManager {
         if (Objects.isNull(mapper)) {
             return;
         }
-        Map<String, Mapper> mapperMap = MAPPER_SPI_MAP.getOrDefault(mapper.getDataSource(), new HashMap<>(16));
-        mapperMap.put(mapper.getTableName(), mapper);
-        MAPPER_SPI_MAP.put(mapper.getDataSource(), mapperMap);
-        LOGGER.warn("[MapperManager] join successfully.");
+        putMapper(mapper);
+        LOGGER.info("[MapperManager] join successfully.");
+    }
+    
+    private static void putMapper(Mapper mapper) {
+        Map<String, Mapper> mapperMap = MAPPER_SPI_MAP.computeIfAbsent(mapper.getDataSource(), key ->
+                new HashMap<>(16));
+        mapperMap.putIfAbsent(mapper.getTableName(), mapper);
     }
     
     /**
@@ -97,7 +99,9 @@ public class MapperManager {
      * @return mapper.
      */
     public <R extends Mapper> R findMapper(String dataSource, String tableName) {
-        LOGGER.info("[MapperManager] findMapper dataSource: {}, tableName: {}", dataSource, tableName);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("[MapperManager] findMapper dataSource: {}, tableName: {}", dataSource, tableName);
+        }
         if (StringUtils.isBlank(dataSource) || StringUtils.isBlank(tableName)) {
             throw new NacosRuntimeException(FIND_DATASOURCE_ERROR_CODE, "dataSource or tableName is null");
         }
@@ -112,8 +116,7 @@ public class MapperManager {
                     "[MapperManager] Failed to find the table ,tableName:" + tableName);
         }
         if (dataSourceLogEnable) {
-            MapperProxy mapperProxy = new MapperProxy();
-            return (R) mapperProxy.createProxy(mapper);
+            return MapperProxy.createSingleProxy(mapper);
         }
         return (R) mapper;
     }

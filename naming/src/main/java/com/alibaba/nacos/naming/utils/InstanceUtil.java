@@ -18,12 +18,15 @@ package com.alibaba.nacos.naming.utils;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.pojo.instance.InstanceIdGeneratorManager;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -84,7 +87,7 @@ public final class InstanceUtil {
 
     /**
      * Deepcopy one instance.
-     * 
+     *
      * @param source instance to be deepcopy
      */
     public static Instance deepCopy(Instance source) {
@@ -100,5 +103,34 @@ public final class InstanceUtil {
         target.setServiceName(source.getServiceName());
         target.setMetadata(new HashMap<>(source.getMetadata()));
         return target;
+    }
+    
+    /**
+     * If the instance id is empty, use the default-instance-id-generator method to set the instance id.
+     *
+     * @param instance    instance from request
+     * @param groupedServiceName groupedServiceName from service
+     */
+    public static void setInstanceIdIfEmpty(Instance instance, String groupedServiceName) {
+        if (null != instance && StringUtils.isEmpty(instance.getInstanceId())) {
+            if (StringUtils.isBlank(instance.getServiceName())) {
+                instance.setServiceName(groupedServiceName);
+            }
+            instance.setInstanceId(InstanceIdGeneratorManager.generateInstanceId(instance));
+        }
+    }
+    
+    /**
+     * Batch set instance id if empty.
+     *
+     * @param instances   instances from request
+     * @param groupedServiceName groupedServiceName from service
+     */
+    public static void batchSetInstanceIdIfEmpty(List<Instance> instances, String groupedServiceName) {
+        if (null != instances) {
+            for (Instance instance : instances) {
+                setInstanceIdIfEmpty(instance, groupedServiceName);
+            }
+        }
     }
 }

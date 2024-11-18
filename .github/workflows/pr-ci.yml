@@ -1,0 +1,37 @@
+name: PR-CI
+
+on:
+  pull_request:
+    branches: [ develop, v1.x-develop ]
+
+jobs:
+  dist-tar:
+    name: Build distribution tar
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: "8"
+          cache: "maven"
+      - name: Build distribution tar
+        run: |
+          mvn -Prelease-nacos -DskipTests clean install -U -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+      - uses: actions/upload-artifact@v3
+        name: Upload distribution tar
+        with:
+          name: nacos
+          path: distribution/target/nacos-server-*.tar.gz
+      - name: Save PR number
+        run: |
+          mkdir -p ./pr
+          echo ${{ github.event.pull_request.number }} > ./pr/pr.txt
+      - uses: actions/upload-artifact@v3
+        name: Upload PR number
+        with:
+          name: pr
+          path: pr/pr.txt

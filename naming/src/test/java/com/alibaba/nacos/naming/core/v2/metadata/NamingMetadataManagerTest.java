@@ -21,13 +21,12 @@ import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.metadata.MetadataEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -37,8 +36,15 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-@RunWith(MockitoJUnitRunner.class)
-public class NamingMetadataManagerTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+@ExtendWith(MockitoExtension.class)
+class NamingMetadataManagerTest {
+    
+    private static final String METADATA_ID = "METADATA_ID";
     
     @Mock
     private Service service;
@@ -63,61 +69,58 @@ public class NamingMetadataManagerTest {
     
     private NamingMetadataManager namingMetadataManager;
     
-    private static final String METADATA_ID = "METADATA_ID";
-    
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         namingMetadataManager = new NamingMetadataManager();
         
         Class<NamingMetadataManager> namingMetadataManagerClass = NamingMetadataManager.class;
         Field serviceMetadataMapField = namingMetadataManagerClass.getDeclaredField("serviceMetadataMap");
         serviceMetadataMapField.setAccessible(true);
-        ConcurrentMap<Service, ServiceMetadata> serviceMetadataMap = (ConcurrentMap<Service, ServiceMetadata>) serviceMetadataMapField
-                .get(namingMetadataManager);
+        ConcurrentMap<Service, ServiceMetadata> serviceMetadataMap = (ConcurrentMap<Service, ServiceMetadata>) serviceMetadataMapField.get(
+                namingMetadataManager);
         serviceMetadataMap.put(service, serviceMetadata);
         
         Field instanceMetadataMapField = namingMetadataManagerClass.getDeclaredField("instanceMetadataMap");
         instanceMetadataMapField.setAccessible(true);
-        ConcurrentMap<Service, ConcurrentMap<String, InstanceMetadata>> instanceMetadataMap =
-                (ConcurrentMap<Service, ConcurrentMap<String, InstanceMetadata>>) instanceMetadataMapField.get(namingMetadataManager);
         
         ConcurrentMap<String, InstanceMetadata> concurrentMap = new ConcurrentHashMap<>();
         concurrentMap.put(METADATA_ID, instanceMetadata);
-        instanceMetadataMap.put(service, concurrentMap);
+        ((ConcurrentMap<Service, ConcurrentMap<String, InstanceMetadata>>) instanceMetadataMapField.get(namingMetadataManager)).put(service,
+                concurrentMap);
     }
     
     @Test
-    public void testContainServiceMetadata() {
+    void testContainServiceMetadata() {
         boolean result = namingMetadataManager.containServiceMetadata(service);
         
-        Assert.assertTrue(result);
+        assertTrue(result);
     }
     
     @Test
-    public void testContainInstanceMetadata() {
+    void testContainInstanceMetadata() {
         boolean result = namingMetadataManager.containInstanceMetadata(service, METADATA_ID);
         
-        Assert.assertTrue(result);
+        assertTrue(result);
     }
     
     @Test
-    public void testGetServiceMetadata() {
+    void testGetServiceMetadata() {
         Optional<ServiceMetadata> serviceMetadata = namingMetadataManager.getServiceMetadata(service);
         
-        Assert.assertTrue(serviceMetadata.isPresent());
-        Assert.assertNotNull(serviceMetadata.get());
+        assertTrue(serviceMetadata.isPresent());
+        assertNotNull(serviceMetadata.get());
     }
     
     @Test
-    public void testGetInstanceMetadata() {
+    void testGetInstanceMetadata() {
         Optional<InstanceMetadata> instanceMetadata = namingMetadataManager.getInstanceMetadata(service, METADATA_ID);
         
-        Assert.assertTrue(instanceMetadata.isPresent());
-        Assert.assertNotNull(instanceMetadata.get());
+        assertTrue(instanceMetadata.isPresent());
+        assertNotNull(instanceMetadata.get());
     }
     
     @Test
-    public void testUpdateServiceMetadata() throws NoSuchFieldException, IllegalAccessException {
+    void testUpdateServiceMetadata() throws NoSuchFieldException, IllegalAccessException {
         
         ServiceMetadata serviceMetadata = new ServiceMetadata();
         Class<ServiceMetadata> serviceMetadataClass = ServiceMetadata.class;
@@ -128,13 +131,13 @@ public class NamingMetadataManagerTest {
         namingMetadataManager.updateServiceMetadata(service, serviceMetadata);
         
         Optional<ServiceMetadata> optional = namingMetadataManager.getServiceMetadata(service);
-        Assert.assertTrue(optional.isPresent());
-        Assert.assertNotNull(optional.get());
-        Assert.assertFalse(optional.get().isEphemeral());
+        assertTrue(optional.isPresent());
+        assertNotNull(optional.get());
+        assertFalse(optional.get().isEphemeral());
     }
     
     @Test
-    public void testUpdateInstanceMetadata() throws NoSuchFieldException, IllegalAccessException {
+    void testUpdateInstanceMetadata() throws NoSuchFieldException, IllegalAccessException {
         InstanceMetadata instanceMetadata = new InstanceMetadata();
         Class<InstanceMetadata> instanceMetadataClass = InstanceMetadata.class;
         Field enabled = instanceMetadataClass.getDeclaredField("enabled");
@@ -144,79 +147,77 @@ public class NamingMetadataManagerTest {
         namingMetadataManager.updateInstanceMetadata(service, METADATA_ID, instanceMetadata);
         
         Optional<InstanceMetadata> optional = namingMetadataManager.getInstanceMetadata(service, METADATA_ID);
-        Assert.assertTrue(optional.isPresent());
-        Assert.assertNotNull(optional.get());
-        Assert.assertFalse(optional.get().isEnabled());
+        assertTrue(optional.isPresent());
+        assertNotNull(optional.get());
+        assertFalse(optional.get().isEnabled());
     }
     
     @Test
-    public void testRemoveServiceMetadata() {
+    void testRemoveServiceMetadata() {
         
         namingMetadataManager.removeServiceMetadata(service);
         
         Optional<ServiceMetadata> serviceMetadata = namingMetadataManager.getServiceMetadata(service);
         
-        Assert.assertFalse(serviceMetadata.isPresent());
+        assertFalse(serviceMetadata.isPresent());
     }
     
     @Test
-    public void testRemoveInstanceMetadata() {
+    void testRemoveInstanceMetadata() {
         
         namingMetadataManager.removeInstanceMetadata(service, METADATA_ID);
         
         Optional<InstanceMetadata> instanceMetadata = namingMetadataManager.getInstanceMetadata(service, METADATA_ID);
         
-        Assert.assertFalse(instanceMetadata.isPresent());
+        assertFalse(instanceMetadata.isPresent());
     }
     
     @Test
-    public void testGetServiceMetadataSnapshot() {
+    void testGetServiceMetadataSnapshot() {
         Map<Service, ServiceMetadata> serviceMetadataSnapshot = namingMetadataManager.getServiceMetadataSnapshot();
         
-        Assert.assertEquals(serviceMetadataSnapshot.size(), 1);
+        assertEquals(1, serviceMetadataSnapshot.size());
     }
     
     @Test
-    public void testGetInstanceMetadataSnapshot() {
-        Map<Service, ConcurrentMap<String, InstanceMetadata>> instanceMetadataSnapshot = namingMetadataManager
-                .getInstanceMetadataSnapshot();
+    void testGetInstanceMetadataSnapshot() {
+        Map<Service, ConcurrentMap<String, InstanceMetadata>> instanceMetadataSnapshot = namingMetadataManager.getInstanceMetadataSnapshot();
         
-        Assert.assertEquals(instanceMetadataSnapshot.size(), 1);
+        assertEquals(1, instanceMetadataSnapshot.size());
     }
     
     @Test
-    public void testLoadServiceMetadataSnapshot() {
+    void testLoadServiceMetadataSnapshot() {
         namingMetadataManager.loadServiceMetadataSnapshot(new ConcurrentHashMap<>());
         Map<Service, ServiceMetadata> serviceMetadataSnapshot = namingMetadataManager.getServiceMetadataSnapshot();
         
-        Assert.assertEquals(serviceMetadataSnapshot.size(), 0);
+        assertEquals(0, serviceMetadataSnapshot.size());
     }
     
     @Test
-    public void testLoadInstanceMetadataSnapshot() {
+    void testLoadInstanceMetadataSnapshot() {
         namingMetadataManager.loadInstanceMetadataSnapshot(new ConcurrentHashMap<>());
-        Map<Service, ConcurrentMap<String, InstanceMetadata>> instanceMetadataSnapshot = namingMetadataManager
-                .getInstanceMetadataSnapshot();
+        Map<Service, ConcurrentMap<String, InstanceMetadata>> instanceMetadataSnapshot = namingMetadataManager.getInstanceMetadataSnapshot();
         
-        Assert.assertEquals(instanceMetadataSnapshot.size(), 0);
+        assertEquals(0, instanceMetadataSnapshot.size());
     }
     
     @Test
-    public void testGetExpiredMetadataInfos() {
+    void testGetExpiredMetadataInfos() {
         Set<ExpiredMetadataInfo> expiredMetadataInfos = namingMetadataManager.getExpiredMetadataInfos();
         
-        Assert.assertNotNull(expiredMetadataInfos);
+        assertNotNull(expiredMetadataInfos);
     }
     
     @Test
-    public void testSubscribeTypes() {
+    void testSubscribeTypes() {
         List<Class<? extends Event>> classes = namingMetadataManager.subscribeTypes();
         
-        Assert.assertEquals(classes.size(), 3);
+        assertEquals(3, classes.size());
     }
     
     @Test
-    public void testOnEvent() {
+    void testOnEvent() {
         Mockito.when(instanceMetadataEvent.getService()).thenReturn(service);
         Mockito.when(instanceMetadataEvent.getMetadataId()).thenReturn(METADATA_ID);
         Mockito.when(serviceMetadataEvent.getService()).thenReturn(service);

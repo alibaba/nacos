@@ -17,31 +17,30 @@
 package com.alibaba.nacos.plugin.auth.api;
 
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Properties;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class PermissionTest {
+class PermissionTest {
     
     private Permission permission;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         permission = new Permission(Resource.EMPTY_RESOURCE, ActionTypes.WRITE.toString());
     }
     
     @Test
-    public void testToString() {
-        assertEquals(
-                "Permission{resource='Resource{namespaceId='', group='', name='', type='', properties=null}', action='w'}",
+    void testToString() {
+        assertEquals("Permission{resource='Resource{namespaceId='', group='', name='', type='', properties=null}', action='w'}",
                 permission.toString());
     }
     
     @Test
-    public void testSetResource() {
+    void testSetResource() {
         Permission permission = new Permission();
         Properties properties = new Properties();
         Resource resource = new Resource("NS", "G", "N", "TEST", properties);
@@ -54,7 +53,7 @@ public class PermissionTest {
     }
     
     @Test
-    public void testSetAction() {
+    void testSetAction() {
         Permission permission = new Permission();
         permission.setAction(ActionTypes.READ.toString());
         assertEquals(ActionTypes.READ.toString(), permission.getAction());

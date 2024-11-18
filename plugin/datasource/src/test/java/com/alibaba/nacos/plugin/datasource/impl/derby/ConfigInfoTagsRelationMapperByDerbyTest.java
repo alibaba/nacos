@@ -16,65 +16,95 @@
 
 package com.alibaba.nacos.plugin.datasource.impl.derby;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import com.alibaba.nacos.plugin.datasource.model.MapperContext;
+import com.alibaba.nacos.plugin.datasource.model.MapperResult;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
+import java.util.Arrays;
+import java.util.List;
 
-public class ConfigInfoTagsRelationMapperByDerbyTest {
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class ConfigInfoTagsRelationMapperByDerbyTest {
+    
+    int startRow = 0;
+    
+    int pageSize = 5;
+    
+    String tenantId = "tenantId";
+    
+    String[] tagArr = new String[] {"tag1", "tag3", "tag2", "tag4", "tag5"};
+    
+    MapperContext context;
     
     private ConfigInfoTagsRelationMapperByDerby configInfoTagsRelationMapperByDerby;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         this.configInfoTagsRelationMapperByDerby = new ConfigInfoTagsRelationMapperByDerby();
+        context = new MapperContext(startRow, pageSize);
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
+        context.putWhereParameter(FieldConstant.TAG_ARR, tagArr);
     }
     
     @Test
-    public void testFindConfigInfo4PageCountRows() {
-        String sql = configInfoTagsRelationMapperByDerby.findConfigInfoLike4PageCountRows(new HashMap<>(), 5);
-        Assert.assertEquals(sql,
-                "SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id  WHERE  "
-                        + "a.tenant_id LIKE ?  AND b.tag_name IN (?, ?, ?, ?, ?) ");
+    void testFindConfigInfo4PageCountRows() {
+        MapperResult mapperResult = configInfoTagsRelationMapperByDerby.findConfigInfoLike4PageCountRows(context);
+        assertEquals(mapperResult.getSql(), "SELECT count(*) FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id WHERE "
+                + "a.tenant_id LIKE ?  AND b.tag_name IN (?, ?, ?, ?, ?) ");
+        List<Object> list = CollectionUtils.list(tenantId);
+        list.addAll(Arrays.asList(tagArr));
+        assertArrayEquals(mapperResult.getParamList().toArray(), list.toArray());
     }
     
     @Test
-    public void testFindConfigInfo4PageFetchRows() {
-        String sql = configInfoTagsRelationMapperByDerby.findConfigInfo4PageFetchRows(new HashMap<>(), 5, 0, 5);
-        Assert.assertEquals(sql,
+    void testFindConfigInfo4PageFetchRows() {
+        MapperResult mapperResult = configInfoTagsRelationMapperByDerby.findConfigInfo4PageFetchRows(context);
+        assertEquals(mapperResult.getSql(),
                 "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a LEFT JOIN "
                         + "config_tags_relation b ON a.id=b.id WHERE  a.tenant_id=?  AND b.tag_name IN (?, ?, ?, ?, ?)  "
                         + "OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY");
+        List<Object> list = CollectionUtils.list(tenantId);
+        list.addAll(Arrays.asList(tagArr));
+        assertArrayEquals(mapperResult.getParamList().toArray(), list.toArray());
     }
     
     @Test
-    public void testFindConfigInfoLike4PageCountRows() {
-        String sql = configInfoTagsRelationMapperByDerby.findConfigInfoLike4PageCountRows(new HashMap<>(), 5);
-        Assert.assertEquals(sql, "SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id  "
-                + "WHERE  a.tenant_id LIKE ?  AND b.tag_name IN (?, ?, ?, ?, ?) ");
+    void testFindConfigInfoLike4PageCountRows() {
+        MapperResult mapperResult = configInfoTagsRelationMapperByDerby.findConfigInfoLike4PageCountRows(context);
+        assertEquals(mapperResult.getSql(), "SELECT count(*) FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id "
+                + "WHERE a.tenant_id LIKE ?  AND b.tag_name IN (?, ?, ?, ?, ?) ");
+        List<Object> list = CollectionUtils.list(tenantId);
+        list.addAll(Arrays.asList(tagArr));
+        assertArrayEquals(mapperResult.getParamList().toArray(), list.toArray());
     }
     
     @Test
-    public void tsetFindConfigInfoLike4PageFetchRows() {
-        String sql = configInfoTagsRelationMapperByDerby.findConfigInfoLike4PageFetchRows(new HashMap<>(), 5, 0, 5);
-        Assert.assertEquals(sql,
-                "SELECT a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a "
-                        + "LEFT JOIN config_tags_relation b ON a.id=b.id  WHERE  a.tenant_id LIKE ?  AND b.tag_name "
-                        + "IN (?, ?, ?, ?, ?)  OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY");
+    void tsetFindConfigInfoLike4PageFetchRows() {
+        MapperResult mapperResult = configInfoTagsRelationMapperByDerby.findConfigInfoLike4PageFetchRows(context);
+        assertEquals(mapperResult.getSql(), "SELECT a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.type FROM config_info a "
+                + "LEFT JOIN config_tags_relation b ON a.id=b.id WHERE a.tenant_id LIKE ?  AND b.tag_name "
+                + "IN (?, ?, ?, ?, ?)  OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY");
+        List<Object> list = CollectionUtils.list(tenantId);
+        list.addAll(Arrays.asList(tagArr));
+        assertArrayEquals(mapperResult.getParamList().toArray(), list.toArray());
     }
     
     @Test
-    public void testGetTableName() {
+    void testGetTableName() {
         String tableName = configInfoTagsRelationMapperByDerby.getTableName();
-        Assert.assertEquals(tableName, TableConstant.CONFIG_TAGS_RELATION);
+        assertEquals(TableConstant.CONFIG_TAGS_RELATION, tableName);
     }
     
     @Test
-    public void testGetDataSource() {
+    void testGetDataSource() {
         String dataSource = configInfoTagsRelationMapperByDerby.getDataSource();
-        Assert.assertEquals(dataSource, DataSourceConstant.DERBY);
+        assertEquals(DataSourceConstant.DERBY, dataSource);
     }
 }

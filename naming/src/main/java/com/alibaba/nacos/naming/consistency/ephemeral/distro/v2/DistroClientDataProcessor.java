@@ -34,6 +34,7 @@ import com.alibaba.nacos.naming.core.v2.client.ClientSyncDatumSnapshot;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
+import com.alibaba.nacos.naming.core.v2.event.metadata.MetadataEvent;
 import com.alibaba.nacos.naming.core.v2.event.publisher.NamingEventPublisherFactory;
 import com.alibaba.nacos.naming.core.v2.pojo.BatchInstanceData;
 import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
@@ -103,7 +104,7 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     
     private void syncToVerifyFailedServer(ClientEvent.ClientVerifyFailedEvent event) {
         Client client = clientManager.getClient(event.getClientId());
-        if (null == client || !client.isEphemeral() || !clientManager.isResponsibleClient(client)) {
+        if (isInvalidClient(client)) {
             return;
         }
         DistroKey distroKey = new DistroKey(client.getClientId(), TYPE);
@@ -113,8 +114,7 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     
     private void syncToAllServer(ClientEvent event) {
         Client client = event.getClient();
-        // Only ephemeral data sync by Distro, persist client should sync by raft.
-        if (null == client || !client.isEphemeral() || !clientManager.isResponsibleClient(client)) {
+        if (isInvalidClient(client)) {
             return;
         }
         if (event instanceof ClientEvent.ClientDisconnectEvent) {
@@ -124,6 +124,11 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
             DistroKey distroKey = new DistroKey(client.getClientId(), TYPE);
             distroProtocol.sync(distroKey, DataOperation.CHANGE);
         }
+    }
+    
+    private boolean isInvalidClient(Client client) {
+        // Only ephemeral data sync by Distro, persist client should sync by raft.
+        return null == client || !client.isEphemeral() || !clientManager.isResponsibleClient(client);
     }
     
     @Override
@@ -177,6 +182,8 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
                 client.addServiceInstance(singleton, instancePublishInfo);
                 NotifyCenter.publishEvent(
                         new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
+                NotifyCenter.publishEvent(
+                        new MetadataEvent.InstanceMetadataEvent(singleton, instancePublishInfo.getMetadataId(), false));
             }
         }
         for (Service each : client.getAllPublishedService()) {
@@ -186,6 +193,7 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
                         new ClientOperationEvent.ClientDeregisterServiceEvent(each, client.getClientId()));
             }
         }
+        client.setRevision(clientSyncData.getAttributes().<Integer>getClientAttribute(ClientConstants.REVISION, 0));
     }
     
     private static void processBatchInstanceDistroData(Set<Service> syncedService, Client client,
@@ -206,19 +214,13 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
             Service singleton = ServiceManager.getInstance().getSingleton(service);
             syncedService.add(singleton);
             BatchInstancePublishInfo batchInstancePublishInfo = batchInstancePublishInfos.get(i);
-            BatchInstancePublishInfo targetInstanceInfo = (BatchInstancePublishInfo) client
-                    .getInstancePublishInfo(singleton);
-            boolean result = false;
-            if (targetInstanceInfo != null) {
-                result = batchInstancePublishInfo.equals(targetInstanceInfo);
-            }
-            if (!result) {
-                client.addServiceInstance(service, batchInstancePublishInfo);
+            InstancePublishInfo publishInfo = client.getInstancePublishInfo(singleton);
+            if (batchInstancePublishInfo != null && !batchInstancePublishInfo.equals(publishInfo)) {
+                client.addServiceInstance(singleton, batchInstancePublishInfo);
                 NotifyCenter.publishEvent(
                         new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
             }
         }
-        client.setRevision(clientSyncData.getAttributes().<Integer>getClientAttribute(ClientConstants.REVISION, 0));
     }
     
     @Override

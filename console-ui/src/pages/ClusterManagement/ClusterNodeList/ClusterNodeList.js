@@ -29,9 +29,9 @@ import {
   Table,
   Dialog,
   ConfigProvider,
+  Message,
 } from '@alifd/next';
 import { request } from '../../../globalLib';
-import RegionGroup from '../../../components/RegionGroup';
 import axios from 'axios';
 import PageTitle from '../../../components/PageTitle';
 
@@ -63,18 +63,16 @@ class ClusterNodeList extends React.Component {
     this.field = new Field(this);
   }
 
+  componentDidMount() {
+    this.getQueryLater();
+  }
+
   openLoading() {
     this.setState({ loading: true });
   }
 
   closeLoading() {
     this.setState({ loading: false });
-  }
-
-  openEditServiceDialog() {
-    try {
-      this.editServiceDialog.current.getInstance().show(this.state.service);
-    } catch (error) {}
   }
 
   queryClusterStateList() {
@@ -105,17 +103,36 @@ class ClusterNodeList extends React.Component {
   }
 
   leave(nodes) {
+    const { locale = {} } = this.props;
+    const accessToken = JSON.parse(localStorage.token || '{}').accessToken;
     this.openLoading();
     axios
-      .post('v1/core/cluster/server/leave', nodes)
-      .then(() => {
+      .post(`v1/core/cluster/server/leave?accessToken=${accessToken}`, nodes)
+      .then(response => {
+        if (response.data.code === 200) {
+          Message.success(locale.leaveSucc);
+        } else {
+          const errorMessage = response.data.message || locale.leaveFail;
+          this.showErrorDialog(locale.leavePrompt, errorMessage);
+        }
+
         this.queryClusterStateList();
         this.closeLoading();
       })
-      .catch(() => {
+      .catch(error => {
+        const errorMessage = error.response?.data?.message || locale.leaveFail;
+        this.showErrorDialog(locale.leavePrompt, errorMessage);
+
         this.queryClusterStateList();
         this.closeLoading();
       });
+  }
+
+  showErrorDialog(title, content) {
+    Dialog.alert({
+      title,
+      content,
+    });
   }
 
   showLeaveDialog(value) {
@@ -166,11 +183,7 @@ class ClusterNodeList extends React.Component {
           tip="Loading..."
           color="#333"
         >
-          <PageTitle title={clusterNodeList} desc={nowNamespaceId} nameSpace />
-          <RegionGroup
-            setNowNameSpace={this.setNowNameSpace}
-            namespaceCallBack={this.getQueryLater}
-          />
+          <PageTitle title={clusterNodeList} />
           <Row className="demo-row" style={{ marginBottom: 10, padding: 0 }}>
             <Col span="24">
               <Form inline field={this.field}>
@@ -206,11 +219,12 @@ class ClusterNodeList extends React.Component {
                 locale={{ empty: pubNoData }}
                 rowProps={row => this.rowColor(row)}
               >
-                <Column title={locale.nodeIp} dataIndex="address" width="20%" />
+                <Column title={locale.nodeIp} dataIndex="address" width="20%" align="center" />
                 <Column
                   title={locale.nodeState}
                   dataIndex="state"
-                  width="20%"
+                  width="10%"
+                  align="center"
                   cell={function(value, index, record) {
                     if (value === 'UP') {
                       return (
@@ -243,7 +257,7 @@ class ClusterNodeList extends React.Component {
                 <Column
                   title={locale.extendInfo}
                   dataIndex="extendInfo"
-                  width="30%"
+                  width="50%"
                   cell={function(value, index, record) {
                     function showCollapse() {
                       const collapse = (
@@ -267,6 +281,7 @@ class ClusterNodeList extends React.Component {
                   title={locale.operation}
                   dataIndex="address"
                   width="20%"
+                  align="center"
                   cell={this.renderCol.bind(this)}
                 />
               </Table>

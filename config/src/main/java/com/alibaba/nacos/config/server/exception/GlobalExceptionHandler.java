@@ -17,8 +17,12 @@
 package com.alibaba.nacos.config.server.exception;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
+import com.alibaba.nacos.persistence.monitor.DatasourceMetrics;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -31,7 +35,8 @@ import java.io.IOException;
  *
  * @author Nacos
  */
-@ControllerAdvice
+@ControllerAdvice(basePackages = "com.alibaba.nacos.config.server")
+@Order(Ordered.LOWEST_PRECEDENCE - 1)
 public class GlobalExceptionHandler {
     
     /**
@@ -47,6 +52,17 @@ public class GlobalExceptionHandler {
     }
     
     /**
+     * For NacosRuntimeException.
+     *
+     * @throws com.alibaba.nacos.api.exception.runtime.NacosRuntimeException NacosRuntimeException.
+     */
+    @ExceptionHandler(NacosRuntimeException.class)
+    public ResponseEntity<String> handleNacosRunTimeException(NacosRuntimeException ex) throws IOException {
+        MetricsMonitor.getNacosException().increment();
+        return ResponseEntity.status(ex.getErrCode()).body(ExceptionUtil.getAllExceptionMsg(ex));
+    }
+
+    /**
      * For NacosException.
      *
      * @throws NacosException NacosException.
@@ -56,7 +72,7 @@ public class GlobalExceptionHandler {
         MetricsMonitor.getNacosException().increment();
         return ResponseEntity.status(ex.getErrCode()).body(ExceptionUtil.getAllExceptionMsg(ex));
     }
-    
+
     /**
      * For DataAccessException.
      *
@@ -64,7 +80,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<String> handleDataAccessException(DataAccessException ex) throws DataAccessException {
-        MetricsMonitor.getDbException().increment();
+        DatasourceMetrics.getDbException().increment();
         return ResponseEntity.status(500).body(ExceptionUtil.getAllExceptionMsg(ex));
     }
 }

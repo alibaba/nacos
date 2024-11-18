@@ -16,6 +16,19 @@
 
 import { isJsonString } from '../utils/nacosutil';
 
+const serviceDiscoveryMenu = {
+  key: 'serviceManagementVirtual',
+  children: [
+    {
+      key: 'serviceManagement',
+      url: '/serviceManagement',
+    },
+    {
+      key: 'subscriberList',
+      url: '/subscriberList',
+    },
+  ],
+};
 const configurationMenu = {
   key: 'configurationManagementVirtual',
   children: [
@@ -53,39 +66,39 @@ const authorityControlMenu = {
     },
   ],
 };
-
+const namespaceMenu = {
+  key: 'namespace',
+  url: '/namespace',
+};
+const clusterMenu = {
+  key: 'clusterManagementVirtual',
+  children: [
+    {
+      key: 'clusterManagement',
+      url: '/clusterManagement',
+    },
+  ],
+};
+const settingMenu = {
+  key: 'settingCenter',
+  url: '/settingCenter',
+};
 export default function(model) {
   const { token = '{}' } = localStorage;
   const { globalAdmin } = isJsonString(token) ? JSON.parse(token) || {} : {};
-
-  return [
-    model === 'naming' ? undefined : configurationMenu,
-    {
-      key: 'serviceManagementVirtual',
-      children: [
-        {
-          key: 'serviceManagement',
-          url: '/serviceManagement',
-        },
-        {
-          key: 'subscriberList',
-          url: '/subscriberList',
-        },
-      ],
-    },
-    globalAdmin ? authorityControlMenu : undefined,
-    {
-      key: 'namespace',
-      url: '/namespace',
-    },
-    {
-      key: 'clusterManagementVirtual',
-      children: [
-        {
-          key: 'clusterManagement',
-          url: '/clusterManagement',
-        },
-      ],
-    },
-  ].filter(item => item);
+  const result = [];
+  if (model === 'naming') {
+    result.push(serviceDiscoveryMenu);
+  } else if (model === 'config') {
+    result.push(configurationMenu);
+  } else {
+    result.push(configurationMenu, serviceDiscoveryMenu);
+  }
+  if (globalAdmin) {
+    result.push(authorityControlMenu);
+  }
+  result.push(namespaceMenu);
+  result.push(clusterMenu);
+  result.push(settingMenu);
+  return result.filter(item => item);
 }

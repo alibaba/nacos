@@ -28,7 +28,6 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -54,12 +53,15 @@ public class CapacityManagementAspect {
     private static final String DELETE_CONFIG =
             "execution(* com.alibaba.nacos.config.server.controller.ConfigController.deleteConfig(..)) && args"
                     + "(request,response,dataId,group,tenant,..)";
-    
-    @Autowired
-    private CapacityService capacityService;
-    
-    @Autowired
-    private ConfigInfoPersistService configInfoPersistService;
+
+    private final CapacityService capacityService;
+
+    private final ConfigInfoPersistService configInfoPersistService;
+
+    public CapacityManagementAspect(ConfigInfoPersistService configInfoPersistService, CapacityService capacityService) {
+        this.configInfoPersistService = configInfoPersistService;
+        this.capacityService = capacityService;
+    }
     
     /**
      * Need to judge the size of content whether to exceed the limitation.

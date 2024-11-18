@@ -20,25 +20,27 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-public class ConfigChangePublisherTest {
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+class ConfigChangePublisherTest {
     
-    @Before
-    public void startUP() {
+    @BeforeEach
+    void startUP() {
         EnvUtil.setIsStandalone(true);
-        PropertyUtil.setEmbeddedStorage(true);
+        DatasourceConfiguration.setEmbeddedStorage(true);
     }
     
     @Test
-    public void testConfigChangeNotify() throws InterruptedException {
+    void testConfigChangeNotify() throws InterruptedException {
         
         AtomicReference<ConfigDataChangeEvent> reference = new AtomicReference<>();
         
@@ -58,46 +60,46 @@ public class ConfigChangePublisherTest {
         
         // nacos is standalone mode and use embedded storage
         EnvUtil.setIsStandalone(true);
-        PropertyUtil.setEmbeddedStorage(true);
+        DatasourceConfiguration.setEmbeddedStorage(true);
         
-        ConfigChangePublisher
-                .notifyConfigChange(new ConfigDataChangeEvent("chuntaojun", "chuntaojun", System.currentTimeMillis()));
+        ConfigChangePublisher.notifyConfigChange(
+                new ConfigDataChangeEvent("chuntaojun", "chuntaojun", null, System.currentTimeMillis()));
         Thread.sleep(2000);
-        Assert.assertNotNull(reference.get());
+        assertNotNull(reference.get());
         reference.set(null);
         
         // nacos is standalone mode and use external storage
         EnvUtil.setIsStandalone(true);
-        PropertyUtil.setEmbeddedStorage(false);
-        ConfigChangePublisher
-                .notifyConfigChange(new ConfigDataChangeEvent("chuntaojun", "chuntaojun", System.currentTimeMillis()));
+        DatasourceConfiguration.setEmbeddedStorage(false);
+        ConfigChangePublisher.notifyConfigChange(
+                new ConfigDataChangeEvent("chuntaojun", "chuntaojun", null, System.currentTimeMillis()));
         Thread.sleep(2000);
-        Assert.assertNotNull(reference.get());
+        assertNotNull(reference.get());
         reference.set(null);
         
         // nacos is cluster mode and use embedded storage
         EnvUtil.setIsStandalone(false);
-        PropertyUtil.setEmbeddedStorage(true);
-        ConfigChangePublisher
-                .notifyConfigChange(new ConfigDataChangeEvent("chuntaojun", "chuntaojun", System.currentTimeMillis()));
+        DatasourceConfiguration.setEmbeddedStorage(true);
+        ConfigChangePublisher.notifyConfigChange(
+                new ConfigDataChangeEvent("chuntaojun", "chuntaojun", null, System.currentTimeMillis()));
         Thread.sleep(2000);
-        Assert.assertNull(reference.get());
+        assertNull(reference.get());
         reference.set(null);
         
         // nacos is cluster mode and use external storage
         EnvUtil.setIsStandalone(false);
-        PropertyUtil.setEmbeddedStorage(false);
-        ConfigChangePublisher
-                .notifyConfigChange(new ConfigDataChangeEvent("chuntaojun", "chuntaojun", System.currentTimeMillis()));
+        DatasourceConfiguration.setEmbeddedStorage(false);
+        ConfigChangePublisher.notifyConfigChange(
+                new ConfigDataChangeEvent("chuntaojun", "chuntaojun", null, System.currentTimeMillis()));
         Thread.sleep(2000);
-        Assert.assertNotNull(reference.get());
+        assertNotNull(reference.get());
         reference.set(null);
-    
+        
     }
     
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         EnvUtil.setIsStandalone(true);
-        PropertyUtil.setEmbeddedStorage(true);
+        DatasourceConfiguration.setEmbeddedStorage(true);
     }
 }

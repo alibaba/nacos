@@ -34,7 +34,7 @@ public enum SourceType {
      */
     ENV,
     /**
-     * get value from default setting.
+     * get value from unknown environment, will be search in all properties by orders.
      */
-    DEFAULT_SETTING
+    UNKNOWN
 }

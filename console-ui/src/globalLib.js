@@ -17,6 +17,7 @@
 import projectConfig from './config';
 import $ from 'jquery';
 import { Message } from '@alifd/next';
+import { LOGINPAGE_ENABLED } from './constants';
 
 function goLogin() {
   const url = window.location.href;
@@ -24,6 +25,23 @@ function goLogin() {
   const base_url = url.split('#')[0];
   console.log('base_url', base_url);
   window.location = `${base_url}#/login`;
+}
+
+function goRegister() {
+  const url = window.location.href;
+  localStorage.removeItem('token');
+  const base_url = url.split('#')[0];
+  window.location = `${base_url}#/register`;
+}
+
+function generateRandomPassword(length) {
+  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let password = '';
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * charset.length);
+    password += charset[randomIndex];
+  }
+  return password;
 }
 
 const global = window;
@@ -493,17 +511,24 @@ const request = (function(_global) {
 
     // 处理后置中间件
     config = handleMiddleWare.apply(this, [config, ...args, middlewareBackList]);
-    let token = {};
-    try {
-      token = JSON.parse(localStorage.token);
-    } catch (e) {
-      console.log('Token Error', localStorage.token, e);
-      goLogin();
-    }
-    const { accessToken = '' } = token;
+
     const [url, paramsStr] = config.url.split('?');
     const params = paramsStr ? paramsStr.split('&') : [];
-    params.push(`accessToken=${accessToken}`);
+
+    const _LOGINPAGE_ENABLED = localStorage.getItem(LOGINPAGE_ENABLED);
+
+    let accessTokenInHeader = '';
+    if (_LOGINPAGE_ENABLED !== 'false') {
+      let token = {};
+      try {
+        token = JSON.parse(localStorage.token);
+      } catch (e) {
+        console.log('Token Error', localStorage.token, e);
+        goLogin();
+      }
+      const { accessToken = '' } = token;
+      accessTokenInHeader = accessToken;
+    }
 
     return $.ajax(
       Object.assign({}, config, {
@@ -515,7 +540,8 @@ const request = (function(_global) {
           config.beforeSend && config.beforeSend(xhr);
         },
         headers: {
-          Authorization: localStorage.getItem('token'),
+          Authorization: localStorage.getItem('token') || undefined,
+          AccessToken: accessTokenInHeader,
         },
       })
     ).then(
@@ -556,5 +582,8 @@ export {
   getParams,
   setParam,
   setParams,
+  goLogin,
+  goRegister,
+  generateRandomPassword,
   request,
 };

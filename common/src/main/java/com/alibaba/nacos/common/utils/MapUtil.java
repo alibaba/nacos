@@ -31,7 +31,7 @@ import java.util.function.BiFunction;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class MapUtil {
-
+    
     private MapUtil() {
     }
     
@@ -151,23 +151,18 @@ public class MapUtil {
         Objects.requireNonNull(param1, "param1");
         Objects.requireNonNull(param2, "param2");
         
-        V val = target.get(key);
-        if (val == null) {
-            V ret = mappingFunction.apply(param1, param2);
-            target.put(key, ret);
-            return ret;
-        }
-        return val;
+        return target.computeIfAbsent(key, (keyInner) -> mappingFunction.apply(param1, param2));
+        
     }
     
     /**
      * remove value, Thread safety depends on whether the Map is a thread-safe Map.
      *
-     * @param map map
-     * @param key key
+     * @param map         map
+     * @param key         key
      * @param removeJudge judge this key can be remove
-     * @param <K> key type
-     * @param <V> value type
+     * @param <K>         key type
+     * @param <V>         value type
      * @return value
      */
     public static <K, V> V removeKey(Map<K, V> map, K key, Predicate<V> removeJudge) {

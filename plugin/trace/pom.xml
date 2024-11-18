@@ -28,7 +28,7 @@
     <artifactId>nacos-trace-plugin</artifactId>
     <name>nacos-trace-plugin ${project.version}</name>
     <url>https://nacos.io</url>
-    
+    <description>Nacos trace plugin pom.xml file</description>
     <dependencies>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>

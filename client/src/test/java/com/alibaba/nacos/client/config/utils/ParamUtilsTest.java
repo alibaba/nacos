@@ -19,39 +19,39 @@
 package com.alibaba.nacos.client.config.utils;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class ParamUtilsTest {
-    
-    @Rule
-    public ExpectedException exceptionRule = ExpectedException.none();
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
+class ParamUtilsTest {
     
     @Test
-    public void testIsValid() {
+    void testIsValid() {
         String content = "abcABC09.:_-";
-        Assert.assertTrue(ParamUtils.isValid(content));
+        assertTrue(ParamUtils.isValid(content));
         
         content = null;
-        Assert.assertFalse(ParamUtils.isValid(content));
+        assertFalse(ParamUtils.isValid(content));
         
         content = "@";
-        Assert.assertFalse(ParamUtils.isValid(content));
+        assertFalse(ParamUtils.isValid(content));
         
         content = "+";
-        Assert.assertFalse(ParamUtils.isValid(content));
+        assertFalse(ParamUtils.isValid(content));
         
         content = "/";
-        Assert.assertFalse(ParamUtils.isValid(content));
+        assertFalse(ParamUtils.isValid(content));
     }
     
     @Test
-    public void testCheckTdg() throws NacosException {
+    void testCheckTdg() throws NacosException {
         String tenant = "a";
         String dataId = "b";
         String group = "c";
@@ -59,29 +59,31 @@ public class ParamUtilsTest {
     }
     
     @Test
-    public void testCheckTdgFail1() throws NacosException {
-        exceptionRule.expect(NacosException.class);
-        exceptionRule.expectMessage("dataId invalid");
-        
-        String tenant = "a";
-        String dataId = "";
-        String group = "c";
-        ParamUtils.checkTdg(tenant, dataId, group);
+    void testCheckTdgFail1() throws NacosException {
+        Throwable exception = assertThrows(NacosException.class, () -> {
+            
+            String tenant = "a";
+            String dataId = "";
+            String group = "c";
+            ParamUtils.checkTdg(tenant, dataId, group);
+        });
+        assertTrue(exception.getMessage().contains("dataId invalid"));
     }
     
     @Test
-    public void testCheckTdgFail2() throws NacosException {
-        exceptionRule.expect(NacosException.class);
-        exceptionRule.expectMessage("group invalid");
-        
-        String tenant = "a";
-        String dataId = "b";
-        String group = "";
-        ParamUtils.checkTdg(tenant, dataId, group);
+    void testCheckTdgFail2() throws NacosException {
+        Throwable exception = assertThrows(NacosException.class, () -> {
+            
+            String tenant = "a";
+            String dataId = "b";
+            String group = "";
+            ParamUtils.checkTdg(tenant, dataId, group);
+        });
+        assertTrue(exception.getMessage().contains("group invalid"));
     }
     
     @Test
-    public void testCheckKeyParam1() throws NacosException {
+    void testCheckKeyParam1() throws NacosException {
         String dataId = "b";
         String group = "c";
         ParamUtils.checkKeyParam(dataId, group);
@@ -90,23 +92,23 @@ public class ParamUtilsTest {
             dataId = "";
             group = "c";
             ParamUtils.checkKeyParam(dataId, group);
-            Assert.fail();
+            fail();
         } catch (NacosException e) {
-            Assert.assertEquals("dataId invalid", e.getMessage());
+            assertEquals("dataId invalid", e.getMessage());
         }
         
         try {
             dataId = "b";
             group = "";
             ParamUtils.checkKeyParam(dataId, group);
-            Assert.fail();
+            fail();
         } catch (NacosException e) {
-            Assert.assertEquals("group invalid", e.getMessage());
+            assertEquals("group invalid", e.getMessage());
         }
     }
     
     @Test
-    public void testCheckKeyParam2() throws NacosException {
+    void testCheckKeyParam2() throws NacosException {
         String dataId = "b";
         String group = "c";
         String datumId = "a";
@@ -117,9 +119,9 @@ public class ParamUtilsTest {
             group = "c";
             ParamUtils.checkKeyParam(dataId, group, datumId);
             
-            Assert.fail();
+            fail();
         } catch (NacosException e) {
-            Assert.assertEquals("dataId invalid", e.getMessage());
+            assertEquals("dataId invalid", e.getMessage());
         }
         
         try {
@@ -127,9 +129,9 @@ public class ParamUtilsTest {
             group = "";
             ParamUtils.checkKeyParam(dataId, group, datumId);
             
-            Assert.fail();
+            fail();
         } catch (NacosException e) {
-            Assert.assertEquals("group invalid", e.getMessage());
+            assertEquals("group invalid", e.getMessage());
         }
         
         try {
@@ -138,14 +140,14 @@ public class ParamUtilsTest {
             datumId = "";
             ParamUtils.checkKeyParam(dataId, group, datumId);
             
-            Assert.fail();
+            fail();
         } catch (NacosException e) {
-            Assert.assertEquals("datumId invalid", e.getMessage());
+            assertEquals("datumId invalid", e.getMessage());
         }
     }
     
     @Test
-    public void testCheckKeyParam3() throws NacosException {
+    void testCheckKeyParam3() throws NacosException {
         String dataId = "b";
         String group = "c";
         ParamUtils.checkKeyParam(Arrays.asList(dataId), group);
@@ -154,9 +156,9 @@ public class ParamUtilsTest {
             group = "c";
             ParamUtils.checkKeyParam(new ArrayList<String>(), group);
             
-            Assert.fail();
+            fail();
         } catch (NacosException e) {
-            Assert.assertEquals("dataIds invalid", e.getMessage());
+            assertEquals("dataIds invalid", e.getMessage());
         }
         
         try {
@@ -164,9 +166,9 @@ public class ParamUtilsTest {
             group = "c";
             ParamUtils.checkKeyParam(Arrays.asList(dataId), group);
             
-            Assert.fail();
+            fail();
         } catch (NacosException e) {
-            Assert.assertEquals("dataId invalid", e.getMessage());
+            assertEquals("dataId invalid", e.getMessage());
         }
         
         try {
@@ -174,33 +176,34 @@ public class ParamUtilsTest {
             group = "";
             ParamUtils.checkKeyParam(Arrays.asList(dataId), group);
             
-            Assert.fail();
+            fail();
         } catch (NacosException e) {
-            Assert.assertEquals("group invalid", e.getMessage());
+            assertEquals("group invalid", e.getMessage());
         }
     }
     
     @Test
-    public void testCheckParam() throws NacosException {
+    void testCheckParam() throws NacosException {
         String dataId = "b";
         String group = "c";
         String content = "a";
         ParamUtils.checkParam(dataId, group, content);
     }
- 
+    
     @Test
-    public void testCheckParamFail() throws NacosException {
-        exceptionRule.expect(NacosException.class);
-        exceptionRule.expectMessage("content invalid");
-        
-        String dataId = "b";
-        String group = "c";
-        String content = "";
-        ParamUtils.checkParam(dataId, group, content);
+    void testCheckParamFail() throws NacosException {
+        Throwable exception = assertThrows(NacosException.class, () -> {
+            
+            String dataId = "b";
+            String group = "c";
+            String content = "";
+            ParamUtils.checkParam(dataId, group, content);
+        });
+        assertTrue(exception.getMessage().contains("content invalid"));
     }
     
     @Test
-    public void testCheckParam2() throws NacosException {
+    void testCheckParam2() throws NacosException {
         String dataId = "b";
         String group = "c";
         String datumId = "d";
@@ -209,60 +212,65 @@ public class ParamUtilsTest {
     }
     
     @Test
-    public void testCheckParam2Fail() throws NacosException {
-        exceptionRule.expect(NacosException.class);
-        exceptionRule.expectMessage("content invalid");
-    
-        String dataId = "b";
-        String group = "c";
-        String datumId = "d";
-        String content = "";
-        ParamUtils.checkParam(dataId, group, datumId, content);
+    void testCheckParam2Fail() throws NacosException {
+        Throwable exception = assertThrows(NacosException.class, () -> {
+            
+            String dataId = "b";
+            String group = "c";
+            String datumId = "d";
+            String content = "";
+            ParamUtils.checkParam(dataId, group, datumId, content);
+        });
+        assertTrue(exception.getMessage().contains("content invalid"));
     }
     
     @Test
-    public void testCheckTenant() throws NacosException {
+    void testCheckTenant() throws NacosException {
         String tenant = "a";
         ParamUtils.checkTenant(tenant);
     }
     
     @Test
-    public void testCheckTenantFail() throws NacosException {
-        exceptionRule.expect(NacosException.class);
-        exceptionRule.expectMessage("tenant invalid");
-        String tenant = "";
-        ParamUtils.checkTenant(tenant);
+    void testCheckTenantFail() throws NacosException {
+        Throwable exception = assertThrows(NacosException.class, () -> {
+            String tenant = "";
+            ParamUtils.checkTenant(tenant);
+        });
+        assertTrue(exception.getMessage().contains("tenant invalid"));
     }
     
     @Test
-    public void testCheckBetaIps() throws NacosException {
+    void testCheckBetaIps() throws NacosException {
         ParamUtils.checkBetaIps("127.0.0.1");
     }
     
     @Test
-    public void testCheckBetaIpsFail1() throws NacosException {
-        exceptionRule.expect(NacosException.class);
-        exceptionRule.expectMessage("betaIps invalid");
-        
-        ParamUtils.checkBetaIps("");
+    void testCheckBetaIpsFail1() throws NacosException {
+        Throwable exception = assertThrows(NacosException.class, () -> {
+            
+            ParamUtils.checkBetaIps("");
+        });
+        assertTrue(exception.getMessage().contains("betaIps invalid"));
     }
     
     @Test
-    public void testCheckBetaIpsFail2() throws NacosException {
-        exceptionRule.expect(NacosException.class);
-        exceptionRule.expectMessage("betaIps invalid");
-        ParamUtils.checkBetaIps("aaa");
+    void testCheckBetaIpsFail2() throws NacosException {
+        Throwable exception = assertThrows(NacosException.class, () -> {
+            ParamUtils.checkBetaIps("aaa");
+        });
+        assertTrue(exception.getMessage().contains("betaIps invalid"));
     }
     
     @Test
-    public void testCheckContent() throws NacosException {
+    void testCheckContent() throws NacosException {
         ParamUtils.checkContent("aaa");
     }
     
     @Test
-    public void testCheckContentFail() throws NacosException {
-        exceptionRule.expect(NacosException.class);
-        exceptionRule.expectMessage("content invalid");
-        ParamUtils.checkContent("");
+    void testCheckContentFail() throws NacosException {
+        Throwable exception = assertThrows(NacosException.class, () -> {
+            ParamUtils.checkContent("");
+        });
+        assertTrue(exception.getMessage().contains("content invalid"));
     }
 }

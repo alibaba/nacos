@@ -29,8 +29,8 @@ class EditInstanceDialog extends React.Component {
     serviceName: PropTypes.string,
     clusterName: PropTypes.string,
     groupName: PropTypes.string,
-    openLoading: PropTypes.string,
-    closeLoading: PropTypes.string,
+    openLoading: PropTypes.func,
+    closeLoading: PropTypes.func,
     getInstanceList: PropTypes.func,
     locale: PropTypes.object,
   };

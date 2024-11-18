@@ -16,44 +16,45 @@
 
 package com.alibaba.nacos.core.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
- *
  * {@link ClassUtils} unit tests.
  */
-public class ClassUtilsTest {
+class ClassUtilsTest {
     
     @Test
-    public void testGeneric() {
+    void testGeneric() {
         Type type = new GenericType<List<String>>() {
         }.getType();
-        Assert.assertEquals("java.util.List<java.lang.String>", type.getTypeName());
-        Assert.assertTrue(type instanceof ParameterizedType);
+        assertEquals("java.util.List<java.lang.String>", type.getTypeName());
+        assertTrue(type instanceof ParameterizedType);
     }
     
     @Test
-    public void testFindClassByName() {
+    void testFindClassByName() {
         Class clazz = ClassUtils.findClassByName("java.lang.Integer");
-        Assert.assertEquals("java.lang.Integer", clazz.getName());
+        assertEquals("java.lang.Integer", clazz.getName());
     }
     
     @Test
-    public void testGetName() {
+    void testGetName() {
         final String name = "java.lang.Integer";
         Integer val = 1;
-        Assert.assertEquals(name, ClassUtils.getName(val));
-        Assert.assertEquals(name, ClassUtils.getName(Integer.class));
+        assertEquals(name, ClassUtils.getName(val));
+        assertEquals(name, ClassUtils.getName(Integer.class));
         
-        Assert.assertEquals(name, ClassUtils.getCanonicalName(val));
-        Assert.assertEquals(name, ClassUtils.getCanonicalName(Integer.class));
+        assertEquals(name, ClassUtils.getCanonicalName(val));
+        assertEquals(name, ClassUtils.getCanonicalName(Integer.class));
         
-        Assert.assertEquals("Integer", ClassUtils.getSimplaName(val));
-        Assert.assertEquals("Integer", ClassUtils.getSimplaName(Integer.class));
+        assertEquals("Integer", ClassUtils.getSimplaName(val));
+        assertEquals("Integer", ClassUtils.getSimplaName(Integer.class));
     }
 }

@@ -17,24 +17,28 @@
 package com.alibaba.nacos.auth.context;
 
 import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class GrpcIdentityContextBuilderTest {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class GrpcIdentityContextBuilderTest {
     
     private static final String TEST_PLUGIN = "test";
     
@@ -50,8 +54,8 @@ public class GrpcIdentityContextBuilderTest {
     
     private GrpcIdentityContextBuilder identityContextBuilder;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         identityContextBuilder = new GrpcIdentityContextBuilder(authConfigs);
         when(authConfigs.getNacosAuthSystemType()).thenReturn(TEST_PLUGIN);
         Map<String, String> headers = new HashMap<>();
@@ -61,14 +65,14 @@ public class GrpcIdentityContextBuilderTest {
     }
     
     @Test
-    public void testBuildWithoutPlugin() {
+    void testBuildWithoutPlugin() {
         when(authConfigs.getNacosAuthSystemType()).thenReturn("non-exist");
         IdentityContext actual = identityContextBuilder.build(request);
         assertNull(actual.getParameter(IDENTITY_TEST_KEY));
     }
     
     @Test
-    public void testBuild() {
+    void testBuild() {
         IdentityContext actual = identityContextBuilder.build(request);
         assertEquals(IDENTITY_TEST_VALUE, actual.getParameter(IDENTITY_TEST_KEY));
         assertEquals("1.1.1.1", actual.getParameter(Constants.Identity.REMOTE_IP));

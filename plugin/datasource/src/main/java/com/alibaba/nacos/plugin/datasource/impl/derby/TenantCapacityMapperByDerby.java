@@ -16,9 +16,12 @@
 
 package com.alibaba.nacos.plugin.datasource.impl.derby;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
-import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.TenantCapacityMapper;
+import com.alibaba.nacos.plugin.datasource.model.MapperContext;
+import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
 /**
  * The derby implementation of TenantCapacityMapper.
@@ -26,7 +29,7 @@ import com.alibaba.nacos.plugin.datasource.mapper.TenantCapacityMapper;
  * @author hyx
  **/
 
-public class TenantCapacityMapperByDerby extends AbstractMapper implements TenantCapacityMapper {
+public class TenantCapacityMapperByDerby extends AbstractMapperByDerby implements TenantCapacityMapper {
 
     @Override
     public String getDataSource() {
@@ -34,8 +37,10 @@ public class TenantCapacityMapperByDerby extends AbstractMapper implements Tenan
     }
 
     @Override
-    public String getCapacityList4CorrectUsage() {
-        return "SELECT id, tenant_id FROM tenant_capacity WHERE id>? OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY";
+    public MapperResult getCapacityList4CorrectUsage(MapperContext context) {
+        String sql = "SELECT id, tenant_id FROM tenant_capacity WHERE id>? OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY";
+        return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.ID),
+                context.getWhereParameter(FieldConstant.LIMIT_SIZE)));
     }
-
+    
 }

@@ -25,33 +25,12 @@ import com.alibaba.nacos.common.task.AbstractDelayTask;
  */
 public class DumpTask extends AbstractDelayTask {
     
-    public DumpTask(String groupKey, long lastModified, String handleIp) {
+    public DumpTask(String groupKey, String grayName, long lastModified, String handleIp) {
         this.groupKey = groupKey;
         this.lastModified = lastModified;
         this.handleIp = handleIp;
-        this.isBeta = false;
-        this.tag = null;
-        // retry interval: 1s
-        setTaskInterval(1000L);
-    }
-    
-    public DumpTask(String groupKey, long lastModified, String handleIp, boolean isBeta) {
-        this.groupKey = groupKey;
-        this.lastModified = lastModified;
-        this.handleIp = handleIp;
-        this.isBeta = isBeta;
-        this.tag = null;
-        // retry interval: 1s
-        setTaskInterval(1000L);
-    }
-    
-    public DumpTask(String groupKey, String tag, long lastModified, String handleIp, boolean isBeta) {
-        this.groupKey = groupKey;
-        this.lastModified = lastModified;
-        this.handleIp = handleIp;
-        this.isBeta = isBeta;
-        this.tag = tag;
-        // retry interval: 1s
+        this.grayName = grayName;
+        //retry interval: 1s
         setTaskInterval(1000L);
     }
     
@@ -65,9 +44,7 @@ public class DumpTask extends AbstractDelayTask {
     
     final String handleIp;
     
-    final boolean isBeta;
-    
-    final String tag;
+    final String grayName;
     
     public String getGroupKey() {
         return groupKey;
@@ -81,13 +58,8 @@ public class DumpTask extends AbstractDelayTask {
         return handleIp;
     }
     
-    public boolean isBeta() {
-        return isBeta;
+    public String getGrayName() {
+        return grayName;
     }
-    
-    public String getTag() {
-        return tag;
-    }
-    
 }
 

@@ -59,16 +59,7 @@ public final class CredentialService implements SpasCredentialLoader {
     
     public static CredentialService getInstance(String appName) {
         String key = appName != null ? appName : IdentifyConstants.NO_APP_NAME;
-        CredentialService instance = INSTANCES.get(key);
-        if (instance != null) {
-            return instance;
-        }
-        instance = new CredentialService(appName);
-        CredentialService previous = INSTANCES.putIfAbsent(key, instance);
-        if (previous != null) {
-            instance = previous;
-        }
-        return instance;
+        return INSTANCES.computeIfAbsent(key, k -> new CredentialService(appName));
     }
     
     public static CredentialService freeInstance() {
@@ -102,10 +93,6 @@ public final class CredentialService implements SpasCredentialLoader {
     
     @Override
     public Credentials getCredential() {
-        Credentials localCredential = credentials;
-        if (localCredential.valid()) {
-            return localCredential;
-        }
         return credentials;
     }
     
