@@ -43,6 +43,8 @@ class HistoryConfigInfoMapperByDerbyTest {
     
     Timestamp endTime = new Timestamp(System.currentTimeMillis());
     
+    String publishType = "formal";
+    
     MapperContext context;
     
     private HistoryConfigInfoMapperByDerby historyConfigInfoMapperByDerby;
@@ -56,6 +58,7 @@ class HistoryConfigInfoMapperByDerbyTest {
         context.putWhereParameter(FieldConstant.LIMIT_SIZE, limitSize);
         context.putWhereParameter(FieldConstant.LAST_MAX_ID, lastMaxId);
         context.putWhereParameter(FieldConstant.PAGE_SIZE, pageSize);
+        context.putWhereParameter(FieldConstant.PUBLISH_TYPE, publishType);
         
     }
     
@@ -63,7 +66,7 @@ class HistoryConfigInfoMapperByDerbyTest {
     void testRemoveConfigHistory() {
         MapperResult mapperResult = historyConfigInfoMapperByDerby.removeConfigHistory(context);
         assertEquals(mapperResult.getSql(),
-                "DELETE FROM his_config_info WHERE id IN( SELECT id FROM his_config_info WHERE gmt_modified < ? "
+                "DELETE FROM his_config_info WHERE nid IN( SELECT nid FROM his_config_info WHERE gmt_modified < ? "
                         + "OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY)");
         assertArrayEquals(new Object[] {startTime, limitSize}, mapperResult.getParamList().toArray());
     }
@@ -78,10 +81,10 @@ class HistoryConfigInfoMapperByDerbyTest {
     @Test
     void testFindDeletedConfig() {
         MapperResult mapperResult = historyConfigInfoMapperByDerby.findDeletedConfig(context);
-        assertEquals(mapperResult.getSql(), "SELECT data_id, group_id, tenant_id,gmt_modified,nid FROM his_config_info WHERE op_type = 'D' "
-                + "AND gmt_modified >= ? and nid > ? order by nid OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
-        
-        assertArrayEquals(new Object[] {startTime, lastMaxId, pageSize}, mapperResult.getParamList().toArray());
+        assertEquals(mapperResult.getSql(), "SELECT id, nid, data_id, group_id, app_name, content, md5, gmt_create, gmt_modified, src_user, src_ip,"
+                + " op_type, tenant_id, publish_type, ext_info, encrypted_data_key FROM his_config_info WHERE op_type = 'D' AND "
+                + "publish_type = ? and gmt_modified >= ? and nid > ? order by nid OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
+        assertArrayEquals(new Object[] {publishType, startTime, lastMaxId, pageSize}, mapperResult.getParamList().toArray());
     }
     
     @Test

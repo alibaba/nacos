@@ -30,6 +30,7 @@ import com.alibaba.nacos.api.config.remote.response.ClientConfigMetricResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
@@ -760,5 +761,22 @@ class ClientWorkerTest {
         assertEquals(cacheDataFromCache2, differentCacheData);
         assertFalse(cacheDataFromCache2.isDiscard());
         assertFalse(cacheDataFromCache2.isConsistentWithServer());
+    }
+    
+    @Test
+    void testResponse403() throws NacosException {
+        Properties prop = new Properties();
+        ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
+        ConfigServerListManager agent = Mockito.mock(ConfigServerListManager.class);
+        
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
+        final ClientWorker clientWorker = new ClientWorker(filter, agent, nacosClientProperties);
+        
+        ConfigRemoveResponse response = ConfigRemoveResponse.buildFailResponse("accessToken invalid");
+        response.setErrorCode(ConfigQueryResponse.NO_RIGHT);
+        Mockito.when(rpcClient.request(any(ConfigRemoveRequest.class)))
+                .thenReturn(response);
+        boolean result = clientWorker.removeConfig("a", "b", "c", "tag");
+        assertFalse(result);
     }
 }
