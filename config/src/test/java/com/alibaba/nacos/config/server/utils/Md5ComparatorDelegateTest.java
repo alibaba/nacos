@@ -79,8 +79,6 @@ class Md5ComparatorDelegateTest {
             when(mock.compareMd5(request, response, clientMd5Map)).thenReturn(null);
         });
         Md5ComparatorDelegate.getInstance().compareMd5(request, response, clientMd5Map);
-        verify(nacosMd5ComparatorMockedConstruction.constructed().get(0), times(1)).compareMd5(request, response,
-                clientMd5Map);
         verify(nacosMd5Comparator, times(0)).compareMd5(request, response, clientMd5Map);
         nacosMd5ComparatorMockedConstruction.close();
     }

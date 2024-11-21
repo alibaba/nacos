@@ -16,9 +16,6 @@
 
 package com.alibaba.nacos.config.server.model;
 
-import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
-import com.alibaba.nacos.config.server.model.gray.ConfigGrayPersistInfo;
-import com.google.gson.Gson;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -30,19 +27,8 @@ class NacosConfigCacheFactoryTest {
         NacosConfigCacheFactory nacosConfigCacheFactory = new NacosConfigCacheFactory();
         ConfigCache configCache = nacosConfigCacheFactory.createConfigCache();
         assertEquals(ConfigCache.class, configCache.getClass());
-        ConfigCache configCache2 = nacosConfigCacheFactory.createConfigCache("md5", 1L);
-        assertEquals(ConfigCache.class, configCache2.getClass());
-        assertEquals("md5", configCache2.getMd5());
-        assertEquals(1L, configCache2.getLastModifiedTs());
-        ConfigCacheGray configCacheGray = nacosConfigCacheFactory.createConfigCacheGray("grayName");
+        ConfigCacheGray configCacheGray = nacosConfigCacheFactory.createConfigCacheGray();
         assertEquals(ConfigCacheGray.class, configCacheGray.getClass());
-        assertEquals("grayName", configCacheGray.getGrayName());
-        ConfigGrayPersistInfo localConfigGrayPersistInfo = new ConfigGrayPersistInfo(BetaGrayRule.TYPE_BETA,
-                BetaGrayRule.VERSION, "1.1.1.1", Integer.MAX_VALUE);
-        ConfigCacheGray configCacheGray2 = nacosConfigCacheFactory.createConfigCacheGray("md5", 1L, (new Gson()).toJson(localConfigGrayPersistInfo));
-        assertEquals(ConfigCacheGray.class, configCacheGray2.getClass());
-        assertEquals("md5", configCacheGray2.getMd5());
-        assertEquals(1L, configCacheGray2.getLastModifiedTs());
     }
     
     @Test

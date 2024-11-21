@@ -16,25 +16,16 @@
 
 package com.alibaba.nacos.config.server.model;
 
-/**
- * The interface Config cache md5 post processor.
- *
- * @author Sunrisea
- */
-public interface ConfigCacheMd5PostProcessor {
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class NacosConfigCachePostProcessorTest {
     
-    /**
-     * Gets post processor name.
-     *
-     * @return the post processor name
-     */
-    public String getPostProcessorName();
-    
-    /**
-     * Post process.
-     *
-     * @param configCache the config cache
-     * @param content     the content
-     */
-    public void postProcess(ConfigCache configCache, String content);
+    @Test
+    public void test() {
+        NacosConfigCachePostProcessor nacosConfigCacheMd5PostProcessor = new NacosConfigCachePostProcessor();
+        assertEquals("nacos", nacosConfigCacheMd5PostProcessor.getPostProcessorName());
+        nacosConfigCacheMd5PostProcessor.postProcess(null, null);
+    }
 }

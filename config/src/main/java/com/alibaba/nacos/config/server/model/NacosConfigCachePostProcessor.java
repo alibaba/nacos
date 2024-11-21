@@ -21,7 +21,7 @@ package com.alibaba.nacos.config.server.model;
  *
  * @author Sunrisea
  */
-public class NacosConfigCacheMd5PostProcessor implements ConfigCacheMd5PostProcessor {
+public class NacosConfigCachePostProcessor implements ConfigCachePostProcessor {
     
     @Override
     public String getPostProcessorName() {

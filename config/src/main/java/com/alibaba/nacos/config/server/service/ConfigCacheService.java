@@ -22,7 +22,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigCache;
 import com.alibaba.nacos.config.server.model.ConfigCacheGray;
-import com.alibaba.nacos.config.server.model.ConfigCacheMd5PostProcessorDelegate;
+import com.alibaba.nacos.config.server.model.ConfigCachePostProcessorDelegate;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.model.gray.GrayRule;
 import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
@@ -363,7 +363,7 @@ public class ConfigCacheService {
             configCache.setMd5(md5);
             configCache.setLastModifiedTs(lastModifiedTs);
             configCache.setEncryptedDataKey(encryptedDataKey);
-            ConfigCacheMd5PostProcessorDelegate.getInstance().postProcess(configCache, content);
+            ConfigCachePostProcessorDelegate.getInstance().postProcess(configCache, content);
             NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey));
         }
     }
@@ -389,7 +389,7 @@ public class ConfigCacheService {
         configCache.setEncryptedDataKey(encryptedDataKey);
         configCache.resetGrayRule(grayRule);
         cache.sortConfigGray();
-        ConfigCacheMd5PostProcessorDelegate.getInstance().postProcess(configCache, content);
+        ConfigCachePostProcessorDelegate.getInstance().postProcess(configCache, content);
         NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey));
     }
     
