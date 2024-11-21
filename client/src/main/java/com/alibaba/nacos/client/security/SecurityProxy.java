@@ -17,12 +17,15 @@
 package com.alibaba.nacos.client.security;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.auth.impl.NacosAuthLoginConstant;
 import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthPluginManager;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthService;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.lifecycle.Closeable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -36,6 +39,8 @@ import java.util.Properties;
  * @since 1.2.0
  */
 public class SecurityProxy implements Closeable {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(SecurityProxy.class);
     
     private ClientAuthPluginManager clientAuthPluginManager;
     
@@ -84,5 +89,24 @@ public class SecurityProxy implements Closeable {
     @Override
     public void shutdown() throws NacosException {
         clientAuthPluginManager.shutdown();
+    }
+    
+    /**
+     * Login again to refresh the accessToken.
+     */
+    public void reLogin() {
+        if (clientAuthPluginManager.getAuthServiceSpiImplSet().isEmpty()) {
+            return;
+        }
+        for (ClientAuthService clientAuthService : clientAuthPluginManager.getAuthServiceSpiImplSet()) {
+            try {
+                LoginIdentityContext loginIdentityContext = clientAuthService.getLoginIdentityContext(new RequestResource());
+                if (loginIdentityContext != null) {
+                    loginIdentityContext.setParameter(NacosAuthLoginConstant.RELOGINFLAG, "true");
+                }
+            } catch (Exception e) {
+                LOGGER.error("[SecurityProxy] set reLoginFlag failed.", e);
+            }
+        }
     }
 }

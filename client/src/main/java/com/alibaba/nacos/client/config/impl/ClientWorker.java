@@ -1221,10 +1221,17 @@ public class ClientWorker implements Closeable {
                 throw new NacosException(NacosException.CLIENT_OVER_THRESHOLD,
                         "More than client-side current limit threshold");
             }
+            Response response;
             if (timeoutMills < 0) {
-                return rpcClientInner.request(request);
+                response = rpcClientInner.request(request);
+            } else {
+                response = rpcClientInner.request(request, timeoutMills);
             }
-            return rpcClientInner.request(request, timeoutMills);
+            // If the 403 login operation is triggered, refresh the accessToken of the client
+            if (response.getErrorCode() == ConfigQueryResponse.NO_RIGHT) {
+                reLogin();
+            }
+            return response;
         }
         
         private RequestResource resourceBuild(Request request) {
