@@ -17,7 +17,10 @@
 package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -42,6 +45,18 @@ import static org.mockito.Mockito.when;
 
 class MD5UtilTest {
     
+    MockedStatic<EnvUtil> envUtilMockedStatic;
+    
+    @BeforeEach
+    void setUp() {
+        envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
+    }
+    
+    @AfterEach
+    void tearDown() {
+        envUtilMockedStatic.close();
+    }
+    
     @Test
     void testCompareMd5() {
         
@@ -55,6 +70,8 @@ class MD5UtilTest {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("Vipserver-Tag", "test");
         MockHttpServletResponse response = new MockHttpServletResponse();
+        
+        envUtilMockedStatic.when(() -> EnvUtil.getProperty("nacos.config.cache.type", "nacos")).thenReturn("nacos");
         
         List<String> changedGroupKeys = MD5Util.compareMd5(request, response, clientMd5Map);
         

@@ -57,14 +57,13 @@ class Md5ComparatorDelegateTest {
     void setUp() {
         envUtilMockedStatic = mockStatic(EnvUtil.class);
         nacosServiceLoaderMockedStatic = mockStatic(NacosServiceLoader.class);
-        nacosMd5ComparatorMockedConstruction = mockConstruction(NacosMd5Comparator.class);
+        
     }
     
     @AfterEach
     void tearDown() {
         envUtilMockedStatic.close();
         nacosServiceLoaderMockedStatic.close();
-        nacosMd5ComparatorMockedConstruction.close();
     }
     
     @Test
@@ -76,11 +75,14 @@ class Md5ComparatorDelegateTest {
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
         HashMap<String, String> clientMd5Map = new HashMap<>();
+        nacosMd5ComparatorMockedConstruction = mockConstruction(NacosMd5Comparator.class, (mock, context) -> {
+            when(mock.compareMd5(request, response, clientMd5Map)).thenReturn(null);
+        });
         Md5ComparatorDelegate.getInstance().compareMd5(request, response, clientMd5Map);
-        when(nacosMd5ComparatorMockedConstruction.constructed().get(0).compareMd5(request, response, clientMd5Map)).thenReturn(null);
         verify(nacosMd5ComparatorMockedConstruction.constructed().get(0), times(1)).compareMd5(request, response,
                 clientMd5Map);
         verify(nacosMd5Comparator, times(0)).compareMd5(request, response, clientMd5Map);
+        nacosMd5ComparatorMockedConstruction.close();
     }
     
     @Test
