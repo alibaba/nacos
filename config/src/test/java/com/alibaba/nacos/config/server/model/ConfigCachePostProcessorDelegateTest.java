@@ -34,7 +34,6 @@ import java.lang.reflect.Modifier;
 import java.util.Collections;
 
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -55,21 +54,19 @@ class ConfigCachePostProcessorDelegateTest {
     @BeforeEach
     void setUp() {
         envUtilMockedStatic = mockStatic(EnvUtil.class);
-        mockedConstruction = mockConstruction(NacosConfigCachePostProcessor.class);
         nacosServiceLoaderMockedStatic = mockStatic(NacosServiceLoader.class);
+        when(mockConfigCacheMd5PostProcessor.getPostProcessorName()).thenReturn("nacos");
         
     }
     
     @AfterEach
     void tearDown() {
         envUtilMockedStatic.close();
-        mockedConstruction.close();
         nacosServiceLoaderMockedStatic.close();
     }
     
     @Test
     void test1() {
-        when(mockConfigCacheMd5PostProcessor.getPostProcessorName()).thenReturn("nacos");
         envUtilMockedStatic.when(() -> EnvUtil.getProperty("nacos.config.cache.type", "nacos")).thenReturn("lalala");
         nacosServiceLoaderMockedStatic.when(() -> NacosServiceLoader.load(ConfigCachePostProcessor.class))
                 .thenReturn(Collections.singletonList(mockConfigCacheMd5PostProcessor));
@@ -80,8 +77,6 @@ class ConfigCachePostProcessorDelegateTest {
     @Test
     void test2()
             throws NoSuchFieldException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        
-        when(mockConfigCacheMd5PostProcessor.getPostProcessorName()).thenReturn("nacos");
         doNothing().when(mockConfigCacheMd5PostProcessor).postProcess(null, null);
         envUtilMockedStatic.when(() -> EnvUtil.getProperty("nacos.config.cache.type", "nacos")).thenReturn("nacos");
         nacosServiceLoaderMockedStatic.when(() -> NacosServiceLoader.load(ConfigCachePostProcessor.class))
