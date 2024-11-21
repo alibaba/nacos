@@ -103,12 +103,7 @@ public class AuthFilter implements Filter {
                         break;
                 }
                 
-                ApiType apiType = secured.apiType();
-                if (apiType == ApiType.CONSOLE_API && !authConfigs.isConsoleAuthEnabled()) {
-                    chain.doFilter(request, response);
-                    return;
-                }
-                if (apiType == ApiType.OPEN_API && !authConfigs.isAuthEnabled()) {
+                if (targetApiTypeAuthDisabled(secured.apiType())) {
                     chain.doFilter(request, response);
                     return;
                 }
@@ -149,5 +144,14 @@ public class AuthFilter implements Filter {
             Loggers.AUTH.warn("[AUTH-FILTER] Server failed: ", e);
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Server failed, " + e.getMessage());
         }
+    }
+    
+    private boolean targetApiTypeAuthDisabled(ApiType apiType) {
+        // Console type api to judge console auth enabled switches.
+        if (apiType == ApiType.CONSOLE_API) {
+            return !authConfigs.isConsoleAuthEnabled();
+        }
+        // Others type api to judge global auth enabled switches.
+        return !authConfigs.isAuthEnabled();
     }
 }

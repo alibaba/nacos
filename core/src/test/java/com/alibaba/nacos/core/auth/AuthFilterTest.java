@@ -25,6 +25,7 @@ import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -213,6 +214,20 @@ class AuthFilterTest {
         authFilter.doFilter(request, response, filterChain);
         verify(filterChain, never()).doFilter(request, response);
         verify(response).sendError(eq(403), anyString());
+    }
+    
+    @Test
+    @Secured(apiType = ApiType.CONSOLE_API)
+    void testDoFilterWithConsoleApiDisabled() throws NoSuchMethodException, ServletException, IOException {
+        when(authConfigs.isAuthEnabled()).thenReturn(true);
+        when(authConfigs.isConsoleAuthEnabled()).thenReturn(false);
+        when(authConfigs.getServerIdentityKey()).thenReturn("1");
+        when(authConfigs.getServerIdentityValue()).thenReturn("2");
+        when(methodsCache.getMethod(request)).thenReturn(
+                this.getClass().getDeclaredMethod("testDoFilterWithConsoleApiDisabled"));
+        authFilter.doFilter(request, response, filterChain);
+        verify(filterChain).doFilter(request, response);
+        verify(response, never()).sendError(anyInt(), anyString());
     }
     
     private HttpProtocolAuthService injectMockPlugins() {
