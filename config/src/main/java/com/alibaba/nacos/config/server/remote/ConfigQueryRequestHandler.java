@@ -88,7 +88,6 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
         String groupKey = GroupKey2.getKey(configQueryRequest.getDataId(), configQueryRequest.getGroup(),
                 configQueryRequest.getTenant());
         String requestIpApp = meta.getLabels().get(CLIENT_APPNAME_HEADER);
-        String acceptCharset = ENCODE_UTF8;
         ParamUtils.checkParam(tag);
         int lockResult = ConfigCacheService.tryConfigReadLock(groupKey);
         String pullEvent = ConfigTraceService.PULL_EVENT;
@@ -129,7 +128,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                     }
                 }
                 if (matchedGray != null) {
-                    md5 = matchedGray.getMd5(acceptCharset);
+                    md5 = matchedGray.getMd5();
                     lastModified = matchedGray.getLastModifiedTs();
                     encryptedDataKey = matchedGray.getEncryptedDataKey();
                     content = ConfigDiskServiceFactory.getInstance()
@@ -150,7 +149,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                     pullEvent = ConfigTraceService.PULL_EVENT + "-" + TagGrayRule.TYPE_TAG + "-" + tag;
                     response.setTag(tag);
                 } else {
-                    md5 = cacheItem.getConfigCache().getMd5(acceptCharset);
+                    md5 = cacheItem.getConfigCache().getMd5();
                     lastModified = cacheItem.getConfigCache().getLastModifiedTs();
                     encryptedDataKey = cacheItem.getConfigCache().getEncryptedDataKey();
                     content = ConfigDiskServiceFactory.getInstance().getContent(dataId, group, tenant);

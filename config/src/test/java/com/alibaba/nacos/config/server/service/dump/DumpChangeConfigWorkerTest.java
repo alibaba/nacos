@@ -188,7 +188,7 @@ class DumpChangeConfigWorkerTest {
                         .getLastModifiedTs());
         assertEquals(MD5Utils.md5Hex(configInfoWrapperNewForId1.getContent(), "UTF-8"),
                 ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataIdPrefix + 1, "group" + 1, "tenant" + 1)).getConfigCache()
-                        .getMd5Utf8());
+                        .getMd5());
     }
     
     @Test
@@ -224,7 +224,7 @@ class DumpChangeConfigWorkerTest {
                         .getLastModifiedTs());
         assertEquals(MD5Utils.md5Hex(configInfoWrapperNewForId1.getContent(), "UTF-8"),
                 ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataIdPrefix + 1, "group" + 1, "tenant" + 1)).getConfigCache()
-                        .getMd5Utf8());
+                        .getMd5());
         
     }
     
@@ -263,7 +263,7 @@ class DumpChangeConfigWorkerTest {
                         .getLastModifiedTs());
         assertEquals(MD5Utils.md5Hex("content" + 1, "UTF-8"),
                 ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataIdPrefix + 1, "group" + 1, "tenant" + 1)).getConfigCache()
-                        .getMd5Utf8());
+                        .getMd5());
         
     }
     
@@ -302,7 +302,7 @@ class DumpChangeConfigWorkerTest {
                         .getLastModifiedTs());
         assertEquals(MD5Utils.md5Hex(configInfoWrapperNewForId1.getContent(), "UTF-8"),
                 ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataIdPrefix + 1, "group" + 1, "tenant" + 1)).getConfigCache()
-                        .getMd5Utf8());
+                        .getMd5());
         
     }
     

@@ -55,7 +55,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
 import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
 
 /**
@@ -135,8 +134,6 @@ public class ConfigServletInner {
         
         boolean notify = StringUtils.isNotBlank(isNotify) && Boolean.parseBoolean(isNotify);
         
-        String acceptCharset = ENCODE_UTF8;
-        
         if (isV2) {
             response.setHeader(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         }
@@ -187,7 +184,7 @@ public class ConfigServletInner {
                 String encryptedDataKey;
                 
                 if (matchedGray != null) {
-                    md5 = matchedGray.getMd5(acceptCharset);
+                    md5 = matchedGray.getMd5();
                     lastModified = matchedGray.getLastModifiedTs();
                     encryptedDataKey = matchedGray.getEncryptedDataKey();
                     content = ConfigDiskServiceFactory.getInstance()
@@ -211,7 +208,7 @@ public class ConfigServletInner {
                     response.setHeader(com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG,
                             URLEncoder.encode(tag, StandardCharsets.UTF_8.displayName()));
                 } else {
-                    md5 = cacheItem.getConfigCache().getMd5(acceptCharset);
+                    md5 = cacheItem.getConfigCache().getMd5();
                     lastModified = cacheItem.getConfigCache().getLastModifiedTs();
                     encryptedDataKey = cacheItem.getConfigCache().getEncryptedDataKey();
                     content = ConfigDiskServiceFactory.getInstance().getContent(dataId, group, tenant);
