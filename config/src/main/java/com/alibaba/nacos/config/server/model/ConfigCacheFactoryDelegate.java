@@ -59,23 +59,56 @@ public class ConfigCacheFactoryDelegate {
         }
     }
     
+    /**
+     * Gets instance.
+     *
+     * @return the instance
+     */
     public static ConfigCacheFactoryDelegate getInstance() {
         return INSTANCE;
     }
     
+    /**
+     * Create config cache config cache.
+     *
+     * @return the config cache
+     */
     public ConfigCache createConfigCache() {
         return configCacheFactory.createConfigCache();
     }
     
+    /**
+     * Create config cache config cache.
+     *
+     * @param md5            the md 5
+     * @param lastModifiedTs the last modified ts
+     * @return the config cache
+     */
     public ConfigCache createConfigCache(String md5, long lastModifiedTs) {
-        return configCacheFactory.createConfigCache(md5, lastModifiedTs);
+        ConfigCache configCache = this.createConfigCache();
+        configCache.setMd5(md5);
+        configCache.setLastModifiedTs(lastModifiedTs);
+        return configCache;
     }
     
+    /**
+     * Create config cache gray config cache gray.
+     *
+     * @return the config cache gray
+     */
+    public ConfigCacheGray createConfigCacheGray() {
+        return configCacheFactory.createConfigCacheGray();
+    }
+    
+    /**
+     * Create config cache gray config cache gray.
+     *
+     * @param grayName the gray name
+     * @return the config cache gray
+     */
     public ConfigCacheGray createConfigCacheGray(String grayName) {
-        return configCacheFactory.createConfigCacheGray(grayName);
-    }
-    
-    public ConfigCacheGray createConfigCacheGray(String md5, long lastModifiedTs, String grayRule) {
-        return configCacheFactory.createConfigCacheGray(md5, lastModifiedTs, grayRule);
+        ConfigCacheGray configCacheGray = configCacheFactory.createConfigCacheGray();
+        configCacheGray.setGrayName(grayName);
+        return configCacheGray;
     }
 }

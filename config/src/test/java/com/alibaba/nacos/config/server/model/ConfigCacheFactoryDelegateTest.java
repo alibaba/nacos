@@ -52,7 +52,10 @@ class ConfigCacheFactoryDelegateTest {
     void setUp() {
         envUtilMockedStatic = mockStatic(EnvUtil.class);
         nacosServiceLoaderMockedStatic = mockStatic(NacosServiceLoader.class);
-        nacosConfigCacheFactoryMockedConstruction = mockConstruction(NacosConfigCacheFactory.class);
+        nacosConfigCacheFactoryMockedConstruction = mockConstruction(NacosConfigCacheFactory.class, (mock, context) -> {
+            when(mock.createConfigCache()).thenReturn(new ConfigCache());
+            when(mock.createConfigCacheGray()).thenReturn(new ConfigCacheGray());
+        });
     }
     
     @AfterEach
@@ -64,6 +67,7 @@ class ConfigCacheFactoryDelegateTest {
     
     @Test
     public void test() {
+        
         when(nacosConfigCacheFactory.getConfigCacheFactoryName()).thenReturn("nacos");
         nacosServiceLoaderMockedStatic.when(() -> NacosServiceLoader.load(ConfigCacheFactory.class))
                 .thenReturn(Collections.singletonList(nacosConfigCacheFactory));
@@ -71,19 +75,16 @@ class ConfigCacheFactoryDelegateTest {
         ConfigCache configCache = ConfigCacheFactoryDelegate.getInstance().createConfigCache();
         ConfigCache configCache1 = ConfigCacheFactoryDelegate.getInstance().createConfigCache("md5", 123456789L);
         ConfigCacheGray configCacheGray = ConfigCacheFactoryDelegate.getInstance().createConfigCacheGray("grayName");
-        ConfigCacheGray configCacheGray1 = ConfigCacheFactoryDelegate.getInstance().createConfigCacheGray("md5", 123456789L, "grayRule");
-        verify(nacosConfigCacheFactoryMockedConstruction.constructed().get(0), times(1)).createConfigCache();
-        verify(nacosConfigCacheFactoryMockedConstruction.constructed().get(0), times(1)).createConfigCache("md5",
-                123456789L);
-        verify(nacosConfigCacheFactoryMockedConstruction.constructed().get(0), times(1)).createConfigCacheGray(
-                "grayName");
-        verify(nacosConfigCacheFactoryMockedConstruction.constructed().get(0), times(1)).createConfigCacheGray("md5",
-                123456789L, "grayRule");
+        ConfigCacheGray configCacheGray1 = ConfigCacheFactoryDelegate.getInstance().createConfigCacheGray();
+        verify(nacosConfigCacheFactoryMockedConstruction.constructed().get(0), times(2)).createConfigCache();
+        verify(nacosConfigCacheFactoryMockedConstruction.constructed().get(0), times(2)).createConfigCacheGray();
     }
     
     @Test
     public void test2() throws Exception {
         when(nacosConfigCacheFactory.getConfigCacheFactoryName()).thenReturn("nacos");
+        when(nacosConfigCacheFactory.createConfigCache()).thenReturn(new ConfigCache());
+        when(nacosConfigCacheFactory.createConfigCacheGray()).thenReturn(new ConfigCacheGray());
         nacosServiceLoaderMockedStatic.when(() -> NacosServiceLoader.load(ConfigCacheFactory.class))
                 .thenReturn(Collections.singletonList(nacosConfigCacheFactory));
         envUtilMockedStatic.when(() -> EnvUtil.getProperty("nacos.config.cache.type", "nacos")).thenReturn("nacos");
@@ -93,10 +94,8 @@ class ConfigCacheFactoryDelegateTest {
         configCacheFactoryDelegate.createConfigCache();
         configCacheFactoryDelegate.createConfigCache("md5", 123456789L);
         configCacheFactoryDelegate.createConfigCacheGray("grayName");
-        configCacheFactoryDelegate.createConfigCacheGray("md5", 123456789L, "grayRule");
-        verify(nacosConfigCacheFactory, times(1)).createConfigCache();
-        verify(nacosConfigCacheFactory, times(1)).createConfigCache("md5", 123456789L);
-        verify(nacosConfigCacheFactory, times(1)).createConfigCacheGray("grayName");
-        verify(nacosConfigCacheFactory, times(1)).createConfigCacheGray("md5", 123456789L, "grayRule");
+        configCacheFactoryDelegate.createConfigCacheGray();
+        verify(nacosConfigCacheFactory, times(2)).createConfigCache();
+        verify(nacosConfigCacheFactory, times(2)).createConfigCacheGray();
     }
 }

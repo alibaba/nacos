@@ -31,31 +31,11 @@ public interface ConfigCacheFactory {
     public ConfigCache createConfigCache();
     
     /**
-     * Create config cache config cache.
-     *
-     * @param md5            the md 5
-     * @param lastModifiedTs the last modified ts
-     * @return the config cache
-     */
-    public ConfigCache createConfigCache(String md5, long lastModifiedTs);
-    
-    /**
      * Create config cache gray config cache gray.
      *
-     * @param grayName the gray name
      * @return the config cache gray
      */
-    public ConfigCacheGray createConfigCacheGray(String grayName);
-    
-    /**
-     * Create config cache gray config cache gray.
-     *
-     * @param md5            the md 5
-     * @param lastModifiedTs the last modified ts
-     * @param grayRule       the gray rule
-     * @return the config cache gray
-     */
-    public ConfigCacheGray createConfigCacheGray(String md5, long lastModifiedTs, String grayRule);
+    public ConfigCacheGray createConfigCacheGray();
     
     /**
      * Gets config cache factroy name.

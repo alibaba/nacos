@@ -29,18 +29,8 @@ public class NacosConfigCacheFactory implements ConfigCacheFactory {
     }
     
     @Override
-    public ConfigCache createConfigCache(String md5, long lastModifiedTs) {
-        return new ConfigCache(md5, lastModifiedTs);
-    }
-    
-    @Override
-    public ConfigCacheGray createConfigCacheGray(String grayName) {
-        return new ConfigCacheGray(grayName);
-    }
-    
-    @Override
-    public ConfigCacheGray createConfigCacheGray(String md5, long lastModifiedTs, String grayRule) {
-        return new ConfigCacheGray(md5, lastModifiedTs, grayRule);
+    public ConfigCacheGray createConfigCacheGray() {
+        return new ConfigCacheGray();
     }
     
     @Override
