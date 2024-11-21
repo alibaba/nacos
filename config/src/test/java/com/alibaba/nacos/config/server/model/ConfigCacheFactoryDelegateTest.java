@@ -43,8 +43,6 @@ class ConfigCacheFactoryDelegateTest {
     
     MockedStatic<NacosServiceLoader> nacosServiceLoaderMockedStatic;
     
-    MockedConstruction<NacosConfigCacheFactory> nacosConfigCacheFactoryMockedConstruction;
-    
     @Mock
     NacosConfigCacheFactory nacosConfigCacheFactory;
     
@@ -52,22 +50,16 @@ class ConfigCacheFactoryDelegateTest {
     void setUp() {
         envUtilMockedStatic = mockStatic(EnvUtil.class);
         nacosServiceLoaderMockedStatic = mockStatic(NacosServiceLoader.class);
-        nacosConfigCacheFactoryMockedConstruction = mockConstruction(NacosConfigCacheFactory.class, (mock, context) -> {
-            when(mock.createConfigCache()).thenReturn(new ConfigCache());
-            when(mock.createConfigCacheGray()).thenReturn(new ConfigCacheGray());
-        });
     }
     
     @AfterEach
     void tearDown() {
         envUtilMockedStatic.close();
         nacosServiceLoaderMockedStatic.close();
-        nacosConfigCacheFactoryMockedConstruction.close();
     }
     
     @Test
     public void test() {
-        
         when(nacosConfigCacheFactory.getConfigCacheFactoryName()).thenReturn("nacos");
         nacosServiceLoaderMockedStatic.when(() -> NacosServiceLoader.load(ConfigCacheFactory.class))
                 .thenReturn(Collections.singletonList(nacosConfigCacheFactory));
@@ -76,8 +68,8 @@ class ConfigCacheFactoryDelegateTest {
         ConfigCache configCache1 = ConfigCacheFactoryDelegate.getInstance().createConfigCache("md5", 123456789L);
         ConfigCacheGray configCacheGray = ConfigCacheFactoryDelegate.getInstance().createConfigCacheGray("grayName");
         ConfigCacheGray configCacheGray1 = ConfigCacheFactoryDelegate.getInstance().createConfigCacheGray();
-        verify(nacosConfigCacheFactoryMockedConstruction.constructed().get(0), times(2)).createConfigCache();
-        verify(nacosConfigCacheFactoryMockedConstruction.constructed().get(0), times(2)).createConfigCacheGray();
+        verify(nacosConfigCacheFactory, times(0)).createConfigCache();
+        verify(nacosConfigCacheFactory, times(0)).createConfigCacheGray();
     }
     
     @Test
