@@ -440,6 +440,12 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
             if (HttpStatus.SC_NOT_MODIFIED == restResult.getCode()) {
                 return StringUtils.EMPTY;
             }
+            
+            // If the 403 login operation is triggered, refresh the accessToken of the client
+            if (HttpStatus.SC_FORBIDDEN == restResult.getCode()) {
+                reLogin();
+            }
+
             throw new NacosException(restResult.getCode(), restResult.getMessage());
         } catch (NacosException e) {
             NAMING_LOGGER.error("[NA] failed to request", e);

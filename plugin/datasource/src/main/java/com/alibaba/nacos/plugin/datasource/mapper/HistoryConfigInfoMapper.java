@@ -107,8 +107,8 @@ public interface HistoryConfigInfoMapper extends Mapper {
      */
     default MapperResult detailPreviousConfigHistory(MapperContext context) {
         return new MapperResult(
-                "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified,encrypted_data_key "
-                        + "FROM his_config_info WHERE nid = (SELECT max(nid) FROM his_config_info WHERE id = ?)",
+                "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,publish_type,ext_info,gmt_create"
+                        + ",gmt_modified,encrypted_data_key FROM his_config_info WHERE nid = (SELECT max(nid) FROM his_config_info WHERE id = ?)",
                 Collections.singletonList(context.getWhereParameter(FieldConstant.ID)));
     }
     
