@@ -35,7 +35,7 @@ public class CacheItem {
 
     public String type;
 
-    ConfigCache configCache = new ConfigCache();
+    ConfigCache configCache = ConfigCacheFactoryDelegate.getInstance().createConfigCache();
 
     /**
      * Use for gray.
@@ -92,7 +92,7 @@ public class CacheItem {
     public void initConfigGrayIfEmpty(String grayName) {
         initConfigGrayIfEmpty();
         if (!this.configCacheGray.containsKey(grayName)) {
-            this.configCacheGray.put(grayName, new ConfigCacheGray(grayName));
+            this.configCacheGray.put(grayName, ConfigCacheFactoryDelegate.getInstance().createConfigCacheGray(grayName));
         }
     }
 

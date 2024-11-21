@@ -98,7 +98,7 @@ class ConfigCacheServiceTest {
         //verify cache.
         CacheItem contentCache1 = ConfigCacheService.getContentCache(groupKey);
         assertEquals(ts, contentCache1.getConfigCache().getLastModifiedTs());
-        assertEquals(md5, contentCache1.getConfigCache().getMd5Utf8());
+        assertEquals(md5, contentCache1.getConfigCache().getMd5());
         assertEquals(type, contentCache1.getType());
         assertEquals(encryptedDataKey, contentCache1.getConfigCache().getEncryptedDataKey());
         Mockito.verify(configDiskService, times(1)).saveToDisk(eq(dataId), eq(group), eq(tenant), eq(content));
@@ -111,7 +111,7 @@ class ConfigCacheServiceTest {
         Mockito.verify(configDiskService, times(1)).saveToDisk(eq(dataId), eq(group), eq(tenant), eq(contentNew));
         assertEquals(newTs, contentCache1.getConfigCache().getLastModifiedTs());
         String newMd5 = MD5Utils.md5Hex(contentNew, "UTF-8");
-        assertEquals(newMd5, contentCache1.getConfigCache().getMd5Utf8());
+        assertEquals(newMd5, contentCache1.getConfigCache().getMd5());
         
         //modified ts old
         long oldTs2 = newTs - 123L;
@@ -121,7 +121,7 @@ class ConfigCacheServiceTest {
         Mockito.verify(configDiskService, times(0)).saveToDisk(eq(dataId), eq(group), eq(tenant), eq(contentWithOldTs));
         //not change ts and md5
         assertEquals(newTs, contentCache1.getConfigCache().getLastModifiedTs());
-        assertEquals(newMd5, contentCache1.getConfigCache().getMd5Utf8());
+        assertEquals(newMd5, contentCache1.getConfigCache().getMd5());
         
         //modified ts new only
         long newTs2 = newTs + 123L;
@@ -168,7 +168,7 @@ class ConfigCacheServiceTest {
                 encryptedDataKey);
         assertTrue(result);
         CacheItem contentCache = ConfigCacheService.getContentCache(groupKey);
-        assertEquals(md5, contentCache.getConfigCacheGray().get(grayName).getMd5Utf8());
+        assertEquals(md5, contentCache.getConfigCacheGray().get(grayName).getMd5());
         assertEquals(ts, contentCache.getConfigCacheGray().get(grayName).getLastModifiedTs());
         assertEquals(encryptedDataKey, contentCache.getConfigCacheGray().get(grayName).getEncryptedDataKey());
         Mockito.verify(configDiskService, times(1))
@@ -181,7 +181,7 @@ class ConfigCacheServiceTest {
         boolean resultNew = ConfigCacheService.dumpGray(dataId, group, tenant, grayName, grayRule, contentNew, tsNew,
                 encryptedDataKey);
         assertTrue(resultNew);
-        assertEquals(md5New, contentCache.getConfigCacheGray().get(grayName).getMd5Utf8());
+        assertEquals(md5New, contentCache.getConfigCacheGray().get(grayName).getMd5());
         assertEquals(tsNew, contentCache.getConfigCacheGray().get(grayName).getLastModifiedTs());
         assertEquals(encryptedDataKey, contentCache.getConfigCacheGray().get(grayName).getEncryptedDataKey());
         Mockito.verify(configDiskService, times(1))
@@ -193,7 +193,7 @@ class ConfigCacheServiceTest {
         boolean resultOld = ConfigCacheService.dumpGray(dataId, group, tenant, grayName, grayRule, contentWithOldTs,
                 tsOld, encryptedDataKey);
         assertTrue(resultOld);
-        assertEquals(md5New, contentCache.getConfigCacheGray().get(grayName).getMd5Utf8());
+        assertEquals(md5New, contentCache.getConfigCacheGray().get(grayName).getMd5());
         assertEquals(tsNew, contentCache.getConfigCacheGray().get(grayName).getLastModifiedTs());
         assertEquals(encryptedDataKey, contentCache.getConfigCacheGray().get(grayName).getEncryptedDataKey());
         Mockito.verify(configDiskService, times(0))
@@ -207,7 +207,7 @@ class ConfigCacheServiceTest {
         boolean resultNew2 = ConfigCacheService.dumpGray(dataId, group, tenant, grayName, grayRuleNew, contentWithPrev,
                 tsNew2, encryptedDataKey);
         assertTrue(resultNew2);
-        assertEquals(md5New, contentCache.getConfigCacheGray().get(grayName).getMd5Utf8());
+        assertEquals(md5New, contentCache.getConfigCacheGray().get(grayName).getMd5());
         assertEquals(tsNew2, contentCache.getConfigCacheGray().get(grayName).getLastModifiedTs());
         assertEquals(encryptedDataKey, contentCache.getConfigCacheGray().get(grayName).getEncryptedDataKey());
         assertEquals(GrayRuleManager.constructGrayRule(GrayRuleManager.deserializeConfigGrayPersistInfo(grayRuleNew)),
@@ -220,7 +220,7 @@ class ConfigCacheServiceTest {
         boolean resultNew3 = ConfigCacheService.dumpGray(dataId, group, tenant, grayName, grayRulePrev,
                 contentWithPrev2, tsNew3, encryptedDataKey);
         assertTrue(resultNew3);
-        assertEquals(md5New, contentCache.getConfigCacheGray().get(grayName).getMd5Utf8());
+        assertEquals(md5New, contentCache.getConfigCacheGray().get(grayName).getMd5());
         assertEquals(tsNew3, contentCache.getConfigCacheGray().get(grayName).getLastModifiedTs());
         assertEquals(encryptedDataKey, contentCache.getConfigCacheGray().get(grayName).getEncryptedDataKey());
         assertEquals(GrayRuleManager.constructGrayRule(GrayRuleManager.deserializeConfigGrayPersistInfo(grayRuleNew)),
@@ -232,7 +232,7 @@ class ConfigCacheServiceTest {
         boolean resultNew4 = ConfigCacheService.dumpGray(dataId, group, tenant, grayName, grayRulePrev,
                 contentWithPrev4, tsNew4, encryptedDataKey);
         assertTrue(resultNew4);
-        assertEquals(md5New, contentCache.getConfigCacheGray().get(grayName).getMd5Utf8());
+        assertEquals(md5New, contentCache.getConfigCacheGray().get(grayName).getMd5());
         assertEquals(tsNew3, contentCache.getConfigCacheGray().get(grayName).getLastModifiedTs());
         assertEquals(encryptedDataKey, contentCache.getConfigCacheGray().get(grayName).getEncryptedDataKey());
         assertEquals(GrayRuleManager.constructGrayRule(GrayRuleManager.deserializeConfigGrayPersistInfo(grayRuleNew)),
