@@ -48,6 +48,7 @@ class ConfigCacheFactoryDelegateTest {
     void setUp() {
         envUtilMockedStatic = mockStatic(EnvUtil.class);
         nacosServiceLoaderMockedStatic = mockStatic(NacosServiceLoader.class);
+        when(nacosConfigCacheFactory.getConfigCacheFactoryName()).thenReturn("nacos");
     }
     
     @AfterEach
@@ -58,7 +59,6 @@ class ConfigCacheFactoryDelegateTest {
     
     @Test
     public void test() {
-        when(nacosConfigCacheFactory.getConfigCacheFactoryName()).thenReturn("nacos");
         nacosServiceLoaderMockedStatic.when(() -> NacosServiceLoader.load(ConfigCacheFactory.class))
                 .thenReturn(Collections.singletonList(nacosConfigCacheFactory));
         envUtilMockedStatic.when(() -> EnvUtil.getProperty("nacos.config.cache.type", "nacos")).thenReturn("lalala");
@@ -72,7 +72,6 @@ class ConfigCacheFactoryDelegateTest {
     
     @Test
     public void test2() throws Exception {
-        when(nacosConfigCacheFactory.getConfigCacheFactoryName()).thenReturn("nacos");
         when(nacosConfigCacheFactory.createConfigCache()).thenReturn(new ConfigCache());
         when(nacosConfigCacheFactory.createConfigCacheGray()).thenReturn(new ConfigCacheGray());
         nacosServiceLoaderMockedStatic.when(() -> NacosServiceLoader.load(ConfigCacheFactory.class))
