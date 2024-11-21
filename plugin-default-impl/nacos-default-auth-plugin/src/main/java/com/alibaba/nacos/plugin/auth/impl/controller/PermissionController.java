@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.controller;
 
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -116,7 +117,7 @@ public class PermissionController {
      */
     @GetMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.READ)
-    public Boolean isDuplicatePermission(@RequestParam String role, @RequestParam String resource, @RequestParam String action) {
+    public Result<Boolean> isDuplicatePermission(@RequestParam String role, @RequestParam String resource, @RequestParam String action) {
         return nacosRoleService.isDuplicatePermission(role, resource, action);
     }
 }

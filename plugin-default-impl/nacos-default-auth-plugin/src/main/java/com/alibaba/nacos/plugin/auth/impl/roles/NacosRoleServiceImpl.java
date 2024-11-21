@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.roles;
 
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
@@ -379,19 +380,19 @@ public class NacosRoleServiceImpl {
      * @param action action
      * @return true if duplicate, false otherwise
      */
-    public Boolean isDuplicatePermission(String role, String resource, String action) {
+    public Result<Boolean> isDuplicatePermission(String role, String resource, String action) {
         List<PermissionInfo> permissionInfos = getPermissions(role);
         if (CollectionUtils.isEmpty(permissionInfos)) {
-            return Boolean.FALSE;
+            return Result.success(Boolean.FALSE);
         }
         for (PermissionInfo permissionInfo : permissionInfos) {
             boolean resourceMatch = StringUtils.equals(resource, permissionInfo.getResource());
             boolean actionMatch = StringUtils.equals(action, permissionInfo.getAction()) || "rw".equals(permissionInfo.getAction());
             if (resourceMatch && actionMatch) {
-                return Boolean.TRUE;
+                return Result.success(Boolean.TRUE);
             }
         }
-        return Boolean.FALSE;
+        return Result.success(Boolean.FALSE);
     }
     
 }
