@@ -17,9 +17,13 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.utils.GroupKey2;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 
@@ -31,9 +35,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @WebAppConfiguration
 class ClientTrackServiceTest {
     
+    MockedStatic<EnvUtil> envUtilMockedStatic;
+    
     @BeforeEach
     void before() {
         ClientTrackService.clientRecords.clear();
+        envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
+        envUtilMockedStatic.when(() -> EnvUtil.getProperty("nacos.config.cache.type", "nacos"))
+                .thenReturn("nacos");
+    }
+    
+    @AfterEach
+    void after() {
+        envUtilMockedStatic.close();
     }
     
     @Test
@@ -43,8 +57,9 @@ class ClientTrackServiceTest {
         String group = "online";
         String groupKey = GroupKey2.getKey(dataId, group);
         String md5 = "xxxxxxxxxxxxx";
+        String content = "test";
         
-        ConfigCacheService.updateMd5(groupKey, md5, System.currentTimeMillis(), "");
+        ConfigCacheService.updateMd5(groupKey, md5, content, System.currentTimeMillis(), "");
         
         ClientTrackService.trackClientMd5(clientIp, groupKey, md5);
         ClientTrackService.trackClientMd5(clientIp, groupKey, md5);
@@ -54,7 +69,7 @@ class ClientTrackServiceTest {
         assertEquals(1, ClientTrackService.subscriberCount());
         
         //服务端数据更新
-        ConfigCacheService.updateMd5(groupKey, md5 + "111", System.currentTimeMillis(), "");
+        ConfigCacheService.updateMd5(groupKey, md5 + "111", content, System.currentTimeMillis(), "");
         assertFalse(ClientTrackService.isClientUptodate(clientIp).get(groupKey));
     }
     

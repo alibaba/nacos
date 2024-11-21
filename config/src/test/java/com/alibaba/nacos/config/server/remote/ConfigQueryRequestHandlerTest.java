@@ -107,8 +107,7 @@ class ConfigQueryRequestHandlerTest {
         when(ConfigDiskServiceFactory.getInstance()).thenReturn(configRocksDbDiskService);
         
         CacheItem cacheItem = new CacheItem(groupKey);
-        cacheItem.getConfigCache().setMd5Gbk(MD5Utils.md5Hex(content, "GBK"));
-        cacheItem.getConfigCache().setMd5Utf8(MD5Utils.md5Hex(content, "UTF-8"));
+        cacheItem.getConfigCache().setMd5(MD5Utils.md5Hex(content, "UTF-8"));
         cacheItem.getConfigCache().setEncryptedDataKey("key_testGetNormal_NotDirectRead");
         when(ConfigCacheService.getContentCache(eq(groupKey))).thenReturn(cacheItem);
         
@@ -147,8 +146,7 @@ class ConfigQueryRequestHandlerTest {
         cacheItem.initConfigGrayIfEmpty(BetaGrayRule.TYPE_BETA);
         String content = "content_from_beta_notdirectreadÄãºÃ" + System.currentTimeMillis();
         ConfigCacheGray configCacheGrayBeta = cacheItem.getConfigCacheGray().get(BetaGrayRule.TYPE_BETA);
-        configCacheGrayBeta.setMd5Gbk(MD5Utils.md5Hex(content, "GBK"));
-        configCacheGrayBeta.setMd5Utf8(MD5Utils.md5Hex(content, "UTF-8"));
+        configCacheGrayBeta.setMd5(MD5Utils.md5Hex(content, "UTF-8"));
         configCacheGrayBeta.setEncryptedDataKey("key_testGetBeta_NotDirectRead");
         ConfigGrayPersistInfo configGrayPersistInfo = new ConfigGrayPersistInfo(BetaGrayRule.TYPE_BETA,
                 BetaGrayRule.VERSION, "127.0.0.1", -1000);
@@ -188,8 +186,7 @@ class ConfigQueryRequestHandlerTest {
         when(ConfigDiskServiceFactory.getInstance()).thenReturn(configRocksDbDiskService);
         
         CacheItem cacheItem = new CacheItem(groupKey);
-        cacheItem.getConfigCache().setMd5Gbk(MD5Utils.md5Hex(content, "GBK"));
-        cacheItem.getConfigCache().setMd5Utf8(MD5Utils.md5Hex(content, "UTF-8"));
+        cacheItem.getConfigCache().setMd5(MD5Utils.md5Hex(content, "UTF-8"));
         cacheItem.getConfigCache().setEncryptedDataKey("key_testGetTag_NotFound");
         
         when(ConfigCacheService.getContentCache(eq(groupKey))).thenReturn(cacheItem);
@@ -232,8 +229,7 @@ class ConfigQueryRequestHandlerTest {
         when(ConfigDiskServiceFactory.getInstance()).thenReturn(configRocksDbDiskService);
         
         CacheItem cacheItem = new CacheItem(groupKey);
-        cacheItem.getConfigCache().setMd5Gbk(MD5Utils.md5Hex(content, "GBK"));
-        cacheItem.getConfigCache().setMd5Utf8(MD5Utils.md5Hex(content, "UTF-8"));
+        cacheItem.getConfigCache().setMd5(MD5Utils.md5Hex(content, "UTF-8"));
         cacheItem.getConfigCache().setEncryptedDataKey("key_formal");
         
         String specificTag = "specific_tag";
@@ -241,8 +237,7 @@ class ConfigQueryRequestHandlerTest {
         ConfigCacheGray configCacheGrayTag = cacheItem.getConfigCacheGray()
                 .get(TagGrayRule.TYPE_TAG + "_" + specificTag);
         String tagContent = "content_from_specific_tag_directreadÄãºÃ" + System.currentTimeMillis();
-        configCacheGrayTag.setMd5Gbk(MD5Utils.md5Hex(tagContent, "GBK"));
-        configCacheGrayTag.setMd5Utf8(MD5Utils.md5Hex(tagContent, "UTF-8"));
+        configCacheGrayTag.setMd5(MD5Utils.md5Hex(tagContent, "UTF-8"));
         configCacheGrayTag.setEncryptedDataKey("key_testGetTag_NotDirectRead");
         ConfigGrayPersistInfo configGrayPersistInfo = new ConfigGrayPersistInfo(TagGrayRule.TYPE_TAG,
                 TagGrayRule.VERSION, specificTag, -999);
@@ -291,12 +286,10 @@ class ConfigQueryRequestHandlerTest {
         String autoTag = "auto_tag";
         CacheItem cacheItem = new CacheItem(groupKey);
         cacheItem.initConfigGrayIfEmpty(TagGrayRule.TYPE_TAG + "_" + autoTag);
-        cacheItem.getConfigCache().setMd5Gbk(MD5Utils.md5Hex(content, "GBK"));
-        cacheItem.getConfigCache().setMd5Utf8(MD5Utils.md5Hex(content, "UTF-8"));
+        cacheItem.getConfigCache().setMd5(MD5Utils.md5Hex(content, "UTF-8"));
         ConfigCacheGray configCacheGrayTag = cacheItem.getConfigCacheGray().get(TagGrayRule.TYPE_TAG + "_" + autoTag);
         String tagContent = "content_from_specific_tag_directreadÄãºÃ" + System.currentTimeMillis();
-        configCacheGrayTag.setMd5Gbk(MD5Utils.md5Hex(tagContent, "GBK"));
-        configCacheGrayTag.setMd5Utf8(MD5Utils.md5Hex(tagContent, "UTF-8"));
+        configCacheGrayTag.setMd5(MD5Utils.md5Hex(tagContent, "UTF-8"));
         configCacheGrayTag.setEncryptedDataKey("key_testGetTag_AutoTag_NotDirectRead");
         ConfigGrayPersistInfo configGrayPersistInfo = new ConfigGrayPersistInfo(TagGrayRule.TYPE_TAG,
                 TagGrayRule.VERSION, autoTag, -999);
