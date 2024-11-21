@@ -74,7 +74,6 @@ class ConfigCacheMd5PostProcessorDelegateTest {
         nacosServiceLoaderMockedStatic.when(() -> NacosServiceLoader.load(ConfigCacheMd5PostProcessor.class))
                 .thenReturn(Collections.singletonList(mockConfigCacheMd5PostProcessor));
         ConfigCacheMd5PostProcessorDelegate.getInstance().postProcess(null, null);
-        doNothing().when(mockedConstruction.constructed().get(0)).postProcess(null, null);
         verify(mockConfigCacheMd5PostProcessor, times(0)).postProcess(null, null);
         verify(mockedConstruction.constructed().get(0), times(1)).postProcess(null, null);
     }
