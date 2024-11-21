@@ -29,40 +29,40 @@ import java.util.Collection;
  *
  * @author Sunrisea
  */
-public class ConfigCacheMd5PostProcessorDelegate {
+public class ConfigCachePostProcessorDelegate {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigCacheFactoryDelegate.class);
     
-    private static final ConfigCacheMd5PostProcessorDelegate INSTANCE = new ConfigCacheMd5PostProcessorDelegate();
+    private static final ConfigCachePostProcessorDelegate INSTANCE = new ConfigCachePostProcessorDelegate();
     
     private String configCacheMd5PostProcessorType = EnvUtil.getProperty("nacos.config.cache.type", "nacos");
     
-    private ConfigCacheMd5PostProcessor configCacheMd5PostProcessor;
+    private ConfigCachePostProcessor configCachePostProcessor;
     
-    private ConfigCacheMd5PostProcessorDelegate() {
-        Collection<ConfigCacheMd5PostProcessor> processors = NacosServiceLoader.load(ConfigCacheMd5PostProcessor.class);
-        for (ConfigCacheMd5PostProcessor processor : processors) {
+    private ConfigCachePostProcessorDelegate() {
+        Collection<ConfigCachePostProcessor> processors = NacosServiceLoader.load(ConfigCachePostProcessor.class);
+        for (ConfigCachePostProcessor processor : processors) {
             if (StringUtils.isEmpty(processor.getPostProcessorName())) {
                 LOGGER.warn(
-                        "[ConfigCacheMd5PostProcessor] Load ConfigCacheMd5PostProcessor({}) PostProcessorName(null/empty) fail. "
+                        "[ConfigCachePostProcessor] Load ConfigCachePostProcessor({}) PostProcessorName(null/empty) fail. "
                                 + "Please add PostProcessorName to resolve",
                         processor.getClass().getName());
                 continue;
             }
             if (StringUtils.equals(configCacheMd5PostProcessorType, processor.getPostProcessorName())) {
-                this.configCacheMd5PostProcessor = processor;
+                this.configCachePostProcessor = processor;
             }
         }
-        if (configCacheMd5PostProcessor == null) {
-            configCacheMd5PostProcessor = new NacosConfigCacheMd5PostProcessor();
+        if (configCachePostProcessor == null) {
+            configCachePostProcessor = new NacosConfigCachePostProcessor();
         }
     }
     
-    public static ConfigCacheMd5PostProcessorDelegate getInstance() {
+    public static ConfigCachePostProcessorDelegate getInstance() {
         return INSTANCE;
     }
     
     public void postProcess(ConfigCache configCache, String content) {
-        configCacheMd5PostProcessor.postProcess(configCache, content);
+        configCachePostProcessor.postProcess(configCache, content);
     }
 }
