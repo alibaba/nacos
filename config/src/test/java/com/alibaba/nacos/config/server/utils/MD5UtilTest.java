@@ -47,20 +47,22 @@ class MD5UtilTest {
     
     MockedStatic<EnvUtil> envUtilMockedStatic;
     
+    MockedStatic<ConfigCacheService> configCacheServiceMockedStatic;
+    
     @BeforeEach
     void setUp() {
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
+        configCacheServiceMockedStatic = Mockito.mockStatic(ConfigCacheService.class);
     }
     
     @AfterEach
     void tearDown() {
         envUtilMockedStatic.close();
+        configCacheServiceMockedStatic.close();
     }
     
     @Test
     void testCompareMd5() {
-        
-        final MockedStatic<ConfigCacheService> configCacheServiceMockedStatic = Mockito.mockStatic(ConfigCacheService.class);
         
         when(ConfigCacheService.isUptodate(anyString(), anyString(), anyString(), anyString())).thenReturn(false);
         
@@ -78,7 +80,6 @@ class MD5UtilTest {
         assertEquals(1, changedGroupKeys.size());
         assertEquals("test", changedGroupKeys.get(0));
         
-        configCacheServiceMockedStatic.close();
     }
     
     @Test
