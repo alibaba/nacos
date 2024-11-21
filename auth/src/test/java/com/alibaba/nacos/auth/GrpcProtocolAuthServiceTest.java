@@ -26,6 +26,7 @@ import com.alibaba.nacos.auth.serveridentity.ServerIdentityResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import org.junit.jupiter.api.BeforeEach;
@@ -181,7 +182,7 @@ class GrpcProtocolAuthServiceTest {
     }
     
     @Test
-    @Secured
+    @Secured(apiType = ApiType.INNER_API)
     void testCheckServerIdentityWithoutIdentityConfig() throws NoSuchMethodException {
         Secured secured = getMethodSecure("testCheckServerIdentityWithoutIdentityConfig");
         ServerIdentityResult result = protocolAuthService.checkServerIdentity(namingRequest, secured);
@@ -198,7 +199,7 @@ class GrpcProtocolAuthServiceTest {
     }
     
     @Test
-    @Secured
+    @Secured(apiType = ApiType.INNER_API)
     void testCheckServerIdentityNotMatched() throws NoSuchMethodException {
         Secured secured = getMethodSecure("testCheckServerIdentityNotMatched");
         when(authConfigs.getServerIdentityKey()).thenReturn("1");
@@ -211,7 +212,7 @@ class GrpcProtocolAuthServiceTest {
     }
     
     @Test
-    @Secured
+    @Secured(apiType = ApiType.INNER_API)
     void testCheckServerIdentityMatched() throws NoSuchMethodException {
         when(authConfigs.getServerIdentityKey()).thenReturn("1");
         when(authConfigs.getServerIdentityValue()).thenReturn("2");
@@ -219,6 +220,15 @@ class GrpcProtocolAuthServiceTest {
         Secured secured = getMethodSecure("testCheckServerIdentityMatched");
         ServerIdentityResult result = protocolAuthService.checkServerIdentity(namingRequest, secured);
         assertEquals(ServerIdentityResult.ResultStatus.MATCHED, result.getStatus());
+    }
+    
+    @Test
+    @Secured
+    void testCheckServerIdentityForOtherTypeApi() throws NoSuchMethodException {
+        namingRequest.putHeader("1", "2");
+        Secured secured = getMethodSecure("testCheckServerIdentityForOtherTypeApi");
+        ServerIdentityResult result = protocolAuthService.checkServerIdentity(namingRequest, secured);
+        assertEquals(ServerIdentityResult.ResultStatus.NOT_MATCHED, result.getStatus());
     }
     
     private Secured getMethodSecure(String methodName) throws NoSuchMethodException {
