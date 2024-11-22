@@ -189,6 +189,7 @@ public class ConfigController {
         }
         
         // check tenant
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         ParamUtils.checkTenant(tenant);
         ParamUtils.checkParam(dataId, group, "datumId", content);
         ParamUtils.checkParam(tag);
@@ -263,6 +264,7 @@ public class ConfigController {
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant)
             throws NacosException {
         // check tenant
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         ParamUtils.checkTenant(tenant);
         // check params
         ParamUtils.checkParam(dataId, group, "datumId", "content");
@@ -297,6 +299,7 @@ public class ConfigController {
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "tag", required = false) String tag) throws NacosException {
         // check tenant
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         ParamUtils.checkTenant(tenant);
         ParamUtils.checkParam(dataId, group, "datumId", "rm");
         ParamUtils.checkParam(tag);
@@ -345,6 +348,7 @@ public class ConfigController {
     public RestResult<ConfigAdvanceInfo> getConfigAdvanceInfo(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         ConfigAdvanceInfo configInfo = configInfoPersistService.findConfigAdvanceInfo(dataId, group, tenant);
         return RestResultUtils.success(configInfo);
     }
@@ -389,6 +393,7 @@ public class ConfigController {
             @RequestParam("group") String group, @RequestParam(value = "tenant", required = false) String tenant,
             @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime) throws Exception {
         group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group;
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         SampleResult collectSampleResult = configSubService.getCollectSampleResult(dataId, group, tenant, sampleTime);
         GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
         gls.setCollectStatus(200);
@@ -417,6 +422,7 @@ public class ConfigController {
         if (StringUtils.isNotBlank(configTags)) {
             configAdvanceInfo.put("config_tags", configTags);
         }
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         try {
             return configInfoPersistService.findConfigInfo4Page(pageNo, pageSize, dataId, group, tenant,
                     configAdvanceInfo);
@@ -452,6 +458,7 @@ public class ConfigController {
         if (StringUtils.isNotBlank(types)) {
             configAdvanceInfo.put(ParametersField.TYPES, types);
         }
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         try {
             return configInfoPersistService.findConfigInfoLike4Page(pageNo, pageSize, dataId, group, tenant,
                     configAdvanceInfo);
@@ -478,6 +485,7 @@ public class ConfigController {
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
         String remoteIp = getRemoteIp(httpServletRequest);
         String requestIpApp = RequestUtil.getAppName(httpServletRequest);
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         try {
             configInfoGrayPersistService.removeConfigInfoGray(dataId, group, tenant, BetaGrayRule.TYPE_BETA, remoteIp,
                     RequestUtil.getSrcUserName(httpServletRequest));
@@ -512,7 +520,7 @@ public class ConfigController {
             @RequestParam(value = "group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
         try {
-            
+            tenant = NamespaceUtil.processNamespaceParameter(tenant);
             ConfigInfo4Beta configInfo4Beta = null;
             ConfigInfoGrayWrapper beta4Gray = configInfoGrayPersistService.findConfigInfo4Gray(dataId, group, tenant,
                     "beta");

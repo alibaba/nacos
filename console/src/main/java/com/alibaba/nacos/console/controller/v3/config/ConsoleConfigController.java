@@ -287,6 +287,7 @@ public class ConsoleConfigController {
             @RequestParam(value = "namespaceId", required = false) String namespaceId,
             @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime, ModelMap modelMap)
             throws NacosException {
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         GroupkeyListenserStatus result = configProxy.getAllSubClientConfigByIp(ip, all, namespaceId, sampleTime);
         return Result.success(result);
     }

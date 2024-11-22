@@ -27,6 +27,7 @@ import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
@@ -94,6 +95,7 @@ public class ClientMetricsController {
             @RequestParam(value = "tenant", required = false) String tenant) throws NacosException {
     
         ParamUtils.checkTenant(tenant);
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         ParamUtils.checkParam(dataId, group, "default", "default");
     
         Loggers.CORE.info("Get cluster config metrics received, ip={},dataId={},group={},tenant={}", ip, dataId, group,
@@ -181,6 +183,7 @@ public class ClientMetricsController {
             @RequestParam(value = "tenant", required = false) String tenant) throws NacosException {
     
         ParamUtils.checkTenant(tenant);
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         ParamUtils.checkParam(dataId, group, "default", "default");
     
         Map<String, Object> metrics = new HashMap<>(16);

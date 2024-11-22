@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.common.utils;
 
+import com.alibaba.nacos.api.common.Constants;
+
 /**
  * namespace(tenant) util. Because config and naming treat namespace(tenant) differently, this tool class can only be
  * used by the config module.
@@ -24,28 +26,23 @@ package com.alibaba.nacos.common.utils;
  * @date 2020/10/12 17:56
  */
 public class NamespaceUtil {
-
+    
     private NamespaceUtil() {
     }
     
-    private static final String NAMESPACE_PUBLIC_KEY = "public";
-    
     /**
-     * public id，默认值为 "".
+     * public id，默认值为 "public".
      */
-    public static String namespaceDefaultId = "";
-    
-    private static final String NAMESPACE_NULL_KEY = "null";
+    public static String namespaceDefaultId = Constants.DEFAULT_NAMESPACE_ID;
     
     /**
-     * Treat the namespace(tenant) parameters with values of "public" and "null" as an empty string.
+     * Treat the namespace(tenant) parameters with values of empty string as "public".
      *
      * @param tenant namespace(tenant) id
      * @return java.lang.String A namespace(tenant) string processed
      */
     public static String processNamespaceParameter(String tenant) {
-        if (StringUtils.isBlank(tenant) || NAMESPACE_PUBLIC_KEY.equalsIgnoreCase(tenant)
-                || NAMESPACE_NULL_KEY.equalsIgnoreCase(tenant)) {
+        if (StringUtils.isBlank(tenant)) {
             return getNamespaceDefaultId();
         }
         return tenant.trim();
@@ -67,5 +64,15 @@ public class NamespaceUtil {
      */
     public static String getNamespaceDefaultId() {
         return NamespaceUtil.namespaceDefaultId;
+    }
+    
+    /**
+     * Judge whether is default namespaceId.
+     *
+     * @param namespaceId to check namespaceId
+     * @return {@code true} if equals default namespaceId, otherwise {@code false}.
+     */
+    public static boolean isDefaultNamespaceId(String namespaceId) {
+        return StringUtils.equals(namespaceId, getNamespaceDefaultId());
     }
 }

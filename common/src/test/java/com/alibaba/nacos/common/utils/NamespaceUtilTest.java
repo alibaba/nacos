@@ -16,10 +16,13 @@
 
 package com.alibaba.nacos.common.utils;
 
+import com.alibaba.nacos.api.common.Constants;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * test NamespaceUtil.
@@ -31,18 +34,18 @@ class NamespaceUtilTest {
     
     @AfterEach
     void tearDown() {
-        NamespaceUtil.setNamespaceDefaultId("");
+        NamespaceUtil.setNamespaceDefaultId(Constants.DEFAULT_NAMESPACE_ID);
     }
     
     @Test
     void testProcessTenantParameter() {
         String strPublic = "public";
+        assertEquals(strPublic, NamespaceUtil.processNamespaceParameter(strPublic));
         String strEmpty = "";
-        assertEquals(strEmpty, NamespaceUtil.processNamespaceParameter(strPublic));
         String strNull = "null";
-        assertEquals(strEmpty, NamespaceUtil.processNamespaceParameter(strNull));
-        assertEquals(strEmpty, NamespaceUtil.processNamespaceParameter(strEmpty));
-        assertEquals(strEmpty, NamespaceUtil.processNamespaceParameter(null));
+        assertEquals(strNull, NamespaceUtil.processNamespaceParameter(strNull));
+        assertEquals(strPublic, NamespaceUtil.processNamespaceParameter(strEmpty));
+        assertEquals(strPublic, NamespaceUtil.processNamespaceParameter(null));
         String strAbc = "abc";
         assertEquals(strAbc, NamespaceUtil.processNamespaceParameter(strAbc));
         String strdef123 = "def123";
@@ -53,7 +56,9 @@ class NamespaceUtilTest {
     
     @Test
     void testSetNamespaceDefaultId() {
+        assertTrue(NamespaceUtil.isDefaultNamespaceId(Constants.DEFAULT_NAMESPACE_ID));
         NamespaceUtil.setNamespaceDefaultId("Deprecated");
         assertEquals("Deprecated", NamespaceUtil.getNamespaceDefaultId());
+        assertFalse(NamespaceUtil.isDefaultNamespaceId(Constants.DEFAULT_NAMESPACE_ID));
     }
 }

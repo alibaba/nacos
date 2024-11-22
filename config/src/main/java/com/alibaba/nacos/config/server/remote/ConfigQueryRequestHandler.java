@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigCacheGray;
@@ -82,6 +83,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
         String dataId = configQueryRequest.getDataId();
         String group = configQueryRequest.getGroup();
         String tenant = configQueryRequest.getTenant();
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         String clientIp = meta.getClientIp();
         String tag = configQueryRequest.getTag();
         

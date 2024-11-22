@@ -201,6 +201,7 @@ public class ConfigControllerV2 {
         if (StringUtils.isNotBlank(configDetail)) {
             configAdvanceInfo.put("content", configDetail);
         }
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         try {
             return configDetailService.findConfigInfoPage(search, pageNo, pageSize, dataId, group, tenant, configAdvanceInfo);
         } catch (Exception e) {
