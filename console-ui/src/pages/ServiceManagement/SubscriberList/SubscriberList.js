@@ -63,7 +63,7 @@ class SubscriberList extends React.Component {
         serviceName: getParams('name') || '',
         groupName: getParams('groupName') || '',
       },
-      nowNamespaceId: getParams('namespace') || '',
+      nowNamespaceId: getParams('namespace') || 'public',
     };
     this.field = new Field(this);
   }

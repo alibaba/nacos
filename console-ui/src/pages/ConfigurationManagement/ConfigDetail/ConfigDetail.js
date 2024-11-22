@@ -66,7 +66,7 @@ class ConfigDetail extends React.Component {
     this.group = getParams('group') || 'DEFAULT_GROUP';
     this.ips = '';
     this.valueMap = {}; // 存储不同版本的数据
-    this.namespaceId = getParams('namespace') || '';
+    this.namespaceId = getParams('namespace') || 'public';
     this.searchDataId = getParams('searchDataId') || '';
     this.searchGroup = getParams('searchGroup') || '';
     this.pageSize = getParams('pageSize');
@@ -147,7 +147,7 @@ class ConfigDetail extends React.Component {
     const { locale = {} } = this.props;
     const self = this;
     this.serverId = getParams('serverId') || 'center';
-    this.namespaceId = getParams('namespace') || '';
+    this.namespaceId = getParams('namespace') || 'public';
     this.edasAppName = getParams('edasAppName') || '';
     this.inApp = this.edasAppName;
     const url = `v3/console/cs/config?&dataId=${this.dataId}&groupName=${this.group}`;

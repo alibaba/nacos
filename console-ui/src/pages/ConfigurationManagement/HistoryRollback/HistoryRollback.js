@@ -217,7 +217,7 @@ class HistoryRollback extends React.Component {
 
   goDetail(record) {
     this.serverId = getParams('serverId') || 'center';
-    this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
+    this.tenant = getParams('namespace') || 'public'; // 为当前实例保存tenant参数
     this.props.history.push(
       `/historyDetail?serverId=${this.serverId || ''}&dataId=${record.dataId}&group=${
         record.group
@@ -226,7 +226,7 @@ class HistoryRollback extends React.Component {
   }
 
   goCompare(record) {
-    let tenant = getParams('namespace') || '';
+    let tenant = getParams('namespace') || 'public';
     let serverId = getParams('serverId') || 'center';
     this.getConfig(-1, tenant, serverId, record.dataId, record.group).then(lasted => {
       this.getHistoryConfig(record.id, record.dataId, record.group).then(selected => {
@@ -292,7 +292,7 @@ class HistoryRollback extends React.Component {
 
   goRollBack(record) {
     this.serverId = getParams('serverId') || 'center';
-    this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
+    this.tenant = getParams('namespace') || 'public'; // 为当前实例保存tenant参数
     this.props.history.push(
       `/configRollback?serverId=${this.serverId || ''}&dataId=${record.dataId}&group=${
         record.group
@@ -302,7 +302,7 @@ class HistoryRollback extends React.Component {
 
   getConfigList() {
     const { locale = {} } = this.props;
-    this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
+    this.tenant = getParams('namespace') || 'public'; // 为当前实例保存tenant参数
     const self = this;
     request({
       url: `v3/console/cs/history/configs?namespaceId=${this.tenant}`,

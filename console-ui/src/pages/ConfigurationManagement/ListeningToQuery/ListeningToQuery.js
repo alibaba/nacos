@@ -61,7 +61,7 @@ class ListeningToQuery extends React.Component {
     this.group = getParams('listeningGroup') || '';
     this.dataId = getParams('listeningDataId') || '';
     this.serverId = getParams('listeningServerId') || '';
-    this.tenant = getParams('namespace') || '';
+    this.tenant = getParams('namespace') || 'public';
   }
 
   componentDidMount() {
@@ -93,7 +93,7 @@ class ListeningToQuery extends React.Component {
     if (type === 1) {
       const ip = this.getValue('ip');
       queryUrl = `v3/console/cs/config/listener/ip?ip=${ip}`;
-      const tenant = window.nownamespace || getParams('namespace') || '';
+      const tenant = window.nownamespace || getParams('namespace') || 'public';
       if (tenant) {
         queryUrl += `&namespaceId=${tenant}`;
       }

@@ -94,7 +94,7 @@ class ConfigEditor extends React.Component {
   componentDidMount() {
     const isNewConfig = !getParams('dataId');
     const group = getParams('group').trim();
-    this.tenant = getParams('namespace') || '';
+    this.tenant = getParams('namespace') || 'public';
     this.setState({ isNewConfig }, () => {
       if (!isNewConfig) {
         this.changeForm(

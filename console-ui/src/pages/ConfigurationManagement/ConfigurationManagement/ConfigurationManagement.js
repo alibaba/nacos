@@ -201,7 +201,7 @@ class ConfigurationManagement extends React.Component {
 
   navTo(url, record) {
     this.serverId = getParams('serverId') || '';
-    this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
+    this.tenant = getParams('namespace') || 'public'; // 为当前实例保存tenant参数
     switch (url) {
       case '/historyRollback':
         url = `${url}?historyServerId=${this.serverId || ''}&historyDataId=${
@@ -276,7 +276,7 @@ class ConfigurationManagement extends React.Component {
       return;
     }
     const { locale = {}, configurations = {} } = this.props;
-    this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
+    this.tenant = getParams('namespace') || 'public'; // 为当前实例保存tenant参数
     this.serverId = getParams('serverId') || '';
     const prePageNo = getParams('pageNo');
     const prePageSize = getParams('pageSize');
@@ -524,7 +524,7 @@ class ConfigurationManagement extends React.Component {
 
   chooseEnv(value) {
     this.serverId = getParams('serverId') || 'center';
-    this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
+    this.tenant = getParams('namespace') || 'public'; // 为当前实例保存tenant参数
     this.props.history.push(
       `/newconfig?serverId=${this.serverId || ''}&namespace=${this.tenant}&edasAppName=${
         this.edasAppName
@@ -542,7 +542,7 @@ class ConfigurationManagement extends React.Component {
 
   goDetail(record) {
     this.serverId = getParams('serverId') || 'center';
-    this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
+    this.tenant = getParams('namespace') || 'public'; // 为当前实例保存tenant参数
     // 点击详情到另一个页面, 返回时候要保留原来的搜索条件 比如: record.dataId为详情的, this.dataId为搜索条件的.
     this.props.history.push(
       `/configdetail?serverId=${this.serverId || ''}&dataId=${record.dataId}&group=${
@@ -555,7 +555,7 @@ class ConfigurationManagement extends React.Component {
 
   goEditor(record) {
     this.serverId = getParams('serverId') || 'center';
-    this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
+    this.tenant = getParams('namespace') || 'public'; // 为当前实例保存tenant参数
     this.props.history.push(
       `/configeditor?serverId=${this.serverId || ''}&dataId=${record.dataId}&group=${
         record.group
