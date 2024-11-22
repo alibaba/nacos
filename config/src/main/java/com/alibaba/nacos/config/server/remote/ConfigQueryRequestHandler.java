@@ -87,8 +87,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
         String clientIp = meta.getClientIp();
         String tag = configQueryRequest.getTag();
         
-        String groupKey = GroupKey2.getKey(configQueryRequest.getDataId(), configQueryRequest.getGroup(),
-                configQueryRequest.getTenant());
+        String groupKey = GroupKey2.getKey(configQueryRequest.getDataId(), configQueryRequest.getGroup(), tenant);
         String requestIpApp = meta.getLabels().get(CLIENT_APPNAME_HEADER);
         String acceptCharset = ENCODE_UTF8;
         ParamUtils.checkParam(tag);
