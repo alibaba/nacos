@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.config.remote.response.cluster.ConfigChangeClusterS
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
@@ -34,6 +35,8 @@ import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.ConfigRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.remote.grpc.InvokeSource;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.stereotype.Component;
 
 /**
@@ -60,6 +63,7 @@ public class ConfigChangeClusterSyncRequestHandler
     @TpsControl(pointName = "ClusterConfigChangeNotify")
     @Override
     @ExtractorManager.Extractor(rpcExtractor = ConfigRequestParamExtractor.class)
+    @Secured(signType = SignType.CONFIG, apiType = ApiType.INNER_API)
     public ConfigChangeClusterSyncResponse handle(ConfigChangeClusterSyncRequest configChangeSyncRequest,
             RequestMeta meta) throws NacosException {
         
