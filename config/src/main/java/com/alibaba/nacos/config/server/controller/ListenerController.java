@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
@@ -72,6 +73,7 @@ public class ListenerController {
             return gls;
         }
         Map<String, String> status = collectSampleResult.getLisentersGroupkeyStatus();
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         for (Map.Entry<String, String> config : status.entrySet()) {
             if (!StringUtils.isBlank(tenant) && config.getKey().contains(tenant)) {
                 configMd5Status.put(config.getKey(), config.getValue());

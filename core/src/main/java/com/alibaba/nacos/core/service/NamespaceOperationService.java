@@ -114,9 +114,13 @@ public class NamespaceOperationService {
     public Boolean createNamespace(String namespaceId, String namespaceName, String namespaceDesc)
             throws NacosException {
         // TODO 获取用kp
+        if (NamespaceUtil.isDefaultNamespaceId(namespaceId)) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.NAMESPACE_ALREADY_EXIST,
+                    "namespaceId [" + namespaceId + "] is default namespace id and already exist.");
+        }
         if (namespacePersistService.tenantInfoCountByTenantId(namespaceId) > 0) {
-            throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.NAMESPACE_ALREADY_EXIST,
-                    "namespaceId [" + namespaceId + "] already exist");
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.NAMESPACE_ALREADY_EXIST,
+                    "namespaceId [" + namespaceId + "] already exist.");
         }
         
         namespacePersistService

@@ -91,7 +91,7 @@ class NewConfig extends React.Component {
     this.betaips = document.getElementById('betaips');
     // this.createCodeMirror('text', '');
     this.chontenttab = document.getElementById('chontenttab'); // diff标签
-    this.tenant = getParams('namespace') || '';
+    this.tenant = getParams('namespace') || 'public';
     this.field.setValue('group', this.group);
     if (!window.monaco) {
       window.importEditor(() => {
@@ -217,7 +217,7 @@ class NewConfig extends React.Component {
   }
 
   goList() {
-    this.tenant = getParams('namespace') || '';
+    this.tenant = getParams('namespace') || 'public';
     this.serverId = getParams('serverId') || '';
     this.props.history.push(
       generateUrl('/configurationManagement', {
@@ -301,7 +301,7 @@ class NewConfig extends React.Component {
       data: {
         dataId: addonBefore + this.field.getValue('dataId'),
         groupName: this.field.getValue('group'),
-        namespaceId: getParams('namespace') || '',
+        namespaceId: getParams('namespace') || 'public',
       },
       success: res => {
         // 检查 res.data 是否为 null，如果不是 null，说明存在就不提交配置
@@ -335,7 +335,7 @@ class NewConfig extends React.Component {
     const self = this;
     const { locale = {} } = this.props;
     let { addonBefore, config_tags, configType } = this.state;
-    this.tenant = getParams('namespace') || '';
+    this.tenant = getParams('namespace') || 'public';
     const payload = {
       dataId: addonBefore + this.field.getValue('dataId'),
       groupName: this.field.getValue('group'),

@@ -62,7 +62,7 @@ class ConfigEditor extends React.Component {
     this.field = new Field(this);
     this.dataId = getParams('dataId') || 'yanlin';
     this.group = getParams('group') || 'DEFAULT_GROUP';
-    this.tenant = getParams('namespace') || '';
+    this.tenant = getParams('namespace') || 'public';
     this.state = {
       configType: 'text',
       codeValue: '',
@@ -159,7 +159,7 @@ class ConfigEditor extends React.Component {
 
   navTo(url) {
     this.serverId = getParams('serverId') || '';
-    this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
+    this.tenant = getParams('namespace') || 'public'; // 为当前实例保存tenant参数
     this.props.history.push(
       `${url}?serverId=${this.serverId || ''}&dataId=${this.dataId}&groupName=${
         this.group
@@ -182,7 +182,7 @@ class ConfigEditor extends React.Component {
   getDataDetail() {
     const { locale = {} } = this.props;
     const self = this;
-    this.tenant = getParams('namespace') || '';
+    this.tenant = getParams('namespace') || 'public';
     this.serverId = getParams('serverId') || 'center';
     const url = `v3/console/cs/config?dataId=${this.dataId}&groupName=${this.group}`;
     request({
@@ -361,7 +361,7 @@ class ConfigEditor extends React.Component {
     const { locale = {} } = this.props;
     const self = this;
     this.codeValue = content;
-    this.tenant = getParams('namespace') || '';
+    this.tenant = getParams('namespace') || 'public';
     this.serverId = getParams('serverId') || 'center';
 
     const payload = {

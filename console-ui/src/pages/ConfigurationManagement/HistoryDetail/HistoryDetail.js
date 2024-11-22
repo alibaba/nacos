@@ -46,7 +46,7 @@ class HistoryDetail extends React.Component {
     this.group = getParams('group') || 'DEFAULT_GROUP';
     this.serverId = getParams('serverId') || 'center';
     this.nid = getParams('nid') || '123509854';
-    this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
+    this.tenant = getParams('namespace') || 'public'; // 为当前实例保存tenant参数
     // this.params = window.location.hash.split('?')[1]||'';
   }
 

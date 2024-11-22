@@ -239,7 +239,7 @@ public class ParamUtil {
         if (StringUtils.isBlank(namespaceTmp)) {
             namespaceTmp = properties.getProperty(PropertyKeyConst.NAMESPACE);
         }
-        return StringUtils.isNotBlank(namespaceTmp) ? namespaceTmp.trim() : StringUtils.EMPTY;
+        return StringUtils.isNotBlank(namespaceTmp) ? namespaceTmp.trim() : Constants.DEFAULT_NAMESPACE_ID;
     }
     
     /**

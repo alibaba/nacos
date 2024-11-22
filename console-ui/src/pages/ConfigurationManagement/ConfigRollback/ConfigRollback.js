@@ -75,7 +75,7 @@ class ConfigRollback extends React.Component {
 
   getDataDetail() {
     const self = this;
-    this.namespaceId = getParams('namespace') || '';
+    this.namespaceId = getParams('namespace') || 'public';
     this.serverId = getParams('serverId') || 'center';
     const url = `v3/console/cs/history?dataId=${this.dataId}&groupName=${this.group}&nid=${this.nid}`;
     request({
@@ -137,7 +137,7 @@ class ConfigRollback extends React.Component {
         </div>
       ),
       onOk() {
-        self.tenant = getParams('namespace') || '';
+        self.tenant = getParams('namespace') || 'public';
         self.serverId = getParams('serverId') || 'center';
         self.dataId = self.field.getValue('dataId');
         self.group = self.field.getValue('group');

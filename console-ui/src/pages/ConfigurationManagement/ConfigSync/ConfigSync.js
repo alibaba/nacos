@@ -93,7 +93,7 @@ class ConfigSync extends React.Component {
   getDataDetail() {
     const self = this;
     const { locale = {} } = this.props;
-    this.tenant = getParams('namespace') || '';
+    this.tenant = getParams('namespace') || 'public';
     this.serverId = getParams('serverId') || 'center';
     let url = `/diamond-ops/configList/detail/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}/tenant/${this.tenant}?id=`;
     if (this.tenant === 'global' || !this.tenant) {
