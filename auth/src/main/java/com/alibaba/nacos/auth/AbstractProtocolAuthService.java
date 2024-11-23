@@ -18,7 +18,12 @@ package com.alibaba.nacos.auth;
 
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.serveridentity.ServerIdentity;
+import com.alibaba.nacos.auth.serveridentity.ServerIdentityChecker;
+import com.alibaba.nacos.auth.serveridentity.ServerIdentityCheckerHolder;
+import com.alibaba.nacos.auth.serveridentity.ServerIdentityResult;
 import com.alibaba.nacos.auth.util.Loggers;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
@@ -42,8 +47,16 @@ public abstract class AbstractProtocolAuthService<R> implements ProtocolAuthServ
     
     protected final AuthConfigs authConfigs;
     
+    protected final ServerIdentityChecker checker;
+    
     protected AbstractProtocolAuthService(AuthConfigs authConfigs) {
         this.authConfigs = authConfigs;
+        this.checker = ServerIdentityCheckerHolder.getInstance().getChecker();
+    }
+    
+    @Override
+    public void initialize() {
+        this.checker.init(authConfigs);
     }
     
     @Override
@@ -77,6 +90,30 @@ public abstract class AbstractProtocolAuthService<R> implements ProtocolAuthServ
         }
         return true;
     }
+    
+    @Override
+    public ServerIdentityResult checkServerIdentity(R request, Secured secured) {
+        if (isInvalidServerIdentity()) {
+            return ServerIdentityResult.fail(
+                    "Invalid server identity key or value, Please make sure set `nacos.core.auth.server.identity.key`"
+                            + " and `nacos.core.auth.server.identity.value`, or open `nacos.core.auth.enable.userAgentAuthWhite`");
+        }
+        ServerIdentity serverIdentity = parseServerIdentity(request);
+        return checker.check(serverIdentity, secured);
+    }
+    
+    private boolean isInvalidServerIdentity() {
+        return StringUtils.isBlank(authConfigs.getServerIdentityKey()) || StringUtils.isBlank(
+                authConfigs.getServerIdentityValue());
+    }
+    
+    /**
+     * Parse server identity from protocol request.
+     *
+     * @param request protocol request
+     * @return nacos server identity.
+     */
+    protected abstract ServerIdentity parseServerIdentity(R request);
     
     /**
      * Get resource from secured annotation specified resource.
