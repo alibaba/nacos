@@ -414,11 +414,10 @@ public class NacosRoleServiceImpl {
         }
         return CollectionUtils.isNotEmpty(permissionInfos) && permissionInfos.stream()
                 .anyMatch(permissionInfo ->
-                        StringUtils.equals(role, permissionInfo.getRole()) &&
-                        StringUtils.equals(resource, permissionInfo.getResource()) &&
-                                (StringUtils.equals(action, permissionInfo.getAction())
-                                        || "rw".equals(permissionInfo.getAction()))
-                );
+                        StringUtils.equals(role, permissionInfo.getRole())
+                        && StringUtils.equals(resource, permissionInfo.getResource())
+                        && (StringUtils.equals(action, permissionInfo.getAction())
+                        || "rw".equals(permissionInfo.getAction())));
     }
     
 }
