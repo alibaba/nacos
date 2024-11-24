@@ -303,6 +303,11 @@ public class NacosRoleServiceImpl {
         if (!roleSet.contains(role)) {
             throw new IllegalArgumentException("role " + role + " not found!");
         }
+
+        if (hasDuplicatePermission(role, resource, action)) {
+            throw new IllegalArgumentException("permission already exists!");
+        }
+
         permissionPersistService.addPermission(role, resource, action);
     }
     
@@ -392,6 +397,28 @@ public class NacosRoleServiceImpl {
         List<RoleInfo> roleInfos = roleInfoPage.getPageItems();
         return CollectionUtils.isNotEmpty(roleInfos) && roleInfos.stream()
                 .anyMatch(roleInfo -> role.equals(roleInfo.getRole()));
+    }
+
+    /**
+     * judge whether the permission is duplicate.
+     *
+     * @param role role name
+     * @param resource resource
+     * @param action action
+     * @return true if duplicate, false otherwise
+     */
+    public boolean hasDuplicatePermission(String role, String resource, String action) {
+        List<PermissionInfo> permissionInfos = getPermissions(role);
+        if (CollectionUtils.isEmpty(permissionInfos)) {
+            return false;
+        }
+        return CollectionUtils.isNotEmpty(permissionInfos) && permissionInfos.stream()
+                .anyMatch(permissionInfo ->
+                        StringUtils.equals(role, permissionInfo.getRole()) &&
+                        StringUtils.equals(resource, permissionInfo.getResource()) &&
+                                (StringUtils.equals(action, permissionInfo.getAction())
+                                        || "rw".equals(permissionInfo.getAction()))
+                );
     }
     
 }
