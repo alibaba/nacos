@@ -33,6 +33,7 @@ import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RolePersistService;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
+import com.sun.istack.internal.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -235,6 +236,12 @@ public class NacosRoleServiceImpl {
             throw new IllegalArgumentException(
                     "role '" + AuthConstants.GLOBAL_ADMIN_ROLE + "' is not permitted to create!");
         }
+
+        if (hasRoleWithUsername(role, username)) {
+            throw new IllegalArgumentException(
+                    "user '" + username + "' already bound to the role '" + role + "' !");
+        }
+
         rolePersistService.addRole(role, username);
         roleSet.add(role);
     }
@@ -369,6 +376,22 @@ public class NacosRoleServiceImpl {
                 .anyMatch(roleInfo -> AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole()));
         authConfigs.setHasGlobalAdminRole(hasGlobalAdminRole);
         return hasGlobalAdminRole;
+    }
+
+    /**
+     * check if the user is already bound to the role.
+     *
+     * @return true if the user is already bound to the role.
+     */
+    public boolean hasRoleWithUsername(@NotNull String role, @NotNull String username) {
+        Page<RoleInfo> roleInfoPage = rolePersistService.getRolesByUserNameAndRoleName(username,
+                role, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
+        if (roleInfoPage == null) {
+            return false;
+        }
+        List<RoleInfo> roleInfos = roleInfoPage.getPageItems();
+        return CollectionUtils.isNotEmpty(roleInfos) && roleInfos.stream()
+                .anyMatch(roleInfo -> role.equals(roleInfo.getRole()));
     }
     
 }
