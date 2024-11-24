@@ -28,6 +28,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.constant.ParametersField;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
+import com.alibaba.nacos.config.server.enums.ApiVersionEnum;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -244,7 +245,7 @@ public class ConfigController {
         
         final String clientIp = RequestUtil.getRemoteIp(request);
         String isNotify = request.getHeader("notify");
-        inner.doGetConfig(request, response, dataId, group, tenant, tag, isNotify, clientIp);
+        inner.doGetConfig(request, response, dataId, group, tenant, tag, isNotify, clientIp, ApiVersionEnum.V1);
     }
     
     /**

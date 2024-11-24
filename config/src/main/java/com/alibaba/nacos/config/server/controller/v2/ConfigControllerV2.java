@@ -27,6 +27,7 @@ import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.ConfigServletInner;
+import com.alibaba.nacos.config.server.enums.ApiVersionEnum;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.paramcheck.ConfigBlurSearchHttpParamExtractor;
@@ -105,7 +106,7 @@ public class ConfigControllerV2 {
         ParamUtils.checkParamV2(tag);
         final String clientIp = RequestUtil.getRemoteIp(request);
         String isNotify = request.getHeader("notify");
-        inner.doGetConfig(request, response, dataId, group, namespaceId, tag, isNotify, clientIp, true);
+        inner.doGetConfig(request, response, dataId, group, namespaceId, tag, isNotify, clientIp, ApiVersionEnum.V2);
     }
     
     /**
