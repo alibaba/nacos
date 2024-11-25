@@ -24,8 +24,16 @@ import com.alibaba.nacos.config.server.remote.query.handler.ConfigQueryHandler;
  */
 public interface ConfigQueryHandlerChainBuilder {
     
+    /**
+     * Builds the configuration query handler chain.
+     * @return the configuration query handler chain
+     */
     ConfigQueryHandlerChain build();
     
+    /**
+     * Adds a configuration query handler to the chain.
+     * @param handler the handler to be added
+     * @return the current builder instance
+     */
     ConfigQueryHandlerChainBuilder addHandler(ConfigQueryHandler handler);
-    
 }

@@ -157,7 +157,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
         ConfigQueryChainRequest chainRequest = new ConfigQueryChainRequest();
         
         String tag = request.getTag();
-        Map<String, String> appLabels = new HashMap<>();
+        Map<String, String> appLabels = new HashMap<>(4);
         appLabels.put(BetaGrayRule.CLIENT_IP_LABEL, meta.getClientIp());
         if (StringUtils.isNotBlank(tag)) {
             appLabels.put(TagGrayRule.VIP_SERVER_TAG_LABEL, tag);

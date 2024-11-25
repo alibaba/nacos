@@ -39,11 +39,34 @@ public class ConfigQueryChainResponse {
     private ConfigQueryStatus status;
     
     public enum ConfigQueryStatus {
+        /**
+         * GrayRule-Beta Type.
+         */
         BETA,
+        
+        /**
+         * GrayRule-Tag Type.
+         */
         TAG,
+        
+        /**
+         * Tag not found.
+         */
         TAG_NOT_FOUND,
+        
+        /**
+         * Formal.
+         */
         FORMAL,
+        
+        /**
+         * Configuration query conflict.
+         */
         CONFIG_QUERY_CONFLICT,
+        
+        /**
+         * Configuration not found.
+         */
         CONFIG_NOT_FOUND,
     }
     

@@ -168,7 +168,7 @@ public class ConfigServletInner {
             String tenant, String tag, String clientIp) {
         ConfigQueryChainRequest chainRequest = new ConfigQueryChainRequest();
         
-        Map<String, String> appLabels = new HashMap<>();
+        Map<String, String> appLabels = new HashMap<>(4);
         String autoTag = request.getHeader(VIPSERVER_TAG);
         appLabels.put(BetaGrayRule.CLIENT_IP_LABEL, clientIp);
         if (StringUtils.isNotBlank(tag)) {

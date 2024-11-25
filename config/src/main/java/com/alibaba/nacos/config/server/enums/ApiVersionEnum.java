@@ -22,8 +22,14 @@ package com.alibaba.nacos.config.server.enums;
  */
 public enum ApiVersionEnum {
     
+    /**
+     * API version v1.
+     */
     V1("v1"),
     
+    /**
+     * API version v2.
+     */
     V2("v2");
     
     private final String version;
