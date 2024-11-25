@@ -48,15 +48,21 @@ public class Md5ComparatorDelegate {
         for (Md5Comparator each : md5Comparators) {
             if (StringUtils.isEmpty(each.getMd5ComparatorName())) {
                 LOGGER.warn(
-                        "[Md5Comparator] Load Md5Comparator({}) Md5ComparatorName(null/empty) fail. Please add Md5ComparatorName to resolve",
+                        "[Md5ComparatorDelegate] Load Md5Comparator({}) Md5ComparatorName(null/empty) fail. Please add Md5ComparatorName to resolve",
                         each.getClass().getName());
                 continue;
             }
+            LOGGER.info("[Md5ComparatorDelegate] Load Md5Comparator({}) Md5ComparatorName({}) successfully.",
+                    each.getClass().getName(), each.getMd5ComparatorName());
             if (StringUtils.equals(md5ComparatorType, each.getMd5ComparatorName())) {
+                LOGGER.info("[Md5ComparatorDelegate] Matched Md5Comparator found,set md5Comparator={}",
+                        each.getClass().getName());
                 md5Comparator = each;
             }
         }
         if (md5Comparator == null) {
+            LOGGER.info(
+                    "[Md5ComparatorDelegate] Matched Md5Comparator not found, load Default NacosMd5Comparator successfully");
             md5Comparator = new NacosMd5Comparator();
         }
     }

@@ -43,18 +43,23 @@ public class ConfigCacheFactoryDelegate {
         Collection<ConfigCacheFactory> configCacheFactories = NacosServiceLoader.load(ConfigCacheFactory.class);
         for (ConfigCacheFactory each : configCacheFactories) {
             if (StringUtils.isEmpty(each.getConfigCacheFactoryName())) {
-                LOGGER.warn("[ConfigCacheFactory] Load ConfigCacheFactory({}) ConfigFactroyName (null/empty) fail. "
-                                + "Please add ConfigFactoryName to resolve",
-                        each.getClass());
+                LOGGER.warn(
+                        "[ConfigCacheFactoryDelegate] Load ConfigCacheFactory({}) ConfigFactroyName (null/empty) fail. "
+                                + "Please add ConfigFactoryName to resolve", each.getClass().getName());
                 continue;
             }
-            LOGGER.info("[ConfigCacheFactory] Load ConfigCacheFactory({}) ConfigCacheFactoryName({}) successfully. ",
-                    each.getClass(), each.getConfigCacheFactoryName());
+            LOGGER.info(
+                    "[ConfigCacheFactoryDelegate] Load ConfigCacheFactory({}) ConfigCacheFactoryName({}) successfully. ",
+                    each.getClass().getName(), each.getConfigCacheFactoryName());
             if (StringUtils.equals(configCacheFactoryType, each.getConfigCacheFactoryName())) {
+                LOGGER.info("[ConfigCacheFactoryDelegate] Matched ConfigCacheFactory found,set configCacheFactory={}",
+                        each.getClass().getName());
                 this.configCacheFactory = each;
             }
         }
         if (this.configCacheFactory == null) {
+            LOGGER.info(
+                    "[ConfigCacheFactoryDelegate] Matched ConfigCacheFactory not found, Load Default NacosConfigCacheFactory successfully.");
             this.configCacheFactory = new NacosConfigCacheFactory();
         }
     }
