@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.console.controller.v3.config;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.config.AuthConfigs;
@@ -162,7 +163,7 @@ public class ConsoleConfigControllerTest {
     @Test
     void testDeleteConfig() throws Exception {
         
-        when(configProxy.deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG), any(),
+        when(configProxy.deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(Constants.DEFAULT_NAMESPACE_ID), eq(TEST_TAG), any(),
                 any())).thenReturn(true);
         
         ConfigFormV3 configForm = new ConfigFormV3();
@@ -173,7 +174,7 @@ public class ConsoleConfigControllerTest {
         MockHttpServletRequest request = new MockHttpServletRequest();
         Result<Boolean> booleanResult = consoleConfigController.deleteConfig(request, configForm);
         
-        verify(configProxy).deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG), any(),
+        verify(configProxy).deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(Constants.DEFAULT_NAMESPACE_ID), eq(TEST_TAG), any(),
                 any());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
@@ -227,7 +228,7 @@ public class ConsoleConfigControllerTest {
         configAdvanceInfo.put("appName", "testApp");
         configAdvanceInfo.put("config_tags", "testTag");
         
-        when(configProxy.getConfigList(1, 10, "testDataId", "testGroup", "", configAdvanceInfo)).thenReturn(page);
+        when(configProxy.getConfigList(1, 10, "testDataId", "testGroup", "public", configAdvanceInfo)).thenReturn(page);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/config/list")
                 .param("dataId", "testDataId").param("groupName", "testGroup").param("appName", "testApp")
@@ -263,7 +264,7 @@ public class ConsoleConfigControllerTest {
         Map<String, Object> configAdvanceInfo = new HashMap<>(8);
         configAdvanceInfo.put("content", "server.port");
         
-        when(configProxy.getConfigListByContent("blur", 1, 10, "test", "test", "", configAdvanceInfo)).thenReturn(page);
+        when(configProxy.getConfigListByContent("blur", 1, 10, "test", "test", "public", configAdvanceInfo)).thenReturn(page);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/config/searchDetail")
                 .param("dataId", "test").param("groupName", "test").param("appName", "").param("namespaceId", "")
