@@ -92,7 +92,7 @@ class HistoryControllerTest {
         page.setPagesAvailable(2);
         page.setPageItems(configHistoryInfoList);
         
-        when(historyService.listConfigHistory("test", "test", "", 1, 10)).thenReturn(page);
+        when(historyService.listConfigHistory("test", "test", "public", 1, 10)).thenReturn(page);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.HISTORY_CONTROLLER_PATH).param("search", "accurate")
                 .param("dataId", "test").param("group", "test").param("tenant", "").param("appName", "").param("pageNo", "1")
@@ -149,7 +149,7 @@ class HistoryControllerTest {
         configHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
         configHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
         
-        when(historyService.getPreviousConfigHistoryInfo("test", "test", "", 1L)).thenReturn(configHistoryInfo);
+        when(historyService.getPreviousConfigHistoryInfo("test", "test", "public", 1L)).thenReturn(configHistoryInfo);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.HISTORY_CONTROLLER_PATH + "/previous")
                 .param("dataId", "test").param("group", "test").param("tenant", "").param("id", "1");

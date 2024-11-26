@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.console.controller.v3.config;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
@@ -72,7 +73,7 @@ public class ConsoleHistoryControllerTest {
         configHistoryInfo.setDataId("testDataId");
         configHistoryInfo.setGroup("testGroup");
         
-        when(historyProxy.getConfigHistoryInfo("testDataId", "testGroup", "", 1L)).thenReturn(configHistoryInfo);
+        when(historyProxy.getConfigHistoryInfo("testDataId", "testGroup", Constants.DEFAULT_NAMESPACE_ID, 1L)).thenReturn(configHistoryInfo);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/history")
                 .param("dataId", "testDataId").param("groupName", "testGroup").param("nid", "1");
@@ -100,7 +101,7 @@ public class ConsoleHistoryControllerTest {
         configHistoryInfo.setGroup("testGroup");
         page.setPageItems(Collections.singletonList(configHistoryInfo));
         
-        when(historyProxy.listConfigHistory("testDataId", "testGroup", "", 1, 100)).thenReturn(page);
+        when(historyProxy.listConfigHistory("testDataId", "testGroup", Constants.DEFAULT_NAMESPACE_ID, 1, 100)).thenReturn(page);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/history/list")
                 .param("dataId", "testDataId").param("groupName", "testGroup").param("pageNo", "1")
@@ -125,7 +126,7 @@ public class ConsoleHistoryControllerTest {
         configHistoryInfo.setDataId("testDataId");
         configHistoryInfo.setGroup("testGroup");
         
-        when(historyProxy.getPreviousConfigHistoryInfo("testDataId", "testGroup", "", 1L)).thenReturn(
+        when(historyProxy.getPreviousConfigHistoryInfo("testDataId", "testGroup", Constants.DEFAULT_NAMESPACE_ID, 1L)).thenReturn(
                 configHistoryInfo);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/history/previous")

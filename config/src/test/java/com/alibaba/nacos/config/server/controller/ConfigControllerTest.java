@@ -154,7 +154,7 @@ class ConfigControllerTest {
         configAllInfo.setCreateIp("localhost");
         configAllInfo.setCreateUser("test");
         
-        when(configInfoPersistService.findConfigAllInfo("test", "test", "")).thenReturn(configAllInfo);
+        when(configInfoPersistService.findConfigAllInfo("test", "test", "public")).thenReturn(configAllInfo);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CONFIG_CONTROLLER_PATH)
                 .param("show", "all").param("dataId", "test").param("group", "test").param("tenant", "");
@@ -233,7 +233,7 @@ class ConfigControllerTest {
         configAdvanceInfo.setCreateUser("test");
         configAdvanceInfo.setDesc("desc");
         
-        when(configInfoPersistService.findConfigAdvanceInfo("test", "test", "")).thenReturn(configAdvanceInfo);
+        when(configInfoPersistService.findConfigAdvanceInfo("test", "test", "public")).thenReturn(configAdvanceInfo);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(
                         Constants.CONFIG_CONTROLLER_PATH + "/catalog").param("dataId", "test").param("group", "test")
@@ -265,7 +265,7 @@ class ConfigControllerTest {
         SampleResult sampleResult = new SampleResult();
         sampleResult.setLisentersGroupkeyStatus(listenersGroupkeyStatus);
         
-        when(configSubService.getCollectSampleResult("test", "test", "", 1)).thenReturn(sampleResult);
+        when(configSubService.getCollectSampleResult("test", "test", "public", 1)).thenReturn(sampleResult);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(
                         Constants.CONFIG_CONTROLLER_PATH + "/listener").param("dataId", "test").param("group", "test")
@@ -292,7 +292,7 @@ class ConfigControllerTest {
         page.setPageItems(configInfoList);
         Map<String, Object> configAdvanceInfo = new HashMap<>(8);
         
-        when(configInfoPersistService.findConfigInfo4Page(1, 10, "test", "test", "", configAdvanceInfo)).thenReturn(
+        when(configInfoPersistService.findConfigInfo4Page(1, 10, "test", "test", "public", configAdvanceInfo)).thenReturn(
                 page);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CONFIG_CONTROLLER_PATH)
@@ -325,7 +325,7 @@ class ConfigControllerTest {
         page.setPageItems(configInfoList);
         Map<String, Object> configAdvanceInfo = new HashMap<>(8);
         
-        when(configInfoPersistService.findConfigInfoLike4Page(1, 10, "test", "test", "", configAdvanceInfo)).thenReturn(
+        when(configInfoPersistService.findConfigInfoLike4Page(1, 10, "test", "test", "public", configAdvanceInfo)).thenReturn(
                 page);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CONFIG_CONTROLLER_PATH)
@@ -367,7 +367,7 @@ class ConfigControllerTest {
         configInfoBetaWrapper.setContent("test");
         configInfoBetaWrapper.setGrayName("beta");
         configInfoBetaWrapper.setGrayRule("{\"type\":\"beta\",\"version\":\"1.0.0\",\"expr\":\"127.0.0.1,127.0.0.2\",\"priority\":-1000}");
-        when(configInfoGrayPersistService.findConfigInfo4Gray("test", "test", "", "beta")).thenReturn(
+        when(configInfoGrayPersistService.findConfigInfo4Gray("test", "test", "public", "beta")).thenReturn(
                 configInfoBetaWrapper);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CONFIG_CONTROLLER_PATH)

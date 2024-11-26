@@ -73,7 +73,7 @@ class NamingHttpResourceParserTest {
         Mockito.when(request.getParameter(eq(CommonParams.GROUP_NAME))).thenReturn("testG");
         Mockito.when(request.getParameter(eq(CommonParams.SERVICE_NAME))).thenReturn("testS");
         Resource actual = resourceParser.parse(request, secured);
-        assertEquals(StringUtils.EMPTY, actual.getNamespaceId());
+        assertEquals(Constants.DEFAULT_NAMESPACE_ID, actual.getNamespaceId());
         assertEquals("testG", actual.getGroup());
         assertEquals("testS", actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());

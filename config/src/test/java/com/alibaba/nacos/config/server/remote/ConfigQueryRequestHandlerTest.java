@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.remote;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
@@ -86,7 +87,7 @@ class ConfigQueryRequestHandlerTest {
         propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
         configDiskServiceFactoryMockedStatic = Mockito.mockStatic(ConfigDiskServiceFactory.class);
         configQueryRequestHandler = new ConfigQueryRequestHandler();
-        final String groupKey = GroupKey2.getKey(dataId, group, "");
+        final String groupKey = GroupKey2.getKey(dataId, group, Constants.DEFAULT_NAMESPACE_ID);
         when(ConfigCacheService.tryConfigReadLock(groupKey)).thenReturn(1);
         propertyUtilMockedStatic.when(PropertyUtil::getMaxContent).thenReturn(1024 * 1000);
         
@@ -100,7 +101,7 @@ class ConfigQueryRequestHandlerTest {
     @Test
     void testGetNormal() throws Exception {
         
-        final String groupKey = GroupKey2.getKey(dataId, group, "");
+        final String groupKey = GroupKey2.getKey(dataId, group, Constants.DEFAULT_NAMESPACE_ID);
         String content = "content_from_notdirectreadÄãºÃ" + System.currentTimeMillis();
         ConfigRocksDbDiskService configRocksDbDiskService = Mockito.mock(ConfigRocksDbDiskService.class);
         when(ConfigDiskServiceFactory.getInstance()).thenReturn(configRocksDbDiskService);
@@ -117,7 +118,7 @@ class ConfigQueryRequestHandlerTest {
         RequestMeta requestMeta = new RequestMeta();
         requestMeta.setClientIp("127.0.0.1");
         
-        when(configRocksDbDiskService.getContent(eq(dataId), eq(group), eq(null))).thenReturn(content);
+        when(configRocksDbDiskService.getContent(eq(dataId), eq(group), eq(Constants.DEFAULT_NAMESPACE_ID))).thenReturn(content);
         ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
         assertEquals(content, response.getContent());
         assertEquals(MD5Utils.md5Hex(content, "UTF-8"), response.getMd5());
@@ -138,7 +139,7 @@ class ConfigQueryRequestHandlerTest {
     @Test
     void testGetBeta() throws Exception {
         
-        final String groupKey = GroupKey2.getKey(dataId, group, "");
+        final String groupKey = GroupKey2.getKey(dataId, group, Constants.DEFAULT_NAMESPACE_ID);
         ConfigRocksDbDiskService configRocksDbDiskService = Mockito.mock(ConfigRocksDbDiskService.class);
         when(ConfigDiskServiceFactory.getInstance()).thenReturn(configRocksDbDiskService);
         
@@ -161,7 +162,7 @@ class ConfigQueryRequestHandlerTest {
         RequestMeta requestMeta = new RequestMeta();
         requestMeta.setClientIp("127.0.0.1");
         
-        when(configRocksDbDiskService.getGrayContent(eq(dataId), eq(group), eq(null),
+        when(configRocksDbDiskService.getGrayContent(eq(dataId), eq(group), eq(Constants.DEFAULT_NAMESPACE_ID),
                 eq(BetaGrayRule.TYPE_BETA))).thenReturn(content);
         ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
         //check content&md5
@@ -181,7 +182,7 @@ class ConfigQueryRequestHandlerTest {
     @Test
     void testGetTagNotFound() throws Exception {
         
-        final String groupKey = GroupKey2.getKey(dataId, group, "");
+        final String groupKey = GroupKey2.getKey(dataId, group, Constants.DEFAULT_NAMESPACE_ID);
         String content = "content_from_tag_withtagÄãºÃ" + System.currentTimeMillis();
         ConfigRocksDbDiskService configRocksDbDiskService = Mockito.mock(ConfigRocksDbDiskService.class);
         when(ConfigDiskServiceFactory.getInstance()).thenReturn(configRocksDbDiskService);
@@ -225,7 +226,7 @@ class ConfigQueryRequestHandlerTest {
     @Test
     void testGetTagWithTag() throws Exception {
         
-        final String groupKey = GroupKey2.getKey(dataId, group, "");
+        final String groupKey = GroupKey2.getKey(dataId, group, Constants.DEFAULT_NAMESPACE_ID);
         String content = "content_from_tag_notdirectreadÄãºÃ" + System.currentTimeMillis();
         ConfigRocksDbDiskService configRocksDbDiskService = Mockito.mock(ConfigRocksDbDiskService.class);
         when(ConfigDiskServiceFactory.getInstance()).thenReturn(configRocksDbDiskService);
@@ -260,7 +261,7 @@ class ConfigQueryRequestHandlerTest {
         requestMeta.setClientIp("127.0.0.1");
         
         //mock disk read.
-        when(configRocksDbDiskService.getGrayContent(eq(dataId), eq(group), eq(null),
+        when(configRocksDbDiskService.getGrayContent(eq(dataId), eq(group), eq(Constants.DEFAULT_NAMESPACE_ID),
                 eq(TagGrayRule.TYPE_TAG + "_" + specificTag))).thenReturn(tagContent);
         ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
         
@@ -282,7 +283,7 @@ class ConfigQueryRequestHandlerTest {
     @Test
     void testGetTagAutoTag() throws Exception {
         
-        final String groupKey = GroupKey2.getKey(dataId, group, "");
+        final String groupKey = GroupKey2.getKey(dataId, group, Constants.DEFAULT_NAMESPACE_ID);
         String content = "content_from_tag_notdirectreadÄãºÃ" + System.currentTimeMillis();
         ConfigRocksDbDiskService configRocksDbDiskService = Mockito.mock(ConfigRocksDbDiskService.class);
         when(ConfigDiskServiceFactory.getInstance()).thenReturn(configRocksDbDiskService);
@@ -310,7 +311,7 @@ class ConfigQueryRequestHandlerTest {
         requestMeta.setClientIp("127.0.0.1");
         requestMeta.getAppLabels().put(VIPSERVER_TAG, autoTag);
         //mock disk read.
-        when(configRocksDbDiskService.getGrayContent(eq(dataId), eq(group), eq(null),
+        when(configRocksDbDiskService.getGrayContent(eq(dataId), eq(group), eq(Constants.DEFAULT_NAMESPACE_ID),
                 eq(TagGrayRule.TYPE_TAG + "_" + autoTag))).thenReturn(tagContent);
         ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
         
