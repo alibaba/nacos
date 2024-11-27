@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.roles;
 
+import static org.mockito.Mockito.*;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.api.Permission;
@@ -32,10 +33,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
@@ -202,5 +205,17 @@ class NacosRoleServiceImplTest {
         Resource resource = new Resource("public", "group", AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, "rw", null);
         Object invoke = method.invoke(nacosRoleService, new Resource[] {resource});
         assertNotNull(invoke);
+    }
+    
+    @Test
+    void duplicatePermission() {
+        List<PermissionInfo> permissionInfos = new ArrayList<>();
+        PermissionInfo permissionInfo = new PermissionInfo();
+        permissionInfo.setAction("rw");
+        permissionInfo.setResource("test");
+        permissionInfos.add(permissionInfo);
+        NacosRoleServiceImpl spy = spy(nacosRoleService);
+        when(spy.getPermissions("admin")).thenReturn(permissionInfos);
+        spy.isDuplicatePermission("admin", "test", "r");
     }
 }
