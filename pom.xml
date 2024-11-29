@@ -154,7 +154,7 @@
         <!-- override dependency version -->
         <spring.version>5.3.39</spring.version>
         <spring-security.version>5.8.15</spring-security.version>
-        <tomcat.version>9.0.93</tomcat.version>
+        <tomcat.version>9.0.96</tomcat.version>
     </properties>
     <!-- == -->
     <!-- =========================================================Build plugins================================================ -->

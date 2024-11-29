@@ -17,6 +17,7 @@
 package com.alibaba.nacos.auth;
 
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.serveridentity.ServerIdentity;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.auth.config.AuthConfigs;
@@ -51,6 +52,7 @@ public class HttpProtocolAuthService extends AbstractProtocolAuthService<HttpSer
     
     @Override
     public void initialize() {
+        super.initialize();
         resourceParserMap.put(SignType.NAMING, new NamingHttpResourceParser());
         resourceParserMap.put(SignType.CONFIG, new ConfigHttpResourceParser());
     }
@@ -71,5 +73,12 @@ public class HttpProtocolAuthService extends AbstractProtocolAuthService<HttpSer
     @Override
     public IdentityContext parseIdentity(HttpServletRequest request) {
         return identityContextBuilder.build(request);
+    }
+    
+    @Override
+    protected ServerIdentity parseServerIdentity(HttpServletRequest request) {
+        String serverIdentityKey = authConfigs.getServerIdentityKey();
+        String serverIdentity = request.getHeader(serverIdentityKey);
+        return new ServerIdentity(serverIdentityKey, serverIdentity);
     }
 }
