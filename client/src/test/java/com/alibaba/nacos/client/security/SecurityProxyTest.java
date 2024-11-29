@@ -17,11 +17,14 @@
 package com.alibaba.nacos.client.security;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.auth.impl.NacosAuthLoginConstant;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
+import com.alibaba.nacos.plugin.auth.spi.client.AbstractClientAuthService;
 import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthPluginManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -99,5 +102,38 @@ class SecurityProxyTest {
         securityProxy.login(new Properties());
         Map<String, String> header = securityProxy.getIdentityContext(new RequestResource());
         assertTrue(header.isEmpty());
+    }
+    
+    @Test
+    void testReLogin() throws NoSuchFieldException, IllegalAccessException {
+        Field clientAuthPluginManagerField = SecurityProxy.class.getDeclaredField("clientAuthPluginManager");
+        clientAuthPluginManagerField.setAccessible(true);
+        ClientAuthPluginManager clientAuthPluginManager = mock(ClientAuthPluginManager.class);
+        clientAuthPluginManagerField.set(securityProxy, clientAuthPluginManager);
+        when(clientAuthPluginManager.getAuthServiceSpiImplSet()).thenReturn(Collections.singleton(new AbstractClientAuthService() {
+            
+            private LoginIdentityContext loginIdentityContext;
+            
+            @Override
+            public Boolean login(Properties properties) {
+                return null;
+            }
+            
+            @Override
+            public LoginIdentityContext getLoginIdentityContext(RequestResource resource) {
+                if (loginIdentityContext == null) {
+                    loginIdentityContext = new LoginIdentityContext();
+                }
+                return loginIdentityContext;
+            }
+            
+            @Override
+            public void shutdown() throws NacosException {
+            
+            }
+        }));
+        securityProxy.reLogin();
+        Map<String, String> identityContext = securityProxy.getIdentityContext(new RequestResource());
+        assertEquals(identityContext.get(NacosAuthLoginConstant.RELOGINFLAG), "true");
     }
 }

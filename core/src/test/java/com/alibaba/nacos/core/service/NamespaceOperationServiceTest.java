@@ -57,7 +57,9 @@ class NamespaceOperationServiceTest {
     
     private static final String TEST_NAMESPACE_DESC = "testDesc";
     
-    private static final String DEFAULT_NAMESPACE = "public";
+    private static final String DEFAULT_NAMESPACE_SHOW_NAME = "public";
+    
+    private static final String DEFAULT_NAMESPACE_DESCRIPTION = "Default Namespace";
     
     private static final int DEFAULT_QUOTA = 200;
     
@@ -93,7 +95,8 @@ class NamespaceOperationServiceTest {
         assertEquals(2, list.size());
         Namespace namespaceA = list.get(0);
         assertEquals("", namespaceA.getNamespace());
-        assertEquals(DEFAULT_NAMESPACE, namespaceA.getNamespaceShowName());
+        assertEquals(DEFAULT_NAMESPACE_SHOW_NAME, namespaceA.getNamespaceShowName());
+        assertEquals(DEFAULT_NAMESPACE_DESCRIPTION, namespaceA.getNamespaceDesc());
         assertEquals(DEFAULT_QUOTA, namespaceA.getQuota());
         assertEquals(1, namespaceA.getConfigCount());
         
@@ -104,7 +107,7 @@ class NamespaceOperationServiceTest {
     }
     
     @Test
-    void testGetNamespace() throws NacosException {
+    void testGetNamespace() {
         assertThrows(NacosApiException.class, () -> {
             
             TenantInfo tenantInfo = new TenantInfo();

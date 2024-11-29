@@ -37,5 +37,5 @@ public class NacosAuthLoginConstant {
     
     public static final String SERVER = "server";
     
-    
+    public static final String RELOGINFLAG = "reLoginFlag";
 }

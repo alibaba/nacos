@@ -54,4 +54,8 @@ public abstract class AbstractNamingClientProxy extends Subscriber<ServerListCha
         result.put(APP_FILED, AppNameUtils.getAppName());
         return result;
     }
+    
+    protected void reLogin() {
+        securityProxy.reLogin();
+    }
 }

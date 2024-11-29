@@ -27,9 +27,10 @@ import com.alibaba.nacos.persistence.repository.PaginationHelper;
 
 /**
  * Database service, providing access to config_info_beta in the database.
- *
+ * Deprecated since 2.5.0，only support on compatibility,replaced with ConfigInfoGray model, will be  soon removed on further version.
  * @author lixiaoshuang
  */
+@Deprecated
 public interface ConfigInfoBetaPersistService {
     
     /**

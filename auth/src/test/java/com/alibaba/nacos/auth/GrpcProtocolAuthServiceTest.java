@@ -22,6 +22,7 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.auth.mock.MockAuthPluginService;
 import com.alibaba.nacos.auth.mock.MockResourceParser;
+import com.alibaba.nacos.auth.serveridentity.ServerIdentityResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
@@ -41,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class GrpcProtocolAuthServiceTest {
@@ -176,6 +178,47 @@ class GrpcProtocolAuthServiceTest {
         Mockito.when(authConfigs.getNacosAuthSystemType()).thenReturn("non-exist-plugin");
         Secured secured = getMethodSecure("testEnabledAuthWithoutPlugin");
         assertFalse(protocolAuthService.enableAuth(secured));
+    }
+    
+    @Test
+    @Secured
+    void testCheckServerIdentityWithoutIdentityConfig() throws NoSuchMethodException {
+        Secured secured = getMethodSecure("testCheckServerIdentityWithoutIdentityConfig");
+        ServerIdentityResult result = protocolAuthService.checkServerIdentity(namingRequest, secured);
+        assertEquals(ServerIdentityResult.ResultStatus.FAIL, result.getStatus());
+        assertEquals("Invalid server identity key or value, Please make sure set `nacos.core.auth.server.identity.key`"
+                        + " and `nacos.core.auth.server.identity.value`, or open `nacos.core.auth.enable.userAgentAuthWhite`",
+                result.getMessage());
+        when(authConfigs.getServerIdentityKey()).thenReturn("1");
+        result = protocolAuthService.checkServerIdentity(namingRequest, secured);
+        assertEquals(ServerIdentityResult.ResultStatus.FAIL, result.getStatus());
+        assertEquals("Invalid server identity key or value, Please make sure set `nacos.core.auth.server.identity.key`"
+                        + " and `nacos.core.auth.server.identity.value`, or open `nacos.core.auth.enable.userAgentAuthWhite`",
+                result.getMessage());
+    }
+    
+    @Test
+    @Secured
+    void testCheckServerIdentityNotMatched() throws NoSuchMethodException {
+        Secured secured = getMethodSecure("testCheckServerIdentityNotMatched");
+        when(authConfigs.getServerIdentityKey()).thenReturn("1");
+        when(authConfigs.getServerIdentityValue()).thenReturn("2");
+        ServerIdentityResult result = protocolAuthService.checkServerIdentity(namingRequest, secured);
+        assertEquals(ServerIdentityResult.ResultStatus.NOT_MATCHED, result.getStatus());
+        namingRequest.putHeader("1", "3");
+        result = protocolAuthService.checkServerIdentity(namingRequest, secured);
+        assertEquals(ServerIdentityResult.ResultStatus.NOT_MATCHED, result.getStatus());
+    }
+    
+    @Test
+    @Secured
+    void testCheckServerIdentityMatched() throws NoSuchMethodException {
+        when(authConfigs.getServerIdentityKey()).thenReturn("1");
+        when(authConfigs.getServerIdentityValue()).thenReturn("2");
+        namingRequest.putHeader("1", "2");
+        Secured secured = getMethodSecure("testCheckServerIdentityMatched");
+        ServerIdentityResult result = protocolAuthService.checkServerIdentity(namingRequest, secured);
+        assertEquals(ServerIdentityResult.ResultStatus.MATCHED, result.getStatus());
     }
     
     private Secured getMethodSecure(String methodName) throws NoSuchMethodException {

@@ -256,6 +256,9 @@ const I18N_CONF = {
     historyCompareTitle: '历史版本比较',
     historyCompareLastVersion: '最新版本',
     historyCompareSelectedVersion: '当前选中版本',
+    publishType: '发布类型',
+    formal: '正式版本',
+    gray: '灰度版本',
   },
   HistoryDetail: {
     historyDetails: '历史详情',
@@ -271,6 +274,11 @@ const I18N_CONF = {
     sourceIp: '来源 IP',
     back: '返回',
     namespace: '命名空间',
+    publishType: '发布类型',
+    formal: '正式版本',
+    gray: '灰度版本',
+    grayVersion: '灰度版本',
+    grayRule: '灰度规则',
   },
   DashboardCard: {
     importantReminder0: '重要提醒',

@@ -20,7 +20,6 @@ import com.alibaba.nacos.common.task.NacosTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
-import com.alibaba.nacos.config.server.service.AggrWhitelist;
 import com.alibaba.nacos.config.server.service.ClientIpWhiteList;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.SwitchService;
@@ -54,7 +53,9 @@ public class DumpAllProcessor implements NacosTaskProcessor {
     @Override
     public boolean process(NacosTask task) {
         if (!(task instanceof DumpAllTask)) {
-            DEFAULT_LOG.error("[all-dump-error] ,invalid task type,DumpAllProcessor should process DumpAllTask type.");
+            DEFAULT_LOG.error(
+                    "[all-dump-error] ,invalid task type {},DumpAllProcessor should process DumpAllTask type.",
+                    task.getClass().getSimpleName());
             return false;
         }
         DumpAllTask dumpAllTask = (DumpAllTask) task;
@@ -105,9 +106,6 @@ public class DumpAllProcessor implements NacosTaskProcessor {
                 
                 if (cf == null) {
                     continue;
-                }
-                if (cf.getDataId().equals(AggrWhitelist.AGGRIDS_METADATA)) {
-                    AggrWhitelist.load(cf.getContent());
                 }
                 
                 if (cf.getDataId().equals(ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA)) {

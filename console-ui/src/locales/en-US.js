@@ -258,6 +258,9 @@ const I18N_CONF = {
     historyCompareTitle: 'History Compare',
     historyCompareLastVersion: 'Lasted Release Version',
     historyCompareSelectedVersion: 'Selected Version',
+    publishType: 'Publish Type',
+    formal: 'Formal Version',
+    gray: 'Gray Version',
   },
   HistoryDetail: {
     historyDetails: 'History Details',
@@ -273,6 +276,11 @@ const I18N_CONF = {
     configureContent: 'Configuration Content',
     back: 'Back',
     namespace: 'Namespace',
+    publishType: 'Publish Type',
+    formal: 'Formal Version',
+    gray: 'Gray Version',
+    grayVersion: 'Gray Version',
+    grayRule: 'Gray Rule',
   },
   DashboardCard: {
     importantReminder0: 'Important reminder',
