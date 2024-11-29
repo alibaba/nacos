@@ -250,7 +250,7 @@ public class ConfigInfoMapperByMySql extends AbstractMapperByMysql implements Co
             where.and().like("content", content);
         }
         if (!ArrayUtils.isEmpty(types)) {
-            where.in("type", types);
+            where.and().in("type", types);
         }
         where.limit(context.getStartRow(), context.getPageSize());
         return where.build();

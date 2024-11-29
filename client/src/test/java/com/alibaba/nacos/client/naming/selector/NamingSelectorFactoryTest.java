@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -92,6 +92,7 @@ public class NamingSelectorFactoryTest {
     @Test
     public void testNewMetadataSelector() {
         Instance ins1 = new Instance();
+        ins1.setMetadata(new LinkedHashMap<>()); 
         ins1.addMetadata("a", "1");
         ins1.addMetadata("b", "2");
         Instance ins2 = new Instance();
@@ -102,7 +103,7 @@ public class NamingSelectorFactoryTest {
         NamingContext namingContext = mock(NamingContext.class);
         when(namingContext.getInstances()).thenReturn(Arrays.asList(ins1, ins2, ins3));
         
-        NamingSelector metadataSelector = NamingSelectorFactory.newMetadataSelector(new HashMap() {
+        NamingSelector metadataSelector = NamingSelectorFactory.newMetadataSelector(new LinkedHashMap() {
             {
                 put("a", "1");
                 put("b", "2");
@@ -117,6 +118,7 @@ public class NamingSelectorFactoryTest {
     @Test
     public void testNewMetadataSelector2() {
         Instance ins1 = new Instance();
+        ins1.setMetadata(new LinkedHashMap<>()); 
         ins1.addMetadata("a", "1");
         ins1.addMetadata("c", "3");
         Instance ins2 = new Instance();
@@ -127,7 +129,7 @@ public class NamingSelectorFactoryTest {
         NamingContext namingContext = mock(NamingContext.class);
         when(namingContext.getInstances()).thenReturn(Arrays.asList(ins1, ins2, ins3));
         
-        NamingSelector metadataSelector = NamingSelectorFactory.newMetadataSelector(new HashMap() {
+        NamingSelector metadataSelector = NamingSelectorFactory.newMetadataSelector(new LinkedHashMap() {
             {
                 put("a", "1");
                 put("b", "2");
