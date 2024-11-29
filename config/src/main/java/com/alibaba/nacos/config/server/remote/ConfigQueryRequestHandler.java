@@ -24,6 +24,9 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.CacheItem;
+import com.alibaba.nacos.config.server.model.ConfigCacheGray;
+import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
+import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
@@ -40,7 +43,10 @@ import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.stereotype.Component;
 
 import java.net.URLEncoder;
+import java.util.HashMap;
+import java.util.Map;
 
+import static com.alibaba.nacos.api.common.Constants.CLIENT_IP;
 import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
 import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
 import static com.alibaba.nacos.config.server.utils.RequestUtil.CLIENT_APPNAME_HEADER;
@@ -81,11 +87,9 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
         
         String groupKey = GroupKey2.getKey(configQueryRequest.getDataId(), configQueryRequest.getGroup(),
                 configQueryRequest.getTenant());
-        String autoTag = configQueryRequest.getHeader(com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG);
         String requestIpApp = meta.getLabels().get(CLIENT_APPNAME_HEADER);
         String acceptCharset = ENCODE_UTF8;
         ParamUtils.checkParam(tag);
-        ParamUtils.checkParam(autoTag);
         int lockResult = ConfigCacheService.tryConfigReadLock(groupKey);
         String pullEvent = ConfigTraceService.PULL_EVENT;
         String pullType = ConfigTraceService.PULL_TYPE_OK;
@@ -96,47 +100,61 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
         if (lockResult > 0 && cacheItem != null) {
             try {
                 long lastModified = 0L;
-                boolean isBeta = cacheItem.isBeta() && cacheItem.getIps4Beta() != null && cacheItem.getIps4Beta()
-                        .contains(clientIp) && cacheItem.getConfigCacheBeta() != null;
                 String configType = cacheItem.getType();
                 response.setContentType((null != configType) ? configType : "text");
                 
                 String content;
                 String md5;
                 String encryptedDataKey;
-                if (isBeta) {
-                    md5 = cacheItem.getConfigCacheBeta().getMd5(acceptCharset);
-                    lastModified = cacheItem.getConfigCacheBeta().getLastModifiedTs();
-                    content = ConfigDiskServiceFactory.getInstance().getBetaContent(dataId, group, tenant);
-                    pullEvent = ConfigTraceService.PULL_EVENT_BETA;
-                    encryptedDataKey = cacheItem.getConfigCacheBeta().getEncryptedDataKey();
-                    response.setBeta(true);
+                ConfigCacheGray matchedGray = null;
+                Map<String, String> appLabels = null;
+                boolean specificTag = StringUtils.isNotBlank(tag);
+                if (specificTag) {
+                    appLabels = new HashMap<>(4);
+                    appLabels.put(TagGrayRule.VIP_SERVER_TAG_LABEL, tag);
+                    appLabels.put(CLIENT_IP, clientIp);
                 } else {
-                    if (StringUtils.isBlank(tag)) {
-                        if (isUseTag(cacheItem, autoTag)) {
-                            md5 = cacheItem.getTagMd5(autoTag, acceptCharset);
-                            lastModified = cacheItem.getTagLastModified(autoTag);
-                            encryptedDataKey = cacheItem.getTagEncryptedDataKey(autoTag);
-                            content = ConfigDiskServiceFactory.getInstance()
-                                    .getTagContent(dataId, group, tenant, autoTag);
-                            pullEvent = ConfigTraceService.PULL_EVENT_TAG + "-" + autoTag;
-                            response.setTag(URLEncoder.encode(autoTag, ENCODE_UTF8));
-                            
-                        } else {
-                            md5 = cacheItem.getConfigCache().getMd5(acceptCharset);
-                            lastModified = cacheItem.getConfigCache().getLastModifiedTs();
-                            encryptedDataKey = cacheItem.getConfigCache().getEncryptedDataKey();
-                            content = ConfigDiskServiceFactory.getInstance().getContent(dataId, group, tenant);
-                            pullEvent = ConfigTraceService.PULL_EVENT;
-                        }
-                    } else {
-                        md5 = cacheItem.getTagMd5(tag, acceptCharset);
-                        lastModified = cacheItem.getTagLastModified(tag);
-                        encryptedDataKey = cacheItem.getTagEncryptedDataKey(tag);
-                        content = ConfigDiskServiceFactory.getInstance().getTagContent(dataId, group, tenant, tag);
-                        response.setTag(tag);
-                        pullEvent = ConfigTraceService.PULL_EVENT_TAG + "-" + tag;
+                    appLabels = new HashMap(meta.getAppLabels());
+                    if (!appLabels.containsKey(CLIENT_IP)) {
+                        appLabels.put(CLIENT_IP, clientIp);
                     }
+                }
+                
+                if (cacheItem.getSortConfigGrays() != null && !cacheItem.getSortConfigGrays().isEmpty()) {
+                    for (ConfigCacheGray configCacheGray : cacheItem.getSortConfigGrays()) {
+                        if (configCacheGray.match(appLabels)) {
+                            matchedGray = configCacheGray;
+                            break;
+                        }
+                    }
+                }
+                if (matchedGray != null) {
+                    md5 = matchedGray.getMd5(acceptCharset);
+                    lastModified = matchedGray.getLastModifiedTs();
+                    encryptedDataKey = matchedGray.getEncryptedDataKey();
+                    content = ConfigDiskServiceFactory.getInstance()
+                            .getGrayContent(dataId, group, tenant, matchedGray.getGrayName());
+                    pullEvent = ConfigTraceService.PULL_EVENT + "-" + matchedGray.getGrayName();
+                    if (BetaGrayRule.TYPE_BETA.equals(matchedGray.getGrayName())) {
+                        response.setBeta(true);
+                    }
+                    if (TagGrayRule.TYPE_TAG.equals(matchedGray.getGrayRule().getType())) {
+                        response.setTag(URLEncoder.encode(matchedGray.getRawGrayRule(), ENCODE_UTF8));
+                    }
+                } else if (specificTag) {
+                    //specific tag is not found
+                    md5 = null;
+                    lastModified = 0L;
+                    encryptedDataKey = null;
+                    content = null;
+                    pullEvent = ConfigTraceService.PULL_EVENT + "-" + TagGrayRule.TYPE_TAG + "-" + tag;
+                    response.setTag(tag);
+                } else {
+                    md5 = cacheItem.getConfigCache().getMd5(acceptCharset);
+                    lastModified = cacheItem.getConfigCache().getLastModifiedTs();
+                    encryptedDataKey = cacheItem.getConfigCache().getEncryptedDataKey();
+                    content = ConfigDiskServiceFactory.getInstance().getContent(dataId, group, tenant);
+                    pullEvent = ConfigTraceService.PULL_EVENT;
                 }
                 
                 response.setMd5(md5);
@@ -170,11 +188,6 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                     "requested file is being modified, please try later.");
         }
         return response;
-    }
-    
-    private static boolean isUseTag(CacheItem cacheItem, String tag) {
-        return StringUtils.isNotBlank(tag) && cacheItem.getConfigCacheTags() != null && cacheItem.getConfigCacheTags()
-                .containsKey(tag);
     }
     
 }

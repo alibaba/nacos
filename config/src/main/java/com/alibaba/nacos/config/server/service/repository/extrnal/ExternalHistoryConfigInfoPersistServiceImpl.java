@@ -23,6 +23,7 @@ import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
+import com.alibaba.nacos.config.server.utils.ConfigExtInfoUtil;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
@@ -46,11 +47,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.HISTORY_DETAIL_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.HISTORY_LIST_ROW_MAPPER;
 
@@ -88,20 +89,21 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     
     @Override
     public void insertConfigHistoryAtomic(long id, ConfigInfo configInfo, String srcIp, String srcUser,
-            final Timestamp time, String ops) {
+            final Timestamp time, String ops, String publishType, String extInfo) {
         String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
         String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
         String encryptedDataKey = StringUtils.defaultEmptyIfBlank(configInfo.getEncryptedDataKey());
+        String publishTypeTmp = StringUtils.defaultEmptyIfBlank(publishType);
         
         try {
             HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
                     dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
             jt.update(historyConfigInfoMapper.insert(
                             Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "src_ip",
-                                    "src_user", "gmt_modified", "op_type", "encrypted_data_key")), id, configInfo.getDataId(),
-                    configInfo.getGroup(), tenantTmp, appNameTmp, configInfo.getContent(), md5Tmp, srcIp, srcUser, time,
-                    ops, encryptedDataKey);
+                                    "src_user", "gmt_modified", "op_type", "publish_type", "ext_info", "encrypted_data_key")),
+                    id, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp, configInfo.getContent(),
+                    md5Tmp, srcIp, srcUser, time, ops, publishTypeTmp, extInfo, encryptedDataKey);
         } catch (DataAccessException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;
@@ -121,7 +123,8 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     }
     
     @Override
-    public List<ConfigInfoStateWrapper> findDeletedConfig(final Timestamp startTime, long startId, int pageSize) {
+    public List<ConfigInfoStateWrapper> findDeletedConfig(final Timestamp startTime, long startId, int pageSize,
+            String publishType) {
         try {
             HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
                     dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
@@ -129,10 +132,25 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
             context.putWhereParameter(FieldConstant.START_TIME, startTime);
             context.putWhereParameter(FieldConstant.PAGE_SIZE, pageSize);
             context.putWhereParameter(FieldConstant.LAST_MAX_ID, startId);
+            context.putWhereParameter(FieldConstant.PUBLISH_TYPE, publishType);
             
             MapperResult mapperResult = historyConfigInfoMapper.findDeletedConfig(context);
-            return jt.query(mapperResult.getSql(), mapperResult.getParamList().toArray(),
-                    CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER);
+            List<ConfigHistoryInfo> configHistoryInfos = jt.query(mapperResult.getSql(), mapperResult.getParamList().toArray(),
+                    HISTORY_DETAIL_ROW_MAPPER);
+            
+            List<ConfigInfoStateWrapper> configInfoStateWrappers = new ArrayList<>();
+            for (ConfigHistoryInfo configHistoryInfo : configHistoryInfos) {
+                ConfigInfoStateWrapper configInfoStateWrapper = new ConfigInfoStateWrapper();
+                configInfoStateWrapper.setId(configHistoryInfo.getId());
+                configInfoStateWrapper.setDataId(configHistoryInfo.getDataId());
+                configInfoStateWrapper.setGroup(configHistoryInfo.getGroup());
+                configInfoStateWrapper.setTenant(configHistoryInfo.getTenant());
+                configInfoStateWrapper.setMd5(configHistoryInfo.getMd5());
+                configInfoStateWrapper.setLastModified(configHistoryInfo.getLastModifiedTime().getTime());
+                configInfoStateWrapper.setGrayName(ConfigExtInfoUtil.extractGrayName(configHistoryInfo.getExtInfo()));
+                configInfoStateWrappers.add(configInfoStateWrapper);
+            }
+            return configInfoStateWrappers;
         } catch (DataAccessException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;
@@ -174,7 +192,7 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
                 dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
         String sqlFetchRows = historyConfigInfoMapper.select(
                 Arrays.asList("nid", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "src_user",
-                        "src_ip", "op_type", "gmt_create", "gmt_modified", "encrypted_data_key"),
+                        "src_ip", "op_type", "gmt_create", "gmt_modified", "publish_type", "ext_info", "encrypted_data_key"),
                 Collections.singletonList("nid"));
         try {
             ConfigHistoryInfo historyInfo = jt.queryForObject(sqlFetchRows, new Object[] {nid},

@@ -30,6 +30,8 @@ public class ConfigQueryResponse extends Response {
     
     public static final int CONFIG_QUERY_CONFLICT = 400;
     
+    public static final int NO_RIGHT = 403;
+    
     String content;
     
     String encryptedDataKey;
