@@ -22,6 +22,7 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.auth.mock.MockAuthPluginService;
 import com.alibaba.nacos.auth.mock.MockResourceParser;
+import com.alibaba.nacos.auth.serveridentity.ServerIdentityResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
@@ -31,7 +32,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -45,6 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 // todo remove this
@@ -63,12 +64,12 @@ class HttpProtocolAuthServiceTest {
     void setUp() throws Exception {
         protocolAuthService = new HttpProtocolAuthService(authConfigs);
         protocolAuthService.initialize();
-        Mockito.when(request.getParameter(eq(CommonParams.NAMESPACE_ID))).thenReturn("testNNs");
-        Mockito.when(request.getParameter(eq(CommonParams.GROUP_NAME))).thenReturn("testNG");
-        Mockito.when(request.getParameter(eq(CommonParams.SERVICE_NAME))).thenReturn("testS");
-        Mockito.when(request.getParameter(eq("tenant"))).thenReturn("testCNs");
-        Mockito.when(request.getParameter(eq(Constants.GROUP))).thenReturn("testCG");
-        Mockito.when(request.getParameter(eq(Constants.DATA_ID))).thenReturn("testD");
+        when(request.getParameter(eq(CommonParams.NAMESPACE_ID))).thenReturn("testNNs");
+        when(request.getParameter(eq(CommonParams.GROUP_NAME))).thenReturn("testNG");
+        when(request.getParameter(eq(CommonParams.SERVICE_NAME))).thenReturn("testS");
+        when(request.getParameter(eq("tenant"))).thenReturn("testCNs");
+        when(request.getParameter(eq(Constants.GROUP))).thenReturn("testCG");
+        when(request.getParameter(eq(Constants.DATA_ID))).thenReturn("testD");
     }
     
     @Test
@@ -139,7 +140,7 @@ class HttpProtocolAuthServiceTest {
     
     @Test
     void testValidateIdentityWithPlugin() throws AccessException {
-        Mockito.when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
+        when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
         IdentityContext identityContext = new IdentityContext();
         assertFalse(protocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE));
     }
@@ -152,7 +153,7 @@ class HttpProtocolAuthServiceTest {
     
     @Test
     void testValidateAuthorityWithPlugin() throws AccessException {
-        Mockito.when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
+        when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
         assertFalse(protocolAuthService.validateAuthority(new IdentityContext(),
                 new Permission(Resource.EMPTY_RESOURCE, "")));
     }
@@ -160,7 +161,7 @@ class HttpProtocolAuthServiceTest {
     @Test
     @Secured(signType = SignType.CONFIG)
     void testEnabledAuthWithPlugin() throws NoSuchMethodException {
-        Mockito.when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
+        when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
         Secured secured = getMethodSecure("testEnabledAuthWithPlugin");
         assertTrue(protocolAuthService.enableAuth(secured));
     }
@@ -168,9 +169,47 @@ class HttpProtocolAuthServiceTest {
     @Test
     @Secured(signType = SignType.CONFIG)
     void testEnabledAuthWithoutPlugin() throws NoSuchMethodException {
-        Mockito.when(authConfigs.getNacosAuthSystemType()).thenReturn("non-exist-plugin");
+        when(authConfigs.getNacosAuthSystemType()).thenReturn("non-exist-plugin");
         Secured secured = getMethodSecure("testEnabledAuthWithoutPlugin");
         assertFalse(protocolAuthService.enableAuth(secured));
+    }
+    
+    @Test
+    void testCheckServerIdentityWithoutIdentityConfig() throws NoSuchMethodException {
+        Secured secured = getMethodSecure("testCheckServerIdentityWithoutIdentityConfig");
+        ServerIdentityResult result = protocolAuthService.checkServerIdentity(request, secured);
+        assertEquals(ServerIdentityResult.ResultStatus.FAIL, result.getStatus());
+        assertEquals("Invalid server identity key or value, Please make sure set `nacos.core.auth.server.identity.key`"
+                        + " and `nacos.core.auth.server.identity.value`, or open `nacos.core.auth.enable.userAgentAuthWhite`",
+                result.getMessage());
+        when(authConfigs.getServerIdentityKey()).thenReturn("1");
+        result = protocolAuthService.checkServerIdentity(request, secured);
+        assertEquals(ServerIdentityResult.ResultStatus.FAIL, result.getStatus());
+        assertEquals("Invalid server identity key or value, Please make sure set `nacos.core.auth.server.identity.key`"
+                        + " and `nacos.core.auth.server.identity.value`, or open `nacos.core.auth.enable.userAgentAuthWhite`",
+                result.getMessage());
+    }
+    
+    @Test
+    void testCheckServerIdentityNotMatched() throws NoSuchMethodException {
+        Secured secured = getMethodSecure("testCheckServerIdentityNotMatched");
+        when(authConfigs.getServerIdentityKey()).thenReturn("1");
+        when(authConfigs.getServerIdentityValue()).thenReturn("2");
+        ServerIdentityResult result = protocolAuthService.checkServerIdentity(request, secured);
+        assertEquals(ServerIdentityResult.ResultStatus.NOT_MATCHED, result.getStatus());
+        when(request.getHeader("1")).thenReturn("3");
+        result = protocolAuthService.checkServerIdentity(request, secured);
+        assertEquals(ServerIdentityResult.ResultStatus.NOT_MATCHED, result.getStatus());
+    }
+    
+    @Test
+    void testCheckServerIdentityMatched() throws NoSuchMethodException {
+        when(authConfigs.getServerIdentityKey()).thenReturn("1");
+        when(authConfigs.getServerIdentityValue()).thenReturn("2");
+        when(request.getHeader("1")).thenReturn("2");
+        Secured secured = getMethodSecure("testCheckServerIdentityMatched");
+        ServerIdentityResult result = protocolAuthService.checkServerIdentity(request, secured);
+        assertEquals(ServerIdentityResult.ResultStatus.MATCHED, result.getStatus());
     }
     
     private Secured getMethodSecure(String methodName) throws NoSuchMethodException {
