@@ -58,7 +58,7 @@ CREATE TABLE `config_info_gray` (
                                     UNIQUE KEY `uk_configinfogray_datagrouptenantgray` (`data_id`,`group_id`,`tenant_id`,`gray_name`),
                                     KEY `idx_dataid_gmt_modified` (`data_id`,`gmt_modified`),
                                     KEY `idx_gmt_modified` (`gmt_modified`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COMMENT='config_info_gray'
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COMMENT='config_info_gray';
 
 /******************************************/
 /*   表名称 = config_info_beta             */
@@ -153,7 +153,7 @@ CREATE TABLE `his_config_info` (
                                    `op_type` char(10) DEFAULT NULL COMMENT 'operation type',
                                    `tenant_id` varchar(128) DEFAULT '' COMMENT '租户字段',
                                    `encrypted_data_key` varchar(1024) NOT NULL DEFAULT '' COMMENT '密钥',
-                                   `publish_type` varchar(50)  DEFAULT 'formal' COMMENT 'publish type gray or formal',,
+                                   `publish_type` varchar(50)  DEFAULT 'formal' COMMENT 'publish type gray or formal',
                                    `ext_info`  longtext DEFAULT NULL COMMENT 'ext info',
                                    PRIMARY KEY (`nid`),
                                    KEY `idx_gmt_create` (`gmt_create`),
