@@ -22,6 +22,8 @@ import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 /**
@@ -58,6 +60,11 @@ public class DefaultParamChecker extends AbstractParamChecker {
     
     @Override
     public ParamCheckResponse checkParamInfoList(List<ParamInfo> paramInfos) {
+        return this.checkParamInfoList(paramInfos, null);
+    }
+    
+    @Override
+    public ParamCheckResponse checkParamInfoList(List<ParamInfo> paramInfos, Function<ParamInfo, ParamCheckResponse> extensionsParamChecker) {
         ParamCheckResponse paramCheckResponse = new ParamCheckResponse();
         if (paramInfos == null) {
             paramCheckResponse.setSuccess(true);
@@ -65,6 +72,9 @@ public class DefaultParamChecker extends AbstractParamChecker {
         }
         for (ParamInfo paramInfo : paramInfos) {
             paramCheckResponse = checkParamInfoFormat(paramInfo);
+            if (Objects.nonNull(extensionsParamChecker)) {
+                paramCheckResponse = extensionsParamChecker.apply(paramInfo);
+            }
             if (!paramCheckResponse.isSuccess()) {
                 return paramCheckResponse;
             }

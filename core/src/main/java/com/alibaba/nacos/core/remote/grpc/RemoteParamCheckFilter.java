@@ -28,6 +28,7 @@ import com.alibaba.nacos.core.paramcheck.AbstractRpcParamExtractor;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.ServerParamCheckConfig;
 import com.alibaba.nacos.core.remote.AbstractRequestFilter;
+import com.alibaba.nacos.core.utils.NamespaceParamCheckUtils;
 import com.alibaba.nacos.plugin.control.Loggers;
 import org.springframework.stereotype.Component;
 
@@ -60,7 +61,8 @@ public class RemoteParamCheckFilter extends AbstractRequestFilter {
             ParamCheckerManager paramCheckerManager = ParamCheckerManager.getInstance();
             AbstractParamChecker paramChecker = paramCheckerManager.getParamChecker(
                     ServerParamCheckConfig.getInstance().getActiveParamChecker());
-            ParamCheckResponse checkResponse = paramChecker.checkParamInfoList(paramInfoList);
+            ParamCheckResponse checkResponse = paramChecker.checkParamInfoList(paramInfoList,
+                    paramInfo -> NamespaceParamCheckUtils.checkNamespaceExists(paramInfo.getNamespaceId()));
             if (!checkResponse.isSuccess()) {
                 return generateFailResponse(request, checkResponse.getMessage(), handlerClazz);
             }

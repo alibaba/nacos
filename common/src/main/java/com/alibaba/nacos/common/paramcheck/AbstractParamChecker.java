@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.paramcheck;
 
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * The type Abstract param checker.
@@ -45,6 +46,15 @@ public abstract class AbstractParamChecker {
      * @return the param check response
      */
     public abstract ParamCheckResponse checkParamInfoList(List<ParamInfo> paramInfos);
+    
+    /**
+     * Check param info list param check response.
+     *
+     * @param paramInfos the param infos
+     * @param extensionsParamChecker custom param checker function, accept params return paramCheckResponse.
+     * @return the param check response
+     */
+    public abstract ParamCheckResponse checkParamInfoList(List<ParamInfo> paramInfos, Function<ParamInfo, ParamCheckResponse> extensionsParamChecker);
     
     /**
      * Init param check rule.

@@ -24,6 +24,7 @@ import com.alibaba.nacos.common.paramcheck.ParamCheckerManager;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.exception.ErrorCode;
+import com.alibaba.nacos.core.utils.NamespaceParamCheckUtils;
 import com.alibaba.nacos.plugin.control.Loggers;
 
 import javax.servlet.Filter;
@@ -79,7 +80,8 @@ public class ParamCheckerFilter implements Filter {
             List<ParamInfo> paramInfoList = httpParamExtractor.extractParam(req);
             ParamCheckerManager paramCheckerManager = ParamCheckerManager.getInstance();
             AbstractParamChecker paramChecker = paramCheckerManager.getParamChecker(ServerParamCheckConfig.getInstance().getActiveParamChecker());
-            ParamCheckResponse paramCheckResponse = paramChecker.checkParamInfoList(paramInfoList);
+            ParamCheckResponse paramCheckResponse = paramChecker.checkParamInfoList(paramInfoList,
+                    paramInfo -> NamespaceParamCheckUtils.checkNamespaceExists(paramInfo.getNamespaceId()));
             if (paramCheckResponse.isSuccess()) {
                 chain.doFilter(req, resp);
             } else {

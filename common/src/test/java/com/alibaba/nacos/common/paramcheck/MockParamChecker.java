@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.paramcheck;
 
 import java.util.List;
+import java.util.function.Function;
 
 public class MockParamChecker extends AbstractParamChecker {
     
@@ -27,6 +28,11 @@ public class MockParamChecker extends AbstractParamChecker {
     
     @Override
     public ParamCheckResponse checkParamInfoList(List<ParamInfo> paramInfos) {
+        return new ParamCheckResponse();
+    }
+    
+    @Override
+    public ParamCheckResponse checkParamInfoList(List<ParamInfo> paramInfos, Function<ParamInfo, ParamCheckResponse> extensionsParamChecker) {
         return new ParamCheckResponse();
     }
     
