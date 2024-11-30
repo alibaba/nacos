@@ -16,10 +16,13 @@
 
 package com.alibaba.nacos.core.utils;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.paramcheck.ParamCheckResponse;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+
+import java.util.Objects;
 
 /**
  * <p>
@@ -37,14 +40,14 @@ public class NamespaceParamCheckUtils {
     
     /**
      * check namespaceId exists.
-     * if namespace is null or empty. return true.
+     * if namespace is null or empty or default public. return true.
      * else query namespace by id. when not exists,then return false.
      * @param namespaceId namespaceId
      * @return paramCheckResponse
      */
     public static ParamCheckResponse checkNamespaceExists(String namespaceId) {
         ParamCheckResponse paramCheckResponse = new ParamCheckResponse();
-        if (StringUtils.isEmpty(namespaceId)) {
+        if (StringUtils.isEmpty(namespaceId) || Objects.equals(Constants.DEFAULT_NAMESPACE_ID, namespaceId)) {
             paramCheckResponse.setSuccess(true);
             return paramCheckResponse;
         }
