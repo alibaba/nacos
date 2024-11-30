@@ -72,11 +72,16 @@ public class DefaultParamChecker extends AbstractParamChecker {
         }
         for (ParamInfo paramInfo : paramInfos) {
             paramCheckResponse = checkParamInfoFormat(paramInfo);
-            if (Objects.nonNull(extensionsParamChecker)) {
-                paramCheckResponse = extensionsParamChecker.apply(paramInfo);
-            }
             if (!paramCheckResponse.isSuccess()) {
                 return paramCheckResponse;
+            }
+            // if extensionsParamChecker exists, check params
+            if (Objects.nonNull(extensionsParamChecker)) {
+                paramCheckResponse = extensionsParamChecker.apply(paramInfo);
+                // if not success ,return
+                if (!paramCheckResponse.isSuccess()) {
+                    return paramCheckResponse;
+                }
             }
         }
         paramCheckResponse.setSuccess(true);
