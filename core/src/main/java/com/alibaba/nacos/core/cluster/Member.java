@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.ability.ServerAbilities;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
+import io.github.pixee.security.ObjectInputFilters;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -204,6 +205,7 @@ public class Member implements Comparable<Member>, Cloneable, Serializable {
             // convert the input stream to member object
             ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
             ObjectInputStream ois = new ObjectInputStream(bais);
+            ObjectInputFilters.enableObjectFilterIfUnprotected(ois);
             copy = (Member) ois.readObject();
         } catch (IOException | ClassNotFoundException e) {
             Loggers.CORE.warn("[Member copy] copy failed", e);

@@ -155,6 +155,7 @@
         <spring.version>5.3.39</spring.version>
         <spring-security.version>5.8.15</spring-security.version>
         <tomcat.version>9.0.93</tomcat.version>
+        <versions.java-security-toolkit>1.2.0</versions.java-security-toolkit>
     </properties>
     <!-- == -->
     <!-- =========================================================Build plugins================================================ -->
@@ -1065,6 +1066,11 @@
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
                 <version>${SnakeYaml.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.pixee</groupId>
+                <artifactId>java-security-toolkit</artifactId>
+                <version>${versions.java-security-toolkit}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
