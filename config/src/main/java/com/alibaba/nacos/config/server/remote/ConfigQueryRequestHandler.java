@@ -39,6 +39,8 @@ import com.alibaba.nacos.core.paramcheck.impl.ConfigRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.net.URLEncoder;
@@ -54,6 +56,8 @@ import static com.alibaba.nacos.config.server.utils.RequestUtil.CLIENT_APPNAME_H
  */
 @Component
 public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest, ConfigQueryResponse> {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigQueryRequestHandler.class);
     
     private final ConfigQueryChainService configQueryChainService;
     
@@ -129,6 +133,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
             return response;
             
         } catch (Exception e) {
+            LOGGER.error("Failed to handle grpc configuration query", e);
             return ConfigQueryResponse.buildFailResponse(ResponseCode.FAIL.getCode(), e.getMessage());
         }
         
