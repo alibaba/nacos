@@ -29,6 +29,11 @@ import java.util.Map;
 
 import static com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG;
 
+/**
+ * DefaultChainRequestExtractor.
+ *
+ * @author Nacos
+ */
 public class DefaultChainRequestExtractor implements ConfigQueryChainRequestExtractor {
     
     @Override
