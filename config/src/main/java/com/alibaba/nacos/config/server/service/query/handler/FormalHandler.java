@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.remote.query.handler;
+package com.alibaba.nacos.config.server.service.query.handler;
 
 import com.alibaba.nacos.config.server.model.CacheItem;
-import com.alibaba.nacos.config.server.model.ConfigQueryChainRequest;
-import com.alibaba.nacos.config.server.model.ConfigQueryChainResponse;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
+import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
+import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
 
 import java.io.IOException;
 
@@ -36,18 +36,12 @@ public class FormalHandler extends AbstractConfigQueryHandler {
     private static final String FORMAL_HANDLER = "formalHandler";
     
     @Override
-    public String getQueryHandlerName() {
+    public String getName() {
         return FORMAL_HANDLER;
     }
     
     @Override
-    public boolean canHandler(ConfigQueryChainRequest request) {
-        // Always return true to ensure this handler processes all requests not handled by previous handlers.
-        return true;
-    }
-    
-    @Override
-    public ConfigQueryChainResponse doHandle(ConfigQueryChainRequest request) throws IOException {
+    public ConfigQueryChainResponse handle(ConfigQueryChainRequest request) throws IOException {
         ConfigQueryChainResponse response = new ConfigQueryChainResponse();
         
         String dataId = request.getDataId();
@@ -66,7 +60,7 @@ public class FormalHandler extends AbstractConfigQueryHandler {
         response.setLastModified(lastModified);
         response.setEncryptedDataKey(encryptedDataKey);
         response.setContentType(contentType);
-        response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.FORMAL);
+        response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_FORMAL);
         
         return response;
     }

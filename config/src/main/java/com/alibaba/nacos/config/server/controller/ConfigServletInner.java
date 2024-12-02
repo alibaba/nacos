@@ -26,13 +26,16 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.ApiVersionEnum;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
+import com.alibaba.nacos.config.server.exception.NacosConfigException;
 import com.alibaba.nacos.config.server.model.ConfigCacheGray;
-import com.alibaba.nacos.config.server.model.ConfigQueryChainRequest;
-import com.alibaba.nacos.config.server.model.ConfigQueryChainResponse;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
-import com.alibaba.nacos.config.server.remote.query.ConfigQueryChainService;
+import com.alibaba.nacos.config.server.service.query.ConfigChainRequestExtractorService;
+import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.LongPollingService;
+import com.alibaba.nacos.config.server.service.query.enums.ResponseCode;
+import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
+import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
@@ -51,7 +54,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -135,8 +137,13 @@ public class ConfigServletInner {
         String requestIp = RequestUtil.getRemoteIp(request);
         String requestIpApp = RequestUtil.getAppName(request);
         
-        ConfigQueryChainRequest chainRequest = buildChainRequest(request, dataId, group, tenant, tag, clientIp);
+        ConfigQueryChainRequest chainRequest = ConfigChainRequestExtractorService.getExtractor()
+                .extract(request, dataId, group, tenant, tag, clientIp);
         ConfigQueryChainResponse chainResponse = configQueryChainService.handle(chainRequest);
+        
+        if (ResponseCode.FAIL.getCode() == chainResponse.getResultCode()) {
+            throw new NacosConfigException(chainResponse.getMessage());
+        }
         
         if (ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND == chainResponse.getStatus()) {
             return handlerConfigNotFound(response, apiVersion, dataId, group, tenant, requestIpApp, requestIp, notify);
@@ -150,7 +157,7 @@ public class ConfigServletInner {
             return handlerConfigNotFound(response, apiVersion, dataId, group, tenant, requestIpApp, requestIp, notify);
         }
         
-        setResponseHead(response, chainResponse, apiVersion);
+        setResponseHead(response, chainResponse, apiVersion, tag);
         
         writeContent(response, chainResponse, dataId, apiVersion);
         
@@ -162,28 +169,6 @@ public class ConfigServletInner {
                 ConfigTraceService.PULL_TYPE_OK, delayed, clientIp, notify, "http");
         
         return HttpServletResponse.SC_OK + "";
-    }
-    
-    private ConfigQueryChainRequest buildChainRequest(HttpServletRequest request, String dataId, String group,
-            String tenant, String tag, String clientIp) {
-        ConfigQueryChainRequest chainRequest = new ConfigQueryChainRequest();
-        
-        Map<String, String> appLabels = new HashMap<>(4);
-        String autoTag = request.getHeader(VIPSERVER_TAG);
-        appLabels.put(BetaGrayRule.CLIENT_IP_LABEL, clientIp);
-        if (StringUtils.isNotBlank(tag)) {
-            appLabels.put(TagGrayRule.VIP_SERVER_TAG_LABEL, tag);
-        } else if (StringUtils.isNotBlank(autoTag)) {
-            appLabels.put(TagGrayRule.VIP_SERVER_TAG_LABEL, autoTag);
-        }
-        
-        chainRequest.setDataId(dataId);
-        chainRequest.setGroup(group);
-        chainRequest.setTenant(tenant);
-        chainRequest.setTag(tag);
-        chainRequest.setAppLabels(appLabels);
-        
-        return chainRequest;
     }
     
     private void writeContent(HttpServletResponse response, ConfigQueryChainResponse chainResponse, String dataId, ApiVersionEnum apiVersion)
@@ -205,15 +190,14 @@ public class ConfigServletInner {
     
     private String resolvePullEventType(ConfigQueryChainResponse chainResponse, String tag) {
         switch (chainResponse.getStatus()) {
-            case BETA:
-            case TAG:
+            case CONFIG_FOUND_GRAY:
                 ConfigCacheGray matchedGray = chainResponse.getMatchedGray();
                 if (matchedGray != null) {
                     return ConfigTraceService.PULL_EVENT + "-" + matchedGray.getGrayName();
                 } else {
                     return ConfigTraceService.PULL_EVENT;
                 }
-            case TAG_NOT_FOUND:
+            case SPECIAL_TAG_CONFIG_NOT_FOUND:
                 return ConfigTraceService.PULL_EVENT + "-" + TagGrayRule.TYPE_TAG + "-" + tag;
             default:
                 return ConfigTraceService.PULL_EVENT;
@@ -221,13 +205,14 @@ public class ConfigServletInner {
     }
     
     private void setResponseHead(HttpServletResponse response, ConfigQueryChainResponse chainResponse,
-            ApiVersionEnum version) {
-        String contentType = chainResponse.getContentType();
+            ApiVersionEnum version, String tag) {
+        String contentType = chainResponse.getContentType() != null ? chainResponse.getContentType() : FileTypeEnum.TEXT.getFileType();
         FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(contentType);
         String contentTypeHeader = fileTypeEnum.getContentType();
         
         response.setHeader(CONFIG_TYPE, contentType);
-        response.setHeader(HttpHeaderConsts.CONTENT_TYPE, ApiVersionEnum.V2 == version ? MediaType.APPLICATION_JSON : contentTypeHeader);
+        response.setHeader(HttpHeaderConsts.CONTENT_TYPE,
+                ApiVersionEnum.V2 == version ? MediaType.APPLICATION_JSON : contentTypeHeader);
         response.setHeader(CONTENT_MD5, chainResponse.getMd5());
         response.setHeader("Pragma", "no-cache");
         response.setDateHeader("Expires", 0);
@@ -238,18 +223,29 @@ public class ConfigServletInner {
             response.setHeader("Encrypted-Data-Key", chainResponse.getEncryptedDataKey());
         }
         
-        if (ConfigQueryChainResponse.ConfigQueryStatus.BETA == chainResponse.getStatus()) {
-            response.setHeader("isBeta", "true");
+        // Check if there is a matched gray rule
+        if (ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_GRAY == chainResponse.getStatus()) {
+            if (BetaGrayRule.TYPE_BETA.equals(chainResponse.getMatchedGray().getGrayRule().getType())) {
+                response.setHeader("isBeta", "true");
+            } else if (TagGrayRule.TYPE_TAG.equals(chainResponse.getMatchedGray().getGrayRule().getType())) {
+                try {
+                    response.setHeader(TagGrayRule.TYPE_TAG, URLEncoder.encode(chainResponse.getMatchedGray().getGrayRule().getRawGrayRuleExp(),
+                            StandardCharsets.UTF_8.displayName()));
+                } catch (Exception e) {
+                    LOGGER.error("Error encoding tag", e);
+                }
+            }
         }
         
-        if (ConfigQueryChainResponse.ConfigQueryStatus.TAG == chainResponse.getStatus()) {
+        // Check if there is a special tag
+        if (ConfigQueryChainResponse.ConfigQueryStatus.SPECIAL_TAG_CONFIG_NOT_FOUND == chainResponse.getStatus()) {
             try {
-                response.setHeader(VIPSERVER_TAG, URLEncoder.encode(chainResponse.getMatchedGray().getGrayRule().getRawGrayRuleExp(),
-                        StandardCharsets.UTF_8.displayName()));
+                response.setHeader(VIPSERVER_TAG, URLEncoder.encode(tag, StandardCharsets.UTF_8.displayName()));
             } catch (Exception e) {
                 LOGGER.error("Error encoding tag", e);
             }
         }
+        
     }
     
     private String handlerConfigConflict(HttpServletResponse response, ApiVersionEnum version, String clientIp, String groupKey)

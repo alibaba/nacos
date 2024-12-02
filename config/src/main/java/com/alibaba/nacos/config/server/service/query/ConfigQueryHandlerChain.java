@@ -14,33 +14,39 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.remote.query;
+package com.alibaba.nacos.config.server.service.query;
 
-import com.alibaba.nacos.config.server.remote.query.handler.ConfigQueryHandler;
+import com.alibaba.nacos.config.server.service.query.handler.ConfigQueryHandler;
+import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
+import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.Objects;
 
 /**
- * DefaultConfigQueryHandlerChainBuilder.
+ * ConfigQueryHandlerChain.
  * @author Nacos
  */
-public class DefaultConfigQueryHandlerChainBuilder implements ConfigQueryHandlerChainBuilder {
+public class ConfigQueryHandlerChain {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultConfigQueryHandlerChainBuilder.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigQueryHandlerChain.class);
     
     private ConfigQueryHandler head;
     
     private ConfigQueryHandler tail;
     
-    @Override
-    public ConfigQueryHandlerChain build() {
-        return new ConfigQueryHandlerChain(head);
+    public ConfigQueryHandlerChain() {
     }
     
-    @Override
-    public ConfigQueryHandlerChainBuilder addHandler(ConfigQueryHandler handler) {
+    /**
+     * Adds a new configuration query handler to the chain.
+     *
+     * @param handler the configuration query handler to be added
+     * @return the current configuration query handler chain object, supporting method chaining
+     */
+    public ConfigQueryHandlerChain addHandler(ConfigQueryHandler handler) {
         if (Objects.isNull(handler)) {
             LOGGER.warn("Attempted to add a null config query handler");
             return this;
@@ -56,4 +62,9 @@ public class DefaultConfigQueryHandlerChainBuilder implements ConfigQueryHandler
         
         return this;
     }
+    
+    public ConfigQueryChainResponse handle(ConfigQueryChainRequest request) throws IOException {
+        return head.handle(request);
+    }
+    
 }

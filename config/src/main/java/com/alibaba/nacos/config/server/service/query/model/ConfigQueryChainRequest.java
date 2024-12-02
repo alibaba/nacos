@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.model;
+package com.alibaba.nacos.config.server.service.query.model;
 
 import java.util.Map;
 import java.util.Objects;
 
 /**
  * ConfigQueryChainRequest.
+ *
  * @author Nacos
  */
 public class ConfigQueryChainRequest {

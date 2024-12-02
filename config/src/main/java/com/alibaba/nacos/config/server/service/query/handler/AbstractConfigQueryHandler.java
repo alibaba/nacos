@@ -14,26 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.remote.query;
-
-import com.alibaba.nacos.config.server.remote.query.handler.ConfigQueryHandler;
+package com.alibaba.nacos.config.server.service.query.handler;
 
 /**
- * ConfigQueryHandlerChainBuilder.
+ * AbstractConfigQueryHandler.
+ * This abstract class provides a base implementation for configuration query handlers.
+ * It implements the {@link ConfigQueryHandler} interface and handles the chaining of handlers.
+ *
  * @author Nacos
  */
-public interface ConfigQueryHandlerChainBuilder {
+public abstract class AbstractConfigQueryHandler implements ConfigQueryHandler {
     
-    /**
-     * Builds the configuration query handler chain.
-     * @return the configuration query handler chain
-     */
-    ConfigQueryHandlerChain build();
+    public ConfigQueryHandler nextHandler;
     
-    /**
-     * Adds a configuration query handler to the chain.
-     * @param handler the handler to be added
-     * @return the current builder instance
-     */
-    ConfigQueryHandlerChainBuilder addHandler(ConfigQueryHandler handler);
+    public void setNextHandler(ConfigQueryHandler nextHandler) {
+        this.nextHandler = nextHandler;
+    }
+    
+    public ConfigQueryHandler getNextHandler() {
+        return this.nextHandler;
+    }
+    
 }

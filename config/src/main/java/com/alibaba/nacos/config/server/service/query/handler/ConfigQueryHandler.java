@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.remote.query.handler;
+package com.alibaba.nacos.config.server.service.query.handler;
 
-import com.alibaba.nacos.config.server.model.ConfigQueryChainRequest;
-import com.alibaba.nacos.config.server.model.ConfigQueryChainResponse;
+import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
+import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
 
 import java.io.IOException;
 
 /**
  * Configuration Query Handler Interface.
  * This interface defines the standard methods for handling configuration query requests.
+ *
  * @author Nacos
  */
 public interface ConfigQueryHandler {
@@ -32,7 +33,7 @@ public interface ConfigQueryHandler {
      * Gets the name of the handler.
      * @return The name of the handler.
      */
-    String getQueryHandlerName();
+    String getName();
     
     /**
      * Handles the configuration query request.

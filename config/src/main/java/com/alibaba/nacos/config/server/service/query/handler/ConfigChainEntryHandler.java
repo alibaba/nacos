@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.remote.query.handler;
+package com.alibaba.nacos.config.server.service.query.handler;
 
 import com.alibaba.nacos.config.server.model.CacheItem;
-import com.alibaba.nacos.config.server.model.ConfigQueryChainRequest;
-import com.alibaba.nacos.config.server.model.ConfigQueryChainResponse;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
+import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
+import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,18 +41,12 @@ public class ConfigChainEntryHandler extends AbstractConfigQueryHandler {
     private static final ThreadLocal<CacheItem> CACHE_ITEM_THREAD_LOCAL = new ThreadLocal<>();
     
     @Override
-    public String getQueryHandlerName() {
+    public String getName() {
         return CHAIN_ENTRY_HANDLER;
     }
     
     @Override
-    public boolean canHandler(ConfigQueryChainRequest request) {
-        // Always return true to ensure this handler processes all requests.
-        return true;
-    }
-    
-    @Override
-    public ConfigQueryChainResponse doHandle(ConfigQueryChainRequest request) throws IOException {
+    public ConfigQueryChainResponse handle(ConfigQueryChainRequest request) throws IOException {
         String groupKey = GroupKey2.getKey(request.getDataId(), request.getGroup(), request.getTenant());
         int lockResult = ConfigCacheService.tryConfigReadLock(groupKey);
         CacheItem cacheItem = ConfigCacheService.getContentCache(groupKey);

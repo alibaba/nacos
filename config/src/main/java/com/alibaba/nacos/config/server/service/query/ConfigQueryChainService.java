@@ -14,25 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.remote.query;
+package com.alibaba.nacos.config.server.service.query;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
-import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.config.server.exception.NacosConfigException;
-import com.alibaba.nacos.config.server.model.ConfigQueryChainRequest;
-import com.alibaba.nacos.config.server.model.ConfigQueryChainResponse;
-import com.alibaba.nacos.config.server.remote.query.handler.ConfigChainEntryHandler;
-import com.alibaba.nacos.config.server.remote.query.handler.FormalHandler;
-import com.alibaba.nacos.config.server.remote.query.handler.GrayRuleMatchHandler;
-import com.alibaba.nacos.config.server.remote.query.handler.TagNotFoundHandler;
+import com.alibaba.nacos.config.server.service.query.enums.ResponseCode;
+import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
+import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
+import java.util.Optional;
 
 /**
- * ConfigQueryChainService.
+ * Service class for initializing and retrieving the configuration query chain builder.
+ *
  * @author Nacos
  */
 @Service
@@ -40,20 +38,22 @@ public class ConfigQueryChainService {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigQueryChainService.class);
     
-    private final ConfigQueryHandlerChain configQueryHandlerChain;
+    private final ConfigQueryHandlerChain chain;
     
     public ConfigQueryChainService() {
-        Collection<ConfigQueryHandlerChainBuilder> configQueryHandlerChainBuilders =
-                NacosServiceLoader.load(ConfigQueryHandlerChainBuilder.class);
-        if (CollectionUtils.isEmpty(configQueryHandlerChainBuilders)) {
-            throw new NacosConfigException("No ConfigQueryHandlerChainBuilder found");
+        String curChain = EnvUtil.getProperty("nacos.config.query.chain.builder", "nacos");
+        Optional<ConfigQueryHandlerChainBuilder> optionalBuilder = NacosServiceLoader.load(ConfigQueryHandlerChainBuilder.class)
+                .stream()
+                .filter(builder -> builder.getName().equals(curChain))
+                .findFirst();
+        if (optionalBuilder.isPresent()) {
+            chain = optionalBuilder.get().build();
+            LOGGER.info("ConfigQueryHandlerChain has been initialized successfully with chain: {}", curChain);
+        } else {
+            String errorMessage = "No suitable ConfigQueryHandlerChainBuilder found for name: " + curChain;
+            LOGGER.error(errorMessage);
+            throw new NacosConfigException(errorMessage);
         }
-        ConfigQueryHandlerChainBuilder builder = configQueryHandlerChainBuilders.iterator().next();
-        configQueryHandlerChain = builder.addHandler(new ConfigChainEntryHandler())
-                .addHandler(new GrayRuleMatchHandler())
-                .addHandler(new TagNotFoundHandler())
-                .addHandler(new FormalHandler())
-                .build();
     }
     
     /**
@@ -64,10 +64,10 @@ public class ConfigQueryChainService {
      */
     public ConfigQueryChainResponse handle(ConfigQueryChainRequest request) {
         try {
-            return configQueryHandlerChain.handle(request);
+            return chain.handle(request);
         } catch (Exception e) {
             LOGGER.error("[Error] Fail to handle ConfigQueryChainRequest", e);
-            return new ConfigQueryChainResponse();
+            return ConfigQueryChainResponse.buildFailResponse(ResponseCode.FAIL.getCode(), e.getMessage());
         }
     }
 }

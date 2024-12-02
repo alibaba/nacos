@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-com.alibaba.nacos.config.server.remote.query.DefaultConfigQueryHandlerChainBuilder
+com.alibaba.nacos.config.server.service.query.DefaultConfigQueryHandlerChainBuilder

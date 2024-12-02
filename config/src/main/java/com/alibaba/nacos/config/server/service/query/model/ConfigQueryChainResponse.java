@@ -14,12 +14,16 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.model;
+package com.alibaba.nacos.config.server.service.query.model;
+
+import com.alibaba.nacos.config.server.model.ConfigCacheGray;
+import com.alibaba.nacos.config.server.service.query.enums.ResponseCode;
 
 import java.util.Objects;
 
 /**
  * ConfigQueryChainResponse.
+ *
  * @author Nacos
  */
 public class ConfigQueryChainResponse {
@@ -36,38 +40,37 @@ public class ConfigQueryChainResponse {
     
     private ConfigCacheGray matchedGray;
     
+    private int resultCode;
+    
+    private String message;
+    
     private ConfigQueryStatus status;
     
     public enum ConfigQueryStatus {
         /**
-         * GrayRule-Beta Type.
+         * Indicates that the configuration was found and is formal.
          */
-        BETA,
+        CONFIG_FOUND_FORMAL,
         
         /**
-         * GrayRule-Tag Type.
+         * Indicates that the configuration was found and is gray.
          */
-        TAG,
+        CONFIG_FOUND_GRAY,
         
         /**
-         * Tag not found.
+         * Indicates that the configuration special tag was not found.
          */
-        TAG_NOT_FOUND,
+        SPECIAL_TAG_CONFIG_NOT_FOUND,
         
         /**
-         * Formal.
-         */
-        FORMAL,
-        
-        /**
-         * Configuration query conflict.
-         */
-        CONFIG_QUERY_CONFLICT,
-        
-        /**
-         * Configuration not found.
+         * Indicates that the configuration was not found.
          */
         CONFIG_NOT_FOUND,
+        
+        /**
+         * Indicates a conflict in the configuration query.
+         */
+        CONFIG_QUERY_CONFLICT,
     }
     
     public String getContent() {
@@ -118,12 +121,46 @@ public class ConfigQueryChainResponse {
         this.matchedGray = matchedGray;
     }
     
+    public int getResultCode() {
+        return resultCode;
+    }
+    
+    public void setResultCode(int resultCode) {
+        this.resultCode = resultCode;
+    }
+    
+    public String getMessage() {
+        return message;
+    }
+    
+    public void setMessage(String message) {
+        this.message = message;
+    }
+    
     public ConfigQueryStatus getStatus() {
         return status;
     }
     
     public void setStatus(ConfigQueryStatus status) {
         this.status = status;
+    }
+    
+    /**
+     * Build fail response.
+     *
+     * @param errorCode errorCode.
+     * @param message   message.
+     * @return response.
+     */
+    public static ConfigQueryChainResponse buildFailResponse(int errorCode, String message) {
+        ConfigQueryChainResponse response = new ConfigQueryChainResponse();
+        response.setErrorInfo(errorCode, message);
+        return response;
+    }
+    
+    public void setErrorInfo(int errorCode, String errorMsg) {
+        this.resultCode = ResponseCode.FAIL.getCode();
+        this.message = errorMsg;
     }
     
     @Override
@@ -141,11 +178,13 @@ public class ConfigQueryChainResponse {
                 && Objects.equals(encryptedDataKey, that.encryptedDataKey)
                 && Objects.equals(md5, that.md5)
                 && Objects.equals(matchedGray, that.matchedGray)
+                && Objects.equals(resultCode, that.resultCode)
+                && Objects.equals(message, that.message)
                 && status == that.status;
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(content, contentType, encryptedDataKey, md5, lastModified, matchedGray, status);
+        return Objects.hash(content, contentType, encryptedDataKey, md5, lastModified, matchedGray, resultCode, message, status);
     }
 }

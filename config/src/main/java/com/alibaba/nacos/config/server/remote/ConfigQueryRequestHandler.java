@@ -22,13 +22,13 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigCacheGray;
-import com.alibaba.nacos.config.server.model.ConfigQueryChainRequest;
-import com.alibaba.nacos.config.server.model.ConfigQueryChainResponse;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
-import com.alibaba.nacos.config.server.remote.query.ConfigQueryChainService;
+import com.alibaba.nacos.config.server.service.query.ConfigChainRequestExtractorService;
+import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
+import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
+import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
@@ -42,9 +42,6 @@ import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.stereotype.Component;
 
 import java.net.URLEncoder;
-import java.util.HashMap;
-import java.util.Map;
-
 import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
 import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
 import static com.alibaba.nacos.config.server.utils.RequestUtil.CLIENT_APPNAME_HEADER;
@@ -79,8 +76,12 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
             String requestIpApp = meta.getLabels().get(CLIENT_APPNAME_HEADER);
             String clientIp = meta.getClientIp();
             
-            ConfigQueryChainRequest chainRequest = buildChainRequest(request, meta);
+            ConfigQueryChainRequest chainRequest = ConfigChainRequestExtractorService.getExtractor().extract(request, meta);
             ConfigQueryChainResponse chainResponse = configQueryChainService.handle(chainRequest);
+            
+            if (ResponseCode.FAIL.getCode() == chainResponse.getResultCode()) {
+                return ConfigQueryResponse.buildFailResponse(ResponseCode.FAIL.getCode(), chainResponse.getMessage());
+            }
             
             if (chainResponse.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
                 return handlerConfigNotFound(request.getDataId(), request.getGroup(), request.getTenant(), requestIpApp, clientIp, notify);
@@ -91,12 +92,21 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
             }
             
             ConfigQueryResponse response = new ConfigQueryResponse();
-            if (chainResponse.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.TAG_NOT_FOUND
-                    || chainResponse.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.TAG) {
-                response.setTag(URLEncoder.encode(chainResponse.getMatchedGray().getRawGrayRule(), ENCODE_UTF8));
-            } else if (chainResponse.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.BETA) {
-                response.setBeta(true);
+            
+            // Check if there is a matched gray rule
+            if (chainResponse.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_GRAY) {
+                if (BetaGrayRule.TYPE_BETA.equals(chainResponse.getMatchedGray().getGrayRule().getType())) {
+                    response.setBeta(true);
+                } else if (TagGrayRule.TYPE_TAG.equals(chainResponse.getMatchedGray().getGrayRule().getType())) {
+                    response.setTag(URLEncoder.encode(chainResponse.getMatchedGray().getRawGrayRule(), ENCODE_UTF8));
+                }
             }
+            
+            // Check if there is a special tag
+            if (chainResponse.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.SPECIAL_TAG_CONFIG_NOT_FOUND) {
+                response.setTag(request.getTag());
+            }
+            
             response.setMd5(chainResponse.getMd5());
             response.setEncryptedDataKey(chainResponse.getEncryptedDataKey());
             response.setContent(chainResponse.getContent());
@@ -146,45 +156,16 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
         
     }
     
-    /**
-     * Builds a ConfigQueryChainRequest object.
-     *
-     * @param request the configuration query request
-     * @param meta the request meta
-     * @return the constructed ConfigQueryChainRequest object
-     */
-    public ConfigQueryChainRequest buildChainRequest(ConfigQueryRequest request, RequestMeta meta) {
-        ConfigQueryChainRequest chainRequest = new ConfigQueryChainRequest();
-        
-        String tag = request.getTag();
-        Map<String, String> appLabels = new HashMap<>(4);
-        appLabels.put(BetaGrayRule.CLIENT_IP_LABEL, meta.getClientIp());
-        if (StringUtils.isNotBlank(tag)) {
-            appLabels.put(TagGrayRule.VIP_SERVER_TAG_LABEL, tag);
-        } else {
-            appLabels = new HashMap<>(meta.getAppLabels());
-        }
-        
-        chainRequest.setDataId(request.getDataId());
-        chainRequest.setGroup(request.getGroup());
-        chainRequest.setTenant(request.getTenant());
-        chainRequest.setTag(request.getTag());
-        chainRequest.setAppLabels(appLabels);
-        
-        return chainRequest;
-    }
-    
     private String resolvePullEventType(ConfigQueryChainResponse chainResponse, String tag) {
         switch (chainResponse.getStatus()) {
-            case BETA:
-            case TAG:
+            case CONFIG_FOUND_GRAY:
                 ConfigCacheGray matchedGray = chainResponse.getMatchedGray();
                 if (matchedGray != null) {
                     return ConfigTraceService.PULL_EVENT + "-" + matchedGray.getGrayName();
                 } else {
                     return ConfigTraceService.PULL_EVENT;
                 }
-            case TAG_NOT_FOUND:
+            case SPECIAL_TAG_CONFIG_NOT_FOUND:
                 return ConfigTraceService.PULL_EVENT + "-" + TagGrayRule.TYPE_TAG + "-" + tag;
             default:
                 return ConfigTraceService.PULL_EVENT;
