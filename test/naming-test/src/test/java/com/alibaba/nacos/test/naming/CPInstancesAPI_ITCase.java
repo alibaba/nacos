@@ -24,12 +24,14 @@ import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.test.base.Params;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -41,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 /**
  * @author nkorange
@@ -54,6 +57,9 @@ class CPInstancesAPI_ITCase extends NamingBase {
     private NamingService naming1;
     
     private NamingService naming2;
+    
+    @MockBean
+    private NamespacePersistService namespacePersistService;
     
     @LocalServerPort
     private int port;
@@ -75,6 +81,8 @@ class CPInstancesAPI_ITCase extends NamingBase {
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1" + ":" + port);
         naming2 = NamingFactory.createNamingService(properties);
         isNamingServerReady();
+        when(namespacePersistService.tenantInfoCountByTenantId(TEST_NAMESPACE_1)).thenReturn(1);
+        when(namespacePersistService.tenantInfoCountByTenantId(TEST_NAMESPACE_2)).thenReturn(1);
     }
     
     @AfterEach

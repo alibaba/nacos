@@ -26,10 +26,12 @@ import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
+import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.web.server.LocalServerPort;
 
 import java.util.Arrays;
@@ -50,6 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 /**
  * @author nkorange
@@ -63,6 +66,9 @@ class MultiTenant_ITCase {
     private NamingService naming1;
     
     private NamingService naming2;
+    
+    @MockBean
+    private NamespacePersistService namespacePersistService;
     
     @LocalServerPort
     private int port;
@@ -93,6 +99,10 @@ class MultiTenant_ITCase {
         properties.put(PropertyKeyConst.NAMESPACE, "namespace-2");
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1" + ":" + port);
         naming2 = NamingFactory.createNamingService(properties);
+        
+        
+        when(namespacePersistService.tenantInfoCountByTenantId("namespace-1")).thenReturn(1);
+        when(namespacePersistService.tenantInfoCountByTenantId("namespace-2")).thenReturn(1);
     }
     
     /**

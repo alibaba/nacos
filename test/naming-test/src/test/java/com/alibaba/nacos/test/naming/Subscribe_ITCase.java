@@ -27,12 +27,14 @@ import com.alibaba.nacos.client.naming.listener.AbstractNamingChangeListener;
 import com.alibaba.nacos.client.naming.listener.NamingChangeEvent;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.test.base.Params;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -47,6 +49,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by wangtong.wt on 2018/6/20.
@@ -64,6 +67,9 @@ class Subscribe_ITCase extends NamingBase {
     private int port;
     
     private volatile List<Instance> instances = Collections.emptyList();
+    
+    @MockBean
+    private NamespacePersistService namespacePersistService;
     
     @BeforeEach
     void init() throws Exception {
@@ -272,6 +278,8 @@ class Subscribe_ITCase extends NamingBase {
         Properties properties2 = new Properties();
         properties2.setProperty("serverAddr", "127.0.0.1" + ":" + port);
         properties2.setProperty("namespace", "ns-002");
+        when(namespacePersistService.tenantInfoCountByTenantId("ns-001")).thenReturn(1);
+        when(namespacePersistService.tenantInfoCountByTenantId("ns-002")).thenReturn(1);
         final NamingService naming2 = NamingFactory.createNamingService(properties2);
         
         final ConcurrentHashSet<Instance> concurrentHashSet1 = new ConcurrentHashSet();

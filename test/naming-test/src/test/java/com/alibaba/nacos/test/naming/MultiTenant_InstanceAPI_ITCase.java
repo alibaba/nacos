@@ -22,12 +22,15 @@ import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.test.base.Params;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
@@ -49,6 +52,7 @@ import static com.alibaba.nacos.test.naming.NamingBase.TEST_GROUP_2;
 import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 /**
  * @author nkorange
@@ -70,6 +74,9 @@ class MultiTenant_InstanceAPI_ITCase {
     
     @Autowired
     private TestRestTemplate restTemplate;
+    
+    @MockBean
+    private NamespacePersistService namespacePersistService;
     
     private URL base;
     
@@ -100,6 +107,9 @@ class MultiTenant_InstanceAPI_ITCase {
         properties.put(PropertyKeyConst.NAMESPACE, "namespace-2");
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1" + ":" + port);
         naming2 = NamingFactory.createNamingService(properties);
+        
+        when(namespacePersistService.tenantInfoCountByTenantId("namespace-1")).thenReturn(1);
+        when(namespacePersistService.tenantInfoCountByTenantId("namespace-2")).thenReturn(1);
     }
     
     /**
