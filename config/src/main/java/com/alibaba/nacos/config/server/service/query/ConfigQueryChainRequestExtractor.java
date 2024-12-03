@@ -39,15 +39,10 @@ public interface ConfigQueryChainRequestExtractor {
     /**
      * Extracts a configuration query chain request from an HTTP request.
      *
-     * @param request  the HTTP request object
-     * @param dataId   the configuration data ID
-     * @param group    the configuration group
-     * @param tenant   the tenant information
-     * @param tag      the tag
-     * @param clientIp the client IP address
+     * @param request the HTTP request object
      * @return the extracted configuration query chain request
      */
-    ConfigQueryChainRequest extract(HttpServletRequest request, String dataId, String group, String tenant, String tag, String clientIp);
+    ConfigQueryChainRequest extract(HttpServletRequest request);
 
     /**
      * Extracts a configuration query chain request from a configuration query request object.

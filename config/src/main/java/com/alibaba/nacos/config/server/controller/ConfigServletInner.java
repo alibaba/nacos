@@ -134,48 +134,81 @@ public class ConfigServletInner {
         
         boolean notify = StringUtils.isNotBlank(isNotify) && Boolean.parseBoolean(isNotify);
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
-        String requestIp = RequestUtil.getRemoteIp(request);
         String requestIpApp = RequestUtil.getAppName(request);
         
-        ConfigQueryChainRequest chainRequest = ConfigChainRequestExtractorService.getExtractor()
-                .extract(request, dataId, group, tenant, tag, clientIp);
+        ConfigQueryChainRequest chainRequest = ConfigChainRequestExtractorService.getExtractor().extract(request);
         ConfigQueryChainResponse chainResponse = configQueryChainService.handle(chainRequest);
         
         if (ResponseCode.FAIL.getCode() == chainResponse.getResultCode()) {
             throw new NacosConfigException(chainResponse.getMessage());
         }
         
-        if (ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND == chainResponse.getStatus()) {
-            return handlerConfigNotFound(response, apiVersion, dataId, group, tenant, requestIpApp, requestIp, notify);
-        }
-        
-        if (ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_QUERY_CONFLICT == chainResponse.getStatus()) {
-            return handlerConfigConflict(response, apiVersion, clientIp, groupKey);
-        }
-        
-        if (chainResponse.getContent() == null) {
-            return handlerConfigNotFound(response, apiVersion, dataId, group, tenant, requestIpApp, requestIp, notify);
-        }
-        
-        setResponseHead(response, chainResponse, apiVersion, tag);
-        
-        writeContent(response, chainResponse, dataId, apiVersion);
-        
         String pullEvent = resolvePullEventType(chainResponse, tag);
         
-        LogUtil.PULL_CHECK_LOG.warn("{}|{}|{}|{}", groupKey, requestIp, chainResponse.getMd5(), TimeUtils.getCurrentTimeStr());
+        switch (chainResponse.getStatus()) {
+            case CONFIG_NOT_FOUND:
+                return handlerConfigNotFound(response, dataId, group, tenant, requestIpApp, clientIp, notify,
+                        pullEvent, apiVersion);
+            case CONFIG_QUERY_CONFLICT:
+                return handlerConfigConflict(response, apiVersion, clientIp, groupKey);
+            default:
+                return handleResponse(response, chainResponse, dataId, group, tenant, tag, requestIpApp,
+                        clientIp, notify, pullEvent, apiVersion);
+        }
+    }
+    
+    private String handlerConfigNotFound(HttpServletResponse response, String dataId, String group, String tenant, String requestIpApp,
+            String clientIp, boolean notify, String pullEvent, ApiVersionEnum apiVersion) throws IOException {
+        ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, pullEvent,
+                ConfigTraceService.PULL_TYPE_NOTFOUND, -1, clientIp, notify, "http");
+        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        return writeResponse(response, apiVersion, Result.failure(ErrorCode.RESOURCE_NOT_FOUND, "config data not exist"));
+    }
+    
+    private String handlerConfigConflict(HttpServletResponse response, ApiVersionEnum apiVersion, String clientIp,
+            String groupKey) throws IOException {
+        PULL_LOG.info("[client-get] clientIp={}, {}, get data during dump", clientIp, groupKey);
+        response.setStatus(HttpServletResponse.SC_CONFLICT);
+        return writeResponse(response, apiVersion,
+                Result.failure(ErrorCode.RESOURCE_CONFLICT, "requested file is being modified, please try later."));
+    }
+    
+    private String handleResponse(HttpServletResponse response, ConfigQueryChainResponse chainResponse, String dataId,
+            String group, String tenant, String tag, String requestIpApp, String clientIp,
+            boolean notify, String pullEvent, ApiVersionEnum apiVersion) throws IOException {
+        if (apiVersion == ApiVersionEnum.V1) {
+            return handleResponseForVersion(response, chainResponse, dataId, group, tenant, tag, requestIpApp,
+                    clientIp, notify, pullEvent, ApiVersionEnum.V1);
+        } else {
+            return handleResponseForVersion(response, chainResponse, dataId, group, tenant, tag, requestIpApp,
+                    clientIp, notify, pullEvent, ApiVersionEnum.V2);
+        }
+    }
+    
+    private String handleResponseForVersion(HttpServletResponse response, ConfigQueryChainResponse chainResponse,
+            String dataId, String group, String tenant, String tag, String requestIpApp, String clientIp, boolean notify,
+            String pullEvent, ApiVersionEnum apiVersion) throws IOException {
+        if (chainResponse.getContent() == null) {
+            return handlerConfigNotFound(response, dataId, group, tenant, requestIpApp, clientIp, notify, pullEvent, apiVersion);
+        }
+        
+        setResponseHead(response, chainResponse, tag, apiVersion);
+        writeContent(response, chainResponse, dataId, apiVersion);
+        
+        LogUtil.PULL_CHECK_LOG.warn("{}|{}|{}|{}", group, requestIpApp, chainResponse.getMd5(), TimeUtils.getCurrentTimeStr());
         final long delayed = notify ? -1 : System.currentTimeMillis() - chainResponse.getLastModified();
         ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, chainResponse.getLastModified(), pullEvent,
                 ConfigTraceService.PULL_TYPE_OK, delayed, clientIp, notify, "http");
         
         return HttpServletResponse.SC_OK + "";
     }
-    
-    private void writeContent(HttpServletResponse response, ConfigQueryChainResponse chainResponse, String dataId, ApiVersionEnum apiVersion)
-            throws IOException {
+
+    private void writeContent(HttpServletResponse response, ConfigQueryChainResponse chainResponse, String dataId,
+            ApiVersionEnum apiVersion) throws IOException {
         PrintWriter out = response.getWriter();
         try {
-            Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, chainResponse.getEncryptedDataKey(), chainResponse.getContent());
+            Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, chainResponse.getEncryptedDataKey(),
+                    chainResponse.getContent());
             String decryptContent = pair.getSecond();
             if (ApiVersionEnum.V2 == apiVersion) {
                 out.print(JacksonUtils.toJson(Result.success(decryptContent)));
@@ -186,6 +219,17 @@ public class ConfigServletInner {
             out.flush();
             out.close();
         }
+    }
+    
+    private String writeResponse(HttpServletResponse response, ApiVersionEnum apiVersion, Result<String> result)
+            throws IOException {
+        PrintWriter writer = response.getWriter();
+        if (ApiVersionEnum.V2 == apiVersion) {
+            writer.println(JacksonUtils.toJson(result));
+        } else {
+            writer.println(result.getData());
+        }
+        return response.getStatus() + "";
     }
     
     private String resolvePullEventType(ConfigQueryChainResponse chainResponse, String tag) {
@@ -204,8 +248,7 @@ public class ConfigServletInner {
         }
     }
     
-    private void setResponseHead(HttpServletResponse response, ConfigQueryChainResponse chainResponse,
-            ApiVersionEnum version, String tag) {
+    private void setResponseHead(HttpServletResponse response, ConfigQueryChainResponse chainResponse, String tag, ApiVersionEnum version) {
         String contentType = chainResponse.getContentType() != null ? chainResponse.getContentType() : FileTypeEnum.TEXT.getFileType();
         FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(contentType);
         String contentTypeHeader = fileTypeEnum.getContentType();
@@ -245,37 +288,5 @@ public class ConfigServletInner {
                 LOGGER.error("Error encoding tag", e);
             }
         }
-        
-    }
-    
-    private String handlerConfigConflict(HttpServletResponse response, ApiVersionEnum version, String clientIp, String groupKey)
-            throws IOException {
-        PULL_LOG.info("[client-get] clientIp={}, {}, get data during dump", clientIp, groupKey);
-        response.setStatus(HttpServletResponse.SC_CONFLICT);
-        PrintWriter writer = response.getWriter();
-        if (ApiVersionEnum.V2 == version) {
-            writer.println(JacksonUtils.toJson(Result.failure(ErrorCode.RESOURCE_CONFLICT,
-                    "requested file is being modified, please try later.")));
-        } else {
-            writer.println("requested file is being modified, please try later.");
-        }
-        
-        return HttpServletResponse.SC_CONFLICT + "";
-    }
-    
-    private String handlerConfigNotFound(HttpServletResponse response, ApiVersionEnum version, String dataId, String group,
-            String tenant, String requestIpApp, String requestIp, boolean notify) throws IOException {
-        ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, ConfigTraceService.PULL_EVENT,
-                ConfigTraceService.PULL_TYPE_NOTFOUND, -1, requestIp, notify, "http");
-        
-        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-        PrintWriter writer = response.getWriter();
-        if (ApiVersionEnum.V2 == version) {
-            writer.println(JacksonUtils.toJson(Result.failure(ErrorCode.RESOURCE_NOT_FOUND, "config data not exist")));
-        } else {
-            writer.println("config data not exist");
-        }
-        
-        return HttpServletResponse.SC_NOT_FOUND + "";
     }
 }
