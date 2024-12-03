@@ -25,9 +25,11 @@ import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
 import com.alibaba.nacos.common.utils.ReflectUtils;
+import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.web.server.LocalServerPort;
 
 import java.util.Arrays;
@@ -42,6 +44,7 @@ import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 public abstract class AbstractInstanceOperate_ITCase {
     
@@ -52,6 +55,9 @@ public abstract class AbstractInstanceOperate_ITCase {
     
     @Value("${server.servlet.context-path}")
     private String contextPath;
+    
+    @MockBean
+    private NamespacePersistService namespacePersistService;
     
     @BeforeEach
     public void init() throws Exception {
@@ -178,6 +184,7 @@ public abstract class AbstractInstanceOperate_ITCase {
         properties.put(PropertyKeyConst.NAMESPACE, "t3");
         properties.put(PropertyKeyConst.CONTEXT_PATH, contextPath);
         
+        when(namespacePersistService.tenantInfoCountByTenantId("t3")).thenReturn(1);
         naming = NamingFactory.createNamingService(properties);
         TimeUnit.SECONDS.sleep(10);
         
