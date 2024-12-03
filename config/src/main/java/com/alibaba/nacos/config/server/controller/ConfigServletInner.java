@@ -37,12 +37,9 @@ import com.alibaba.nacos.config.server.service.query.enums.ResponseCode;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
-import com.alibaba.nacos.config.server.utils.GroupKey2;
-import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.Protocol;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
-import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +57,6 @@ import java.util.Map;
 import static com.alibaba.nacos.api.common.Constants.CONFIG_TYPE;
 import static com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG;
 import static com.alibaba.nacos.config.server.constant.Constants.CONTENT_MD5;
-import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
 
 /**
  * ConfigServlet inner for aop.
@@ -133,7 +129,6 @@ public class ConfigServletInner {
             String tenant, String tag, String isNotify, String clientIp, ApiVersionEnum apiVersion) throws IOException {
         
         boolean notify = StringUtils.isNotBlank(isNotify) && Boolean.parseBoolean(isNotify);
-        String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String requestIpApp = RequestUtil.getAppName(request);
         
         ConfigQueryChainRequest chainRequest = ConfigChainRequestExtractorService.getExtractor().extract(request);
@@ -143,66 +138,62 @@ public class ConfigServletInner {
             throw new NacosConfigException(chainResponse.getMessage());
         }
         
-        String pullEvent = resolvePullEventType(chainResponse, tag);
+        logPullEvent(dataId, group, tenant, requestIpApp, chainResponse, clientIp, notify, tag);
         
         switch (chainResponse.getStatus()) {
             case CONFIG_NOT_FOUND:
-                return handlerConfigNotFound(response, dataId, group, tenant, requestIpApp, clientIp, notify,
-                        pullEvent, apiVersion);
+                return handlerConfigNotFound(response, apiVersion);
             case CONFIG_QUERY_CONFLICT:
-                return handlerConfigConflict(response, apiVersion, clientIp, groupKey);
+                return handlerConfigConflict(response, apiVersion);
             default:
-                return handleResponse(response, chainResponse, dataId, group, tenant, tag, requestIpApp,
-                        clientIp, notify, pullEvent, apiVersion);
+                return handleResponse(response, chainResponse, dataId, group, apiVersion);
         }
     }
     
-    private String handlerConfigNotFound(HttpServletResponse response, String dataId, String group, String tenant, String requestIpApp,
-            String clientIp, boolean notify, String pullEvent, ApiVersionEnum apiVersion) throws IOException {
-        ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, pullEvent,
-                ConfigTraceService.PULL_TYPE_NOTFOUND, -1, clientIp, notify, "http");
+    private String handlerConfigNotFound(HttpServletResponse response, ApiVersionEnum apiVersion) throws IOException {
         response.setStatus(HttpServletResponse.SC_NOT_FOUND);
         return writeResponse(response, apiVersion, Result.failure(ErrorCode.RESOURCE_NOT_FOUND, "config data not exist"));
     }
     
-    private String handlerConfigConflict(HttpServletResponse response, ApiVersionEnum apiVersion, String clientIp,
-            String groupKey) throws IOException {
-        PULL_LOG.info("[client-get] clientIp={}, {}, get data during dump", clientIp, groupKey);
+    private String handlerConfigConflict(HttpServletResponse response, ApiVersionEnum apiVersion) throws IOException {
         response.setStatus(HttpServletResponse.SC_CONFLICT);
         return writeResponse(response, apiVersion,
                 Result.failure(ErrorCode.RESOURCE_CONFLICT, "requested file is being modified, please try later."));
     }
     
     private String handleResponse(HttpServletResponse response, ConfigQueryChainResponse chainResponse, String dataId,
-            String group, String tenant, String tag, String requestIpApp, String clientIp,
-            boolean notify, String pullEvent, ApiVersionEnum apiVersion) throws IOException {
+            String group, ApiVersionEnum apiVersion) throws IOException {
         if (apiVersion == ApiVersionEnum.V1) {
-            return handleResponseForVersion(response, chainResponse, dataId, group, tenant, tag, requestIpApp,
-                    clientIp, notify, pullEvent, ApiVersionEnum.V1);
+            return handleResponseForV1(response, chainResponse, dataId, group);
         } else {
-            return handleResponseForVersion(response, chainResponse, dataId, group, tenant, tag, requestIpApp,
-                    clientIp, notify, pullEvent, ApiVersionEnum.V2);
+            return handleResponseForV2(response, chainResponse, dataId, group);
         }
     }
     
-    private String handleResponseForVersion(HttpServletResponse response, ConfigQueryChainResponse chainResponse,
-            String dataId, String group, String tenant, String tag, String requestIpApp, String clientIp, boolean notify,
-            String pullEvent, ApiVersionEnum apiVersion) throws IOException {
+    private String handleResponseForV1(HttpServletResponse response, ConfigQueryChainResponse chainResponse,
+            String dataId, String tag) throws IOException {
         if (chainResponse.getContent() == null) {
-            return handlerConfigNotFound(response, dataId, group, tenant, requestIpApp, clientIp, notify, pullEvent, apiVersion);
+            return handlerConfigNotFound(response, ApiVersionEnum.V1);
         }
         
-        setResponseHead(response, chainResponse, tag, apiVersion);
-        writeContent(response, chainResponse, dataId, apiVersion);
-        
-        LogUtil.PULL_CHECK_LOG.warn("{}|{}|{}|{}", group, requestIpApp, chainResponse.getMd5(), TimeUtils.getCurrentTimeStr());
-        final long delayed = notify ? -1 : System.currentTimeMillis() - chainResponse.getLastModified();
-        ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, chainResponse.getLastModified(), pullEvent,
-                ConfigTraceService.PULL_TYPE_OK, delayed, clientIp, notify, "http");
+        setResponseHead(response, chainResponse, tag, ApiVersionEnum.V1);
+        writeContent(response, chainResponse, dataId, ApiVersionEnum.V1);
         
         return HttpServletResponse.SC_OK + "";
     }
-
+    
+    private String handleResponseForV2(HttpServletResponse response, ConfigQueryChainResponse chainResponse,
+            String dataId, String tag) throws IOException {
+        if (chainResponse.getContent() == null) {
+            return handlerConfigNotFound(response, ApiVersionEnum.V2);
+        }
+        
+        setResponseHead(response, chainResponse, tag, ApiVersionEnum.V2);
+        writeContent(response, chainResponse, dataId, ApiVersionEnum.V2);
+        
+        return HttpServletResponse.SC_OK + "";
+    }
+    
     private void writeContent(HttpServletResponse response, ConfigQueryChainResponse chainResponse, String dataId,
             ApiVersionEnum apiVersion) throws IOException {
         PrintWriter out = response.getWriter();
@@ -232,7 +223,7 @@ public class ConfigServletInner {
         return response.getStatus() + "";
     }
     
-    private String resolvePullEventType(ConfigQueryChainResponse chainResponse, String tag) {
+    private String resolvePullEvent(ConfigQueryChainResponse chainResponse, String tag) {
         switch (chainResponse.getStatus()) {
             case CONFIG_FOUND_GRAY:
                 ConfigCacheGray matchedGray = chainResponse.getMatchedGray();
@@ -248,14 +239,33 @@ public class ConfigServletInner {
         }
     }
     
+    private void logPullEvent(String dataId, String group, String tenant, String requestIpApp,
+            ConfigQueryChainResponse chainResponse, String clientIp, boolean notify, String tag) {
+        
+        String pullEvent = resolvePullEvent(chainResponse, tag);
+        
+        ConfigQueryChainResponse.ConfigQueryStatus status = chainResponse.getStatus();
+        
+        if (status == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_QUERY_CONFLICT) {
+            ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, pullEvent,
+                    ConfigTraceService.PULL_TYPE_CONFLICT, -1, clientIp, notify, "http");
+        } else if (status == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND || chainResponse.getContent() == null) {
+            ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, pullEvent,
+                    ConfigTraceService.PULL_TYPE_NOTFOUND, -1, clientIp, notify, "http");
+        } else {
+            long delayed = notify ? -1 : System.currentTimeMillis() - chainResponse.getLastModified();
+            ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, chainResponse.getLastModified(), pullEvent,
+                    ConfigTraceService.PULL_TYPE_OK, delayed, clientIp, notify, "http");
+        }
+    }
+    
     private void setResponseHead(HttpServletResponse response, ConfigQueryChainResponse chainResponse, String tag, ApiVersionEnum version) {
         String contentType = chainResponse.getContentType() != null ? chainResponse.getContentType() : FileTypeEnum.TEXT.getFileType();
         FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(contentType);
         String contentTypeHeader = fileTypeEnum.getContentType();
         
         response.setHeader(CONFIG_TYPE, contentType);
-        response.setHeader(HttpHeaderConsts.CONTENT_TYPE,
-                ApiVersionEnum.V2 == version ? MediaType.APPLICATION_JSON : contentTypeHeader);
+        response.setHeader(HttpHeaderConsts.CONTENT_TYPE, ApiVersionEnum.V2 == version ? MediaType.APPLICATION_JSON : contentTypeHeader);
         response.setHeader(CONTENT_MD5, chainResponse.getMd5());
         response.setHeader("Pragma", "no-cache");
         response.setDateHeader("Expires", 0);
