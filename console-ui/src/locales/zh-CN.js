@@ -277,7 +277,6 @@ const I18N_CONF = {
     publishType: '发布类型',
     formal: '正式版本',
     gray: '灰度版本',
-    grayVersion: '灰度版本',
     grayRule: '灰度规则',
   },
   DashboardCard: {
