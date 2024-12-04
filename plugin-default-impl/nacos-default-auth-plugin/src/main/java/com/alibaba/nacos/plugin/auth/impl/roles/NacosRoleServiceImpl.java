@@ -235,6 +235,12 @@ public class NacosRoleServiceImpl {
             throw new IllegalArgumentException(
                     "role '" + AuthConstants.GLOBAL_ADMIN_ROLE + "' is not permitted to create!");
         }
+
+        if (hasRoleWithUsername(role, username)) {
+            throw new IllegalArgumentException(
+                    "user '" + username + "' already bound to the role '" + role + "' !");
+        }
+
         rolePersistService.addRole(role, username);
         roleSet.add(role);
     }
@@ -296,6 +302,11 @@ public class NacosRoleServiceImpl {
         if (!roleSet.contains(role)) {
             throw new IllegalArgumentException("role " + role + " not found!");
         }
+
+        if (hasPermission(role, resource, action)) {
+            throw new IllegalArgumentException("permission already exists!");
+        }
+
         permissionPersistService.addPermission(role, resource, action);
     }
     
@@ -370,5 +381,42 @@ public class NacosRoleServiceImpl {
         authConfigs.setHasGlobalAdminRole(hasGlobalAdminRole);
         return hasGlobalAdminRole;
     }
-    
+
+    /**
+     * check if the user is already bound to the role.
+     *
+     * @return true if the user is already bound to the role.
+     */
+    public boolean hasRoleWithUsername(String role, String username) {
+        Page<RoleInfo> roleInfoPage = rolePersistService.getRolesByUserNameAndRoleName(username,
+                role, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
+        if (roleInfoPage == null) {
+            return false;
+        }
+        List<RoleInfo> roleInfos = roleInfoPage.getPageItems();
+        return CollectionUtils.isNotEmpty(roleInfos) && roleInfos.stream()
+                .anyMatch(roleInfo -> role.equals(roleInfo.getRole()));
+    }
+
+    /**
+     * check if the permission is already exists.
+     *
+     * @param role role name
+     * @param resource resource
+     * @param action action
+     * @return true if duplicate, false otherwise
+     */
+    public boolean hasPermission(String role, String resource, String action) {
+        List<PermissionInfo> permissionInfos = getPermissions(role);
+        if (CollectionUtils.isEmpty(permissionInfos)) {
+            return false;
+        }
+        return CollectionUtils.isNotEmpty(permissionInfos) && permissionInfos.stream()
+                .anyMatch(permissionInfo ->
+                        StringUtils.equals(role, permissionInfo.getRole())
+                        && StringUtils.equals(resource, permissionInfo.getResource())
+                        && (StringUtils.equals(action, permissionInfo.getAction())
+                        || "rw".equals(permissionInfo.getAction())));
+    }
+
 }
