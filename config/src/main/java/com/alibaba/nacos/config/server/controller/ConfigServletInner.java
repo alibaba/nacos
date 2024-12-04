@@ -152,13 +152,20 @@ public class ConfigServletInner {
     
     private String handlerConfigNotFound(HttpServletResponse response, ApiVersionEnum apiVersion) throws IOException {
         response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-        return writeResponse(response, apiVersion, Result.failure(ErrorCode.RESOURCE_NOT_FOUND, "config data not exist"));
+        if (apiVersion == ApiVersionEnum.V1) {
+            return writeResponseForV1(response, Result.failure(ErrorCode.RESOURCE_NOT_FOUND, "config data not exist"));
+        } else {
+            return writeResponseForV2(response, Result.failure(ErrorCode.RESOURCE_NOT_FOUND, "config data not exist"));
+        }
     }
     
     private String handlerConfigConflict(HttpServletResponse response, ApiVersionEnum apiVersion) throws IOException {
         response.setStatus(HttpServletResponse.SC_CONFLICT);
-        return writeResponse(response, apiVersion,
-                Result.failure(ErrorCode.RESOURCE_CONFLICT, "requested file is being modified, please try later."));
+        if (apiVersion == ApiVersionEnum.V1) {
+            return writeResponseForV1(response, Result.failure(ErrorCode.RESOURCE_CONFLICT, "requested file is being modified, please try later."));
+        } else {
+            return writeResponseForV2(response, Result.failure(ErrorCode.RESOURCE_CONFLICT, "requested file is being modified, please try later."));
+        }
     }
     
     private String handleResponse(HttpServletResponse response, ConfigQueryChainResponse chainResponse, String dataId,
@@ -176,8 +183,9 @@ public class ConfigServletInner {
             return handlerConfigNotFound(response, ApiVersionEnum.V1);
         }
         
-        setResponseHead(response, chainResponse, tag, ApiVersionEnum.V1);
-        writeContent(response, chainResponse, dataId, ApiVersionEnum.V1);
+        setCommonResponseHead(response, chainResponse, tag);
+        setResponseHeadForV1(response, chainResponse);
+        writeContentForV1(response, chainResponse, dataId);
         
         return HttpServletResponse.SC_OK + "";
     }
@@ -188,38 +196,63 @@ public class ConfigServletInner {
             return handlerConfigNotFound(response, ApiVersionEnum.V2);
         }
         
-        setResponseHead(response, chainResponse, tag, ApiVersionEnum.V2);
-        writeContent(response, chainResponse, dataId, ApiVersionEnum.V2);
+        setCommonResponseHead(response, chainResponse, tag);
+        setResponseHeadForV2(response);
+        writeContentForV2(response, chainResponse, dataId);
         
         return HttpServletResponse.SC_OK + "";
     }
     
-    private void writeContent(HttpServletResponse response, ConfigQueryChainResponse chainResponse, String dataId,
-            ApiVersionEnum apiVersion) throws IOException {
+    private void setResponseHeadForV1(HttpServletResponse response, ConfigQueryChainResponse chainResponse) {
+        String contentType = chainResponse.getContentType() != null ? chainResponse.getContentType() : FileTypeEnum.TEXT.getFileType();
+        FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(contentType);
+        String contentTypeHeader = fileTypeEnum.getContentType();
+        response.setHeader(HttpHeaderConsts.CONTENT_TYPE, contentTypeHeader);
+    }
+    
+    private void setResponseHeadForV2(HttpServletResponse response) {
+        response.setHeader(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+    }
+    
+    private void writeContentForV1(HttpServletResponse response, ConfigQueryChainResponse chainResponse, String dataId)
+            throws IOException {
         PrintWriter out = response.getWriter();
         try {
-            Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, chainResponse.getEncryptedDataKey(),
-                    chainResponse.getContent());
-            String decryptContent = pair.getSecond();
-            if (ApiVersionEnum.V2 == apiVersion) {
-                out.print(JacksonUtils.toJson(Result.success(decryptContent)));
-            } else {
-                out.print(decryptContent);
-            }
+            String decryptContent = getDecryptContent(chainResponse, dataId);
+            out.print(decryptContent);
         } finally {
             out.flush();
             out.close();
         }
     }
     
-    private String writeResponse(HttpServletResponse response, ApiVersionEnum apiVersion, Result<String> result)
+    private void writeContentForV2(HttpServletResponse response, ConfigQueryChainResponse chainResponse, String dataId)
             throws IOException {
-        PrintWriter writer = response.getWriter();
-        if (ApiVersionEnum.V2 == apiVersion) {
-            writer.println(JacksonUtils.toJson(result));
-        } else {
-            writer.println(result.getData());
+        PrintWriter out = response.getWriter();
+        try {
+            String decryptContent = getDecryptContent(chainResponse, dataId);
+            out.print(JacksonUtils.toJson(Result.success(decryptContent)));
+        } finally {
+            out.flush();
+            out.close();
         }
+    }
+    
+    private static String getDecryptContent(ConfigQueryChainResponse chainResponse, String dataId) {
+        Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, chainResponse.getEncryptedDataKey(),
+                chainResponse.getContent());
+        return pair.getSecond();
+    }
+    
+    private String writeResponseForV1(HttpServletResponse response, Result<String> result) throws IOException {
+        PrintWriter writer = response.getWriter();
+        writer.println(result.getData());
+        return response.getStatus() + "";
+    }
+    
+    private String writeResponseForV2(HttpServletResponse response, Result<String> result) throws IOException {
+        PrintWriter writer = response.getWriter();
+        writer.println(JacksonUtils.toJson(result));
         return response.getStatus() + "";
     }
     
@@ -259,13 +292,10 @@ public class ConfigServletInner {
         }
     }
     
-    private void setResponseHead(HttpServletResponse response, ConfigQueryChainResponse chainResponse, String tag, ApiVersionEnum version) {
+    private void setCommonResponseHead(HttpServletResponse response, ConfigQueryChainResponse chainResponse, String tag) {
         String contentType = chainResponse.getContentType() != null ? chainResponse.getContentType() : FileTypeEnum.TEXT.getFileType();
-        FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(contentType);
-        String contentTypeHeader = fileTypeEnum.getContentType();
         
         response.setHeader(CONFIG_TYPE, contentType);
-        response.setHeader(HttpHeaderConsts.CONTENT_TYPE, ApiVersionEnum.V2 == version ? MediaType.APPLICATION_JSON : contentTypeHeader);
         response.setHeader(CONTENT_MD5, chainResponse.getMd5());
         response.setHeader("Pragma", "no-cache");
         response.setDateHeader("Expires", 0);
