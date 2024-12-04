@@ -104,7 +104,6 @@ public abstract class AbstractMapper implements Mapper {
             return sql.toString();
         }
 
-        sql.append(" ");
         appendWhereClause(where, sql);
 
         return sql.toString();
