@@ -279,7 +279,6 @@ const I18N_CONF = {
     publishType: 'Publish Type',
     formal: 'Formal Version',
     gray: 'Gray Version',
-    grayVersion: 'Gray Version',
     grayRule: 'Gray Rule',
   },
   DashboardCard: {
