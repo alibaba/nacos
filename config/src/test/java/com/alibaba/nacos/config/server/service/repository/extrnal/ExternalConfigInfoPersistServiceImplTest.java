@@ -262,7 +262,8 @@ class ExternalConfigInfoPersistServiceImplTest {
         configAdvanceInfo.put("config_tags", "tag1,tag2");
         ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, null, "content");
         try {
-            externalConfigInfoPersistService.insertOrUpdate("srcIp", "srcUser", configInfo, configAdvanceInfo);
+            externalConfigInfoPersistService.insertOrUpdate("srcIp", "srcUser", configInfo,
+                    configAdvanceInfo);
             assertTrue(false);
         } catch (Exception e) {
             assertEquals("mock fail", e.getMessage());
