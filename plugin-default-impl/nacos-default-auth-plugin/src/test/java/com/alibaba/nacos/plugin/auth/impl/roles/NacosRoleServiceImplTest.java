@@ -21,11 +21,7 @@ import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
-import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionInfo;
-import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionPersistService;
-import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
-import com.alibaba.nacos.plugin.auth.impl.persistence.RolePersistService;
-import com.alibaba.nacos.plugin.auth.impl.persistence.User;
+import com.alibaba.nacos.plugin.auth.impl.persistence.*;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.util.Assert;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -217,5 +214,16 @@ class NacosRoleServiceImplTest {
         NacosRoleServiceImpl spy = spy(nacosRoleService);
         when(spy.getPermissions("admin")).thenReturn(permissionInfos);
         spy.isDuplicatePermission("admin", "test", "r");
+    }
+
+    @Test
+    void isUserBoundToRole() {
+        String role = "TEST";
+        String userName = "nacos";
+        assertFalse(nacosRoleService.isUserBoundToRole("", userName));
+        assertFalse(nacosRoleService.isUserBoundToRole(role, ""));
+        assertFalse(nacosRoleService.isUserBoundToRole("", null));
+        assertFalse(nacosRoleService.isUserBoundToRole(null, ""));
+        assertFalse(nacosRoleService.isUserBoundToRole(role, userName));
     }
 }
