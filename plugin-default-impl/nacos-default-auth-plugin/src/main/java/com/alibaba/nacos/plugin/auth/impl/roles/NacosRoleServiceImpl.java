@@ -236,6 +236,12 @@ public class NacosRoleServiceImpl {
             throw new IllegalArgumentException(
                     "role '" + AuthConstants.GLOBAL_ADMIN_ROLE + "' is not permitted to create!");
         }
+
+        if (isUserBoundToRole(role, username)) {
+            throw new IllegalArgumentException(
+                    "user '" + username + "' already bound to the role '" + role + "'!");
+        }
+
         rolePersistService.addRole(role, username);
         roleSet.add(role);
     }
@@ -393,6 +399,24 @@ public class NacosRoleServiceImpl {
             }
         }
         return Result.success(Boolean.FALSE);
+    }
+
+    /**
+     * judge whether the user is already bound to the role.
+     *
+     * @param role     role name
+     * @param username user name
+     * @return true if the user is already bound to the role.
+     */
+    public boolean isUserBoundToRole(String role, String username) {
+        Page<RoleInfo> roleInfoPage = rolePersistService.getRolesByUserNameAndRoleName(username,
+                role, DEFAULT_PAGE_NO, 1);
+        if (roleInfoPage == null) {
+            return false;
+        }
+        List<RoleInfo> roleInfos = roleInfoPage.getPageItems();
+        return CollectionUtils.isNotEmpty(roleInfos) && roleInfos.stream()
+                .anyMatch(roleInfo -> role.equals(roleInfo.getRole()));
     }
     
 }
