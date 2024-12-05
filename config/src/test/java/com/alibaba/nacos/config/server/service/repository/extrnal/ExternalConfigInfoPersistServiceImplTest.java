@@ -262,8 +262,7 @@ class ExternalConfigInfoPersistServiceImplTest {
         configAdvanceInfo.put("config_tags", "tag1,tag2");
         ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, null, "content");
         try {
-            externalConfigInfoPersistService.insertOrUpdate("srcIp", "srcUser", configInfo,
-                    configAdvanceInfo);
+            externalConfigInfoPersistService.insertOrUpdate("srcIp", "srcUser", configInfo, configAdvanceInfo);
             assertTrue(false);
         } catch (Exception e) {
             assertEquals("mock fail", e.getMessage());
@@ -1261,7 +1260,8 @@ class ExternalConfigInfoPersistServiceImplTest {
         String select = configInfoMapper.select(
                 Arrays.asList("id", "data_id", "group_id", "tenant_id", "gmt_modified"),
                 Arrays.asList("data_id", "group_id", "tenant_id"));
-        assertEquals("SELECT id,data_id,group_id,tenant_id,gmt_modified FROM config_info WHERE data_id = ? AND group_id = ? AND tenant_id = ?", select);
+        assertEquals("SELECT id,data_id,group_id,tenant_id,gmt_modified FROM config_info WHERE data_id = ? " +
+                "AND group_id = ? AND tenant_id = ?", select);
     }
     
 }
