@@ -34,6 +34,7 @@ import com.alibaba.nacos.config.server.utils.TestCaseUtils;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -1114,7 +1115,7 @@ class ExternalConfigInfoPersistServiceImplTest {
             assertTrue(e.getMessage().endsWith("mock exp"));
         }
     }
-    
+
     @Test
     void testFindAllConfigInfo4Export() {
         
@@ -1249,6 +1250,17 @@ class ExternalConfigInfoPersistServiceImplTest {
             assertEquals("mock fail", e.getMessage());
         }
         
+    }
+
+    @Test
+    void  testBuildFindConfigInfoStateSql() {
+        MapperManager mapperManager = MapperManager.instance(false);
+        ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                TableConstant.CONFIG_INFO);
+        String select = configInfoMapper.select(
+                Arrays.asList("id", "data_id", "group_id", "tenant_id", "gmt_modified"),
+                Arrays.asList("data_id", "group_id", "tenant_id"));
+        assertEquals("SELECT id,data_id,group_id,tenant_id,gmt_modified FROM config_info WHERE data_id = ? AND group_id = ? AND tenant_id = ?", select);
     }
     
 }

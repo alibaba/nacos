@@ -71,7 +71,7 @@ class AbstractMapperTest {
     @Test
     void testDelete() {
         String sql = abstractMapper.delete(Arrays.asList("id"));
-        assertEquals("DELETE FROM tenant_info WHERE id = ? ", sql);
+        assertEquals("DELETE FROM tenant_info WHERE id = ?", sql);
     }
     
     @Test
