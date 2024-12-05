@@ -26,6 +26,7 @@ import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.model.gray.ConfigGrayPersistInfo;
 import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
 import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
+import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigRocksDbDiskService;
@@ -85,7 +86,7 @@ class ConfigQueryRequestHandlerTest {
         configCacheServiceMockedStatic = Mockito.mockStatic(ConfigCacheService.class);
         propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
         configDiskServiceFactoryMockedStatic = Mockito.mockStatic(ConfigDiskServiceFactory.class);
-        configQueryRequestHandler = new ConfigQueryRequestHandler();
+        configQueryRequestHandler = new ConfigQueryRequestHandler(new ConfigQueryChainService());
         final String groupKey = GroupKey2.getKey(dataId, group, "");
         when(ConfigCacheService.tryConfigReadLock(groupKey)).thenReturn(1);
         propertyUtilMockedStatic.when(PropertyUtil::getMaxContent).thenReturn(1024 * 1000);
@@ -207,9 +208,9 @@ class ConfigQueryRequestHandlerTest {
         
         //check content&md5
         assertNull(response.getContent());
-        assertNull(response.getMd5());
+        assertEquals(MD5Utils.md5Hex(content, "UTF-8"), response.getMd5());
         assertEquals(CONFIG_NOT_FOUND, response.getErrorCode());
-        assertNull(response.getEncryptedDataKey());
+        assertEquals("key_testGetTag_NotFound", response.getEncryptedDataKey());
         
         //check flags.
         assertFalse(response.isBeta());
