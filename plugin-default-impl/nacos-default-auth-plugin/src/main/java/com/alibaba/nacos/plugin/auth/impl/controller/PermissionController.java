@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.controller;
 
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -104,5 +105,19 @@ public class PermissionController {
             @RequestParam String action) {
         nacosRoleService.deletePermission(role, resource, action);
         return RestResultUtils.success("delete permission ok!");
+    }
+
+    /**
+     * Judge whether a permission is duplicate.
+     *
+     * @param role     the role
+     * @param resource the related resource
+     * @param action   the related action
+     * @return true if duplicate, false otherwise
+     */
+    @GetMapping
+    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.READ)
+    public Result<Boolean> isDuplicatePermission(@RequestParam String role, @RequestParam String resource, @RequestParam String action) {
+        return nacosRoleService.isDuplicatePermission(role, resource, action);
     }
 }

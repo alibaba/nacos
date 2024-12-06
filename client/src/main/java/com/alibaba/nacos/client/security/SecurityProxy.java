@@ -17,18 +17,22 @@
 package com.alibaba.nacos.client.security;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.address.AbstractServerListManager;
+import com.alibaba.nacos.client.address.ServerListChangeEvent;
 import com.alibaba.nacos.client.auth.impl.NacosAuthLoginConstant;
-import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthPluginManager;
-import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
-import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthService;
-import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
+import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
+import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthPluginManager;
+import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -45,15 +49,25 @@ public class SecurityProxy implements Closeable {
     private ClientAuthPluginManager clientAuthPluginManager;
     
     /**
-     * Construct from serverList, nacosRestTemplate, init client auth plugin.
-     * // TODO change server list to serverListManager after serverListManager refactor and unite.
+     * Construct from serverListManager, nacosRestTemplate, init client auth plugin.
      *
-     * @param serverList a server list that client request to.
+     * @param serverListManager a server list manager that client request to.
      * @Param nacosRestTemplate http request template.
      */
-    public SecurityProxy(List<String> serverList, NacosRestTemplate nacosRestTemplate) {
+    public SecurityProxy(AbstractServerListManager serverListManager, NacosRestTemplate nacosRestTemplate) {
         clientAuthPluginManager = new ClientAuthPluginManager();
-        clientAuthPluginManager.init(serverList, nacosRestTemplate);
+        clientAuthPluginManager.init(serverListManager.getServerList(), nacosRestTemplate);
+        NotifyCenter.registerSubscriber(new Subscriber<ServerListChangeEvent>() {
+            @Override
+            public void onEvent(ServerListChangeEvent event) {
+                clientAuthPluginManager.refreshServerList(serverListManager.getServerList());
+            }
+            
+            @Override
+            public Class<? extends Event> subscribeType() {
+                return ServerListChangeEvent.class;
+            }
+        });
     }
     
     /**
