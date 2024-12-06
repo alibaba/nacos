@@ -1307,8 +1307,7 @@ class ExternalConfigInfoPersistServiceImplTest {
                 TableConstant.CONFIG_INFO);
         String select = configInfoMapper.select(Arrays.asList("id", "data_id", "group_id", "tenant_id", "gmt_modified"),
                 Arrays.asList("data_id", "group_id", "tenant_id"));
-        assertEquals(
-                "SELECT id,data_id,group_id,tenant_id,gmt_modified FROM config_info WHERE data_id = ? AND group_id = ? AND tenant_id = ?",
+        assertEquals("SELECT id,data_id,group_id,tenant_id,gmt_modified FROM config_info WHERE data_id = ? AND group_id = ? AND tenant_id = ?",
                 select);
     }
     

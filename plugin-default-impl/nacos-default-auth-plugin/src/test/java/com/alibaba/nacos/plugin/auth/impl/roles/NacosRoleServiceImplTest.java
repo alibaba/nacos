@@ -218,4 +218,15 @@ class NacosRoleServiceImplTest {
         when(spy.getPermissions("admin")).thenReturn(permissionInfos);
         spy.isDuplicatePermission("admin", "test", "r");
     }
+
+    @Test
+    void isUserBoundToRole() {
+        String role = "TEST";
+        String userName = "nacos";
+        assertFalse(nacosRoleService.isUserBoundToRole("", userName));
+        assertFalse(nacosRoleService.isUserBoundToRole(role, ""));
+        assertFalse(nacosRoleService.isUserBoundToRole("", null));
+        assertFalse(nacosRoleService.isUserBoundToRole(null, ""));
+        assertFalse(nacosRoleService.isUserBoundToRole(role, userName));
+    }
 }
