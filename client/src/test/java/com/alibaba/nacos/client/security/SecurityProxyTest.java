@@ -18,7 +18,9 @@ package com.alibaba.nacos.client.security;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.address.AbstractServerListManager;
 import com.alibaba.nacos.client.auth.impl.NacosAuthLoginConstant;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
@@ -68,7 +70,34 @@ class SecurityProxyTest {
         
         List<String> serverList = new ArrayList<>();
         serverList.add("localhost");
-        securityProxy = new SecurityProxy(serverList, nacosRestTemplate);
+        NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive(new Properties());
+        AbstractServerListManager serverListManager = new AbstractServerListManager(properties) {
+            @Override
+            protected String getModuleName() {
+                return "Test";
+            }
+            
+            @Override
+            protected NacosRestTemplate getNacosRestTemplate() {
+                return nacosRestTemplate;
+            }
+            
+            @Override
+            public String genNextServer() {
+                return serverList.get(0);
+            }
+            
+            @Override
+            public String getCurrentServer() {
+                return serverList.get(0);
+            }
+            
+            @Override
+            public List<String> getServerList() {
+                return serverList;
+            }
+        };
+        securityProxy = new SecurityProxy(serverListManager, nacosRestTemplate);
     }
     
     @Test

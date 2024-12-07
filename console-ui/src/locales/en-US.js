@@ -279,7 +279,6 @@ const I18N_CONF = {
     publishType: 'Publish Type',
     formal: 'Formal Version',
     gray: 'Gray Version',
-    grayVersion: 'Gray Version',
     grayRule: 'Gray Rule',
   },
   DashboardCard: {
@@ -673,6 +672,7 @@ const I18N_CONF = {
     defaultFuzzyd: 'Default fuzzy query mode opened',
     fuzzyd: "Add wildcard '*' for fuzzy query",
     query: 'Search',
+    checkPermission: 'This role permission already exists!',
   },
   NewPermissions: {
     addPermission: 'Add Permission',
