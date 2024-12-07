@@ -20,7 +20,9 @@ import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.common.paramcheck.ParamCheckResponse;
 import com.alibaba.nacos.core.remote.grpc.RemoteParamCheckFilter;
+import com.alibaba.nacos.core.utils.NamespaceParamCheckUtils;
 import com.alibaba.nacos.naming.remote.rpc.handler.InstanceRequestHandler;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.Test;
@@ -46,6 +48,13 @@ class RpcParamCheckTest {
     
     @Test
     void testFilter() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        MockedStatic<NamespaceParamCheckUtils> namespaceParamCheckUtilsMockedStatic = Mockito.mockStatic(NamespaceParamCheckUtils.class);
+        // namespace check successResponse
+        ParamCheckResponse paramCheckResponse = new ParamCheckResponse();
+        paramCheckResponse.setSuccess(true);
+        namespaceParamCheckUtilsMockedStatic.when(() -> NamespaceParamCheckUtils.checkNamespaceExists("test111")).thenReturn(paramCheckResponse);
+        namespaceParamCheckUtilsMockedStatic.when(() -> NamespaceParamCheckUtils.checkNamespaceExists("test@@@")).thenReturn(paramCheckResponse);
+        
         MockedStatic<EnvUtil> mockedStatic = Mockito.mockStatic(EnvUtil.class);
         mockedStatic.when(() -> EnvUtil.getProperty(Mockito.any(), Mockito.any(), Mockito.any())).thenAnswer((k) -> k.getArgument(2));
         RemoteParamCheckFilter filter = new RemoteParamCheckFilter();
@@ -59,5 +68,6 @@ class RpcParamCheckTest {
         Response response2 = (Response) method.invoke(filter, request, null, InstanceRequestHandler.class);
         assertEquals(400, response2.getErrorCode());
         mockedStatic.close();
+        namespaceParamCheckUtilsMockedStatic.close();
     }
 }
