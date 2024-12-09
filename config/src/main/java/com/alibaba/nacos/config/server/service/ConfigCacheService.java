@@ -22,6 +22,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigCache;
 import com.alibaba.nacos.config.server.model.ConfigCacheGray;
+import com.alibaba.nacos.config.server.model.ConfigCachePostProcessorDelegate;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.model.gray.GrayRule;
 import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
@@ -124,7 +125,7 @@ public class ConfigCacheService {
                 DUMP_LOG.info(
                         "[dump] md5 changed, update md5 and timestamp in jvm cache ,groupKey={}, newMd5={},oldMd5={},lastModifiedTs={}",
                         groupKey, md5, localContentMd5, lastModifiedTs);
-                updateMd5(groupKey, md5, lastModifiedTs, encryptedDataKey);
+                updateMd5(groupKey, md5, content, lastModifiedTs, encryptedDataKey);
             } else if (newLastModified) {
                 DUMP_LOG.info(
                         "[dump] md5 consistent ,timestamp changed, update timestamp only in jvm cache ,groupKey={},lastModifiedTs={}",
@@ -229,7 +230,7 @@ public class ConfigCacheService {
                         "[dump-gray] md5 changed, update local jvm cache& local disk cache, groupKey={},grayName={}, "
                                 + "newMd5={},oldMd5={}, newGrayRule={}, oldGrayRule={},lastModifiedTs={}", groupKey,
                         grayName, md5, localContentGrayMd5, grayRule, localGrayRule, lastModifiedTs);
-                updateGrayMd5(groupKey, grayName, grayRule, md5, lastModifiedTs, encryptedDataKey);
+                updateGrayMd5(groupKey, grayName, grayRule, md5, content, lastModifiedTs, encryptedDataKey);
                 ConfigDiskServiceFactory.getInstance().saveGrayToDisk(dataId, group, tenant, grayName, content);
                 
             } else if (grayRuleChanged) {
@@ -349,16 +350,20 @@ public class ConfigCacheService {
     /**
      * Update md5 value.
      *
-     * @param groupKey       groupKey string value.
-     * @param md5Utf8        md5 string value.
-     * @param lastModifiedTs lastModifiedTs long value.
+     * @param groupKey         the group key
+     * @param md5              the md 5
+     * @param content          the content
+     * @param lastModifiedTs   the last modified ts
+     * @param encryptedDataKey the encrypted data key
      */
-    public static void updateMd5(String groupKey, String md5Utf8, long lastModifiedTs, String encryptedDataKey) {
+    public static void updateMd5(String groupKey, String md5, String content, long lastModifiedTs, String encryptedDataKey) {
         CacheItem cache = makeSure(groupKey, encryptedDataKey);
-        if (cache.getConfigCache().getMd5Utf8() == null || !cache.getConfigCache().getMd5Utf8().equals(md5Utf8)) {
-            cache.getConfigCache().setMd5Utf8(md5Utf8);
-            cache.getConfigCache().setLastModifiedTs(lastModifiedTs);
-            cache.getConfigCache().setEncryptedDataKey(encryptedDataKey);
+        ConfigCache configCache = cache.getConfigCache();
+        if (configCache.getMd5() == null || !configCache.getMd5().equals(md5)) {
+            configCache.setMd5(md5);
+            configCache.setLastModifiedTs(lastModifiedTs);
+            configCache.setEncryptedDataKey(encryptedDataKey);
+            ConfigCachePostProcessorDelegate.getInstance().postProcess(configCache, content);
             NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey));
         }
     }
@@ -366,23 +371,25 @@ public class ConfigCacheService {
     /**
      * Update gray md5 value.
      *
-     * @param groupKey         groupKey string value.
-     * @param grayName         grayName string value.
-     * @param grayRule         grayRule string value.
-     * @param md5Utf8          md5UTF8 string value.
-     * @param lastModifiedTs   lastModifiedTs long value.
-     * @param encryptedDataKey encryptedDataKey string value.
+     * @param groupKey         the group key
+     * @param grayName         the gray name
+     * @param grayRule         the gray rule
+     * @param md5              the md 5
+     * @param content          the content
+     * @param lastModifiedTs   the last modified ts
+     * @param encryptedDataKey the encrypted data key
      */
-    private static void updateGrayMd5(String groupKey, String grayName, String grayRule, String md5Utf8,
+    public static void updateGrayMd5(String groupKey, String grayName, String grayRule, String md5, String content,
             long lastModifiedTs, String encryptedDataKey) {
         CacheItem cache = makeSure(groupKey, null);
         cache.initConfigGrayIfEmpty(grayName);
         ConfigCacheGray configCache = cache.getConfigCacheGray().get(grayName);
-        configCache.setMd5Utf8(md5Utf8);
+        configCache.setMd5(md5);
         configCache.setLastModifiedTs(lastModifiedTs);
         configCache.setEncryptedDataKey(encryptedDataKey);
         configCache.resetGrayRule(grayRule);
         cache.sortConfigGray();
+        ConfigCachePostProcessorDelegate.getInstance().postProcess(configCache, content);
         NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey));
     }
     
@@ -394,11 +401,10 @@ public class ConfigCacheService {
     }
     
     public static String getContentMd5(String groupKey, String ip, String tag) {
-        return getContentMd5(groupKey, ip, tag, null, ENCODE_UTF8);
+        return getContentMd5(groupKey, ip, tag, null);
     }
     
-    public static String getContentMd5(String groupKey, String ip, String tag, Map<String, String> connLabels,
-            String encode) {
+    public static String getContentMd5(String groupKey, String ip, String tag, Map<String, String> connLabels) {
         CacheItem item = CACHE.get(groupKey);
         if (item == null) {
             return NULL;
@@ -419,11 +425,11 @@ public class ConfigCacheService {
         if (item.getSortConfigGrays() != null && connLabels != null && !connLabels.isEmpty()) {
             for (ConfigCacheGray entry : item.getSortConfigGrays()) {
                 if (entry.match(connLabels)) {
-                    return entry.getMd5(encode);
+                    return entry.getMd5();
                 }
             }
         }
-        String md5 = item.getConfigCache().getMd5(encode);
+        String md5 = item.getConfigCache().getMd5();
         return md5 == null ? NULL : md5;
     }
     
@@ -451,7 +457,7 @@ public class ConfigCacheService {
         if (item == null || item.getConfigCacheGray() == null || !item.getConfigCacheGray().containsKey(grayName)) {
             return NULL;
         }
-        return item.getConfigCacheGray().get(grayName).getMd5(ENCODE_UTF8);
+        return item.getConfigCacheGray().get(grayName).getMd5();
     }
     
     public static long getGrayLastModifiedTs(String groupKey, String grayName) {
@@ -510,7 +516,7 @@ public class ConfigCacheService {
     
     public static boolean isUptodate(String groupKey, String md5, String ip, String tag,
             Map<String, String> appLabels) {
-        String serverMd5 = ConfigCacheService.getContentMd5(groupKey, ip, tag, appLabels, ENCODE_UTF8);
+        String serverMd5 = ConfigCacheService.getContentMd5(groupKey, ip, tag, appLabels);
         return StringUtils.equals(md5, serverMd5);
     }
     
@@ -593,7 +599,7 @@ public class ConfigCacheService {
      * try config read lock with spin of try get lock times.
      *
      * @param groupKey group key of config.
-     * @return
+     * @return 0 - No data and failed. Positive number - lock succeeded. Negative number - lock failed.
      */
     public static int tryConfigReadLock(String groupKey) {
         

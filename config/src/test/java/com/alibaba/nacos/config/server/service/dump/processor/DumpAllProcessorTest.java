@@ -70,6 +70,8 @@ class DumpAllProcessorTest {
     
     MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic;
     
+    MockedStatic<PropertyUtil> propertyUtilMockedStatic;
+    
     @Mock
     ConfigInfoPersistService configInfoPersistService;
     
@@ -81,6 +83,8 @@ class DumpAllProcessorTest {
     void init() throws Exception {
         dynamicDataSourceMockedStatic = Mockito.mockStatic(DynamicDataSource.class);
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
+        propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
+        propertyUtilMockedStatic.when(PropertyUtil::getAllDumpPageSize).thenReturn(100);
         dumpAllProcessor = new DumpAllProcessor(configInfoPersistService);
         when(EnvUtil.getNacosHome()).thenReturn(System.getProperty("user.home"));
         when(EnvUtil.getProperty(eq(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG), eq(Boolean.class), eq(false))).thenReturn(false);
@@ -93,12 +97,14 @@ class DumpAllProcessorTest {
         dumpAllProcessor = new DumpAllProcessor(configInfoPersistService);
         envUtilMockedStatic.when(() -> EnvUtil.getProperty(eq("memory_limit_file_path"), eq("/sys/fs/cgroup/memory/memory.limit_in_bytes")))
                 .thenReturn(mockMem);
+        
     }
     
     @AfterEach
     void after() throws Exception {
         dynamicDataSourceMockedStatic.close();
         envUtilMockedStatic.close();
+        propertyUtilMockedStatic.close();
     }
     
     private ConfigInfoWrapper createNewConfig(int id) {
@@ -153,7 +159,7 @@ class DumpAllProcessorTest {
         //Check cache
         CacheItem contentCache1 = ConfigCacheService.getContentCache(
                 GroupKey2.getKey(configInfoWrapper1.getDataId(), configInfoWrapper1.getGroup(), configInfoWrapper1.getTenant()));
-        assertEquals(md51, contentCache1.getConfigCache().getMd5Utf8());
+        assertEquals(md51, contentCache1.getConfigCache().getMd5());
         // check if config1 is updated
         assertTrue(timestamp < contentCache1.getConfigCache().getLastModifiedTs());
         //check disk
@@ -164,7 +170,7 @@ class DumpAllProcessorTest {
         //Check cache
         CacheItem contentCache2 = ConfigCacheService.getContentCache(
                 GroupKey2.getKey(configInfoWrapper2.getDataId(), configInfoWrapper2.getGroup(), configInfoWrapper2.getTenant()));
-        assertEquals(MD5Utils.md5Hex(configInfoWrapper2.getContent(), "UTF-8"), contentCache2.getConfigCache().getMd5Utf8());
+        assertEquals(MD5Utils.md5Hex(configInfoWrapper2.getContent(), "UTF-8"), contentCache2.getConfigCache().getMd5());
         // check if config2 is updated
         assertEquals(timestamp, contentCache2.getConfigCache().getLastModifiedTs());
         //check disk
@@ -226,7 +232,7 @@ class DumpAllProcessorTest {
         CacheItem contentCache1 = ConfigCacheService.getContentCache(
                 GroupKey2.getKey(configInfoWrapper1.getDataId(), configInfoWrapper1.getGroup(), configInfoWrapper1.getTenant()));
         // check if config1 is not updated
-        assertEquals(md51, contentCache1.getConfigCache().getMd5Utf8());
+        assertEquals(md51, contentCache1.getConfigCache().getMd5());
         assertEquals(latterTimestamp, contentCache1.getConfigCache().getLastModifiedTs());
         //check disk
         String contentFromDisk1 = ConfigDiskServiceFactory.getInstance()
@@ -237,7 +243,7 @@ class DumpAllProcessorTest {
         CacheItem contentCache2 = ConfigCacheService.getContentCache(
                 GroupKey2.getKey(configInfoWrapper2.getDataId(), configInfoWrapper2.getGroup(), configInfoWrapper2.getTenant()));
         // check if config2 is updated
-        assertEquals(MD5Utils.md5Hex(configInfoWrapperSingle2.getContent(), "UTF-8"), contentCache2.getConfigCache().getMd5Utf8());
+        assertEquals(MD5Utils.md5Hex(configInfoWrapperSingle2.getContent(), "UTF-8"), contentCache2.getConfigCache().getMd5());
         assertEquals(configInfoWrapper2.getLastModified(), contentCache2.getConfigCache().getLastModifiedTs());
         //check disk
         String contentFromDisk2 = ConfigDiskServiceFactory.getInstance()

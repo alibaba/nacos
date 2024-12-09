@@ -23,8 +23,6 @@ import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRespo
 
 import java.io.IOException;
 
-import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
-
 /**
  * Formal Handler.
  * This class represents a formal handler in the configuration query processing chain.
@@ -49,7 +47,7 @@ public class FormalHandler extends AbstractConfigQueryHandler {
         String tenant = request.getTenant();
         
         CacheItem cacheItem = ConfigChainEntryHandler.getThreadLocalCacheItem();
-        String md5 = cacheItem.getConfigCache().getMd5(ENCODE_UTF8);
+        String md5 = cacheItem.getConfigCache().getMd5();
         long lastModified = cacheItem.getConfigCache().getLastModifiedTs();
         String encryptedDataKey = cacheItem.getConfigCache().getEncryptedDataKey();
         String contentType = cacheItem.getType();
