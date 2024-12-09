@@ -19,6 +19,7 @@ package com.alibaba.nacos.plugin.datasource.mapper;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * The abstract mapper contains CRUD methods.
@@ -33,17 +34,9 @@ public abstract class AbstractMapper implements Mapper {
         StringBuilder sql = new StringBuilder();
         String method = "SELECT ";
         sql.append(method);
-        for (int i = 0; i < columns.size(); i++) {
-            sql.append(columns.get(i));
-            if (i == columns.size() - 1) {
-                sql.append(" ");
-            } else {
-                sql.append(",");
-            }
-        }
-        sql.append("FROM ");
+        sql.append(columns.stream().collect(Collectors.joining(",")));
+        sql.append(" FROM ");
         sql.append(getTableName());
-        sql.append(" ");
 
         if (CollectionUtils.isEmpty(where)) {
             return sql.toString();
@@ -111,7 +104,6 @@ public abstract class AbstractMapper implements Mapper {
             return sql.toString();
         }
 
-        sql.append(" ");
         appendWhereClause(where, sql);
 
         return sql.toString();
@@ -121,13 +113,8 @@ public abstract class AbstractMapper implements Mapper {
     public String delete(List<String> params) {
         StringBuilder sql = new StringBuilder();
         String method = "DELETE ";
-        sql.append(method).append("FROM ").append(getTableName()).append(" ").append("WHERE ");
-        for (int i = 0; i < params.size(); i++) {
-            sql.append(params.get(i)).append(" ").append("=").append(" ? ");
-            if (i != params.size() - 1) {
-                sql.append("AND ");
-            }
-        }
+        sql.append(method).append("FROM ").append(getTableName());
+        appendWhereClause(params, sql);
 
         return sql.toString();
     }
@@ -139,9 +126,8 @@ public abstract class AbstractMapper implements Mapper {
         sql.append(method);
         sql.append("COUNT(*) FROM ");
         sql.append(getTableName());
-        sql.append(" ");
 
-        if (null == where || where.size() == 0) {
+        if (CollectionUtils.isEmpty(where)) {
             return sql.toString();
         }
 
@@ -156,12 +142,7 @@ public abstract class AbstractMapper implements Mapper {
     }
 
     private void appendWhereClause(List<String> where, StringBuilder sql) {
-        sql.append("WHERE ");
-        for (int i = 0; i < where.size(); i++) {
-            sql.append(where.get(i)).append(" = ").append("?");
-            if (i != where.size() - 1) {
-                sql.append(" AND ");
-            }
-        }
+        sql.append(" WHERE ");
+        sql.append(where.stream().map(str -> (str + " = ?")).collect(Collectors.joining(" AND ")));
     }
 }
