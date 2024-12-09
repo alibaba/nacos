@@ -42,7 +42,7 @@ public class ConfigCacheFactoryDelegate {
     private ConfigCacheFactoryDelegate() {
         Collection<ConfigCacheFactory> configCacheFactories = NacosServiceLoader.load(ConfigCacheFactory.class);
         for (ConfigCacheFactory each : configCacheFactories) {
-            if (StringUtils.isEmpty(each.getConfigCacheFactoryName())) {
+            if (StringUtils.isEmpty(each.getName())) {
                 LOGGER.warn(
                         "[ConfigCacheFactoryDelegate] Load ConfigCacheFactory({}) ConfigFactroyName (null/empty) fail. "
                                 + "Please add ConfigFactoryName to resolve", each.getClass().getName());
@@ -50,8 +50,8 @@ public class ConfigCacheFactoryDelegate {
             }
             LOGGER.info(
                     "[ConfigCacheFactoryDelegate] Load ConfigCacheFactory({}) ConfigCacheFactoryName({}) successfully. ",
-                    each.getClass().getName(), each.getConfigCacheFactoryName());
-            if (StringUtils.equals(configCacheFactoryType, each.getConfigCacheFactoryName())) {
+                    each.getClass().getName(), each.getName());
+            if (StringUtils.equals(configCacheFactoryType, each.getName())) {
                 LOGGER.info("[ConfigCacheFactoryDelegate] Matched ConfigCacheFactory found,set configCacheFactory={}",
                         each.getClass().getName());
                 this.configCacheFactory = each;

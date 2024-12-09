@@ -32,8 +32,8 @@ class NacosConfigCacheFactoryTest {
     }
     
     @Test
-    public void testGetConfigCacheFactoryName() {
+    public void testGetName() {
         NacosConfigCacheFactory nacosConfigCacheFactory = new NacosConfigCacheFactory();
-        assertEquals("nacos", nacosConfigCacheFactory.getConfigCacheFactoryName());
+        assertEquals("nacos", nacosConfigCacheFactory.getName());
     }
 }

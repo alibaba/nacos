@@ -34,7 +34,7 @@ import static com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG;
 public class NacosMd5Comparator implements Md5Comparator {
     
     @Override
-    public String getMd5ComparatorName() {
+    public String getName() {
         return "nacos";
     }
     

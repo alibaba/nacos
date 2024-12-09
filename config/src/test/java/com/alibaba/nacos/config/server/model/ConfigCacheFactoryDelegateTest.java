@@ -71,7 +71,7 @@ class ConfigCacheFactoryDelegateTest {
     
     @Test
     public void test2() throws Exception {
-        when(nacosConfigCacheFactory.getConfigCacheFactoryName()).thenReturn("nacos");
+        when(nacosConfigCacheFactory.getName()).thenReturn("nacos");
         when(nacosConfigCacheFactory.createConfigCache()).thenReturn(new ConfigCache());
         when(nacosConfigCacheFactory.createConfigCacheGray()).thenReturn(new ConfigCacheGray());
         nacosServiceLoaderMockedStatic.when(() -> NacosServiceLoader.load(ConfigCacheFactory.class))

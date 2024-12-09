@@ -42,7 +42,7 @@ public class ConfigCachePostProcessorDelegate {
     private ConfigCachePostProcessorDelegate() {
         Collection<ConfigCachePostProcessor> processors = NacosServiceLoader.load(ConfigCachePostProcessor.class);
         for (ConfigCachePostProcessor processor : processors) {
-            if (StringUtils.isEmpty(processor.getPostProcessorName())) {
+            if (StringUtils.isEmpty(processor.getName())) {
                 LOGGER.warn(
                         "[ConfigCachePostProcessorDelegate] Load ConfigCachePostProcessor({}) PostProcessorName(null/empty) fail. "
                                 + "Please add PostProcessorName to resolve", processor.getClass().getName());
@@ -50,8 +50,8 @@ public class ConfigCachePostProcessorDelegate {
             }
             LOGGER.info(
                     "[ConfigCachePostProcessorDelegate] Load ConfigCachePostProcessor({}) PostProcessorName({}) successfully. ",
-                    processor.getClass().getName(), processor.getPostProcessorName());
-            if (StringUtils.equals(configCacheMd5PostProcessorType, processor.getPostProcessorName())) {
+                    processor.getClass().getName(), processor.getName());
+            if (StringUtils.equals(configCacheMd5PostProcessorType, processor.getName())) {
                 LOGGER.info(
                         "[ConfigCachePostProcessorDelegate] Matched ConfigCachePostProcessor found,set configCacheFactory={}",
                         processor.getClass().getName());

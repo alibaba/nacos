@@ -24,7 +24,7 @@ package com.alibaba.nacos.config.server.model;
 public class NacosConfigCachePostProcessor implements ConfigCachePostProcessor {
     
     @Override
-    public String getPostProcessorName() {
+    public String getName() {
         return "nacos";
     }
     

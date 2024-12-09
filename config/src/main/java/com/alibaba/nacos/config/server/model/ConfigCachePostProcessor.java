@@ -28,7 +28,7 @@ public interface ConfigCachePostProcessor {
      *
      * @return the post processor name
      */
-    public String getPostProcessorName();
+    public String getName();
     
     /**
      * Post process.

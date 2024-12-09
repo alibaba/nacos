@@ -42,5 +42,5 @@ public interface ConfigCacheFactory {
      *
      * @return the config cache factory name
      */
-    public String getConfigCacheFactoryName();
+    public String getName();
 }

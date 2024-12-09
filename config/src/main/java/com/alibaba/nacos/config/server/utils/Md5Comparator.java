@@ -33,7 +33,7 @@ public interface Md5Comparator {
      *
      * @return the md 5 comparator name
      */
-    public String getMd5ComparatorName();
+    public String getName();
     
     /**
      * Compare md 5 list.

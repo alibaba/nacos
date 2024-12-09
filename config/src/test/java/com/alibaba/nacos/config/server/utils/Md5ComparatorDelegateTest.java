@@ -83,7 +83,7 @@ class Md5ComparatorDelegateTest {
     
     @Test
     public void test2() throws Exception {
-        when(nacosMd5Comparator.getMd5ComparatorName()).thenReturn("nacos");
+        when(nacosMd5Comparator.getName()).thenReturn("nacos");
         envUtilMockedStatic.when(() -> EnvUtil.getProperty("nacos.config.cache.type", "nacos")).thenReturn("nacos");
         nacosServiceLoaderMockedStatic.when(() -> NacosServiceLoader.load(Md5Comparator.class))
                 .thenReturn(Collections.singletonList(nacosMd5Comparator));

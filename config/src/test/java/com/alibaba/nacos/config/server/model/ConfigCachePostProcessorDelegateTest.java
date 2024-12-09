@@ -75,7 +75,7 @@ class ConfigCachePostProcessorDelegateTest {
     @Test
     void test2()
             throws NoSuchFieldException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        when(mockConfigCacheMd5PostProcessor.getPostProcessorName()).thenReturn("nacos");
+        when(mockConfigCacheMd5PostProcessor.getName()).thenReturn("nacos");
         doNothing().when(mockConfigCacheMd5PostProcessor).postProcess(null, null);
         envUtilMockedStatic.when(() -> EnvUtil.getProperty("nacos.config.cache.type", "nacos")).thenReturn("nacos");
         nacosServiceLoaderMockedStatic.when(() -> NacosServiceLoader.load(ConfigCachePostProcessor.class))

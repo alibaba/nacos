@@ -63,9 +63,9 @@ class NacosMd5ComparatorTest {
     }
     
     @Test
-    void getMd5ComparatorName() {
+    void getName() {
         NacosMd5Comparator nacosMd5Comparator = new NacosMd5Comparator();
-        assertEquals("nacos", nacosMd5Comparator.getMd5ComparatorName());
+        assertEquals("nacos", nacosMd5Comparator.getName());
     }
     
     @Test

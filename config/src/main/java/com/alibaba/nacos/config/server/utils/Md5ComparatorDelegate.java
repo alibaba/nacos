@@ -46,15 +46,15 @@ public class Md5ComparatorDelegate {
     private Md5ComparatorDelegate() {
         Collection<Md5Comparator> md5Comparators = NacosServiceLoader.load(Md5Comparator.class);
         for (Md5Comparator each : md5Comparators) {
-            if (StringUtils.isEmpty(each.getMd5ComparatorName())) {
+            if (StringUtils.isEmpty(each.getName())) {
                 LOGGER.warn(
                         "[Md5ComparatorDelegate] Load Md5Comparator({}) Md5ComparatorName(null/empty) fail. Please add Md5ComparatorName to resolve",
                         each.getClass().getName());
                 continue;
             }
             LOGGER.info("[Md5ComparatorDelegate] Load Md5Comparator({}) Md5ComparatorName({}) successfully.",
-                    each.getClass().getName(), each.getMd5ComparatorName());
-            if (StringUtils.equals(md5ComparatorType, each.getMd5ComparatorName())) {
+                    each.getClass().getName(), each.getName());
+            if (StringUtils.equals(md5ComparatorType, each.getName())) {
                 LOGGER.info("[Md5ComparatorDelegate] Matched Md5Comparator found,set md5Comparator={}",
                         each.getClass().getName());
                 md5Comparator = each;

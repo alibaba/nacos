@@ -34,7 +34,7 @@ public class NacosConfigCacheFactory implements ConfigCacheFactory {
     }
     
     @Override
-    public String getConfigCacheFactoryName() {
+    public String getName() {
         return "nacos";
     }
 }
