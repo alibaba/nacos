@@ -277,7 +277,6 @@ const I18N_CONF = {
     publishType: '发布类型',
     formal: '正式版本',
     gray: '灰度版本',
-    grayVersion: '灰度版本',
     grayRule: '灰度规则',
   },
   DashboardCard: {
@@ -668,6 +667,7 @@ const I18N_CONF = {
     defaultFuzzyd: '已开启默认模糊查询',
     fuzzyd: "添加通配符'*'进行模糊查询",
     query: '查询',
+    checkPermission: '此角色权限已存在！',
   },
   NewPermissions: {
     addPermission: '添加权限',

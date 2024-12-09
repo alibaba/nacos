@@ -22,6 +22,7 @@ import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.enums.ApiVersionEnum;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigCacheGray;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
@@ -32,6 +33,7 @@ import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigRocksDbDiskService;
+import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.MD5Util;
@@ -93,6 +95,7 @@ class ConfigServletInnerTest {
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
         ReflectionTestUtils.setField(configServletInner, "longPollingService", longPollingService);
+        ReflectionTestUtils.setField(configServletInner, "configQueryChainService", new ConfigQueryChainService());
         configCacheServiceMockedStatic = Mockito.mockStatic(ConfigCacheService.class);
         propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
         propertyUtilMockedStatic.when(PropertyUtil::getMaxContent).thenReturn(1024 * 1000);
@@ -160,14 +163,17 @@ class ConfigServletInnerTest {
         String mockBetaContent = "content3456543";
         mockGray4Beta(cacheItem, mockBetaContent, "localhost", "betaKey1234567");
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRemoteAddr("localhost:8080");
+        request.setParameter("dataId", dataId);
+        request.setParameter("group", group);
+        request.setParameter("tenant", tenant);
+        request.setRemoteAddr("localhost");
         request.addHeader(CLIENT_APPNAME_HEADER, "test");
         MockHttpServletResponse response = new MockHttpServletResponse();
         
         when(configRocksDbDiskService.getGrayContent(dataId, group, tenant, BetaGrayRule.TYPE_BETA)).thenReturn(
                 mockBetaContent);
         String actualValue = configServletInner.doGetConfig(request, response, dataId, group, tenant, "", "true",
-                "localhost");
+                "localhost", ApiVersionEnum.V1);
         assertEquals(HttpServletResponse.SC_OK + "", actualValue);
         assertEquals("true", response.getHeader("isBeta"));
         assertEquals(MD5Utils.md5Hex(mockBetaContent, ENCODE_UTF8), response.getHeader(CONTENT_MD5));
@@ -232,7 +238,10 @@ class ConfigServletInnerTest {
         
         //test auto tag.
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRemoteAddr("localhost:8080");
+        request.setParameter("dataId", dataId);
+        request.setParameter("group", group);
+        request.setParameter("tenant", tenant);
+        request.setRemoteAddr("localhost");
         request.addHeader(CLIENT_APPNAME_HEADER, "test");
         request.addHeader(VIPSERVER_TAG, autoTag);
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -241,7 +250,7 @@ class ConfigServletInnerTest {
                         configRocksDbDiskService.getGrayContent(dataId, group, tenant, TagGrayRule.TYPE_TAG + "_" + autoTag))
                 .thenReturn(autoTagContent);
         String actualValue = configServletInner.doGetConfig(request, response, dataId, group, tenant, null, "true",
-                "localhost");
+                "localhost", ApiVersionEnum.V1);
         assertEquals(HttpServletResponse.SC_OK + "", actualValue);
         assertEquals(autoTagContent, response.getContentAsString());
         assertEquals(MD5Utils.md5Hex(autoTagContent, "UTF-8"), response.getHeader(CONTENT_MD5));
@@ -249,21 +258,23 @@ class ConfigServletInnerTest {
         
         //test for specific tag. has higher propority than auto tag.
         response = new MockHttpServletResponse();
+        request.setParameter("tag", specificTag);
         when(configRocksDbDiskService.getGrayContent(dataId, group, tenant,
                 TagGrayRule.TYPE_TAG + "_" + specificTag)).thenReturn(specificTagContent);
         actualValue = configServletInner.doGetConfig(request, response, dataId, group, tenant, specificTag, "true",
-                "localhost");
+                "localhost", ApiVersionEnum.V1);
         assertEquals(HttpServletResponse.SC_OK + "", actualValue);
         assertEquals(specificTagContent, response.getContentAsString());
         assertEquals(MD5Utils.md5Hex(specificTagContent, "UTF-8"), response.getHeader(CONTENT_MD5));
         assertEquals("specificTagkey", response.getHeader("Encrypted-Data-Key"));
         
         // test for specific tag ,not exist
+        request.setParameter("tag", "auto-tag-test-not-exist");
         when(configRocksDbDiskService.getGrayContent(dataId, group, tenant,
                 TagGrayRule.TYPE_TAG + "_" + "auto-tag-test-not-exist")).thenReturn(null);
         response = new MockHttpServletResponse();
         actualValue = configServletInner.doGetConfig(request, response, dataId, group, tenant,
-                "auto-tag-test-not-exist", "true", "localhost");
+                "auto-tag-test-not-exist", "true", "localhost", ApiVersionEnum.V1);
         assertEquals(HttpServletResponse.SC_NOT_FOUND + "", actualValue);
         String expectedContent = "config data not exist";
         String actualContent = response.getContentAsString();
@@ -283,7 +294,7 @@ class ConfigServletInnerTest {
         //mock cache item .
         CacheItem cacheItem = new CacheItem("test");
         String md5 = "md5wertyui";
-        String content = "content345678";
+        final String content = "content345678";
         cacheItem.getConfigCache().setMd5Utf8(md5);
         long ts = System.currentTimeMillis();
         cacheItem.getConfigCache().setLastModifiedTs(ts);
@@ -292,11 +303,14 @@ class ConfigServletInnerTest {
                 () -> ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataId, group, tenant)))
                 .thenReturn(cacheItem);
         MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setParameter("dataId", dataId);
+        request.setParameter("group", group);
+        request.setParameter("tenant", tenant);
         MockHttpServletResponse response = new MockHttpServletResponse();
         
         when(configRocksDbDiskService.getContent(dataId, group, tenant)).thenReturn(content);
         String actualValue = configServletInner.doGetConfig(request, response, dataId, group, tenant, null, "true",
-                "localhost");
+                "localhost", ApiVersionEnum.V1);
         assertEquals(content, response.getContentAsString());
         assertEquals(HttpServletResponse.SC_OK + "", actualValue);
         assertEquals(md5, response.getHeader(CONTENT_MD5));
@@ -315,7 +329,7 @@ class ConfigServletInnerTest {
         //mock cache item .
         CacheItem cacheItem = new CacheItem("test");
         String md5 = "md5wertyui";
-        String content = "content345678";
+        final String content = "content345678";
         cacheItem.getConfigCache().setMd5Utf8(md5);
         long ts = System.currentTimeMillis();
         cacheItem.getConfigCache().setLastModifiedTs(ts);
@@ -324,11 +338,14 @@ class ConfigServletInnerTest {
                 () -> ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataId, group, tenant)))
                 .thenReturn(cacheItem);
         MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setParameter("dataId", dataId);
+        request.setParameter("group", group);
+        request.setParameter("tenant", tenant);
         MockHttpServletResponse response = new MockHttpServletResponse();
         
         when(configRocksDbDiskService.getContent(dataId, group, tenant)).thenReturn(content);
         String actualValue = configServletInner.doGetConfig(request, response, dataId, group, tenant, null, "true",
-                "localhost", true);
+                "localhost", ApiVersionEnum.V2);
         assertEquals(JacksonUtils.toJson(Result.success(content)), response.getContentAsString());
         assertEquals(HttpServletResponse.SC_OK + "", actualValue);
         assertEquals(md5, response.getHeader(CONTENT_MD5));
@@ -338,13 +355,21 @@ class ConfigServletInnerTest {
     
     @Test
     void testDoGetConfigNotExist() throws Exception {
+        String dataId = "test";
+        String group = "test";
+        final String tenant = "test";
+        final String tag = "test";
         
         // if lockResult equals 0,cache item not exist.
         configCacheServiceMockedStatic.when(() -> ConfigCacheService.tryConfigReadLock(anyString())).thenReturn(0);
         MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setParameter("dataId", dataId);
+        request.setParameter("group", group);
+        request.setParameter("tenant", tenant);
+        request.setParameter("tag", tag);
         MockHttpServletResponse response = new MockHttpServletResponse();
-        String actualValue = configServletInner.doGetConfig(request, response, "test", "test", "test", "test", "true",
-                "localhost");
+        String actualValue = configServletInner.doGetConfig(request, response, dataId, group, tenant, tag, "true",
+                "localhost", ApiVersionEnum.V1);
         assertEquals(HttpServletResponse.SC_NOT_FOUND + "", actualValue);
         
         configCacheServiceMockedStatic.when(
@@ -353,7 +378,7 @@ class ConfigServletInnerTest {
         // if lockResult less than 0
         configCacheServiceMockedStatic.when(() -> ConfigCacheService.tryConfigReadLock(anyString())).thenReturn(-1);
         actualValue = configServletInner.doGetConfig(request, response, "test", "test", "test", "test", "true",
-                "localhost");
+                "localhost", ApiVersionEnum.V1);
         assertEquals(HttpServletResponse.SC_CONFLICT + "", actualValue);
         
     }

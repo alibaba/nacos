@@ -36,6 +36,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
@@ -45,6 +46,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 /**
  * NacosRoleServiceImpl Test.
@@ -202,5 +205,28 @@ class NacosRoleServiceImplTest {
         Resource resource = new Resource("public", "group", AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, "rw", null);
         Object invoke = method.invoke(nacosRoleService, new Resource[] {resource});
         assertNotNull(invoke);
+    }
+    
+    @Test
+    void duplicatePermission() {
+        List<PermissionInfo> permissionInfos = new ArrayList<>();
+        PermissionInfo permissionInfo = new PermissionInfo();
+        permissionInfo.setAction("rw");
+        permissionInfo.setResource("test");
+        permissionInfos.add(permissionInfo);
+        NacosRoleServiceImpl spy = spy(nacosRoleService);
+        when(spy.getPermissions("admin")).thenReturn(permissionInfos);
+        spy.isDuplicatePermission("admin", "test", "r");
+    }
+
+    @Test
+    void isUserBoundToRole() {
+        String role = "TEST";
+        String userName = "nacos";
+        assertFalse(nacosRoleService.isUserBoundToRole("", userName));
+        assertFalse(nacosRoleService.isUserBoundToRole(role, ""));
+        assertFalse(nacosRoleService.isUserBoundToRole("", null));
+        assertFalse(nacosRoleService.isUserBoundToRole(null, ""));
+        assertFalse(nacosRoleService.isUserBoundToRole(role, userName));
     }
 }

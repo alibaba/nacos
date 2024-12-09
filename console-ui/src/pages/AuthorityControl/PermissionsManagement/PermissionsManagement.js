@@ -25,9 +25,15 @@ import {
   Form,
   Input,
   Switch,
+  Message,
 } from '@alifd/next';
 import { connect } from 'react-redux';
-import { getPermissions, createPermission, deletePermission } from '../../../reducers/authority';
+import {
+  getPermissions,
+  checkPermission,
+  createPermission,
+  deletePermission,
+} from '../../../reducers/authority';
 import { getNamespaces } from '../../../reducers/namespace';
 import RegionGroup from '../../../components/RegionGroup';
 import NewPermissions from './NewPermissions';
@@ -217,9 +223,17 @@ class PermissionsManagement extends React.Component {
         <NewPermissions
           visible={createPermissionVisible}
           onOk={permission =>
-            createPermission(permission).then(res => {
-              this.setState({ pageNo: 1 }, () => this.getPermissions());
-              return res;
+            checkPermission(permission).then(res => {
+              if (res) {
+                Message.error({
+                  content: locale.checkPermission,
+                });
+              } else {
+                createPermission(permission).then(res => {
+                  this.setState({ pageNo: 1 }, () => this.getPermissions());
+                  return res;
+                });
+              }
             })
           }
           onCancel={() => this.colseCreatePermission()}
