@@ -45,6 +45,7 @@ public class ConsoleExceptionHandler {
     @ExceptionHandler(AccessException.class)
     private ResponseEntity<String> handleAccessException(AccessException e) {
         LOGGER.error("got exception. {}", e.getErrMsg());
+        System.out.println("测试测试1111111");
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getErrMsg());
     }
     

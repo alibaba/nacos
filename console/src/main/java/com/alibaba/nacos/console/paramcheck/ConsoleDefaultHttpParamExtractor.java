@@ -38,6 +38,7 @@ public class ConsoleDefaultHttpParamExtractor extends AbstractHttpParamExtractor
         paramInfo.setNamespaceShowName(getAliasNamespaceShowName(request));
         ArrayList<ParamInfo> paramInfos = new ArrayList<>();
         paramInfos.add(paramInfo);
+        System.out.println("测试测试222222222");
         return paramInfos;
     }
     
