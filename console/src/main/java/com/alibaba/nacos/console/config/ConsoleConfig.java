@@ -81,7 +81,7 @@ public class ConsoleConfig {
     
     @Bean
     public Jackson2ObjectMapperBuilderCustomizer jacksonObjectMapperCustomization() {
-        System.out.println("测试测试33333333");
+        System.out.println("测试测试444444444445555555666");
         return jacksonObjectMapperBuilder -> jacksonObjectMapperBuilder.timeZone(ZoneId.systemDefault().toString());
     }
     
