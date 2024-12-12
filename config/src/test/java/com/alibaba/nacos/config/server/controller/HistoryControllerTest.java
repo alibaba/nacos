@@ -204,7 +204,7 @@ class HistoryControllerTest {
 
         when(historyController.getConfigHistoryInfoPair("test", "test", "", 1L)).thenReturn(configHistoryInfoPair);
 
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.HISTORY_CONTROLLER_PATH+"/pair")
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.HISTORY_CONTROLLER_PATH + "/pair")
                 .param("dataId", "test").param("group", "test")
                 .param("tenant", "").param("nid", "1");
 

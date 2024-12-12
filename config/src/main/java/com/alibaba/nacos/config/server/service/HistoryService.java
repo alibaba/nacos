@@ -145,20 +145,20 @@ public class HistoryService {
             configHistoryInfoPair.setMd5(StringUtils.EMPTY);
         }
 
-        if("U".equals(configHistoryInfoPair.getOpType())) {
-            ConfigHistoryInfo ConfigHistoryInfoUpdated = historyConfigInfoPersistService.detailUpdatedConfigHistory(nid);
-            if (Objects.isNull(ConfigHistoryInfoUpdated)) {
+        if ("U".equals(configHistoryInfoPair.getOpType())) {
+            ConfigHistoryInfo configHistoryInfoUpdated = historyConfigInfoPersistService.detailUpdatedConfigHistory(nid);
+            if (Objects.isNull(configHistoryInfoUpdated)) {
                 // get the latest config info
                 ConfigInfo configInfo = configInfoPersistService.findConfigInfo(dataId, group, namespaceId);
                 configHistoryInfoPair.setUpdatedMd5(configInfo.getMd5());
                 configHistoryInfoPair.setUpdatedContent(configInfo.getContent());
             } else {
-                configHistoryInfoPair.setUpdatedMd5(ConfigHistoryInfoUpdated.getMd5());
-                configHistoryInfoPair.setUpdatedContent(ConfigHistoryInfoUpdated.getContent());
+                configHistoryInfoPair.setUpdatedMd5(configHistoryInfoUpdated.getMd5());
+                configHistoryInfoPair.setUpdatedContent(configHistoryInfoUpdated.getContent());
             }
         }
 
-        if("D".equals(configHistoryInfoPair.getOpType())) {
+        if ("D".equals(configHistoryInfoPair.getOpType())) {
             configHistoryInfoPair.setUpdatedMd5(StringUtils.EMPTY);
             configHistoryInfoPair.setUpdatedContent(StringUtils.EMPTY);
         }

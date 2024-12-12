@@ -38,7 +38,7 @@ public class ConfigHistoryInfoPair extends ConfigHistoryInfo implements Serializ
         }
         ConfigHistoryInfoPair that = (ConfigHistoryInfoPair) o;
         return super.equals(o) && Objects.equals(updatedMd5, that.updatedMd5)
-                && Objects.equals(updatedContent, that.updatedContent) ;
+                && Objects.equals(updatedContent, that.updatedContent);
     }
 
     @Override
