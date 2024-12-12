@@ -115,4 +115,12 @@ public interface HistoryConfigInfoPersistService {
      */
     @Deprecated
     int findConfigHistoryCountByTime(final Timestamp startTime);
+
+    /**
+     * Get updated history config detail of the history config.
+     *
+     * @param nid nid
+     * @return {@link ConfigHistoryInfo}
+     */
+    ConfigHistoryInfo detailUpdatedConfigHistory(Long nid);
 }

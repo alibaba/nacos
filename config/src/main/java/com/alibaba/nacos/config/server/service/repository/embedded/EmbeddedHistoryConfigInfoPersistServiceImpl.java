@@ -208,4 +208,16 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
         }
         return result;
     }
+
+    @Override
+    public ConfigHistoryInfo detailUpdatedConfigHistory(Long nid) {
+        HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
+                dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
+        MapperContext context = new MapperContext();
+        context.putWhereParameter(FieldConstant.NID, nid);
+        MapperResult sqlFetchRows = historyConfigInfoMapper.detailUpdatedConfigHistory(context);
+        return databaseOperate.queryOne(sqlFetchRows.getSql(), sqlFetchRows.getParamList().toArray(),
+                HISTORY_DETAIL_ROW_MAPPER);
+    }
+
 }

@@ -240,4 +240,23 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
         }
         return result;
     }
+
+    @Override
+    public ConfigHistoryInfo detailUpdatedConfigHistory(Long nid) {
+        HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
+                dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
+        MapperContext context = new MapperContext();
+        context.putWhereParameter(FieldConstant.NID, nid);
+        MapperResult sqlFetchRows = historyConfigInfoMapper.detailUpdatedConfigHistory(context);
+        try {
+            ConfigHistoryInfo historyInfo = jt.queryForObject(sqlFetchRows.getSql(),
+                    sqlFetchRows.getParamList().toArray(), HISTORY_DETAIL_ROW_MAPPER);
+            return historyInfo;
+        } catch (EmptyResultDataAccessException emptyResultDataAccessException) {
+            return null;
+        } catch (DataAccessException e) {
+            LogUtil.FATAL_LOG.error("[detail-updated-config-history] error, nid:{}", new Object[] {nid}, e);
+            throw e;
+        }
+    }
 }

@@ -22,6 +22,7 @@ import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 /**
@@ -119,5 +120,22 @@ public interface HistoryConfigInfoMapper extends Mapper {
      */
     default String getTableName() {
         return TableConstant.HIS_CONFIG_INFO;
+    }
+
+    /**
+     * Get updated history config detail of the history config. The default sql: SELECT
+     * nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified FROM
+     * his_config_info WHERE nid = (SELECT min(nid) FROM his_config_info WHERE nid > ?
+     * AND id = (SELECT id from his_config_info where nid = ?))
+     *
+     * @param context sql paramMap
+     * @return The sql of getting updated history config detail of the history config.
+     */
+    default MapperResult detailUpdatedConfigHistory(MapperContext context) {
+        return new MapperResult(
+                "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,publish_type,ext_info,gmt_create"
+                        + ",gmt_modified,encrypted_data_key FROM his_config_info WHERE nid = (SELECT min(nid) FROM his_config_info "
+                        + "WHERE nid > ? AND id = (SELECT id FROM his_config_info WHERE nid = ?))",
+                Collections.unmodifiableList(Arrays.asList(context.getWhereParameter(FieldConstant.NID), context.getWhereParameter(FieldConstant.NID))));
     }
 }
