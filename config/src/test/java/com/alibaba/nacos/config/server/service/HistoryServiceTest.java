@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
+import com.alibaba.nacos.config.server.model.ConfigHistoryInfoPair;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
@@ -54,6 +55,14 @@ class HistoryServiceTest {
     private static final String TEST_TENANT = "";
     
     private static final String TEST_CONTENT = "test config";
+
+    private static final String TEST_UPDATED_CONTENT = "test config updated";
+
+    private static final String TEST_OP_INSERT = "U";
+
+    private static final String TEST_MD5 = "77963b7a931377ad4ab5ad6a9cd718aa";
+
+    private static final String TEST_UPDATED_MD5 = "3ba1e44fa18519221f6c70afc0e8ae84";
     
     private HistoryService historyService;
     
@@ -165,5 +174,41 @@ class HistoryServiceTest {
         assertEquals(configInfoWrapper.getDataId(), actualConfigInfoWrapper.getDataId());
         assertEquals(configInfoWrapper.getGroup(), actualConfigInfoWrapper.getGroup());
         assertEquals(configInfoWrapper.getContent(), actualConfigInfoWrapper.getContent());
+    }
+
+    @Test
+    void testGetConfigHistoryInfoPair() throws Exception {
+        ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
+        configHistoryInfo.setDataId(TEST_DATA_ID);
+        configHistoryInfo.setGroup(TEST_GROUP);
+        configHistoryInfo.setContent(TEST_CONTENT);
+        configHistoryInfo.setTenant(TEST_TENANT);
+        configHistoryInfo.setOpType(TEST_OP_INSERT);
+        configHistoryInfo.setMd5(TEST_MD5);
+        configHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
+        configHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
+
+        when(historyConfigInfoPersistService.detailConfigHistory(1L)).thenReturn(configHistoryInfo);
+
+        ConfigHistoryInfo configHistoryInfoUpdated = new ConfigHistoryInfoPair();
+        configHistoryInfoUpdated.setDataId(TEST_DATA_ID);
+        configHistoryInfoUpdated.setGroup(TEST_GROUP);
+        configHistoryInfoUpdated.setTenant(TEST_TENANT);
+        configHistoryInfoUpdated.setOpType(TEST_OP_INSERT);
+        configHistoryInfoUpdated.setMd5(TEST_UPDATED_MD5);
+        configHistoryInfoUpdated.setContent(TEST_UPDATED_CONTENT);
+        configHistoryInfoUpdated.setCreatedTime(new Timestamp(new Date().getTime()));
+        configHistoryInfoUpdated.setLastModifiedTime(new Timestamp(new Date().getTime()));
+
+        when(historyConfigInfoPersistService.detailUpdatedConfigHistory(1L)).thenReturn(configHistoryInfoUpdated);
+
+        ConfigHistoryInfoPair resConfigHistoryInfoPair = historyService.getConfigHistoryInfoPair(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1L);
+
+        verify(historyConfigInfoPersistService).detailUpdatedConfigHistory(1L);
+
+        assertEquals(configHistoryInfoUpdated.getDataId(), resConfigHistoryInfoPair.getDataId());
+        assertEquals(configHistoryInfoUpdated.getGroup(), resConfigHistoryInfoPair.getGroup());
+        assertEquals(configHistoryInfoUpdated.getMd5(), resConfigHistoryInfoPair.getUpdatedMd5());
+        assertEquals(configHistoryInfoUpdated.getContent(), resConfigHistoryInfoPair.getUpdatedContent());
     }
 }
