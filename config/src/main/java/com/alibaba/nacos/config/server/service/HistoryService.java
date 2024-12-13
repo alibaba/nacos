@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.enums.OperationType;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfoPair;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -137,14 +138,14 @@ public class HistoryService {
         BeanUtils.copyProperties(configHistoryInfo, configHistoryInfoPair);
         configHistoryInfoPair.setOpType(configHistoryInfoPair.getOpType().trim());
 
-        if ("I".equals(configHistoryInfoPair.getOpType())) {
+        if (OperationType.INSERT.getValue().equals(configHistoryInfoPair.getOpType())) {
             configHistoryInfoPair.setUpdatedContent(configHistoryInfoPair.getContent());
             configHistoryInfoPair.setUpdatedMd5(configHistoryInfoPair.getMd5());
             configHistoryInfoPair.setContent(StringUtils.EMPTY);
             configHistoryInfoPair.setMd5(StringUtils.EMPTY);
         }
 
-        if ("U".equals(configHistoryInfoPair.getOpType())) {
+        if (OperationType.UPDATE.getValue().equals(configHistoryInfoPair.getOpType())) {
             ConfigHistoryInfo configHistoryInfoUpdated = historyConfigInfoPersistService.detailUpdatedConfigHistory(nid);
             if (Objects.isNull(configHistoryInfoUpdated)) {
                 // get the latest config info
@@ -157,7 +158,7 @@ public class HistoryService {
             }
         }
 
-        if ("D".equals(configHistoryInfoPair.getOpType())) {
+        if (OperationType.DELETE.getValue().equals(configHistoryInfoPair.getOpType())) {
             configHistoryInfoPair.setUpdatedMd5(StringUtils.EMPTY);
             configHistoryInfoPair.setUpdatedContent(StringUtils.EMPTY);
         }

@@ -21,6 +21,8 @@ import java.util.Objects;
 
 /**
  * extensible {@link ConfigHistoryInfo}.
+ *
+ * @author dirtybit
  */
 public class ConfigHistoryInfoPair extends ConfigHistoryInfo implements Serializable {
 
