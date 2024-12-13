@@ -21,8 +21,11 @@ jobs:
       - name: Build distribution tar
         run: |
           mvn -Prelease-nacos -DskipTests clean install -U -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+      # 打印 pmd.xml文件内容
+      - name: Display PMD Report
+        run: |
+          cat /home/runner/work/nacos/nacos/config/target/pmd.xml
       - uses: actions/upload-artifact@v3
-        if: always()
         name: Upload distribution tar
         with:
           name: nacos
