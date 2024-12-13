@@ -22,6 +22,7 @@ jobs:
         run: |
           mvn -Prelease-nacos -DskipTests clean install -U -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
       - uses: actions/upload-artifact@v3
+        if: always()
         name: Upload distribution tar
         with:
           name: nacos
