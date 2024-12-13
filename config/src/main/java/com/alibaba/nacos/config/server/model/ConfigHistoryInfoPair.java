@@ -20,7 +20,7 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * ConfigHistoryInfo including updated info.
+ * extensible {@link ConfigHistoryInfo}.
  */
 public class ConfigHistoryInfoPair extends ConfigHistoryInfo implements Serializable {
 

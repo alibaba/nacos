@@ -103,8 +103,7 @@ public class HistoryController {
     }
 
     /**
-     * Query the detailed configuration history information pair,
-     * including the original version and the updated version. notes:
+     * Query the detailed configuration history information pair, including the original version and the updated version. notes:
      *
      * @param nid    history_config_info nid
      * @param dataId dataId  @since 2.0.3
@@ -112,7 +111,6 @@ public class HistoryController {
      * @param tenant tenantId  @since 2.0.3
      * @return history config info
      * @since 2.0.3 add {@link Secured}, dataId, groupId and tenant for history config permission check.
-     * @since 1.4.0
      */
     @GetMapping(value = "/pair")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)

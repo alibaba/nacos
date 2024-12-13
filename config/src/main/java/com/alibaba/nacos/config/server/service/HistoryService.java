@@ -120,8 +120,7 @@ public class HistoryService {
     }
 
     /**
-     * Query the detailed configuration history information pair,
-     * including the original version and the updated version.
+     * Query the detailed configuration history information pair, including the original version and the updated version.
      */
     public ConfigHistoryInfoPair getConfigHistoryInfoPair(String dataId, String group, String namespaceId, Long nid)
             throws AccessException {
