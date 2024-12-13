@@ -24,24 +24,19 @@ package com.alibaba.nacos.config.server.enums;
 public enum OperationType {
 
     /**
-     * Insert
+     * Insert.
      */
     INSERT("I"),
 
     /**
-     * Update
+     * Update.
      */
     UPDATE("U"),
 
     /**
-     * Delete
+     * Delete.
      */
-    DELETE("D"),
-
-    /**
-     * Select
-     */
-    SELECT("S");
+    DELETE("D");
 
     /**
      * operation type value.
@@ -52,7 +47,7 @@ public enum OperationType {
         this.value = value;
     }
 
-    public void setValue(String value){
+    public void setValue(String value) {
         this.value = value;
     }
 

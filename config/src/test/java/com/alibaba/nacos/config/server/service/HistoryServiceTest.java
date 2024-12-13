@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.config.server.enums.OperationType;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfoPair;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
@@ -58,7 +59,7 @@ class HistoryServiceTest {
 
     private static final String TEST_UPDATED_CONTENT = "test config updated";
 
-    private static final String TEST_OP_INSERT = "U";
+    private static final String TEST_OP_TYPE = OperationType.UPDATE.getValue();
 
     private static final String TEST_MD5 = "77963b7a931377ad4ab5ad6a9cd718aa";
 
@@ -183,7 +184,7 @@ class HistoryServiceTest {
         configHistoryInfo.setGroup(TEST_GROUP);
         configHistoryInfo.setContent(TEST_CONTENT);
         configHistoryInfo.setTenant(TEST_TENANT);
-        configHistoryInfo.setOpType(TEST_OP_INSERT);
+        configHistoryInfo.setOpType(TEST_OP_TYPE);
         configHistoryInfo.setMd5(TEST_MD5);
         configHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
         configHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
@@ -194,7 +195,7 @@ class HistoryServiceTest {
         configHistoryInfoUpdated.setDataId(TEST_DATA_ID);
         configHistoryInfoUpdated.setGroup(TEST_GROUP);
         configHistoryInfoUpdated.setTenant(TEST_TENANT);
-        configHistoryInfoUpdated.setOpType(TEST_OP_INSERT);
+        configHistoryInfoUpdated.setOpType(TEST_OP_TYPE);
         configHistoryInfoUpdated.setMd5(TEST_UPDATED_MD5);
         configHistoryInfoUpdated.setContent(TEST_UPDATED_CONTENT);
         configHistoryInfoUpdated.setCreatedTime(new Timestamp(new Date().getTime()));
