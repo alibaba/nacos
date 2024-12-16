@@ -145,9 +145,9 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
                         eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser),
                         any(Timestamp.class), any(Timestamp.class)), times(1));
         
-        Mockito.verify(historyConfigInfoPersistService, times(1)).insertConfigHistoryAtomic(
-                eq(configInfo.getId()), eq(configInfo), eq(srcIp), eq(srcUser), any(Timestamp.class), eq("I"),
-                eq("gray"), anyString());
+        Mockito.verify(historyConfigInfoPersistService, times(1))
+                .insertConfigHistoryAtomic(eq(configInfo.getId()), eq(configInfo), eq(srcIp), eq(srcUser),
+                        any(Timestamp.class), eq("I"), eq("gray"), eq(grayName), anyString());
         assertEquals(configInfoStateWrapper.getId(), configOperateResult.getId());
         assertEquals(configInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
         
@@ -194,9 +194,9 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
                         eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser),
                         any(Timestamp.class), eq(appName), eq(grayRule), eq(dataId), eq(group), eq(tenant),
                         eq(grayName)), times(1));
-        Mockito.verify(historyConfigInfoPersistService, times(1)).insertConfigHistoryAtomic(
-                eq(configAllInfo4Gray.getId()), eq(configAllInfo4Gray), eq(srcIp), eq(srcUser), any(Timestamp.class), eq("U"),
-                eq("gray"), anyString());
+        Mockito.verify(historyConfigInfoPersistService, times(1))
+                .insertConfigHistoryAtomic(eq(configAllInfo4Gray.getId()), eq(configAllInfo4Gray), eq(srcIp),
+                        eq(srcUser), any(Timestamp.class), eq("U"), eq("gray"), eq(grayName), anyString());
         assertEquals(configInfoStateWrapper.getId(), configOperateResult.getId());
         assertEquals(configInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
         
@@ -234,9 +234,9 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
                         eq(grayName), eq(grayRule), eq(appName), eq(content),
                         eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser),
                         any(Timestamp.class), any(Timestamp.class)), times(1));
-        Mockito.verify(historyConfigInfoPersistService, times(1)).insertConfigHistoryAtomic(
-                eq(configInfo.getId()), eq(configInfo), eq(srcIp), eq(srcUser), any(Timestamp.class), eq("I"),
-                eq("gray"), anyString());
+        Mockito.verify(historyConfigInfoPersistService, times(1))
+                .insertConfigHistoryAtomic(eq(configInfo.getId()), eq(configInfo), eq(srcIp), eq(srcUser),
+                        any(Timestamp.class), eq("I"), eq("gray"), eq(grayName), anyString());
         assertEquals(configInfoStateWrapper.getId(), configOperateResult.getId());
         assertEquals(configInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
         
@@ -286,9 +286,9 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
                         eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser), eq(appName),
                         eq(grayRule), eq(dataId), eq(group), eq(tenant), eq(grayName), eq(configInfo.getMd5())),
                 times(1));
-        Mockito.verify(historyConfigInfoPersistService, times(1)).insertConfigHistoryAtomic(
-                eq(configAllInfo4Gray.getId()), eq(configAllInfo4Gray), eq(srcIp), eq(srcUser), any(Timestamp.class), eq("U"),
-                eq("gray"), anyString());
+        Mockito.verify(historyConfigInfoPersistService, times(1))
+                .insertConfigHistoryAtomic(eq(configAllInfo4Gray.getId()), eq(configAllInfo4Gray), eq(srcIp),
+                        eq(srcUser), any(Timestamp.class), eq("U"), eq("gray"), eq(grayName), anyString());
         assertEquals(configInfoStateWrapper.getId(), configOperateResult.getId());
         assertEquals(configInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
     }
@@ -318,9 +318,9 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
         embeddedStorageContextHolderMockedStatic.verify(
                 () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(dataId), eq(group), eq(tenant),
                         eq(grayName)), times(1));
-        Mockito.verify(historyConfigInfoPersistService, times(1)).insertConfigHistoryAtomic(
-                eq(configAllInfo4Gray.getId()), eq(configAllInfo4Gray), eq(srcIp), eq(srcUser), any(Timestamp.class), eq("D"),
-                eq("gray"), anyString());
+        Mockito.verify(historyConfigInfoPersistService, times(1))
+                .insertConfigHistoryAtomic(eq(configAllInfo4Gray.getId()), eq(configAllInfo4Gray), eq(srcIp),
+                        eq(srcUser), any(Timestamp.class), eq("D"), eq("gray"), eq(grayName), anyString());
     }
     
     @Test

@@ -169,7 +169,8 @@ class ExternalConfigInfoPersistServiceImplTest {
         //mock insert config info
         Mockito.doNothing().when(historyConfigInfoPersistService)
                 .insertConfigHistoryAtomic(eq(0), eq(configInfo), eq(srcIp), eq(srcUser), any(Timestamp.class), eq("I"),
-                        eq("formal"), eq(ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser)));
+                        eq("formal"), eq(null),
+                        eq(ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser)));
         
         externalConfigInfoPersistService.insertOrUpdate(srcIp, srcUser, configInfo, configAdvanceInfo);
         //expect insert config info
@@ -189,7 +190,7 @@ class ExternalConfigInfoPersistServiceImplTest {
         //expect insert history info
         Mockito.verify(historyConfigInfoPersistService, times(1))
                 .insertConfigHistoryAtomic(eq(0L), eq(configInfo), eq(srcIp), eq(srcUser), any(Timestamp.class),
-                        eq("I"), eq("formal"),
+                        eq("I"), eq("formal"), eq(null),
                         eq(ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser)));
         
     }
@@ -230,7 +231,8 @@ class ExternalConfigInfoPersistServiceImplTest {
         //mock insert config info
         Mockito.doNothing().when(historyConfigInfoPersistService)
                 .insertConfigHistoryAtomic(eq(0), eq(configInfo), eq(srcIp), eq(srcUser), any(Timestamp.class), eq("I"),
-                        eq("formal"), eq(ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser)));
+                        eq("formal"), eq(null),
+                        eq(ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser)));
         
         externalConfigInfoPersistService.insertOrUpdateCas(srcIp, srcUser, configInfo, configAdvanceInfo);
         //expect insert config info
@@ -250,7 +252,7 @@ class ExternalConfigInfoPersistServiceImplTest {
         //expect insert history info
         Mockito.verify(historyConfigInfoPersistService, times(1))
                 .insertConfigHistoryAtomic(eq(0L), eq(configInfo), eq(srcIp), eq(srcUser), any(Timestamp.class),
-                        eq("I"), eq("formal"),
+                        eq("I"), eq("formal"), eq(null),
                         eq(ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser)));
         
     }
@@ -341,7 +343,7 @@ class ExternalConfigInfoPersistServiceImplTest {
         //mock insert his config info
         Mockito.doNothing().when(historyConfigInfoPersistService)
                 .insertConfigHistoryAtomic(eq(configAllInfo.getId()), eq(configInfo), eq(srcIp), eq(srcUser),
-                        any(Timestamp.class), eq("I"), eq("formal"),
+                        any(Timestamp.class), eq("I"), eq("formal"), eq(null),
                         eq(ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfo)));
         
         externalConfigInfoPersistService.insertOrUpdate(srcIp, srcUser, configInfo, configAdvanceInfo);
@@ -361,7 +363,7 @@ class ExternalConfigInfoPersistServiceImplTest {
         //expect insert history info
         Mockito.verify(historyConfigInfoPersistService, times(1))
                 .insertConfigHistoryAtomic(eq(configAllInfo.getId()), any(ConfigInfo.class), eq(srcIp), eq(srcUser),
-                        any(Timestamp.class), eq("U"), eq("formal"),
+                        any(Timestamp.class), eq("U"), eq("formal"), eq(null),
                         eq(ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfo)));
         
     }
@@ -422,7 +424,7 @@ class ExternalConfigInfoPersistServiceImplTest {
         //mock insert his config info
         Mockito.doNothing().when(historyConfigInfoPersistService)
                 .insertConfigHistoryAtomic(eq(configAllInfo.getId()), eq(configInfo), eq(srcIp), eq(srcUser),
-                        any(Timestamp.class), eq("I"), eq("formal"),
+                        any(Timestamp.class), eq("I"), eq("formal"), eq(null),
                         eq(ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfo)));
         
         externalConfigInfoPersistService.insertOrUpdateCas(srcIp, srcUser, configInfo, configAdvanceInfo);
@@ -449,7 +451,7 @@ class ExternalConfigInfoPersistServiceImplTest {
         //expect insert history info
         Mockito.verify(historyConfigInfoPersistService, times(1))
                 .insertConfigHistoryAtomic(eq(configAllInfo.getId()), any(ConfigInfo.class), eq(srcIp), eq(srcUser),
-                        any(Timestamp.class), eq("U"), eq("formal"),
+                        any(Timestamp.class), eq("U"), eq("formal"), eq(null),
                         eq(ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfo)));
         
     }
@@ -512,7 +514,7 @@ class ExternalConfigInfoPersistServiceImplTest {
         //expect insert delete history
         Mockito.verify(historyConfigInfoPersistService, times(1))
                 .insertConfigHistoryAtomic(eq(configAllInfo.getId()), eq(configAllInfo), eq(srcIp), eq(srcUser), any(),
-                        eq("D"), eq("formal"), eq(ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfo)));
+                        eq("D"), eq("formal"), eq(null), eq(ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfo)));
         
     }
     
@@ -550,11 +552,11 @@ class ExternalConfigInfoPersistServiceImplTest {
         //expect insert delete history
         Mockito.verify(historyConfigInfoPersistService, times(1))
                 .insertConfigHistoryAtomic(eq(configAllInfos.get(0).getId()), eq(configAllInfos.get(0)), eq(srcIp),
-                        eq(srcUser), any(), eq("D"), eq("formal"),
+                        eq(srcUser), any(), eq("D"), eq("formal"), eq(null),
                         eq(ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfos.get(0))));
         Mockito.verify(historyConfigInfoPersistService, times(1))
                 .insertConfigHistoryAtomic(eq(configAllInfos.get(1).getId()), eq(configAllInfos.get(1)), eq(srcIp),
-                        eq(srcUser), any(), eq("D"), eq("formal"),
+                        eq(srcUser), any(), eq("D"), eq("formal"), eq(null),
                         eq(ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfos.get(0))));
         
     }
@@ -1307,7 +1309,8 @@ class ExternalConfigInfoPersistServiceImplTest {
                 TableConstant.CONFIG_INFO);
         String select = configInfoMapper.select(Arrays.asList("id", "data_id", "group_id", "tenant_id", "gmt_modified"),
                 Arrays.asList("data_id", "group_id", "tenant_id"));
-        assertEquals("SELECT id,data_id,group_id,tenant_id,gmt_modified FROM config_info WHERE data_id = ? AND group_id = ? AND tenant_id = ?",
+        assertEquals(
+                "SELECT id,data_id,group_id,tenant_id,gmt_modified FROM config_info WHERE data_id = ? AND group_id = ? AND tenant_id = ?",
                 select);
     }
     
