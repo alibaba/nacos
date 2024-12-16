@@ -24,7 +24,6 @@ import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
-import com.alibaba.nacos.config.server.utils.ConfigExtInfoUtil;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
@@ -91,20 +90,23 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     
     @Override
     public void insertConfigHistoryAtomic(long configHistoryId, ConfigInfo configInfo, String srcIp, String srcUser,
-            final Timestamp time, String ops, String publishType, String extInfo) {
+            final Timestamp time, String ops, String publishType, String grayName, String extInfo) {
         String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
         String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
         String publishTypeTmp = StringUtils.defaultEmptyIfBlank(publishType);
         String encryptedDataKey = StringUtils.defaultEmptyIfBlank(configInfo.getEncryptedDataKey());
+        String grayNameTemp = StringUtils.defaultEmptyIfBlank(grayName);
         
         HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
                 dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
         final String sql = historyConfigInfoMapper.insert(
                 Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "src_ip",
-                        "src_user", "gmt_modified", "op_type", "publish_type", "ext_info", "encrypted_data_key"));
+                        "src_user", "gmt_modified", "op_type", "publish_type", "gray_name", "ext_info",
+                        "encrypted_data_key"));
         final Object[] args = new Object[] {configHistoryId, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
-                appNameTmp, configInfo.getContent(), md5Tmp, srcIp, srcUser, time, ops, publishTypeTmp, extInfo, encryptedDataKey};
+                appNameTmp, configInfo.getContent(), md5Tmp, srcIp, srcUser, time, ops, publishTypeTmp, grayNameTemp,
+                extInfo, encryptedDataKey};
         
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
     }
@@ -122,8 +124,8 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     }
     
     @Override
-    public List<ConfigInfoStateWrapper> findDeletedConfig(final Timestamp startTime, long lastMaxId,
-            final int pageSize, String publishType) {
+    public List<ConfigInfoStateWrapper> findDeletedConfig(final Timestamp startTime, long lastMaxId, final int pageSize,
+            String publishType) {
         HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
                 dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
         MapperContext context = new MapperContext();
@@ -145,7 +147,7 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
             configInfoStateWrapper.setTenant(configHistoryInfo.getTenant());
             configInfoStateWrapper.setMd5(configHistoryInfo.getMd5());
             configInfoStateWrapper.setLastModified(configHistoryInfo.getLastModifiedTime().getTime());
-            configInfoStateWrapper.setGrayName(ConfigExtInfoUtil.extractGrayName(configHistoryInfo.getExtInfo()));
+            configInfoStateWrapper.setGrayName(configHistoryInfo.getGrayName());
             configInfoStateWrappers.add(configInfoStateWrapper);
         }
         return configInfoStateWrappers;
@@ -178,8 +180,8 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
                 dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
         String sqlFetchRows = historyConfigInfoMapper.select(
                 Arrays.asList("nid", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "src_user",
-                        "src_ip", "op_type", "publish_type", "ext_info", "gmt_create", "gmt_modified", "encrypted_data_key"),
-                Collections.singletonList("nid"));
+                        "src_ip", "op_type", "publish_type", "ext_info", "gmt_create", "gmt_modified",
+                        "encrypted_data_key"), Collections.singletonList("nid"));
         return databaseOperate.queryOne(sqlFetchRows, new Object[] {nid}, HISTORY_DETAIL_ROW_MAPPER);
     }
     
