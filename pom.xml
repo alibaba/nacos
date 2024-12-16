@@ -623,6 +623,8 @@
         <module>persistence</module>
         <module>logger-adapter-impl</module>
         <module>k8s-sync</module>
+        <module>bootstrap</module>
+        <module>server</module>
     </modules>
     
     <!-- Default dependencies in all subprojects -->
@@ -790,6 +792,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-console</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-server</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

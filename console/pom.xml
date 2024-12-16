@@ -135,7 +135,7 @@
                         <groupId>org.springframework.boot</groupId>
                         <artifactId>spring-boot-maven-plugin</artifactId>
                         <configuration>
-                            <mainClass>com.alibaba.nacos.Nacos</mainClass>
+                            <mainClass>com.alibaba.nacos.bootstrap.Nacos</mainClass>
                             <layout>ZIP</layout>
                         </configuration>
                         <executions>

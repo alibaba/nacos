@@ -43,9 +43,6 @@ import java.util.List;
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosAuthPluginService implements AuthPluginService {
     
-    @Deprecated
-    private static final String USER_IDENTITY_PARAM_KEY = "user";
-    
     private static final List<String> IDENTITY_NAMES = new LinkedList<String>() {
         {
             add(AuthConstants.AUTHORIZATION_HEADER);
