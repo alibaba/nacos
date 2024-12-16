@@ -41,35 +41,39 @@ import RegionGroup from 'components/RegionGroup';
 import ShowCodeing from 'components/ShowCodeing';
 import DeleteDialog from 'components/DeleteDialog';
 import DashboardCard from './DashboardCard';
-import { getParams, request, setParams } from '@/globalLib';
-import { goLogin } from '../../../globalLib';
-import { connect } from 'react-redux';
-import { getConfigs, getConfigsV2 } from '../../../reducers/configuration';
+import {getParams, request, setParams} from '@/globalLib';
+import {goLogin} from '../../../globalLib';
+import {connect} from 'react-redux';
+import {getConfigs, getConfigsV2} from '../../../reducers/configuration';
 import PageTitle from '../../../components/PageTitle';
 import QueryResult from '../../../components/QueryResult';
 
 import './index.scss';
-import { GLOBAL_PAGE_SIZE_LIST, LANGUAGE_KEY, LOGINPAGE_ENABLED } from '../../../constants';
+import {
+  GLOBAL_PAGE_SIZE_LIST,
+  LANGUAGE_KEY,
+  LOGINPAGE_ENABLED
+} from '../../../constants';
 import TotalRender from '../../../components/Page/TotalRender';
 
-const { Item } = MenuButton;
-const { Panel } = Collapse;
+const {Item} = MenuButton;
+const {Panel} = Collapse;
 const configsTableSelected = new Map();
 const typeMapping = [
-  { value: 'text', label: 'TEXT' },
-  { value: 'json', label: 'JSON' },
-  { value: 'xml', label: 'XML' },
-  { value: 'yaml', label: 'YAML' },
-  { value: 'html', label: 'HTML' },
-  { value: 'properties', label: 'Properties' },
-  { value: 'toml', label: 'TOML' },
+  {value: 'text', label: 'TEXT'},
+  {value: 'json', label: 'JSON'},
+  {value: 'xml', label: 'XML'},
+  {value: 'yaml', label: 'YAML'},
+  {value: 'html', label: 'HTML'},
+  {value: 'properties', label: 'Properties'},
+  {value: 'toml', label: 'TOML'},
 ];
 
 @connect(
   state => ({
     configurations: state.configuration.configurations,
   }),
-  { getConfigs, getConfigsV2 }
+  {getConfigs, getConfigsV2}
 )
 @ConfigProvider.config
 class ConfigurationManagement extends React.Component {
@@ -110,8 +114,10 @@ class ConfigurationManagement extends React.Component {
       group: this.group,
       appName: this.appName,
       config_detail: getParams('configDetail') || '',
-      config_tags: getParams('configTags') ? getParams('configTags').split(',') : [],
-      types: getParams('types') ? getParams('types').split(',') : [],
+      config_tags: getParams('configTags') ? getParams('configTags').split(',')
+        : [],
+      types: getParams('types') ? getParams('types').split(
+        ',') : [],
       tagLst: getParams('tagList') ? getParams('tagList').split(',') : [],
       selectValue: [],
       loading: false,
@@ -146,7 +152,7 @@ class ConfigurationManagement extends React.Component {
   }
 
   componentDidMount() {
-    const { locale = {} } = this.props;
+    const {locale = {}} = this.props;
     // this.getGroup();
     this.setIsCn();
     if (window._getLink && window._getLink('isCn') === 'true') {
@@ -159,16 +165,17 @@ class ConfigurationManagement extends React.Component {
             },
             content: (
               <div>
-                <div style={{ fontSize: '15px', lineHeight: '22px' }}>
+                <div style={{fontSize: '15px', lineHeight: '22px'}}>
                   {locale.ad}
                   {/* eslint-disable */}
-                  <a href="https://survey.aliyun.com/survey/k0BjJ2ARC" target="_blank">
+                  <a href="https://survey.aliyun.com/survey/k0BjJ2ARC"
+                     target="_blank">
                     {locale.questionnaire2}
                   </a>
                 </div>
-                <div style={{ fontSize: '15px' }}>
+                <div style={{fontSize: '15px'}}>
                   {locale.noLongerDisplay4}
-                  <Checkbox onChange={this.toggleShowQuestionnaire} />
+                  <Checkbox onChange={this.toggleShowQuestionnaire}/>
                 </div>
               </div>
             ),
@@ -179,7 +186,7 @@ class ConfigurationManagement extends React.Component {
   }
 
   setIsCn() {
-    this.setState({ isCn: localStorage.getItem(LANGUAGE_KEY) === 'zh-CN' });
+    this.setState({isCn: localStorage.getItem(LANGUAGE_KEY) === 'zh-CN'});
   }
 
   toggleShowQuestionnaire(value) {
@@ -209,12 +216,14 @@ class ConfigurationManagement extends React.Component {
         }&historyGroup=${record.group}&namespace=${this.tenant}`;
         break;
       case '/listeningToQuery':
-        url = `${url}?listeningServerId=${this.serverId || ''}&listeningDataId=${
+        url = `${url}?listeningServerId=${this.serverId
+        || ''}&listeningDataId=${
           record.dataId
         }&listeningGroup=${record.group}&namespace=${this.tenant}`;
         break;
       case '/pushTrajectory':
-        url = `${url}?serverId=${this.serverId || ''}&dataId=${record.dataId}&group=${
+        url = `${url}?serverId=${this.serverId
+        || ''}&dataId=${record.dataId}&group=${
           record.group
         }&namespace=${this.tenant}`;
         break;
@@ -250,9 +259,9 @@ class ConfigurationManagement extends React.Component {
     }
     this.getData();
     configsTableSelected.clear();
-    const { rowSelection } = this.state;
+    const {rowSelection} = this.state;
     rowSelection.selectedRowKeys = [];
-    this.setState({ rowSelection });
+    this.setState({rowSelection});
   }
 
   changeParamsBySearchType(params) {
@@ -275,7 +284,7 @@ class ConfigurationManagement extends React.Component {
     if (this.state.loading) {
       return;
     }
-    const { locale = {}, configurations = {} } = this.props;
+    const {locale = {}, configurations = {}} = this.props;
     this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
     this.serverId = getParams('serverId') || '';
     const prePageNo = getParams('pageNo');
@@ -295,7 +304,7 @@ class ConfigurationManagement extends React.Component {
     setParams('pageSize', null);
     setParams('pageNo', null);
     this.changeParamsBySearchType(params);
-    this.setState({ loading: true });
+    this.setState({loading: true});
     let props = null;
     if (this.state.config_detail && this.state.config_detail !== '') {
       if (this.state.defaultFuzzySearch) {
@@ -351,31 +360,27 @@ class ConfigurationManagement extends React.Component {
   }
 
   removeConfig(record) {
-    const { locale = {} } = this.props;
+    const {locale = {}} = this.props;
     const self = this;
     Dialog.confirm({
       title: locale.removeConfiguration,
       content: (
-        <div style={{ marginTop: '-20px' }}>
+        <div style={{marginTop: '-20px'}}>
           <h3>{locale.sureDelete}</h3>
           <p>
-            <span style={{ color: '#999', marginRight: 5 }}>Data ID</span>
-            <span style={{ color: '#c7254e' }}>{record.dataId}</span>
+            <span style={{color: '#999', marginRight: 5}}>Data ID</span>
+            <span style={{color: '#c7254e'}}>{record.dataId}</span>
           </p>
           <p>
-            <span style={{ color: '#999', marginRight: 5 }}>Group</span>
-            <span style={{ color: '#c7254e' }}>{record.group}</span>
+            <span style={{color: '#999', marginRight: 5}}>Group</span>
+            <span style={{color: '#c7254e'}}>{record.group}</span>
           </p>
           <p>
-            <span
-              style={{
+              <span style={{
                 color: '#999',
-                marginRight: 5,
-              }}
-            >
-              {locale.environment}
-            </span>
-            <span style={{ color: '#c7254e' }}>{self.serverId || ''}</span>
+                marginRight: 5
+              }}>{locale.environment}</span>
+            <span style={{color: '#c7254e'}}>{self.serverId || ''}</span>
           </p>
         </div>
       ),
@@ -410,30 +415,35 @@ class ConfigurationManagement extends React.Component {
   }
 
   renderCol(value, index, record) {
-    const { locale = {} } = this.props;
+    const {locale = {}} = this.props;
     return (
       <div>
-        <a onClick={this.goDetail.bind(this, record)} style={{ marginRight: 5 }}>
+        <a onClick={this.goDetail.bind(this, record)}
+           style={{marginRight: 5}}>
           {locale.details}
         </a>
-        <span style={{ marginRight: 5 }}>|</span>
-        <a style={{ marginRight: 5 }} onClick={this.showCode.bind(this, record)}>
+        <span style={{marginRight: 5}}>|</span>
+        <a style={{marginRight: 5}}
+           onClick={this.showCode.bind(this, record)}>
           {locale.sampleCode}
         </a>
-        <span style={{ marginRight: 5 }}>|</span>
-        <a style={{ marginRight: 5 }} onClick={this.goEditor.bind(this, record)}>
+        <span style={{marginRight: 5}}>|</span>
+        <a style={{marginRight: 5}}
+           onClick={this.goEditor.bind(this, record)}>
           {locale.edit}
         </a>
-        <span style={{ marginRight: 5 }}>|</span>
-        <a style={{ marginRight: 5 }} onClick={this.removeConfig.bind(this, record)}>
+        <span style={{marginRight: 5}}>|</span>
+        <a style={{marginRight: 5}}
+           onClick={this.removeConfig.bind(this, record)}>
           {locale.deleteAction}
         </a>
-        <span style={{ marginRight: 5 }}>|</span>
+        <span style={{marginRight: 5}}>|</span>
 
         <Dropdown
           trigger={
             <a title={locale.more}>
-              <Icon type="ellipsis" size={'small'} style={{ transform: 'rotate(90deg)' }} />
+              <Icon type="ellipsis" size={'small'}
+                    style={{transform: 'rotate(90deg)'}}/>
             </a>
           }
           triggerType={'click'}
@@ -458,8 +468,8 @@ class ConfigurationManagement extends React.Component {
   }
 
   onChangeSort(dataIndex, order) {
-    const { configurations = {} } = this.props;
-    configurations.pageItems.sort(function(a, b) {
+    const {configurations = {}} = this.props;
+    configurations.pageItems.sort(function (a, b) {
       if (order === 'asc') {
         return (a[dataIndex] + '').localeCompare(b[dataIndex] + '');
       }
@@ -469,7 +479,7 @@ class ConfigurationManagement extends React.Component {
   }
 
   handlePageSizeChange(pageSize) {
-    this.setState({ pageSize }, () => this.changePage(1));
+    this.setState({pageSize}, () => this.changePage(1));
   }
 
   setConfigDetail(value) {
@@ -526,7 +536,8 @@ class ConfigurationManagement extends React.Component {
     this.serverId = getParams('serverId') || 'center';
     this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
     this.props.history.push(
-      `/newconfig?serverId=${this.serverId || ''}&namespace=${this.tenant}&edasAppName=${
+      `/newconfig?serverId=${this.serverId
+      || ''}&namespace=${this.tenant}&edasAppName=${
         this.edasAppName
       }&edasAppId=${this.edasAppId}&searchDataId=${this.dataId}&searchGroup=${this.group}`
     );
@@ -545,7 +556,8 @@ class ConfigurationManagement extends React.Component {
     this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
     // 点击详情到另一个页面, 返回时候要保留原来的搜索条件 比如: record.dataId为详情的, this.dataId为搜索条件的.
     this.props.history.push(
-      `/configdetail?serverId=${this.serverId || ''}&dataId=${record.dataId}&group=${
+      `/configdetail?serverId=${this.serverId
+      || ''}&dataId=${record.dataId}&group=${
         record.group
       }&namespace=${this.tenant}&edasAppName=${this.edasAppName}&searchDataId=${
         this.dataId
@@ -557,7 +569,8 @@ class ConfigurationManagement extends React.Component {
     this.serverId = getParams('serverId') || 'center';
     this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
     this.props.history.push(
-      `/configeditor?serverId=${this.serverId || ''}&dataId=${record.dataId}&group=${
+      `/configeditor?serverId=${this.serverId
+      || ''}&dataId=${record.dataId}&group=${
         record.group
       }&namespace=${this.tenant}&edasAppName=${this.edasAppName}&edasAppId=${
         this.edasAppId
@@ -612,8 +625,9 @@ class ConfigurationManagement extends React.Component {
   }
 
   exportData() {
-    const { group, appName, dataId, openUri } = this;
-    const { accessToken = '', username = '' } = JSON.parse(localStorage.token || '{}');
+    const {group, appName, dataId, openUri} = this;
+    const {accessToken = '', username = ''} = JSON.parse(
+      localStorage.token || '{}');
     openUri('v1/cs/configs', {
       export: 'true',
       tenant: getParams('namespace'),
@@ -627,8 +641,9 @@ class ConfigurationManagement extends React.Component {
   }
 
   exportDataNew() {
-    const { group, appName, dataId, openUri } = this;
-    const { accessToken = '', username = '' } = JSON.parse(localStorage.token || '{}');
+    const {group, appName, dataId, openUri} = this;
+    const {accessToken = '', username = ''} = JSON.parse(
+      localStorage.token || '{}');
     openUri('v1/cs/configs', {
       exportV2: 'true',
       tenant: getParams('namespace'),
@@ -643,8 +658,9 @@ class ConfigurationManagement extends React.Component {
 
   exportSelectedData(newVersion) {
     const ids = [];
-    const { locale = {} } = this.props;
-    const { accessToken = '', username = '' } = JSON.parse(localStorage.token || '{}');
+    const {locale = {}} = this.props;
+    const {accessToken = '', username = ''} = JSON.parse(
+      localStorage.token || '{}');
     if (!configsTableSelected.size) {
       Dialog.alert({
         title: locale.exportSelectedAlertTitle,
@@ -677,7 +693,7 @@ class ConfigurationManagement extends React.Component {
   }
 
   multipleSelectionDeletion() {
-    const { locale = {} } = this.props;
+    const {locale = {}} = this.props;
     const self = this;
     if (configsTableSelected.size === 0) {
       Dialog.alert({
@@ -695,17 +711,18 @@ class ConfigurationManagement extends React.Component {
       Dialog.confirm({
         title: locale.removeConfiguration,
         content: (
-          <div style={{ marginTop: '-20px' }}>
+          <div style={{marginTop: '-20px'}}>
             <h3>{locale.sureDelete}</h3>
             <Table dataSource={toShowDatas}>
-              <Table.Column title="Data Id" dataIndex="dataId" />
-              <Table.Column title="Group" dataIndex="group" />
+              <Table.Column title="Data Id" dataIndex="dataId"/>
+              <Table.Column title="Group" dataIndex="group"/>
             </Table>
           </div>
         ),
         onOk: () => {
           const url =
-            `v1/cs/configs?delType=ids&ids=${Array.from(configsTableSelected.keys()).join(
+            `v1/cs/configs?delType=ids&ids=${Array.from(
+              configsTableSelected.keys()).join(
               ','
             )}&tenant=` + self.state.nownamespace_id;
           request({
@@ -722,7 +739,7 @@ class ConfigurationManagement extends React.Component {
   }
 
   cloneSelectedDataConfirm() {
-    const { locale = {} } = this.props;
+    const {locale = {}} = this.props;
     const self = this;
     self.field.setValue('sameConfigPolicy', 'ABORT');
     self.field.setValue('cloneTargetSpace', undefined);
@@ -750,16 +767,10 @@ class ConfigurationManagement extends React.Component {
         let namespaceSelectData = [];
         let namespaceSelecItemRender = item => {
           if (item.isCurrent) {
-            return (
-              <span
-                style={{
-                  color: '#00AA00',
-                  'font-weight': 'bold',
-                }}
-              >
-                {item.label}
-              </span>
-            );
+            return <span style={{
+              color: '#00AA00',
+              'font-weight': 'bold'
+            }}>{item.label}</span>;
           } else {
             return <span>{item.label}</span>;
           }
@@ -788,21 +799,26 @@ class ConfigurationManagement extends React.Component {
           dataItem.dataId = value.dataId;
           dataItem.group = value.group;
           editableTableData.push(dataItem);
-          configsTableSelectedDeepCopyed.set(key, JSON.parse(JSON.stringify(value)));
+          configsTableSelectedDeepCopyed.set(key,
+            JSON.parse(JSON.stringify(value)));
         });
         let editableTableOnBlur = (record, type, e) => {
           if (type === 1) {
-            configsTableSelectedDeepCopyed.get(record.id).dataId = e.target.value;
+            configsTableSelectedDeepCopyed.get(
+              record.id).dataId = e.target.value;
           } else {
-            configsTableSelectedDeepCopyed.get(record.id).group = e.target.value;
+            configsTableSelectedDeepCopyed.get(
+              record.id).group = e.target.value;
           }
         };
 
         let renderEditableTableCellDataId = (value, index, record) => (
-          <Input defaultValue={value} onBlur={editableTableOnBlur.bind(this, record, 1)} />
+          <Input defaultValue={value}
+                 onBlur={editableTableOnBlur.bind(this, record, 1)}/>
         );
         let renderEditableTableCellGroup = (value, index, record) => (
-          <Input defaultValue={value} onBlur={editableTableOnBlur.bind(this, record, 2)} />
+          <Input defaultValue={value}
+                 onBlur={editableTableOnBlur.bind(this, record, 2)}/>
         );
 
         const cloneConfirm = Dialog.confirm({
@@ -810,50 +826,36 @@ class ConfigurationManagement extends React.Component {
           footer: false,
           content: (
             <>
-              <div style={{ marginBottom: 10 }}>
-                <span
-                  style={{
+              <div style={{marginBottom: 10}}>
+                  <span style={{
                     color: '#999',
-                    marginRight: 5,
-                  }}
-                >
-                  {locale.source}
-                </span>
-                <span style={{ color: '#49D2E7' }}>{self.state.nownamespace_name} </span>|{' '}
+                    marginRight: 5
+                  }}>{locale.source}</span>
+                <span
+                  style={{color: '#49D2E7'}}>{self.state.nownamespace_name} </span>|{' '}
                 {self.state.nownamespace_id}
               </div>
-              <div style={{ marginBottom: 10 }}>
-                <span
-                  style={{
+              <div style={{marginBottom: 10}}>
+                  <span style={{
                     color: '#999',
-                    marginRight: 5,
-                  }}
-                >
-                  {locale.configurationNumber}
-                </span>
-                <span style={{ color: '#49D2E7' }}>{configsTableSelected.size} </span>
+                    marginRight: 5
+                  }}>{locale.configurationNumber}</span>
+                <span
+                  style={{color: '#49D2E7'}}>{configsTableSelected.size} </span>
                 {locale.selectedEntry}
               </div>
-              <div style={{ marginBottom: 10 }}>
-                <span
-                  style={{
+              <div style={{marginBottom: 10}}>
+                  <span style={{
                     color: 'red',
                     marginRight: 2,
-                    marginLeft: -10,
-                  }}
-                >
-                  {'*'}
-                </span>
-                <span
-                  style={{
-                    color: '#999',
-                    marginRight: 5,
-                  }}
-                >
-                  {locale.target}
-                </span>
+                    marginLeft: -10
+                  }}>{'*'}</span>
+                <span style={{
+                  color: '#999',
+                  marginRight: 5
+                }}>{locale.target}</span>
                 <Select
-                  style={{ width: 450 }}
+                  style={{width: 450}}
                   placeholder={locale.selectNamespace}
                   size={'medium'}
                   hasArrow
@@ -864,27 +866,25 @@ class ConfigurationManagement extends React.Component {
                   dataSource={namespaceSelectData}
                   onChange={(value, actionType, item) => {
                     if (value) {
-                      document.getElementById('cloneTargetSpaceSelectErr').style.display = 'none';
+                      document.getElementById(
+                        'cloneTargetSpaceSelectErr').style.display = 'none';
                       self.field.setValue('cloneTargetSpace', value);
                     }
                   }}
                 />
-                <br />
-                <span id={'cloneTargetSpaceSelectErr'} style={{ color: 'red', display: 'none' }}>
+                <br/>
+                <span id={'cloneTargetSpaceSelectErr'}
+                      style={{color: 'red', display: 'none'}}>
                   {locale.selectNamespace}
                 </span>
               </div>
-              <div style={{ marginBottom: 10 }}>
-                <span
-                  style={{
+              <div style={{marginBottom: 10}}>
+                  <span style={{
                     color: '#999',
-                    marginRight: 5,
-                  }}
-                >
-                  {locale.samePreparation}:
-                </span>
+                    marginRight: 5
+                  }}>{locale.samePreparation}:</span>
                 <Select
-                  style={{ width: 130 }}
+                  style={{width: 130}}
                   size={'medium'}
                   hasArrow
                   mode="single"
@@ -912,28 +912,33 @@ class ConfigurationManagement extends React.Component {
                   }}
                 />
               </div>
-              <div style={{ marginBottom: 10 }}>
+              <div style={{marginBottom: 10}}>
                 <Button
                   type={'primary'}
-                  style={{ marginRight: 10 }}
+                  style={{marginRight: 10}}
                   onClick={() => {
                     if (!self.field.getValue('cloneTargetSpace')) {
-                      document.getElementById('cloneTargetSpaceSelectErr').style.display = 'inline';
+                      document.getElementById(
+                        'cloneTargetSpaceSelectErr').style.display = 'inline';
                       return;
                     } else {
-                      document.getElementById('cloneTargetSpaceSelectErr').style.display = 'none';
+                      document.getElementById(
+                        'cloneTargetSpaceSelectErr').style.display = 'none';
                     }
                     let idsStr = '';
                     let clonePostData = [];
-                    configsTableSelectedDeepCopyed.forEach((value, key, map) => {
-                      let postDataItem = {};
-                      postDataItem.cfgId = key;
-                      postDataItem.dataId = value.dataId;
-                      postDataItem.group = value.group;
-                      clonePostData.push(postDataItem);
-                    });
-                    let cloneTargetSpace = self.field.getValue('cloneTargetSpace');
-                    let sameConfigPolicy = self.field.getValue('sameConfigPolicy');
+                    configsTableSelectedDeepCopyed.forEach(
+                      (value, key, map) => {
+                        let postDataItem = {};
+                        postDataItem.cfgId = key;
+                        postDataItem.dataId = value.dataId;
+                        postDataItem.group = value.group;
+                        clonePostData.push(postDataItem);
+                      });
+                    let cloneTargetSpace = self.field.getValue(
+                      'cloneTargetSpace');
+                    let sameConfigPolicy = self.field.getValue(
+                      'sameConfigPolicy');
                     request({
                       url: `v1/cs/configs?clone=true&tenant=${cloneTargetSpace}&policy=${sameConfigPolicy}&namespaceId=`,
                       method: 'post',
@@ -944,7 +949,8 @@ class ConfigurationManagement extends React.Component {
                       },
                       success(ret) {
                         self.closeLoading();
-                        self.processImportAndCloneResult(ret, locale, cloneConfirm, false);
+                        self.processImportAndCloneResult(ret, locale,
+                          cloneConfirm, false);
                       },
                       error(data) {
                         self.closeLoading();
@@ -964,8 +970,8 @@ class ConfigurationManagement extends React.Component {
                   {locale.startCloning}
                 </Button>
               </div>
-              <div style={{ marginBottom: 10 }}>
-                <span style={{ color: '#00AA00', fontWeight: 'bold' }}>
+              <div style={{marginBottom: 10}}>
+                <span style={{color: '#00AA00', fontWeight: 'bold'}}>
                   {locale.cloneEditableTitle}
                 </span>
               </div>
@@ -975,7 +981,8 @@ class ConfigurationManagement extends React.Component {
                   dataIndex="dataId"
                   cell={renderEditableTableCellDataId}
                 />
-                <Table.Column title="Group" dataIndex="group" cell={renderEditableTableCellGroup} />
+                <Table.Column title="Group" dataIndex="group"
+                              cell={renderEditableTableCellGroup}/>
               </Table>
             </>
           ),
@@ -1001,22 +1008,23 @@ class ConfigurationManagement extends React.Component {
       confirm.hide();
       let failCount = ret.data.failData ? ret.data.failData.length : 0;
       let skipCount = ret.data.skipData ? ret.data.skipData.length : 0;
-      let unrecognizedCount = ret.data.unrecognizedCount ? ret.data.unrecognizedCount : 0;
+      let unrecognizedCount = ret.data.unrecognizedCount
+        ? ret.data.unrecognizedCount : 0;
       if (failCount > 0) {
         Dialog.alert({
           title: isImport ? locale.importAbort : locale.cloneAbort,
           content: (
-            <div style={{ width: '500px' }}>
+            <div style={{width: '500px'}}>
               <h4>
                 {locale.conflictConfig}：{ret.data.failData[0].group}/{ret.data.failData[0].dataId}
               </h4>
-              <div style={{ marginTop: 20 }}>
+              <div style={{marginTop: 20}}>
                 <h5>
                   {locale.failureEntries}: {failCount}
                 </h5>
                 <Table dataSource={ret.data.failData}>
-                  <Table.Column title="Data Id" dataIndex="dataId" />
-                  <Table.Column title="Group" dataIndex="group" />
+                  <Table.Column title="Data Id" dataIndex="dataId"/>
+                  <Table.Column title="Group" dataIndex="group"/>
                 </Table>
               </div>
               <div>
@@ -1024,8 +1032,8 @@ class ConfigurationManagement extends React.Component {
                   {locale.unprocessedEntries}: {skipCount}
                 </h5>
                 <Table dataSource={ret.data.skipData}>
-                  <Table.Column title="Data Id" dataIndex="dataId" />
-                  <Table.Column title="Group" dataIndex="group" />
+                  <Table.Column title="Data Id" dataIndex="dataId"/>
+                  <Table.Column title="Group" dataIndex="group"/>
                 </Table>
               </div>
               <div>
@@ -1033,28 +1041,29 @@ class ConfigurationManagement extends React.Component {
                   {locale.unrecognizedEntries}: {unrecognizedCount}
                 </h5>
                 <Table dataSource={ret.data.unrecognizedData}>
-                  <Table.Column title="Item Name" dataIndex="itemName" />
+                  <Table.Column title="Item Name" dataIndex="itemName"/>
                 </Table>
               </div>
             </div>
           ),
         });
       } else if (skipCount > 0 || unrecognizedCount > 0) {
-        let message = `${isImport ? locale.importSuccEntries : locale.cloneSuccEntries}${
+        let message = `${isImport ? locale.importSuccEntries
+          : locale.cloneSuccEntries}${
           ret.data.succCount
         }`;
         Dialog.alert({
           title: isImport ? locale.importSucc : locale.cloneSucc,
           content: (
-            <div style={{ width: '500px' }}>
+            <div style={{width: '500px'}}>
               <h5>{message}</h5>
               <div>
                 <h5>
                   {locale.skippedEntries}: {skipCount}
                 </h5>
                 <Table dataSource={ret.data.skipData}>
-                  <Table.Column title="Data Id" dataIndex="dataId" />
-                  <Table.Column title="Group" dataIndex="group" />
+                  <Table.Column title="Data Id" dataIndex="dataId"/>
+                  <Table.Column title="Group" dataIndex="group"/>
                 </Table>
               </div>
               <div>
@@ -1062,14 +1071,15 @@ class ConfigurationManagement extends React.Component {
                   {locale.unrecognizedEntries}: {unrecognizedCount}
                 </h5>
                 <Table dataSource={ret.data.unrecognizedData}>
-                  <Table.Column title="Item Name" dataIndex="itemName" />
+                  <Table.Column title="Item Name" dataIndex="itemName"/>
                 </Table>
               </div>
             </div>
           ),
         });
       } else {
-        let message = `${isImport ? locale.importSuccBegin : locale.cloneSuccBegin}${
+        let message = `${isImport ? locale.importSuccBegin
+          : locale.cloneSuccBegin}${
           ret.data.succCount
         }${isImport ? locale.importSuccEnd : locale.cloneSuccEnd}`;
         Message.success(message);
@@ -1083,7 +1093,8 @@ class ConfigurationManagement extends React.Component {
       if (resultCode === 100002) {
         alertContent = locale.metadataIllegal;
       }
-      if (resultCode === 100003 || resultCode === 100004 || resultCode === 100005) {
+      if (resultCode === 100003 || resultCode === 100004 || resultCode
+        === 100005) {
         alertContent = locale.importDataValidationError;
       }
       Dialog.alert({
@@ -1094,7 +1105,7 @@ class ConfigurationManagement extends React.Component {
   }
 
   importData() {
-    const { locale = {} } = this.props;
+    const {locale = {}} = this.props;
     const self = this;
     self.field.setValue('sameConfigPolicy', 'ABORT');
 
@@ -1114,13 +1125,14 @@ class ConfigurationManagement extends React.Component {
         return;
       }
     }
-    const { accessToken = '', username = '' } = token;
+    const {accessToken = '', username = ''} = token;
     const uploadProps = {
       accept: 'application/zip',
       action: `v1/cs/configs?import=true&namespace=${getParams(
         'namespace'
-      )}&accessToken=${accessToken}&username=${username}&tenant=${getParams('namespace')}`,
-      headers: Object.assign({}, {}, { accessToken }),
+      )}&accessToken=${accessToken}&username=${username}&tenant=${getParams(
+        'namespace')}`,
+      headers: Object.assign({}, {}, {accessToken}),
       data: {
         policy: self.field.getValue('sameConfigPolicy'),
       },
@@ -1131,10 +1143,11 @@ class ConfigurationManagement extends React.Component {
         return options;
       },
       onSuccess(ret) {
-        self.processImportAndCloneResult(ret.response, locale, importConfirm, true);
+        self.processImportAndCloneResult(ret.response, locale, importConfirm,
+          true);
       },
       onError(err) {
-        const { data = {}, status } = err.response;
+        const {data = {}, status} = err.response;
         if ([401, 403].includes(status)) {
           Dialog.alert({
             title: locale.importFail,
@@ -1153,29 +1166,22 @@ class ConfigurationManagement extends React.Component {
       footer: false,
       content: (
         <div>
-          <div style={{ marginBottom: 10 }}>
-            <span
-              style={{
+          <div style={{marginBottom: 10}}>
+              <span style={{
                 color: '#999',
-                marginRight: 5,
-              }}
-            >
-              {locale.targetNamespace}:
-            </span>
-            <span style={{ color: '#49D2E7' }}>{this.state.nownamespace_name} </span>|{' '}
+                marginRight: 5
+              }}>{locale.targetNamespace}:</span>
+            <span
+              style={{color: '#49D2E7'}}>{this.state.nownamespace_name} </span>|{' '}
             {this.state.nownamespace_id}
           </div>
-          <div style={{ marginBottom: 10 }}>
-            <span
-              style={{
+          <div style={{marginBottom: 10}}>
+              <span style={{
                 color: '#999',
-                marginRight: 5,
-              }}
-            >
-              {locale.samePreparation}:
-            </span>
+                marginRight: 5
+              }}>{locale.samePreparation}:</span>
             <Select
-              style={{ width: 130 }}
+              style={{width: 130}}
               size={'medium'}
               hasArrow
               mode="single"
@@ -1196,13 +1202,14 @@ class ConfigurationManagement extends React.Component {
                 },
               ]}
               hasClear={false}
-              onChange={function(value, actionType, item) {
+              onChange={function (value, actionType, item) {
                 self.field.setValue('sameConfigPolicy', value);
               }}
             />
           </div>
-          <div style={{ marginBottom: 10 }}>
-            <Icon type="prompt" style={{ color: '#FFA003', marginRight: '10px' }} />
+          <div style={{marginBottom: 10}}>
+            <Icon type="prompt"
+                  style={{color: '#FFA003', marginRight: '10px'}}/>
             {locale.importRemind}
           </div>
           <div>
@@ -1221,9 +1228,9 @@ class ConfigurationManagement extends React.Component {
   }
 
   configDataTableOnChange(ids, records) {
-    const { rowSelection } = this.state;
+    const {rowSelection} = this.state;
     rowSelection.selectedRowKeys = ids;
-    this.setState({ rowSelection });
+    this.setState({rowSelection});
     configsTableSelected.clear();
     records.forEach((record, i) => {
       configsTableSelected.set(record.id, record);
@@ -1231,16 +1238,16 @@ class ConfigurationManagement extends React.Component {
   }
 
   render() {
-    const { locale = {}, configurations = {} } = this.props;
+    const {locale = {}, configurations = {}} = this.props;
     return (
       <>
-        <BatchHandle ref={ref => (this.batchHandle = ref)} />
+        <BatchHandle ref={ref => (this.batchHandle = ref)}/>
         <div className={this.state.hasdash ? 'dash-page-container' : ''}>
           <div
             className={this.state.hasdash ? 'dash-left-container' : ''}
-            style={{ position: 'relative' }}
+            style={{position: 'relative'}}
           >
-            <div style={{ display: this.inApp ? 'none' : 'block' }}>
+            <div style={{display: this.inApp ? 'none' : 'block'}}>
               <PageTitle
                 title={locale.configurationManagement8}
                 desc={this.state.nownamespace_desc}
@@ -1273,12 +1280,13 @@ class ConfigurationManagement extends React.Component {
                     value={this.dataId}
                     htmlType="text"
                     placeholder={
-                      this.state.defaultFuzzySearch ? locale.defaultFuzzyd : locale.fuzzyd
+                      this.state.defaultFuzzySearch ? locale.defaultFuzzyd
+                        : locale.fuzzyd
                     }
-                    style={{ width: 200 }}
+                    style={{width: 200}}
                     onChange={dataId => {
                       this.dataId = dataId;
-                      this.setState({ dataId });
+                      this.setState({dataId});
                       setParams('dataId', this.dataId);
                     }}
                     onPressEnter={() => this.selectAll()}
@@ -1287,10 +1295,11 @@ class ConfigurationManagement extends React.Component {
 
                 <Form.Item label="Group">
                   <Select.AutoComplete
-                    style={{ width: 200 }}
+                    style={{width: 200}}
                     size={'medium'}
                     placeholder={
-                      this.state.defaultFuzzySearch ? locale.defaultFuzzyg : locale.fuzzyg
+                      this.state.defaultFuzzySearch ? locale.defaultFuzzyg
+                        : locale.fuzzyg
                     }
                     dataSource={this.state.groups}
                     value={this.state.group}
@@ -1313,7 +1322,7 @@ class ConfigurationManagement extends React.Component {
                 <Form.Item label={''}>
                   <Button
                     type={'primary'}
-                    style={{ marginRight: 10 }}
+                    style={{marginRight: 10}}
                     onClick={this.selectAll.bind(this)}
                     data-spm-click={'gostr=/aliyun;locaid=dashsearch'}
                   >
@@ -1323,24 +1332,26 @@ class ConfigurationManagement extends React.Component {
                 <Form.Item
                   style={
                     this.inApp
-                      ? { display: 'none' }
+                      ? {display: 'none'}
                       : {
-                          verticalAlign: 'middle',
-                          marginTop: 0,
-                          marginLeft: 0,
-                        }
+                        verticalAlign: 'middle',
+                        marginTop: 0,
+                        marginLeft: 0
+                      }
                   }
                 >
                   <Button onClick={this.changeAdvancedQuery}>
                     {this.state.isAdvancedQuery ? (
                       <>
                         {locale.advancedQuery9}
-                        <Icon type="arrow-up" size="xs" style={{ marginLeft: '5px' }} />
+                        <Icon type="arrow-up" size="xs"
+                              style={{marginLeft: '5px'}}/>
                       </>
                     ) : (
                       <>
                         {locale.advancedQuery9}
-                        <Icon type="arrow-down" size="xs" style={{ marginLeft: '5px' }} />
+                        <Icon type="arrow-down" size="xs"
+                              style={{marginLeft: '5px'}}/>
                       </>
                     )}
                   </Button>
@@ -1349,39 +1360,40 @@ class ConfigurationManagement extends React.Component {
                 <Form.Item label={''}>
                   <Button
                     type={'primary'}
-                    style={{ marginRight: 10 }}
+                    style={{marginRight: 10}}
                     onClick={this.importData.bind(this)}
                     data-spm-click={'gostr=/aliyun;locaid=configsExport'}
                   >
                     {locale.import}
                   </Button>
                 </Form.Item>
-                <br />
+                <br/>
                 <Form.Item
                   style={
                     this.inApp
-                      ? { display: 'none' }
+                      ? {display: 'none'}
                       : this.state.isAdvancedQuery
-                      ? {}
-                      : { display: 'none' }
+                        ? {}
+                        : {display: 'none'}
                   }
                   label={locale.application}
                 >
                   <Input
                     htmlType={'text'}
                     placeholder={locale.app1}
-                    style={{ width: 200 }}
+                    style={{width: 200}}
                     value={this.state.appName}
                     onChange={this.setAppName.bind(this)}
                     onPressEnter={() => this.getData()}
                   />
                 </Form.Item>
                 <Form.Item
-                  style={this.state.isAdvancedQuery ? {} : { display: 'none' }}
+                  style={this.state.isAdvancedQuery ? {}
+                    : {display: 'none'}}
                   label={locale.tags}
                 >
                   <Select
-                    style={{ width: 200 }}
+                    style={{width: 200}}
                     size="medium"
                     hasArrow
                     mode="tag"
@@ -1391,9 +1403,9 @@ class ConfigurationManagement extends React.Component {
                     onChange={this.setConfigTags.bind(this)}
                     showSearch
                     onSearch={val => {
-                      const { tagLst } = this.state;
+                      const {tagLst} = this.state;
                       if (!tagLst.includes(val)) {
-                        this.setState({ tagLst: tagLst.concat(val) });
+                        this.setState({tagLst: tagLst.concat(val)});
                         setParams('tagList', this.state.tagLst.join(','));
                       }
                     }}
@@ -1401,11 +1413,12 @@ class ConfigurationManagement extends React.Component {
                   />
                 </Form.Item>
                 <Form.Item
-                  style={this.state.isAdvancedQuery ? {} : { display: 'none' }}
+                  style={this.state.isAdvancedQuery ? {}
+                    : {display: 'none'}}
                   label={locale.types}
                 >
                   <Select
-                    style={{ width: 200 }}
+                    style={{width: 200}}
                     size="medium"
                     hasArrow
                     mode="tag"
@@ -1417,46 +1430,49 @@ class ConfigurationManagement extends React.Component {
                   />
                 </Form.Item>
                 <Form.Item
-                  style={this.state.isAdvancedQuery ? {} : { display: 'none' }}
+                  style={this.state.isAdvancedQuery ? {}
+                    : {display: 'none'}}
                   label={locale.configDetailLabel}
                 >
                   <Input
                     htmlType={'text'}
                     placeholder={locale.configDetailH}
-                    style={{ width: 200 }}
+                    style={{width: 200}}
                     value={this.state.config_detail}
                     onChange={this.setConfigDetail.bind(this)}
                   />
                 </Form.Item>
               </Form>
             </div>
-            <QueryResult total={configurations.totalCount} />
+            <QueryResult total={configurations.totalCount}/>
 
             <Table
               className="configuration-table"
               dataSource={configurations.pageItems}
-              locale={{ empty: locale.pubNoData }}
+              locale={{empty: locale.pubNoData}}
               ref="dataTable"
               loading={this.state.loading}
               rowSelection={this.state.rowSelection}
               onSort={this.onChangeSort.bind(this)}
             >
-              <Table.Column sortable={true} title={'Data Id'} dataIndex={'dataId'} />
-              <Table.Column sortable={true} title={'Group'} dataIndex={'group'} />
-              <Table.Column
-                sortable={true}
-                title={locale.types}
-                cell={this.getLabelFromValue.bind(this, typeMapping)}
-                dataIndex={'type'}
-              />
+              <Table.Column sortable={true} title={'Data Id'}
+                            dataIndex={'dataId'}/>
+              <Table.Column sortable={true} title={'Group'}
+                            dataIndex={'group'}/>
+              <Table.Column sortable={true} title={locale.types}
+                            cell={this.getLabelFromValue.bind(this,
+                              typeMapping)}
+                            dataIndex={'type'}/>
               {!this.inApp && (
-                <Table.Column sortable={true} title={locale.application} dataIndex="appName" />
+                <Table.Column sortable={true} title={locale.application}
+                              dataIndex="appName"/>
               )}
-              <Table.Column title={locale.operation} cell={this.renderCol.bind(this)} />
+              <Table.Column title={locale.operation}
+                            cell={this.renderCol.bind(this)}/>
             </Table>
             {configurations.totalCount > 0 && (
               <>
-                <div style={{ float: 'left' }}>
+                <div style={{float: 'left'}}>
                   {[
                     {
                       warning: true,
@@ -1475,7 +1491,7 @@ class ConfigurationManagement extends React.Component {
                       key={index}
                       warning={item.warning}
                       type="primary"
-                      style={{ marginRight: 10 }}
+                      style={{marginRight: 10}}
                       onClick={item.onClick}
                       data-spm-click={`gostr=/aliyun;locaid=${item.locaid}`}
                     >
@@ -1486,7 +1502,7 @@ class ConfigurationManagement extends React.Component {
                     type="primary"
                     autoWidth={false}
                     label={locale.exportBtn}
-                    popupStyle={{ minWidth: 150 }}
+                    popupStyle={{minWidth: 150}}
                     iconSize="xs"
                   >
                     {[
@@ -1511,34 +1527,36 @@ class ConfigurationManagement extends React.Component {
                         onClick: () => this.exportSelectedData(true),
                       },
                     ].map((item, index) => (
-                      <Item key={item.text} style={{ minWidth: 150 }} onClick={item.onClick}>
+                      <Item key={item.text} style={{minWidth: 150}}
+                            onClick={item.onClick}>
                         {item.text}
                       </Item>
                     ))}
                   </MenuButton>
                 </div>
                 <Pagination
-                  style={{ float: 'right' }}
+                  style={{float: 'right'}}
                   pageSizeList={GLOBAL_PAGE_SIZE_LIST}
                   pageSizePosition="start"
                   pageSizeSelector="dropdown"
-                  popupProps={{ align: 'bl tl' }}
+                  popupProps={{align: 'bl tl'}}
                   onPageSizeChange={val => this.handlePageSizeChange(val)}
                   current={configurations.pageNumber}
                   total={configurations.totalCount}
-                  totalRender={total => <TotalRender locale={locale} total={total} />}
+                  totalRender={total => <TotalRender locale={locale}
+                                                     total={total}/>}
                   pageSize={this.state.pageSize}
                   onChange={this.changePage.bind(this)}
                 />
               </>
             )}
-            <ShowCodeing ref={this.showcode} />
-            <DeleteDialog ref={this.deleteDialog} />
+            <ShowCodeing ref={this.showcode}/>
+            <DeleteDialog ref={this.deleteDialog}/>
           </div>
           {this.state.hasdash && (
             <div className="dash-right-container">
               {this.state.contentList.map((v, i) => (
-                <DashboardCard data={v} height={'auto'} key={`show${i}`} />
+                <DashboardCard data={v} height={'auto'} key={`show${i}`}/>
               ))}
             </div>
           )}
