@@ -35,7 +35,6 @@ class HistoryDetail extends React.Component {
     this.state = {
       showmore: false,
       currentPublishType: '',
-      grayVersion: '',
       grayRule: '',
     };
     this.edasAppName = getParams('edasAppName');
@@ -83,7 +82,6 @@ class HistoryDetail extends React.Component {
           self.setState({
             currentPublishType: data.publishType,
             ...(data.publishType === 'gray' && {
-              grayVersion: grayRule.version || '',
               grayRule: grayRule.expr || '',
             }),
           });
@@ -113,7 +111,7 @@ class HistoryDetail extends React.Component {
   render() {
     const { locale = {} } = this.props;
     const { init } = this.field;
-    const { currentPublishType, grayVersion, grayRule } = this.state;
+    const { currentPublishType, grayRule } = this.state;
     const formItemLayout = {
       labelCol: {
         fixedSpan: 6,
@@ -155,9 +153,6 @@ class HistoryDetail extends React.Component {
           </Form.Item>
           {currentPublishType === 'gray' && (
             <>
-              <Form.Item label={locale.grayVersion} required {...formItemLayout}>
-                <Input htmlType="text" readOnly value={grayVersion} />
-              </Form.Item>
               <Form.Item label={locale.grayRule} required {...formItemLayout}>
                 <Input htmlType="text" readOnly value={grayRule} />
               </Form.Item>

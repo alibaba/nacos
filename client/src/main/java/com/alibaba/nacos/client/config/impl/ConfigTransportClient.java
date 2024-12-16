@@ -79,7 +79,7 @@ public abstract class ConfigTransportClient {
         this.tenant = properties.getProperty(PropertyKeyConst.NAMESPACE);
         this.serverListManager = serverListManager;
         this.properties = properties.asProperties();
-        this.securityProxy = new SecurityProxy(serverListManager.getServerList(),
+        this.securityProxy = new SecurityProxy(serverListManager,
                 ConfigHttpClientManager.getInstance().getNacosRestTemplate());
     }
     

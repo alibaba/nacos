@@ -17,7 +17,10 @@
 package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -38,14 +41,36 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class MD5UtilTest {
     
+    MockedStatic<EnvUtil> envUtilMockedStatic;
+    
+    MockedStatic<ConfigCacheService> configCacheServiceMockedStatic;
+    
+    MockedStatic<Md5ComparatorDelegate> md5ComparatorDelegateMockedStatic;
+    
+    @BeforeEach
+    void setUp() {
+        envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
+        configCacheServiceMockedStatic = Mockito.mockStatic(ConfigCacheService.class);
+        md5ComparatorDelegateMockedStatic = Mockito.mockStatic(Md5ComparatorDelegate.class);
+    }
+    
+    @AfterEach
+    void tearDown() {
+        envUtilMockedStatic.close();
+        configCacheServiceMockedStatic.close();
+        md5ComparatorDelegateMockedStatic.close();
+    }
+    
     @Test
     void testCompareMd5() {
-        
-        final MockedStatic<ConfigCacheService> configCacheServiceMockedStatic = Mockito.mockStatic(ConfigCacheService.class);
+        Md5ComparatorDelegate md5ComparatorDelegate = Mockito.mock(Md5ComparatorDelegate.class);
+        when(Md5ComparatorDelegate.getInstance()).thenReturn(md5ComparatorDelegate);
         
         when(ConfigCacheService.isUptodate(anyString(), anyString(), anyString(), anyString())).thenReturn(false);
         
@@ -56,12 +81,12 @@ class MD5UtilTest {
         request.addHeader("Vipserver-Tag", "test");
         MockHttpServletResponse response = new MockHttpServletResponse();
         
-        List<String> changedGroupKeys = MD5Util.compareMd5(request, response, clientMd5Map);
+        envUtilMockedStatic.when(() -> EnvUtil.getProperty("nacos.config.cache.type", "nacos")).thenReturn("nacos");
+        when(md5ComparatorDelegate.compareMd5(request, response, clientMd5Map)).thenReturn(new ArrayList<>());
+        MD5Util.compareMd5(request, response, clientMd5Map);
         
-        assertEquals(1, changedGroupKeys.size());
-        assertEquals("test", changedGroupKeys.get(0));
+        verify(md5ComparatorDelegate, times(1)).compareMd5(request, response, clientMd5Map);
         
-        configCacheServiceMockedStatic.close();
     }
     
     @Test

@@ -21,8 +21,6 @@ import com.alibaba.nacos.core.utils.StringPool;
 
 import java.io.Serializable;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 /**
  * config cache .
  *
@@ -30,9 +28,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class ConfigCache implements Serializable {
     
-    volatile String md5Gbk = Constants.NULL;
-    
-    volatile String md5Utf8 = Constants.NULL;
+    volatile String md5 = Constants.NULL;
     
     volatile String encryptedDataKey;
     
@@ -42,8 +38,7 @@ public class ConfigCache implements Serializable {
      * clear cache.
      */
     public void clear() {
-        this.md5Gbk = Constants.NULL;
-        this.md5Utf8 = Constants.NULL;
+        this.md5 = Constants.NULL;
         this.encryptedDataKey = null;
         this.lastModifiedTs = -1L;
     }
@@ -51,12 +46,13 @@ public class ConfigCache implements Serializable {
     public ConfigCache() {
     }
     
-    public String getMd5(String encode) {
-        if (UTF_8.name().equalsIgnoreCase(encode)) {
-            return md5Utf8;
-        } else {
-            return md5Gbk;
-        }
+    public ConfigCache(String md5, long lastModifiedTs) {
+        this.md5 = StringPool.get(md5);
+        this.lastModifiedTs = lastModifiedTs;
+    }
+    
+    public String getMd5() {
+        return md5;
     }
     
     public String getEncryptedDataKey() {
@@ -67,26 +63,8 @@ public class ConfigCache implements Serializable {
         this.encryptedDataKey = encryptedDataKey;
     }
     
-    public ConfigCache(String md5Gbk, String md5Utf8, long lastModifiedTs) {
-        this.md5Gbk = StringPool.get(md5Gbk);
-        this.md5Utf8 = StringPool.get(md5Utf8);
-        this.lastModifiedTs = lastModifiedTs;
-    }
-    
-    public String getMd5Gbk() {
-        return md5Gbk;
-    }
-    
-    public void setMd5Gbk(String md5Gbk) {
-        this.md5Gbk = StringPool.get(md5Gbk);
-    }
-    
-    public String getMd5Utf8() {
-        return md5Utf8;
-    }
-    
-    public void setMd5Utf8(String md5Utf8) {
-        this.md5Utf8 = StringPool.get(md5Utf8);
+    public void setMd5(String md5) {
+        this.md5 = StringPool.get(md5);
     }
     
     public long getLastModifiedTs() {

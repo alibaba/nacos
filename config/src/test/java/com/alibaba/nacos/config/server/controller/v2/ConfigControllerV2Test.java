@@ -22,6 +22,7 @@ import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.ConfigServletInner;
+import com.alibaba.nacos.config.server.enums.ApiVersionEnum;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
@@ -136,12 +137,12 @@ class ConfigControllerV2Test {
             x.getArgument(1, HttpServletResponse.class).getWriter().print(JacksonUtils.toJson(stringResult));
             return null;
         }).when(inner).doGetConfig(any(HttpServletRequest.class), any(HttpServletResponse.class), eq(TEST_DATA_ID), eq(TEST_GROUP),
-                eq(TEST_NAMESPACE_ID), eq(TEST_TAG), eq(null), anyString(), eq(true));
+                eq(TEST_NAMESPACE_ID), eq(TEST_TAG), eq(null), anyString(), eq(ApiVersionEnum.V2));
         
         configControllerV2.getConfig(request, response, TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, TEST_TAG);
         
         verify(inner).doGetConfig(eq(request), eq(response), eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG),
-                eq(null), anyString(), eq(true));
+                eq(null), anyString(), eq(ApiVersionEnum.V2));
         JsonNode resNode = JacksonUtils.toObj(response.getContentAsString());
         Integer errCode = JacksonUtils.toObj(resNode.get("code").toString(), Integer.class);
         String actContent = JacksonUtils.toObj(resNode.get("data").toString(), String.class);

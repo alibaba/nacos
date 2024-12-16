@@ -138,7 +138,7 @@ class DumpProcessorTest {
         
         //Check cache
         CacheItem contentCache = ConfigCacheService.getContentCache(GroupKey2.getKey(dataId, group, tenant));
-        assertEquals(MD5Utils.md5Hex(content, "UTF-8"), contentCache.getConfigCache().getMd5Utf8());
+        assertEquals(MD5Utils.md5Hex(content, "UTF-8"), contentCache.getConfigCache().getMd5());
         assertEquals(time, contentCache.getConfigCache().getLastModifiedTs());
         //check disk
         String contentFromDisk = ConfigDiskServiceFactory.getInstance().getContent(dataId, group, tenant);
