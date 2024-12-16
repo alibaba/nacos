@@ -331,7 +331,7 @@ class ConfigurationManagement extends React.Component {
       this.setState({
         loading: false,
       });
-      if (res && [401, 403].includes(res.status)) {
+      if (res && [401, 403].includes(res.status) && localStorage.token) {
         Dialog.alert({
           title: locale.authFail,
           content: locale.getNamespace403.replace(
