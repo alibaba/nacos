@@ -29,6 +29,13 @@ cssLoader.use.push({
   }
 })
 module.exports = Object.assign({}, base, {
+  entry: {
+    app: [
+      'webpack-dev-server/client?http://localhost:8000',  // HMR 客户端入口
+      'webpack/hot/dev-server',
+      './src/index.js',  // 主入口文件
+    ],
+  },
   output: {
     filename: './js/[name].js',
     path: path.resolve(__dirname, '../dist'),
