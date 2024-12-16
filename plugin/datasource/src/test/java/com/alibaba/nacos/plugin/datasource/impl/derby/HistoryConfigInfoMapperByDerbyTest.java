@@ -81,9 +81,9 @@ class HistoryConfigInfoMapperByDerbyTest {
     @Test
     void testFindDeletedConfig() {
         MapperResult mapperResult = historyConfigInfoMapperByDerby.findDeletedConfig(context);
-        assertEquals(mapperResult.getSql(), "SELECT id, nid, data_id, group_id, app_name, content, md5, gmt_create, gmt_modified, src_user, src_ip,"
-                + " op_type, tenant_id, publish_type, ext_info, encrypted_data_key FROM his_config_info WHERE op_type = 'D' AND "
-                + "publish_type = ? and gmt_modified >= ? and nid > ? order by nid OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
+        assertEquals( "SELECT id, nid, data_id, group_id, app_name, content, md5, gmt_create, gmt_modified, src_user, src_ip,"
+                + " op_type, tenant_id, publish_type,gray_name, ext_info, encrypted_data_key FROM his_config_info WHERE op_type = 'D' AND "
+                + "publish_type = ? and gmt_modified >= ? and nid > ? order by nid OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY",mapperResult.getSql());
         assertArrayEquals(new Object[] {publishType, startTime, lastMaxId, pageSize}, mapperResult.getParamList().toArray());
     }
     
