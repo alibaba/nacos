@@ -24,7 +24,6 @@ import com.alibaba.nacos.plugin.auth.impl.authenticate.DefaultAuthenticationMana
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.LdapAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
-import com.alibaba.nacos.plugin.auth.impl.filter.JwtAuthenticationTokenFilter;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
@@ -39,14 +38,9 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.authentication.configuration.GlobalAuthenticationConfigurerAdapter;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsUtils;
 
 import javax.annotation.PostConstruct;
 
@@ -60,17 +54,11 @@ public class NacosAuthConfig {
     
     private static final String SECURITY_IGNORE_URLS_SPILT_CHAR = ",";
     
-    private static final String LOGIN_ENTRY_POINT = "/v1/auth/login";
-    
-    private static final String TOKEN_BASED_AUTH_ENTRY_POINT = "/v1/auth/**";
-    
     private static final String DEFAULT_ALL_PATH_PATTERN = "/**";
     
     private static final String PROPERTY_IGNORE_URLS = "nacos.security.ignore.urls";
     
     private final Environment env;
-    
-    private final TokenManagerDelegate tokenProvider;
     
     private final AuthConfigs authConfigs;
     
@@ -80,13 +68,11 @@ public class NacosAuthConfig {
     
     private final ControllerMethodsCache methodsCache;
     
-    public NacosAuthConfig(Environment env, TokenManagerDelegate tokenProvider, AuthConfigs authConfigs,
-            NacosUserDetailsServiceImpl userDetailsService,
+    public NacosAuthConfig(Environment env, AuthConfigs authConfigs, NacosUserDetailsServiceImpl userDetailsService,
             ObjectProvider<LdapAuthenticationProvider> ldapAuthenticationProvider,
             ControllerMethodsCache methodsCache) {
         
         this.env = env;
-        this.tokenProvider = tokenProvider;
         this.authConfigs = authConfigs;
         this.userDetailsService = userDetailsService;
         this.ldapAuthenticationProvider = ldapAuthenticationProvider.getIfAvailable();
@@ -141,24 +127,6 @@ public class NacosAuthConfig {
                 }
             }
         };
-    }
-    
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        if (StringUtils.isBlank(authConfigs.getNacosAuthSystemType())) {
-            http.csrf().disable().cors()// We don't need CSRF for JWT based authentication
-                    .and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
-                    .authorizeRequests().requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
-                    .antMatchers(LOGIN_ENTRY_POINT).permitAll().and().authorizeRequests()
-                    .antMatchers(TOKEN_BASED_AUTH_ENTRY_POINT).authenticated().and().exceptionHandling()
-                    .authenticationEntryPoint(new JwtAuthenticationEntryPoint());
-            // disable cache
-            http.headers().cacheControl();
-            
-            http.addFilterBefore(new JwtAuthenticationTokenFilter(tokenProvider),
-                    UsernamePasswordAuthenticationFilter.class);
-        }
-        return http.build();
     }
     
     @Bean

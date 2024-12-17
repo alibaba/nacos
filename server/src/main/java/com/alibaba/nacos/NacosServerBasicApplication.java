@@ -16,31 +16,28 @@
 
 package com.alibaba.nacos;
 
+import com.alibaba.nacos.server.NacosWebBeanTypeFilter;
 import com.alibaba.nacos.sys.filter.NacosTypeExcludeFilter;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.AutoConfigurationExcludeFilter;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.TypeExcludeFilter;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.FilterType;
 
 /**
- * Nacos Full merged starter.
- * <p>
- * Use @SpringBootApplication and @ComponentScan at the same time, using CUSTOM type filter to control module enabled.
- * </p>
+ * Nacos Server basic starter class, which load common non-web container beans.
  *
- * @author nacos
+ * @author xiweng.yy
  */
 @SpringBootApplication
 @ComponentScan(basePackages = "com.alibaba.nacos", excludeFilters = {
-        @ComponentScan.Filter(type = FilterType.CUSTOM, classes = {NacosTypeExcludeFilter.class}),
-        @ComponentScan.Filter(type = FilterType.CUSTOM, classes = {TypeExcludeFilter.class}),
-        @ComponentScan.Filter(type = FilterType.CUSTOM, classes = {AutoConfigurationExcludeFilter.class})})
-public class Nacos {
+        @Filter(type = FilterType.REGEX, pattern = "com\\.alibaba\\.nacos\\.console.*"),
+        @Filter(type = FilterType.CUSTOM, classes = {NacosTypeExcludeFilter.class, AutoConfigurationExcludeFilter.class,
+                NacosWebBeanTypeFilter.class})})
+public class NacosServerBasicApplication {
     
     public static void main(String[] args) {
-        SpringApplication.run(Nacos.class, args);
+        SpringApplication.run(NacosServerBasicApplication.class, args);
     }
 }
-

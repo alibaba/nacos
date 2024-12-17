@@ -19,7 +19,6 @@ package com.alibaba.nacos.core.cluster;
 import com.alibaba.nacos.api.ability.ServerAbilities;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
-import com.alibaba.nacos.core.cluster.remote.request.MemberReportRequest;
 import com.alibaba.nacos.auth.util.AuthHeaderUtil;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.http.Callback;
@@ -39,8 +38,10 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.ability.ServerAbilityInitializer;
 import com.alibaba.nacos.core.ability.ServerAbilityInitializerHolder;
+import com.alibaba.nacos.core.ability.control.ServerAbilityControlManager;
 import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
 import com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy;
+import com.alibaba.nacos.core.cluster.remote.request.MemberReportRequest;
 import com.alibaba.nacos.core.cluster.remote.response.MemberReportResponse;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.GenericType;
@@ -50,12 +51,9 @@ import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import org.springframework.boot.web.context.WebServerInitializedEvent;
-import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PreDestroy;
-import javax.servlet.ServletContext;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -65,7 +63,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
-import com.alibaba.nacos.core.ability.control.ServerAbilityControlManager;
 
 import static com.alibaba.nacos.api.exception.NacosException.CLIENT_INVALID_PARAM;
 
@@ -89,7 +86,7 @@ import static com.alibaba.nacos.api.exception.NacosException.CLIENT_INVALID_PARA
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Component(value = "serverMemberManager")
-public class ServerMemberManager implements ApplicationListener<WebServerInitializedEvent> {
+public class ServerMemberManager {
     
     private final NacosAsyncRestTemplate asyncRestTemplate = HttpClientBeanHolder.getNacosAsyncRestTemplate(
             Loggers.CORE);
@@ -139,7 +136,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     private volatile Member self;
     
     private volatile long memberReportTs = System.currentTimeMillis();
-
+    
     /**
      * here is always the node information of the "UP" state.
      */
@@ -151,10 +148,9 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     private final MemberInfoReportTask infoReportTask = new MemberInfoReportTask();
     
     private final UnhealthyMemberInfoReportTask unhealthyMemberInfoReportTask = new UnhealthyMemberInfoReportTask();
-
-    public ServerMemberManager(ServletContext servletContext) throws Exception {
+    
+    public ServerMemberManager() throws Exception {
         this.serverList = new ConcurrentSkipListMap<>();
-        EnvUtil.setContextPath(servletContext.getContextPath());
         init();
     }
     
@@ -165,10 +161,9 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         this.self = MemberUtil.singleParse(this.localAddress);
         this.self.setExtendVal(MemberMetaDataConstants.VERSION, VersionUtils.version);
         //works  for gray model upgrade,can delete after compatibility period.
-        this.self
-                .setExtendVal(MemberMetaDataConstants.SUPPORT_GRAY_MODEL, true);
+        this.self.setExtendVal(MemberMetaDataConstants.SUPPORT_GRAY_MODEL, true);
         this.self.setGrpcReportEnabled(true);
-
+        
         // init abilities.
         this.self.setAbilities(initMemberAbilities());
         
@@ -200,7 +195,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         }
         return serverAbilities;
     }
-
+    
     private void registerClusterEvent() {
         // Register node change events
         NotifyCenter.registerToPublisher(MembersChangeEvent.class,
@@ -239,7 +234,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         isUseAddressServer = this.lookup.useAddressServer();
         this.lookup.start();
     }
-
+    
     /**
      * switch look up.
      *
@@ -251,7 +246,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         isUseAddressServer = this.lookup.useAddressServer();
         this.lookup.start();
     }
-
+    
     public static boolean isUseAddressServer() {
         return isUseAddressServer;
     }
@@ -467,7 +462,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         }
         return false;
     }
-
+    
     /**
      * this member {@link Member#getState()} is health.
      *
@@ -486,20 +481,13 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         return Objects.equals(serverList.firstKey(), this.localAddress);
     }
     
-    @Override
-    public void onApplicationEvent(WebServerInitializedEvent event) {
-        String serverNamespace = event.getApplicationContext().getServerNamespace();
-        if (SPRING_MANAGEMENT_CONTEXT_NAMESPACE.equals(serverNamespace)) {
-            // ignore
-            // fix#issue https://github.com/alibaba/nacos/issues/7230
-            return;
-        }
+    public void setSelfReady(int port) {
         getSelf().setState(NodeState.UP);
         if (!EnvUtil.getStandaloneMode()) {
             GlobalExecutor.scheduleByCommon(this.infoReportTask, DEFAULT_TASK_DELAY_TIME);
             GlobalExecutor.scheduleByCommon(this.unhealthyMemberInfoReportTask, DEFAULT_TASK_DELAY_TIME);
         }
-        EnvUtil.setPort(event.getWebServer().getPort());
+        EnvUtil.setPort(port);
         EnvUtil.setLocalAddress(this.localAddress);
         Loggers.CLUSTER.info("This node is ready to provide external services");
     }
@@ -555,9 +543,9 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         private int cursor = 0;
         
         private ClusterRpcClientProxy clusterRpcClientProxy;
-
+        
         public static final long REPORT_INTERVAL = 50000L;
-
+        
         @Override
         protected void executeBody() {
             List<Member> members = ServerMemberManager.this.allMembersWithoutSelf();
@@ -567,7 +555,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                 Loggers.CLUSTER.info("[serverlist] membercount={}", members.size() + 1);
                 memberReportTs = System.currentTimeMillis();
             }
-
+            
             if (members.isEmpty()) {
                 return;
             }
@@ -576,7 +564,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             Member target = members.get(cursor);
             
             Loggers.CLUSTER.debug("report the metadata to the node : {}", target.getAddress());
-
+            
             // adapt old version
             if (target.getAbilities().getRemoteAbility().isGrpcReportEnabled() || target.isGrpcReportEnabled()) {
                 reportByGrpc(target);
@@ -584,7 +572,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                 reportByHttp(target);
             }
         }
-
+        
         protected void reportByHttp(Member target) {
             final String url = HttpUtils.buildUrl(false, target.getAddress(), EnvUtil.getContextPath(),
                     Commons.NACOS_CORE_CONTEXT, "/cluster/report");
@@ -631,7 +619,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                 target.getAbilities().getRemoteAbility().setGrpcReportEnabled(true);
             }
         }
-
+        
         protected void reportByGrpc(Member target) {
             //Todo  circular reference
             if (Objects.isNull(clusterRpcClientProxy)) {
@@ -642,9 +630,9 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                         new NacosException(CLIENT_INVALID_PARAM, "No rpc client related to member: " + target));
                 return;
             }
-
+            
             MemberReportRequest memberReportRequest = new MemberReportRequest(getSelf());
-
+            
             try {
                 MemberReportResponse response = (MemberReportResponse) clusterRpcClientProxy.sendRequest(target,
                         memberReportRequest);
@@ -667,7 +655,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         protected void after() {
             GlobalExecutor.scheduleByCommon(this, 2_000L);
         }
-
+        
         private void handleReportResult(String reportResult, Member target) {
             if (isBooleanResult(reportResult)) {
                 MemberUtil.onSuccess(ServerMemberManager.this, target);
@@ -682,18 +670,18 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                 MemberUtil.onSuccess(ServerMemberManager.this, target);
             }
         }
-
+        
         private boolean isBooleanResult(String reportResult) {
             return Boolean.TRUE.toString().equals(reportResult) || Boolean.FALSE.toString().equals(reportResult);
         }
     }
-
+    
     class UnhealthyMemberInfoReportTask extends MemberInfoReportTask {
-
+        
         @Override
         protected void executeBody() {
             List<Member> members = ServerMemberManager.this.allMembersWithoutSelf();
-
+            
             if (members.isEmpty()) {
                 return;
             }
@@ -705,11 +693,11 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                         reportByHttp(member);
                     }
                     Loggers.CLUSTER.warn("report the metadata to the unhealthy node : {}", member.getAddress());
-
+                    
                 }
             }
         }
-
+        
         @Override
         protected void after() {
             GlobalExecutor.scheduleByCommon(this, 5_000L);
