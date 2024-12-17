@@ -19,10 +19,14 @@ package com.alibaba.nacos.bootstrap;
 import com.alibaba.nacos.NacosServerBasicApplication;
 import com.alibaba.nacos.NacosServerWebApplication;
 import com.alibaba.nacos.console.NacosConsole;
+import com.alibaba.nacos.sys.env.Constants;
+import org.springframework.boot.Banner;
+import org.springframework.boot.ResourceBanner;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.io.ClassPathResource;
 
 /**
  * Nacos bootstrap class.
@@ -33,23 +37,45 @@ import org.springframework.context.ConfigurableApplicationContext;
 public class NacosBootstrap {
     
     public static void main(String[] args) {
-        ConfigurableApplicationContext coreContext = new SpringApplicationBuilder(
-                NacosServerBasicApplication.class).web(WebApplicationType.NONE).run(args);
-        //        startWithoutConsole(args, coreContext);
-        startWithConsole(args, coreContext);
+        ConfigurableApplicationContext coreContext = startCoreContext(args);
+        String type = coreContext.getEnvironment()
+                .getProperty(Constants.NACOS_DEPLOYMENT_TYPE, Constants.NACOS_DEPLOYMENT_TYPE_MERGED);
+        if (Constants.NACOS_DEPLOYMENT_TYPE_MERGED.equals(type)) {
+            startWithConsole(args, coreContext);
+        } else if (Constants.NACOS_DEPLOYMENT_TYPE_SERVER.equals(type)) {
+            startWithoutConsole(args, coreContext);
+        } else {
+            throw new IllegalArgumentException("Unsupported type " + type);
+        }
     }
     
     private static void startWithoutConsole(String[] args, ConfigurableApplicationContext coreContext) {
-        ConfigurableApplicationContext webContext = new SpringApplicationBuilder(
-                NacosServerWebApplication.class).parent(coreContext).run(args);
+        ConfigurableApplicationContext webContext = startServerWebContext(args, coreContext);
     }
     
     private static void startWithConsole(String[] args, ConfigurableApplicationContext coreContext) {
-        ConfigurableApplicationContext serverWebContext = new SpringApplicationBuilder(
-                NacosServerWebApplication.class).parent(coreContext).run(args);
-        System.out.println(serverWebContext.getEnvironment().getProperty("nacos.k8s.sync.enabled"));
-        ConfigurableApplicationContext consoleWebContext = new SpringApplicationBuilder(NacosConsole.class).parent(
-                coreContext).run(args);
-        System.out.println(consoleWebContext.getEnvironment().getProperty("nacos.k8s.sync.enabled"));
+        ConfigurableApplicationContext serverWebContext = startServerWebContext(args, coreContext);
+        ConfigurableApplicationContext consoleContext = startConsoleContext(args, coreContext);
+    }
+    
+    private static ConfigurableApplicationContext startServerWebContext(String[] args,
+            ConfigurableApplicationContext coreContext) {
+        return new SpringApplicationBuilder(NacosServerWebApplication.class).parent(coreContext)
+                .banner(getBanner("nacos-server-web-banner.txt")).run(args);
+    }
+    
+    private static ConfigurableApplicationContext startConsoleContext(String[] args,
+            ConfigurableApplicationContext coreContext) {
+        return new SpringApplicationBuilder(NacosConsole.class).parent(coreContext)
+                .banner(getBanner("nacos-console-banner.txt")).run(args);
+    }
+    
+    private static ConfigurableApplicationContext startCoreContext(String[] args) {
+        return new SpringApplicationBuilder(NacosServerBasicApplication.class).web(WebApplicationType.NONE)
+                .banner(getBanner("core-banner.txt")).run(args);
+    }
+    
+    private static Banner getBanner(String bannerFileName) {
+        return new ResourceBanner(new ClassPathResource(bannerFileName));
     }
 }
