@@ -451,9 +451,9 @@ class HistoryRollback extends React.Component {
                   if (value === 'formal') {
                     return locale.formal;
                   } else if (value === 'gray') {
-                    const extraInfo = record.extraInfo ? JSON.parse(record.extraInfo) : {};
-                    if (extraInfo.gray_name) {
-                      return `${locale.gray}（${extraInfo.gray_name}）`;
+                    const extInfo = record.extInfo ? JSON.parse(record.extInfo) : {};
+                    if (extInfo.gray_name) {
+                      return `${locale.gray}（${extInfo.gray_name}）`;
                     } else {
                       return locale.gray;
                     }

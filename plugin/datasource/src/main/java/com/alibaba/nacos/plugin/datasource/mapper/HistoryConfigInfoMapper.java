@@ -62,7 +62,7 @@ public interface HistoryConfigInfoMapper extends Mapper {
     default MapperResult findDeletedConfig(MapperContext context) {
         return new MapperResult(
                 "SELECT id, nid, data_id, group_id, app_name, content, md5, gmt_create, gmt_modified, src_user, src_ip, op_type, tenant_id, "
-                        + "publish_type, ext_info, encrypted_data_key FROM his_config_info WHERE op_type = 'D' AND "
+                        + "publish_type, gray_name, ext_info, encrypted_data_key FROM his_config_info WHERE op_type = 'D' AND "
                         + "publish_type = ? and gmt_modified >= ? and nid > ? order by nid limit ? ",
                 CollectionUtils.list(context.getWhereParameter(FieldConstant.PUBLISH_TYPE),
                         context.getWhereParameter(FieldConstant.START_TIME),
@@ -80,7 +80,8 @@ public interface HistoryConfigInfoMapper extends Mapper {
      */
     default MapperResult findConfigHistoryFetchRows(MapperContext context) {
         return new MapperResult(
-                "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified FROM his_config_info "
+                "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,publish_type,gray_name,op_type,"
+                        + "gmt_create,gmt_modified FROM his_config_info "
                         + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC",
                 CollectionUtils.list(context.getWhereParameter(FieldConstant.DATA_ID),
                         context.getWhereParameter(FieldConstant.GROUP_ID),
@@ -107,7 +108,7 @@ public interface HistoryConfigInfoMapper extends Mapper {
      */
     default MapperResult detailPreviousConfigHistory(MapperContext context) {
         return new MapperResult(
-                "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,publish_type,ext_info,gmt_create"
+                "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,publish_type,gray_name,ext_info,gmt_create"
                         + ",gmt_modified,encrypted_data_key FROM his_config_info WHERE nid = (SELECT max(nid) FROM his_config_info WHERE id = ?)",
                 Collections.singletonList(context.getWhereParameter(FieldConstant.ID)));
     }

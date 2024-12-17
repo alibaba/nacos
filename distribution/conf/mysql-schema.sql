@@ -157,6 +157,7 @@ CREATE TABLE `his_config_info` (
                                    `tenant_id` varchar(128) DEFAULT '' COMMENT '租户字段',
                                    `encrypted_data_key` varchar(1024) NOT NULL DEFAULT '' COMMENT '密钥',
                                    `publish_type` varchar(50)  DEFAULT 'formal' COMMENT 'publish type gray or formal',
+                                   `gray_name` varchar(50)  DEFAULT NULL COMMENT 'gray name',
                                    `ext_info`  longtext DEFAULT NULL COMMENT 'ext info',
                                    PRIMARY KEY (`nid`),
                                    KEY `idx_gmt_create` (`gmt_create`),

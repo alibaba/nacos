@@ -57,6 +57,7 @@ CREATE TABLE his_config_info (
   publish_type varchar(50)  DEFAULT 'formal',
   ext_info CLOB,
   op_type char(10) DEFAULT NULL,
+  gray_name varchar(128) DEFAULT NULL,
   encrypted_data_key LONG VARCHAR DEFAULT NULL,
   constraint hisconfiginfo_nid_key PRIMARY KEY (nid));
 
@@ -237,3 +238,4 @@ ALTER TABLE config_info_beta ADD  src_ip varchar(50)  DEFAULT NULL  ;
 
 ALTER TABLE his_config_info ADD publish_type varchar(50)  DEFAULT 'formal';
 ALTER TABLE his_config_info ADD ext_info CLOB   DEFAULT NULL ;
+ALTER TABLE his_config_info ADD gray_name varchar(128) DEFAULT NULL;
