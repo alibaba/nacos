@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfoPair;
@@ -198,11 +199,12 @@ class HistoryControllerTest {
         configHistoryInfoPair.setGroup("test");
         configHistoryInfoPair.setContent("test");
         configHistoryInfoPair.setUpdatedContent("test updated");
-        configHistoryInfoPair.setTenant("");
+        configHistoryInfoPair.setTenant(StringUtils.EMPTY);
         configHistoryInfoPair.setCreatedTime(new Timestamp(new Date().getTime()));
         configHistoryInfoPair.setLastModifiedTime(new Timestamp(new Date().getTime()));
 
-        when(historyController.getConfigHistoryInfoPair("test", "test", "", 1L)).thenReturn(configHistoryInfoPair);
+        when(historyController.getConfigHistoryInfoPair("test", "test", StringUtils.EMPTY, 1L))
+                .thenReturn(configHistoryInfoPair);
 
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.HISTORY_CONTROLLER_PATH + "/pair")
                 .param("dataId", "test").param("group", "test")

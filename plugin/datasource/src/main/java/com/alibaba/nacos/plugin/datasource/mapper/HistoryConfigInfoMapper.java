@@ -17,13 +17,14 @@
 package com.alibaba.nacos.plugin.datasource.mapper;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * The history config info mapper.
@@ -126,20 +127,29 @@ public interface HistoryConfigInfoMapper extends Mapper {
     /**
      * Get updated history config detail of the history config. The default sql: SELECT
      * nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified FROM
-     * his_config_info WHERE nid = (SELECT min(nid) FROM his_config_info WHERE nid > ?
-     * AND id = (SELECT id from his_config_info where nid = ?))
+     * his_config_info WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND publish_type = ? AND gray_name = ?
+     * AND nid > ? ORDER BY nid LIMIT 1
      *
      * @param context sql paramMap
-     * @return The sql of getting updated history config detail of the history config.
+     * @return The sql of getting the next history config detail of the history config.
      */
-    default MapperResult detailUpdatedConfigHistory(MapperContext context) {
-        return new MapperResult(
-                "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,publish_type,ext_info,gmt_create"
-                        + ",gmt_modified,encrypted_data_key FROM his_config_info WHERE nid = (SELECT min(nid) FROM his_config_info "
-                        + "WHERE nid > ? AND id = (SELECT id FROM his_config_info WHERE nid = ?))",
-                Collections.unmodifiableList(
-                        Arrays.asList(context.getWhereParameter(FieldConstant.NID), context.getWhereParameter(FieldConstant.NID))
-                )
-        );
+    default MapperResult getNextHistoryInfo(MapperContext context) {
+        String sql = "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,publish_type,"
+                + "gray_name,ext_info,gmt_create,gmt_modified,encrypted_data_key FROM his_config_info "
+                + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND publish_type = ? "
+                + (StringUtils.isEmpty(context.getContextParameter(FieldConstant.GRAY_NAME)) ? "" : "AND gray_name = ? ")
+                + "AND nid > ? ORDER BY nid LIMIT 1";
+
+        List<Object> paramList = CollectionUtils.list(
+                context.getWhereParameter(FieldConstant.DATA_ID),
+                context.getWhereParameter(FieldConstant.GROUP_ID),
+                context.getWhereParameter(FieldConstant.TENANT_ID),
+                context.getWhereParameter(FieldConstant.PUBLISH_TYPE),
+                context.getWhereParameter(FieldConstant.NID));
+        if (!StringUtils.isEmpty(context.getContextParameter(FieldConstant.GRAY_NAME))) {
+            paramList.add(4, context.getWhereParameter(FieldConstant.GRAY_NAME));
+        }
+
+        return new MapperResult(sql, paramList);
     }
 }

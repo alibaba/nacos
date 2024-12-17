@@ -119,10 +119,16 @@ public interface HistoryConfigInfoPersistService {
     int findConfigHistoryCountByTime(final Timestamp startTime);
 
     /**
-     * Get updated history config detail of the history config.
+     * Get the next history config detail of the history config.
      *
-     * @param nid nid
-     * @return {@link ConfigHistoryInfo}
+     * @param dataId      data Id
+     * @param group       group
+     * @param tenant      tenant
+     * @param publishType publish type
+     * @param grayName    gray name
+     * @param startNid    start nid
+     * @return the next history config detail of the history config
      */
-    ConfigHistoryInfo detailUpdatedConfigHistory(Long nid);
+    ConfigHistoryInfo getNextHistoryInfo(String dataId,String group,String tenant, String publishType,String grayName,
+            long startNid);
 }

@@ -23,6 +23,7 @@ import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfoPair;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
@@ -46,11 +47,14 @@ public class HistoryService {
     private final HistoryConfigInfoPersistService historyConfigInfoPersistService;
     
     private final ConfigInfoPersistService configInfoPersistService;
+
+    private final ConfigInfoGrayPersistService configInfoGrayPersistService;
     
     public HistoryService(HistoryConfigInfoPersistService historyConfigInfoPersistService,
-            ConfigInfoPersistService configInfoPersistService) {
+            ConfigInfoPersistService configInfoPersistService, ConfigInfoGrayPersistService configInfoGrayPersistService) {
         this.historyConfigInfoPersistService = historyConfigInfoPersistService;
         this.configInfoPersistService = configInfoPersistService;
+        this.configInfoGrayPersistService = configInfoGrayPersistService;
     }
     
     /**
@@ -121,7 +125,7 @@ public class HistoryService {
     }
 
     /**
-     * Query the detailed configuration history information pair, including the original version and the updated version.
+     * Query the detailed config history info pair, including the original version and the updated version.
      */
     public ConfigHistoryInfoPair getConfigHistoryInfoPair(String dataId, String group, String namespaceId, Long nid)
             throws AccessException {
@@ -146,15 +150,19 @@ public class HistoryService {
         }
 
         if (OperationType.UPDATE.getValue().equals(configHistoryInfoPair.getOpType())) {
-            ConfigHistoryInfo configHistoryInfoUpdated = historyConfigInfoPersistService.detailUpdatedConfigHistory(nid);
-            if (Objects.isNull(configHistoryInfoUpdated)) {
+            ConfigHistoryInfo nextHistoryInfo = historyConfigInfoPersistService.getNextHistoryInfo(dataId, group,
+                    namespaceId, configHistoryInfoPair.getPublishType(), configHistoryInfoPair.getGrayName(), nid);
+            if (Objects.isNull(nextHistoryInfo)) {
                 // get the latest config info
-                ConfigInfo configInfo = configInfoPersistService.findConfigInfo(dataId, group, namespaceId);
+                ConfigInfo configInfo = StringUtils.isEmpty(configHistoryInfoPair.getGrayName())
+                        ? configInfoPersistService.findConfigInfo(dataId, group, namespaceId)
+                        : configInfoGrayPersistService.findConfigInfo4Gray(dataId, group, namespaceId,
+                        configHistoryInfoPair.getGrayName());
                 configHistoryInfoPair.setUpdatedMd5(configInfo.getMd5());
                 configHistoryInfoPair.setUpdatedContent(configInfo.getContent());
             } else {
-                configHistoryInfoPair.setUpdatedMd5(configHistoryInfoUpdated.getMd5());
-                configHistoryInfoPair.setUpdatedContent(configHistoryInfoUpdated.getContent());
+                configHistoryInfoPair.setUpdatedMd5(nextHistoryInfo.getMd5());
+                configHistoryInfoPair.setUpdatedContent(nextHistoryInfo.getContent());
             }
         }
 

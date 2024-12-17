@@ -16,10 +16,13 @@
 
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.OperationType;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfoPair;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.persistence.model.Page;
@@ -72,10 +75,13 @@ class HistoryServiceTest {
     
     @Mock
     private ConfigInfoPersistService configInfoPersistService;
+
+    @Mock
+    private ConfigInfoGrayPersistService configInfoGrayPersistService;
     
     @BeforeEach
     void setUp() throws Exception {
-        this.historyService = new HistoryService(historyConfigInfoPersistService, configInfoPersistService);
+        this.historyService = new HistoryService(historyConfigInfoPersistService, configInfoPersistService, configInfoGrayPersistService);
     }
     
     @Test
@@ -186,30 +192,37 @@ class HistoryServiceTest {
         configHistoryInfo.setTenant(TEST_TENANT);
         configHistoryInfo.setOpType(TEST_OP_TYPE);
         configHistoryInfo.setMd5(TEST_MD5);
+        configHistoryInfo.setPublishType(Constants.FORMAL);
+        configHistoryInfo.setGrayName(StringUtils.EMPTY);
         configHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
         configHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
 
         when(historyConfigInfoPersistService.detailConfigHistory(1L)).thenReturn(configHistoryInfo);
 
-        ConfigHistoryInfo configHistoryInfoUpdated = new ConfigHistoryInfoPair();
-        configHistoryInfoUpdated.setDataId(TEST_DATA_ID);
-        configHistoryInfoUpdated.setGroup(TEST_GROUP);
-        configHistoryInfoUpdated.setTenant(TEST_TENANT);
-        configHistoryInfoUpdated.setOpType(TEST_OP_TYPE);
-        configHistoryInfoUpdated.setMd5(TEST_UPDATED_MD5);
-        configHistoryInfoUpdated.setContent(TEST_UPDATED_CONTENT);
-        configHistoryInfoUpdated.setCreatedTime(new Timestamp(new Date().getTime()));
-        configHistoryInfoUpdated.setLastModifiedTime(new Timestamp(new Date().getTime()));
+        ConfigHistoryInfo nextHistoryInfo = new ConfigHistoryInfo();
+        nextHistoryInfo.setDataId(TEST_DATA_ID);
+        nextHistoryInfo.setGroup(TEST_GROUP);
+        nextHistoryInfo.setTenant(TEST_TENANT);
+        nextHistoryInfo.setOpType(TEST_OP_TYPE);
+        nextHistoryInfo.setMd5(TEST_UPDATED_MD5);
+        nextHistoryInfo.setContent(TEST_UPDATED_CONTENT);
+        nextHistoryInfo.setPublishType(Constants.FORMAL);
+        nextHistoryInfo.setGrayName(StringUtils.EMPTY);
+        nextHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
+        nextHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
 
-        when(historyConfigInfoPersistService.detailUpdatedConfigHistory(1L)).thenReturn(configHistoryInfoUpdated);
+        when(historyConfigInfoPersistService.getNextHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, Constants.FORMAL,
+                StringUtils.EMPTY, 1L)).thenReturn(nextHistoryInfo);
 
-        ConfigHistoryInfoPair resConfigHistoryInfoPair = historyService.getConfigHistoryInfoPair(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1L);
+        ConfigHistoryInfoPair resConfigHistoryInfoPair = historyService.getConfigHistoryInfoPair(TEST_DATA_ID, TEST_GROUP,
+                TEST_TENANT, 1L);
 
-        verify(historyConfigInfoPersistService).detailUpdatedConfigHistory(1L);
+        verify(historyConfigInfoPersistService).getNextHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, Constants.FORMAL,
+                StringUtils.EMPTY, 1L);
 
-        assertEquals(configHistoryInfoUpdated.getDataId(), resConfigHistoryInfoPair.getDataId());
-        assertEquals(configHistoryInfoUpdated.getGroup(), resConfigHistoryInfoPair.getGroup());
-        assertEquals(configHistoryInfoUpdated.getMd5(), resConfigHistoryInfoPair.getUpdatedMd5());
-        assertEquals(configHistoryInfoUpdated.getContent(), resConfigHistoryInfoPair.getUpdatedContent());
+        assertEquals(nextHistoryInfo.getDataId(), resConfigHistoryInfoPair.getDataId());
+        assertEquals(nextHistoryInfo.getGroup(), resConfigHistoryInfoPair.getGroup());
+        assertEquals(nextHistoryInfo.getMd5(), resConfigHistoryInfoPair.getUpdatedMd5());
+        assertEquals(nextHistoryInfo.getContent(), resConfigHistoryInfoPair.getUpdatedContent());
     }
 }
