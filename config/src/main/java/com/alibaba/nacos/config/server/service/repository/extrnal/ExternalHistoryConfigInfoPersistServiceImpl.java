@@ -243,7 +243,7 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     }
 
     @Override
-    public ConfigHistoryInfo getNextHistoryInfo(String dataId,String group,String tenant, String publishType,
+    public ConfigHistoryInfo getNextHistoryInfo(String dataId, String group, String tenant, String publishType,
             String grayName, long startNid) {
         HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
                 dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);

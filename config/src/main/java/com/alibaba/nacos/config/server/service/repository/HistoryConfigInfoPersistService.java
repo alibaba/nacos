@@ -129,6 +129,6 @@ public interface HistoryConfigInfoPersistService {
      * @param startNid    start nid
      * @return the next history config detail of the history config
      */
-    ConfigHistoryInfo getNextHistoryInfo(String dataId,String group,String tenant, String publishType,String grayName,
+    ConfigHistoryInfo getNextHistoryInfo(String dataId, String group, String tenant, String publishType, String grayName,
             long startNid);
 }
