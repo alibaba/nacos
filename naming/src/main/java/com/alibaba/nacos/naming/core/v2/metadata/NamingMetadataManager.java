@@ -151,7 +151,7 @@ public class NamingMetadataManager extends SmartSubscriber {
         if (null != instanceMetadataMapForService) {
             instanceMetadataMapForService.remove(metadataId);
             if (instanceMetadataMapForService.isEmpty()) {
-                serviceMetadataMap.remove(service);
+                instanceMetadataMap.remove(service);
             }
         }
         expiredMetadataInfos.remove(ExpiredMetadataInfo.newExpiredInstanceMetadata(service, metadataId));
