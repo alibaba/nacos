@@ -17,13 +17,19 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.common.utils.Pair;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.enums.OperationType;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
+import com.alibaba.nacos.config.server.model.ConfigHistoryInfoPair;
+import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -41,11 +47,14 @@ public class HistoryService {
     private final HistoryConfigInfoPersistService historyConfigInfoPersistService;
     
     private final ConfigInfoPersistService configInfoPersistService;
+
+    private final ConfigInfoGrayPersistService configInfoGrayPersistService;
     
     public HistoryService(HistoryConfigInfoPersistService historyConfigInfoPersistService,
-            ConfigInfoPersistService configInfoPersistService) {
+            ConfigInfoPersistService configInfoPersistService, ConfigInfoGrayPersistService configInfoGrayPersistService) {
         this.historyConfigInfoPersistService = historyConfigInfoPersistService;
         this.configInfoPersistService = configInfoPersistService;
+        this.configInfoGrayPersistService = configInfoGrayPersistService;
     }
     
     /**
@@ -113,5 +122,65 @@ public class HistoryService {
                 .equals(configHistoryInfo.getTenant(), namespaceId)) {
             throw new AccessException("Please check dataId, group or namespaceId.");
         }
+    }
+
+    /**
+     * Query the detailed config history info pair, including the original version and the updated version.
+     */
+    public ConfigHistoryInfoPair getConfigHistoryInfoPair(String dataId, String group, String namespaceId, Long nid)
+            throws AccessException {
+        ConfigHistoryInfo configHistoryInfo = historyConfigInfoPersistService.detailConfigHistory(nid);
+        if (Objects.isNull(configHistoryInfo)) {
+            return null;
+        }
+
+        // check if history config match the input
+        checkHistoryInfoPermission(configHistoryInfo, dataId, group, namespaceId);
+
+        // transform
+        ConfigHistoryInfoPair configHistoryInfoPair = new ConfigHistoryInfoPair();
+        BeanUtils.copyProperties(configHistoryInfo, configHistoryInfoPair);
+        configHistoryInfoPair.setOpType(configHistoryInfoPair.getOpType().trim());
+
+        if (OperationType.INSERT.getValue().equals(configHistoryInfoPair.getOpType())) {
+            configHistoryInfoPair.setUpdatedContent(configHistoryInfoPair.getContent());
+            configHistoryInfoPair.setUpdatedMd5(configHistoryInfoPair.getMd5());
+            configHistoryInfoPair.setContent(StringUtils.EMPTY);
+            configHistoryInfoPair.setMd5(StringUtils.EMPTY);
+        }
+
+        if (OperationType.UPDATE.getValue().equals(configHistoryInfoPair.getOpType())) {
+            ConfigHistoryInfo nextHistoryInfo = historyConfigInfoPersistService.getNextHistoryInfo(dataId, group,
+                    namespaceId, configHistoryInfoPair.getPublishType(), configHistoryInfoPair.getGrayName(), nid);
+            if (Objects.isNull(nextHistoryInfo)) {
+                // get the latest config info
+                ConfigInfo configInfo = StringUtils.isEmpty(configHistoryInfoPair.getGrayName())
+                        ? configInfoPersistService.findConfigInfo(dataId, group, namespaceId)
+                        : configInfoGrayPersistService.findConfigInfo4Gray(dataId, group, namespaceId,
+                        configHistoryInfoPair.getGrayName());
+                configHistoryInfoPair.setUpdatedMd5(configInfo.getMd5());
+                configHistoryInfoPair.setUpdatedContent(configInfo.getContent());
+            } else {
+                configHistoryInfoPair.setUpdatedMd5(nextHistoryInfo.getMd5());
+                configHistoryInfoPair.setUpdatedContent(nextHistoryInfo.getContent());
+            }
+        }
+
+        if (OperationType.DELETE.getValue().equals(configHistoryInfoPair.getOpType())) {
+            configHistoryInfoPair.setUpdatedMd5(StringUtils.EMPTY);
+            configHistoryInfoPair.setUpdatedContent(StringUtils.EMPTY);
+        }
+
+        // decrypt content
+        String encryptedDataKey = configHistoryInfoPair.getEncryptedDataKey();
+        String originalContent = EncryptionHandler.decryptHandler(dataId, encryptedDataKey,
+                configHistoryInfoPair.getContent()).getSecond();
+        configHistoryInfoPair.setContent(originalContent);
+
+        String updatedContent = EncryptionHandler.decryptHandler(dataId, encryptedDataKey,
+                configHistoryInfoPair.getUpdatedContent()).getSecond();
+        configHistoryInfoPair.setUpdatedContent(updatedContent);
+
+        return configHistoryInfoPair;
     }
 }

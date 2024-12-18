@@ -43,6 +43,8 @@ public class FieldConstant {
     public static final String PAGE_SIZE = "pageSize";
     
     public static final String ID = "id";
+
+    public static final String NID = "nid";
     
     public static final String START_TIME = "startTime";
     

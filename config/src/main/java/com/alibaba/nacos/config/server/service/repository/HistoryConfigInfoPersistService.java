@@ -117,4 +117,18 @@ public interface HistoryConfigInfoPersistService {
      */
     @Deprecated
     int findConfigHistoryCountByTime(final Timestamp startTime);
+
+    /**
+     * Get the next history config detail of the history config.
+     *
+     * @param dataId      data Id
+     * @param group       group
+     * @param tenant      tenant
+     * @param publishType publish type
+     * @param grayName    gray name
+     * @param startNid    start nid
+     * @return the next history config detail of the history config
+     */
+    ConfigHistoryInfo getNextHistoryInfo(String dataId, String group, String tenant, String publishType, String grayName,
+            long startNid);
 }
