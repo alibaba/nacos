@@ -151,6 +151,7 @@ public class HistoryService {
             configHistoryInfoDetail.setOriginalExtInfo(StringUtils.EMPTY);
             configHistoryInfoDetail.setOriginalContent(StringUtils.EMPTY);
             configHistoryInfoDetail.setOriginalMd5(StringUtils.EMPTY);
+            configHistoryInfoDetail.setOriginalEncryptedDataKey(StringUtils.EMPTY);
         }
         
         //update
@@ -185,6 +186,7 @@ public class HistoryService {
                 configHistoryInfoDetail.setUpdatedContent(currentConfigInfo.getContent());
                 configHistoryInfoDetail.setUpdatedMd5(currentConfigInfo.getMd5());
                 configHistoryInfoDetail.setUpdatedEncryptedDataKey(currentConfigInfo.getEncryptedDataKey());
+    
             }
         }
         

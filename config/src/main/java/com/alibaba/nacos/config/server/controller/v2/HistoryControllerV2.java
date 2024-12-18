@@ -120,7 +120,7 @@ public class HistoryControllerV2 {
      * @param nid    history_config_info nid
      * @param dataId dataId  @since 2.0.3
      * @param group  groupId  @since 2.0.3
-     * @param tenant tenantId  @since 2.0.3
+     * @param namespaceId namespaceId  @since 2.0.3
      * @return history config info
      * @since 2.0.3 add {@link Secured}, dataId, groupId and tenant for history config permission check.
      */
