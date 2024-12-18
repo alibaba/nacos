@@ -241,4 +241,29 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
         }
         return result;
     }
+
+    @Override
+    public ConfigHistoryInfo getNextHistoryInfo(String dataId, String group, String tenant, String publishType,
+            String grayName, long startNid) {
+        HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
+                dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
+        MapperContext context = new MapperContext();
+        context.putWhereParameter(FieldConstant.DATA_ID, dataId);
+        context.putWhereParameter(FieldConstant.GROUP_ID, group);
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenant);
+        context.putWhereParameter(FieldConstant.PUBLISH_TYPE, publishType);
+        context.putWhereParameter(FieldConstant.NID, startNid);
+        context.putWhereParameter(FieldConstant.GRAY_NAME, grayName);
+        MapperResult sqlFetchRows = historyConfigInfoMapper.getNextHistoryInfo(context);
+        try {
+            ConfigHistoryInfo historyInfo = jt.queryForObject(sqlFetchRows.getSql(),
+                    sqlFetchRows.getParamList().toArray(), HISTORY_DETAIL_ROW_MAPPER);
+            return historyInfo;
+        } catch (EmptyResultDataAccessException emptyResultDataAccessException) {
+            return null;
+        } catch (DataAccessException e) {
+            LogUtil.FATAL_LOG.error("[db-error] " + e, e);
+            throw e;
+        }
+    }
 }

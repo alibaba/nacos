@@ -17,8 +17,10 @@
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
+import com.alibaba.nacos.config.server.model.ConfigHistoryInfoPair;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.HistoryService;
 import com.alibaba.nacos.persistence.model.Page;
@@ -188,5 +190,33 @@ class HistoryControllerTest {
         assertEquals(configInfoWrapper.getContent(), resConfigInfoWrapper.getContent());
         
     }
-    
+
+    @Test
+    void testGetConfigHistoryInfoPair() throws Exception {
+
+        ConfigHistoryInfoPair configHistoryInfoPair = new ConfigHistoryInfoPair();
+        configHistoryInfoPair.setDataId("test");
+        configHistoryInfoPair.setGroup("test");
+        configHistoryInfoPair.setContent("test");
+        configHistoryInfoPair.setUpdatedContent("test updated");
+        configHistoryInfoPair.setTenant(StringUtils.EMPTY);
+        configHistoryInfoPair.setCreatedTime(new Timestamp(new Date().getTime()));
+        configHistoryInfoPair.setLastModifiedTime(new Timestamp(new Date().getTime()));
+
+        when(historyController.getConfigHistoryInfoPair("test", "test", StringUtils.EMPTY, 1L))
+                .thenReturn(configHistoryInfoPair);
+
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.HISTORY_CONTROLLER_PATH + "/pair")
+                .param("dataId", "test").param("group", "test")
+                .param("tenant", "").param("nid", "1");
+
+        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        ConfigHistoryInfoPair resConfigHistoryInfoPair = JacksonUtils.toObj(actualValue, ConfigHistoryInfoPair.class);
+
+        assertEquals(configHistoryInfoPair.getDataId(), resConfigHistoryInfoPair.getDataId());
+        assertEquals(configHistoryInfoPair.getGroup(), resConfigHistoryInfoPair.getGroup());
+        assertEquals(configHistoryInfoPair.getContent(), resConfigHistoryInfoPair.getContent());
+        assertEquals(configHistoryInfoPair.getUpdatedContent(), resConfigHistoryInfoPair.getUpdatedContent());
+    }
+
 }
