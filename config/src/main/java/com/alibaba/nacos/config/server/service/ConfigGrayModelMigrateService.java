@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.api.utils.NetUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
@@ -29,6 +30,7 @@ import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistS
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -142,10 +144,11 @@ public class ConfigGrayModelMigrateService {
     
     private void doCheckMigrate() throws Exception {
         
-        ThreadPoolExecutor executorService = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(),
-                Runtime.getRuntime().availableProcessors(), 60L, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(PropertyUtil.getAllDumpPageSize() * 2),
-                r -> new Thread(r, "gray migrate worker"), new ThreadPoolExecutor.CallerRunsPolicy());
+        int migrateMulti=EnvUtil.getProperty("nacos.gray.migrate.executor.multi",Integer.class,Integer.valueOf(4));
+        ThreadPoolExecutor executorService = new ThreadPoolExecutor(ThreadUtils.getSuitableThreadCount(migrateMulti),
+                ThreadUtils.getSuitableThreadCount(migrateMulti), 60L, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(PropertyUtil.getAllDumpPageSize() * migrateMulti),
+                r -> new Thread(r, "gray-migrate-worker"), new ThreadPoolExecutor.CallerRunsPolicy());
         int pageSize = 100;
         int rowCount = configInfoBetaPersistService.configInfoBetaCount();
         int pageCount = (int) Math.ceil(rowCount * 1.0 / pageSize);
