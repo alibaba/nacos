@@ -170,6 +170,10 @@ class NamingMetadataManagerTest {
         Optional<InstanceMetadata> instanceMetadata = namingMetadataManager.getInstanceMetadata(service, METADATA_ID);
         
         assertFalse(instanceMetadata.isPresent());
+
+        Map<Service, ConcurrentMap<String, InstanceMetadata>> instanceMetadataSnapshot = namingMetadataManager.getInstanceMetadataSnapshot();
+        
+        assertEquals(0, instanceMetadataSnapshot.size());
     }
     
     @Test
