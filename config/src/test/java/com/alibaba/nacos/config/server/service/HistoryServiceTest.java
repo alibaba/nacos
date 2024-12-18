@@ -20,7 +20,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.OperationType;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
-import com.alibaba.nacos.config.server.model.ConfigHistoryInfoPair;
+import com.alibaba.nacos.config.server.model.ConfigHistoryInfoDetail;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
@@ -214,15 +214,15 @@ class HistoryServiceTest {
         when(historyConfigInfoPersistService.getNextHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, Constants.FORMAL,
                 StringUtils.EMPTY, 1L)).thenReturn(nextHistoryInfo);
 
-        ConfigHistoryInfoPair resConfigHistoryInfoPair = historyService.getConfigHistoryInfoPair(TEST_DATA_ID, TEST_GROUP,
+        ConfigHistoryInfoDetail resConfigHistoryInfoDetail = historyService.getConfigHistoryInfoDetail(TEST_DATA_ID, TEST_GROUP,
                 TEST_TENANT, 1L);
 
         verify(historyConfigInfoPersistService).getNextHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, Constants.FORMAL,
                 StringUtils.EMPTY, 1L);
 
-        assertEquals(nextHistoryInfo.getDataId(), resConfigHistoryInfoPair.getDataId());
-        assertEquals(nextHistoryInfo.getGroup(), resConfigHistoryInfoPair.getGroup());
-        assertEquals(nextHistoryInfo.getMd5(), resConfigHistoryInfoPair.getUpdatedMd5());
-        assertEquals(nextHistoryInfo.getContent(), resConfigHistoryInfoPair.getUpdatedContent());
+        assertEquals(nextHistoryInfo.getDataId(), resConfigHistoryInfoDetail.getDataId());
+        assertEquals(nextHistoryInfo.getGroup(), resConfigHistoryInfoDetail.getGroup());
+        assertEquals(nextHistoryInfo.getMd5(), resConfigHistoryInfoDetail.getUpdatedMd5());
+        assertEquals(nextHistoryInfo.getContent(), resConfigHistoryInfoDetail.getUpdatedContent());
     }
 }

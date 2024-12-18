@@ -144,7 +144,7 @@ public class ConfigGrayModelMigrateService {
     
     private void doCheckMigrate() throws Exception {
         
-        int migrateMulti=EnvUtil.getProperty("nacos.gray.migrate.executor.multi",Integer.class,Integer.valueOf(4));
+        int migrateMulti = EnvUtil.getProperty("nacos.gray.migrate.executor.multi", Integer.class, Integer.valueOf(4));
         ThreadPoolExecutor executorService = new ThreadPoolExecutor(ThreadUtils.getSuitableThreadCount(migrateMulti),
                 ThreadUtils.getSuitableThreadCount(migrateMulti), 60L, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(PropertyUtil.getAllDumpPageSize() * migrateMulti),
