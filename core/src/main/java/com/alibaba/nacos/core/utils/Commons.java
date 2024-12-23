@@ -29,11 +29,15 @@ public final class Commons {
     
     public static final String NACOS_SERVER_VERSION_V2 = "/v2";
     
+    public static final String NACOS_SERVER_VERSION_V3 = "/v3";
+    
     public static final String DEFAULT_NACOS_CORE_CONTEXT = NACOS_SERVER_VERSION + "/core";
     
     public static final String NACOS_CORE_CONTEXT = DEFAULT_NACOS_CORE_CONTEXT;
     
     public static final String NACOS_CORE_CONTEXT_V2 = NACOS_SERVER_VERSION_V2 + "/core";
+    
+    public static final String NACOS_ADMIN_CORE_CONTEXT_V3 = NACOS_SERVER_VERSION_V3 + "/admin/core";
     
     
 }

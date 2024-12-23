@@ -46,6 +46,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping(Commons.NACOS_CORE_CONTEXT + "/ops")
+@Deprecated
 public class CoreOpsController {
     
     private final ProtocolManager protocolManager;
@@ -66,7 +67,7 @@ public class CoreOpsController {
     
     @PostMapping(value = "/raft")
     @Secured(action = ActionTypes.WRITE, resource = "nacos/admin")
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "POST {contextPath:nacos}/v3/admin/core/ops/raft")
     public RestResult<String> raftOps(@RequestBody Map<String, String> commands) {
         return protocolManager.getCpProtocol().execute(commands);
     }
@@ -77,7 +78,7 @@ public class CoreOpsController {
      * @return {@link RestResult}
      */
     @GetMapping(value = "/idInfo")
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/admin/core/ops/ids")
     public RestResult<Map<String, Map<Object, Object>>> idInfo() {
         Map<String, Map<Object, Object>> info = new HashMap<>(10);
         idGeneratorManager.getGeneratorMap().forEach((resource, idGenerator) -> info.put(resource, idGenerator.info()));
@@ -86,7 +87,7 @@ public class CoreOpsController {
     
     @PutMapping(value = "/log")
     @Secured(action = ActionTypes.WRITE, resource = "nacos/admin", signType = SignType.CONSOLE)
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "PUT {contextPath:nacos}/v3/admin/core/ops/log")
     public String setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
         Loggers.setLogLevel(logName, logLevel);
         return HttpServletResponse.SC_OK + "";

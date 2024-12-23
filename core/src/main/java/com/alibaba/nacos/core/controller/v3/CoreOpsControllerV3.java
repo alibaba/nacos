@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.controller.v2;
+package com.alibaba.nacos.core.controller.v3;
 
+import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.core.controller.compatibility.Compatibility;
-import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.common.Beta;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
+import com.alibaba.nacos.core.model.form.v3.RaftCommandForm;
 import com.alibaba.nacos.core.model.request.LogUpdateRequest;
 import com.alibaba.nacos.core.model.vo.IdGeneratorVO;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,24 +39,25 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+
+import static com.alibaba.nacos.core.utils.Commons.NACOS_ADMIN_CORE_CONTEXT_V3;
 
 /**
- * Kernel modules operate and maintain HTTP interfaces v2.
+ * Kernel modules operate and maintain HTTP interfaces v3.
  *
- * @author wuzhiguo
+ * @author yunye
+ * @since 3.0.0-beta
  */
-@Beta
+@NacosApi
 @RestController
-@RequestMapping(Commons.NACOS_CORE_CONTEXT_V2 + "/ops")
-@Deprecated
-public class CoreOpsV2Controller {
+@RequestMapping(NACOS_ADMIN_CORE_CONTEXT_V3 + "/ops")
+public class CoreOpsControllerV3 {
     
     private final ProtocolManager protocolManager;
     
     private final IdGeneratorManager idGeneratorManager;
     
-    public CoreOpsV2Controller(ProtocolManager protocolManager, IdGeneratorManager idGeneratorManager) {
+    public CoreOpsControllerV3(ProtocolManager protocolManager, IdGeneratorManager idGeneratorManager) {
         this.protocolManager = protocolManager;
         this.idGeneratorManager = idGeneratorManager;
     }
@@ -68,14 +69,14 @@ public class CoreOpsV2Controller {
      * "ip:{raft_port}" }
      * </p>
      *
-     * @param commands transferLeader or doSnapshot or resetRaftCluster or removePeer
+     * @param form RaftCommandForm
      * @return {@link RestResult}
      */
     @PostMapping(value = "/raft")
-    @Secured(action = ActionTypes.WRITE, resource = "nacos/admin", signType = SignType.CONSOLE)
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "POST {contextPath:nacos}/v3/admin/core/ops/raft")
-    public RestResult<String> raftOps(@RequestBody Map<String, String> commands) {
-        return protocolManager.getCpProtocol().execute(commands);
+    @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
+            + "/ops", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
+    public Result<String> raftOps(@RequestBody RaftCommandForm form) {
+        return Result.success(protocolManager.getCpProtocol().execute(form.toMap()).getData());
     }
     
     /**
@@ -84,8 +85,9 @@ public class CoreOpsV2Controller {
      * @return {@link RestResult}
      */
     @GetMapping(value = "/ids")
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/admin/core/ops/ids")
-    public RestResult<List<IdGeneratorVO>> ids() {
+    @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
+            + "/ops", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
+    public Result<List<IdGeneratorVO>> ids() {
         List<IdGeneratorVO> result = new ArrayList<>();
         idGeneratorManager.getGeneratorMap().forEach((resource, idGenerator) -> {
             IdGeneratorVO vo = new IdGeneratorVO();
@@ -99,15 +101,14 @@ public class CoreOpsV2Controller {
             result.add(vo);
         });
         
-        return RestResultUtils.success(result);
+        return Result.success(result);
     }
     
     @PutMapping(value = "/log")
-    @Secured(action = ActionTypes.WRITE, resource = "nacos/admin", signType = SignType.CONSOLE)
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "PUT {contextPath:nacos}/v3/admin/core/ops/log")
-    public RestResult<Void> updateLog(@RequestBody LogUpdateRequest logUpdateRequest) {
+    @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
+            + "/ops", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
+    public Result<Void> updateLog(@RequestBody LogUpdateRequest logUpdateRequest) {
         Loggers.setLogLevel(logUpdateRequest.getLogName(), logUpdateRequest.getLogLevel());
-        return RestResultUtils.success();
+        return Result.success();
     }
-    
 }
