@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.controller.v2;
+package com.alibaba.nacos.core.controller.v3;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -23,11 +23,9 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.NodeState;
-import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.model.request.LookupUpdateRequest;
 import com.alibaba.nacos.core.service.NacosClusterOperationService;
 import com.alibaba.nacos.core.utils.Commons;
@@ -35,7 +33,6 @@ import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -47,26 +44,28 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 
+import static com.alibaba.nacos.core.utils.Commons.NACOS_ADMIN_CORE_CONTEXT_V3;
+
 /**
- * Cluster communication interface v2.
+ * Cluster communication interface v3.
  *
- * @author wuzhiguo
+ * @author yunye
+ * @since 3.0.0-beta
  */
 @NacosApi
 @RestController
-@RequestMapping(Commons.NACOS_CORE_CONTEXT_V2 + "/cluster")
-@Deprecated
-public class NacosClusterControllerV2 {
+@RequestMapping(NACOS_ADMIN_CORE_CONTEXT_V3 + "/cluster")
+public class NacosClusterControllerV3 {
     
     private final NacosClusterOperationService nacosClusterOperationService;
     
-    public NacosClusterControllerV2(NacosClusterOperationService nacosClusterOperationService) {
+    public NacosClusterControllerV3(NacosClusterOperationService nacosClusterOperationService) {
         this.nacosClusterOperationService = nacosClusterOperationService;
     }
     
     @GetMapping(value = "/node/self")
-    @Secured(action = ActionTypes.READ, resource = "nacos/admin", signType = SignType.CONSOLE)
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/admin/core/cluster/node/self")
+    @Secured(action = ActionTypes.READ, resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
+            + "/cluster", signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
     public Result<Member> self() {
         return Result.success(nacosClusterOperationService.self());
     }
@@ -79,8 +78,8 @@ public class NacosClusterControllerV2 {
      * @return members that matches condition
      */
     @GetMapping(value = "/node/list")
-    @Secured(action = ActionTypes.READ, resource = "nacos/admin", signType = SignType.CONSOLE)
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/admin/core/cluster/node/list")
+    @Secured(action = ActionTypes.READ, resource = NACOS_ADMIN_CORE_CONTEXT_V3
+            + "/cluster", signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
     public Result<Collection<Member>> listNodes(@RequestParam(value = "address", required = false) String address,
             @RequestParam(value = "state", required = false) String state) throws NacosException {
         
@@ -97,8 +96,8 @@ public class NacosClusterControllerV2 {
     }
     
     @GetMapping(value = "/node/self/health")
-    @Secured(action = ActionTypes.READ, resource = "nacos/admin", signType = SignType.CONSOLE)
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/admin/core/cluster/node/self/health")
+    @Secured(action = ActionTypes.READ, resource = NACOS_ADMIN_CORE_CONTEXT_V3
+            + "/cluster", signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
     public Result<String> selfHealth() {
         return Result.success(nacosClusterOperationService.selfHealth());
     }
@@ -113,8 +112,8 @@ public class NacosClusterControllerV2 {
      * @return {@link RestResult}
      */
     @PutMapping(value = "/node/list")
-    @Secured(action = ActionTypes.WRITE, resource = "nacos/admin", signType = SignType.CONSOLE)
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "PUT {contextPath:nacos}/v3/admin/core/cluster/node/list")
+    @Secured(action = ActionTypes.WRITE, resource = NACOS_ADMIN_CORE_CONTEXT_V3
+            + "/cluster", signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
     public Result<Boolean> updateNodes(@RequestBody List<Member> nodes) throws NacosApiException {
         if (nodes == null || nodes.size() == 0) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
@@ -130,29 +129,14 @@ public class NacosClusterControllerV2 {
      * @return {@link RestResult}
      */
     @PutMapping(value = "/lookup")
-    @Secured(action = ActionTypes.WRITE, resource = "nacos/admin", signType = SignType.CONSOLE)
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "PUT {contextPath:nacos}/v3/admin/core/cluster/lookup")
-    public Result<Boolean> updateLookup(LookupUpdateRequest request) throws NacosException {
+    @Secured(action = ActionTypes.WRITE, resource = NACOS_ADMIN_CORE_CONTEXT_V3
+            + "/cluster", signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
+    public Result<Boolean> updateLookup(@RequestBody LookupUpdateRequest request) throws NacosException {
         if (request == null || request.getType() == null) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
                     "required parameter 'type' is missing");
         }
         return Result.success(nacosClusterOperationService.updateLookup(request));
-    }
-    
-    /**
-     * member leave.
-     *
-     * @param addresses member ip list, example [ip1:port1,ip2:port2,...]
-     * @return {@link RestResult}
-     * @throws Exception throw {@link Exception}
-     */
-    @DeleteMapping("/nodes")
-    @Secured(action = ActionTypes.WRITE, resource = "nacos/admin", signType = SignType.CONSOLE)
-    @Compatibility(apiType = ApiType.ADMIN_API)
-    public RestResult<Void> deleteNodes(@RequestParam("addresses") List<String> addresses) throws Exception {
-        return RestResultUtils.failed(405, null, "DELETE /v2/core/cluster/nodes API not allow to use temporarily.");
-        
     }
     
 }

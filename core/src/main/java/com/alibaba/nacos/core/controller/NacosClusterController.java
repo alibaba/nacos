@@ -48,6 +48,7 @@ import java.util.Collection;
  */
 @RestController
 @RequestMapping(Commons.NACOS_CORE_CONTEXT + "/cluster")
+@Deprecated
 public class NacosClusterController {
     
     private final ServerMemberManager memberManager;
@@ -58,7 +59,7 @@ public class NacosClusterController {
     
     @GetMapping(value = "/self")
     @Secured(resource = Commons.NACOS_CORE_CONTEXT + "/cluster", action = ActionTypes.READ, signType = SignType.CONSOLE)
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/admin/core/cluster/node/self")
     public RestResult<Member> self() {
         return RestResultUtils.success(memberManager.getSelf());
     }
@@ -71,7 +72,7 @@ public class NacosClusterController {
      */
     @GetMapping(value = "/nodes")
     @Secured(resource = Commons.NACOS_CORE_CONTEXT + "/cluster", action = ActionTypes.READ, signType = SignType.CONSOLE)
-    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/core/cluster/nodes")
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/admin/core/cluster/node/list")
     public RestResult<Collection<Member>> listNodes(
             @RequestParam(value = "keyword", required = false) String ipKeyWord) {
         Collection<Member> members = memberManager.allMembers();
@@ -103,7 +104,7 @@ public class NacosClusterController {
     
     @GetMapping("/health")
     @Secured(resource = Commons.NACOS_CORE_CONTEXT + "/cluster", action = ActionTypes.READ, signType = SignType.CONSOLE)
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/admin/core/cluster/node/self/health")
     public RestResult<String> getHealth() {
         return RestResultUtils.success(memberManager.getSelf().getState().name());
     }
@@ -116,7 +117,8 @@ public class NacosClusterController {
      */
     @Deprecated
     @PostMapping(value = {"/report"})
-    @Secured(resource = Commons.NACOS_CORE_CONTEXT + "/cluster", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
+    @Secured(resource = Commons.NACOS_CORE_CONTEXT
+            + "/cluster", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
     @Compatibility(apiType = ApiType.INNER_API)
     public RestResult<String> report(@RequestBody Member node) {
         if (!node.check()) {
@@ -136,8 +138,9 @@ public class NacosClusterController {
      * @return {@link RestResult}
      */
     @PostMapping(value = "/switch/lookup")
-    @Secured(resource = Commons.NACOS_CORE_CONTEXT + "/cluster", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Secured(resource = Commons.NACOS_CORE_CONTEXT
+            + "/cluster", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "PUT {contextPath:nacos}/v3/admin/core/cluster/lookup")
     public RestResult<String> switchLookup(@RequestParam(name = "type") String type) {
         try {
             memberManager.switchLookup(type);
@@ -155,7 +158,8 @@ public class NacosClusterController {
      * @throws Exception {@link Exception}
      */
     @PostMapping("/server/leave")
-    @Secured(resource = Commons.NACOS_CORE_CONTEXT + "/cluster", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
+    @Secured(resource = Commons.NACOS_CORE_CONTEXT
+            + "/cluster", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
     @Compatibility(apiType = ApiType.CONSOLE_API)
     public RestResult<String> leave(@RequestBody Collection<String> params,
             @RequestParam(defaultValue = "true") Boolean notifyOtherMembers) throws Exception {
