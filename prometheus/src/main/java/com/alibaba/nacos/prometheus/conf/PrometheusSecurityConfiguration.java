@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.prometheus.conf;
 
+import com.alibaba.nacos.core.web.NacosWebBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
@@ -31,6 +32,7 @@ import static com.alibaba.nacos.prometheus.api.ApiConstants.PROMETHEUS_CONTROLLE
  * @author vividfish
  */
 @Configuration
+@NacosWebBean
 public class PrometheusSecurityConfiguration {
     
     @Bean

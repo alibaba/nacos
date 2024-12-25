@@ -89,4 +89,6 @@ public interface Constants {
     String NACOS_DEPLOYMENT_TYPE_SERVER = "server";
     
     String NACOS_DEPLOYMENT_TYPE_CONSOLE = "console";
+    
+    String NACOS_DUPLICATE_BEAN_ENHANCEMENT_ENABLED = "nacos.sys.duplicate.bean.enhancement.enabled";
 }

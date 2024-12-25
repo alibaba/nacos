@@ -27,6 +27,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.jmx.support.MBeanRegistrationSupport;
+import org.springframework.jmx.support.RegistrationPolicy;
 
 /**
  * Nacos bootstrap class.
@@ -38,6 +40,7 @@ public class NacosBootstrap {
     
     public static void main(String[] args) {
         ConfigurableApplicationContext coreContext = startCoreContext(args);
+        coreContext.getBean(MBeanRegistrationSupport.class).setRegistrationPolicy(RegistrationPolicy.IGNORE_EXISTING);
         String type = coreContext.getEnvironment()
                 .getProperty(Constants.NACOS_DEPLOYMENT_TYPE, Constants.NACOS_DEPLOYMENT_TYPE_MERGED);
         if (Constants.NACOS_DEPLOYMENT_TYPE_MERGED.equals(type)) {
