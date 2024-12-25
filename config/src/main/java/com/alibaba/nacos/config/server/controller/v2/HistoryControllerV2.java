@@ -25,6 +25,7 @@ import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
+import com.alibaba.nacos.config.server.model.ConfigHistoryInfoDetail;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
@@ -111,6 +112,27 @@ public class HistoryControllerV2 {
         }
         return Result.success(configHistoryInfo);
     }
+    
+    
+    /**
+     * Query the detailed configuration history information pair, including the original version and the updated version. notes:
+     *
+     * @param nid    history_config_info nid
+     * @param dataId dataId  @since 2.0.3
+     * @param group  groupId  @since 2.0.3
+     * @param namespaceId namespaceId  @since 2.0.3
+     * @return history config info
+     * @since 2.0.3 add {@link Secured}, dataId, groupId and tenant for history config permission check.
+     */
+    @GetMapping(value = "/detail")
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    public Result<ConfigHistoryInfoDetail> getConfigHistoryInfoDetail(@RequestParam("dataId") String dataId,
+            @RequestParam("group") String group,
+            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
+            @RequestParam(value = "nid") Long nid) throws AccessException {
+        return Result.success(historyService.getConfigHistoryInfoDetail(dataId, group, namespaceId, nid));
+    }
+    
     
     /**
      * Query previous config history information. notes:
