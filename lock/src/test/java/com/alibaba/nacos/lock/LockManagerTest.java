@@ -23,12 +23,15 @@ import com.alibaba.nacos.lock.factory.ClientLockFactory;
 import com.alibaba.nacos.lock.factory.LockFactory;
 import com.alibaba.nacos.lock.model.LockInfo;
 import com.alibaba.nacos.lock.model.LockKey;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * lock manager test.
@@ -43,15 +46,15 @@ public class LockManagerTest {
     @Test
     public void testLockManagerError() {
         String emptyType = "testLockFactory_lock";
-        Assert.assertThrows(NacosLockException.class, () -> {
+        assertThrows(NacosLockException.class, () -> {
             lockManager.getMutexLock(new LockKey(emptyType, "key"));
         });
         
-        Assert.assertThrows(NacosLockException.class, () -> {
+        assertThrows(NacosLockException.class, () -> {
             lockManager.getMutexLock(new LockKey(emptyType, null));
         });
         
-        Assert.assertThrows(NacosLockException.class, () -> {
+        assertThrows(NacosLockException.class, () -> {
             lockManager.getMutexLock(new LockKey(null, "key"));
         });
     }
@@ -61,14 +64,14 @@ public class LockManagerTest {
         Field factoryMap = NacosLockManager.class.getDeclaredField("factoryMap");
         factoryMap.setAccessible(true);
         Map<String, LockFactory> map = (Map<String, LockFactory>) factoryMap.get(lockManager);
-        Assert.assertEquals(map.size(), 2);
+        assertEquals(2, map.size());
     }
     
     @Test
     public void testClientLockFactory() {
         AtomicLockService lock = lockManager.getMutexLock(new LockKey(ClientLockFactory.TYPE, "key"));
-        Assert.assertEquals(lock.getClass(), ClientAtomicLock.class);
-        Assert.assertEquals(lock.getKey(), "key");
+        assertEquals(ClientAtomicLock.class, lock.getClass());
+        assertEquals("key", lock.getKey());
         
         LockInfo lockInfo = new ClientLockFactory.ClientLockInstance();
         lockInfo.setParams(new HashMap() {
@@ -77,8 +80,8 @@ public class LockManagerTest {
             }
         });
         
-        Assert.assertTrue(lock.tryLock(lockInfo));
-        Assert.assertTrue(lock.tryLock(lockInfo));
-        Assert.assertTrue(lock.unLock(lockInfo));
+        assertTrue(lock.tryLock(lockInfo));
+        assertTrue(lock.tryLock(lockInfo));
+        assertTrue(lock.unLock(lockInfo));
     }
 }

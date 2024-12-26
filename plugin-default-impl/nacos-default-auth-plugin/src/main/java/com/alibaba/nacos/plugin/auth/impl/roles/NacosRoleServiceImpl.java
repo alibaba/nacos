@@ -23,7 +23,6 @@ import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.Constants;

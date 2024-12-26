@@ -21,12 +21,14 @@ import com.alibaba.nacos.lock.LockManager;
 import com.alibaba.nacos.lock.core.reentrant.AtomicLockService;
 import com.alibaba.nacos.lock.model.LockInfo;
 import com.alibaba.nacos.lock.model.LockKey;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * mutex atomic lock test.
@@ -34,7 +36,7 @@ import org.mockito.junit.MockitoJUnitRunner;
  * @author 985492783@qq.com
  * @date 2023/8/28 13:13
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class MutexAtomicLockTest {
     
     @Mock
@@ -46,8 +48,8 @@ public class MutexAtomicLockTest {
         AtomicLockService lock = lockManager.getMutexLock(new LockKey(LockConstants.NACOS_LOCK_TYPE, "key"));
         LockInfo lockInfo = new LockInfo();
         lockInfo.setEndTime(System.currentTimeMillis() + 2_000_000);
-        Assert.assertTrue(lock.tryLock(lockInfo));
-        Assert.assertTrue(lock.unLock(lockInfo));
+        assertTrue(lock.tryLock(lockInfo));
+        assertTrue(lock.unLock(lockInfo));
     }
     
     @Test
@@ -58,12 +60,12 @@ public class MutexAtomicLockTest {
         
         LockInfo lockInfo = new LockInfo();
         lockInfo.setEndTime(System.currentTimeMillis() - 2_000_000);
-        Assert.assertTrue(lock.tryLock(lockInfo));
-        Assert.assertTrue(lock.autoExpire());
+        assertTrue(lock.tryLock(lockInfo));
+        assertTrue(lock.autoExpire());
         
         LockInfo lockInstanceAuto = new LockInfo();
         lockInstanceAuto.setEndTime(System.currentTimeMillis() + 2_000_000);
-        Assert.assertTrue(lock.tryLock(lockInstanceAuto));
+        assertTrue(lock.tryLock(lockInstanceAuto));
     }
     
 }

@@ -88,7 +88,7 @@
     </issueManagement>
     
     <properties>
-        <revision>3.0.0-ALPHA</revision>
+        <revision>3.0.0-ALPHA-SNAPSHOT</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Compiler settings properties -->
@@ -625,6 +625,7 @@
         <module>k8s-sync</module>
         <module>bootstrap</module>
         <module>server</module>
+        <module>lock</module>
     </modules>
     
     <!-- Default dependencies in all subprojects -->

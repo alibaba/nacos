@@ -23,12 +23,13 @@ import com.alibaba.nacos.api.lock.remote.LockOperationEnum;
 import com.alibaba.nacos.api.lock.remote.request.LockOperationRequest;
 import com.alibaba.nacos.api.lock.remote.response.LockOperationResponse;
 import com.alibaba.nacos.lock.service.LockOperationService;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * lockRequest handler test.
@@ -36,7 +37,7 @@ import org.mockito.junit.MockitoJUnitRunner;
  * @author 985492783@qq.com
  * @date 2023/9/1 10:00
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class LockRequestHandlerTest {
     
     @Mock
@@ -54,7 +55,7 @@ public class LockRequestHandlerTest {
         request.setLockOperationEnum(LockOperationEnum.ACQUIRE);
         Mockito.when(lockOperationService.lock(lockInstance)).thenReturn(true);
         LockOperationResponse response = lockRequestHandler.handle(request, null);
-        Assert.assertTrue((Boolean) response.getResult());
+        assertTrue((Boolean) response.getResult());
     }
     
     @Test
@@ -67,6 +68,6 @@ public class LockRequestHandlerTest {
         request.setLockOperationEnum(LockOperationEnum.RELEASE);
         Mockito.when(lockOperationService.unLock(lockInstance)).thenReturn(true);
         LockOperationResponse response = lockRequestHandler.handle(request, null);
-        Assert.assertTrue((Boolean) response.getResult());
+        assertTrue((Boolean) response.getResult());
     }
 }

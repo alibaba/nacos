@@ -19,9 +19,10 @@ package com.alibaba.nacos.client.lock;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.lock.LockService;
 import com.alibaba.nacos.api.lock.model.LockInstance;
+import com.alibaba.nacos.client.address.AbstractServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.lock.remote.grpc.LockGrpcClient;
-import com.alibaba.nacos.client.naming.core.ServerListManager;
+import com.alibaba.nacos.client.naming.core.NamingServerListManager;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
 import com.alibaba.nacos.client.security.SecurityProxy;
 
@@ -52,8 +53,8 @@ public class NacosLockService implements LockService {
     public NacosLockService(Properties properties) throws NacosException {
         this.properties = properties;
         NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
-        ServerListManager serverListManager = new ServerListManager(properties);
-        this.securityProxy = new SecurityProxy(serverListManager.getServerList(),
+        AbstractServerListManager serverListManager =  new NamingServerListManager(properties);
+        this.securityProxy = new SecurityProxy(serverListManager,
                 NamingHttpClientManager.getInstance().getNacosRestTemplate());
         initSecurityProxy(nacosClientProperties);
         this.lockGrpcClient = new LockGrpcClient(nacosClientProperties, serverListManager, securityProxy);

@@ -34,7 +34,7 @@ import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
-import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
+import com.alibaba.nacos.common.remote.client.RpcClientTlsConfigFactory;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 
 import java.util.HashMap;
@@ -66,7 +66,7 @@ public class LockGrpcClient extends AbstractLockClient {
         labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_LOCK);
         labels.put(Constants.APPNAME, AppNameUtils.getAppName());
         this.rpcClient = RpcClientFactory.createClient(uuid, ConnectionType.GRPC, labels,
-                RpcClientTlsConfig.properties(properties.asProperties()));
+                RpcClientTlsConfigFactory.getInstance().createSdkConfig(properties.asProperties()));
         start(serverListFactory);
     }
     

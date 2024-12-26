@@ -34,17 +34,21 @@ import com.alibaba.nacos.lock.raft.request.MutexLockRequest;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.google.protobuf.ByteString;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.function.BooleanSupplier;
 
 import static com.alibaba.nacos.lock.constant.Constants.LOCK_ACQUIRE_SERVICE_GROUP_V2;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * lock operation service test.
@@ -52,7 +56,7 @@ import static com.alibaba.nacos.lock.constant.Constants.LOCK_ACQUIRE_SERVICE_GRO
  * @author 985492783@qq.com
  * @date 2023/8/30 14:01
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class LockOperationServiceImplTest {
     
     @Mock
@@ -72,7 +76,7 @@ public class LockOperationServiceImplTest {
     
     private static MockedStatic<EnvUtil> mockedEnv;
     
-    @BeforeClass
+    @BeforeAll
     public static void setUp() {
         mockedStatic = Mockito.mockStatic(ApplicationUtils.class);
         mockedEnv = Mockito.mockStatic(EnvUtil.class);
@@ -93,7 +97,7 @@ public class LockOperationServiceImplTest {
     public void testGroup() {
         buildService();
         
-        Assert.assertEquals(lockOperationService.group(), LOCK_ACQUIRE_SERVICE_GROUP_V2);
+        assertEquals(lockOperationService.group(), LOCK_ACQUIRE_SERVICE_GROUP_V2);
     }
     
     @Test
@@ -106,8 +110,8 @@ public class LockOperationServiceImplTest {
             WriteRequest request = i.getArgument(0);
             MutexLockRequest mutexLockRequest = serializer.deserialize(request.getData().toByteArray());
             LockInfo lockInfo = mutexLockRequest.getLockInfo();
-            Assert.assertEquals(lockInfo.getKey().getLockType(), LockConstants.NACOS_LOCK_TYPE);
-            Assert.assertEquals((long) lockInfo.getEndTime(), timestamp + PropertiesConstant.DEFAULT_AUTO_EXPIRE_TIME);
+            assertEquals(LockConstants.NACOS_LOCK_TYPE, lockInfo.getKey().getLockType());
+            assertEquals(timestamp + PropertiesConstant.DEFAULT_AUTO_EXPIRE_TIME, (long) lockInfo.getEndTime());
             
             return getResponse();
         });
@@ -125,8 +129,8 @@ public class LockOperationServiceImplTest {
             WriteRequest request = i.getArgument(0);
             MutexLockRequest mutexLockRequest = serializer.deserialize(request.getData().toByteArray());
             LockInfo lockInfo = mutexLockRequest.getLockInfo();
-            Assert.assertEquals(lockInfo.getKey().getLockType(), LockConstants.NACOS_LOCK_TYPE);
-            Assert.assertEquals((long) lockInfo.getEndTime(), timestamp + 1_000L);
+            assertEquals(lockInfo.getKey().getLockType(), LockConstants.NACOS_LOCK_TYPE);
+            assertEquals((long) lockInfo.getEndTime(), timestamp + 1_000L);
             
             return getResponse();
         });
@@ -144,8 +148,8 @@ public class LockOperationServiceImplTest {
             WriteRequest request = i.getArgument(0);
             MutexLockRequest mutexLockRequest = serializer.deserialize(request.getData().toByteArray());
             LockInfo lockInfo = mutexLockRequest.getLockInfo();
-            Assert.assertEquals(lockInfo.getKey().getLockType(), LockConstants.NACOS_LOCK_TYPE);
-            Assert.assertEquals((long) lockInfo.getEndTime(), timestamp + PropertiesConstant.MAX_AUTO_EXPIRE_TIME);
+            assertEquals(lockInfo.getKey().getLockType(), LockConstants.NACOS_LOCK_TYPE);
+            assertEquals((long) lockInfo.getEndTime(), timestamp + PropertiesConstant.MAX_AUTO_EXPIRE_TIME);
             
             return getResponse();
         });
@@ -162,8 +166,8 @@ public class LockOperationServiceImplTest {
         
         WriteRequest request = getRequest(LockOperationEnum.ACQUIRE);
         Response response = lockOperationService.onApply(request);
-        Assert.assertTrue(response.getSuccess());
-        Assert.assertTrue(serializer.deserialize(response.getData().toByteArray()));
+        assertTrue(response.getSuccess());
+        assertTrue(serializer.<Boolean>deserialize(response.getData().toByteArray()));
     }
     
     public WriteRequest getRequest(LockOperationEnum lockOperationEnum) {
@@ -182,7 +186,7 @@ public class LockOperationServiceImplTest {
         return Response.newBuilder().setSuccess(true).setData(ByteString.copyFrom(serializer.serialize(true))).build();
     }
     
-    @AfterClass
+    @AfterAll
     public static void destroy() {
         mockedStatic.close();
         mockedEnv.close();
