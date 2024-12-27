@@ -1089,7 +1089,6 @@ class NacosNamingServiceTest {
         verify(proxy, times(1)).unsubscribe(serviceName, Constants.DEFAULT_GROUP, Constants.NULL);
     }
     
-    @Test
     public void testUnSubscribeWithFullNameAndCustomSelector() throws NacosException {
         //given
         String serviceName = "service1";

@@ -175,6 +175,21 @@ class AbstractNamingClientProxyTest {
         }
         
         @Override
+        public void fuzzyWatch(String serviceNamePattern, String groupNamePattern, String uuid) throws NacosException {
+        
+        }
+        
+        @Override
+        public void cancelFuzzyWatch(String serviceNamePattern, String groupNamePattern) throws NacosException {
+        
+        }
+        
+        @Override
+        public boolean isFuzzyWatched(String serviceNamePattern, String groupNamePattern) {
+            return false;
+        }
+        
+        @Override
         public boolean serverHealthy() {
             return false;
         }

@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
+import com.alibaba.nacos.api.naming.listener.AbstractFuzzyWatchEventListener;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
@@ -31,9 +32,12 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
+import com.alibaba.nacos.client.naming.cache.FuzzyWatchServiceListHolder;
 import com.alibaba.nacos.client.naming.core.Balancer;
 import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
 import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
+import com.alibaba.nacos.client.naming.event.FuzzyWatchNotifyEvent;
+import com.alibaba.nacos.client.naming.event.ServicesChangeNotifier;
 import com.alibaba.nacos.client.naming.event.InstancesDiff;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxyDelegate;
@@ -56,6 +60,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
+import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_PATTERN_WILDCARD;
 import static com.alibaba.nacos.client.naming.selector.NamingSelectorFactory.getUniqueClusterString;
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
@@ -83,7 +88,11 @@ public class NacosNamingService implements NamingService {
     
     private ServiceInfoHolder serviceInfoHolder;
     
+    private FuzzyWatchServiceListHolder fuzzyWatchServiceListHolder;
+    
     private InstancesChangeNotifier changeNotifier;
+    
+    private ServicesChangeNotifier servicesChangeNotifier;
     
     private NamingClientProxy clientProxy;
     
@@ -113,9 +122,14 @@ public class NacosNamingService implements NamingService {
         this.changeNotifier = new InstancesChangeNotifier(this.notifierEventScope);
         NotifyCenter.registerToPublisher(InstancesChangeEvent.class, 16384);
         NotifyCenter.registerSubscriber(changeNotifier);
+        this.servicesChangeNotifier = new ServicesChangeNotifier(this.notifierEventScope);
+        NotifyCenter.registerToPublisher(FuzzyWatchNotifyEvent.class, 16384);
+        NotifyCenter.registerSubscriber(servicesChangeNotifier);
+        
         this.serviceInfoHolder = new ServiceInfoHolder(namespace, this.notifierEventScope, nacosClientProperties);
-        this.clientProxy = new NamingClientProxyDelegate(this.namespace, serviceInfoHolder, nacosClientProperties,
-                changeNotifier);
+        this.fuzzyWatchServiceListHolder = new FuzzyWatchServiceListHolder(this.notifierEventScope, nacosClientProperties);
+        this.clientProxy = new NamingClientProxyDelegate(this.namespace, serviceInfoHolder, fuzzyWatchServiceListHolder,
+                nacosClientProperties, changeNotifier);
     }
     
     @Deprecated
@@ -522,6 +536,58 @@ public class NacosNamingService implements NamingService {
         changeNotifier.deregisterListener(groupName, serviceName, wrapper);
         if (!changeNotifier.isSubscribed(groupName, serviceName)) {
             clientProxy.unsubscribe(serviceName, groupName, Constants.NULL);
+        }
+    }
+    
+    @Override
+    public void fuzzyWatch(String fixedGroupName, AbstractFuzzyWatchEventListener listener) throws NacosException {
+        doFuzzyWatch(FUZZY_WATCH_PATTERN_WILDCARD, fixedGroupName, listener);
+    }
+    
+    @Override
+    public void fuzzyWatch(String serviceNamePattern, String fixedGroupName,
+            AbstractFuzzyWatchEventListener listener) throws NacosException {
+        // only support prefix match right now
+        if (!serviceNamePattern.endsWith(FUZZY_WATCH_PATTERN_WILDCARD)) {
+            if (serviceNamePattern.startsWith(FUZZY_WATCH_PATTERN_WILDCARD)) {
+                throw new UnsupportedOperationException("Suffix matching for service names is not supported yet."
+                        + " It will be supported in future updates if needed.");
+            } else {
+                throw new UnsupportedOperationException("Illegal service name pattern, please read the documentation and pass a valid pattern.");
+            }
+        }
+        doFuzzyWatch(serviceNamePattern, fixedGroupName, listener);
+    }
+    
+    private void doFuzzyWatch(String serviceNamePattern, String groupNamePattern,
+            AbstractFuzzyWatchEventListener listener) throws NacosException {
+        if (null == listener) {
+            return;
+        }
+        String uuid = UUID.randomUUID().toString();
+        listener.setUuid(uuid);
+        servicesChangeNotifier.registerFuzzyWatchListener(serviceNamePattern, groupNamePattern, listener);
+        clientProxy.fuzzyWatch(serviceNamePattern, groupNamePattern, uuid);
+    }
+    
+    @Override
+    public void cancelFuzzyWatch(String fixedGroupName, AbstractFuzzyWatchEventListener listener) throws NacosException {
+        doCancelFuzzyWatch(FUZZY_WATCH_PATTERN_WILDCARD, fixedGroupName, listener);
+    }
+    
+    @Override
+    public void cancelFuzzyWatch(String serviceNamePattern, String fixedGroupName, AbstractFuzzyWatchEventListener listener) throws NacosException {
+        doCancelFuzzyWatch(serviceNamePattern, fixedGroupName, listener);
+    }
+    
+    private void doCancelFuzzyWatch(String serviceNamePattern, String groupNamePattern,
+            AbstractFuzzyWatchEventListener listener) throws NacosException {
+        if (null == listener) {
+            return;
+        }
+        servicesChangeNotifier.deregisterFuzzyWatchListener(serviceNamePattern, groupNamePattern, listener);
+        if (!servicesChangeNotifier.isWatched(serviceNamePattern, groupNamePattern)) {
+            clientProxy.cancelFuzzyWatch(serviceNamePattern, groupNamePattern);
         }
     }
     

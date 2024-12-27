@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.naming.push.v2;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.api.utils.StringUtils;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
@@ -33,6 +35,9 @@ import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.NamingSubscriberService;
 import com.alibaba.nacos.naming.push.v2.executor.PushExecutorDelegate;
+import com.alibaba.nacos.naming.push.v2.task.FuzzyWatchInitDelayTask;
+import com.alibaba.nacos.naming.push.v2.task.FuzzyWatchNotifyChangeDelayTask;
+import com.alibaba.nacos.naming.push.v2.task.FuzzyWatchPushDelayTaskEngine;
 import com.alibaba.nacos.naming.push.v2.task.PushDelayTask;
 import com.alibaba.nacos.naming.push.v2.task.PushDelayTaskExecuteEngine;
 
@@ -40,6 +45,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -58,6 +64,8 @@ public class NamingSubscriberServiceV2Impl extends SmartSubscriber implements Na
     
     private final PushDelayTaskExecuteEngine delayTaskEngine;
     
+    private final FuzzyWatchPushDelayTaskEngine fuzzyWatchPushDelayTaskEngine;
+    
     public NamingSubscriberServiceV2Impl(ClientManagerDelegate clientManager,
             ClientServiceIndexesManager indexesManager, ServiceStorage serviceStorage,
             NamingMetadataManager metadataManager, PushExecutorDelegate pushExecutor, SwitchDomain switchDomain) {
@@ -65,6 +73,8 @@ public class NamingSubscriberServiceV2Impl extends SmartSubscriber implements Na
         this.indexesManager = indexesManager;
         this.delayTaskEngine = new PushDelayTaskExecuteEngine(clientManager, indexesManager, serviceStorage,
                 metadataManager, pushExecutor, switchDomain);
+        this.fuzzyWatchPushDelayTaskEngine = new FuzzyWatchPushDelayTaskEngine(clientManager, indexesManager,
+                serviceStorage, metadataManager, pushExecutor, switchDomain);
         NotifyCenter.registerSubscriber(this, NamingEventPublisherFactory.getInstance());
         
     }
@@ -108,6 +118,7 @@ public class NamingSubscriberServiceV2Impl extends SmartSubscriber implements Na
         List<Class<? extends Event>> result = new LinkedList<>();
         result.add(ServiceEvent.ServiceChangedEvent.class);
         result.add(ServiceEvent.ServiceSubscribedEvent.class);
+        result.add(ServiceEvent.ServiceFuzzyWatchInitEvent.class);
         return result;
     }
     
@@ -118,6 +129,9 @@ public class NamingSubscriberServiceV2Impl extends SmartSubscriber implements Na
             ServiceEvent.ServiceChangedEvent serviceChangedEvent = (ServiceEvent.ServiceChangedEvent) event;
             Service service = serviceChangedEvent.getService();
             delayTaskEngine.addTask(service, new PushDelayTask(service, PushConfig.getInstance().getPushTaskDelay()));
+            // watch notify push task specify by service
+            fuzzyWatchPushDelayTaskEngine.addTask(service, new FuzzyWatchNotifyChangeDelayTask(service,
+                    serviceChangedEvent.getChangedType(), PushConfig.getInstance().getPushTaskDelay()));
             MetricsMonitor.incrementServiceChangeCount(service);
         } else if (event instanceof ServiceEvent.ServiceSubscribedEvent) {
             // If service is subscribed by one client, only push this client.
@@ -125,7 +139,31 @@ public class NamingSubscriberServiceV2Impl extends SmartSubscriber implements Na
             Service service = subscribedEvent.getService();
             delayTaskEngine.addTask(service, new PushDelayTask(service, PushConfig.getInstance().getPushTaskDelay(),
                     subscribedEvent.getClientId()));
+        } else if (event instanceof ServiceEvent.ServiceFuzzyWatchInitEvent) {
+            ServiceEvent.ServiceFuzzyWatchInitEvent serviceFuzzyWatchInitEvent = (ServiceEvent.ServiceFuzzyWatchInitEvent) event;
+            
+            String completedPattern = serviceFuzzyWatchInitEvent.getPattern();
+            String clientId = serviceFuzzyWatchInitEvent.getClientId();
+            String taskKey = getTaskKey(clientId, completedPattern);
+            Collection<String> matchedService = serviceFuzzyWatchInitEvent.getMatchedService().stream()
+                    .map(Service::getGroupedServiceName)
+                    .collect(Collectors.toSet());
+            int originSize = matchedService.size();
+            // watch init push task is specify by client id with pattern
+            // The key is just used to differentiate between different initialization tasks and merge them if needed.
+            fuzzyWatchPushDelayTaskEngine.addTask(taskKey, new FuzzyWatchInitDelayTask(taskKey, clientId, completedPattern, matchedService,
+                    originSize, PushConfig.getInstance().getPushTaskDelay(), false));
         }
+    }
+    
+    private String getTaskKey(String clientId, String pattern) {
+        if (StringUtils.isBlank(clientId)) {
+            throw new IllegalArgumentException("Param 'clientId' is illegal, clientId is blank");
+        }
+        if (StringUtils.isBlank(pattern)) {
+            throw new IllegalArgumentException("Param 'pattern' is illegal, pattern is blank");
+        }
+        return clientId + Constants.SERVICE_INFO_SPLITER + pattern;
     }
     
     private Stream<Service> getServiceStream() {

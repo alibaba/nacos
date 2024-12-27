@@ -23,12 +23,14 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.utils.StringUtils;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
 import static com.alibaba.nacos.api.common.Constants.CLUSTER_NAME_PATTERN_STRING;
+import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_PATTERN_WILDCARD;
 import static com.alibaba.nacos.api.common.Constants.NUMBER_PATTERN_STRING;
 
 /**
@@ -187,6 +189,124 @@ public class NamingUtils {
             checkInstanceIsEphemeral(instance);
             checkInstanceIsLegal(instance);
         }
+    }
+    
+    public static String getPatternWithNamespace(final String namespaceId, final String groupedPattern) {
+        if (StringUtils.isBlank(namespaceId)) {
+            throw new IllegalArgumentException("Param 'namespaceId' is illegal, namespaceId is blank");
+        }
+        if (StringUtils.isBlank(groupedPattern)) {
+            throw new IllegalArgumentException("Param 'groupedPattern' is illegal, groupedPattern is blank");
+        }
+        final String resultGroupedPattern = namespaceId + Constants.NAMESPACE_ID_SPLITER + groupedPattern;
+        return resultGroupedPattern.intern();
+    }
+    
+    public static String getNamespaceFromPattern(String completedPattern) {
+        if (StringUtils.isBlank(completedPattern)) {
+            return StringUtils.EMPTY;
+        }
+        if (!completedPattern.contains(Constants.NAMESPACE_ID_SPLITER)) {
+            return Constants.DEFAULT_NAMESPACE_ID;
+        }
+        return completedPattern.split(Constants.NAMESPACE_ID_SPLITER)[0];
+    }
+    
+    public static String getPatternRemovedNamespace(String completedPattern) {
+        if (StringUtils.isBlank(completedPattern)) {
+            return StringUtils.EMPTY;
+        }
+        if (!completedPattern.contains(Constants.NAMESPACE_ID_SPLITER)) {
+            return completedPattern;
+        }
+        return completedPattern.split(Constants.NAMESPACE_ID_SPLITER)[1];
+    }
+    
+    /**
+     * Get the pattern watched under given namespace id.
+     *
+     * @param namespaceId name space id
+     * @param completedPatterns a set of all watched pattern(with namespace id)
+     * @return filtered pattern set
+     */
+    public static Set<String> filterPatternWithNamespace(String namespaceId, Set<String> completedPatterns) {
+        Set<String> patternsOfGivenNamespace = new HashSet<>();
+        for (String each : completedPatterns) {
+            String nameSpaceOfPattern = getNamespaceFromPattern(each);
+            if (namespaceId.equals(nameSpaceOfPattern)) {
+                patternsOfGivenNamespace.add(getPatternRemovedNamespace(each));
+            }
+        }
+        return patternsOfGivenNamespace;
+    }
+    
+    /**
+     * Given a service, and a list of watched patterns, return the patterns that the service can match.
+     *
+     * @param serviceName service Name
+     * @param groupName group Name
+     * @param watchPattern a list of completed watch patterns
+     * @return the patterns list that the service can match.
+     */
+    public static Set<String> getServiceMatchedPatterns(String serviceName, String groupName, Collection<String> watchPattern) {
+        if (watchPattern == null || watchPattern.isEmpty()) {
+            return new HashSet<>(1);
+        }
+        Set<String> matchedPatternList = new HashSet<>();
+        for (String eachPattern : watchPattern) {
+            if (isMatchPattern(serviceName, groupName, getServiceName(eachPattern), getGroupName(eachPattern))) {
+                matchedPatternList.add(eachPattern);
+            }
+        }
+        return matchedPatternList;
+    }
+    
+    /**
+     * Given a list of service's name, and a pattern to watch, return the services that can match the pattern.
+     *
+     * @param servicesList a list of service's name
+     * @param serviceNamePattern service name Pattern
+     * @param groupNamePattern group name Pattern
+     * @return the patterns list that the service can match.
+     */
+    public static Set<String> getPatternMatchedServices(Collection<String> servicesList, String serviceNamePattern,
+            String groupNamePattern) {
+        if (servicesList == null || servicesList.isEmpty()) {
+            return new HashSet<>(1);
+        }
+        Set<String> matchList = new HashSet<>();
+        for (String eachService : servicesList) {
+            if (isMatchPattern(getServiceName(eachService), getGroupName(eachService), serviceNamePattern, groupNamePattern)) {
+                matchList.add(eachService);
+            }
+        }
+        return matchList;
+    }
+    
+    /**
+     * Given a service name and a pattern to match, determine whether it can match.
+     * TODO：If want to add a matching method, can implement in here.
+     *
+     * @param serviceName service name to judge
+     * @param groupName group name to judge
+     * @param serviceNamePattern service name Pattern
+     * @param groupNamePattern group name Pattern
+     * @return matching result
+     */
+    public static boolean isMatchPattern(String serviceName, String groupName, String serviceNamePattern, String groupNamePattern) {
+        // Only support prefix match or all match service name right now
+        // Only support fixed group name right now
+        if (serviceNamePattern.equals(FUZZY_WATCH_PATTERN_WILDCARD)) {
+            return groupName.equals(groupNamePattern);
+        } else if (serviceNamePattern.endsWith(FUZZY_WATCH_PATTERN_WILDCARD)) {
+            String serviceMatchName = serviceNamePattern.substring(0, serviceNamePattern.length() - 1);
+            return prefixMatchWithFixedGroupName(serviceName, serviceMatchName, groupName, groupNamePattern);
+        }
+        return false;
+    }
+    
+    private static boolean prefixMatchWithFixedGroupName(String serviceName, String serviceNamePrefix, String groupName, String fixedGroupName) {
+        return groupName.equals(fixedGroupName) && serviceName.startsWith(serviceNamePrefix);
     }
     
     /**

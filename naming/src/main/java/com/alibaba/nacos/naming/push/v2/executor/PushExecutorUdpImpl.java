@@ -17,7 +17,9 @@
 package com.alibaba.nacos.naming.push.v2.executor;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.api.naming.remote.request.AbstractFuzzyWatchNotifyRequest;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.UdpPushService;
@@ -92,5 +94,15 @@ public class PushExecutorUdpImpl implements PushExecutor {
     private ServiceInfo handleClusterData(ServiceInfo data, Subscriber subscriber) {
         return StringUtils.isBlank(subscriber.getCluster()) ? data
                 : ServiceUtil.selectInstances(data, subscriber.getCluster());
+    }
+    
+    @Override
+    public void doWatcherNotifyPush(String clientId, AbstractFuzzyWatchNotifyRequest watchNotifyRequest) {
+    
+    }
+    
+    @Override
+    public void doFuzzyWatchNotifyPushWithCallBack(String clientId, AbstractFuzzyWatchNotifyRequest watchNotifyRequest, PushCallBack callBack) {
+    
     }
 }

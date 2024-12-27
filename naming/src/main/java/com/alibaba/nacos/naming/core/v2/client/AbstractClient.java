@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.core.v2.client;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.BatchInstanceData;
 import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
@@ -46,6 +47,8 @@ public abstract class AbstractClient implements Client {
     protected final ConcurrentHashMap<Service, InstancePublishInfo> publishers = new ConcurrentHashMap<>(16, 0.75f, 1);
     
     protected final ConcurrentHashMap<Service, Subscriber> subscribers = new ConcurrentHashMap<>(16, 0.75f, 1);
+    
+    protected final ConcurrentHashSet<String> watchedPattern = new ConcurrentHashSet<>();
     
     protected volatile long lastUpdatedTime;
     
@@ -132,6 +135,34 @@ public abstract class AbstractClient implements Client {
     @Override
     public Collection<Service> getAllSubscribeService() {
         return subscribers.keySet();
+    }
+    
+    @Override
+    public boolean addWatchedPattern(String watchPattern) {
+        if (watchedPattern.add(watchPattern)) {
+            // TODO:Watch MetricsMonitor
+            return true;
+        }
+        return true;
+    }
+    
+    @Override
+    public boolean removeWatchedPattern(String watchPattern) {
+        if (watchedPattern.remove(watchPattern)) {
+            // TODO:Watch MetricsMonitor
+            return true;
+        }
+        return true;
+    }
+    
+    @Override
+    public boolean isWatchedPattern(String watchPattern) {
+        return watchedPattern.contains(watchPattern);
+    }
+    
+    @Override
+    public Collection<String> getAllFuzzyWatchPattern() {
+        return watchedPattern;
     }
     
     @Override

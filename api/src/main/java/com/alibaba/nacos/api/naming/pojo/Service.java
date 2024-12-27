@@ -16,9 +16,12 @@
 
 package com.alibaba.nacos.api.naming.pojo;
 
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Service of Nacos.
@@ -63,6 +66,11 @@ public class Service implements Serializable {
         this.name = name;
     }
     
+    public Service(String name, String groupName) {
+        this.name = name;
+        this.groupName = groupName;
+    }
+    
     public String getName() {
         return name;
     }
@@ -95,6 +103,10 @@ public class Service implements Serializable {
         this.groupName = groupName;
     }
     
+    public String getGroupedServiceName() {
+        return NamingUtils.getGroupedName(name, groupName);
+    }
+    
     public Map<String, String> getMetadata() {
         return metadata;
     }
@@ -111,5 +123,22 @@ public class Service implements Serializable {
     public String toString() {
         return "Service{" + "name='" + name + '\'' + ", protectThreshold=" + protectThreshold + ", appName='" + appName
                 + '\'' + ", groupName='" + groupName + '\'' + ", metadata=" + metadata + '}';
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Service service = (Service) o;
+        return name.equals(service.name) && groupName.equals(service.groupName);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, groupName);
     }
 }

@@ -19,6 +19,8 @@ package com.alibaba.nacos.naming.core.v2.event.service;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 
+import java.util.Collection;
+
 /**
  * Service event.
  *
@@ -28,7 +30,10 @@ public class ServiceEvent extends Event {
     
     private static final long serialVersionUID = -9173247502346692418L;
     
-    private final Service service;
+    private Service service;
+    
+    public ServiceEvent() {
+    }
     
     public ServiceEvent(Service service) {
         this.service = service;
@@ -45,17 +50,25 @@ public class ServiceEvent extends Event {
         
         private static final long serialVersionUID = 2123694271992630822L;
         
-        public ServiceChangedEvent(Service service) {
-            this(service, false);
+        private final String changedType;
+        
+        public ServiceChangedEvent(Service service, String changedType) {
+            this(service, changedType, false);
         }
         
-        public ServiceChangedEvent(Service service, boolean incrementRevision) {
+        public ServiceChangedEvent(Service service, String changedType, boolean incrementRevision) {
             super(service);
+            this.changedType = changedType;
             service.renewUpdateTime();
             if (incrementRevision) {
                 service.incrementRevision();
             }
         }
+        
+        public String getChangedType() {
+            return changedType;
+        }
+        
     }
     
     /**
@@ -77,4 +90,36 @@ public class ServiceEvent extends Event {
         }
     }
     
+    /**
+     * A client initiates a fuzzy watch request.
+     */
+    public static class ServiceFuzzyWatchInitEvent extends ServiceEvent {
+        
+        private static final long serialVersionUID = -2645441445867337345L;
+        
+        private final String clientId;
+        
+        private final String pattern;
+        
+        private final Collection<Service> matchedService;
+        
+        public ServiceFuzzyWatchInitEvent(String clientId, String pattern, Collection<Service> matchedService) {
+            super();
+            this.clientId = clientId;
+            this.pattern = pattern;
+            this.matchedService = matchedService;
+        }
+        
+        public String getClientId() {
+            return clientId;
+        }
+        
+        public String getPattern() {
+            return pattern;
+        }
+        
+        public Collection<Service> getMatchedService() {
+            return matchedService;
+        }
+    }
 }
