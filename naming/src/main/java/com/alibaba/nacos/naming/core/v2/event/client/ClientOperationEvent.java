@@ -20,6 +20,8 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 
+import java.util.Set;
+
 /**
  * Operation client event.
  *
@@ -94,10 +96,80 @@ public class ClientOperationEvent extends Event {
         }
     }
     
+    /**
+     * Client fuzzy watch service event.
+     */
+    public static class ClientFuzzyWatchEvent extends ClientOperationEvent {
+        
+        private static final long serialVersionUID = -4518919987813223119L;
+        
+        /**
+         * client watched pattern.
+         */
+        private final String groupKeyPattern;
+        
+        /**
+         * client side received group keys.
+         */
+        private Set<String> clientReceivedServiceKeys;
+        
+        /**
+         * is fuzzy watch initializing.
+         */
+        private boolean isInitializing;
+        
+        public ClientFuzzyWatchEvent(String groupKeyPattern, String clientId, Set<String> clientReceivedServiceKeys,
+                boolean isInitializing) {
+            super(clientId, null);
+            this.groupKeyPattern = groupKeyPattern;
+            this.clientReceivedServiceKeys = clientReceivedServiceKeys;
+            this.isInitializing = isInitializing;
+        }
+        
+        public String getGroupKeyPattern() {
+            return groupKeyPattern;
+        }
+        
+        public Set<String> getClientReceivedServiceKeys() {
+            return clientReceivedServiceKeys;
+        }
+        
+        public void setClientReceivedServiceKeys(Set<String> clientReceivedServiceKeys) {
+            this.clientReceivedServiceKeys = clientReceivedServiceKeys;
+        }
+        
+        public boolean isInitializing() {
+            return isInitializing;
+        }
+        
+        public void setInitializing(boolean initializing) {
+            isInitializing = initializing;
+        }
+    }
+    
+    /**
+     * Client cancel fuzzy watch service event.
+     */
+    public static class ClientCancelFuzzyWatchEvent extends ClientOperationEvent {
+        
+        private static final long serialVersionUID = -4518919987813223118L;
+        
+        private final String pattern;
+        
+        public ClientCancelFuzzyWatchEvent(String pattern, String clientId) {
+            super(clientId, null);
+            this.pattern = pattern;
+        }
+        
+        public String getPattern() {
+            return pattern;
+        }
+    }
+    
     public static class ClientReleaseEvent extends ClientOperationEvent {
-    
+        
         private static final long serialVersionUID = -281486927726245701L;
-    
+        
         private final Client client;
         
         private final boolean isNative;
@@ -107,11 +179,11 @@ public class ClientOperationEvent extends Event {
             this.client = client;
             this.isNative = isNative;
         }
-    
+        
         public Client getClient() {
             return client;
         }
-    
+        
         public boolean isNative() {
             return isNative;
         }

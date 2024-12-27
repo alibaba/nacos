@@ -17,9 +17,6 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.common.utils.GroupKeyPattern;
-import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.CacheItem;
@@ -34,14 +31,9 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.api.common.Constants.CLIENT_IP;
 import static com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG;
@@ -70,41 +62,10 @@ public class ConfigCacheService {
     /**
      * groupKey -> cacheItem.
      */
-    private static final ConcurrentHashMap<String, CacheItem> CACHE = new ConcurrentHashMap<>();
+    static final ConcurrentHashMap<String, CacheItem> CACHE = new ConcurrentHashMap<>();
     
     public static int groupCount() {
         return CACHE.size();
-    }
-    
-    /**
-     * Matches the client effective group keys based on the specified group key pattern, client IP, and tag.
-     *
-     * @param groupKeyPattern The pattern to match group keys.
-     * @param clientIp        The IP address of the client.
-     * @param tag             The tag associated with the configuration.
-     * @return A set of group keys that match the pattern and are effective for the client.
-     */
-    public static Set<String> matchClientEffectiveGroupKeys(String groupKeyPattern, String clientIp, String tag) {
-        return CACHE.entrySet().stream()
-                .filter(entry -> GroupKeyPattern.isMatchPatternWithNamespace(entry.getKey(), groupKeyPattern))
-                .filter(entry -> entry.getValue().effectiveForClient(tag, clientIp)).map(Map.Entry::getKey)
-                .collect(Collectors.toSet());
-    }
-    
-    /**
-     * Checks if the specified group key is present in the cache and effective for the client.
-     *
-     * @param groupKey The group key to check.
-     * @param clientIp The IP address of the client.
-     * @param tag      The tag associated with the configuration.
-     * @return true if the group key is present in the cache and effective for the client, false otherwise.
-     */
-    public static boolean containsAndEffectiveForClient(String groupKey, String clientIp, String tag) {
-        if (!CACHE.containsKey(groupKey)) {
-            return false;
-        }
-        CacheItem cacheItem = CACHE.get(groupKey);
-        return cacheItem.effectiveForClient(tag, clientIp);
     }
     
     /**
@@ -239,6 +200,8 @@ public class ConfigCacheService {
             
             //check timestamp
             long localGrayLastModifiedTs = ConfigCacheService.getGrayLastModifiedTs(groupKey, grayName);
+            
+            boolean timestampOutdated = lastModifiedTs < localGrayLastModifiedTs;
             if (timestampOutdated) {
                 DUMP_LOG.warn("[dump-gray-ignore] timestamp is outdated,groupKey={}", groupKey);
                 return true;
