@@ -19,6 +19,8 @@ package com.alibaba.nacos.bootstrap;
 import com.alibaba.nacos.NacosServerBasicApplication;
 import com.alibaba.nacos.NacosServerWebApplication;
 import com.alibaba.nacos.console.NacosConsole;
+import com.alibaba.nacos.core.listener.startup.NacosStartUp;
+import com.alibaba.nacos.core.listener.startup.NacosStartUpManager;
 import com.alibaba.nacos.sys.env.Constants;
 import org.springframework.boot.Banner;
 import org.springframework.boot.ResourceBanner;
@@ -63,17 +65,20 @@ public class NacosBootstrap {
     
     private static ConfigurableApplicationContext startServerWebContext(String[] args,
             ConfigurableApplicationContext coreContext) {
+        NacosStartUpManager.start(NacosStartUp.WEB_START_UP_PHASE);
         return new SpringApplicationBuilder(NacosServerWebApplication.class).parent(coreContext)
                 .banner(getBanner("nacos-server-web-banner.txt")).run(args);
     }
     
     private static ConfigurableApplicationContext startConsoleContext(String[] args,
             ConfigurableApplicationContext coreContext) {
+        NacosStartUpManager.start(NacosStartUp.CONSOLE_START_UP_PHASE);
         return new SpringApplicationBuilder(NacosConsole.class).parent(coreContext)
                 .banner(getBanner("nacos-console-banner.txt")).run(args);
     }
     
     private static ConfigurableApplicationContext startCoreContext(String[] args) {
+        NacosStartUpManager.start(NacosStartUp.CORE_START_UP_PHASE);
         return new SpringApplicationBuilder(NacosServerBasicApplication.class).web(WebApplicationType.NONE)
                 .banner(getBanner("core-banner.txt")).run(args);
     }
