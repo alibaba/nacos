@@ -38,7 +38,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import java.lang.reflect.Field;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
@@ -157,6 +157,7 @@ class NacosConfigServiceTest {
                     .thenThrow(new NacosException(NacosException.NO_RIGHT, "no right"));
             try {
                 nacosConfigService.getConfig(dataId, group, timeout);
+                Assert.fail();
                 assertTrue(false);
             } catch (NacosException e) {
                 assertEquals(NacosException.NO_RIGHT, e.getErrCode());
@@ -195,27 +196,42 @@ class NacosConfigServiceTest {
             public void startInternal() throws NacosException {
                 // NOOP
             }
-            
+    
             @Override
             public String getName() {
                 return "TestConfigTransportClient";
             }
-            
+    
             @Override
             public void notifyListenConfig() {
                 // NOOP
             }
-            
+    
+            @Override
+            public void notifyFuzzyListenConfig() {
+                // NOOP
+            }
+    
             @Override
             public void executeConfigListen() {
                 // NOOP
             }
-            
+    
+            @Override
+            public void executeConfigFuzzyListen() throws NacosException {
+                // NOOP
+            }
+    
             @Override
             public void removeCache(String dataId, String group) {
                 // NOOP
             }
-            
+    
+            @Override
+            public void removeFuzzyListenContext(String dataIdPattern, String group) {
+                // NOOP
+            }
+    
             @Override
             public ConfigResponse queryConfig(String dataId, String group, String tenant, long readTimeous, boolean notify)
                     throws NacosException {
@@ -241,6 +257,10 @@ class NacosConfigServiceTest {
         Mockito.when(mockWoker.getAgent()).thenReturn(client);
         
         final String config = nacosConfigService.getConfigAndSignListener(dataId, group, timeout, listener);
+        Assert.assertEquals(content, config);
+    
+        Mockito.verify(mockWoker, Mockito.times(1))
+                .addTenantListenersWithContent(dataId, group, content, null, Collections.singletonList(listener));
         assertEquals(content, config);
         
         Mockito.verify(mockWoker, Mockito.times(1)).addTenantListenersWithContent(dataId, group, content, null, Arrays.asList(listener));
@@ -255,15 +275,16 @@ class NacosConfigServiceTest {
             public Executor getExecutor() {
                 return null;
             }
-            
+    
             @Override
             public void receiveConfigInfo(String configInfo) {
-            
+        
             }
         };
-        
+    
         nacosConfigService.addListener(dataId, group, listener);
-        Mockito.verify(mockWoker, Mockito.times(1)).addTenantListeners(dataId, group, Arrays.asList(listener));
+        Mockito.verify(mockWoker, Mockito.times(1))
+                .addTenantListeners(dataId, group, Collections.singletonList(listener));
     }
     
     @Test
