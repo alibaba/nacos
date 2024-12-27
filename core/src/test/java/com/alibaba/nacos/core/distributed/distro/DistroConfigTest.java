@@ -19,17 +19,16 @@ package com.alibaba.nacos.core.distributed.distro;
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.lang.reflect.Constructor;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class DistroConfigTest {
+class DistroConfigTest {
     
     private DistroConfig distroConfig;
     
@@ -45,38 +44,38 @@ public class DistroConfigTest {
     
     private long loadDataRetryDelayMillis = 80000L;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         EnvUtil.setEnvironment(new MockEnvironment());
         distroConfig = DistroConfig.getInstance();
     }
     
     @Test
-    public void testSetSyncDelayMillis() {
+    void testSetSyncDelayMillis() {
         distroConfig.setSyncDelayMillis(syncDelayMillis);
         assertEquals(syncDelayMillis, distroConfig.getSyncDelayMillis());
     }
     
     @Test
-    public void testSetSyncRetryDelayMillis() {
+    void testSetSyncRetryDelayMillis() {
         distroConfig.setSyncRetryDelayMillis(syncRetryDelayMillis);
         assertEquals(syncRetryDelayMillis, distroConfig.getSyncRetryDelayMillis());
     }
     
     @Test
-    public void testSetVerifyIntervalMillis() {
+    void testSetVerifyIntervalMillis() {
         distroConfig.setVerifyIntervalMillis(verifyIntervalMillis);
         assertEquals(verifyIntervalMillis, distroConfig.getVerifyIntervalMillis());
     }
     
     @Test
-    public void testSetLoadDataRetryDelayMillis() {
+    void testSetLoadDataRetryDelayMillis() {
         distroConfig.setLoadDataRetryDelayMillis(loadDataRetryDelayMillis);
         assertEquals(loadDataRetryDelayMillis, distroConfig.getLoadDataRetryDelayMillis());
     }
     
     @Test
-    public void testUpgradeConfig() throws InterruptedException {
+    void testUpgradeConfig() throws InterruptedException {
         assertEquals(DistroConstants.DEFAULT_DATA_SYNC_DELAY_MILLISECONDS, distroConfig.getSyncDelayMillis());
         MockEnvironment environment = new MockEnvironment();
         environment.setProperty(DistroConstants.DATA_SYNC_DELAY_MILLISECONDS, String.valueOf(syncDelayMillis));
@@ -87,7 +86,7 @@ public class DistroConfigTest {
     }
     
     @Test
-    public void testInitConfigFormEnv() throws ReflectiveOperationException {
+    void testInitConfigFormEnv() throws ReflectiveOperationException {
         MockEnvironment environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         environment.setProperty(DistroConstants.DATA_SYNC_DELAY_MILLISECONDS, String.valueOf(syncDelayMillis));
@@ -100,13 +99,13 @@ public class DistroConfigTest {
         Constructor<DistroConfig> declaredConstructor = DistroConfig.class.getDeclaredConstructor();
         declaredConstructor.setAccessible(true);
         DistroConfig distroConfig = declaredConstructor.newInstance();
-    
-        Assert.assertEquals(distroConfig.getSyncDelayMillis(), syncDelayMillis);
-        Assert.assertEquals(distroConfig.getSyncTimeoutMillis(), syncTimeoutMillis);
-        Assert.assertEquals(distroConfig.getSyncRetryDelayMillis(), syncRetryDelayMillis);
-        Assert.assertEquals(distroConfig.getVerifyIntervalMillis(), verifyIntervalMillis);
-        Assert.assertEquals(distroConfig.getVerifyTimeoutMillis(), verifyTimeoutMillis);
-        Assert.assertEquals(distroConfig.getLoadDataRetryDelayMillis(), loadDataRetryDelayMillis);
+        
+        assertEquals(distroConfig.getSyncDelayMillis(), syncDelayMillis);
+        assertEquals(distroConfig.getSyncTimeoutMillis(), syncTimeoutMillis);
+        assertEquals(distroConfig.getSyncRetryDelayMillis(), syncRetryDelayMillis);
+        assertEquals(distroConfig.getVerifyIntervalMillis(), verifyIntervalMillis);
+        assertEquals(distroConfig.getVerifyTimeoutMillis(), verifyTimeoutMillis);
+        assertEquals(distroConfig.getLoadDataRetryDelayMillis(), loadDataRetryDelayMillis);
         
     }
 }

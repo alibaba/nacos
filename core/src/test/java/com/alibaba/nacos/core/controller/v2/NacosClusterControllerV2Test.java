@@ -27,14 +27,13 @@ import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.model.request.LookupUpdateRequest;
 import com.alibaba.nacos.core.service.NacosClusterOperationService;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Arrays;
@@ -42,14 +41,17 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class NacosClusterControllerV2Test {
+@ExtendWith(MockitoExtension.class)
+class NacosClusterControllerV2Test {
+    
+    private final MockEnvironment environment = new MockEnvironment();
     
     @InjectMocks
     private NacosClusterControllerV2 nacosClusterControllerV2;
@@ -57,16 +59,14 @@ public class NacosClusterControllerV2Test {
     @Mock
     private NacosClusterOperationService nacosClusterOperationService;
     
-    private final MockEnvironment environment = new MockEnvironment();
-    
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         nacosClusterControllerV2 = new NacosClusterControllerV2(nacosClusterOperationService);
         EnvUtil.setEnvironment(environment);
     }
     
     @Test
-    public void testSelf() {
+    void testSelf() {
         Member self = new Member();
         when(nacosClusterOperationService.self()).thenReturn(self);
         
@@ -76,7 +76,7 @@ public class NacosClusterControllerV2Test {
     }
     
     @Test
-    public void testListNodes() throws NacosException {
+    void testListNodes() throws NacosException {
         Member member1 = new Member();
         member1.setIp("1.1.1.1");
         member1.setPort(8848);
@@ -95,7 +95,7 @@ public class NacosClusterControllerV2Test {
     }
     
     @Test
-    public void testSelfHealth() {
+    void testSelfHealth() {
         String selfHealth = "UP";
         when(nacosClusterOperationService.selfHealth()).thenReturn(selfHealth);
         
@@ -105,7 +105,7 @@ public class NacosClusterControllerV2Test {
     }
     
     @Test
-    public void testUpdate() throws NacosApiException {
+    void testUpdate() throws NacosApiException {
         Member member = new Member();
         member.setIp("1.1.1.1");
         member.setPort(8848);
@@ -114,11 +114,11 @@ public class NacosClusterControllerV2Test {
         Result<Boolean> result = nacosClusterControllerV2.updateNodes(Collections.singletonList(member));
         verify(nacosClusterOperationService).updateNodes(any());
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
-        assertEquals(true, result.getData());
+        assertTrue(result.getData());
     }
     
     @Test
-    public void testSwitchLookup() throws NacosException {
+    void testSwitchLookup() throws NacosException {
         LookupUpdateRequest request = new LookupUpdateRequest();
         request.setType("test");
         
@@ -126,13 +126,13 @@ public class NacosClusterControllerV2Test {
         Result<Boolean> result = nacosClusterControllerV2.updateLookup(request);
         verify(nacosClusterOperationService).updateLookup(any());
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
-        assertEquals(true, result.getData());
+        assertTrue(result.getData());
     }
     
     @Test
-    public void testLeave() throws Exception {
+    void testLeave() throws Exception {
         RestResult<Void> result = nacosClusterControllerV2.deleteNodes(Collections.singletonList("1.1.1.1"));
-        Assert.assertFalse(result.ok());
-        Assert.assertEquals(405, result.getCode());
+        assertFalse(result.ok());
+        assertEquals(405, result.getCode());
     }
 }

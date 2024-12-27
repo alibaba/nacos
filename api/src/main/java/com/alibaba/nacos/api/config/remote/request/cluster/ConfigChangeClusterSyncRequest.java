@@ -25,14 +25,16 @@ import com.alibaba.nacos.api.config.remote.request.AbstractConfigRequest;
  * @version $Id: ConfigChangeClusterSyncRequest.java, v 0.1 2020年08月11日 4:30 PM liuzunfei Exp $
  */
 public class ConfigChangeClusterSyncRequest extends AbstractConfigRequest {
-    
-    String tag;
-    
+
     long lastModified;
     
+    String grayName;
+    
+    @Deprecated
     boolean isBeta;
     
-    boolean isBatch;
+    @Deprecated
+    String tag;
     
     public boolean isBeta() {
         return isBeta;
@@ -40,14 +42,6 @@ public class ConfigChangeClusterSyncRequest extends AbstractConfigRequest {
     
     public void setBeta(boolean beta) {
         isBeta = beta;
-    }
-    
-    public boolean isBatch() {
-        return isBatch;
-    }
-    
-    public void setBatch(boolean batch) {
-        isBatch = batch;
     }
     
     /**
@@ -66,6 +60,14 @@ public class ConfigChangeClusterSyncRequest extends AbstractConfigRequest {
      */
     public void setTag(String tag) {
         this.tag = tag;
+    }
+    
+    public String getGrayName() {
+        return grayName;
+    }
+    
+    public void setGrayName(String grayName) {
+        this.grayName = grayName;
     }
     
     /**

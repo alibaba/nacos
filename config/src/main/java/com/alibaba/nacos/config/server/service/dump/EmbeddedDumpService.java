@@ -20,19 +20,17 @@ import com.alibaba.nacos.common.utils.Observable;
 import com.alibaba.nacos.common.utils.Observer;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
-import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
+import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
+import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -73,13 +71,11 @@ public class EmbeddedDumpService extends DumpService {
      * @param protocolManager {@link ProtocolManager}
      */
     public EmbeddedDumpService(ConfigInfoPersistService configInfoPersistService,
-            NamespacePersistService namespacePersistService, HistoryConfigInfoPersistService historyConfigInfoPersistService,
-            ConfigInfoAggrPersistService configInfoAggrPersistService,
-            ConfigInfoBetaPersistService configInfoBetaPersistService,
-            ConfigInfoTagPersistService configInfoTagPersistService, ServerMemberManager memberManager,
-            ProtocolManager protocolManager) {
-        super(configInfoPersistService, namespacePersistService, historyConfigInfoPersistService,
-                configInfoAggrPersistService, configInfoBetaPersistService, configInfoTagPersistService, memberManager);
+            NamespacePersistService namespacePersistService,
+            HistoryConfigInfoPersistService historyConfigInfoPersistService,
+            ConfigInfoGrayPersistService configInfoGrayPersistService,
+            ServerMemberManager memberManager, ProtocolManager protocolManager) {
+        super(configInfoPersistService, namespacePersistService, historyConfigInfoPersistService, configInfoGrayPersistService, memberManager);
         this.protocolManager = protocolManager;
     }
     
@@ -87,7 +83,7 @@ public class EmbeddedDumpService extends DumpService {
     @Override
     protected void init() throws Throwable {
         if (EnvUtil.getStandaloneMode()) {
-            dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor, dumpAllTagProcessor);
+            dumpOperate();
             return;
         }
         
@@ -110,14 +106,15 @@ public class EmbeddedDumpService extends DumpService {
                         return;
                     }
                     // Identify without a timeout mechanism
-                    EmbeddedStorageContextHolder.putExtendInfo(PersistenceConstant.EXTEND_NEED_READ_UNTIL_HAVE_DATA, "true");
+                    EmbeddedStorageContextHolder.putExtendInfo(PersistenceConstant.EXTEND_NEED_READ_UNTIL_HAVE_DATA,
+                            "true");
                     // Remove your own listening to avoid task accumulation
                     boolean canEnd = false;
                     for (; ; ) {
                         try {
-                            dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor, dumpAllTagProcessor);
-                            protocol.protocolMetaData()
-                                    .unSubscribe(PersistenceConstant.CONFIG_MODEL_RAFT_GROUP, MetadataKey.LEADER_META_DATA, this);
+                            dumpOperate();
+                            protocol.protocolMetaData().unSubscribe(PersistenceConstant.CONFIG_MODEL_RAFT_GROUP,
+                                    MetadataKey.LEADER_META_DATA, this);
                             canEnd = true;
                         } catch (Throwable ex) {
                             if (!shouldRetry(ex)) {

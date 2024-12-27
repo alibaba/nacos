@@ -29,8 +29,8 @@ class EditInstanceDialog extends React.Component {
     serviceName: PropTypes.string,
     clusterName: PropTypes.string,
     groupName: PropTypes.string,
-    openLoading: PropTypes.string,
-    closeLoading: PropTypes.string,
+    openLoading: PropTypes.func,
+    closeLoading: PropTypes.func,
     getInstanceList: PropTypes.func,
     locale: PropTypes.object,
   };
@@ -69,7 +69,7 @@ class EditInstanceDialog extends React.Component {
     const { ip, port, ephemeral, weight, enabled, metadataText } = this.state.editInstance;
     request({
       method: 'PUT',
-      url: 'v1/ns/instance',
+      url: 'v3/console/ns/instance',
       data: {
         serviceName,
         clusterName,
@@ -81,10 +81,10 @@ class EditInstanceDialog extends React.Component {
         enabled,
         metadata: metadataText,
       },
-      dataType: 'text',
+      dataType: 'json',
       beforeSend: () => openLoading(),
       success: res => {
-        if (res !== 'ok') {
+        if (res.data !== 'ok') {
           Message.error(res);
           return;
         }

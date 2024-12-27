@@ -25,14 +25,18 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.HealthOperator;
 import com.alibaba.nacos.naming.core.HealthOperatorV2Impl;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
+import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,6 +65,7 @@ import static com.alibaba.nacos.naming.constants.RequestConstant.VALID_KEY;
  */
 @RestController("namingHealthController")
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_HEALTH_CONTEXT)
+@ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)
 public class HealthController {
     
     @Autowired
@@ -72,6 +77,7 @@ public class HealthController {
      * @return hello message
      */
     @RequestMapping("/server")
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public ResponseEntity server() {
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         result.put("msg", "Hello! I am Nacos-Naming and healthy! total services: " + MetricsMonitor.getDomCountMonitor()
@@ -88,6 +94,7 @@ public class HealthController {
     @CanDistro
     @PutMapping(value = {"", "/instance"})
     @Secured(action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public ResponseEntity update(HttpServletRequest request) throws NacosException {
         String healthyString = WebUtils.optional(request, HEALTHY_KEY, StringUtils.EMPTY);
         if (StringUtils.isBlank(healthyString)) {
@@ -114,6 +121,7 @@ public class HealthController {
      * @return health checkers map
      */
     @GetMapping("/checkers")
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public ResponseEntity checkers() {
         List<Class<? extends AbstractHealthChecker>> classes = HealthCheckType.getLoadedHealthCheckerClasses();
         Map<String, AbstractHealthChecker> checkerMap = new HashMap<>(8);

@@ -18,20 +18,20 @@ package com.alibaba.nacos.sys.env;
 
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.sys.module.ModuleState;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class EnvModuleStateBuilderTest {
+class EnvModuleStateBuilderTest {
     
     private static ConfigurableEnvironment environment;
     
-    @BeforeClass
-    public static void setUp() throws Exception {
+    @BeforeAll
+    static void setUp() throws Exception {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "true");
@@ -39,11 +39,11 @@ public class EnvModuleStateBuilderTest {
     }
     
     @Test
-    public void testBuild() {
+    void testBuild() {
         ModuleState actual = new EnvModuleStateBuilder().build();
         assertEquals(Constants.SYS_MODULE, actual.getModuleName());
         assertEquals(EnvUtil.STANDALONE_MODE_ALONE, actual.getStates().get(Constants.STARTUP_MODE_STATE));
-        assertNull(EnvUtil.FUNCTION_MODE_NAMING, actual.getStates().get(Constants.FUNCTION_MODE_STATE));
+        assertNull(actual.getStates().get(Constants.FUNCTION_MODE_STATE), EnvUtil.FUNCTION_MODE_NAMING);
         assertEquals(VersionUtils.version, actual.getStates().get(Constants.NACOS_VERSION));
     }
 }

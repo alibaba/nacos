@@ -72,9 +72,17 @@ class ServiceDetail extends React.Component {
   getServiceDetail() {
     const { serviceName, groupName } = this.state;
     request({
-      url: `v1/ns/catalog/service?serviceName=${serviceName}&groupName=${groupName}`,
+      url: `v3/console/ns/service?serviceName=${serviceName}&groupName=${groupName}`,
       beforeSend: () => this.openLoading(),
-      success: ({ clusters = [], service = {} }) => this.setState({ service, clusters }),
+      success: res => {
+        if (res.code === 0) {
+          // 确保 res.data 存在并且 clusters 是数组
+          const { clusters = [], service = {} } = res.data || { clusters: [], service: {} };
+          this.setState({ service, clusters: Array.isArray(clusters) ? clusters : [] });
+        } else {
+          Message.error(res.message || '请求失败');
+        }
+      },
       error: e => Message.error(e.responseText || 'error'),
       complete: () => this.closeLoading(),
     });

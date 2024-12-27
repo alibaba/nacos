@@ -99,8 +99,11 @@ public class HttpLoginProcessor implements LoginProcessor {
             }
             return loginIdentityContext;
         } catch (Exception e) {
+            Map<String, String> newBodyMap = new HashMap<>(bodyMap);
+            newBodyMap.put(PropertyKeyConst.PASSWORD,
+                    ParamUtil.desensitiseParameter(bodyMap.get(PropertyKeyConst.PASSWORD)));
             SECURITY_LOGGER.error("[NacosClientAuthServiceImpl] login http request failed"
-                    + " url: {}, params: {}, bodyMap: {}, errorMsg: {}", url, params, bodyMap, e.getMessage());
+                    + " url: {}, params: {}, bodyMap: {}, errorMsg: {}", url, params, newBodyMap, e.getMessage());
             return null;
         }
     }

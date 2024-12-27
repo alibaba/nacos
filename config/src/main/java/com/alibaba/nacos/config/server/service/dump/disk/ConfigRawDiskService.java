@@ -16,10 +16,13 @@
 
 package com.alibaba.nacos.config.server.service.dump.disk;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.utils.StringUtils;
+import com.alibaba.nacos.common.pathencoder.PathEncoderManager;
 import com.alibaba.nacos.common.utils.IoUtils;
-import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.io.FileUtils;
 
@@ -42,17 +45,9 @@ public class ConfigRawDiskService implements ConfigDiskService {
     
     private static final String TENANT_BASE_DIR = File.separator + "data" + File.separator + "tenant-config-data";
     
-    private static final String BETA_DIR = File.separator + "data" + File.separator + "beta-data";
+    private static final String GRAY_DIR = File.separator + "data" + File.separator + "gray-data";
     
-    private static final String TENANT_BETA_DIR = File.separator + "data" + File.separator + "tenant-beta-data";
-    
-    private static final String TAG_DIR = File.separator + "data" + File.separator + "tag-data";
-    
-    private static final String TENANT_TAG_DIR = File.separator + "data" + File.separator + "tenant-tag-data";
-    
-    private static final String BATCH_DIR = File.separator + "data" + File.separator + "batch-data";
-    
-    private static final String TENANT_BATCH_DIR = File.separator + "data" + File.separator + "tenant-batch-data";
+    private static final String TENANT_GRAY_DIR = File.separator + "data" + File.separator + "tenant-gray-data";
     
     /**
      * Save configuration information to disk.
@@ -65,7 +60,16 @@ public class ConfigRawDiskService implements ConfigDiskService {
     /**
      * Returns the path of the server cache file.
      */
-    private static File targetFile(String dataId, String group, String tenant) {
+    static File targetFile(String dataId, String group, String tenant) {
+        try {
+            ParamUtils.checkParam(dataId, group, tenant);
+        } catch (Exception e) {
+            throw new NacosRuntimeException(NacosException.CLIENT_INVALID_PARAM, "parameter is invalid.");
+        }
+        // fix https://github.com/alibaba/nacos/issues/10067
+        dataId = PathEncoderManager.getInstance().encode(dataId);
+        group = PathEncoderManager.getInstance().encode(group);
+        tenant = PathEncoderManager.getInstance().encode(tenant);
         File file = null;
         if (StringUtils.isBlank(tenant)) {
             file = new File(EnvUtil.getNacosHome(), BASE_DIR);
@@ -79,74 +83,47 @@ public class ConfigRawDiskService implements ConfigDiskService {
     }
     
     /**
-     * Returns the path of cache file in server.
+     * Returns the path of the gray cache file in server.
      */
-    private static File targetBetaFile(String dataId, String group, String tenant) {
+    private static File targetGrayFile(String dataId, String group, String tenant, String grayName) {
+        try {
+            ParamUtils.checkParam(grayName);
+            ParamUtils.checkParam(dataId, group, tenant);
+        } catch (Exception e) {
+            throw new NacosRuntimeException(NacosException.CLIENT_INVALID_PARAM, "parameter is invalid.");
+        }
+        // fix https://github.com/alibaba/nacos/issues/10067
+        dataId = PathEncoderManager.getInstance().encode(dataId);
+        group = PathEncoderManager.getInstance().encode(group);
+        tenant = PathEncoderManager.getInstance().encode(tenant);
+        
         File file = null;
         if (StringUtils.isBlank(tenant)) {
-            file = new File(EnvUtil.getNacosHome(), BETA_DIR);
+            file = new File(EnvUtil.getNacosHome(), GRAY_DIR);
         } else {
-            file = new File(EnvUtil.getNacosHome(), TENANT_BETA_DIR);
+            file = new File(EnvUtil.getNacosHome(), TENANT_GRAY_DIR);
             file = new File(file, tenant);
         }
         file = new File(file, group);
         file = new File(file, dataId);
+        file = new File(file, grayName);
         return file;
     }
     
     /**
-     * Returns the path of the tag cache file in server.
+     * Returns the path of the gray content cache file in server.
      */
-    private static File targetTagFile(String dataId, String group, String tenant, String tag) {
-        File file = null;
-        if (StringUtils.isBlank(tenant)) {
-            file = new File(EnvUtil.getNacosHome(), TAG_DIR);
-        } else {
-            file = new File(EnvUtil.getNacosHome(), TENANT_TAG_DIR);
-            file = new File(file, tenant);
-        }
-        file = new File(file, group);
-        file = new File(file, dataId);
-        file = new File(file, tag);
-        return file;
-    }
-    
-    private static File targetBatchFile(String dataId, String group, String tenant) {
-        File file = null;
-        if (org.apache.commons.lang.StringUtils.isBlank(tenant)) {
-            file = new File(EnvUtil.getNacosHome(), BATCH_DIR);
-        } else {
-            file = new File(EnvUtil.getNacosHome(), TENANT_BATCH_DIR);
-            file = new File(file, tenant);
-        }
-        file = new File(file, group);
-        file = new File(file, dataId);
-        return file;
+    private static File targetGrayContentFile(String dataId, String group, String tenant, String grayName) {
+        return targetGrayFile(dataId, group, tenant, grayName);
     }
     
     /**
-     * Save beta information to disk.
+     * Save gray information to disk.
      */
-    public void saveBetaToDisk(String dataId, String group, String tenant, String content) throws IOException {
-        File targetFile = targetBetaFile(dataId, group, tenant);
-        FileUtils.writeStringToFile(targetFile, content, ENCODE_UTF8);
-    }
-    
-    /**
-     * save batch to disk.
-     */
-    public void saveBatchToDisk(String dataId, String group, String tenant, String content) throws IOException {
-        File targetFile = targetBatchFile(dataId, group, tenant);
-        FileUtils.writeStringToFile(targetFile, content, ENCODE_UTF8);
-    }
-    
-    /**
-     * Save tag information to disk.
-     */
-    public void saveTagToDisk(String dataId, String group, String tenant, String tag, String content)
+    public void saveGrayToDisk(String dataId, String group, String tenant, String grayName, String content)
             throws IOException {
-        File targetFile = targetTagFile(dataId, group, tenant, tag);
-        FileUtils.writeStringToFile(targetFile, content, ENCODE_UTF8);
+        File targetGrayContentFile = targetGrayContentFile(dataId, group, tenant, grayName);
+        FileUtils.writeStringToFile(targetGrayContentFile, content, ENCODE_UTF8);
     }
     
     /**
@@ -157,24 +134,10 @@ public class ConfigRawDiskService implements ConfigDiskService {
     }
     
     /**
-     * Deletes beta configuration files on disk.
+     * Deletes gray configuration files on disk.
      */
-    public void removeConfigInfo4Beta(String dataId, String group, String tenant) {
-        FileUtils.deleteQuietly(targetBetaFile(dataId, group, tenant));
-    }
-    
-    /**
-     * remove config for batch.
-     */
-    public void removeConfigInfo4Batch(String dataId, String group, String tenant) {
-        FileUtils.deleteQuietly(targetBatchFile(dataId, group, tenant));
-    }
-    
-    /**
-     * Deletes tag configuration files on disk.
-     */
-    public void removeConfigInfo4Tag(String dataId, String group, String tenant, String tag) {
-        FileUtils.deleteQuietly(targetTagFile(dataId, group, tenant, tag));
+    public void removeConfigInfo4Gray(String dataId, String group, String tenant, String grayName) {
+        FileUtils.deleteQuietly(targetGrayContentFile(dataId, group, tenant, grayName));
     }
     
     private static String file2String(File file) throws IOException {
@@ -185,19 +148,10 @@ public class ConfigRawDiskService implements ConfigDiskService {
     }
     
     /**
-     * Returns the path of cache file in server.
+     * Returns the content of the gray cache file in server.
      */
-    public String getBetaContent(String dataId, String group, String tenant) throws IOException {
-        File file = targetBetaFile(dataId, group, tenant);
-        return file2String(file);
-    }
-    
-    /**
-     * Returns the path of the tag cache file in server.
-     */
-    public String getTagContent(String dataId, String group, String tenant, String tag) throws IOException {
-        File file = targetTagFile(dataId, group, tenant, tag);
-        return file2String(file);
+    public String getGrayContent(String dataId, String group, String tenant, String grayName) throws IOException {
+        return file2String(targetGrayContentFile(dataId, group, tenant, grayName));
     }
     
     public String getContent(String dataId, String group, String tenant) throws IOException {
@@ -215,14 +169,6 @@ public class ConfigRawDiskService implements ConfigDiskService {
         } else {
             return null;
         }
-    }
-    
-    public String getLocalConfigMd5(String dataId, String group, String tenant, String encode) throws IOException {
-        String content = getContent(dataId, group, tenant);
-        if (content == null) {
-            content = com.alibaba.nacos.common.utils.StringUtils.EMPTY;
-        }
-        return MD5Utils.md5Hex(content, encode);
     }
     
     /**
@@ -244,62 +190,22 @@ public class ConfigRawDiskService implements ConfigDiskService {
     }
     
     /**
-     * Clear all beta config file.
+     * Clear all gray config file.
      */
-    public void clearAllBeta() {
-        File file = new File(EnvUtil.getNacosHome(), BETA_DIR);
-        if (!file.exists() || FileUtils.deleteQuietly(file)) {
-            LogUtil.DEFAULT_LOG.info("clear all config-info-beta success.");
-        } else {
-            LogUtil.DEFAULT_LOG.warn("clear all config-info-beta failed.");
-        }
-        File fileTenant = new File(EnvUtil.getNacosHome(), TENANT_BETA_DIR);
-        if (!fileTenant.exists() || FileUtils.deleteQuietly(fileTenant)) {
-            LogUtil.DEFAULT_LOG.info("clear all config-info-beta-tenant success.");
-        } else {
-            LogUtil.DEFAULT_LOG.warn("clear all config-info-beta-tenant failed.");
-        }
-    }
-    
-    /**
-     * Clear all tag config file.
-     */
-    public void clearAllTag() {
-        File file = new File(EnvUtil.getNacosHome(), TAG_DIR);
+    public void clearAllGray() {
+        File file = new File(EnvUtil.getNacosHome(), GRAY_DIR);
         
         if (!file.exists() || FileUtils.deleteQuietly(file)) {
-            LogUtil.DEFAULT_LOG.info("clear all config-info-tag success.");
+            LogUtil.DEFAULT_LOG.info("clear all config-info-gray success.");
         } else {
-            LogUtil.DEFAULT_LOG.warn("clear all config-info-tag failed.");
+            LogUtil.DEFAULT_LOG.warn("clear all config-info-gray failed.");
         }
-        File fileTenant = new File(EnvUtil.getNacosHome(), TENANT_TAG_DIR);
+        File fileTenant = new File(EnvUtil.getNacosHome(), TENANT_GRAY_DIR);
         if (!fileTenant.exists() || FileUtils.deleteQuietly(fileTenant)) {
-            LogUtil.DEFAULT_LOG.info("clear all config-info-tag-tenant success.");
+            LogUtil.DEFAULT_LOG.info("clear all config-info-gray-tenant success.");
         } else {
-            LogUtil.DEFAULT_LOG.warn("clear all config-info-tag-tenant failed.");
+            LogUtil.DEFAULT_LOG.warn("clear all config-info-gray-tenant failed.");
         }
     }
     
-    /**
-     * clear all batch.
-     */
-    public void clearAllBatch() {
-        File file = new File(EnvUtil.getNacosHome(), BATCH_DIR);
-        if (!file.exists() || FileUtils.deleteQuietly(file)) {
-            LogUtil.DEFAULT_LOG.info("clear all config-info-batch success");
-        } else {
-            LogUtil.DEFAULT_LOG.warn("clear all config-info-batch failed.");
-        }
-        File fileTenant = new File(EnvUtil.getNacosHome(), TENANT_BATCH_DIR);
-        if (!fileTenant.exists() || FileUtils.deleteQuietly(fileTenant)) {
-            LogUtil.DEFAULT_LOG.info("clear all config-info-batch-tenant success.");
-        } else {
-            LogUtil.DEFAULT_LOG.warn("clear all config-info-batch-tenant failed.");
-        }
-    }
-    
-    public String getBatchContent(String dataId, String group, String tenant) throws IOException {
-        File file = targetBatchFile(dataId, group, tenant);
-        return file2String(file);
-    }
 }

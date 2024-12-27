@@ -32,6 +32,7 @@ import {
 import QueryResult from '../../../components/QueryResult';
 
 import './index.scss';
+import PageTitle from '../../../components/PageTitle';
 
 const FormItem = Form.Item;
 const { Row, Col } = Grid;
@@ -54,12 +55,13 @@ class ListeningToQuery extends React.Component {
       pageSize: 10,
       currentPage: 1,
       dataSource: [],
+      totalDataSource: [],
     };
     this.field = new Field(this);
     this.group = getParams('listeningGroup') || '';
     this.dataId = getParams('listeningDataId') || '';
     this.serverId = getParams('listeningServerId') || '';
-    this.tenant = getParams('namespace') || '';
+    this.tenant = getParams('namespace') || 'public';
   }
 
   componentDidMount() {
@@ -90,16 +92,16 @@ class ListeningToQuery extends React.Component {
     const type = this.getValue('type');
     if (type === 1) {
       const ip = this.getValue('ip');
-      queryUrl = `v1/cs/listener?ip=${ip}`;
-      const tenant = window.nownamespace || getParams('namespace') || '';
+      queryUrl = `v3/console/cs/config/listener/ip?ip=${ip}`;
+      const tenant = window.nownamespace || getParams('namespace') || 'public';
       if (tenant) {
-        queryUrl += `&tenant=${tenant}`;
+        queryUrl += `&namespaceId=${tenant}`;
       }
     } else {
       const dataId = this.getValue('dataId');
       const group = this.getValue('group');
       if (!dataId || !group) return false;
-      queryUrl = `v1/cs/configs/listener?dataId=${dataId}&group=${group}`;
+      queryUrl = `v3/console/cs/config/listener?dataId=${dataId}&groupName=${group}`;
     }
     request({
       url: queryUrl,
@@ -107,9 +109,10 @@ class ListeningToQuery extends React.Component {
         self.openLoading();
       },
       success(data) {
-        if (data.collectStatus === 200) {
+        const res = data.data;
+        if (res.collectStatus === 200) {
           const dataSoureTmp = [];
-          const status = data.lisentersGroupkeyStatus;
+          const status = res.lisentersGroupkeyStatus;
           for (const key in status) {
             if (type === 1) {
               const obj = {};
@@ -126,8 +129,9 @@ class ListeningToQuery extends React.Component {
             }
           }
           self.setState({
-            dataSource: dataSoureTmp || [],
+            totalDataSource: dataSoureTmp || [],
             total: dataSoureTmp.length || 0,
+            dataSource: dataSoureTmp.slice(0, self.state.pageSize),
           });
         }
       },
@@ -140,8 +144,10 @@ class ListeningToQuery extends React.Component {
   showMore() {}
 
   changePage = value => {
+    const startIndex = (value - 1) * this.state.pageSize;
     this.setState({
       currentPage: value,
+      dataSource: this.state.totalDataSource.slice(startIndex, startIndex + this.state.pageSize),
     });
   };
 
@@ -170,7 +176,15 @@ class ListeningToQuery extends React.Component {
     });
   };
 
+  setNowNameSpace = (nowNamespaceName, nowNamespaceId, nowNamespaceDesc) =>
+    this.setState({
+      nowNamespaceName,
+      nowNamespaceId,
+      nowNamespaceDesc,
+    });
+
   render() {
+    const { nowNamespaceName, nowNamespaceId, nowNamespaceDesc } = this.state;
     const { locale = {} } = this.props;
     const { init, getValue } = this.field;
     this.init = init;
@@ -195,7 +209,17 @@ class ListeningToQuery extends React.Component {
           tip="Loading..."
           color="#333"
         >
-          <RegionGroup left={locale.listenerQuery} namespaceCallBack={this.getQueryLater} />
+          <PageTitle
+            title={locale.listenerQuery}
+            desc={nowNamespaceDesc}
+            namespaceId={nowNamespaceId}
+            namespaceName={nowNamespaceName}
+            nameSpace
+          />
+          <RegionGroup
+            setNowNameSpace={this.setNowNameSpace}
+            namespaceCallBack={this.getQueryLater}
+          />
           <Row className="demo-row" style={{ marginBottom: 10, padding: 0 }}>
             <Col span="24">
               <Form inline field={this.field}>
@@ -311,7 +335,6 @@ class ListeningToQuery extends React.Component {
               pageSize={this.state.pageSize}
               onChange={this.changePage}
             />
-            ,
           </div>
         </Loading>
       </>

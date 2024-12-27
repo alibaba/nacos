@@ -16,13 +16,13 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import java.util.Map;
-
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.http.HttpStatus;
+
+import java.util.Map;
 
 /**
  * Parameter validity check util.
@@ -98,6 +98,25 @@ public class ParamUtils {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "invalid content, over " + PropertyUtil.getMaxContent());
         }
+    }
+    
+    /**
+     * Check Config basic Parameters.
+     *
+     * @param dataId data Id
+     * @param group  group name
+     * @param namespaceId namespace Id
+     */
+    public static void checkParam(String dataId, String group, String namespaceId) throws NacosApiException {
+        if (StringUtils.isBlank(dataId) || !isValid(dataId.trim())) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "invalid dataId : " + dataId);
+        }
+        if (StringUtils.isBlank(group) || !isValid(group)) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "invalid group : " + group);
+        }
+        checkTenantV2(namespaceId);
     }
     
     /**

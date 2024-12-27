@@ -32,5 +32,9 @@ public enum SourceType {
     /**
      * get value from system environment.
      */
-    ENV
+    ENV,
+    /**
+     * get value from unknown environment, will be search in all properties by orders.
+     */
+    UNKNOWN
 }

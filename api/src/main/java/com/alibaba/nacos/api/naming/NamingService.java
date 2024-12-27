@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.api.naming.selector.NamingSelector;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 
 import java.util.List;
@@ -34,7 +35,7 @@ import java.util.List;
 public interface NamingService {
     
     /**
-     * register a instance to service.
+     * register an instance to service.
      *
      * @param serviceName name of service
      * @param ip          instance ip
@@ -44,7 +45,7 @@ public interface NamingService {
     void registerInstance(String serviceName, String ip, int port) throws NacosException;
     
     /**
-     * register a instance to service.
+     * register an instance to service.
      *
      * @param serviceName name of service
      * @param groupName   group of service
@@ -55,7 +56,7 @@ public interface NamingService {
     void registerInstance(String serviceName, String groupName, String ip, int port) throws NacosException;
     
     /**
-     * register a instance to service with specified cluster name.
+     * register an instance to service with specified cluster name.
      *
      * @param serviceName name of service
      * @param ip          instance ip
@@ -66,7 +67,7 @@ public interface NamingService {
     void registerInstance(String serviceName, String ip, int port, String clusterName) throws NacosException;
     
     /**
-     * register a instance to service with specified cluster name.
+     * register an instance to service with specified cluster name.
      *
      * @param serviceName name of service
      * @param groupName   group of service
@@ -79,7 +80,7 @@ public interface NamingService {
             throws NacosException;
     
     /**
-     * register a instance to service with specified instance properties.
+     * register an instance to service with specified instance properties.
      *
      * @param serviceName name of service
      * @param instance    instance to register
@@ -88,7 +89,7 @@ public interface NamingService {
     void registerInstance(String serviceName, Instance instance) throws NacosException;
     
     /**
-     * register a instance to service with specified instance properties.
+     * register an instance to service with specified instance properties.
      *
      * @param serviceName name of service
      * @param groupName   group of service
@@ -493,6 +494,28 @@ public interface NamingService {
             throws NacosException;
     
     /**
+     * Subscribe service to receive events of instances alteration.
+     *
+     * @param serviceName name of service
+     * @param selector    selector of instances
+     * @param listener    event listener
+     * @throws NacosException nacos exception
+     */
+    void subscribe(String serviceName, NamingSelector selector, EventListener listener) throws NacosException;
+    
+    /**
+     * Subscribe service to receive events of instances alteration.
+     *
+     * @param serviceName name of service
+     * @param groupName   group of service
+     * @param selector    selector of instances
+     * @param listener    event listener
+     * @throws NacosException nacos exception
+     */
+    void subscribe(String serviceName, String groupName, NamingSelector selector, EventListener listener)
+            throws NacosException;
+    
+    /**
      * Unsubscribe event listener of service.
      *
      * @param serviceName name of service
@@ -577,6 +600,28 @@ public interface NamingService {
      */
     void cancelFuzzyWatch(String serviceNamePattern, String fixedGroupName, AbstractFuzzyWatchEventListener listener) throws NacosException;
 
+    /**
+     * Unsubscribe event listener of service.
+     *
+     * @param serviceName name of service
+     * @param selector    selector of instances
+     * @param listener    event listener
+     * @throws NacosException nacos exception
+     */
+    void unsubscribe(String serviceName, NamingSelector selector, EventListener listener) throws NacosException;
+    
+    /**
+     * Unsubscribe event listener of service.
+     *
+     * @param serviceName name of service
+     * @param groupName   group of service
+     * @param selector    selector of instances
+     * @param listener    event listener
+     * @throws NacosException nacos exception
+     */
+    void unsubscribe(String serviceName, String groupName, NamingSelector selector, EventListener listener)
+            throws NacosException;
+    
     /**
      * Get all service names from server.
      *

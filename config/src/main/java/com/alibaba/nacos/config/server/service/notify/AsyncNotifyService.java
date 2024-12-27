@@ -19,18 +19,20 @@ package com.alibaba.nacos.config.server.service.notify;
 import com.alibaba.nacos.api.config.remote.request.cluster.ConfigChangeClusterSyncRequest;
 import com.alibaba.nacos.api.config.remote.response.cluster.ConfigChangeClusterSyncResponse;
 import com.alibaba.nacos.api.remote.RequestCallBack;
-import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
+import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
+import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
+import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.remote.ConfigClusterRpcClientProxy;
-import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
@@ -48,6 +50,8 @@ import java.util.Queue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
+import static com.alibaba.nacos.core.cluster.MemberMetaDataConstants.SUPPORT_GRAY_MODEL;
+
 /**
  * Async notify service.
  *
@@ -63,9 +67,6 @@ public class AsyncNotifyService {
     private static final int INCREASE_STEPS = 1000;
     
     private static final int MAX_COUNT = 6;
-    
-    @Autowired
-    private DumpService dumpService;
     
     @Autowired
     private ConfigClusterRpcClientProxy configClusterRpcClientProxy;
@@ -92,31 +93,7 @@ public class AsyncNotifyService {
             @Override
             public void onEvent(Event event) {
                 // Generate ConfigDataChangeEvent concurrently
-                if (event instanceof ConfigDataChangeEvent) {
-                    ConfigDataChangeEvent evt = (ConfigDataChangeEvent) event;
-                    long dumpTs = evt.lastModifiedTs;
-                    String dataId = evt.dataId;
-                    String group = evt.group;
-                    String tenant = evt.tenant;
-                    String tag = evt.tag;
-                    MetricsMonitor.incrementConfigChangeCount(tenant, group, dataId);
-                    
-                    Collection<Member> ipList = memberManager.allMembers();
-                    
-                    // In fact, any type of queue here can be
-                    Queue<NotifySingleRpcTask> rpcQueue = new LinkedList<>();
-                    
-                    for (Member member : ipList) {
-                        // grpc report data change only
-                        rpcQueue.add(
-                                new NotifySingleRpcTask(dataId, group, tenant, tag, dumpTs, evt.isBeta, evt.isBatch,
-                                        member));
-                    }
-                    if (!rpcQueue.isEmpty()) {
-                        ConfigExecutor.executeAsyncNotify(new AsyncRpcTask(rpcQueue));
-                    }
-                    
-                }
+                handleConfigDataChangeEvent(event);
             }
             
             @Override
@@ -126,11 +103,104 @@ public class AsyncNotifyService {
         });
     }
     
+    void handleConfigDataChangeEvent(Event event) {
+        if (event instanceof ConfigDataChangeEvent) {
+            ConfigDataChangeEvent evt = (ConfigDataChangeEvent) event;
+            
+            MetricsMonitor.incrementConfigChangeCount(evt.tenant, evt.group, evt.dataId);
+            
+            Collection<Member> ipList = memberManager.allMembersWithoutSelf();
+            
+            // In fact, any type of queue here can be
+            Queue<NotifySingleRpcTask> rpcQueue = new LinkedList<>();
+            
+            for (Member member : ipList) {
+                // grpc report data change only
+                NotifySingleRpcTask notifySingleRpcTask = generateTask(evt, member);
+                if (notifySingleRpcTask != null) {
+                    rpcQueue.add(notifySingleRpcTask);
+                }
+                
+            }
+            if (!rpcQueue.isEmpty()) {
+                ConfigExecutor.executeAsyncNotify(new AsyncRpcTask(rpcQueue));
+            }
+        }
+    }
+    
+    private NotifySingleRpcTask generateTask(ConfigDataChangeEvent configDataChangeEvent, Member member) {
+        
+        NotifySingleRpcTask task = new NotifySingleRpcTask(configDataChangeEvent.dataId, configDataChangeEvent.group,
+                configDataChangeEvent.tenant, configDataChangeEvent.grayName, configDataChangeEvent.lastModifiedTs,
+                member);
+        
+        if (PropertyUtil.isGrayCompatibleModel() && StringUtils.isNotBlank(configDataChangeEvent.grayName)) {
+            
+            // old server should set beta or tag flag
+            if (!(Boolean) member.getExtendInfo().getOrDefault(SUPPORT_GRAY_MODEL, Boolean.FALSE)) {
+                String underLine = "_";
+                task.setBeta(BetaGrayRule.TYPE_BETA.equals(configDataChangeEvent.grayName));
+                if (configDataChangeEvent.grayName.startsWith(TagGrayRule.TYPE_TAG + underLine)) {
+                    task.setTag(configDataChangeEvent.grayName.substring(
+                            configDataChangeEvent.grayName.indexOf(TagGrayRule.TYPE_TAG + underLine) + 4));
+                }
+                
+            }
+        }
+        
+        // compatible with gray model
+        return task;
+    }
+    
     private boolean isUnHealthy(String targetIp) {
         return !memberManager.stateCheck(targetIp, HEALTHY_CHECK_STATUS);
     }
     
-    class AsyncRpcTask implements Runnable {
+    void executeAsyncRpcTask(Queue<NotifySingleRpcTask> queue) {
+        while (!queue.isEmpty()) {
+            NotifySingleRpcTask task = queue.poll();
+            
+            ConfigChangeClusterSyncRequest syncRequest = new ConfigChangeClusterSyncRequest();
+            syncRequest.setDataId(task.getDataId());
+            syncRequest.setTenant(task.getTenant());
+            syncRequest.setGroup(task.getGroup());
+            syncRequest.setLastModified(task.getLastModified());
+            syncRequest.setGrayName(task.getGrayName());
+            syncRequest.setBeta(task.isBeta());
+            syncRequest.setTag(task.getTag());
+            Member member = task.member;
+            
+            String event = getNotifyEvent(task);
+            if (memberManager.hasMember(member.getAddress())) {
+                // start the health check and there are ips that are not monitored, put them directly in the notification queue, otherwise notify
+                boolean unHealthNeedDelay = isUnHealthy(member.getAddress());
+                if (unHealthNeedDelay) {
+                    // target ip is unhealthy, then put it in the notification list
+                    ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
+                            task.getLastModified(), InetUtils.getSelfIP(), event,
+                            ConfigTraceService.NOTIFY_TYPE_UNHEALTH, 0, member.getAddress());
+                    // get delay time and set fail count to the task
+                    asyncTaskExecute(task);
+                } else {
+                    
+                    // grpc report data change only
+                    try {
+                        configClusterRpcClientProxy.syncConfigChange(member, syncRequest,
+                                new AsyncRpcNotifyCallBack(AsyncNotifyService.this, task));
+                    } catch (Exception e) {
+                        MetricsMonitor.getConfigNotifyException().increment();
+                        asyncTaskExecute(task);
+                    }
+                    
+                }
+            } else {
+                //No nothing if  member has offline.
+            }
+            
+        }
+    }
+    
+    public class AsyncRpcTask implements Runnable {
         
         private Queue<NotifySingleRpcTask> queue;
         
@@ -140,91 +210,42 @@ public class AsyncNotifyService {
         
         @Override
         public void run() {
-            while (!queue.isEmpty()) {
-                NotifySingleRpcTask task = queue.poll();
-                
-                ConfigChangeClusterSyncRequest syncRequest = new ConfigChangeClusterSyncRequest();
-                syncRequest.setDataId(task.getDataId());
-                syncRequest.setGroup(task.getGroup());
-                syncRequest.setBeta(task.isBeta);
-                syncRequest.setLastModified(task.getLastModified());
-                syncRequest.setTag(task.tag);
-                syncRequest.setBatch(task.isBatch);
-                syncRequest.setTenant(task.getTenant());
-                Member member = task.member;
-                if (memberManager.getSelf().equals(member)) {
-                    if (syncRequest.isBeta()) {
-                        dumpService.dumpBeta(syncRequest.getDataId(), syncRequest.getGroup(), syncRequest.getTenant(),
-                                syncRequest.getLastModified(), NetUtils.localIP());
-                    } else if (syncRequest.isBatch()) {
-                        dumpService.dumpBatch(syncRequest.getDataId(), syncRequest.getGroup(), syncRequest.getTenant(),
-                                syncRequest.getLastModified(), NetUtils.localIP());
-                    } else if (StringUtils.isNotBlank(syncRequest.getTag())) {
-                        dumpService.dumpTag(syncRequest.getDataId(), syncRequest.getGroup(), syncRequest.getTenant(),
-                                syncRequest.getTag(), syncRequest.getLastModified(), NetUtils.localIP());
-                    } else {
-                        dumpService.dumpFormal(syncRequest.getDataId(), syncRequest.getGroup(), syncRequest.getTenant(),
-                                syncRequest.getLastModified(), NetUtils.localIP());
-                    }
-                    continue;
-                }
-                String event = getNotifyEvent(task);
-                
-                if (memberManager.hasMember(member.getAddress())) {
-                    // start the health check and there are ips that are not monitored, put them directly in the notification queue, otherwise notify
-                    boolean unHealthNeedDelay = isUnHealthy(member.getAddress());
-                    if (unHealthNeedDelay) {
-                        // target ip is unhealthy, then put it in the notification list
-                        ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
-                                task.getLastModified(), InetUtils.getSelfIP(), event,
-                                ConfigTraceService.NOTIFY_TYPE_UNHEALTH, 0, member.getAddress());
-                        // get delay time and set fail count to the task
-                        asyncTaskExecute(task);
-                    } else {
-                        
-                        // grpc report data change only
-                        try {
-                            configClusterRpcClientProxy.syncConfigChange(member, syncRequest,
-                                    new AsyncRpcNotifyCallBack(task));
-                        } catch (Exception e) {
-                            MetricsMonitor.getConfigNotifyException().increment();
-                            asyncTaskExecute(task);
-                        }
-                        
-                    }
-                } else {
-                    //No nothing if  member has offline.
-                }
-                
-            }
+            executeAsyncRpcTask(queue);
         }
     }
     
-    static class NotifySingleRpcTask extends NotifyTask {
+    public static class NotifySingleRpcTask extends AbstractDelayTask {
+        
+        private String dataId;
+        
+        private String group;
+        
+        private String tenant;
+        
+        private long lastModified;
+        
+        private int failCount;
         
         private Member member;
         
+        private String grayName;
+        
+        @Deprecated
         private boolean isBeta;
         
+        @Deprecated
         private String tag;
         
-        private boolean isBatch;
-        
-        public NotifySingleRpcTask(String dataId, String group, String tenant, String tag, long lastModified,
-                boolean isBeta, Member member) {
-            super(dataId, group, tenant, lastModified);
+        public NotifySingleRpcTask(String dataId, String group, String tenant, String grayName, long lastModified,
+                Member member) {
+            this.dataId = dataId;
+            this.group = group;
+            this.tenant = tenant;
+            this.lastModified = lastModified;
             this.member = member;
-            this.isBeta = isBeta;
-            this.tag = tag;
-        }
-        
-        public NotifySingleRpcTask(String dataId, String group, String tenant, String tag, long lastModified,
-                boolean isBeta, boolean isBatch, Member member) {
-            super(dataId, group, tenant, lastModified);
-            this.member = member;
-            this.isBeta = isBeta;
-            this.tag = tag;
-            this.isBatch = isBatch;
+            this.grayName = grayName;
+            setTaskInterval(3000L);
+            
         }
         
         public boolean isBeta() {
@@ -243,13 +264,44 @@ public class AsyncNotifyService {
             this.tag = tag;
         }
         
-        public boolean isBatch() {
-            return isBatch;
+        public String getGrayName() {
+            return grayName;
         }
         
-        public void setBatch(boolean batch) {
-            isBatch = batch;
+        public void setGrayName(String grayName) {
+            this.grayName = grayName;
         }
+        
+        public String getDataId() {
+            return dataId;
+        }
+        
+        public String getGroup() {
+            return group;
+        }
+        
+        public int getFailCount() {
+            return failCount;
+        }
+        
+        public void setFailCount(int failCount) {
+            this.failCount = failCount;
+        }
+        
+        public long getLastModified() {
+            return lastModified;
+        }
+        
+        @Override
+        public void merge(AbstractDelayTask task) {
+            // Perform merge, but do nothing, tasks with the same dataId and group, later will replace the previous
+            
+        }
+        
+        public String getTenant() {
+            return tenant;
+        }
+        
     }
     
     private void asyncTaskExecute(NotifySingleRpcTask task) {
@@ -260,24 +312,27 @@ public class AsyncNotifyService {
         ConfigExecutor.scheduleAsyncNotify(asyncTask, delay, TimeUnit.MILLISECONDS);
     }
     
-    private String getNotifyEvent(NotifySingleRpcTask task) {
+    private static String getNotifyEvent(NotifySingleRpcTask task) {
         String event = ConfigTraceService.NOTIFY_EVENT;
-        if (task.isBeta) {
+        if (task.isBeta()) {
             event = ConfigTraceService.NOTIFY_EVENT_BETA;
         } else if (!StringUtils.isBlank(task.tag)) {
             event = ConfigTraceService.NOTIFY_EVENT_TAG + "-" + task.tag;
-        } else if (task.isBatch) {
-            event = ConfigTraceService.NOTIFY_EVENT_BATCH;
+        } else if (StringUtils.isNotBlank(task.grayName)) {
+            event = ConfigTraceService.NOTIFY_EVENT + "-" + task.grayName;
         }
         return event;
     }
     
-    class AsyncRpcNotifyCallBack implements RequestCallBack<ConfigChangeClusterSyncResponse> {
+    public static class AsyncRpcNotifyCallBack implements RequestCallBack<ConfigChangeClusterSyncResponse> {
         
         private NotifySingleRpcTask task;
         
-        public AsyncRpcNotifyCallBack(NotifySingleRpcTask task) {
+        AsyncNotifyService asyncNotifyService;
+        
+        public AsyncRpcNotifyCallBack(AsyncNotifyService asyncNotifyService, NotifySingleRpcTask task) {
             this.task = task;
+            this.asyncNotifyService = asyncNotifyService;
         }
         
         @Override
@@ -307,7 +362,7 @@ public class AsyncNotifyService {
                         delayed, task.member.getAddress());
                 
                 //get delay time and set fail count to the task
-                asyncTaskExecute(task);
+                asyncNotifyService.asyncTaskExecute(task);
                 
                 LogUtil.NOTIFY_LOG.error("[notify-retry] target:{} dataId:{} group:{} ts:{}", task.member.getAddress(),
                         task.getDataId(), task.getGroup(), task.getLastModified());
@@ -328,7 +383,7 @@ public class AsyncNotifyService {
                     delayed, task.member.getAddress());
             
             //get delay time and set fail count to the task
-            asyncTaskExecute(task);
+            asyncNotifyService.asyncTaskExecute(task);
             LogUtil.NOTIFY_LOG.error("[notify-retry] target:{} dataId:{} group:{} ts:{}", task.member.getAddress(),
                     task.getDataId(), task.getGroup(), task.getLastModified());
             
@@ -343,7 +398,7 @@ public class AsyncNotifyService {
      * @param task notify task
      * @return delay
      */
-    private static int getDelayTime(NotifyTask task) {
+    private static int getDelayTime(NotifySingleRpcTask task) {
         int failCount = task.getFailCount();
         int delay = MIN_RETRY_INTERVAL + failCount * failCount * INCREASE_STEPS;
         if (failCount <= MAX_COUNT) {

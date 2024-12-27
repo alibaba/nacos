@@ -23,7 +23,6 @@ import com.alibaba.nacos.api.remote.request.ClientDetectionRequest;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import com.alibaba.nacos.plugin.control.Loggers;
 
 import java.util.HashSet;
@@ -48,13 +47,22 @@ public class NacosRuntimeConnectionEjector extends RuntimeConnectionEjector {
      * eject connections on runtime.
      */
     public void doEject() {
+        // remove out dated connection
+        ejectOutdatedConnection();
+        // remove overload connection
+        ejectOverLimitConnection();
+    }
+    
+    /**
+     * eject the outdated connection.
+     */
+    private void ejectOutdatedConnection() {
         try {
-    
+            
             Loggers.CONNECTION.info("Connection check task start");
-    
+            
             Map<String, Connection> connections = connectionManager.connections;
             int totalCount = connections.size();
-            MetricsMonitor.getLongConnectionMonitor().set(totalCount);
             int currentSdkClientCount = connectionManager.currentSdkClientCount();
             
             Loggers.CONNECTION.info("Long connection metrics detail ,Total count ={}, sdkCount={},clusterCount={}",
@@ -66,6 +74,8 @@ public class NacosRuntimeConnectionEjector extends RuntimeConnectionEjector {
             for (Map.Entry<String, Connection> entry : connections.entrySet()) {
                 Connection client = entry.getValue();
                 if (now - client.getMetaInfo().getLastActiveTime() >= KEEP_ALIVE_TIME) {
+                    outDatedConnections.add(client.getMetaInfo().getConnectionId());
+                } else if (client.getMetaInfo().pushQueueBlockTimesLastOver(300 * 1000)) {
                     outDatedConnections.add(client.getMetaInfo().getConnectionId());
                 }
             }
@@ -135,6 +145,49 @@ public class NacosRuntimeConnectionEjector extends RuntimeConnectionEjector {
             
         } catch (Throwable e) {
             Loggers.CONNECTION.error("Error occurs during connection check... ", e);
+        }
+    }
+    
+    /**
+     * eject the over limit connection.
+     */
+    private void ejectOverLimitConnection() {
+        // if not count set, then give up
+        if (getLoadClient() > 0) {
+            try {
+                Loggers.CONNECTION.info("Connection overLimit check task start, loadCount={}, redirectAddress={}",
+                        getLoadClient(), getRedirectAddress());
+                // check count
+                int currentConnectionCount = connectionManager.getCurrentConnectionCount();
+                int ejectingCount = currentConnectionCount - getLoadClient();
+                // if overload
+                if (ejectingCount > 0) {
+                    // we may modify the connection map when connection reset
+                    // avoid concurrent modified exception, create new set for ids snapshot
+                    Set<String> ids = new HashSet<>(connectionManager.connections.keySet());
+                    for (String id : ids) {
+                        if (ejectingCount > 0) {
+                            // check sdk
+                            Connection connection = connectionManager.getConnection(id);
+                            if (connection != null && connection.getMetaInfo().isSdkSource()) {
+                                if (connectionManager.loadSingle(id, redirectAddress)) {
+                                    ejectingCount--;
+                                }
+                            }
+                        } else {
+                            // reach the count
+                            break;
+                        }
+                    }
+                }
+                Loggers.CONNECTION.info("Connection overLimit task end, current loadCount={}, has ejected loadCont={}",
+                        connectionManager.getCurrentConnectionCount(), getLoadClient() - ejectingCount);
+            } catch (Throwable e) {
+                Loggers.CONNECTION.error("Error occurs during connection overLimit... ", e);
+            }
+            // reset
+            setRedirectAddress(null);
+            setLoadClient(-1);
         }
     }
     

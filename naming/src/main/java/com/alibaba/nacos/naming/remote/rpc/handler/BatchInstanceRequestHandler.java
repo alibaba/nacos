@@ -22,9 +22,13 @@ import com.alibaba.nacos.api.naming.remote.request.BatchInstanceRequest;
 import com.alibaba.nacos.api.naming.remote.response.BatchInstanceResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.core.paramcheck.impl.BatchInstanceRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
+import com.alibaba.nacos.naming.utils.InstanceUtil;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import org.springframework.stereotype.Component;
 
@@ -43,10 +47,13 @@ public class BatchInstanceRequestHandler extends RequestHandler<BatchInstanceReq
     }
     
     @Override
+    @TpsControl(pointName = "RemoteNamingInstanceBatchRegister", name = "RemoteNamingInstanceBatchRegister")
     @Secured(action = ActionTypes.WRITE)
+    @ExtractorManager.Extractor(rpcExtractor = BatchInstanceRequestParamExtractor.class)
     public BatchInstanceResponse handle(BatchInstanceRequest request, RequestMeta meta) throws NacosException {
         Service service = Service.newService(request.getNamespace(), request.getGroupName(), request.getServiceName(),
                 true);
+        InstanceUtil.batchSetInstanceIdIfEmpty(request.getInstances(), service.getGroupedServiceName());
         switch (request.getType()) {
             case NamingRemoteConstants.BATCH_REGISTER_INSTANCE:
                 return batchRegisterInstance(service, request, meta);

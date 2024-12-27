@@ -16,15 +16,16 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class SystemConfigTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class SystemConfigTest {
     
     @Test
-    public void testGetHostAddress() {
+    void testGetHostAddress() {
         System.setProperty("nacos.server.ip", "127.0.0.1");
-        Assert.assertEquals("127.0.0.1", SystemConfig.LOCAL_IP);
+        assertEquals("127.0.0.1", SystemConfig.LOCAL_IP);
     }
     
 }

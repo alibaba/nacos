@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -74,19 +75,28 @@ public class RpcClientFactory {
     public static RpcClient createClient(String clientName, ConnectionType connectionType, Map<String, String> labels) {
         return createClient(clientName, connectionType, null, null, labels);
     }
-
+    
     public static RpcClient createClient(String clientName, ConnectionType connectionType, Map<String, String> labels,
-                                         RpcClientTlsConfig tlsConfig) {
+            RpcClientTlsConfig tlsConfig) {
         return createClient(clientName, connectionType, null, null, labels, tlsConfig);
-
     }
-
-    public static RpcClient createClient(String clientName, ConnectionType connectionType, Integer
-            threadPoolCoreSize,
-                                         Integer threadPoolMaxSize, Map<String, String> labels) {
+    
+    /**
+     * create client with properties.
+     *
+     * @return rpc client.
+     * @date 2024/3/7
+     */
+    public static RpcClient createClient(String clientName, ConnectionType connectionType, Map<String, String> labels,
+            Properties properties, RpcClientTlsConfig tlsConfig) {
+        return createClient(clientName, connectionType, null, null, labels, tlsConfig);
+    }
+    
+    public static RpcClient createClient(String clientName, ConnectionType connectionType, Integer threadPoolCoreSize,
+            Integer threadPoolMaxSize, Map<String, String> labels) {
         return createClient(clientName, connectionType, threadPoolCoreSize, threadPoolMaxSize, labels, null);
     }
-
+    
     /**
      * create a rpc client.
      *
@@ -98,74 +108,80 @@ public class RpcClientFactory {
      * @return rpc client.
      */
     public static RpcClient createClient(String clientName, ConnectionType connectionType, Integer threadPoolCoreSize,
-                                         Integer threadPoolMaxSize, Map<String, String> labels, RpcClientTlsConfig tlsConfig) {
-
+            Integer threadPoolMaxSize, Map<String, String> labels, RpcClientTlsConfig tlsConfig) {
+        
         if (!ConnectionType.GRPC.equals(connectionType)) {
             throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
         }
         
         return CLIENT_MAP.computeIfAbsent(clientName, clientNameInner -> {
             LOGGER.info("[RpcClientFactory] create a new rpc client of " + clientName);
-            try {
-                return new GrpcSdkClient(clientNameInner, threadPoolCoreSize, threadPoolMaxSize, labels, tlsConfig);
-            } catch (Throwable throwable) {
-                LOGGER.error("Error to init GrpcSdkClient for client name :" + clientName, throwable);
-                throw throwable;
-            }
-            
+            return new GrpcSdkClient(clientNameInner, threadPoolCoreSize, threadPoolMaxSize, labels, tlsConfig);
         });
     }
     
     /**
-     * create a rpc client.
+     * Creates an RPC client for cluster communication with default thread pool settings.
      *
-     * @param clientName     client name.
-     * @param connectionType client type.
-     * @return rpc client.
+     * @param clientName     The name of the client.
+     * @param connectionType The type of client connection.
+     * @param labels         Additional labels for RPC-related attributes.
+     * @return An RPC client for cluster communication.
      */
     public static RpcClient createClusterClient(String clientName, ConnectionType connectionType,
-                                                Map<String, String> labels) {
+            Map<String, String> labels) {
         return createClusterClient(clientName, connectionType, null, null, labels);
     }
-
+    
+    /**
+     * Creates an RPC client for cluster communication with TLS configuration.
+     *
+     * @param clientName     The name of the client.
+     * @param connectionType The type of client connection.
+     * @param labels         Additional labels for RPC-related attributes.
+     * @param tlsConfig      TLS configuration for secure communication.
+     * @return An RPC client for cluster communication with TLS configuration.
+     */
     public static RpcClient createClusterClient(String clientName, ConnectionType connectionType,
-                                                Map<String, String> labels, RpcClientTlsConfig tlsConfig) {
+            Map<String, String> labels, RpcClientTlsConfig tlsConfig) {
         return createClusterClient(clientName, connectionType, null, null, labels, tlsConfig);
     }
-
+    
     /**
-     * create a rpc client.
+     * Creates an RPC client for cluster communication with custom thread pool settings.
      *
-     * @param clientName         client name.
-     * @param connectionType     client type.
-     * @param threadPoolCoreSize grpc thread pool core size
-     * @param threadPoolMaxSize  grpc thread pool max size
-     * @return rpc client.
+     * @param clientName         The name of the client.
+     * @param connectionType     The type of client connection.
+     * @param threadPoolCoreSize The core size of the gRPC thread pool.
+     * @param threadPoolMaxSize  The maximum size of the gRPC thread pool.
+     * @param labels             Additional labels for RPC-related attributes.
+     * @return An RPC client for cluster communication with custom thread pool settings.
      */
     public static RpcClient createClusterClient(String clientName, ConnectionType connectionType,
-                                                Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels) {
+            Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels) {
         return createClusterClient(clientName, connectionType, threadPoolCoreSize, threadPoolMaxSize, labels, null);
     }
-
+    
     /**
      * createClusterClient.
-     * @param clientName client name.
-     * @param connectionType connectionType.
+     *
+     * @param clientName         client name.
+     * @param connectionType     connectionType.
      * @param threadPoolCoreSize coreSize.
-     * @param threadPoolMaxSize threadPoolSize.
-     * @param labels  tables.
-     * @param tlsConfig tlsConfig.
+     * @param threadPoolMaxSize  threadPoolSize.
+     * @param labels             tables.
+     * @param tlsConfig          tlsConfig.
      * @return
      */
-
-    public static RpcClient createClusterClient(String clientName, ConnectionType connectionType, Integer threadPoolCoreSize,
-                                                Integer threadPoolMaxSize, Map<String, String> labels, RpcClientTlsConfig tlsConfig) {
+    public static RpcClient createClusterClient(String clientName, ConnectionType connectionType,
+            Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels,
+            RpcClientTlsConfig tlsConfig) {
         if (!ConnectionType.GRPC.equals(connectionType)) {
             throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
         }
-
+        
         return CLIENT_MAP.computeIfAbsent(clientName,
-                clientNameInner -> new GrpcClusterClient(clientNameInner, threadPoolCoreSize, threadPoolMaxSize,
-                        labels, tlsConfig));
+                clientNameInner -> new GrpcClusterClient(clientNameInner, threadPoolCoreSize, threadPoolMaxSize, labels,
+                        tlsConfig));
     }
 }

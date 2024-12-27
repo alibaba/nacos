@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest;
 import com.alibaba.nacos.api.config.remote.response.ClientConfigMetricResponse;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
@@ -26,16 +27,22 @@ import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
+import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.http.ResponseEntity;
@@ -61,6 +68,7 @@ import static com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequ
  */
 @RestController
 @RequestMapping(Constants.METRICS_CONTROLLER_PATH)
+@ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
 public class ClientMetricsController {
     
     private final ServerMemberManager serverMemberManager;
@@ -80,47 +88,30 @@ public class ClientMetricsController {
      */
     @GetMapping("/cluster")
     @Secured(resource = Constants.METRICS_CONTROLLER_PATH, action = ActionTypes.READ, signType = SignType.CONFIG)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public ResponseEntity metric(@RequestParam("ip") String ip,
             @RequestParam(value = "dataId", required = false) String dataId,
             @RequestParam(value = "group", required = false) String group,
-            @RequestParam(value = "tenant", required = false) String tenant) {
+            @RequestParam(value = "tenant", required = false) String tenant) throws NacosException {
+    
+        ParamUtils.checkTenant(tenant);
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
+        ParamUtils.checkParam(dataId, group, "default", "default");
+    
         Loggers.CORE.info("Get cluster config metrics received, ip={},dataId={},group={},tenant={}", ip, dataId, group,
                 tenant);
         Map<String, Object> responseMap = new HashMap<>(3);
         Collection<Member> members = serverMemberManager.allMembers();
-        final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientBeanHolder
-                .getNacosAsyncRestTemplate(Loggers.CLUSTER);
+        final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientBeanHolder.getNacosAsyncRestTemplate(
+                Loggers.CLUSTER);
         CountDownLatch latch = new CountDownLatch(members.size());
         for (Member member : members) {
-            String url = HttpUtils
-                    .buildUrl(false, member.getAddress(), EnvUtil.getContextPath(), Constants.METRICS_CONTROLLER_PATH,
-                            "current");
+            String url = HttpUtils.buildUrl(false, member.getAddress(), EnvUtil.getContextPath(),
+                    Constants.METRICS_CONTROLLER_PATH, "current");
             Query query = Query.newInstance().addParam("ip", ip).addParam("dataId", dataId).addParam("group", group)
                     .addParam("tenant", tenant);
             nacosAsyncRestTemplate.get(url, Header.EMPTY, query, new GenericType<Map>() {
-            }.getType(), new Callback<Map>() {
-                
-                @Override
-                public void onReceive(RestResult<Map> result) {
-                    if (result.ok()) {
-                        responseMap.putAll(result.getData());
-                    }
-                    latch.countDown();
-                }
-                
-                @Override
-                public void onError(Throwable throwable) {
-                    Loggers.CORE
-                            .error("Get config metrics error from member address={}, ip={},dataId={},group={},tenant={},error={}",
-                                    member.getAddress(), ip, dataId, group, tenant, throwable);
-                    latch.countDown();
-                }
-                
-                @Override
-                public void onCancel() {
-                    latch.countDown();
-                }
-            });
+            }.getType(), new ClusterMetricsCallBack(responseMap, latch, dataId, group, tenant, ip, member));
         }
         try {
             latch.await(3L, TimeUnit.SECONDS);
@@ -131,34 +122,88 @@ public class ClientMetricsController {
         return ResponseEntity.ok().body(responseMap);
     }
     
+    static class ClusterMetricsCallBack implements Callback<Map> {
+        
+        Map<String, Object> responseMap;
+        
+        CountDownLatch latch;
+        
+        String dataId;
+        
+        String group;
+        
+        String tenant;
+        
+        String ip;
+        
+        Member member;
+        
+        public ClusterMetricsCallBack(Map<String, Object> responseMap, CountDownLatch latch, String dataId,
+                String group, String tenant, String ip, Member member) {
+            this.responseMap = responseMap;
+            this.latch = latch;
+            this.dataId = dataId;
+            this.group = group;
+            this.tenant = tenant;
+            this.member = member;
+            this.ip = ip;
+        }
+        
+        @Override
+        public void onReceive(RestResult<Map> result) {
+            if (result.ok()) {
+                responseMap.putAll(result.getData());
+            }
+            latch.countDown();
+        }
+        
+        @Override
+        public void onError(Throwable throwable) {
+            Loggers.CORE.error(
+                    "Get config metrics error from member address={}, ip={},dataId={},group={},tenant={},error={}",
+                    member.getAddress(), ip, dataId, group, tenant, throwable);
+            latch.countDown();
+        }
+        
+        @Override
+        public void onCancel() {
+            latch.countDown();
+        }
+    }
     
     /**
      * Get client config listener lists of subscriber in local machine.
      */
     @GetMapping("/current")
     @Secured(resource = Constants.METRICS_CONTROLLER_PATH, action = ActionTypes.READ, signType = SignType.CONFIG)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Map<String, Object> getClientMetrics(@RequestParam("ip") String ip,
             @RequestParam(value = "dataId", required = false) String dataId,
             @RequestParam(value = "group", required = false) String group,
-            @RequestParam(value = "tenant", required = false) String tenant) {
+            @RequestParam(value = "tenant", required = false) String tenant) throws NacosException {
+    
+        ParamUtils.checkTenant(tenant);
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
+        ParamUtils.checkParam(dataId, group, "default", "default");
+    
         Map<String, Object> metrics = new HashMap<>(16);
         List<Connection> connectionsByIp = connectionManager.getConnectionByIp(ip);
         for (Connection connectionByIp : connectionsByIp) {
             try {
                 ClientConfigMetricRequest clientMetrics = new ClientConfigMetricRequest();
                 if (StringUtils.isNotBlank(dataId)) {
-                    clientMetrics.getMetricsKeys().add(ClientConfigMetricRequest.MetricsKey
-                            .build(CACHE_DATA, GroupKey2.getKey(dataId, group, tenant)));
-                    clientMetrics.getMetricsKeys().add(ClientConfigMetricRequest.MetricsKey
-                            .build(SNAPSHOT_DATA, GroupKey2.getKey(dataId, group, tenant)));
+                    clientMetrics.getMetricsKeys().add(ClientConfigMetricRequest.MetricsKey.build(CACHE_DATA,
+                            GroupKey2.getKey(dataId, group, tenant)));
+                    clientMetrics.getMetricsKeys().add(ClientConfigMetricRequest.MetricsKey.build(SNAPSHOT_DATA,
+                            GroupKey2.getKey(dataId, group, tenant)));
                 }
                 
-                ClientConfigMetricResponse request1 = (ClientConfigMetricResponse) connectionByIp
-                        .request(clientMetrics, 1000L);
+                ClientConfigMetricResponse request1 = (ClientConfigMetricResponse) connectionByIp.request(clientMetrics,
+                        1000L);
                 metrics.putAll(request1.getMetrics());
             } catch (Exception e) {
-                Loggers.CORE.error("Get config metrics error from client ip={},dataId={},group={},tenant={},error={}", ip, dataId,
-                        group, tenant, e);
+                Loggers.CORE.error("Get config metrics error from client ip={},dataId={},group={},tenant={},error={}",
+                        ip, dataId, group, tenant, e);
             }
         }
         return metrics;

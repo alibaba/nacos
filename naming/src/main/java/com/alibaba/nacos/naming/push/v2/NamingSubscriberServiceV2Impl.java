@@ -132,7 +132,7 @@ public class NamingSubscriberServiceV2Impl extends SmartSubscriber implements Na
             // watch notify push task specify by service
             fuzzyWatchPushDelayTaskEngine.addTask(service, new FuzzyWatchNotifyChangeDelayTask(service,
                     serviceChangedEvent.getChangedType(), PushConfig.getInstance().getPushTaskDelay()));
-            MetricsMonitor.incrementServiceChangeCount(service.getNamespace(), service.getGroup(), service.getName());
+            MetricsMonitor.incrementServiceChangeCount(service);
         } else if (event instanceof ServiceEvent.ServiceSubscribedEvent) {
             // If service is subscribed by one client, only push this client.
             ServiceEvent.ServiceSubscribedEvent subscribedEvent = (ServiceEvent.ServiceSubscribedEvent) event;

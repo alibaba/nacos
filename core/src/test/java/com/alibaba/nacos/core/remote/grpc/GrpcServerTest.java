@@ -17,24 +17,31 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
+import com.alibaba.nacos.api.config.remote.request.cluster.ConfigChangeClusterSyncRequest;
+import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.common.remote.ConnectionType;
-import com.alibaba.nacos.core.remote.RpcServerTlsConfig;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
+import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import io.grpc.stub.StreamObserver;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.mock.env.MockEnvironment;
+import org.springframework.util.ReflectionUtils;
 
-import java.util.concurrent.ThreadPoolExecutor;
+import java.lang.reflect.Field;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.eq;
 
 /**
  * {@link GrpcSdkServer} and {@link GrpcClusterServer} unit test.
@@ -42,125 +49,73 @@ import static org.mockito.Mockito.when;
  * @author chenglu
  * @date 2021-06-30 14:32
  */
-@RunWith(MockitoJUnitRunner.Silent.class)
-public class GrpcServerTest {
-    
-    private final RpcServerTlsConfig grpcServerConfig = mock(RpcServerTlsConfig.class);
+@MockitoSettings(strictness = Strictness.LENIENT)
+@ExtendWith(MockitoExtension.class)
+class GrpcServerTest {
     
     static MockedStatic<ApplicationUtils> applicationUtilsMockedStatic = null;
     
-    @BeforeClass
-    public static void setUp() {
+    private BaseGrpcServer grpcSdkServer;
+    
+    @BeforeAll
+    static void setUpBeforeClass() {
         EnvUtil.setEnvironment(new MockEnvironment());
         applicationUtilsMockedStatic = Mockito.mockStatic(ApplicationUtils.class);
     }
     
-    @AfterClass
-    public static void after() {
+    @AfterAll
+    static void after() {
         applicationUtilsMockedStatic.close();
     }
     
+    @AfterEach
+    void tearDown() throws Exception {
+        if (null != grpcSdkServer) {
+            grpcSdkServer.stopServer();
+        }
+    }
+    
     @Test
-    public void testGrpcSdkServer() throws Exception {
-        BaseGrpcServer grpcSdkServer = new GrpcSdkServer();
-        grpcSdkServer.setRpcServerTlsConfig(grpcServerConfig);
-        when(grpcServerConfig.getEnableTls()).thenReturn(false);
-        when(ApplicationUtils.getBean(RpcServerTlsConfig.class)).thenReturn(grpcServerConfig);
+    void testGrpcSdkServer() throws Exception {
+        grpcSdkServer = new GrpcSdkServer();
         grpcSdkServer.start();
-        Assert.assertEquals(grpcSdkServer.getConnectionType(), ConnectionType.GRPC);
-        Assert.assertEquals(grpcSdkServer.rpcPortOffset(), 1000);
+        assertEquals(ConnectionType.GRPC, grpcSdkServer.getConnectionType());
+        assertEquals(1000, grpcSdkServer.rpcPortOffset());
+    }
+    
+    @Test
+    void testGrpcClusterServer() throws Exception {
+        grpcSdkServer = new GrpcClusterServer();
+        grpcSdkServer.start();
+        assertEquals(ConnectionType.GRPC, grpcSdkServer.getConnectionType());
+        assertEquals(1001, grpcSdkServer.rpcPortOffset());
         grpcSdkServer.stopServer();
     }
     
     @Test
-    public void testGrpcClusterServer() throws Exception {
-        BaseGrpcServer grpcSdkServer = new GrpcClusterServer();
-        grpcSdkServer.setRpcServerTlsConfig(grpcServerConfig);
-        when(grpcServerConfig.getEnableTls()).thenReturn(false);
-        when(ApplicationUtils.getBean(RpcServerTlsConfig.class)).thenReturn(grpcServerConfig);
-        grpcSdkServer.start();
-        Assert.assertEquals(grpcSdkServer.getConnectionType(), ConnectionType.GRPC);
-        Assert.assertEquals(grpcSdkServer.rpcPortOffset(), 1001);
-        grpcSdkServer.stopServer();
-    }
-    
-    @Test
-    public void testGrpcEnableTls() throws Exception {
-        final BaseGrpcServer grpcSdkServer = new BaseGrpcServer() {
-            @Override
-            public ThreadPoolExecutor getRpcExecutor() {
-                return null;
-            }
-            
-            @Override
-            public int rpcPortOffset() {
-                return 100;
-            }
-        };
-        when(grpcServerConfig.getEnableTls()).thenReturn(true);
-        when(grpcServerConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
-        when(grpcServerConfig.getProtocols()).thenReturn("TLSv1.2,TLSv1.3");
+    public void testGrpcSdkServerSourceCheck() throws Exception {
+        grpcSdkServer = new GrpcSdkServer();
+        RequestHandlerRegistry mock = Mockito.mock(RequestHandlerRegistry.class);
+        Field field = ReflectionUtils.findField(GrpcSdkServer.class, "requestHandlerRegistry");
+        field.setAccessible(true);
+        ReflectionUtils.setField(field, grpcSdkServer, mock);
+        GrpcRequestAcceptor mockAcceptor = Mockito.mock(GrpcRequestAcceptor.class);
+        Field fieldGrpcAcceptor = ReflectionUtils.findField(GrpcSdkServer.class, "grpcCommonRequestAcceptor");
+        fieldGrpcAcceptor.setAccessible(true);
+        ReflectionUtils.setField(fieldGrpcAcceptor, grpcSdkServer, mockAcceptor);
         
-        when(grpcServerConfig.getCertPrivateKey()).thenReturn("test-server-key.pem");
-        when(grpcServerConfig.getCertChainFile()).thenReturn("test-server-cert.pem");
-        when(ApplicationUtils.getBean(RpcServerTlsConfig.class)).thenReturn(grpcServerConfig);
-        grpcSdkServer.setRpcServerTlsConfig(grpcServerConfig);
-        grpcSdkServer.start();
-        grpcSdkServer.shutdownServer();
-    }
-    
-    @Test
-    public void testGrpcEnableMutualAuthAndTrustAll() throws Exception {
+        StreamObserver streamObserverMock = Mockito.mock(StreamObserver.class);
+        Payload convert = GrpcUtils.convert(new ConfigChangeClusterSyncRequest());
+        //verify not allowed
+        Mockito.when(mock.checkSourceInvokeAllowed(ConfigChangeClusterSyncRequest.class.getSimpleName(),
+                grpcSdkServer.getSource())).thenReturn(false);
+        grpcSdkServer.handleCommonRequest(convert, streamObserverMock);
+        Mockito.verify(streamObserverMock, Mockito.times(1)).onCompleted();
+        //verify allowed
+        Mockito.when(mock.checkSourceInvokeAllowed(ConfigChangeClusterSyncRequest.class.getSimpleName(),
+                grpcSdkServer.getSource())).thenReturn(true);
+        grpcSdkServer.handleCommonRequest(convert, streamObserverMock);
+        Mockito.verify(mockAcceptor, Mockito.times(1)).request(eq(convert), eq(streamObserverMock));
         
-        final BaseGrpcServer grpcSdkServer = new BaseGrpcServer() {
-            @Override
-            public ThreadPoolExecutor getRpcExecutor() {
-                return null;
-            }
-            
-            @Override
-            public int rpcPortOffset() {
-                return 100;
-            }
-        };
-        
-        when(grpcServerConfig.getEnableTls()).thenReturn(true);
-        when(grpcServerConfig.getTrustAll()).thenReturn(true);
-        when(grpcServerConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
-        when(grpcServerConfig.getProtocols()).thenReturn("TLSv1.2,TLSv1.3");
-        when(grpcServerConfig.getCertPrivateKey()).thenReturn("test-server-key.pem");
-        when(grpcServerConfig.getCertChainFile()).thenReturn("test-server-cert.pem");
-        grpcSdkServer.setRpcServerTlsConfig(grpcServerConfig);
-        grpcSdkServer.start();
-        grpcSdkServer.shutdownServer();
-    }
-    
-    @Test
-    public void testGrpcEnableMutualAuthAndPart() throws Exception {
-        final BaseGrpcServer grpcSdkServer = new BaseGrpcServer() {
-            @Override
-            public ThreadPoolExecutor getRpcExecutor() {
-                return null;
-            }
-            
-            @Override
-            public int rpcPortOffset() {
-                return 100;
-            }
-        };
-        when(grpcServerConfig.getEnableTls()).thenReturn(true);
-        when(grpcServerConfig.getMutualAuthEnable()).thenReturn(true);
-        when(grpcServerConfig.getEnableTls()).thenReturn(true);
-        when(grpcServerConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
-        when(grpcServerConfig.getProtocols()).thenReturn("TLSv1.2,TLSv1.3");
-        
-        when(grpcServerConfig.getCertPrivateKey()).thenReturn("test-server-key.pem");
-        when(grpcServerConfig.getCertChainFile()).thenReturn("test-server-cert.pem");
-        when(grpcServerConfig.getTrustCollectionCertFile()).thenReturn("test-ca-cert.pem");
-        
-        grpcSdkServer.setRpcServerTlsConfig(grpcServerConfig);
-        
-        grpcSdkServer.start();
-        grpcSdkServer.shutdownServer();
     }
 }

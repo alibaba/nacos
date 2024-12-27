@@ -42,9 +42,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.alibaba.nacos.istio.api.ApiConstants.CLUSTER_TYPE;
 import static com.alibaba.nacos.istio.api.ApiConstants.ENDPOINT_TYPE;
+import static com.alibaba.nacos.istio.api.ApiConstants.LISTENER_TYPE;
 import static com.alibaba.nacos.istio.api.ApiConstants.MESH_CONFIG_PROTO_PACKAGE;
+import static com.alibaba.nacos.istio.api.ApiConstants.ROUTE_TYPE;
 import static com.alibaba.nacos.istio.api.ApiConstants.SERVICE_ENTRY_PROTO_PACKAGE;
 import static com.alibaba.nacos.istio.util.IstioCrdUtil.parseClusterNameToServiceName;
+import static com.alibaba.nacos.istio.xds.LdsGenerator.INIT_LISTENER;
+import static com.alibaba.nacos.istio.xds.RdsGenerator.DEFAULT_ROUTE_CONFIGURATION;
 
 /**
  * @author special.fy
@@ -117,9 +121,24 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
         PushRequest pushRequest = new PushRequest(resourceManager.getResourceSnapshot(), true);
         IstioConfig istioConfig = pushRequest.getResourceSnapshot().getIstioConfig();
     
-        for (String resourceName : resourceNames) {
-            String reason = parseClusterNameToServiceName(resourceName, istioConfig.getDomainSuffix());
+        if (discoveryRequest.getTypeUrl().equals(CLUSTER_TYPE)) {
+            for (String resourceName : resourceNames) {
+                String reason = parseClusterNameToServiceName(resourceName, istioConfig.getDomainSuffix());
+                pushRequest.addReason(reason);
+            }
+        }
+    
+        if (discoveryRequest.getTypeUrl().equals(LISTENER_TYPE) && discoveryRequest.getResponseNonce().isEmpty()) {
+            String reason = INIT_LISTENER;
             pushRequest.addReason(reason);
+        }
+    
+        if (discoveryRequest.getTypeUrl().equals(ROUTE_TYPE) && discoveryRequest.getResponseNonce().isEmpty()) {
+            String reason = DEFAULT_ROUTE_CONFIGURATION;
+            pushRequest.addReason(reason);
+            for (String resourceName : resourceNames) {
+                pushRequest.addReason(resourceName);
+            }
         }
         
         DiscoveryResponse response = buildDiscoveryResponse(discoveryRequest.getTypeUrl(), pushRequest);
@@ -149,8 +168,13 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
         if (discoveryRequest.getResponseNonce().isEmpty()) {
             Loggers.MAIN.info("xds: init request, type {}, connection-id {}, version {}",
                     type, connectionId, discoveryRequest.getVersionInfo());
+            Loggers.MAIN.info("xds: content {},{}",
+                    discoveryRequest.getTypeUrl(), discoveryRequest.getResourceNamesList());
             watchedStatus = new WatchedStatus();
+            
             watchedStatus.setType(discoveryRequest.getTypeUrl());
+            Loggers.MAIN.info("watchedStatus: {}",
+                    watchedStatus);
             connection.addWatchedResource(discoveryRequest.getTypeUrl(), watchedStatus);
 
             return true;
@@ -160,8 +184,13 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
         if (watchedStatus == null) {
             Loggers.MAIN.info("xds: reconnect, type {}, connection-id {}, version {}, nonce {}.",
                     type, connectionId, discoveryRequest.getVersionInfo(), discoveryRequest.getResponseNonce());
+            Loggers.MAIN.info("xds: content {},{}",
+                            discoveryRequest.getTypeUrl(), discoveryRequest.getResourceNamesList());
+           
             watchedStatus = new WatchedStatus();
             watchedStatus.setType(discoveryRequest.getTypeUrl());
+            Loggers.MAIN.info("watchedStatus: {}",
+                    watchedStatus);
             connection.addWatchedResource(discoveryRequest.getTypeUrl(), watchedStatus);
 
             return true;
@@ -207,6 +236,39 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
             if (edsWatchedStatus != null) {
                 DiscoveryResponse edsResponse = buildDiscoveryResponse(ENDPOINT_TYPE, pushRequest);
                 connection.push(edsResponse, edsWatchedStatus);
+            }
+            //LDS
+            WatchedStatus ldsWatchedStatus = connection.getWatchedStatusByType(LISTENER_TYPE);
+            if (ldsWatchedStatus != null) {
+                DiscoveryResponse ldsResponse = buildDiscoveryResponse(LISTENER_TYPE, pushRequest);
+                connection.push(ldsResponse, ldsWatchedStatus);
+            }
+            
+        }
+    }
+    
+    /**
+     * Handles events from Istio configuration changes and propagates updates to all connected clients.
+     * @param pushRequest pushRequest
+     */
+    public void handleConfigEvent(PushRequest pushRequest) {
+        if (connections.size() == 0) {
+            return;
+        }
+
+        for (AbstractConnection<DiscoveryResponse> connection : connections.values()) {
+            //RDS
+            WatchedStatus watchedStatus;
+            watchedStatus = connection.getWatchedStatusByType(ROUTE_TYPE);
+            if (watchedStatus == null) {
+                watchedStatus = new WatchedStatus();
+                watchedStatus.setType(ROUTE_TYPE);
+                connection.addWatchedResource(ROUTE_TYPE, watchedStatus);
+            }
+            WatchedStatus rdsWatchedStatus = connection.getWatchedStatusByType(ROUTE_TYPE);
+            if (rdsWatchedStatus != null) {
+                DiscoveryResponse rdsResponse = buildDiscoveryResponse(ROUTE_TYPE, pushRequest);
+                connection.push(rdsResponse, rdsWatchedStatus);
             }
         }
     }

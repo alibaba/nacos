@@ -34,39 +34,39 @@ import java.util.concurrent.TimeUnit;
  */
 public final class ConfigExecutor {
     
-    private static final ScheduledExecutorService TIMER_EXECUTOR = ExecutorFactory.Managed
-            .newScheduledExecutorService(ClassUtils.getCanonicalName(Config.class), 8,
-                    new NameThreadFactory("com.alibaba.nacos.config.server.timer"));
+    private static final ScheduledExecutorService TIMER_EXECUTOR = ExecutorFactory.Managed.newScheduledExecutorService(
+            ClassUtils.getCanonicalName(Config.class), 8,
+            new NameThreadFactory("com.alibaba.nacos.config.server.timer"));
     
-    private static final ScheduledExecutorService CAPACITY_MANAGEMENT_EXECUTOR = ExecutorFactory.Managed
-            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(Config.class),
-                    new NameThreadFactory("com.alibaba.nacos.config.CapacityManagement"));
+    private static final ScheduledExecutorService CAPACITY_MANAGEMENT_EXECUTOR = ExecutorFactory.Managed.newSingleScheduledExecutorService(
+            ClassUtils.getCanonicalName(Config.class),
+            new NameThreadFactory("com.alibaba.nacos.config.CapacityManagement"));
     
-    private static final ScheduledExecutorService ASYNC_NOTIFY_EXECUTOR = ExecutorFactory.Managed
-            .newScheduledExecutorService(ClassUtils.getCanonicalName(Config.class), 100,
-                    new NameThreadFactory("com.alibaba.nacos.config.AsyncNotifyService"));
-
-    private static final ScheduledExecutorService ASYNC_CONFIG_CHANGE_PLUGIN_EXECUTOR = ExecutorFactory.Managed
-            .newScheduledExecutorService(ClassUtils.getCanonicalName(Config.class),
-                    ThreadUtils.getSuitableThreadCount(),
-                    new NameThreadFactory("com.alibaba.nacos.config.plugin.AsyncService"));
-
-    private static final ScheduledExecutorService CONFIG_SUB_SERVICE_EXECUTOR = ExecutorFactory.Managed
-            .newScheduledExecutorService(ClassUtils.getCanonicalName(Config.class),
-                    ThreadUtils.getSuitableThreadCount(),
-                    new NameThreadFactory("com.alibaba.nacos.config.ConfigSubService"));
+    private static final ScheduledExecutorService ASYNC_NOTIFY_EXECUTOR = ExecutorFactory.Managed.newScheduledExecutorService(
+            ClassUtils.getCanonicalName(Config.class), 100,
+            new NameThreadFactory("com.alibaba.nacos.config.AsyncNotifyService"));
     
-    private static final ScheduledExecutorService LONG_POLLING_EXECUTOR = ExecutorFactory.Managed
-            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(Config.class),
-                    new NameThreadFactory("com.alibaba.nacos.config.LongPolling"));
+    private static final ScheduledExecutorService ASYNC_CONFIG_CHANGE_PLUGIN_EXECUTOR = ExecutorFactory.Managed.newScheduledExecutorService(
+            ClassUtils.getCanonicalName(Config.class), ThreadUtils.getSuitableThreadCount(),
+            new NameThreadFactory("com.alibaba.nacos.config.plugin.AsyncService"));
     
-    private static final ScheduledExecutorService ASYNC_CONFIG_CHANGE_NOTIFY_EXECUTOR = ExecutorFactory.Managed
-            .newScheduledExecutorService(ClassUtils.getCanonicalName(Config.class),
-                    ThreadUtils.getSuitableThreadCount(),
-                    new NameThreadFactory("com.alibaba.nacos.config.server.remote.ConfigChangeNotifier"));
+    private static final ScheduledExecutorService CONFIG_SUB_SERVICE_EXECUTOR = ExecutorFactory.Managed.newScheduledExecutorService(
+            ClassUtils.getCanonicalName(Config.class), ThreadUtils.getSuitableThreadCount(),
+            new NameThreadFactory("com.alibaba.nacos.config.ConfigSubService"));
+    
+    private static final ScheduledExecutorService LONG_POLLING_EXECUTOR = ExecutorFactory.Managed.newSingleScheduledExecutorService(
+            ClassUtils.getCanonicalName(Config.class), new NameThreadFactory("com.alibaba.nacos.config.LongPolling"));
+    
+    private static final ScheduledExecutorService ASYNC_CONFIG_CHANGE_NOTIFY_EXECUTOR = ExecutorFactory.Managed.newScheduledExecutorService(
+            ClassUtils.getCanonicalName(Config.class), ThreadUtils.getSuitableThreadCount(),
+            new NameThreadFactory("com.alibaba.nacos.config.server.remote.ConfigChangeNotifier"));
     
     public static void scheduleConfigTask(Runnable command, long initialDelay, long delay, TimeUnit unit) {
         TIMER_EXECUTOR.scheduleWithFixedDelay(command, initialDelay, delay, unit);
+    }
+    
+    public static void scheduleConfigChangeTask(Runnable command, long delay, TimeUnit unit) {
+        TIMER_EXECUTOR.schedule(command, delay, unit);
     }
     
     public static void scheduleCorrectUsageTask(Runnable runnable, long initialDelay, long delay, TimeUnit unit) {
@@ -80,11 +80,11 @@ public final class ConfigExecutor {
     public static void scheduleAsyncNotify(Runnable command, long delay, TimeUnit unit) {
         ASYNC_NOTIFY_EXECUTOR.schedule(command, delay, unit);
     }
-
+    
     public static void executeAsyncConfigChangePluginTask(Runnable runnable) {
         ASYNC_CONFIG_CHANGE_PLUGIN_EXECUTOR.execute(runnable);
     }
-
+    
     public static int asyncNotifyQueueSize() {
         return ((ScheduledThreadPoolExecutor) ASYNC_NOTIFY_EXECUTOR).getQueue().size();
     }
@@ -99,6 +99,10 @@ public final class ConfigExecutor {
     
     public static ScheduledExecutorService getClientConfigNotifierServiceExecutor() {
         return ASYNC_CONFIG_CHANGE_NOTIFY_EXECUTOR;
+    }
+    
+    public static ScheduledFuture<?> scheduleClientConfigNotifier(Runnable runnable, long delay, TimeUnit unit) {
+        return ASYNC_CONFIG_CHANGE_NOTIFY_EXECUTOR.schedule(runnable, delay, unit);
     }
     
     public static void scheduleLongPolling(Runnable runnable, long initialDelay, long delay, TimeUnit unit) {

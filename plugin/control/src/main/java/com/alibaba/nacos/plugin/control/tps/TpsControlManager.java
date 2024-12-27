@@ -18,8 +18,12 @@ package com.alibaba.nacos.plugin.control.tps;
 
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.control.Loggers;
-import com.alibaba.nacos.plugin.control.ruleactivator.RuleParserProxy;
-import com.alibaba.nacos.plugin.control.ruleactivator.RuleStorageProxy;
+import com.alibaba.nacos.plugin.control.rule.parser.NacosTpsControlRuleParser;
+import com.alibaba.nacos.plugin.control.rule.parser.TpsControlRuleParser;
+import com.alibaba.nacos.plugin.control.rule.storage.RuleStorageProxy;
+import com.alibaba.nacos.plugin.control.tps.barrier.TpsBarrier;
+import com.alibaba.nacos.plugin.control.tps.barrier.creator.DefaultNacosTpsBarrierCreator;
+import com.alibaba.nacos.plugin.control.tps.barrier.creator.TpsBarrierCreator;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
@@ -34,12 +38,31 @@ import java.util.Map;
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class TpsControlManager {
     
+    private final TpsControlRuleParser tpsControlRuleParser;
+    
+    protected final TpsBarrierCreator tpsBarrierCreator;
+    
+    protected TpsControlManager() {
+        this.tpsControlRuleParser = buildTpsControlRuleParser();
+        this.tpsBarrierCreator = buildTpsBarrierCreator();
+    }
+    
+    public TpsControlRuleParser getTpsControlRuleParser() {
+        return tpsControlRuleParser;
+    }
+    
+    protected TpsControlRuleParser buildTpsControlRuleParser() {
+        return new NacosTpsControlRuleParser();
+    }
+    
     /**
-     * apple tps rule.
+     * Build tps barrier creator to creator tps barrier for each point.
      *
-     * @param pointName pointName.
+     * @return TpsBarrierCreator implementation for current plugin
      */
-    public abstract void registerTpsPoint(String pointName);
+    protected TpsBarrierCreator buildTpsBarrierCreator() {
+        return new DefaultNacosTpsBarrierCreator();
+    }
     
     protected void initTpsRule(String pointName) {
         RuleStorageProxy ruleStorageProxy = RuleStorageProxy.getInstance();
@@ -56,12 +79,19 @@ public abstract class TpsControlManager {
         }
         
         if (StringUtils.isNotBlank(localRuleContent)) {
-            TpsControlRule tpsLimitRule = RuleParserProxy.getInstance().parseTpsRule(localRuleContent);
+            TpsControlRule tpsLimitRule = tpsControlRuleParser.parseRule(localRuleContent);
             this.applyTpsRule(pointName, tpsLimitRule);
         } else {
-            Loggers.CONTROL.info("No tps control rule of {} found  ", pointName, localRuleContent);
+            Loggers.CONTROL.info("No tps control rule of {} found,content ={}  ", pointName, localRuleContent);
         }
     }
+    
+    /**
+     * apple tps rule.
+     *
+     * @param pointName pointName.
+     */
+    public abstract void registerTpsPoint(String pointName);
     
     /**
      * get points.

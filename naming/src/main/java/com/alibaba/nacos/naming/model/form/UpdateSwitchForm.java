@@ -33,7 +33,7 @@ public class UpdateSwitchForm implements Serializable {
     
     private static final long serialVersionUID = -1580959130954136990L;
     
-    private Boolean debug;
+    private boolean debug;
     
     private String entry;
     
@@ -58,11 +58,11 @@ public class UpdateSwitchForm implements Serializable {
         }
     }
     
-    public Boolean getDebug() {
+    public boolean getDebug() {
         return debug;
     }
     
-    public void setDebug(Boolean debug) {
+    public void setDebug(boolean debug) {
         this.debug = debug;
     }
     

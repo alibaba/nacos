@@ -31,6 +31,8 @@ public class MapperContext {
     
     private final Map<String, Object> updateParamMap;
     
+    private final Map<String, String> contextParamMap;
+    
     private int startRow;
     
     private int pageSize;
@@ -38,11 +40,11 @@ public class MapperContext {
     public MapperContext() {
         this.whereParamMap = new HashMap<>();
         this.updateParamMap = new HashMap<>();
+        this.contextParamMap = new HashMap<>();
     }
     
     public MapperContext(int startRow, int pageSize) {
-        this.whereParamMap = new HashMap<>();
-        this.updateParamMap = new HashMap<>();
+        this();
         this.startRow = startRow;
         this.pageSize = pageSize;
     }
@@ -65,6 +67,26 @@ public class MapperContext {
      */
     public void putWhereParameter(String key, Object value) {
         this.whereParamMap.put(key, value);
+    }
+    
+    /**
+     * Returns the value to which the key is mapped, it will return the context param.
+     *
+     * @param key The key whose associated value is to be returned
+     * @return The value to which the key is mapped
+     */
+    public String getContextParameter(String key) {
+        return contextParamMap.get(key);
+    }
+    
+    /**
+     * Associates the value with the key in this map, it will contain the context parameter.
+     *
+     * @param key   Key with which the value is to be associated
+     * @param value Value to be associated with the specified key
+     */
+    public void putContextParameter(String key, String value) {
+        this.contextParamMap.put(key, value);
     }
     
     /**

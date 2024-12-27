@@ -45,6 +45,8 @@ public class RaftConfig implements Config<RequestProcessor4CP> {
     
     private Set<String> members = Collections.synchronizedSet(new HashSet<>());
     
+    private boolean strictMode;
+    
     @Override
     public void setMembers(String self, Set<String> members) {
         this.selfAddress = self;
@@ -95,10 +97,18 @@ public class RaftConfig implements Config<RequestProcessor4CP> {
         return data.getOrDefault(key, defaultVal);
     }
     
+    public void setStrictMode(boolean strictMode) {
+        this.strictMode = strictMode;
+    }
+    
+    public boolean isStrictMode() {
+        return strictMode;
+    }
+    
     @Override
     public String toString() {
         try {
-            return JacksonUtils.toJson(data);
+            return JacksonUtils.toJson(this);
         } catch (Exception e) {
             return String.valueOf(data);
         }

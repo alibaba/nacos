@@ -16,8 +16,12 @@
 
 package com.alibaba.nacos.console.controller;
 
+import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
 import com.alibaba.nacos.core.cluster.health.ModuleHealthCheckerHolder;
 import com.alibaba.nacos.core.cluster.health.ReadinessResult;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,6 +37,7 @@ import javax.servlet.http.HttpServletRequest;
  */
 @RestController("consoleHealth")
 @RequestMapping("/v1/console/health")
+@ExtractorManager.Extractor(httpExtractor = ConsoleDefaultHttpParamExtractor.class)
 public class HealthController {
     
     /**
@@ -42,6 +47,7 @@ public class HealthController {
      * Nacos is in broken states.
      */
     @GetMapping("/liveness")
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/health/liveness")
     public ResponseEntity<String> liveness() {
         return ResponseEntity.ok().body("OK");
     }
@@ -53,6 +59,7 @@ public class HealthController {
      * ready.
      */
     @GetMapping("/readiness")
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/health/readiness")
     public ResponseEntity<String> readiness(HttpServletRequest request) {
         ReadinessResult result = ModuleHealthCheckerHolder.getInstance().checkReadiness();
         if (result.isSuccess()) {

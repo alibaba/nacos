@@ -27,9 +27,13 @@ import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.trace.DeregisterInstanceReason;
 import com.alibaba.nacos.common.trace.event.naming.DeregisterInstanceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.RegisterInstanceTraceEvent;
+import com.alibaba.nacos.common.trace.event.naming.UpdateInstanceTraceEvent;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.InstanceOperator;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
@@ -39,13 +43,19 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
+import com.alibaba.nacos.naming.paramcheck.NamingInstanceBeatHttpParamExtractor;
+import com.alibaba.nacos.naming.paramcheck.NamingInstanceListHttpParamExtractor;
+import com.alibaba.nacos.naming.paramcheck.NamingInstanceMetadataBatchHttpParamExtractor;
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.pojo.instance.BeatInfoInstanceBuilder;
 import com.alibaba.nacos.naming.pojo.instance.HttpRequestInstanceBuilder;
 import com.alibaba.nacos.naming.pojo.instance.InstanceExtensionHandler;
+import com.alibaba.nacos.naming.utils.NamingRequestUtil;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -75,6 +85,7 @@ import static com.alibaba.nacos.naming.misc.UtilsAndCommons.DEFAULT_CLUSTER_NAME
  */
 @RestController
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT)
+@ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)
 public class InstanceController {
     
     @Autowired
@@ -99,11 +110,13 @@ public class InstanceController {
      */
     @CanDistro
     @PostMapping
+    @TpsControl(pointName = "NamingInstanceRegister", name = "HttpNamingInstanceRegister")
     @Secured(action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.OPEN_API)
     public String register(HttpServletRequest request) throws Exception {
         
-        final String namespaceId = WebUtils
-                .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        final String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
+                Constants.DEFAULT_NAMESPACE_ID);
         final String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
         
@@ -111,7 +124,8 @@ public class InstanceController {
                 .setDefaultInstanceEphemeral(switchDomain.isDefaultInstanceEphemeral()).setRequest(request).build();
         
         getInstanceOperator().registerInstance(namespaceId, serviceName, instance);
-        NotifyCenter.publishEvent(new RegisterInstanceTraceEvent(System.currentTimeMillis(), "", false, namespaceId,
+        NotifyCenter.publishEvent(new RegisterInstanceTraceEvent(System.currentTimeMillis(),
+                NamingRequestUtil.getSourceIpForHttpRequest(request), false, namespaceId,
                 NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName), instance.getIp(),
                 instance.getPort()));
         return "ok";
@@ -126,7 +140,9 @@ public class InstanceController {
      */
     @CanDistro
     @DeleteMapping
+    @TpsControl(pointName = "NamingInstanceDeregister", name = "HttpNamingInstanceDeregister")
     @Secured(action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.OPEN_API)
     public String deregister(HttpServletRequest request) throws Exception {
         Instance instance = HttpRequestInstanceBuilder.newBuilder()
                 .setDefaultInstanceEphemeral(switchDomain.isDefaultInstanceEphemeral()).setRequest(request).build();
@@ -135,9 +151,10 @@ public class InstanceController {
         NamingUtils.checkServiceNameFormat(serviceName);
         
         getInstanceOperator().removeInstance(namespaceId, serviceName, instance);
-        NotifyCenter.publishEvent(new DeregisterInstanceTraceEvent(System.currentTimeMillis(), "", false,
-                DeregisterInstanceReason.REQUEST, namespaceId, NamingUtils.getGroupName(serviceName),
-                NamingUtils.getServiceName(serviceName), instance.getIp(), instance.getPort()));
+        NotifyCenter.publishEvent(new DeregisterInstanceTraceEvent(System.currentTimeMillis(),
+                NamingRequestUtil.getSourceIpForHttpRequest(request), false, DeregisterInstanceReason.REQUEST,
+                namespaceId, NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName),
+                instance.getIp(), instance.getPort()));
         return "ok";
     }
     
@@ -150,7 +167,9 @@ public class InstanceController {
      */
     @CanDistro
     @PutMapping
+    @TpsControl(pointName = "NamingInstanceUpdate", name = "HttpNamingInstanceUpdate")
     @Secured(action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.OPEN_API, alternatives = "PUT ${contextPath:nacos}/v3/console/ns/instance")
     public String update(HttpServletRequest request) throws Exception {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
@@ -158,6 +177,10 @@ public class InstanceController {
         Instance instance = HttpRequestInstanceBuilder.newBuilder()
                 .setDefaultInstanceEphemeral(switchDomain.isDefaultInstanceEphemeral()).setRequest(request).build();
         getInstanceOperator().updateInstance(namespaceId, serviceName, instance);
+        NotifyCenter.publishEvent(new UpdateInstanceTraceEvent(System.currentTimeMillis(),
+                NamingRequestUtil.getSourceIpForHttpRequest(request), namespaceId,
+                NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName), instance.getIp(),
+                instance.getPort(), instance.getMetadata()));
         return "ok";
     }
     
@@ -171,10 +194,13 @@ public class InstanceController {
      */
     @CanDistro
     @PutMapping(value = "/metadata/batch")
+    @TpsControl(pointName = "NamingInstanceMetadataUpdate", name = "HttpNamingInstanceMetadataBatchUpdate")
     @Secured(action = ActionTypes.WRITE)
+    @ExtractorManager.Extractor(httpExtractor = NamingInstanceMetadataBatchHttpParamExtractor.class)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public ObjectNode batchUpdateInstanceMetadata(HttpServletRequest request) throws Exception {
-        final String namespaceId = WebUtils
-                .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        final String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
+                Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String consistencyType = WebUtils.optional(request, "consistencyType", StringUtils.EMPTY);
         String instances = WebUtils.optional(request, "instances", StringUtils.EMPTY);
@@ -183,8 +209,8 @@ public class InstanceController {
         Map<String, String> targetMetadata = UtilsAndCommons.parseMetadata(metadata);
         InstanceOperationInfo instanceOperationInfo = buildOperationInfo(serviceName, consistencyType, targetInstances);
         
-        List<String> operatedInstances = getInstanceOperator()
-                .batchUpdateMetadata(namespaceId, instanceOperationInfo, targetMetadata);
+        List<String> operatedInstances = getInstanceOperator().batchUpdateMetadata(namespaceId, instanceOperationInfo,
+                targetMetadata);
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         ArrayNode ipArray = JacksonUtils.createEmptyArrayNode();
         for (String ip : operatedInstances) {
@@ -204,10 +230,13 @@ public class InstanceController {
      */
     @CanDistro
     @DeleteMapping("/metadata/batch")
+    @TpsControl(pointName = "NamingInstanceMetadataUpdate", name = "HttpNamingInstanceMetadataBatchUpdate")
     @Secured(action = ActionTypes.WRITE)
+    @ExtractorManager.Extractor(httpExtractor = NamingInstanceMetadataBatchHttpParamExtractor.class)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public ObjectNode batchDeleteInstanceMetadata(HttpServletRequest request) throws Exception {
-        final String namespaceId = WebUtils
-                .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        final String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
+                Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String consistencyType = WebUtils.optional(request, "consistencyType", StringUtils.EMPTY);
         String instances = WebUtils.optional(request, "instances", StringUtils.EMPTY);
@@ -215,8 +244,8 @@ public class InstanceController {
         String metadata = WebUtils.required(request, METADATA);
         Map<String, String> targetMetadata = UtilsAndCommons.parseMetadata(metadata);
         InstanceOperationInfo instanceOperationInfo = buildOperationInfo(serviceName, consistencyType, targetInstances);
-        List<String> operatedInstances = getInstanceOperator()
-                .batchDeleteMetadata(namespaceId, instanceOperationInfo, targetMetadata);
+        List<String> operatedInstances = getInstanceOperator().batchDeleteMetadata(namespaceId, instanceOperationInfo,
+                targetMetadata);
         
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         ArrayNode ipArray = JacksonUtils.createEmptyArrayNode();
@@ -249,7 +278,6 @@ public class InstanceController {
         return Collections.emptyList();
     }
     
-    
     /**
      * Patch instance.
      *
@@ -260,6 +288,7 @@ public class InstanceController {
     @CanDistro
     @PatchMapping
     @Secured(action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public String patch(HttpServletRequest request) throws Exception {
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
@@ -299,7 +328,10 @@ public class InstanceController {
      * @throws Exception any error during list
      */
     @GetMapping("/list")
+    @TpsControl(pointName = "NamingServiceSubscribe", name = "HttpNamingServiceSubscribe")
     @Secured(action = ActionTypes.READ)
+    @ExtractorManager.Extractor(httpExtractor = NamingInstanceListHttpParamExtractor.class)
+    @Compatibility(apiType = ApiType.OPEN_API)
     public Object list(HttpServletRequest request) throws Exception {
         
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
@@ -326,7 +358,9 @@ public class InstanceController {
      * @throws Exception any error during get
      */
     @GetMapping
+    @TpsControl(pointName = "NamingInstanceQuery", name = "HttpNamingInstanceQuery")
     @Secured(action = ActionTypes.READ)
+    @Compatibility(apiType = ApiType.OPEN_API)
     public ObjectNode detail(HttpServletRequest request) throws Exception {
         
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
@@ -336,8 +370,8 @@ public class InstanceController {
         String ip = WebUtils.required(request, "ip");
         int port = Integer.parseInt(WebUtils.required(request, "port"));
         
-        com.alibaba.nacos.api.naming.pojo.Instance instance = getInstanceOperator()
-                .getInstance(namespaceId, serviceName, cluster, ip, port);
+        com.alibaba.nacos.api.naming.pojo.Instance instance = getInstanceOperator().getInstance(namespaceId,
+                serviceName, cluster, ip, port);
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         result.put("service", serviceName);
         result.put("ip", ip);
@@ -359,7 +393,10 @@ public class InstanceController {
      */
     @CanDistro
     @PutMapping("/beat")
+    @TpsControl(pointName = "HttpHealthCheck", name = "HttpHealthCheck")
     @Secured(action = ActionTypes.WRITE)
+    @ExtractorManager.Extractor(httpExtractor = NamingInstanceBeatHttpParamExtractor.class)
+    @Compatibility(apiType = ApiType.OPEN_API)
     public ObjectNode beat(HttpServletRequest request) throws Exception {
         
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
@@ -370,8 +407,8 @@ public class InstanceController {
         if (StringUtils.isNotBlank(beat)) {
             clientBeat = JacksonUtils.toObj(beat, RsInfo.class);
         }
-        String clusterName = WebUtils
-                .optional(request, CommonParams.CLUSTER_NAME, UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+        String clusterName = WebUtils.optional(request, CommonParams.CLUSTER_NAME,
+                UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         String ip = WebUtils.optional(request, "ip", StringUtils.EMPTY);
         int port = Integer.parseInt(WebUtils.optional(request, "port", "0"));
         if (clientBeat != null) {
@@ -391,8 +428,8 @@ public class InstanceController {
                 serviceName, namespaceId);
         BeatInfoInstanceBuilder builder = BeatInfoInstanceBuilder.newBuilder();
         builder.setRequest(request);
-        int resultCode = getInstanceOperator()
-                .handleBeat(namespaceId, serviceName, ip, port, clusterName, clientBeat, builder);
+        int resultCode = getInstanceOperator().handleBeat(namespaceId, serviceName, ip, port, clusterName, clientBeat,
+                builder);
         result.put(CommonParams.CODE, resultCode);
         result.put(SwitchEntry.CLIENT_BEAT_INTERVAL,
                 getInstanceOperator().getHeartBeatInterval(namespaceId, serviceName, ip, port, clusterName));
@@ -408,6 +445,7 @@ public class InstanceController {
      * @throws NacosException any error during handle
      */
     @RequestMapping("/statuses")
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public ObjectNode listWithHealthStatus(@RequestParam String key) throws NacosException {
         
         String serviceName;
@@ -422,8 +460,8 @@ public class InstanceController {
         }
         NamingUtils.checkServiceNameFormat(serviceName);
         
-        List<? extends com.alibaba.nacos.api.naming.pojo.Instance> ips = getInstanceOperator()
-                .listAllInstances(namespaceId, serviceName);
+        List<? extends com.alibaba.nacos.api.naming.pojo.Instance> ips = getInstanceOperator().listAllInstances(
+                namespaceId, serviceName);
         
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         ArrayNode ipArray = JacksonUtils.createEmptyArrayNode();

@@ -22,17 +22,19 @@ import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Collections;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * {@link EmptyServiceAutoCleanerV2} unit test.
@@ -40,8 +42,8 @@ import java.util.Collections;
  * @author chenglu
  * @date 2021-07-21 12:40
  */
-@RunWith(MockitoJUnitRunner.class)
-public class EmptyServiceAutoCleanerV2Test {
+@ExtendWith(MockitoExtension.class)
+class EmptyServiceAutoCleanerV2Test {
     
     @Mock
     private ClientServiceIndexesManager clientServiceIndexesManager;
@@ -54,8 +56,8 @@ public class EmptyServiceAutoCleanerV2Test {
     @Mock
     private Service service;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         EnvUtil.setEnvironment(new MockEnvironment());
         emptyServiceAutoCleanerV2 = new EmptyServiceAutoCleanerV2(clientServiceIndexesManager, serviceStorage);
         Mockito.when(service.getNamespace()).thenReturn("public");
@@ -63,18 +65,18 @@ public class EmptyServiceAutoCleanerV2Test {
         serviceManager.getSingleton(service);
     }
     
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         ServiceManager.getInstance().removeSingleton(service);
     }
     
     @Test
-    public void testGetType() {
-        Assert.assertEquals("emptyService", emptyServiceAutoCleanerV2.getType());
+    void testGetType() {
+        assertEquals("emptyService", emptyServiceAutoCleanerV2.getType());
     }
     
     @Test
-    public void testDoClean() {
+    void testDoClean() {
         try {
             Mockito.when(clientServiceIndexesManager.getAllClientsRegisteredService(Mockito.any())).thenReturn(Collections.emptyList());
             
@@ -83,7 +85,7 @@ public class EmptyServiceAutoCleanerV2Test {
             emptyServiceAutoCleanerV2.doClean();
         } catch (Exception e) {
             e.printStackTrace();
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
     }
 }

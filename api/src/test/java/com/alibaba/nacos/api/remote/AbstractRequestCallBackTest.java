@@ -18,20 +18,20 @@ package com.alibaba.nacos.api.remote;
 
 import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.Executor;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class AbstractRequestCallBackTest {
+class AbstractRequestCallBackTest {
     
     boolean testValue;
     
     @Test
-    public void testAbstractPushCallBack() {
+    void testAbstractPushCallBack() {
         AbstractRequestCallBack callBack = new AbstractRequestCallBack() {
             @Override
             public Executor getExecutor() {

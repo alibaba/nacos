@@ -96,7 +96,7 @@ public class AddressServerGeneratorManager {
     /**
      * Generate response ips.
      *
-     * @param instanceList a instance set will generate string response to client.
+     * @param instanceList an instance set will generate string response to client.
      * @return the result of response to client
      */
     public String generateResponseIps(List<com.alibaba.nacos.api.naming.pojo.Instance> instanceList) {
@@ -113,7 +113,7 @@ public class AddressServerGeneratorManager {
     /**
      * Generate nacos service name.
      *
-     * @param rawServiceName the raw service name will not contains the {@link Constants#DEFAULT_GROUP}.
+     * @param rawServiceName the raw service name will not contain the {@link Constants#DEFAULT_GROUP}.
      * @return the nacos service name
      */
     public String generateNacosServiceName(String rawServiceName) {

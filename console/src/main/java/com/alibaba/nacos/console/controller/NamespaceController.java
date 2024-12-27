@@ -21,10 +21,14 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.core.namespace.model.Namespace;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -46,6 +50,7 @@ import java.util.regex.Pattern;
  */
 @RestController
 @RequestMapping("/v1/console/namespaces")
+@ExtractorManager.Extractor(httpExtractor = ConsoleDefaultHttpParamExtractor.class)
 public class NamespaceController {
     
     @Autowired
@@ -66,6 +71,7 @@ public class NamespaceController {
      * @return namespace list
      */
     @GetMapping
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/core/namespace/list")
     public RestResult<List<Namespace>> getNamespaces() {
         return RestResultUtils.success(namespaceOperationService.getNamespaceList());
     }
@@ -77,6 +83,7 @@ public class NamespaceController {
      * @return namespace all info
      */
     @GetMapping(params = "show=all")
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/core/namespace")
     public Namespace getNamespace(@RequestParam("namespaceId") String namespaceId) throws NacosException {
         return namespaceOperationService.getNamespace(namespaceId);
     }
@@ -90,6 +97,7 @@ public class NamespaceController {
      */
     @PostMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "POST ${contextPath:nacos}/v3/console/core/namespace")
     public Boolean createNamespace(@RequestParam("customNamespaceId") String namespaceId,
             @RequestParam("namespaceName") String namespaceName,
             @RequestParam(value = "namespaceDesc", required = false) String namespaceDesc) {
@@ -126,6 +134,7 @@ public class NamespaceController {
      * @return true if exist, otherwise false
      */
     @GetMapping(params = "checkNamespaceIdExist=true")
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/core/namespace/exist")
     public Boolean checkNamespaceIdExist(@RequestParam("customNamespaceId") String namespaceId) {
         if (StringUtils.isBlank(namespaceId)) {
             return false;
@@ -143,6 +152,7 @@ public class NamespaceController {
      */
     @PutMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "PUT ${contextPath:nacos}/v3/console/core/namespace")
     public Boolean editNamespace(@RequestParam("namespace") String namespace,
             @RequestParam("namespaceShowName") String namespaceShowName,
             @RequestParam(value = "namespaceDesc", required = false) String namespaceDesc) {
@@ -161,6 +171,7 @@ public class NamespaceController {
      */
     @DeleteMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "DELETE ${contextPath:nacos}/v3/console/core/namespace")
     public Boolean deleteNamespace(@RequestParam("namespaceId") String namespaceId) {
         return namespaceOperationService.removeNamespace(namespaceId);
     }

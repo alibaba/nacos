@@ -24,15 +24,15 @@ import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
  * @author sunmengying
  */
 public class TestChecker extends AbstractHealthChecker {
-
+    
     public static final String TYPE = "TEST";
-
+    
     private static final long serialVersionUID = -240631834097384337L;
-
+    
     public TestChecker() {
         super(TYPE);
     }
-
+    
     @Override
     public AbstractHealthChecker clone() {
         return new TestChecker();

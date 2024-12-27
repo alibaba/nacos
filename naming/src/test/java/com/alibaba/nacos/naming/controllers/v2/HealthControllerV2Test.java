@@ -22,13 +22,12 @@ import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.core.HealthOperatorV2Impl;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.UpdateHealthForm;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
@@ -36,10 +35,11 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doNothing;
 
-@RunWith(MockitoJUnitRunner.class)
-public class HealthControllerV2Test extends BaseTest {
+@ExtendWith(MockitoExtension.class)
+class HealthControllerV2Test extends BaseTest {
     
     @Mock
     private HealthOperatorV2Impl healthOperatorV2;
@@ -51,7 +51,7 @@ public class HealthControllerV2Test extends BaseTest {
     
     private UpdateHealthForm updateHealthForm;
     
-    @Before
+    @BeforeEach
     public void before() {
         ReflectionTestUtils.setField(healthControllerV2, "healthOperatorV2", healthOperatorV2);
         mockmvc = MockMvcBuilders.standaloneSetup(healthControllerV2).build();
@@ -66,15 +66,15 @@ public class HealthControllerV2Test extends BaseTest {
     }
     
     @Test
-    public void testUpdate() throws Exception {
+    void testUpdate() throws Exception {
         doNothing().when(healthOperatorV2).updateHealthStatusForPersistentInstance(TEST_NAMESPACE,
-                NamingUtils.getGroupedName(updateHealthForm.getServiceName(), updateHealthForm.getGroupName()),
-                TEST_CLUSTER_NAME, "123.123.123.123", 8888, true);
-        MockHttpServletRequestBuilder builder = convert(updateHealthForm, MockMvcRequestBuilders.put(
-                UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_HEALTH_CONTEXT));
+                NamingUtils.getGroupedName(updateHealthForm.getServiceName(), updateHealthForm.getGroupName()), TEST_CLUSTER_NAME,
+                "123.123.123.123", 8888, true);
+        MockHttpServletRequestBuilder builder = convert(updateHealthForm,
+                MockMvcRequestBuilders.put(UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_HEALTH_CONTEXT));
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
-        Assert.assertEquals(200, response.getStatus());
-        Assert.assertEquals("ok", JacksonUtils.toObj(response.getContentAsString()).get("data").asText());
+        assertEquals(200, response.getStatus());
+        assertEquals("ok", JacksonUtils.toObj(response.getContentAsString()).get("data").asText());
     }
     
 }

@@ -18,26 +18,28 @@
 
 package com.alibaba.nacos.client.auth.ram.identify;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class CredentialsTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class CredentialsTest {
     
     @Test
-    public void testGetter() {
+    void testGetter() {
         // given
         String ak = "ak";
         String sk = "sk";
         String tenantId = "100";
         Credentials credentials = new Credentials(ak, sk, tenantId);
         // when  then
-        Assert.assertEquals(ak, credentials.getAccessKey());
-        Assert.assertEquals(sk, credentials.getSecretKey());
-        Assert.assertEquals(tenantId, credentials.getTenantId());
+        assertEquals(ak, credentials.getAccessKey());
+        assertEquals(sk, credentials.getSecretKey());
+        assertEquals(tenantId, credentials.getTenantId());
     }
     
     @Test
-    public void testSetter() {
+    void testSetter() {
         //given
         String ak = "ak";
         String sk = "sk";
@@ -48,13 +50,13 @@ public class CredentialsTest {
         credentials.setSecretKey(sk);
         credentials.setTenantId(tenantId);
         //then
-        Assert.assertEquals(ak, credentials.getAccessKey());
-        Assert.assertEquals(sk, credentials.getSecretKey());
-        Assert.assertEquals(tenantId, credentials.getTenantId());
+        assertEquals(ak, credentials.getAccessKey());
+        assertEquals(sk, credentials.getSecretKey());
+        assertEquals(tenantId, credentials.getTenantId());
     }
     
     @Test
-    public void testValid() {
+    void testValid() {
         //given
         String ak = "ak";
         String sk = "sk";
@@ -63,11 +65,11 @@ public class CredentialsTest {
         //when
         boolean actual = credentials.valid();
         //then
-        Assert.assertTrue(actual);
+        assertTrue(actual);
     }
     
     @Test
-    public void testIdentical() {
+    void testIdentical() {
         //given
         String ak = "ak";
         String sk = "sk";
@@ -77,6 +79,6 @@ public class CredentialsTest {
         //then
         boolean actual = credentials1.identical(credentials2);
         //then
-        Assert.assertTrue(actual);
+        assertTrue(actual);
     }
 }

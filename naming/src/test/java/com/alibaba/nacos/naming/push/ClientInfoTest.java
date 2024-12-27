@@ -17,16 +17,16 @@
 package com.alibaba.nacos.naming.push;
 
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ClientInfoTest {
+class ClientInfoTest {
     
     private final String testVersionString = "2.0.0-ALPHA";
     
     @Test
-    public void testGetClientInfoForJava() {
+    void testGetClientInfoForJava() {
         String userAgent = getUserAgent(ClientInfo.ClientTypeDescription.JAVA_CLIENT);
         ClientInfo actual = new ClientInfo(userAgent);
         assertEquals(ClientInfo.ClientType.JAVA, actual.type);
@@ -34,7 +34,7 @@ public class ClientInfoTest {
     }
     
     @Test
-    public void testGetClientInfoForGo() {
+    void testGetClientInfoForGo() {
         String userAgent = getUserAgent(ClientInfo.ClientTypeDescription.GO_CLIENT);
         ClientInfo actual = new ClientInfo(userAgent);
         assertEquals(ClientInfo.ClientType.GO, actual.type);
@@ -42,7 +42,7 @@ public class ClientInfoTest {
     }
     
     @Test
-    public void testGetClientInfoForC() {
+    void testGetClientInfoForC() {
         String userAgent = getUserAgent(ClientInfo.ClientTypeDescription.C_CLIENT);
         ClientInfo actual = new ClientInfo(userAgent);
         assertEquals(ClientInfo.ClientType.C, actual.type);
@@ -50,7 +50,7 @@ public class ClientInfoTest {
     }
     
     @Test
-    public void testGetClientInfoForCpp() {
+    void testGetClientInfoForCpp() {
         String userAgent = getUserAgent(ClientInfo.ClientTypeDescription.CPP_CLIENT);
         ClientInfo actual = new ClientInfo(userAgent);
         assertEquals(ClientInfo.ClientType.C, actual.type);
@@ -58,7 +58,7 @@ public class ClientInfoTest {
     }
     
     @Test
-    public void testGetClientInfoForDns() {
+    void testGetClientInfoForDns() {
         String userAgent = getUserAgent(ClientInfo.ClientTypeDescription.DNSF_CLIENT);
         ClientInfo actual = new ClientInfo(userAgent);
         assertEquals(ClientInfo.ClientType.DNS, actual.type);
@@ -66,7 +66,7 @@ public class ClientInfoTest {
     }
     
     @Test
-    public void testGetClientInfoForSdk() {
+    void testGetClientInfoForSdk() {
         String userAgent = getUserAgent(ClientInfo.ClientTypeDescription.SDK_CLIENT);
         ClientInfo actual = new ClientInfo(userAgent);
         assertEquals(ClientInfo.ClientType.JAVA_SDK, actual.type);
@@ -74,7 +74,7 @@ public class ClientInfoTest {
     }
     
     @Test
-    public void testGetClientInfoForServer() {
+    void testGetClientInfoForServer() {
         String userAgent = getUserAgent(UtilsAndCommons.NACOS_SERVER_HEADER);
         ClientInfo actual = new ClientInfo(userAgent);
         assertEquals(ClientInfo.ClientType.NACOS_SERVER, actual.type);
@@ -82,7 +82,7 @@ public class ClientInfoTest {
     }
     
     @Test
-    public void testGetClientInfoForNginx() {
+    void testGetClientInfoForNginx() {
         String userAgent = getUserAgent(ClientInfo.ClientTypeDescription.NGINX_CLIENT);
         ClientInfo actual = new ClientInfo(userAgent);
         assertEquals(ClientInfo.ClientType.TENGINE, actual.type);
@@ -90,7 +90,7 @@ public class ClientInfoTest {
     }
     
     @Test
-    public void testGetClientInfoForUnknown() {
+    void testGetClientInfoForUnknown() {
         String userAgent = getUserAgent("TestClient");
         ClientInfo actual = new ClientInfo(userAgent);
         assertEquals(ClientInfo.ClientType.UNKNOWN, actual.type);

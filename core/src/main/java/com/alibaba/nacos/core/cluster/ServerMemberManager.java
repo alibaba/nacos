@@ -19,7 +19,6 @@ package com.alibaba.nacos.core.cluster;
 import com.alibaba.nacos.api.ability.ServerAbilities;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
-import com.alibaba.nacos.core.cluster.remote.request.MemberReportRequest;
 import com.alibaba.nacos.auth.util.AuthHeaderUtil;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.http.Callback;
@@ -39,8 +38,10 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.ability.ServerAbilityInitializer;
 import com.alibaba.nacos.core.ability.ServerAbilityInitializerHolder;
+import com.alibaba.nacos.core.ability.control.ServerAbilityControlManager;
 import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
 import com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy;
+import com.alibaba.nacos.core.cluster.remote.request.MemberReportRequest;
 import com.alibaba.nacos.core.cluster.remote.response.MemberReportResponse;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.GenericType;
@@ -50,12 +51,9 @@ import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import org.springframework.boot.web.context.WebServerInitializedEvent;
-import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PreDestroy;
-import javax.servlet.ServletContext;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -88,7 +86,7 @@ import static com.alibaba.nacos.api.exception.NacosException.CLIENT_INVALID_PARA
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Component(value = "serverMemberManager")
-public class ServerMemberManager implements ApplicationListener<WebServerInitializedEvent> {
+public class ServerMemberManager {
     
     private final NacosAsyncRestTemplate asyncRestTemplate = HttpClientBeanHolder.getNacosAsyncRestTemplate(
             Loggers.CORE);
@@ -151,9 +149,8 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     
     private final UnhealthyMemberInfoReportTask unhealthyMemberInfoReportTask = new UnhealthyMemberInfoReportTask();
     
-    public ServerMemberManager(ServletContext servletContext) throws Exception {
+    public ServerMemberManager() throws Exception {
         this.serverList = new ConcurrentSkipListMap<>();
-        EnvUtil.setContextPath(servletContext.getContextPath());
         init();
     }
     
@@ -163,6 +160,9 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         this.localAddress = InetUtils.getSelfIP() + ":" + port;
         this.self = MemberUtil.singleParse(this.localAddress);
         this.self.setExtendVal(MemberMetaDataConstants.VERSION, VersionUtils.version);
+        //works  for gray model upgrade,can delete after compatibility period.
+        this.self.setExtendVal(MemberMetaDataConstants.SUPPORT_GRAY_MODEL, true);
+        this.self.setGrpcReportEnabled(true);
         
         // init abilities.
         this.self.setAbilities(initMemberAbilities());
@@ -182,6 +182,12 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         Loggers.CORE.info("The cluster resource is initialized");
     }
     
+    /**
+     * Init the ability of current node.
+     *
+     * @return ServerAbilities
+     * @deprecated ability of current node and event cluster can be managed by {@link ServerAbilityControlManager}
+     */
     private ServerAbilities initMemberAbilities() {
         ServerAbilities serverAbilities = new ServerAbilities();
         for (ServerAbilityInitializer each : ServerAbilityInitializerHolder.getInstance().getInitializers()) {
@@ -475,20 +481,13 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         return Objects.equals(serverList.firstKey(), this.localAddress);
     }
     
-    @Override
-    public void onApplicationEvent(WebServerInitializedEvent event) {
-        String serverNamespace = event.getApplicationContext().getServerNamespace();
-        if (SPRING_MANAGEMENT_CONTEXT_NAMESPACE.equals(serverNamespace)) {
-            // ignore
-            // fix#issue https://github.com/alibaba/nacos/issues/7230
-            return;
-        }
+    public void setSelfReady(int port) {
         getSelf().setState(NodeState.UP);
         if (!EnvUtil.getStandaloneMode()) {
             GlobalExecutor.scheduleByCommon(this.infoReportTask, DEFAULT_TASK_DELAY_TIME);
             GlobalExecutor.scheduleByCommon(this.unhealthyMemberInfoReportTask, DEFAULT_TASK_DELAY_TIME);
         }
-        EnvUtil.setPort(event.getWebServer().getPort());
+        EnvUtil.setPort(port);
         EnvUtil.setLocalAddress(this.localAddress);
         Loggers.CLUSTER.info("This node is ready to provide external services");
     }
@@ -566,7 +565,8 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             
             Loggers.CLUSTER.debug("report the metadata to the node : {}", target.getAddress());
             
-            if (target.getAbilities().getRemoteAbility().isGrpcReportEnabled()) {
+            // adapt old version
+            if (target.getAbilities().getRemoteAbility().isGrpcReportEnabled() || target.isGrpcReportEnabled()) {
                 reportByGrpc(target);
             } else {
                 reportByHttp(target);
@@ -590,6 +590,9 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                                     Loggers.CLUSTER.warn("failed to report new info to target node : {}, result : {}",
                                             target.getAddress(), result);
                                     MemberUtil.onFail(ServerMemberManager.this, target);
+                                    // try to connect by grpc next time, adapt old version
+                                    target.setGrpcReportEnabled(true);
+                                    target.getAbilities().getRemoteAbility().setGrpcReportEnabled(true);
                                 }
                             }
                             
@@ -598,6 +601,9 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                                 Loggers.CLUSTER.error("failed to report new info to target node : {}, error : {}",
                                         target.getAddress(), ExceptionUtil.getAllExceptionMsg(throwable));
                                 MemberUtil.onFail(ServerMemberManager.this, target, throwable);
+                                // try to connect by grpc next time, adapt old version
+                                target.setGrpcReportEnabled(true);
+                                target.getAbilities().getRemoteAbility().setGrpcReportEnabled(true);
                             }
                             
                             @Override
@@ -608,6 +614,9 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             } catch (Throwable ex) {
                 Loggers.CLUSTER.error("failed to report new info to target node by http : {}, error : {}",
                         target.getAddress(), ExceptionUtil.getAllExceptionMsg(ex));
+                // try to connect by grpc next time, adapt old version
+                target.setGrpcReportEnabled(true);
+                target.getAbilities().getRemoteAbility().setGrpcReportEnabled(true);
             }
         }
         
@@ -635,6 +644,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             } catch (NacosException e) {
                 if (e.getErrCode() == NacosException.NO_HANDLER) {
                     target.getAbilities().getRemoteAbility().setGrpcReportEnabled(false);
+                    target.setGrpcReportEnabled(false);
                 }
                 Loggers.CLUSTER.error("failed to report new info to target node by grpc : {}, error : {}",
                         target.getAddress(), ExceptionUtil.getAllExceptionMsg(e));

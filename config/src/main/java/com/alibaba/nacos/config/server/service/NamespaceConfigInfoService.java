@@ -16,9 +16,11 @@
 
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.config.server.constant.PropertiesConstant;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.core.namespace.injector.AbstractNamespaceDetailInjector;
 import com.alibaba.nacos.core.namespace.model.Namespace;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.stereotype.Service;
 
 /**
@@ -37,6 +39,12 @@ public class NamespaceConfigInfoService extends AbstractNamespaceDetailInjector 
     
     @Override
     public void injectDetail(Namespace namespace) {
+        
+        if (EnvUtil.getProperty(PropertiesConstant.DEFAULT_TENANT_QUOTA, Integer.class) != null) {
+            namespace.setQuota(EnvUtil.getProperty(PropertiesConstant.DEFAULT_TENANT_QUOTA, Integer.class));
+        }
+        
+        // set config count.
         int configCount = configInfoPersistService.configInfoCount(namespace.getNamespace());
         namespace.setConfigCount(configCount);
     }

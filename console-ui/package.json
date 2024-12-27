@@ -26,7 +26,7 @@
     "url": "git+https://github.com/alibaba/nacos.git"
   },
   "devDependencies": {
-    "@alifd/next-theme-loader": "^1.3.1",
+    "@alifd/next-theme-loader": "^1.3.2",
     "@babel/cli": "^7.7.7",
     "@babel/core": "^7.7.7",
     "@babel/plugin-proposal-decorators": "^7.7.4",
@@ -65,15 +65,18 @@
     "webpack-dev-server": "^3.11.0"
   },
   "dependencies": {
-    "@alifd/next": "^1.19.4",
+    "@alifd/next": "^1.26.24",
     "@alifd/theme-design-pro": "0.x",
+    "@iarna/toml": "^3.0.0",
     "axios": "^0.21.1",
+    "core-js": "^3.6.4",
     "js-yaml": "^4.1.0",
     "moment": "^2.23.0",
     "prop-types": "^15.6.2",
     "qs": "^6.8.2",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
+    "react-icons": "^4.12.0",
     "react-redux": "^7.1.3",
     "react-router": "^5.1.2",
     "react-router-dom": "^5.1.2",

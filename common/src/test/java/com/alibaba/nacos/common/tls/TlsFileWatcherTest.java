@@ -16,14 +16,15 @@
 
 package com.alibaba.nacos.common.tls;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.mockito.stubbing.Answer;
 
 import java.io.File;
@@ -35,14 +36,19 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-@RunWith(MockitoJUnitRunner.class)
-public class TlsFileWatcherTest {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class TlsFileWatcherTest {
     
     static Field watchFilesMapField;
     
@@ -57,23 +63,23 @@ public class TlsFileWatcherTest {
     @Mock
     ScheduledExecutorService executorService;
     
-    @BeforeClass
-    public static void setUpBeforeClass() throws NoSuchFieldException, IllegalAccessException {
+    @BeforeAll
+    static void setUpBeforeClass() throws NoSuchFieldException, IllegalAccessException {
         watchFilesMapField = TlsFileWatcher.getInstance().getClass().getDeclaredField("watchFilesMap");
         watchFilesMapField.setAccessible(true);
         Field modifiersField1 = Field.class.getDeclaredField("modifiers");
         modifiersField1.setAccessible(true);
         modifiersField1.setInt(watchFilesMapField, watchFilesMapField.getModifiers() & ~Modifier.FINAL);
-    
+        
         fileMd5MapField = TlsFileWatcher.getInstance().getClass().getDeclaredField("fileMd5Map");
         fileMd5MapField.setAccessible(true);
-    
+        
         serviceField = TlsFileWatcher.getInstance().getClass().getDeclaredField("service");
         serviceField.setAccessible(true);
         Field modifiersField2 = Field.class.getDeclaredField("modifiers");
         modifiersField2.setAccessible(true);
         modifiersField2.setInt(watchFilesMapField, watchFilesMapField.getModifiers() & ~Modifier.FINAL);
-    
+        
         startedField = TlsFileWatcher.getInstance().getClass().getDeclaredField("started");
         startedField.setAccessible(true);
         Field modifiersField3 = Field.class.getDeclaredField("modifiers");
@@ -81,8 +87,8 @@ public class TlsFileWatcherTest {
         modifiersField3.setInt(watchFilesMapField, watchFilesMapField.getModifiers() & ~Modifier.FINAL);
     }
     
-    @Before
-    public void setUp() throws IOException, IllegalAccessException {
+    @BeforeEach
+    void setUp() throws IOException, IllegalAccessException {
         tempFile = new File("test.txt");
         tempFile.createNewFile();
         serviceField.set(TlsFileWatcher.getInstance(), executorService);
@@ -95,86 +101,74 @@ public class TlsFileWatcherTest {
         doAnswer(answer).when(executorService).scheduleAtFixedRate(any(), anyLong(), anyLong(), any());
     }
     
-    @After
-    public void tearDown() throws IllegalAccessException {
+    @AfterEach
+    void tearDown() throws IllegalAccessException {
         ((Map<?, ?>) watchFilesMapField.get(TlsFileWatcher.getInstance())).clear();
         ((Map<?, ?>) fileMd5MapField.get(TlsFileWatcher.getInstance())).clear();
         tempFile.deleteOnExit();
     }
     
     @Test
-    public void testAddFileChangeListener1() throws IOException, IllegalAccessException {
-        TlsFileWatcher.getInstance().addFileChangeListener(
-                filePath -> { }, 
-                "not/exist/path"
-        );
-    
-        Assert.assertTrue(((Map<?, ?>) watchFilesMapField.get(TlsFileWatcher.getInstance())).isEmpty());
-        Assert.assertTrue(((Map<?, ?>) fileMd5MapField.get(TlsFileWatcher.getInstance())).isEmpty());
-    }
-    
-    @Test
-    public void testAddFileChangeListener2() throws IOException, IllegalAccessException {
-        TlsFileWatcher.getInstance().addFileChangeListener(
-                filePath -> { }, 
-                (String) null
-        );
+    void testAddFileChangeListener1() throws IOException, IllegalAccessException {
+        TlsFileWatcher.getInstance().addFileChangeListener(filePath -> {
+        }, "not/exist/path");
         
-        Assert.assertTrue(((Map<?, ?>) watchFilesMapField.get(TlsFileWatcher.getInstance())).isEmpty());
-        Assert.assertTrue(((Map<?, ?>) fileMd5MapField.get(TlsFileWatcher.getInstance())).isEmpty());
+        assertTrue(((Map<?, ?>) watchFilesMapField.get(TlsFileWatcher.getInstance())).isEmpty());
+        assertTrue(((Map<?, ?>) fileMd5MapField.get(TlsFileWatcher.getInstance())).isEmpty());
     }
     
     @Test
-    public void testAddFileChangeListener3() throws IOException, IllegalAccessException {
-        TlsFileWatcher.getInstance().addFileChangeListener(
-                filePath -> { },
-                tempFile.getPath()
-        );
+    void testAddFileChangeListener2() throws IOException, IllegalAccessException {
+        TlsFileWatcher.getInstance().addFileChangeListener(filePath -> {
+        }, (String) null);
         
-        Assert.assertEquals(1, ((Map<?, ?>) watchFilesMapField.get(TlsFileWatcher.getInstance())).size());
-        Assert.assertEquals(1, ((Map<?, ?>) fileMd5MapField.get(TlsFileWatcher.getInstance())).size());
+        assertTrue(((Map<?, ?>) watchFilesMapField.get(TlsFileWatcher.getInstance())).isEmpty());
+        assertTrue(((Map<?, ?>) fileMd5MapField.get(TlsFileWatcher.getInstance())).isEmpty());
     }
     
     @Test
-    public void testStartGivenTlsFileNotChangeThenNoNotify() throws IllegalAccessException, InterruptedException, IOException {
+    void testAddFileChangeListener3() throws IOException, IllegalAccessException {
+        TlsFileWatcher.getInstance().addFileChangeListener(filePath -> {
+        }, tempFile.getPath());
+        
+        assertEquals(1, ((Map<?, ?>) watchFilesMapField.get(TlsFileWatcher.getInstance())).size());
+        assertEquals(1, ((Map<?, ?>) fileMd5MapField.get(TlsFileWatcher.getInstance())).size());
+    }
+    
+    @Test
+    void testStartGivenTlsFileNotChangeThenNoNotify() throws IllegalAccessException, InterruptedException, IOException {
         // given
         AtomicBoolean notified = new AtomicBoolean(false);
-        TlsFileWatcher.getInstance().addFileChangeListener(
-                filePath -> notified.set(true),
-                tempFile.getPath()
-        );
+        TlsFileWatcher.getInstance().addFileChangeListener(filePath -> notified.set(true), tempFile.getPath());
         
         // when
         TlsFileWatcher.getInstance().start();
         
         // then
-        Assert.assertFalse(notified.get());
+        assertFalse(notified.get());
     }
     
     @Test
-    public void testStartGivenTlsFileChangeThenNotifyTheChangeFilePath() throws IllegalAccessException, IOException {
+    void testStartGivenTlsFileChangeThenNotifyTheChangeFilePath() throws IllegalAccessException, IOException {
         // given
         AtomicBoolean notified = new AtomicBoolean(false);
         AtomicReference<String> changedFilePath = new AtomicReference<>();
-        TlsFileWatcher.getInstance().addFileChangeListener(
-                filePath -> {
-                    notified.set(true);
-                    changedFilePath.set(filePath);
-                },
-                tempFile.getPath()
-        );
+        TlsFileWatcher.getInstance().addFileChangeListener(filePath -> {
+            notified.set(true);
+            changedFilePath.set(filePath);
+        }, tempFile.getPath());
         ((Map<String, String>) fileMd5MapField.get(TlsFileWatcher.getInstance())).put("test.txt", "");
-    
+        
         // when
         TlsFileWatcher.getInstance().start();
         
         // then
-        Assert.assertTrue(notified.get());
-        Assert.assertEquals("test.txt", changedFilePath.get());
+        assertTrue(notified.get());
+        assertEquals("test.txt", changedFilePath.get());
     }
     
     @Test
-    public void testStartGivenTaskIsAlreadyRunThenNotRunAgain() {
+    void testStartGivenTaskIsAlreadyRunThenNotRunAgain() {
         TlsFileWatcher.getInstance().start();
         TlsFileWatcher.getInstance().start();
         

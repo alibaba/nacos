@@ -88,7 +88,7 @@
     </issueManagement>
     
     <properties>
-        <revision>3.0.0-SNAPSHOT</revision>
+        <revision>3.0.0-ALPHA</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Compiler settings properties -->
@@ -105,7 +105,7 @@
         <versions-maven-plugin.version>2.2</versions-maven-plugin.version>
         <dependency-mediator-maven-plugin.version>1.0.2</dependency-mediator-maven-plugin.version>
         <clirr-maven-plugin.version>2.7</clirr-maven-plugin.version>
-        <maven-enforcer-plugin.version>1.4.1</maven-enforcer-plugin.version>
+        <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
         <maven-compiler-plugin.version>3.5.1</maven-compiler-plugin.version>
         <maven-javadoc-plugin.version>2.10.4</maven-javadoc-plugin.version>
         <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
@@ -114,46 +114,48 @@
         <apache-rat-plugin.version>0.12</apache-rat-plugin.version>
         <maven-resources-plugin.version>3.0.2</maven-resources-plugin.version>
         <jacoco-maven-plugin.version>0.8.7</jacoco-maven-plugin.version>
-        <maven-surefire-plugin.version>2.20</maven-surefire-plugin.version>
+        <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
         <findbugs-maven-plugin.version>3.0.4</findbugs-maven-plugin.version>
         <sonar-maven-plugin.version>3.0.2</sonar-maven-plugin.version>
         <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
-        <maven-failsafe-plugin.version>2.19.1</maven-failsafe-plugin.version>
+        <maven-failsafe-plugin.version>3.2.5</maven-failsafe-plugin.version>
         <maven-assembly-plugin.version>3.0.0</maven-assembly-plugin.version>
         <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
         <maven-easyj-version>1.1.5</maven-easyj-version>
         <!-- dependency version related to plugin -->
-        <extra-enforcer-rules.version>1.0-beta-4</extra-enforcer-rules.version>
+        <extra-enforcer-rules.version>1.9.0</extra-enforcer-rules.version>
         <p3c-pmd.version>1.3.0</p3c-pmd.version>
         
         <!-- dependency version -->
-        <spring-boot-dependencies.version>2.7.11</spring-boot-dependencies.version>
+        <nacos.logback.adapter.version>1.1.3</nacos.logback.adapter.version>
+        <spring-boot-dependencies.version>2.7.18</spring-boot-dependencies.version>
         <servlet-api.version>3.0</servlet-api.version>
-        <commons-io.version>2.7</commons-io.version>
+        <commons-io.version>2.14.0</commons-io.version>
         <commons-collections.version>3.2.2</commons-collections.version>
         <slf4j-api.version>1.7.26</slf4j-api.version>
-        <logback.version>1.2.9</logback.version>
+        <logback.version>1.2.13</logback.version>
         <log4j.version>2.17.1</log4j.version>
         
-        <mysql-connector-java.version>8.0.28</mysql-connector-java.version>
+        <mysql-connector-java.version>8.2.0</mysql-connector-java.version>
         <derby.version>10.14.2.0</derby.version>
-        <jackson-core.version>2.12.6</jackson-core.version>
-        <jackson-databind.version>2.12.7.1</jackson-databind.version>
-        <jackson.annotations.version>2.12.6</jackson.annotations.version>
-        <jackson-core-asl.version>1.9.13</jackson-core-asl.version>
         <jjwt.version>0.11.2</jjwt.version>
-        <javatuples.version>1.2</javatuples.version>
-        <grpc-java.version>1.50.2</grpc-java.version>
-        <proto-google-common-protos.version>2.7.1</proto-google-common-protos.version>
-        <protobuf-java.version>3.21.11</protobuf-java.version>
+        <grpc-java.version>1.64.2</grpc-java.version>
+        <proto-google-common-protos.version>2.17.0</proto-google-common-protos.version>
+        <protobuf-java.version>3.25.5</protobuf-java.version>
         <protoc-gen-grpc-java.version>${grpc-java.version}</protoc-gen-grpc-java.version>
         <hessian.version>4.0.63</hessian.version>
-        <mockito-all.version>1.10.19</mockito-all.version>
-        <mockito-core.version>3.8.0</mockito-core.version>
+        <mockito.version>4.11.0</mockito.version>
         <HikariCP.version>3.4.2</HikariCP.version>
-        <jraft-core.version>1.3.12</jraft-core.version>
+        <jraft-core.version>1.3.14</jraft-core.version>
         <rpc-grpc-impl.version>${jraft-core.version}</rpc-grpc-impl.version>
         <SnakeYaml.version>2.0</SnakeYaml.version>
+        <kubernetes.client.version>14.0.0</kubernetes.client.version>
+        <junit5.version>5.10.2</junit5.version>
+        
+        <!-- override dependency version -->
+        <spring.version>5.3.39</spring.version>
+        <spring-security.version>5.8.15</spring-security.version>
+        <tomcat.version>9.0.96</tomcat.version>
     </properties>
     <!-- == -->
     <!-- =========================================================Build plugins================================================ -->
@@ -352,7 +354,8 @@
                         <exclude>**/any.proto</exclude>
                         <exclude>src/main/java/com/alibaba/nacos/common/packagescan/classreading/**</exclude>
                         <exclude>.flattened-pom.xml</exclude>
-                        <exclude>**/announcement.conf</exclude>
+                        <exclude>**/announcement*.conf</exclude>
+                        <exclude>**/console-guide.conf</exclude>
                         <exclude>**/reflect-config.json</exclude>
                         <exclude>**/resource-config.json</exclude>
                         <exclude>**/proxy-config.json</exclude>
@@ -360,6 +363,9 @@
                         <exclude>**/predefined-classes-config.json</exclude>
                         <exclude>**/serialization-config.json</exclude>
                         <exclude>**/filter-config.json</exclude>
+                        <exclude>**/disk_cache_test/**</exclude>
+                        <exclude>**/failover_test/**</exclude>
+                        <exclude>lefthook.yml</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -391,6 +397,9 @@
                     <append>true</append>
                     <excludes>
                         <exclude>**/grpc/auto/**</exclude>
+                        <exclude>**/packagescan/classreading/**</exclude>
+                        <exclude>**/packagescan/resource/**</exclude>
+                        <exclude>**/packagescan/util/**</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -612,15 +621,17 @@
         <module>plugin-default-impl</module>
         <module>prometheus</module>
         <module>persistence</module>
+        <module>logger-adapter-impl</module>
         <module>k8s-sync</module>
+        <module>bootstrap</module>
+        <module>server</module>
     </modules>
     
     <!-- Default dependencies in all subprojects -->
     <dependencies>
-        
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -633,7 +644,11 @@
             <artifactId>mockito-inline</artifactId>
             <scope>test</scope>
         </dependency>
-        
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     
     <!-- Manage the version numbers of dependencies,
@@ -641,12 +656,76 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${junit5.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-bom</artifactId>
+                <version>${mockito.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-framework-bom</artifactId>
+                <version>${spring.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.security</groupId>
+                <artifactId>spring-security-bom</artifactId>
+                <version>${spring-security.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
                 <!-- Import dependency management from Spring Boot -->
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
                 <version>${spring-boot-dependencies.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <!-- override dependencies version due to spring boot 2 is not maintained-->
+            <dependency>
+                <groupId>org.apache.tomcat</groupId>
+                <artifactId>tomcat-annotations-api</artifactId>
+                <version>${tomcat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat</groupId>
+                <artifactId>tomcat-jdbc</artifactId>
+                <version>${tomcat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat</groupId>
+                <artifactId>tomcat-jsp-api</artifactId>
+                <version>${tomcat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-core</artifactId>
+                <version>${tomcat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-el</artifactId>
+                <version>${tomcat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-jasper</artifactId>
+                <version>${tomcat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-websocket</artifactId>
+                <version>${tomcat.version}</version>
             </dependency>
             
             <!-- Internal libs -->
@@ -681,6 +760,21 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.alibaba.nacos</groupId>
+                <artifactId>nacos-logback-adapter-12</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.nacos</groupId>
+                <artifactId>logback-adapter</artifactId>
+                <version>${nacos.logback.adapter.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.nacos</groupId>
+                <artifactId>nacos-log4j2-adapter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-test</artifactId>
                 <version>${project.version}</version>
@@ -698,6 +792,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-console</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-server</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -856,8 +955,8 @@
             
             <!-- JDBC libs -->
             <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql-connector-java.version}</version>
             </dependency>
             
@@ -904,28 +1003,6 @@
             
             <!-- Third-party libs -->
             <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>${jackson-core.version}</version>
-            </dependency>
-            
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${jackson-databind.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-annotations</artifactId>
-                <version>${jackson.annotations.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.codehaus.jackson</groupId>
-                <artifactId>jackson-core-asl</artifactId>
-                <version>${jackson-core-asl.version}</version>
-            </dependency>
-            
-            <dependency>
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-api</artifactId>
                 <version>${jjwt.version}</version>
@@ -949,12 +1026,6 @@
                 <version>1.3.2</version>
             </dependency>
             
-            <dependency>
-                <groupId>org.javatuples</groupId>
-                <artifactId>javatuples</artifactId>
-                <version>${javatuples.version}</version>
-            </dependency>
-            
             <!-- gRPC dependency start -->
             <dependency>
                 <groupId>io.grpc</groupId>
@@ -970,6 +1041,12 @@
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-stub</artifactId>
                 <version>${grpc-java.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-util</artifactId>
+                <version>${grpc-java.version}</version>
+                <scope>compile</scope>
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
@@ -990,23 +1067,6 @@
                 <version>${protobuf-java.version}</version>
             </dependency>
             
-            <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-all</artifactId>
-                <version>${mockito-all.version}</version>
-            </dependency>
-            
-            <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-core</artifactId>
-                <version>${mockito-core.version}</version>
-            </dependency>
-            
-            <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-inline</artifactId>
-                <version>${mockito-core.version}</version>
-            </dependency>
             
             <dependency>
                 <groupId>com.google.code.gson</groupId>
@@ -1024,13 +1084,13 @@
             <dependency>
                 <groupId>io.kubernetes</groupId>
                 <artifactId>client-java-api</artifactId>
-                <version>14.0.0</version>
+                <version>${kubernetes.client.version}</version>
             </dependency>
             
             <dependency>
                 <groupId>io.kubernetes</groupId>
                 <artifactId>client-java</artifactId>
-                <version>14.0.0</version>
+                <version>${kubernetes.client.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

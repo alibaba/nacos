@@ -16,8 +16,10 @@
 
 package com.alibaba.nacos.core.paramcheck;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.paramcheck.ParamInfo;
+
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -25,57 +27,16 @@ import java.util.List;
  *
  * @author zhuoguang
  */
-public abstract class AbstractHttpParamExtractor implements ParamExtractor<HttpServletRequest> {
-    
-    private static final String SPLITTER = "@@";
-    
-    private static final String NACOS_SERVER_CONTEXT = "/nacos";
-    
-    private final List<String> targetRequestList;
+public abstract class AbstractHttpParamExtractor implements ParamExtractor<HttpServletRequest, ParamInfo> {
     
     /**
-     * Instantiates a new Abstract http param extractor.
-     */
-    public AbstractHttpParamExtractor() {
-        targetRequestList = new ArrayList<>();
-        init();
-    }
-    
-    /**
-     * Init,add target request to the target request list.
-     */
-    public abstract void init();
-    
-    @Override
-    public List<String> getTargetRequestList() {
-        return targetRequestList;
-    }
-    
-    /**
-     * extract param and check.
+     * Extract param.
      *
      * @param request the request
-     * @throws Exception exception
+     * @return the list
+     * @throws NacosException the exception
      */
     @Override
-    public abstract void extractParamAndCheck(HttpServletRequest request) throws Exception;
+    public abstract List<ParamInfo> extractParam(HttpServletRequest request) throws NacosException;
     
-    /**
-     * Add target request.
-     *
-     * @param uri    the uri
-     * @param method the method
-     */
-    public void addTargetRequest(String uri, String method) {
-        targetRequestList.add(NACOS_SERVER_CONTEXT + uri + SPLITTER + method);
-    }
-    
-    /**
-     * Add default target request.
-     *
-     * @param module the module
-     */
-    public void addDefaultTargetRequest(String module) {
-        targetRequestList.add("default" + SPLITTER + module);
-    }
 }

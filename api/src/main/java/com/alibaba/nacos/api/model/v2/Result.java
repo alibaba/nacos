@@ -96,6 +96,17 @@ public class Result<T> implements Serializable {
         return new Result<>(errorCode.getCode(), errorCode.getMsg(), data);
     }
     
+    /**
+     * Failed return with code, message and data.
+     * @param <T>  data type
+     * @param code error code
+     * @param msg  error message
+     * @return Result
+     */
+    public static <T> Result<T> failure(Integer code, String msg, T data) {
+        return new Result<>(code, msg, data);
+    }
+    
     @Override
     public String toString() {
         return "Result{" + "errorCode=" + code + ", message='" + message + '\'' + ", data=" + data + '}';

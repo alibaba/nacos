@@ -16,44 +16,45 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
+import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.consistency.RequestProcessor;
 import com.alibaba.nacos.consistency.cp.RequestProcessor4CP;
 import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosure;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alipay.sofa.jraft.CliService;
 import com.alipay.sofa.jraft.Node;
 import com.alipay.sofa.jraft.RaftGroupService;
-import com.alipay.sofa.jraft.core.NodeImpl;
-import com.alipay.sofa.jraft.core.State;
-import com.alipay.sofa.jraft.error.RemotingException;
-import com.alipay.sofa.jraft.rpc.InvokeCallback;
-import com.alipay.sofa.jraft.rpc.RpcClient;
-import com.alipay.sofa.jraft.rpc.impl.cli.CliClientServiceImpl;
-import com.alipay.sofa.jraft.util.Endpoint;
-
-import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.common.model.RestResultUtils;
-import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.distributed.ProtocolManager;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alipay.sofa.jraft.RouteTable;
 import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.conf.Configuration;
+import com.alipay.sofa.jraft.core.NodeImpl;
+import com.alipay.sofa.jraft.core.State;
 import com.alipay.sofa.jraft.entity.PeerId;
+import com.alipay.sofa.jraft.error.RemotingException;
 import com.alipay.sofa.jraft.rpc.CliRequests;
+import com.alipay.sofa.jraft.rpc.InvokeCallback;
+import com.alipay.sofa.jraft.rpc.RpcClient;
 import com.alipay.sofa.jraft.rpc.impl.FutureImpl;
+import com.alipay.sofa.jraft.rpc.impl.cli.CliClientServiceImpl;
+import com.alipay.sofa.jraft.util.Endpoint;
 import com.google.protobuf.Message;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.mock.env.MockEnvironment;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -70,6 +71,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -77,8 +80,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class JRaftServerTest {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class JRaftServerTest {
+    
+    private final String groupId = "test_group";
     
     private PeerId peerId1;
     
@@ -88,17 +95,12 @@ public class JRaftServerTest {
     
     private Configuration conf;
     
-    private final String groupId = "test_group";
-    
     private JRaftServer server;
+    
+    private RaftConfig config;
     
     @Mock
     private RequestProcessor4CP mockProcessor4CP;
-    
-    @BeforeClass
-    public static void beforeClass() {
-        EnvUtil.setEnvironment(new MockEnvironment());
-    }
     
     @Mock
     private CliClientServiceImpl cliClientServiceMock;
@@ -116,20 +118,25 @@ public class JRaftServerTest {
     
     @Mock
     private Node node;
-
+    
     @Mock
     private RequestProcessor requestProcessor;
-
+    
     @Mock
     private RaftGroupService raftGroupService;
-
+    
     @Mock
     private NacosStateMachine nacosStateMachine;
     
-    @Before
-    public void before() throws NoSuchFieldException, IllegalAccessException {
+    @BeforeAll
+    static void beforeClass() {
+        EnvUtil.setEnvironment(new MockEnvironment());
+    }
+    
+    @BeforeEach
+    void before() throws NoSuchFieldException, IllegalAccessException {
         initPeersAndConfiguration();
-        RaftConfig config = new RaftConfig();
+        config = new RaftConfig();
         Collection<Member> initEvent = Collections.singletonList(Member.builder().ip("1.1.1.1").port(7848).build());
         config.setMembers("1.1.1.1:7848", ProtocolManager.toCPMembersInfo(initEvent));
         
@@ -144,7 +151,8 @@ public class JRaftServerTest {
         server.init(config);
         
         Map<String, JRaftServer.RaftGroupTuple> map = new HashMap<>();
-        map.put("test_nacos", new JRaftServer.RaftGroupTuple(node, requestProcessor, raftGroupService, nacosStateMachine));
+        map.put("test_nacos",
+                new JRaftServer.RaftGroupTuple(node, requestProcessor, raftGroupService, nacosStateMachine));
         server.mockMultiRaftGroup(map);
         
         mockcliClientService();
@@ -154,7 +162,7 @@ public class JRaftServerTest {
         Field cliClientServiceField = JRaftServer.class.getDeclaredField("cliClientService");
         cliClientServiceField.setAccessible(true);
         cliClientServiceField.set(server, cliClientServiceMock);
-    
+        
         // Inject the mocked cliServiceMock into server.
         Field cliServiceField = JRaftServer.class.getDeclaredField("cliService");
         cliServiceField.setAccessible(true);
@@ -190,14 +198,12 @@ public class JRaftServerTest {
         // Assign PeerId1 as the leader
         final CliRequests.GetLeaderRequest.Builder rb = CliRequests.GetLeaderRequest.newBuilder();
         rb.setGroupId(groupId);
-        final CliRequests.GetLeaderRequest getLeaderRequest = rb.build();
+        rb.build();
         final FutureImpl<Message> getLeaderFuture = new FutureImpl<>();
         final CliRequests.GetLeaderResponse.Builder gb = CliRequests.GetLeaderResponse.newBuilder();
         gb.setLeaderId(peerId1.toString());
         final CliRequests.GetLeaderResponse getLeaderResponse = gb.build();
         getLeaderFuture.setResult(getLeaderResponse);
-        when(cliClientServiceMock.getLeader(peerId1.getEndpoint(), getLeaderRequest, null))
-                .thenReturn(getLeaderFuture);
     }
     
     private void mockcliService() {
@@ -214,31 +220,33 @@ public class JRaftServerTest {
     }
     
     @Test
-    public void testInvokeToLeader()
+    void testInvokeToLeader()
             throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, RemotingException, InterruptedException {
         when(cliClientServiceMock.getRpcClient()).thenReturn(rpcClient);
         setLeaderAs(peerId1);
         int timeout = 3000;
-        Method invokeToLeaderMethod = JRaftServer.class.getDeclaredMethod("invokeToLeader",
-                String.class, Message.class, int.class, FailoverClosure.class);
+        Method invokeToLeaderMethod = JRaftServer.class.getDeclaredMethod("invokeToLeader", String.class, Message.class,
+                int.class, FailoverClosure.class);
         invokeToLeaderMethod.setAccessible(true);
         invokeToLeaderMethod.invoke(server, groupId, this.readRequest, timeout, null);
         verify(cliClientServiceMock).getRpcClient();
-        verify(rpcClient).invokeAsync(eq(peerId1.getEndpoint()), eq(readRequest), any(InvokeCallback.class), any(long.class));
+        verify(rpcClient).invokeAsync(eq(peerId1.getEndpoint()), eq(readRequest), any(InvokeCallback.class),
+                any(long.class));
     }
     
     @Test
-    public void testRefreshRouteTable() {
+    void testRefreshRouteTable() {
         server.refreshRouteTable(groupId);
-        verify(cliClientServiceMock, times(2)).connect(peerId1.getEndpoint());
-        verify(cliClientServiceMock).getLeader(eq(peerId1.getEndpoint()), any(CliRequests.GetLeaderRequest.class), eq(null));
+        verify(cliClientServiceMock, times(1)).connect(peerId1.getEndpoint());
+        verify(cliClientServiceMock).getLeader(eq(peerId1.getEndpoint()), any(CliRequests.GetLeaderRequest.class),
+                eq(null));
     }
     
     @Test
-    public void testCommit() throws NoSuchFieldException, IllegalAccessException, TimeoutException, InterruptedException {
+    void testCommit() throws NoSuchFieldException, IllegalAccessException, TimeoutException, InterruptedException {
         WriteRequest.Builder writeRequestBuilder = WriteRequest.newBuilder();
         WriteRequest writeRequest = writeRequestBuilder.build();
-    
+        
         // No group is set, and make sure that an IllegalArgumentException will be thrown.
         CompletableFuture<Response> future = server.commit(groupId, writeRequest, this.future);
         verify(future).completeExceptionally(any(IllegalArgumentException.class));
@@ -256,10 +264,10 @@ public class JRaftServerTest {
         Field stateField = NodeImpl.class.getDeclaredField("state");
         stateField.setAccessible(true);
         stateField.set(node, State.STATE_LEADER);
-    
+        
         server.commit(groupId, writeRequest, future);
         verify(cliClientServiceMock, never()).getRpcClient();
-    
+        
         // make the node follower and verify the invokeToLeader is called.
         node = (NodeImpl) server.findNodeByGroup(groupId);
         stateField.setAccessible(true);
@@ -271,14 +279,14 @@ public class JRaftServerTest {
     }
     
     @Test
-    public void testRegisterSelfToCluster() {
+    void testRegisterSelfToCluster() {
         PeerId selfPeerId = new PeerId("4.4.4.4", 8080);
         server.registerSelfToCluster(groupId, selfPeerId, conf);
         verify(cliServiceMock).addPeer(groupId, conf, selfPeerId);
     }
     
     @Test
-    public void testPeerChange() {
+    void testPeerChange() {
         AtomicBoolean changed = new AtomicBoolean(false);
         
         JRaftMaintainService service = new JRaftMaintainService(server) {
@@ -293,38 +301,47 @@ public class JRaftServerTest {
                 Member.builder().ip("127.0.0.1").port(80).build(), Member.builder().ip("127.0.0.2").port(81).build(),
                 Member.builder().ip("127.0.0.3").port(82).build());
         server.peerChange(service, ProtocolManager.toCPMembersInfo(firstEvent));
-        Assert.assertFalse(changed.get());
+        assertFalse(changed.get());
         changed.set(false);
         
         Collection<Member> secondEvent = Arrays.asList(Member.builder().ip("1.1.1.1").port(7848).build(),
                 Member.builder().ip("127.0.0.1").port(80).build(), Member.builder().ip("127.0.0.2").port(81).build(),
                 Member.builder().ip("127.0.0.4").port(83).build());
         server.peerChange(service, ProtocolManager.toCPMembersInfo(secondEvent));
-        Assert.assertTrue(changed.get());
+        assertTrue(changed.get());
         changed.set(false);
         
         Collection<Member> thirdEvent = Arrays.asList(Member.builder().ip("1.1.1.1").port(7848).build(),
-                Member.builder().ip("127.0.0.2").port(81).build(),
-                Member.builder().ip("127.0.0.5").port(82).build());
+                Member.builder().ip("127.0.0.2").port(81).build(), Member.builder().ip("127.0.0.5").port(82).build());
         server.peerChange(service, ProtocolManager.toCPMembersInfo(thirdEvent));
-        Assert.assertTrue(changed.get());
+        assertTrue(changed.get());
         changed.set(false);
         
         Collection<Member> fourEvent = Arrays.asList(Member.builder().ip("1.1.1.1").port(7848).build(),
                 Member.builder().ip("127.0.0.1").port(80).build());
         server.peerChange(service, ProtocolManager.toCPMembersInfo(fourEvent));
-        Assert.assertTrue(changed.get());
+        assertTrue(changed.get());
         changed.set(false);
         
         Collection<Member> fiveEvent = Arrays.asList(Member.builder().ip("1.1.1.1").port(7848).build(),
                 Member.builder().ip("127.0.0.1").port(80).build(), Member.builder().ip("127.0.0.3").port(81).build());
         server.peerChange(service, ProtocolManager.toCPMembersInfo(fiveEvent));
-        Assert.assertFalse(changed.get());
+        assertFalse(changed.get());
         changed.set(false);
     }
     
-    @After
-    public void shutdown() {
+    @Test
+    void testIsReady() {
+        assertTrue(server.isReady());
+        config.setStrictMode(true);
+        ((Collection<RequestProcessor4CP>) ReflectionTestUtils.getField(server, "processors")).add(mockProcessor4CP);
+        assertTrue(server.isReady());
+        setLeaderAs(null);
+        assertFalse(server.isReady());
+    }
+    
+    @AfterEach
+    void shutdown() {
         server.shutdown();
     }
     

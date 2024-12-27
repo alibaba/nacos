@@ -48,6 +48,7 @@ import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER;
@@ -72,7 +73,7 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
     /**
      * The constructor sets the dependency injection order.
      *
-     * @param databaseOperate {@link EmbeddedStoragePersistServiceImpl}
+     * @param databaseOperate databaseOperate.
      */
     public EmbeddedConfigInfoTagPersistServiceImpl(DatabaseOperate databaseOperate) {
         this.databaseOperate = databaseOperate;
@@ -103,8 +104,7 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
     }
     
     private ConfigOperateResult getTagOperateResult(String dataId, String group, String tenant, String tag) {
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        
+        String tenantTmp = StringUtils.defaultEmptyIfBlank(tenant);
         ConfigInfoStateWrapper configInfo4Tag = this.findConfigInfo4TagState(dataId, group, tenantTmp, tag);
         if (configInfo4Tag == null) {
             return new ConfigOperateResult(false);
@@ -115,8 +115,8 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
     
     @Override
     public ConfigOperateResult addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser) {
-        String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
-        String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+        String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
+        String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         
         configInfo.setTenant(tenantTmp);
@@ -147,7 +147,7 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
     @Override
     public ConfigOperateResult insertOrUpdateTag(final ConfigInfo configInfo, final String tag, final String srcIp,
             final String srcUser) {
-        if (findConfigInfo4Tag(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(), tag) == null) {
+        if (findConfigInfo4TagState(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(), tag) == null) {
             return addConfigInfo4Tag(configInfo, tag, srcIp, srcUser);
         } else {
             return updateConfigInfo4Tag(configInfo, tag, srcIp, srcUser);
@@ -157,7 +157,7 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
     @Override
     public ConfigOperateResult insertOrUpdateTagCas(final ConfigInfo configInfo, final String tag, final String srcIp,
             final String srcUser) {
-        if (findConfigInfo4Tag(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(), tag) == null) {
+        if (findConfigInfo4TagState(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(), tag) == null) {
             return addConfigInfo4Tag(configInfo, tag, srcIp, srcUser);
         } else {
             return updateConfigInfo4TagCas(configInfo, tag, srcIp, srcUser);
@@ -186,8 +186,8 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
     
     @Override
     public ConfigOperateResult updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser) {
-        String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
-        String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+        String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
+        String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         
         configInfo.setTenant(tenantTmp);
@@ -219,8 +219,8 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
     @Override
     public ConfigOperateResult updateConfigInfo4TagCas(ConfigInfo configInfo, String tag, String srcIp,
             String srcUser) {
-        String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
-        String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+        String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
+        String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         
         configInfo.setTenant(tenantTmp);
@@ -248,7 +248,7 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
             final MapperResult mapperResult = configInfoTagMapper.updateConfigInfo4TagCas(context);
             
             EmbeddedStorageContextUtils.onModifyConfigTagInfo(configInfo, tagTmp, srcIp, time);
-            EmbeddedStorageContextHolder.addSqlContext(mapperResult.getSql(), mapperResult.getParamList());
+            EmbeddedStorageContextHolder.addSqlContext(mapperResult.getSql(), mapperResult.getParamList().toArray());
             
             Boolean success = databaseOperate.blockUpdate();
             if (success) {
@@ -270,8 +270,8 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
         ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO_TAG);
         final String sql = configInfoTagMapper.select(
-                Arrays.asList("id", "data_id", "group_id", "tenant_id", "tag_id", "app_name", "content"),
-                Arrays.asList("data_id", "group_id", "tenant_id", "tag_id"));
+                Arrays.asList("id", "data_id", "group_id", "tenant_id", "tag_id", "app_name", "content",
+                        "gmt_modified"), Arrays.asList("data_id", "group_id", "tenant_id", "tag_id"));
         
         return databaseOperate.queryOne(sql, new Object[] {dataId, group, tenantTmp, tagTmp},
                 CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER);
@@ -309,7 +309,7 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO_TAG);
-        final String sql = configInfoTagMapper.select(Arrays.asList("tag_id"),
+        final String sql = configInfoTagMapper.select(Collections.singletonList("tag_id"),
                 Arrays.asList("data_id", "group_id", "tenant_id"));
         
         return databaseOperate.queryMany(sql, new Object[] {dataId, group, tenantTmp}, String.class);

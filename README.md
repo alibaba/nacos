@@ -13,7 +13,7 @@
 
 Nacos (official site: [nacos.io](https://nacos.io)) is an easy-to-use platform designed for dynamic service discovery and configuration and service management. It helps you to build cloud native applications and microservices platform easily.
 
-Service is a first-class citizen in Nacos. Nacos supports almost all type of services，for example，[Dubbo/gRPC service](https://nacos.io/en-us/docs/use-nacos-with-dubbo.html), [Spring Cloud RESTFul service](https://nacos.io/en-us/docs/use-nacos-with-springcloud.html) or [Kubernetes service](https://nacos.io/en-us/docs/use-nacos-with-kubernetes.html).
+Service is a first-class citizen in Nacos. Nacos supports almost all type of services，for example，[Dubbo/gRPC service](https://nacos.io/docs/latest/ecology/use-nacos-with-dubbo/), [Spring Cloud RESTFul service](https://nacos.io/docs/latest/ecology/use-nacos-with-spring-cloud/) or [Kubernetes service](https://nacos.io/docs/latest/quickstart/quick-start-kubernetes/).
 
 Nacos provides four major functions.
 
@@ -68,25 +68,25 @@ On the **Windows** platform, run the following command to start server with stan
 startup.cmd -m standalone
 ```
 
-For more details, see [quick-start.](https://nacos.io/en-us/docs/quick-start.html)
+For more details, see [quick-start.](https://nacos.io/docs/latest/quickstart/quick-start/)
 
 ## Quick start for other open-source projects:
-* [Quick start with Nacos command and console](https://nacos.io/en-us/docs/quick-start.html)
+* [Quick start with Nacos command and console](https://nacos.io/docs/latest/quickstart/quick-start/)
 
-* [Quick start with dubbo](https://nacos.io/en-us/docs/use-nacos-with-dubbo.html)
+* [Quick start with dubbo](https://nacos.io/docs/latest/ecology/use-nacos-with-dubbo/)
 
-* [Quick start with spring cloud](https://nacos.io/en-us/docs/quick-start-spring-cloud.html)
+* [Quick start with spring cloud](https://nacos.io/docs/latest/ecology/use-nacos-with-spring-cloud/)
 
-* [Quick start with kubernetes](https://nacos.io/en-us/docs/use-nacos-with-kubernetes.html)
+* [Quick start with kubernetes](https://nacos.io/docs/latest/quickstart/quick-start-kubernetes/)
 
 
 ## Documentation
 
-You can view the full documentation from the [Nacos website](https://nacos.io/en-us/docs/v2/what-is-nacos.html).
+You can view the full documentation from the [Nacos website](https://nacos.io/docs/latest/overview/).
 
-You can also read this online eBook from the [NACOS ARCHITECTURE & PRINCIPLES](https://www.yuque.com/nacos/ebook/kbyo6n).
+You can also read this online eBook from the [NACOS ARCHITECTURE & PRINCIPLES](https://nacos.io/docs/ebook/kbyo6n/).
 
-All the latest and long-term notice can also be found here from [Github notice issue](https://github.com/alibaba/nacos/labels/notice).
+All the latest and long-term notice can also be found here from [GitHub notice issue](https://github.com/alibaba/nacos/labels/notice).
 
 ## Contributing
 
@@ -121,19 +121,21 @@ Contributors are welcomed to join Nacos project. Please check [CONTRIBUTING](./C
      * commits-nacos@googlegroups.com: Commits notice, very high frequency.
 * Join us from DingDing(Group 1: 21708933(full), Group 2: 30438813(full), Group 3: 31222241(full), Group 4: 12810027056). 
 
- ![Nacos](https://img.alicdn.com/imgextra/i1/O1CN01ULSVXu1DRbANwVC6r_!!6000000000213-2-tps-666-884.png)
+
+<img src="https://img.alicdn.com/imgextra/i4/O1CN01MI7re41xTrZNdB7Yv_!!6000000006445-0-tps-974-1228.jpg" width="500">
 
 ## Enterprise Service
 If you need Nacos enterprise service support, or purchase cloud product services, you can join the discussion by scanning the following DingTalk group. It can also be directly activated and used through the microservice engine (MSE) provided by Alibaba Cloud.
 https://cn.aliyun.com/product/aliware/mse?spm=nacos-website.topbar.0.0.0
 
-![image](https://user-images.githubusercontent.com/17695352/128659442-65b030b8-c5f4-4bb7-baa2-e5b3ef0cbc15.png)
+<img src="https://img.alicdn.com/imgextra/i3/O1CN01RTfN7q1KUzX4TcH08_!!6000000001168-2-tps-864-814.png" width="500">
+
 
 ## Download
 
-- [Github Release](https://github.com/alibaba/nacos/releases)
-- [Baidu Netdisk](https://pan.baidu.com/s/1186nmlqPGows9gUZKAx8Zw) Fetch Code : `rest`
-
+- [Nacos Official Website](https://nacos.io/download/nacos-server)
+- [GitHub Release](https://github.com/alibaba/nacos/releases)
+  
 ## Who is using
 
 These are only part of the companies using Nacos, for reference only. If you are using Nacos, please [add your company here](https://github.com/alibaba/nacos/issues/273) to tell us your scenario to make Nacos better.

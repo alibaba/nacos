@@ -27,19 +27,25 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.trace.event.naming.DeregisterServiceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.RegisterServiceTraceEvent;
+import com.alibaba.nacos.common.trace.event.naming.UpdateServiceTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.ServiceForm;
+import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
 import com.alibaba.nacos.naming.pojo.ServiceNameView;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -51,6 +57,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URLDecoder;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -62,6 +69,7 @@ import java.util.Optional;
 @NacosApi
 @RestController
 @RequestMapping(UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_SERVICE_CONTEXT)
+@ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)
 public class ServiceControllerV2 {
     
     private final ServiceOperatorV2Impl serviceOperatorV2;
@@ -77,7 +85,9 @@ public class ServiceControllerV2 {
      * Create a new service. This API will create a persistence service.
      */
     @PostMapping()
+    @TpsControl(pointName = "NamingServiceRegister", name = "HttpNamingServiceRegister")
     @Secured(action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<String> create(ServiceForm serviceForm) throws Exception {
         serviceForm.validate();
         ServiceMetadata serviceMetadata = new ServiceMetadata();
@@ -85,9 +95,8 @@ public class ServiceControllerV2 {
         serviceMetadata.setSelector(parseSelector(serviceForm.getSelector()));
         serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(serviceForm.getMetadata()));
         serviceMetadata.setEphemeral(serviceForm.getEphemeral());
-        serviceOperatorV2.create(Service
-                .newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(), serviceForm.getServiceName(),
-                        serviceForm.getEphemeral()), serviceMetadata);
+        serviceOperatorV2.create(Service.newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(),
+                serviceForm.getServiceName(), serviceForm.getEphemeral()), serviceMetadata);
         NotifyCenter.publishEvent(
                 new RegisterServiceTraceEvent(System.currentTimeMillis(), serviceForm.getNamespaceId(),
                         serviceForm.getGroupName(), serviceForm.getServiceName()));
@@ -98,7 +107,9 @@ public class ServiceControllerV2 {
      * Remove service.
      */
     @DeleteMapping()
+    @TpsControl(pointName = "NamingServiceDeregister", name = "HttpNamingServiceDeregister")
     @Secured(action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<String> remove(
             @RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam("serviceName") String serviceName,
@@ -114,14 +125,16 @@ public class ServiceControllerV2 {
      * Get detail of service.
      */
     @GetMapping()
+    @TpsControl(pointName = "NamingServiceQuery", name = "HttpNamingServiceQuery")
     @Secured(action = ActionTypes.READ)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<ServiceDetailInfo> detail(
             @RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam("serviceName") String serviceName,
             @RequestParam(value = "groupName", defaultValue = Constants.DEFAULT_GROUP) String groupName)
             throws Exception {
-        ServiceDetailInfo result = serviceOperatorV2
-                .queryService(Service.newService(namespaceId, groupName, serviceName));
+        ServiceDetailInfo result = serviceOperatorV2.queryService(
+                Service.newService(namespaceId, groupName, serviceName));
         return Result.success(result);
     }
     
@@ -129,7 +142,9 @@ public class ServiceControllerV2 {
      * List all service names.
      */
     @GetMapping("/list")
+    @TpsControl(pointName = "NamingServiceListQuery", name = "HttpNamingServiceListQuery")
     @Secured(action = ActionTypes.READ)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<ServiceNameView> list(
             @RequestParam(value = "namespaceId", required = false, defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam(value = "groupName", required = false, defaultValue = Constants.DEFAULT_GROUP) String groupName,
@@ -149,16 +164,21 @@ public class ServiceControllerV2 {
      * Update service.
      */
     @PutMapping()
+    @TpsControl(pointName = "NamingServiceUpdate", name = "HttpNamingServiceUpdate")
     @Secured(action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<String> update(ServiceForm serviceForm) throws Exception {
         serviceForm.validate();
+        Map<String, String> metadata = UtilsAndCommons.parseMetadata(serviceForm.getMetadata());
         ServiceMetadata serviceMetadata = new ServiceMetadata();
         serviceMetadata.setProtectThreshold(serviceForm.getProtectThreshold());
-        serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(serviceForm.getMetadata()));
+        serviceMetadata.setExtendData(metadata);
         serviceMetadata.setSelector(parseSelector(serviceForm.getSelector()));
-        Service service = Service
-                .newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(), serviceForm.getServiceName());
+        Service service = Service.newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(),
+                serviceForm.getServiceName());
         serviceOperatorV2.update(service, serviceMetadata);
+        NotifyCenter.publishEvent(new UpdateServiceTraceEvent(System.currentTimeMillis(), serviceForm.getNamespaceId(),
+                serviceForm.getGroupName(), serviceForm.getServiceName(), metadata));
         return Result.success("ok");
     }
     

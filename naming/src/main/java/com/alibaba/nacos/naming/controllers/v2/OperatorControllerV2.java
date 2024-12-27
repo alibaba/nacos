@@ -21,6 +21,8 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
 import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
@@ -31,7 +33,9 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.UpdateSwitchForm;
 import com.alibaba.nacos.naming.model.vo.MetricsInfoVo;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
+import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -52,6 +56,7 @@ import java.util.Collection;
 @RestController
 @RequestMapping({UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT,
         UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + "/ops"})
+@ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)
 public class OperatorControllerV2 {
     
     private final SwitchManager switchManager;
@@ -76,6 +81,7 @@ public class OperatorControllerV2 {
      * @return switchDomain
      */
     @GetMapping("/switches")
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<SwitchDomain> switches() {
         return Result.success(switchDomain);
     }
@@ -89,6 +95,7 @@ public class OperatorControllerV2 {
      */
     @Secured(resource = "naming/switches", action = ActionTypes.WRITE)
     @PutMapping("/switches")
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<String> updateSwitch(UpdateSwitchForm updateSwitchForm) throws Exception {
         updateSwitchForm.validate();
         try {
@@ -108,6 +115,7 @@ public class OperatorControllerV2 {
      * @return metrics information
      */
     @GetMapping("/metrics")
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<MetricsInfoVo> metrics(
             @RequestParam(value = "onlyStatus", required = false, defaultValue = "true") Boolean onlyStatus) {
         MetricsInfoVo metricsInfoVo = new MetricsInfoVo();

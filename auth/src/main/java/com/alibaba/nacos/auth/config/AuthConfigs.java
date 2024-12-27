@@ -58,10 +58,16 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     private static Boolean cachingEnabled = null;
     
     /**
-     * Whether auth enabled.
+     * Whether server auth enabled.
      */
     @Value("${" + Constants.Auth.NACOS_CORE_AUTH_ENABLED + ":false}")
     private boolean authEnabled;
+    
+    /**
+     * Whether console auth enabled.
+     */
+    @Value("${" + Constants.Auth.NACOS_CORE_AUTH_CONSOLE_ENABLED + ":true}")
+    private boolean consoleAuthEnabled;
     
     /**
      * Which auth system is in use.
@@ -78,6 +84,8 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     @Value("${" + Constants.Auth.NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE + ":false}")
     private boolean enableUserAgentAuthWhite;
     
+    private boolean hasGlobalAdminRole;
+    
     private Map<String, Properties> authPluginProperties = new HashMap<>();
     
     public AuthConfigs() {
@@ -92,11 +100,14 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
      */
     @PostConstruct
     public void validate() throws NacosException {
-        if (!authEnabled) {
+        if (!authEnabled && !consoleAuthEnabled) {
             return;
         }
         if (StringUtils.isEmpty(nacosAuthSystemType)) {
             throw new NacosException(AuthErrorCode.INVALID_TYPE.getCode(), AuthErrorCode.INVALID_TYPE.getMsg());
+        }
+        if (EnvUtil.getStandaloneMode()) {
+            return;
         }
         if (StringUtils.isEmpty(serverIdentityKey) || StringUtils.isEmpty(serverIdentityValue)) {
             throw new NacosException(AuthErrorCode.EMPTY_IDENTITY.getCode(), AuthErrorCode.EMPTY_IDENTITY.getMsg());
@@ -107,17 +118,27 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
         try {
             Map<String, Properties> newProperties = new HashMap<>(1);
             Properties properties = PropertiesUtil.getPropertiesWithPrefix(EnvUtil.getEnvironment(), PREFIX);
-            for (String each : properties.stringPropertyNames()) {
-                int typeIndex = each.indexOf('.');
-                String type = each.substring(0, typeIndex);
-                String subKey = each.substring(typeIndex + 1);
-                newProperties.computeIfAbsent(type, key -> new Properties())
-                        .setProperty(subKey, properties.getProperty(each));
+            if (properties != null) {
+                for (String each : properties.stringPropertyNames()) {
+                    int typeIndex = each.indexOf('.');
+                    String type = each.substring(0, typeIndex);
+                    String subKey = each.substring(typeIndex + 1);
+                    newProperties.computeIfAbsent(type, key -> new Properties())
+                            .setProperty(subKey, properties.getProperty(each));
+                }
             }
             authPluginProperties = newProperties;
         } catch (Exception e) {
             LOGGER.warn("Refresh plugin properties failed ", e);
         }
+    }
+    
+    public boolean isHasGlobalAdminRole() {
+        return hasGlobalAdminRole;
+    }
+    
+    public void setHasGlobalAdminRole(boolean hasGlobalAdminRole) {
+        this.hasGlobalAdminRole = hasGlobalAdminRole;
     }
     
     public String getNacosAuthSystemType() {
@@ -137,14 +158,23 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     }
     
     /**
-     * auth function is open.
+     * console auth function is open.
      *
-     * @return auth function is open
+     * @return console auth function is open
+     */
+    public boolean isConsoleAuthEnabled() {
+        return consoleAuthEnabled;
+    }
+    
+    /**
+     * server auth function is open.
+     *
+     * @return server auth function is open
      */
     public boolean isAuthEnabled() {
         return authEnabled;
     }
-    
+
     /**
      * Whether permission information can be cached.
      *
@@ -174,11 +204,12 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     public void onEvent(ServerConfigChangeEvent event) {
         try {
             authEnabled = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLED, Boolean.class, false);
+            consoleAuthEnabled = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_CONSOLE_ENABLED, Boolean.class, true);
             cachingEnabled = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_CACHING_ENABLED, Boolean.class, true);
             serverIdentityKey = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "");
             serverIdentityValue = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "");
-            enableUserAgentAuthWhite = EnvUtil
-                    .getProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE, Boolean.class, false);
+            enableUserAgentAuthWhite = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE,
+                    Boolean.class, false);
             nacosAuthSystemType = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "");
             refreshPluginProperties();
             ModuleStateHolder.getInstance().getModuleState(AuthModuleStateBuilder.AUTH_MODULE)

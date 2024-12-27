@@ -23,14 +23,13 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Arrays;
@@ -38,7 +37,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * {@link NacosClusterController} unit test.
@@ -46,8 +47,8 @@ import static org.junit.Assert.assertEquals;
  * @author chenglu
  * @date 2021-07-07 22:53
  */
-@RunWith(MockitoJUnitRunner.class)
-public class NacosClusterControllerTest {
+@ExtendWith(MockitoExtension.class)
+class NacosClusterControllerTest {
     
     @InjectMocks
     private NacosClusterController nacosClusterController;
@@ -55,13 +56,13 @@ public class NacosClusterControllerTest {
     @Mock
     private ServerMemberManager serverMemberManager;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         EnvUtil.setEnvironment(new MockEnvironment());
     }
     
     @Test
-    public void testSelf() {
+    void testSelf() {
         Member self = new Member();
         Mockito.when(serverMemberManager.getSelf()).thenReturn(self);
         
@@ -70,7 +71,7 @@ public class NacosClusterControllerTest {
     }
     
     @Test
-    public void testListNodes() {
+    void testListNodes() {
         Member member1 = new Member();
         member1.setIp("1.1.1.1");
         List<Member> members = Arrays.asList(member1);
@@ -81,7 +82,7 @@ public class NacosClusterControllerTest {
     }
     
     @Test
-    public void testListSimpleNodes() {
+    void testListSimpleNodes() {
         Mockito.when(serverMemberManager.getMemberAddressInfos()).thenReturn(Collections.singleton("1.1.1.1"));
         
         RestResult<Collection<String>> result = nacosClusterController.listSimpleNodes();
@@ -89,7 +90,7 @@ public class NacosClusterControllerTest {
     }
     
     @Test
-    public void testGetHealth() {
+    void testGetHealth() {
         Member self = new Member();
         self.setState(NodeState.UP);
         Mockito.when(serverMemberManager.getSelf()).thenReturn(self);
@@ -99,7 +100,7 @@ public class NacosClusterControllerTest {
     }
     
     @Test
-    public void testReport() {
+    void testReport() {
         Member self = new Member();
         Mockito.when(serverMemberManager.update(Mockito.any())).thenReturn(true);
         Mockito.when(serverMemberManager.getSelf()).thenReturn(self);
@@ -113,15 +114,15 @@ public class NacosClusterControllerTest {
     }
     
     @Test
-    public void testSwitchLookup() {
+    void testSwitchLookup() {
         RestResult<String> result = nacosClusterController.switchLookup("test");
-        Assert.assertTrue(result.ok());
+        assertTrue(result.ok());
     }
     
     @Test
-    public void testLeave() throws Exception {
+    void testLeave() throws Exception {
         RestResult<String> result = nacosClusterController.leave(Collections.singletonList("1.1.1.1"), true);
-        Assert.assertFalse(result.ok());
+        assertFalse(result.ok());
         assertEquals(405, result.getCode());
     }
 }

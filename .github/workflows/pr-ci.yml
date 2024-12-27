@@ -25,12 +25,13 @@ jobs:
         name: Upload distribution tar
         with:
           name: nacos
-          path: distribution/target/nacos-server-*-SNAPSHOT.tar.gz
+          path: distribution/target/nacos-server-*.tar.gz
       - name: Save PR number
         run: |
           mkdir -p ./pr
-          echo ${{ github.event.number }} > ./pr/NR
-      - uses: actions/upload-artifact@v2
+          echo ${{ github.event.pull_request.number }} > ./pr/pr.txt
+      - uses: actions/upload-artifact@v3
+        name: Upload PR number
         with:
           name: pr
-          path: pr/
+          path: pr/pr.txt

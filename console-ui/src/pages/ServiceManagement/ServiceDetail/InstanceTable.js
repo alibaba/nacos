@@ -69,7 +69,7 @@ class InstanceTable extends React.Component {
     if (!clusterName) return;
     const { pageSize, pageNum } = this.state;
     request({
-      url: 'v1/ns/catalog/instances',
+      url: 'v3/console/ns/instance/list',
       data: {
         serviceName,
         clusterName,
@@ -78,7 +78,14 @@ class InstanceTable extends React.Component {
         pageNo: pageNum,
       },
       beforeSend: () => this.openLoading(),
-      success: instance => this.setState({ instance }),
+      success: ({ data }) => {
+        const instance = {
+          list: data.instances || [],
+          count: data.count || 0,
+        };
+        this.setState({ instance });
+      },
+      error: e => Message.error(e.responseText || 'error'),
       complete: () => this.closeLoading(),
     });
   }
@@ -93,7 +100,7 @@ class InstanceTable extends React.Component {
     const { clusterName, serviceName, groupName } = this.props;
     request({
       method: 'PUT',
-      url: 'v1/ns/instance',
+      url: 'v3/console/ns/instance',
       data: {
         serviceName,
         clusterName,
@@ -105,9 +112,9 @@ class InstanceTable extends React.Component {
         enabled: !enabled,
         metadata: JSON.stringify(metadata),
       },
-      dataType: 'text',
+      dataType: 'json',
       beforeSend: () => this.openLoading(),
-      success: () => {
+      success: ({ data }) => {
         const newVal = Object.assign({}, instance);
         newVal.list[index].enabled = !enabled;
         this.setState({ instance: newVal });
@@ -162,7 +169,7 @@ class InstanceTable extends React.Component {
             cell={(metadata = {}) => {
               if (!metadata) return null;
               return Object.keys(metadata).map(k => (
-                <p>
+                <p key={k}>
                   {k}={metadata[k]}
                 </p>
               ));

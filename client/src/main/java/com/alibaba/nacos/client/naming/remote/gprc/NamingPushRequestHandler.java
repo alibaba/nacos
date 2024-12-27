@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.cache.FuzzyWatchServiceListHolder;
+import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
 
 /**
@@ -43,7 +44,7 @@ public class NamingPushRequestHandler implements ServerRequestHandler {
     }
     
     @Override
-    public Response requestReply(Request request) {
+    public Response requestReply(Request request, Connection connection) {
         if (request instanceof NotifySubscriberRequest) {
             NotifySubscriberRequest notifyRequest = (NotifySubscriberRequest) request;
             serviceInfoHolder.processServiceInfo(notifyRequest.getServiceInfo());

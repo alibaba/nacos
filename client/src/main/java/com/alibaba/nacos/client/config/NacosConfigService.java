@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.filter.IConfigFilter;
+import com.alibaba.nacos.api.config.listener.AbstractFuzzyListenListener;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
@@ -28,20 +29,26 @@ import com.alibaba.nacos.client.config.filter.impl.ConfigRequest;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
+import com.alibaba.nacos.client.config.impl.FuzzyListenContext;
+import com.alibaba.nacos.client.config.impl.ConfigServerListManager;
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
 import com.alibaba.nacos.client.config.impl.LocalEncryptedDataKeyProcessor;
-import com.alibaba.nacos.client.config.impl.ServerListManager;
-import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.client.utils.PreInitUtils;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 
-import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Properties;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+
+import static com.alibaba.nacos.api.common.Constants.FUZZY_LISTEN_PATTERN_WILDCARD;
 
 /**
  * Config Impl.
@@ -73,12 +80,14 @@ public class NacosConfigService implements ConfigService {
     private final ConfigFilterChainManager configFilterChainManager;
     
     public NacosConfigService(Properties properties) throws NacosException {
+        PreInitUtils.asyncPreLoadCostComponent();
         final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        LOGGER.info(ParamUtil.getInputParameters(clientProperties.asProperties()));
         ValidatorUtils.checkInitParam(clientProperties);
         
         initNamespace(clientProperties);
         this.configFilterChainManager = new ConfigFilterChainManager(clientProperties.asProperties());
-        ServerListManager serverListManager = new ServerListManager(clientProperties);
+        ConfigServerListManager serverListManager = new ConfigServerListManager(clientProperties);
         serverListManager.start();
         
         this.worker = new ClientWorker(this.configFilterChainManager, serverListManager, clientProperties);
@@ -105,7 +114,8 @@ public class NacosConfigService implements ConfigService {
                 .queryConfig(dataId, group, worker.getAgent().getTenant(), timeoutMs, false);
         String content = configResponse.getContent();
         String encryptedDataKey = configResponse.getEncryptedDataKey();
-        worker.addTenantListenersWithContent(dataId, group, content, encryptedDataKey, Arrays.asList(listener));
+        worker.addTenantListenersWithContent(dataId, group, content, encryptedDataKey,
+                Collections.singletonList(listener));
         
         // get a decryptContent, fix https://github.com/alibaba/nacos/issues/7039
         ConfigResponse cr = new ConfigResponse();
@@ -119,7 +129,88 @@ public class NacosConfigService implements ConfigService {
     
     @Override
     public void addListener(String dataId, String group, Listener listener) throws NacosException {
-        worker.addTenantListeners(dataId, group, Arrays.asList(listener));
+        worker.addTenantListeners(dataId, group, Collections.singletonList(listener));
+    }
+    
+    @Override
+    public void addFuzzyListener(String fixedGroupName, AbstractFuzzyListenListener listener) throws NacosException {
+        doFuzzyListen(FUZZY_LISTEN_PATTERN_WILDCARD, fixedGroupName, listener);
+    }
+    
+    @Override
+    public void addFuzzyListener(String dataIdPattern, String fixedGroupName, AbstractFuzzyListenListener listener)
+            throws NacosException {
+        // only support prefix match right now
+        if (!dataIdPattern.endsWith(FUZZY_LISTEN_PATTERN_WILDCARD)) {
+            if (dataIdPattern.startsWith(FUZZY_LISTEN_PATTERN_WILDCARD)) {
+                throw new UnsupportedOperationException("Suffix matching for dataId is not supported yet."
+                        + " It will be supported in future updates if needed.");
+            } else {
+                throw new UnsupportedOperationException(
+                        "Illegal dataId pattern, please read the documentation and pass a valid pattern.");
+            }
+        }
+        doFuzzyListen(dataIdPattern, fixedGroupName, listener);
+    }
+    
+    @Override
+    public CompletableFuture<Collection<String>> addFuzzyListenerAndGetConfigs(String fixedGroupName,
+            AbstractFuzzyListenListener listener) throws NacosException {
+        return doAddFuzzyListenerAndGetConfigs(FUZZY_LISTEN_PATTERN_WILDCARD, fixedGroupName, listener);
+    }
+    
+    @Override
+    public CompletableFuture<Collection<String>> addFuzzyListenerAndGetConfigs(String dataIdPattern,
+            String fixedGroupName, AbstractFuzzyListenListener listener) throws NacosException {
+        return doAddFuzzyListenerAndGetConfigs(dataIdPattern, fixedGroupName, listener);
+    }
+    
+    private CompletableFuture<Collection<String>> doAddFuzzyListenerAndGetConfigs(String dataIdPattern,
+            String fixedGroupName, AbstractFuzzyListenListener listener) throws NacosException {
+        CompletableFuture<Collection<String>> future = new CompletableFuture<>();
+        if (listener == null) {
+            future.completeExceptionally(new IllegalArgumentException("Listener cannot be null"));
+            return future;
+        }
+        addFuzzyListener(dataIdPattern, fixedGroupName, listener);
+        FuzzyListenContext context = worker.getFuzzyListenContext(dataIdPattern, fixedGroupName);
+        if (context == null) {
+            future.complete(Collections.emptyList());
+            return future;
+        }
+        return context.waitForInitializationComplete(future);
+    }
+    
+    private void doFuzzyListen(String dataIdPattern, String fixedGroupName, AbstractFuzzyListenListener listener)
+            throws NacosException {
+        if (listener == null) {
+            return;
+        }
+        listener.setUuid(UUID.randomUUID().toString());
+        if (!worker.containsPatternMatchCache(dataIdPattern, fixedGroupName)) {
+            worker.addTenantFuzzyListenListens(dataIdPattern, fixedGroupName, Collections.singletonList(listener));
+        } else {
+            worker.duplicateFuzzyListenInit(dataIdPattern, fixedGroupName, listener);
+        }
+    }
+    
+    @Override
+    public void cancelFuzzyListen(String fixedGroupName, AbstractFuzzyListenListener listener) throws NacosException {
+        cancelFuzzyListen(FUZZY_LISTEN_PATTERN_WILDCARD, fixedGroupName, listener);
+    }
+    
+    @Override
+    public void cancelFuzzyListen(String dataIdPattern, String fixedGroupName, AbstractFuzzyListenListener listener)
+            throws NacosException {
+        doCancelFuzzyListen(dataIdPattern, fixedGroupName, listener);
+    }
+    
+    private void doCancelFuzzyListen(String dataIdPattern, String groupNamePattern,
+            AbstractFuzzyListenListener listener) throws NacosException {
+        if (null == listener) {
+            return;
+        }
+        worker.removeFuzzyListenListener(dataIdPattern, groupNamePattern, listener);
     }
     
     @Override
@@ -170,11 +261,11 @@ public class NacosConfigService implements ConfigService {
         // changing config needed in the same time, while nacos server is down.
         String content = LocalConfigInfoProcessor.getFailover(worker.getAgentName(), dataId, group, tenant);
         if (content != null) {
-            LOGGER.warn("[{}] [get-config] get failover ok, dataId={}, group={}, tenant={}, config={}",
-                    worker.getAgentName(), dataId, group, tenant, ContentUtils.truncateContent(content));
+            LOGGER.warn("[{}] [get-config] get failover ok, dataId={}, group={}, tenant={}",
+                    worker.getAgentName(), dataId, group, tenant);
             cr.setContent(content);
-            String encryptedDataKey = LocalEncryptedDataKeyProcessor
-                    .getEncryptDataKeyFailover(agent.getName(), dataId, group, tenant);
+            String encryptedDataKey = LocalEncryptedDataKeyProcessor.getEncryptDataKeyFailover(agent.getName(), dataId,
+                    group, tenant);
             cr.setEncryptedDataKey(encryptedDataKey);
             configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();
@@ -196,15 +287,15 @@ public class NacosConfigService implements ConfigService {
             LOGGER.warn("[{}] [get-config] get from server error, dataId={}, group={}, tenant={}, msg={}",
                     worker.getAgentName(), dataId, group, tenant, ioe.toString());
         }
-
+        
         content = LocalConfigInfoProcessor.getSnapshot(worker.getAgentName(), dataId, group, tenant);
         if (content != null) {
-            LOGGER.warn("[{}] [get-config] get snapshot ok, dataId={}, group={}, tenant={}, config={}",
-                    worker.getAgentName(), dataId, group, tenant, ContentUtils.truncateContent(content));
+            LOGGER.warn("[{}] [get-config] get snapshot ok, dataId={}, group={}, tenant={}",
+                    worker.getAgentName(), dataId, group, tenant);
         }
         cr.setContent(content);
-        String encryptedDataKey = LocalEncryptedDataKeyProcessor
-                .getEncryptDataKeySnapshot(agent.getName(), dataId, group, tenant);
+        String encryptedDataKey = LocalEncryptedDataKeyProcessor.getEncryptDataKeySnapshot(agent.getName(), dataId,
+                group, tenant);
         cr.setEncryptedDataKey(encryptedDataKey);
         configFilterChainManager.doFilter(null, cr);
         content = cr.getContent();
@@ -236,8 +327,8 @@ public class NacosConfigService implements ConfigService {
         content = cr.getContent();
         String encryptedDataKey = cr.getEncryptedDataKey();
         
-        return worker
-                .publishConfig(dataId, group, tenant, appName, tag, betaIps, content, encryptedDataKey, casMd5, type);
+        return worker.publishConfig(dataId, group, tenant, appName, tag, betaIps, content, encryptedDataKey, casMd5,
+                type);
     }
     
     @Override
@@ -248,12 +339,12 @@ public class NacosConfigService implements ConfigService {
             return DOWN;
         }
     }
-
+    
     @Override
     public void addConfigFilter(IConfigFilter configFilter) {
         configFilterChainManager.addFilter(configFilter);
     }
-
+    
     @Override
     public void shutDown() throws NacosException {
         worker.shutdown();

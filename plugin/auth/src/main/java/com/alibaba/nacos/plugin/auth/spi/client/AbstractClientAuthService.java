@@ -27,7 +27,7 @@ import java.util.List;
  */
 public abstract class AbstractClientAuthService implements ClientAuthService {
     
-    protected List<String> serverList;
+    protected volatile List<String> serverList;
     
     protected NacosRestTemplate nacosRestTemplate;
     

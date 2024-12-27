@@ -18,14 +18,14 @@ package com.alibaba.nacos.common.trace.event.naming;
 
 /**
  * Naming deregister service trace event.
+ *
  * @author yanda
  */
 public class RegisterServiceTraceEvent extends NamingTraceEvent {
     
     private static final long serialVersionUID = -8568231862586636388L;
     
-    public RegisterServiceTraceEvent(long eventTime, String serviceNamespace,
-            String serviceGroup, String serviceName) {
+    public RegisterServiceTraceEvent(long eventTime, String serviceNamespace, String serviceGroup, String serviceName) {
         super("REGISTER_SERVICE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup, serviceName);
     }
 }

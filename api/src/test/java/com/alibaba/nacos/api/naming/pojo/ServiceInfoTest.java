@@ -20,8 +20,8 @@ import com.alibaba.nacos.api.utils.StringUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -30,25 +30,26 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ServiceInfoTest {
+class ServiceInfoTest {
     
     private ObjectMapper mapper;
     
     private ServiceInfo serviceInfo;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         mapper = new ObjectMapper();
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         serviceInfo = new ServiceInfo("G@@testName", "testClusters");
     }
     
     @Test
-    public void testSerialize() throws JsonProcessingException {
+    void testSerialize() throws JsonProcessingException {
         String actual = mapper.writeValueAsString(serviceInfo);
         assertTrue(actual.contains("\"name\":\"G@@testName\""));
         assertTrue(actual.contains("\"clusters\":\"testClusters\""));
@@ -64,7 +65,7 @@ public class ServiceInfoTest {
     }
     
     @Test
-    public void testDeserialize() throws IOException {
+    void testDeserialize() throws IOException {
         String example = "{\"name\":\"G@@testName\",\"clusters\":\"testClusters\",\"cacheMillis\":1000,\"hosts\":[],"
                 + "\"lastRefTime\":0,\"checksum\":\"\",\"allIPs\":false,\"valid\":true,\"groupName\":\"\"}";
         ServiceInfo actual = mapper.readValue(example, ServiceInfo.class);
@@ -82,14 +83,14 @@ public class ServiceInfoTest {
     }
     
     @Test
-    public void testGetKey() {
+    void testGetKey() {
         String key = serviceInfo.getKey();
         assertEquals("G@@testName@@testClusters", key);
         assertEquals("G@@testName@@testClusters", serviceInfo.toString());
     }
     
     @Test
-    public void testGetKeyEncode() {
+    void testGetKeyEncode() {
         String key = serviceInfo.getKeyEncoded();
         String encodeName = null;
         try {
@@ -101,7 +102,7 @@ public class ServiceInfoTest {
     }
     
     @Test
-    public void testServiceInfoConstructor() {
+    void testServiceInfoConstructor() {
         String key1 = "group@@name";
         String key2 = "group@@name@@c2";
         ServiceInfo s1 = new ServiceInfo(key1);
@@ -110,32 +111,34 @@ public class ServiceInfoTest {
         assertEquals(key2, s2.getKey());
     }
     
-    @Test(expected = IllegalArgumentException.class)
-    public void testServiceInfoConstructorWithError() {
-        String key1 = "name";
-        ServiceInfo s1 = new ServiceInfo(key1);
+    @Test
+    void testServiceInfoConstructorWithError() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            String key1 = "name";
+            ServiceInfo s1 = new ServiceInfo(key1);
+        });
     }
     
     @Test
-    public void testValidateForAllIps() {
+    void testValidateForAllIps() {
         serviceInfo.setAllIPs(true);
         assertTrue(serviceInfo.validate());
     }
     
     @Test
-    public void testValidateForNullHosts() {
+    void testValidateForNullHosts() {
         serviceInfo.setHosts(null);
         assertFalse(serviceInfo.validate());
     }
     
     @Test
-    public void testValidateForEmptyHosts() {
+    void testValidateForEmptyHosts() {
         serviceInfo.setHosts(Collections.EMPTY_LIST);
         assertFalse(serviceInfo.validate());
     }
     
     @Test
-    public void testValidateForUnhealthyHosts() {
+    void testValidateForUnhealthyHosts() {
         Instance instance = new Instance();
         instance.setHealthy(false);
         serviceInfo.addHost(instance);
@@ -143,7 +146,7 @@ public class ServiceInfoTest {
     }
     
     @Test
-    public void testValidateForBothUnhealthyAndHealthyHosts() {
+    void testValidateForBothUnhealthyAndHealthyHosts() {
         List<Instance> instanceList = new LinkedList<>();
         Instance instance = new Instance();
         instanceList.add(instance);
@@ -155,7 +158,7 @@ public class ServiceInfoTest {
     }
     
     @Test
-    public void testFromKey() {
+    void testFromKey() {
         String key1 = "group@@name";
         String key2 = "group@@name@@c2";
         ServiceInfo s1 = ServiceInfo.fromKey(key1);
@@ -165,7 +168,7 @@ public class ServiceInfoTest {
     }
     
     @Test
-    public void testSetAndGet() throws JsonProcessingException {
+    void testSetAndGet() throws JsonProcessingException {
         serviceInfo.setReachProtectionThreshold(true);
         serviceInfo.setJsonFromServer(mapper.writeValueAsString(serviceInfo));
         ServiceInfo actual = mapper.readValue(serviceInfo.getJsonFromServer(), ServiceInfo.class);

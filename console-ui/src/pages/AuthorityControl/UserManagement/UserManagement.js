@@ -123,7 +123,7 @@ class UserManagement extends React.Component {
         <Form inline>
           <Form.Item label={locale.username}>
             <Input
-              value={this.username}
+              value={this.state.username || ''}
               htmlType="text"
               placeholder={this.state.defaultFuzzySearch ? locale.defaultFuzzyd : locale.fuzzyd}
               style={{ width: 200 }}
@@ -146,7 +146,11 @@ class UserManagement extends React.Component {
             <Button
               type={'primary'}
               style={{ marginRight: 10 }}
-              onClick={() => this.getUsers()}
+              onClick={() => {
+                this.setState({ pageNo: 1 }, () => {
+                  this.getUsers();
+                });
+              }}
               data-spm-click={'gostr=/aliyun;locaid=dashsearch'}
             >
               {locale.query}

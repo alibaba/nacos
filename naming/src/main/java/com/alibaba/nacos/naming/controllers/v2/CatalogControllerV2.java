@@ -22,9 +22,13 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.naming.core.CatalogServiceV2Impl;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -43,6 +47,7 @@ import java.util.stream.Stream;
  */
 @RestController
 @RequestMapping(UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_CATALOG_CONTEXT)
+@ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)
 public class CatalogControllerV2 {
     
     @Autowired
@@ -61,6 +66,7 @@ public class CatalogControllerV2 {
      */
     @Secured(action = ActionTypes.READ)
     @RequestMapping(value = "/instances")
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/ns/instance/list")
     public Result<ObjectNode> instanceList(
             @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName, @RequestParam(required = false) Boolean healthyOnly,
