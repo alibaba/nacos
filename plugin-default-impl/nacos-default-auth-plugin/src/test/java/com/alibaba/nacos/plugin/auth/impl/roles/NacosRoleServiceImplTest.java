@@ -28,17 +28,26 @@ import com.alibaba.nacos.plugin.auth.impl.persistence.RolePersistService;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 /**
  * NacosRoleServiceImpl Test.
@@ -48,8 +57,10 @@ import java.util.List;
  * @Date: 2022/8/16 17:31
  * @Description: TODO
  */
-@RunWith(MockitoJUnitRunner.class)
-public class NacosRoleServiceImplTest {
+@ExtendWith(MockitoExtension.class)
+class NacosRoleServiceImplTest {
+    
+    Class<NacosRoleServiceImpl> nacosRoleServiceClass;
     
     @Mock
     private AuthConfigs authConfigs;
@@ -66,10 +77,8 @@ public class NacosRoleServiceImplTest {
     @Mock
     private NacosRoleServiceImpl nacosRoleService;
     
-    Class<NacosRoleServiceImpl> nacosRoleServiceClass;
-    
-    @Before
-    public void setup() throws Exception {
+    @BeforeEach
+    void setup() throws Exception {
         nacosRoleService = new NacosRoleServiceImpl();
         nacosRoleServiceClass = NacosRoleServiceImpl.class;
         Field authConfigsFile = nacosRoleServiceClass.getDeclaredField("authConfigs");
@@ -90,107 +99,134 @@ public class NacosRoleServiceImplTest {
     }
     
     @Test
-    public void reload() throws Exception {
+    void reload() throws Exception {
         Method reload = nacosRoleServiceClass.getDeclaredMethod("reload");
         reload.setAccessible(true);
         reload.invoke(nacosRoleService);
     }
     
     @Test
-    public void hasPermission() {
+    void hasPermission() {
         Permission permission = new Permission();
         permission.setAction("rw");
         permission.setResource(Resource.EMPTY_RESOURCE);
         NacosUser nacosUser = new NacosUser();
         nacosUser.setUserName("nacos");
         boolean res = nacosRoleService.hasPermission(nacosUser, permission);
-        Assert.assertFalse(res);
+        assertFalse(res);
         
         Permission permission2 = new Permission();
         permission2.setAction("rw");
-        Resource resource = new Resource("public", "group", AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, "rw", null);
+        Resource resource = new Resource("public", "group", AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, "rw",
+                new Properties());
         permission2.setResource(resource);
         boolean res2 = nacosRoleService.hasPermission(nacosUser, permission2);
-        Assert.assertTrue(res2);
+        assertFalse(res2);
+        resource.getProperties().put(AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, AuthConstants.UPDATE_PASSWORD_ENTRY_POINT);
+        boolean res3 = nacosRoleService.hasPermission(nacosUser, permission2);
+        assertTrue(res3);
     }
     
     @Test
-    public void getRoles() {
+    void getRoles() {
         List<RoleInfo> nacos = nacosRoleService.getRoles("role-admin");
-        Assert.assertEquals(nacos, Collections.emptyList());
+        assertEquals(nacos, Collections.emptyList());
     }
     
     @Test
-    public void getRolesFromDatabase() {
+    void getRolesFromDatabase() {
         Page<RoleInfo> roleInfoPage = nacosRoleService.getRolesFromDatabase("nacos", "ROLE_ADMIN", 1,
                 Integer.MAX_VALUE);
-        Assert.assertEquals(roleInfoPage.getTotalCount(), 0);
+        assertEquals(0, roleInfoPage.getTotalCount());
     }
     
     @Test
-    public void getPermissions() {
+    void getPermissions() {
         boolean cachingEnabled = authConfigs.isCachingEnabled();
-        Assert.assertFalse(cachingEnabled);
+        assertFalse(cachingEnabled);
         List<PermissionInfo> permissions = nacosRoleService.getPermissions("role-admin");
-        Assert.assertEquals(permissions, Collections.emptyList());
+        assertEquals(permissions, Collections.emptyList());
     }
     
     @Test
-    public void getPermissionsByRoleFromDatabase() {
+    void getPermissionsByRoleFromDatabase() {
         Page<PermissionInfo> permissionsByRoleFromDatabase = nacosRoleService.getPermissionsByRoleFromDatabase(
                 "role-admin", 1, Integer.MAX_VALUE);
-        Assert.assertNull(permissionsByRoleFromDatabase);
+        assertNull(permissionsByRoleFromDatabase);
     }
     
     @Test
-    public void addRole() {
+    void addRole() {
         String username = "nacos";
         User userFromDatabase = userDetailsService.getUserFromDatabase(username);
-        Assert.assertNull(userFromDatabase);
+        assertNull(userFromDatabase);
         try {
             nacosRoleService.addRole("role-admin", "nacos");
         } catch (Exception e) {
-            Assert.assertTrue(e.getMessage().contains("user 'nacos' not found!"));
+            assertTrue(e.getMessage().contains("user 'nacos' not found!"));
         }
     }
     
     @Test
-    public void deleteRole() {
+    void deleteRole() {
         try {
             nacosRoleService.deleteRole("role-admin");
         } catch (Exception e) {
-            Assert.assertNull(e);
+            assertNull(e);
         }
     }
     
     @Test
-    public void getPermissionsFromDatabase() {
+    void getPermissionsFromDatabase() {
         Page<PermissionInfo> permissionsFromDatabase = nacosRoleService.getPermissionsFromDatabase("role-admin", 1,
                 Integer.MAX_VALUE);
-        Assert.assertEquals(permissionsFromDatabase.getTotalCount(), 0);
+        assertEquals(0, permissionsFromDatabase.getTotalCount());
     }
     
     @Test
-    public void addPermission() {
+    void addPermission() {
         try {
             nacosRoleService.addPermission("role-admin", "", "rw");
         } catch (Exception e) {
-            Assert.assertTrue(e.getMessage().contains("role role-admin not found!"));
+            assertTrue(e.getMessage().contains("role role-admin not found!"));
         }
     }
     
     @Test
-    public void findRolesLikeRoleName() {
+    void findRolesLikeRoleName() {
         List<String> rolesLikeRoleName = rolePersistService.findRolesLikeRoleName("role-admin");
-        Assert.assertEquals(rolesLikeRoleName, Collections.emptyList());
+        assertEquals(rolesLikeRoleName, Collections.emptyList());
     }
     
     @Test
-    public void joinResource() throws Exception {
+    void joinResource() throws Exception {
         Method method = nacosRoleServiceClass.getDeclaredMethod("joinResource", Resource.class);
         method.setAccessible(true);
         Resource resource = new Resource("public", "group", AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, "rw", null);
         Object invoke = method.invoke(nacosRoleService, new Resource[] {resource});
-        Assert.assertNotNull(invoke);
+        assertNotNull(invoke);
+    }
+    
+    @Test
+    void duplicatePermission() {
+        List<PermissionInfo> permissionInfos = new ArrayList<>();
+        PermissionInfo permissionInfo = new PermissionInfo();
+        permissionInfo.setAction("rw");
+        permissionInfo.setResource("test");
+        permissionInfos.add(permissionInfo);
+        NacosRoleServiceImpl spy = spy(nacosRoleService);
+        when(spy.getPermissions("admin")).thenReturn(permissionInfos);
+        spy.isDuplicatePermission("admin", "test", "r");
+    }
+
+    @Test
+    void isUserBoundToRole() {
+        String role = "TEST";
+        String userName = "nacos";
+        assertFalse(nacosRoleService.isUserBoundToRole("", userName));
+        assertFalse(nacosRoleService.isUserBoundToRole(role, ""));
+        assertFalse(nacosRoleService.isUserBoundToRole("", null));
+        assertFalse(nacosRoleService.isUserBoundToRole(null, ""));
+        assertFalse(nacosRoleService.isUserBoundToRole(role, userName));
     }
 }

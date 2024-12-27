@@ -36,6 +36,7 @@ import RegionGroup from '../../../components/RegionGroup';
 import EditServiceDialog from '../ServiceDetail/EditServiceDialog';
 import ShowServiceCodeing from 'components/ShowCodeing/ShowServiceCodeing';
 import PageTitle from '../../../components/PageTitle';
+import TotalRender from '../../../components/Page/TotalRender';
 
 import './ServiceList.scss';
 import { GLOBAL_PAGE_SIZE_LIST } from '../../../constants';
@@ -102,8 +103,8 @@ class ServiceList extends React.Component {
     });
     this.openLoading();
     request({
-      url: `v1/ns/catalog/services?${parameter.join('&')}`,
-      success: ({ count = 0, serviceList = [] } = {}) => {
+      url: `v3/console/ns/service/list?${parameter.join('&')}`,
+      success: ({ data: { count = 0, serviceList = [] } = {} }) => {
         this.setState({
           dataSource: serviceList,
           total: count,
@@ -157,17 +158,20 @@ class ServiceList extends React.Component {
       onOk: () => {
         request({
           method: 'DELETE',
-          url: `v1/ns/service?serviceName=${service.name}&groupName=${service.groupName}`,
-          dataType: 'text',
+          url: `v3/console/ns/service?serviceName=${service.name}&groupName=${service.groupName}`,
+          dataType: 'json',
           beforeSend: () => this.openLoading(),
           success: res => {
-            if (res !== 'ok') {
-              Message.error(res);
-              return;
+            if (res.code !== 0) {
+              Message.error(res.message || '删除服务失败');
+            } else {
+              Message.success('服务删除成功');
+              this.queryServiceList();
             }
-            this.queryServiceList();
           },
-          error: res => Message.error(res.responseText || res.statusText),
+          error: res => {
+            Message.error(res.data?.responseText || res.statusText || '请求失败');
+          },
           complete: () => this.closeLoading(),
         });
       },
@@ -343,6 +347,7 @@ class ServiceList extends React.Component {
             popupProps={{ align: 'bl tl' }}
             total={this.state.total}
             pageSize={this.state.pageSize}
+            totalRender={total => <TotalRender locale={locale} total={total} />}
             onPageSizeChange={pageSize => this.handlePageSizeChange(pageSize)}
             onChange={currentPage => this.setState({ currentPage }, () => this.queryServiceList())}
           />

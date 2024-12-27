@@ -19,15 +19,15 @@ package com.alibaba.nacos.api.naming.remote.request;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class PersistentInstanceRequestTest extends BasedNamingRequestTest {
+class PersistentInstanceRequestTest extends BasedNamingRequestTest {
     
     @Test
-    public void testSerialize() throws JsonProcessingException {
+    void testSerialize() throws JsonProcessingException {
         PersistentInstanceRequest request = new PersistentInstanceRequest(NAMESPACE, SERVICE, GROUP,
                 NamingRemoteConstants.REGISTER_INSTANCE, new Instance());
         String json = mapper.writeValueAsString(request);
@@ -37,7 +37,7 @@ public class PersistentInstanceRequestTest extends BasedNamingRequestTest {
     }
     
     @Test
-    public void testDeserialize() throws JsonProcessingException {
+    void testDeserialize() throws JsonProcessingException {
         String json = "{\"headers\":{},\"namespace\":\"namespace\",\"serviceName\":\"service\",\"groupName\":\"group\","
                 + "\"type\":\"deregisterInstance\",\"instance\":{\"port\":0,\"weight\":1.0,\"healthy\":true,"
                 + "\"enabled\":true,\"ephemeral\":true,\"metadata\":{},\"instanceIdGenerator\":\"simple\","

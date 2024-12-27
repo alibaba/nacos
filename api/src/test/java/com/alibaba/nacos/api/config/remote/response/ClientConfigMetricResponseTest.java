@@ -18,14 +18,14 @@ package com.alibaba.nacos.api.config.remote.response;
 
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ClientConfigMetricResponseTest extends BasedConfigResponseTest {
     
@@ -33,8 +33,8 @@ public class ClientConfigMetricResponseTest extends BasedConfigResponseTest {
     
     Map<String, Object> metric = new HashMap<>(16);
     
-    @Before
-    public void before() {
+    @BeforeEach
+    void before() {
         metric.put("m1", "v1");
         clientConfigMetricResponse = new ClientConfigMetricResponse();
         clientConfigMetricResponse.setMetrics(metric);

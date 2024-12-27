@@ -34,54 +34,51 @@ import java.util.Set;
 public class RpcConstants {
     
     public static final String NACOS_CLIENT_RPC = "nacos.remote.client.rpc";
+
+    public static final String NACOS_SERVER_RPC = "nacos.remote.server.rpc.tls";
+
+    public static final String NACOS_PEER_RPC = "nacos.remote.peer.rpc.tls";
+
+    @RpcConfigLabel
+    public static final String RPC_CLIENT_TLS_ENABLE = NACOS_CLIENT_RPC + ClientSuffix.TLS_ENABLE;
     
     @RpcConfigLabel
-    public static final String RPC_CLIENT_TLS_ENABLE = NACOS_CLIENT_RPC + ".tls.enable";
+    public static final String RPC_CLIENT_TLS_PROVIDER = NACOS_CLIENT_RPC + ClientSuffix.TLS_PROVIDER;
     
     @RpcConfigLabel
-    public static final String RPC_CLIENT_TLS_PROVIDER = NACOS_CLIENT_RPC + ".tls.provider";
+    public static final String RPC_CLIENT_MUTUAL_AUTH = NACOS_CLIENT_RPC + ClientSuffix.MUTUAL_AUTH;
     
     @RpcConfigLabel
-    public static final String RPC_CLIENT_MUTUAL_AUTH = NACOS_CLIENT_RPC + ".tls.mutualAuth";
+    public static final String RPC_CLIENT_TLS_PROTOCOLS = NACOS_CLIENT_RPC + ClientSuffix.TLS_PROTOCOLS;
     
     @RpcConfigLabel
-    public static final String RPC_CLIENT_TLS_PROTOCOLS = NACOS_CLIENT_RPC + ".tls.protocols";
+    public static final String RPC_CLIENT_TLS_CIPHERS = NACOS_CLIENT_RPC + ClientSuffix.TLS_CIPHERS;
     
     @RpcConfigLabel
-    public static final String RPC_CLIENT_TLS_CIPHERS = NACOS_CLIENT_RPC + ".tls.ciphers";
+    public static final String RPC_CLIENT_TLS_CERT_CHAIN_PATH = NACOS_CLIENT_RPC + ClientSuffix.TLS_CERT_CHAIN_PATH;
     
     @RpcConfigLabel
-    public static final String RPC_CLIENT_TLS_CERT_CHAIN_PATH = NACOS_CLIENT_RPC + ".tls.certChainFile";
+    public static final String RPC_CLIENT_TLS_CERT_KEY = NACOS_CLIENT_RPC + ClientSuffix.TLS_CERT_KEY;
     
     @RpcConfigLabel
-    public static final String RPC_CLIENT_TLS_CERT_KEY = NACOS_CLIENT_RPC + ".tls.certPrivateKey";
-    
-    @RpcConfigLabel
-    public static final String RPC_CLIENT_TLS_TRUST_PWD = NACOS_CLIENT_RPC + ".tls.certPrivateKeyPassword";
+    public static final String RPC_CLIENT_TLS_TRUST_PWD = NACOS_CLIENT_RPC + ClientSuffix.TLS_TRUST_PWD;
     
     @RpcConfigLabel
     public static final String RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH =
-            NACOS_CLIENT_RPC + ".tls.trustCollectionChainPath";
+            NACOS_CLIENT_RPC + ClientSuffix.TLS_TRUST_COLLECTION_CHAIN_PATH;
     
     @RpcConfigLabel
-    public static final String RPC_CLIENT_TLS_TRUST_ALL = NACOS_CLIENT_RPC + ".tls.trustAll";
+    public static final String RPC_CLIENT_TLS_TRUST_ALL = NACOS_CLIENT_RPC + ClientSuffix.TLS_TRUST_ALL;
     
     private static final Set<String> CONFIG_NAMES = new HashSet<>();
-    
-    @Documented
-    @Target(ElementType.FIELD)
-    @Retention(RetentionPolicy.RUNTIME)
-    protected @interface RpcConfigLabel {
-    
-    }
     
     static {
         Class clazz = RpcConstants.class;
         Field[] declaredFields = clazz.getDeclaredFields();
         for (Field declaredField : declaredFields) {
             declaredField.setAccessible(true);
-            if (declaredField.getType().equals(String.class) && null != declaredField
-                    .getAnnotation(RpcConfigLabel.class)) {
+            if (declaredField.getType().equals(String.class) && null != declaredField.getAnnotation(
+                    RpcConfigLabel.class)) {
                 try {
                     CONFIG_NAMES.add((String) declaredField.get(null));
                 } catch (IllegalAccessException ignored) {
@@ -90,7 +87,139 @@ public class RpcConstants {
         }
     }
     
+    /**
+     * Enumeration of common suffixes for RPC configuration properties. Each enum constant represents a specific
+     * configuration attribute suffix. This allows for the construction of complete configuration property keys.
+     */
+    public class ClientSuffix {
+        
+        /**
+         * Suffix for 'tls.enable' configuration property.
+         */
+        public static final String TLS_ENABLE = ".tls.enable";
+        
+        /**
+         * Suffix for 'tls.provider' configuration property.
+         */
+        public static final String TLS_PROVIDER = ".tls.provider";
+        
+        /**
+         * Suffix for 'tls.mutualAuth' configuration property.
+         */
+        public static final String MUTUAL_AUTH = ".tls.mutualAuth";
+        
+        /**
+         * Suffix for 'tls.protocols' configuration property.
+         */
+        public static final String TLS_PROTOCOLS = ".tls.protocols";
+        
+        /**
+         * Suffix for 'tls.ciphers' configuration property.
+         */
+        public static final String TLS_CIPHERS = ".tls.ciphers";
+        
+        /**
+         * Suffix for 'tls.certChainFile' configuration property.
+         */
+        public static final String TLS_CERT_CHAIN_PATH = ".tls.certChainFile";
+        
+        /**
+         * Suffix for 'tls.certPrivateKey' configuration property.
+         */
+        public static final String TLS_CERT_KEY = ".tls.certPrivateKey";
+        
+        /**
+         * Suffix for 'tls.certPrivateKeyPassword' configuration property.
+         */
+        public static final String TLS_TRUST_PWD = ".tls.certPrivateKeyPassword";
+        
+        /**
+         * Suffix for 'tls.trustCollectionChainPath' configuration property.
+         */
+        public static final String TLS_TRUST_COLLECTION_CHAIN_PATH = ".tls.trustCollectionChainPath";
+        
+        /**
+         * Suffix for 'tls.trustAll' configuration property.
+         */
+        public static final String TLS_TRUST_ALL = ".tls.trustAll";
+    }
+
+    /**
+     * Enumeration of common suffixes for RPC configuration properties. Each enum constant represents a specific
+     * configuration attribute suffix. This allows for the construction of complete configuration property keys.
+     */
+    public class ServerSuffix {
+
+        /**
+         * Suffix for 'tls.enable' configuration property.
+         */
+        public static final String TLS_ENABLE = ".enableTls";
+
+        /**
+         * Suffix for 'tls.provider' configuration property.
+         */
+        public static final String TLS_PROVIDER = ".sslProvider";
+
+        /**
+         * Suffix for 'tls.mutualAuth' configuration property.
+         */
+        public static final String MUTUAL_AUTH = ".mutualAuthEnable";
+
+        /**
+         * Suffix for 'tls.protocols' configuration property.
+         */
+        public static final String TLS_PROTOCOLS = ".protocols";
+
+        /**
+         * Suffix for 'tls.ciphers' configuration property.
+         */
+        public static final String TLS_CIPHERS = ".ciphers";
+
+        /**
+         * Suffix for 'tls.certChainFile' configuration property.
+         */
+        public static final String TLS_CERT_CHAIN_PATH = ".certChainFile";
+
+        /**
+         * Suffix for 'tls.certPrivateKey' configuration property.
+         */
+        public static final String TLS_CERT_KEY = ".certPrivateKey";
+
+        /**
+         * Suffix for 'tls.certPrivateKeyPassword' configuration property.
+         */
+        public static final String TLS_TRUST_PWD = ".certPrivateKeyPassword";
+
+        /**
+         * Suffix for 'tls.trustCollectionChainPath' configuration property.
+         */
+        public static final String TLS_TRUST_COLLECTION_CHAIN_PATH = ".trustCollectionCertFile";
+
+        /**
+         * Suffix for 'tls.trustAll' configuration property.
+         */
+        public static final String TLS_TRUST_ALL = ".trustAll";
+
+        /**
+         * Suffix for '.sslContextRefresher' configuration property.
+         */
+        public static final String SSL_CONTEXT_REFRESHER = ".sslContextRefresher";
+
+        /**
+         * Suffix for '.compatibility' configuration property.
+         */
+        public static final String COMPATIBILITY = ".compatibility";
+    }
+    
+    @Documented
+    @Target(ElementType.FIELD)
+    @Retention(RetentionPolicy.RUNTIME)
+    protected @interface RpcConfigLabel {
+    
+    }
+    
     public static Set<String> getRpcParams() {
         return Collections.unmodifiableSet(CONFIG_NAMES);
     }
+    
 }

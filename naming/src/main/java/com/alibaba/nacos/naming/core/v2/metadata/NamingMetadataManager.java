@@ -189,7 +189,8 @@ public class NamingMetadataManager extends SmartSubscriber {
      */
     public void loadServiceMetadataSnapshot(ConcurrentMap<Service, ServiceMetadata> snapshot) {
         for (Service each : snapshot.keySet()) {
-            ServiceManager.getInstance().getSingleton(each);
+            Service  service = Service.newService(each.getNamespace(), each.getGroup(), each.getName(), each.isEphemeral());
+            ServiceManager.getInstance().getSingleton(service);
         }
         ConcurrentMap<Service, ServiceMetadata> oldSnapshot = serviceMetadataMap;
         serviceMetadataMap = snapshot;

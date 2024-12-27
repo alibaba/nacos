@@ -52,6 +52,10 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-prometheus</artifactId>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>nacos-k8s-sync</artifactId>
+        </dependency>
         
         <!-- log -->
         <!-- log4j通过slf4j来代理 -->
@@ -72,6 +76,21 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-test-autoconfigure</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     
@@ -116,7 +135,7 @@
                         <groupId>org.springframework.boot</groupId>
                         <artifactId>spring-boot-maven-plugin</artifactId>
                         <configuration>
-                            <mainClass>com.alibaba.nacos.Nacos</mainClass>
+                            <mainClass>com.alibaba.nacos.bootstrap.Nacos</mainClass>
                             <layout>ZIP</layout>
                         </configuration>
                         <executions>

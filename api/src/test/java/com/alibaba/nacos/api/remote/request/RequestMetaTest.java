@@ -18,22 +18,22 @@ package com.alibaba.nacos.api.remote.request;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.constant.AbilityStatus;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class RequestMetaTest {
+class RequestMetaTest {
     
     private RequestMeta requestMeta;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         requestMeta = new RequestMeta();
         requestMeta.setClientIp("127.0.0.1");
         requestMeta.setClientVersion("1.0.0");
@@ -44,22 +44,22 @@ public class RequestMetaTest {
     }
     
     @Test
-    public void testGetClientIp() {
+    void testGetClientIp() {
         assertEquals("127.0.0.1", requestMeta.getClientIp());
     }
     
     @Test
-    public void testGetClientVersion() {
+    void testGetClientVersion() {
         assertEquals("1.0.0", requestMeta.getClientVersion());
     }
     
     @Test
-    public void testGetConnectionId() {
+    void testGetConnectionId() {
         assertEquals("test-connection-id", requestMeta.getConnectionId());
     }
     
     @Test
-    public void testGetLabels() {
+    void testGetLabels() {
         Map<String, String> labels = requestMeta.getLabels();
         assertNotNull(labels);
         assertEquals(1, labels.size());
@@ -67,20 +67,20 @@ public class RequestMetaTest {
     }
     
     @Test
-    public void testToString() {
+    void testToString() {
         String expected = "RequestMeta{connectionId='test-connection-id', clientIp='127.0.0.1', clientVersion='1.0.0', labels={env=dev}}";
         assertEquals(expected, requestMeta.toString());
     }
     
     @Test
-    public void testGetConnectionAbilityForNonExist() {
+    void testGetConnectionAbilityForNonExist() {
         assertEquals(AbilityStatus.UNKNOWN, requestMeta.getConnectionAbility(AbilityKey.SERVER_TEST_1));
         requestMeta.setAbilityTable(Collections.emptyMap());
         assertEquals(AbilityStatus.UNKNOWN, requestMeta.getConnectionAbility(AbilityKey.SERVER_TEST_1));
     }
     
     @Test
-    public void testGetConnectionAbilityForExist() {
+    void testGetConnectionAbilityForExist() {
         requestMeta.setAbilityTable(Collections.singletonMap(AbilityKey.SERVER_TEST_1.getName(), Boolean.FALSE));
         assertEquals(AbilityStatus.NOT_SUPPORTED, requestMeta.getConnectionAbility(AbilityKey.SERVER_TEST_1));
         requestMeta.setAbilityTable(Collections.singletonMap(AbilityKey.SERVER_TEST_1.getName(), Boolean.TRUE));

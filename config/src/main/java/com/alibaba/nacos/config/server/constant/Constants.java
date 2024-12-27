@@ -33,7 +33,9 @@ public class Constants {
     public static final String DEFAULT_GROUP = "DEFAULT_GROUP";
     
     public static final String DATASOURCE_PLATFORM_PROPERTY_STATE = "datasource_platform";
-    
+
+    public static final String CONFIG_RENTENTION_DAYS_PROPERTY_STATE = "config_retention_days";
+
     /**
      * Config file directory in server side.
      */
@@ -291,11 +293,29 @@ public class Constants {
     public static final String CONFIG_SEARCH_ACCURATE = "accurate";
     
     /**
+     * Gray rule.
+     */
+    public static final String GRAY_RULE_TYPE = "type";
+    
+    public static final String GRAY_RULE_EXPR = "expr";
+    
+    public static final String GRAY_RULE_VERSION = "version";
+    
+    public static final String GRAY_RULE_PRIORITY = "priority";
+    
+    /**
      * default nacos encode.
      */
     public static final String DEFAULT_NACOS_ENCODE = "UTF-8";
     
     public static final String NACOS_PERSIST_ENCODE_KEY = "nacosPersistEncodingKey";
+    
+    /**
+     * config publish type.
+     */
+    public static final String FORMAL = "formal";
+    
+    public static final String GRAY = "gray";
     
     static String getPersistEncode() {
         String persistEncode = System.getenv(NACOS_PERSIST_ENCODE_KEY);

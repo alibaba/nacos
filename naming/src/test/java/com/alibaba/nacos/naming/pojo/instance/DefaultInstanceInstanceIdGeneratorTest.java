@@ -17,15 +17,15 @@
 package com.alibaba.nacos.naming.pojo.instance;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-public class DefaultInstanceInstanceIdGeneratorTest {
+class DefaultInstanceInstanceIdGeneratorTest {
     
     @Test
-    public void testGenerateInstanceId() {
+    void testGenerateInstanceId() {
         final DefaultInstanceIdGenerator instanceIdGenerator = new DefaultInstanceIdGenerator();
         Instance instance = new Instance();
         instance.setServiceName("service");

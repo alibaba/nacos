@@ -17,16 +17,16 @@
 package com.alibaba.nacos.api.naming.remote.request;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.alibaba.nacos.api.common.Constants.Naming.NAMING_MODULE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ServiceListRequestTest extends BasedNamingRequestTest {
+class ServiceListRequestTest extends BasedNamingRequestTest {
     
     @Test
-    public void testSerialize() throws JsonProcessingException {
+    void testSerialize() throws JsonProcessingException {
         ServiceListRequest request = new ServiceListRequest(NAMESPACE, GROUP, 1, 10);
         request.setSelector("label");
         String json = mapper.writeValueAsString(request);
@@ -39,7 +39,7 @@ public class ServiceListRequestTest extends BasedNamingRequestTest {
     }
     
     @Test
-    public void testDeserialize() throws JsonProcessingException {
+    void testDeserialize() throws JsonProcessingException {
         String json = "{\"headers\":{},\"namespace\":\"namespace\",\"serviceName\":\"\",\"groupName\":\"group\","
                 + "\"pageNo\":1,\"pageSize\":10,\"selector\":\"label\",\"module\":\"naming\"}";
         ServiceListRequest actual = mapper.readValue(json, ServiceListRequest.class);

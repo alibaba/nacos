@@ -20,13 +20,12 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -36,22 +35,23 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class NotifyCenterTest {
+@ExtendWith(MockitoExtension.class)
+class NotifyCenterTest {
+    
+    private static AtomicInteger count;
     
     static {
         System.setProperty("nacos.core.notify.share-buffer-size", "8");
     }
-    
-    private static AtomicInteger count;
     
     SmartSubscriber smartSubscriber;
     
@@ -60,8 +60,8 @@ public class NotifyCenterTest {
     @Mock
     ShardedEventPublisher shardedEventPublisher;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         count = new AtomicInteger();
         NotifyCenter.registerToSharePublisher(TestSlowEvent.class);
         NotifyCenter.registerToPublisher(TestSlowEvent1.class, 10);
@@ -70,8 +70,8 @@ public class NotifyCenterTest {
         NotifyCenter.registerToPublisher(SharedEvent.class, shardedEventPublisher);
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         if (null != smartSubscriber) {
             NotifyCenter.deregisterSubscriber(smartSubscriber);
         }
@@ -83,45 +83,45 @@ public class NotifyCenterTest {
     }
     
     @Test
-    public void testRegisterNullPublisher() {
+    void testRegisterNullPublisher() {
         int originalSize = NotifyCenter.getPublisherMap().size();
         NotifyCenter.registerToPublisher(NoPublisherEvent.class, null);
         assertEquals(originalSize, NotifyCenter.getPublisherMap().size());
     }
     
     @Test
-    public void testGetPublisher() {
+    void testGetPublisher() {
         assertEquals(NotifyCenter.getSharePublisher(), NotifyCenter.getPublisher(TestSlowEvent.class));
         assertTrue(NotifyCenter.getPublisher(TestEvent.class) instanceof DefaultPublisher);
     }
     
     @Test
-    public void testEventsCanBeSubscribed() {
+    void testEventsCanBeSubscribed() {
         subscriber = new MockSubscriber<>(TestEvent.class, false);
         smartSubscriber = new MockSmartSubscriber(Collections.singletonList(TestSlowEvent.class));
         NotifyCenter.registerSubscriber(subscriber);
         NotifyCenter.registerSubscriber(smartSubscriber);
-        Assert.assertTrue(NotifyCenter.publishEvent(new TestEvent()));
-        Assert.assertTrue(NotifyCenter.publishEvent(new TestSlowEvent()));
+        assertTrue(NotifyCenter.publishEvent(new TestEvent()));
+        assertTrue(NotifyCenter.publishEvent(new TestSlowEvent()));
         ThreadUtils.sleep(2000L);
         assertEquals(2, count.get());
     }
     
     @Test
-    public void testCanIgnoreExpireEvent() throws Exception {
+    void testCanIgnoreExpireEvent() throws Exception {
         NotifyCenter.registerToPublisher(ExpireEvent.class, 16);
         CountDownLatch latch = new CountDownLatch(3);
         subscriber = new MockSubscriber<>(ExpireEvent.class, true, latch);
         NotifyCenter.registerSubscriber(subscriber);
         for (int i = 0; i < 3; i++) {
-            Assert.assertTrue(NotifyCenter.publishEvent(new ExpireEvent(3 - i)));
+            assertTrue(NotifyCenter.publishEvent(new ExpireEvent(3 - i)));
         }
         latch.await(5000L, TimeUnit.MILLISECONDS);
         assertEquals(1, count.get());
     }
     
     @Test
-    public void testSharePublishEvent() throws InterruptedException {
+    void testSharePublishEvent() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(20);
         Subscriber subscriber = new MockSubscriber<>(TestSlowEvent.class, false, latch);
         Subscriber subscriber1 = new MockSubscriber<>(TestSlowEvent1.class, false, latch);
@@ -129,8 +129,8 @@ public class NotifyCenterTest {
             NotifyCenter.registerSubscriber(subscriber);
             NotifyCenter.registerSubscriber(subscriber1);
             for (int i = 0; i < 10; i++) {
-                Assert.assertTrue(NotifyCenter.publishEvent(new TestSlowEvent()));
-                Assert.assertTrue(NotifyCenter.publishEvent(new TestSlowEvent1()));
+                assertTrue(NotifyCenter.publishEvent(new TestSlowEvent()));
+                assertTrue(NotifyCenter.publishEvent(new TestSlowEvent1()));
             }
             latch.await(5000L, TimeUnit.MILLISECONDS);
             assertEquals(20, count.get());
@@ -141,7 +141,7 @@ public class NotifyCenterTest {
     }
     
     @Test
-    public void testMutipleSlowEventsListenedBySmartSubscriber() throws Exception {
+    void testMutipleSlowEventsListenedBySmartSubscriber() throws Exception {
         List<Class<? extends Event>> subscribedEvents = new LinkedList<>();
         subscribedEvents.add(TestSlowEvent.class);
         subscribedEvents.add(TestSlowEvent1.class);
@@ -149,15 +149,15 @@ public class NotifyCenterTest {
         smartSubscriber = new MockSmartSubscriber(subscribedEvents, latch);
         NotifyCenter.registerSubscriber(smartSubscriber);
         for (int i = 0; i < 3; i++) {
-            Assert.assertTrue(NotifyCenter.publishEvent(new TestSlowEvent()));
-            Assert.assertTrue(NotifyCenter.publishEvent(new TestSlowEvent1()));
+            assertTrue(NotifyCenter.publishEvent(new TestSlowEvent()));
+            assertTrue(NotifyCenter.publishEvent(new TestSlowEvent1()));
         }
         latch.await(5000L, TimeUnit.MILLISECONDS);
         assertEquals(6, count.get());
     }
     
     @Test
-    public void testMutipleKindsEventsCanListenBySmartsubscriber() throws Exception {
+    void testMutipleKindsEventsCanListenBySmartsubscriber() throws Exception {
         List<Class<? extends Event>> subscribedEvents = new LinkedList<>();
         subscribedEvents.add(TestEvent.class);
         subscribedEvents.add(TestSlowEvent.class);
@@ -165,29 +165,29 @@ public class NotifyCenterTest {
         smartSubscriber = new MockSmartSubscriber(subscribedEvents, latch);
         NotifyCenter.registerSubscriber(smartSubscriber);
         for (int i = 0; i < 3; i++) {
-            Assert.assertTrue(NotifyCenter.publishEvent(new TestEvent()));
-            Assert.assertTrue(NotifyCenter.publishEvent(new TestSlowEvent()));
+            assertTrue(NotifyCenter.publishEvent(new TestEvent()));
+            assertTrue(NotifyCenter.publishEvent(new TestSlowEvent()));
         }
         latch.await(5000L, TimeUnit.MILLISECONDS);
         assertEquals(6, count.get());
     }
     
     @Test
-    public void testPublishEventByNoPublisher() {
+    void testPublishEventByNoPublisher() {
         for (int i = 0; i < 3; i++) {
-            Assert.assertFalse(NotifyCenter.publishEvent(new NoPublisherEvent()));
+            assertFalse(NotifyCenter.publishEvent(new NoPublisherEvent()));
         }
     }
     
     @Test
-    public void testPublishEventByPluginEvent() {
+    void testPublishEventByPluginEvent() {
         for (int i = 0; i < 3; i++) {
-            Assert.assertTrue(NotifyCenter.publishEvent(new PluginEvent()));
+            assertTrue(NotifyCenter.publishEvent(new PluginEvent()));
         }
     }
     
     @Test
-    public void testDeregisterPublisherWithException() throws NacosException {
+    void testDeregisterPublisherWithException() throws NacosException {
         final int originalSize = NotifyCenter.getPublisherMap().size();
         doThrow(new RuntimeException("test")).when(shardedEventPublisher).shutdown();
         NotifyCenter.getPublisherMap().put(SharedEvent.class.getCanonicalName(), shardedEventPublisher);
@@ -196,14 +196,14 @@ public class NotifyCenterTest {
     }
     
     @Test
-    public void testPublishEventWithException() {
+    void testPublishEventWithException() {
         when(shardedEventPublisher.publish(any(Event.class))).thenThrow(new RuntimeException("test"));
         NotifyCenter.getPublisherMap().put(SharedEvent.class.getCanonicalName(), shardedEventPublisher);
         assertFalse(NotifyCenter.publishEvent(new SharedEvent()));
     }
     
     @Test
-    public void testOperateSubscriberForShardedPublisher() {
+    void testOperateSubscriberForShardedPublisher() {
         subscriber = new MockSubscriber(SharedEvent.class, false);
         NotifyCenter.getPublisherMap().put(SharedEvent.class.getCanonicalName(), shardedEventPublisher);
         NotifyCenter.registerSubscriber(subscriber);
@@ -212,14 +212,16 @@ public class NotifyCenterTest {
         verify(shardedEventPublisher).removeSubscriber(subscriber, SharedEvent.class);
     }
     
-    @Test(expected = NoSuchElementException.class)
-    public void testDeregisterNonExistSubscriber() {
-        try {
-            subscriber = new MockSubscriber(NoPublisherEvent.class, false);
-            NotifyCenter.deregisterSubscriber(subscriber);
-        } finally {
-            subscriber = null;
-        }
+    @Test
+    void testDeregisterNonExistSubscriber() {
+        assertThrows(NoSuchElementException.class, () -> {
+            try {
+                subscriber = new MockSubscriber(NoPublisherEvent.class, false);
+                NotifyCenter.deregisterSubscriber(subscriber);
+            } finally {
+                subscriber = null;
+            }
+        });
     }
     
     private static class MockSubscriber<T extends Event> extends Subscriber<T> {
@@ -314,14 +316,14 @@ public class NotifyCenterTest {
     }
     
     private static class SharedEvent extends Event {
-    
+        
         private static final long serialVersionUID = 7648766983252000074L;
     }
     
     private static class PluginEvent extends Event {
-    
+        
         private static final long serialVersionUID = -7787588724415976798L;
-    
+        
         @Override
         public boolean isPluginEvent() {
             return true;

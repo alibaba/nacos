@@ -20,30 +20,35 @@ import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.persistence.repository.embedded.sql.ModifyRequest;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.lang.reflect.Field;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class EmbeddedRolePersistServiceImplTest {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class EmbeddedRolePersistServiceImplTest {
     
     @Mock
     private DatabaseOperate databaseOperate;
     
     private EmbeddedRolePersistServiceImpl embeddedRolePersistService;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         when(databaseOperate.queryOne(any(String.class), any(Object[].class), eq(Integer.class))).thenReturn(0);
         embeddedRolePersistService = new EmbeddedRolePersistServiceImpl();
         Class<EmbeddedRolePersistServiceImpl> embeddedRolePersistServiceClass = EmbeddedRolePersistServiceImpl.class;
@@ -53,41 +58,41 @@ public class EmbeddedRolePersistServiceImplTest {
     }
     
     @Test
-    public void testGetRoles() {
+    void testGetRoles() {
         Page<RoleInfo> roles = embeddedRolePersistService.getRoles(1, 10);
-        Assert.assertNotNull(roles);
+        assertNotNull(roles);
     }
     
     @Test
-    public void testGetRolesByUserName() {
+    void testGetRolesByUserName() {
         Page<RoleInfo> page = embeddedRolePersistService.getRolesByUserNameAndRoleName("userName", "roleName", 1, 10);
         
-        Assert.assertNotNull(page);
+        assertNotNull(page);
     }
     
     @Test
-    public void testAddRole() {
+    void testAddRole() {
         embeddedRolePersistService.addRole("role", "userName");
         List<ModifyRequest> currentSqlContext = EmbeddedStorageContextHolder.getCurrentSqlContext();
         
-        Assert.assertEquals(currentSqlContext.size(), 0);
+        assertEquals(0, currentSqlContext.size());
     }
     
     @Test
-    public void testDeleteRole() {
+    void testDeleteRole() {
         embeddedRolePersistService.deleteRole("role");
         embeddedRolePersistService.deleteRole("role", "userName");
         
         List<ModifyRequest> currentSqlContext = EmbeddedStorageContextHolder.getCurrentSqlContext();
         
-        Assert.assertEquals(currentSqlContext.size(), 0);
+        assertEquals(0, currentSqlContext.size());
     }
     
     @Test
-    public void testFindRolesLikeRoleName() {
+    void testFindRolesLikeRoleName() {
         
         List<String> role = embeddedRolePersistService.findRolesLikeRoleName("role");
         
-        Assert.assertEquals(role.size(), 0);
+        assertEquals(0, role.size());
     }
 }

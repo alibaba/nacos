@@ -43,9 +43,6 @@ import java.util.List;
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosAuthPluginService implements AuthPluginService {
     
-    @Deprecated
-    private static final String USER_IDENTITY_PARAM_KEY = "user";
-    
     private static final List<String> IDENTITY_NAMES = new LinkedList<String>() {
         {
             add(AuthConstants.AUTHORIZATION_HEADER);
@@ -99,7 +96,6 @@ public class NacosAuthPluginService implements AuthPluginService {
     public Boolean validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException {
         NacosUser user = (NacosUser) identityContext.getParameter(AuthConstants.NACOS_USER_KEY);
         authenticationManager.authorize(permission, user);
-        
         return true;
     }
     
@@ -110,7 +106,20 @@ public class NacosAuthPluginService implements AuthPluginService {
     
     @Override
     public boolean isLoginEnabled() {
-        return ApplicationUtils.getBean(AuthConfigs.class).isAuthEnabled();
+        return ApplicationUtils.getBean(AuthConfigs.class).isConsoleAuthEnabled();
+    }
+    
+    /**
+     * Only auth enabled and not global admin role existed.
+     *
+     * @return {@code true} when auth enabled and not global admin role existed, otherwise {@code false}
+     */
+    @Override
+    public boolean isAdminRequest() {
+        AuthConfigs authConfigs = ApplicationUtils.getBean(AuthConfigs.class);
+        boolean authEnabled = authConfigs.isConsoleAuthEnabled() || authConfigs.isAuthEnabled();
+        boolean hasGlobalAdminRole = ApplicationUtils.getBean(IAuthenticationManager.class).hasGlobalAdminRole();
+        return authEnabled && !hasGlobalAdminRole;
     }
     
     protected void checkNacosAuthManager() {

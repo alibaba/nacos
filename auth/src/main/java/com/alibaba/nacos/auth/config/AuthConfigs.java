@@ -58,10 +58,16 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     private static Boolean cachingEnabled = null;
     
     /**
-     * Whether auth enabled.
+     * Whether server auth enabled.
      */
     @Value("${" + Constants.Auth.NACOS_CORE_AUTH_ENABLED + ":false}")
     private boolean authEnabled;
+    
+    /**
+     * Whether console auth enabled.
+     */
+    @Value("${" + Constants.Auth.NACOS_CORE_AUTH_CONSOLE_ENABLED + ":true}")
+    private boolean consoleAuthEnabled;
     
     /**
      * Which auth system is in use.
@@ -78,6 +84,8 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     @Value("${" + Constants.Auth.NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE + ":false}")
     private boolean enableUserAgentAuthWhite;
     
+    private boolean hasGlobalAdminRole;
+    
     private Map<String, Properties> authPluginProperties = new HashMap<>();
     
     public AuthConfigs() {
@@ -92,7 +100,7 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
      */
     @PostConstruct
     public void validate() throws NacosException {
-        if (!authEnabled) {
+        if (!authEnabled && !consoleAuthEnabled) {
             return;
         }
         if (StringUtils.isEmpty(nacosAuthSystemType)) {
@@ -125,6 +133,14 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
         }
     }
     
+    public boolean isHasGlobalAdminRole() {
+        return hasGlobalAdminRole;
+    }
+    
+    public void setHasGlobalAdminRole(boolean hasGlobalAdminRole) {
+        this.hasGlobalAdminRole = hasGlobalAdminRole;
+    }
+    
     public String getNacosAuthSystemType() {
         return nacosAuthSystemType;
     }
@@ -142,14 +158,23 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     }
     
     /**
-     * auth function is open.
+     * console auth function is open.
      *
-     * @return auth function is open
+     * @return console auth function is open
+     */
+    public boolean isConsoleAuthEnabled() {
+        return consoleAuthEnabled;
+    }
+    
+    /**
+     * server auth function is open.
+     *
+     * @return server auth function is open
      */
     public boolean isAuthEnabled() {
         return authEnabled;
     }
-    
+
     /**
      * Whether permission information can be cached.
      *
@@ -179,6 +204,7 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     public void onEvent(ServerConfigChangeEvent event) {
         try {
             authEnabled = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLED, Boolean.class, false);
+            consoleAuthEnabled = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_CONSOLE_ENABLED, Boolean.class, true);
             cachingEnabled = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_CACHING_ENABLED, Boolean.class, true);
             serverIdentityKey = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "");
             serverIdentityValue = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "");

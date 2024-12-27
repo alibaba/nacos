@@ -19,7 +19,9 @@ package com.alibaba.nacos.console.controller;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.module.ModuleState;
 import com.alibaba.nacos.sys.module.ModuleStateHolder;
@@ -33,6 +35,10 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.alibaba.nacos.common.utils.StringUtils.FOLDER_SEPARATOR;
+import static com.alibaba.nacos.common.utils.StringUtils.TOP_PATH;
+import static com.alibaba.nacos.common.utils.StringUtils.WINDOWS_FOLDER_SEPARATOR;
 
 /**
  * Server state controller.
@@ -54,6 +60,7 @@ public class ServerStateController {
      * @return state json.
      */
     @GetMapping("/state")
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/server/state")
     public ResponseEntity<Map<String, String>> serverState() {
         Map<String, String> serverState = new HashMap<>(4);
         for (ModuleState each : ModuleStateHolder.getInstance().getAllModuleStates()) {
@@ -63,9 +70,13 @@ public class ServerStateController {
     }
     
     @GetMapping("/announcement")
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/server/announcement")
     public RestResult<String> getAnnouncement(
             @RequestParam(required = false, name = "language", defaultValue = "zh-CN") String language) {
         String file = ANNOUNCEMENT_FILE.substring(0, ANNOUNCEMENT_FILE.length() - 5) + "_" + language + ".conf";
+        if (file.contains(TOP_PATH) || file.contains(FOLDER_SEPARATOR) || file.contains(WINDOWS_FOLDER_SEPARATOR)) {
+            throw new IllegalArgumentException("Invalid filename");
+        }
         File announcementFile = new File(EnvUtil.getConfPath(), file);
         String announcement = null;
         if (announcementFile.exists() && announcementFile.isFile()) {
@@ -75,6 +86,7 @@ public class ServerStateController {
     }
     
     @GetMapping("/guide")
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/server/guide")
     public RestResult<String> getConsoleUiGuide() {
         File guideFile = new File(EnvUtil.getConfPath(), GUIDE_FILE);
         String guideInformation = null;

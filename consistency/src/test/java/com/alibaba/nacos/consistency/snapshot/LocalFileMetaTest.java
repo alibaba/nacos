@@ -17,9 +17,10 @@
 
 package com.alibaba.nacos.consistency.snapshot;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * {@link LocalFileMeta} unit test.
@@ -27,18 +28,18 @@ import org.junit.Test;
  * @author chenglu
  * @date 2021-07-27 18:43
  */
-public class LocalFileMetaTest {
+class LocalFileMetaTest {
     
     private LocalFileMeta fileMeta;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         fileMeta = new LocalFileMeta();
     }
     
     @Test
-    public void testAppendAndGet() {
+    void testAppendAndGet() {
         fileMeta.append("key", "value");
-        Assert.assertEquals("value", fileMeta.get("key"));
+        assertEquals("value", fileMeta.get("key"));
     }
 }

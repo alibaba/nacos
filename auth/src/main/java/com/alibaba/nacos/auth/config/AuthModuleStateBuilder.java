@@ -39,19 +39,39 @@ public class AuthModuleStateBuilder implements ModuleStateBuilder {
     
     public static final String AUTH_SYSTEM_TYPE = "auth_system_type";
     
+    public static final String AUTH_ADMIN_REQUEST = "auth_admin_request";
+    
+    private boolean cacheable;
+    
     @Override
     public ModuleState build() {
         ModuleState result = new ModuleState(AUTH_MODULE);
         AuthConfigs authConfigs = ApplicationUtils.getBean(AuthConfigs.class);
-        result.newState(AUTH_ENABLED, authConfigs.isAuthEnabled());
+        result.newState(AUTH_ENABLED, authConfigs.isConsoleAuthEnabled());
         result.newState(LOGIN_PAGE_ENABLED, isLoginPageEnabled(authConfigs));
         result.newState(AUTH_SYSTEM_TYPE, authConfigs.getNacosAuthSystemType());
+        result.newState(AUTH_ADMIN_REQUEST, isAdminRequest(authConfigs));
         return result;
+    }
+    
+    @Override
+    public boolean isCacheable() {
+        return cacheable;
     }
     
     private Boolean isLoginPageEnabled(AuthConfigs authConfigs) {
         Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
                 .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
         return authPluginService.map(AuthPluginService::isLoginEnabled).orElse(false);
+    }
+    
+    private Boolean isAdminRequest(AuthConfigs authConfigs) {
+        Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
+                .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
+        boolean isAdminRequest = authPluginService.map(AuthPluginService::isAdminRequest).orElse(true);
+        if (!isAdminRequest) {
+            cacheable = true;
+        }
+        return isAdminRequest;
     }
 }

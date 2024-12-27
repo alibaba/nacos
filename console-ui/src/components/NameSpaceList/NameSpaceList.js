@@ -16,10 +16,11 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { ConfigProvider, Dialog } from '@alifd/next';
+import { ConfigProvider, Dialog, Select } from '@alifd/next';
 import { getParams, setParams, request } from '../../globalLib';
 
 import './index.scss';
+import { NAME_SHOW } from '../../constants';
 
 /**
  * 命名空间列表
@@ -42,6 +43,7 @@ class NameSpaceList extends React.Component {
     this.state = {
       nownamespace: window.nownamespace || this._namespace || '',
       namespaceList: window.namespaceList || [],
+      nameShow: localStorage.getItem(NAME_SHOW),
       // namespaceShowName: window.namespaceShowName || this._namespaceShowName || '',
       // _dingdingLink: "",
       // _forumLink: ""
@@ -61,7 +63,7 @@ class NameSpaceList extends React.Component {
           linkKey,
         },
         success: res => {
-          if (res.code === 200) {
+          if (res.code === 0) {
             window[keyName] = res.data;
             this.setState({
               [keyName]: res.data,
@@ -100,6 +102,11 @@ class NameSpaceList extends React.Component {
     this.props.setNowNameSpace && this.props.setNowNameSpace(nsName, ns, nsDesc);
   }
 
+  changeName(...value) {
+    let space = value[2];
+    this.changeNameSpace(space.namespace, space.namespaceShowName, space.namespaceDesc);
+  }
+
   calleeParent(needclean = false) {
     this.props.namespaceCallBack && this.props.namespaceCallBack(needclean);
   }
@@ -111,9 +118,9 @@ class NameSpaceList extends React.Component {
     } else {
       request({
         type: 'get',
-        url: 'v1/console/namespaces',
+        url: 'v3/console/core/namespace/list',
         success: res => {
-          if (res.code === 200) {
+          if (res.code === 0) {
             this.handleNameSpaces(res.data);
           } else {
             Dialog.alert({
@@ -131,7 +138,7 @@ class NameSpaceList extends React.Component {
   }
 
   handleNameSpaces(data) {
-    const nownamespace = getParams('namespace') || '';
+    const nownamespace = getParams('namespace') || 'public';
 
     // let namespaceShowName = this._namespaceShowName || data[0].namespaceShowName || '';
     window.namespaceList = data;
@@ -147,7 +154,7 @@ class NameSpaceList extends React.Component {
     }
     window.namespaceShowName = namespaceShowName;
     window.namespaceDesc = namespaceDesc;
-    setParams('namespace', nownamespace || '');
+    setParams('namespace', nownamespace || 'public');
     localStorage.setItem('namespace', nownamespace);
     // setParams('namespaceShowName', namespaceShowName);
     this.props.setNowNameSpace &&
@@ -166,7 +173,29 @@ class NameSpaceList extends React.Component {
   }
 
   rendernamespace(namespaceList) {
-    const { nownamespace } = this.state; // 获得当前namespace
+    const { nownamespace, nameShow } = this.state; // 获得当前namespace
+    if (nameShow && nameShow === 'select') {
+      let de = {
+        value: nownamespace,
+      };
+      namespaceList.forEach(obj => {
+        obj.label = obj.namespaceShowName + ' ' + (obj.namespaceDesc ? obj.namespaceDesc : '');
+        obj.value = obj.namespace;
+        if (obj.value !== undefined && obj.value === de.value) {
+          de = obj;
+        }
+      });
+      return (
+        <Select
+          style={{ width: 200 }}
+          size="medium"
+          dataSource={namespaceList}
+          value={de}
+          onChange={this.changeName.bind(this)}
+          showSearch
+        />
+      );
+    }
     const namespacesBtn = namespaceList.map((obj, index) => {
       return (
         <div key={index} style={{ cursor: 'pointer' }}>

@@ -16,46 +16,46 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ObservableTest {
+@ExtendWith(MockitoExtension.class)
+class ObservableTest {
     
     @Mock
     private Observer observer;
     
     private Observable observable;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         observable = new Observable();
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
     }
     
     @Test
-    public void testAddObserver() {
+    void testAddObserver() {
         observable.addObserver(observer);
         assertEquals(1, observable.countObservers());
         verify(observer).update(observable);
     }
     
     @Test
-    public void testDeleteObserver() {
+    void testDeleteObserver() {
         observable.addObserver(observer);
         assertEquals(1, observable.countObservers());
         observable.deleteObserver(observer);
@@ -63,7 +63,7 @@ public class ObservableTest {
     }
     
     @Test
-    public void testNotifyObservers() {
+    void testNotifyObservers() {
         observable.addObserver(observer);
         reset(observer);
         observable.notifyObservers();
@@ -77,7 +77,7 @@ public class ObservableTest {
     }
     
     @Test
-    public void testDeleteObservers() {
+    void testDeleteObservers() {
         observable.addObserver(observer);
         observable.deleteObservers();
         assertEquals(1, observable.countObservers());

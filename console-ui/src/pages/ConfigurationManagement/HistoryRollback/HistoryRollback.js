@@ -33,7 +33,10 @@ import './index.scss';
 import DiffEditorDialog from '../../../components/DiffEditorDialog';
 import QueryResult from '../../../components/QueryResult';
 import PageTitle from '../../../components/PageTitle';
+import { connect } from 'react-redux';
+import { getState } from '../../../reducers/base';
 
+@connect(state => ({ ...state.base }), { getState })
 @ConfigProvider.config
 class HistoryRollback extends React.Component {
   static displayName = 'HistoryRollback';
@@ -41,6 +44,7 @@ class HistoryRollback extends React.Component {
   static propTypes = {
     locale: PropTypes.object,
     history: PropTypes.object,
+    configRetentionDays: PropTypes.any,
   };
 
   constructor(props) {
@@ -77,6 +81,7 @@ class HistoryRollback extends React.Component {
   componentDidMount() {
     this.field.setValue('group', this.group);
     this.field.setValue('dataId', this.dataId);
+    this.props.getState();
     // this.getData()
   }
 
@@ -115,9 +120,10 @@ class HistoryRollback extends React.Component {
       beforeSend() {
         self.openLoading();
       },
-      url: `v1/cs/history?search=accurate&dataId=${this.state.dataId}&group=${this.state.group}&&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
-      success(data) {
-        if (data != null) {
+      url: `v3/console/cs/history/list?dataId=${this.state.dataId}&groupName=${this.state.group}&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
+      success(res) {
+        if (res != null) {
+          const data = res.data;
           self.setState({
             dataSource: data.pageItems || [],
             total: data.totalCount,
@@ -133,13 +139,21 @@ class HistoryRollback extends React.Component {
 
   renderCol(value, index, record) {
     const { locale = {} } = this.props;
+    const isBeta = record.publishType === 'gray';
     return (
       <div>
         <a onClick={this.goDetail.bind(this, record)} style={{ marginRight: 5 }}>
           {locale.details}
         </a>
         <span style={{ marginRight: 5 }}>|</span>
-        <a style={{ marginRight: 5 }} onClick={this.goRollBack.bind(this, record)}>
+        <a
+          style={{
+            marginRight: 5,
+            color: isBeta ? 'grey' : '#06C',
+            pointerEvents: isBeta ? 'none' : 'auto',
+          }}
+          onClick={isBeta ? null : this.goRollBack.bind(this, record)} // 如果是 beta，则不绑定事件
+        >
           {locale.rollback}
         </a>
         <span style={{ marginRight: 5 }}>|</span>
@@ -203,7 +217,7 @@ class HistoryRollback extends React.Component {
 
   goDetail(record) {
     this.serverId = getParams('serverId') || 'center';
-    this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
+    this.tenant = getParams('namespace') || 'public'; // 为当前实例保存tenant参数
     this.props.history.push(
       `/historyDetail?serverId=${this.serverId || ''}&dataId=${record.dataId}&group=${
         record.group
@@ -212,7 +226,7 @@ class HistoryRollback extends React.Component {
   }
 
   goCompare(record) {
-    let tenant = getParams('namespace') || '';
+    let tenant = getParams('namespace') || 'public';
     let serverId = getParams('serverId') || 'center';
     this.getConfig(-1, tenant, serverId, record.dataId, record.group).then(lasted => {
       this.getHistoryConfig(record.id, record.dataId, record.group).then(selected => {
@@ -234,9 +248,9 @@ class HistoryRollback extends React.Component {
     return new Promise((resolve, reject) => {
       const { locale = {} } = this.props;
       const self = this;
-      this.tenant = tenant;
+      this.namespaceId = tenant;
       this.serverId = tenant;
-      const url = `v1/cs/configs?show=all&dataId=${dataId}&group=${group}`;
+      const url = `v3/console/cs/config?dataId=${dataId}&groupName=${group}`;
       request({
         url,
         beforeSend() {
@@ -244,7 +258,7 @@ class HistoryRollback extends React.Component {
         },
         success(result) {
           if (result != null) {
-            resolve(result);
+            resolve(result.data);
           }
         },
         complete() {
@@ -266,10 +280,10 @@ class HistoryRollback extends React.Component {
       const { locale = {} } = this.props;
       const self = this;
       request({
-        url: `v1/cs/history?dataId=${dataId}&group=${group}&nid=${nid}`,
+        url: `v3/console/cs/history?dataId=${dataId}&groupName=${group}&nid=${nid}`,
         success(result) {
           if (result != null) {
-            resolve(result);
+            resolve(result.data);
           }
         },
       });
@@ -278,7 +292,7 @@ class HistoryRollback extends React.Component {
 
   goRollBack(record) {
     this.serverId = getParams('serverId') || 'center';
-    this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
+    this.tenant = getParams('namespace') || 'public'; // 为当前实例保存tenant参数
     this.props.history.push(
       `/configRollback?serverId=${this.serverId || ''}&dataId=${record.dataId}&group=${
         record.group
@@ -288,12 +302,13 @@ class HistoryRollback extends React.Component {
 
   getConfigList() {
     const { locale = {} } = this.props;
-    this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
+    this.tenant = getParams('namespace') || 'public'; // 为当前实例保存tenant参数
     const self = this;
     request({
-      url: `v1/cs/history/configs?tenant=${this.tenant}`,
-      success(result) {
-        if (result != null) {
+      url: `v3/console/cs/history/configs?namespaceId=${this.tenant}`,
+      success(res) {
+        if (res != null) {
+          const result = res.data;
           const dataIdList = [];
           const groupList = [];
           for (let i = 0; i < result.length; i++) {
@@ -337,7 +352,7 @@ class HistoryRollback extends React.Component {
           color="#333"
         >
           <PageTitle
-            title={locale.toConfigure}
+            title={locale.toConfigureBegin + this.props.configRetentionDays + locale.toConfigureEnd}
             desc={nowNamespaceDesc}
             namespaceId={nowNamespaceId}
             namespaceName={nowNamespaceName}
@@ -431,6 +446,23 @@ class HistoryRollback extends React.Component {
             <Table dataSource={this.state.dataSource} locale={{ empty: locale.pubNoData }}>
               <Table.Column title="Data ID" dataIndex="dataId" />
               <Table.Column title="Group" dataIndex="group" />
+              <Table.Column
+                title={locale.publishType}
+                dataIndex="publishType"
+                cell={(value, index, record) => {
+                  if (value === 'formal') {
+                    return locale.formal;
+                  } else if (value === 'gray') {
+                    const extraInfo = record.extraInfo ? JSON.parse(record.extraInfo) : {};
+                    if (extraInfo.gray_name) {
+                      return `${locale.gray}（${extraInfo.gray_name}）`;
+                    } else {
+                      return locale.gray;
+                    }
+                  }
+                  return value;
+                }}
+              />
               <Table.Column title={locale.operator} dataIndex="srcUser" />
               <Table.Column
                 title={locale.lastUpdateTime}

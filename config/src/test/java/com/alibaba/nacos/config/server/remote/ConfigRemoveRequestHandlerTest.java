@@ -21,19 +21,21 @@ import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ConfigRemoveRequestHandlerTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+@ExtendWith(MockitoExtension.class)
+class ConfigRemoveRequestHandlerTest {
     
     private ConfigRemoveRequestHandler configRemoveRequestHandler;
     
@@ -41,17 +43,17 @@ public class ConfigRemoveRequestHandlerTest {
     private ConfigInfoPersistService configInfoPersistService;
     
     @Mock
-    private ConfigInfoTagPersistService configInfoTagPersistService;
+    private ConfigInfoGrayPersistService configInfoGrayPersistService;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         configRemoveRequestHandler = new ConfigRemoveRequestHandler(configInfoPersistService,
-                configInfoTagPersistService);
+                configInfoGrayPersistService);
         Mockito.mockStatic(ConfigTraceService.class);
     }
     
     @Test
-    public void testHandle() {
+    void testHandle() {
         ConfigRemoveRequest configRemoveRequest = new ConfigRemoveRequest();
         configRemoveRequest.setRequestId("requestId");
         configRemoveRequest.setGroup("group");
@@ -61,10 +63,10 @@ public class ConfigRemoveRequestHandlerTest {
         meta.setClientIp("1.1.1.1");
         try {
             ConfigRemoveResponse configRemoveResponse = configRemoveRequestHandler.handle(configRemoveRequest, meta);
-            Assert.assertEquals(ResponseCode.SUCCESS.getCode(), configRemoveResponse.getResultCode());
+            assertEquals(ResponseCode.SUCCESS.getCode(), configRemoveResponse.getResultCode());
         } catch (NacosException e) {
             e.printStackTrace();
-            Assert.assertTrue(false);
+            assertTrue(false);
         }
     }
     

@@ -25,28 +25,31 @@ const initialState = {
   authEnabled: '',
   notice: '',
   consoleUiEnable: '',
+  authAdminRequest: '',
   guideMsg: '',
+  configRetentionDays: 30, // config default retention days is 30
 };
 
 /**
  * 用户登录
  * @param {*} param0
  */
-const login = user => request.post('v1/auth/users/login', user);
+const login = user => request.post('v3/auth/user/login', user);
+const admin = user => request.post('v3/auth/user/admin', user);
 
 /**
  * 单独在login处调用 获取提示信息
  */
-const guide = () => request.get('v1/console/server/guide');
+const guide = () => request.get('v3/console/server/guide');
 
 /**
  * 单独在login调用 判断是否可以登陆
  */
-const state = () => request.get('v1/console/server/state');
+const state = () => request.get('v3/console/server/state');
 
 const getState = () => dispatch =>
   request
-    .get('v1/console/server/state')
+    .get('v3/console/server/state')
     .then(res => {
       localStorage.setItem(LOGINPAGE_ENABLED, res.login_page_enabled);
       dispatch({
@@ -57,8 +60,10 @@ const getState = () => dispatch =>
           functionMode: res.function_mode,
           loginPageEnabled: res.login_page_enabled,
           authEnabled: res.auth_enabled,
+          authAdminRequest: res.auth_admin_request,
           consoleUiEnable: res.console_ui_enabled,
           startupMode: res.startup_mode,
+          configRetentionDays: res.config_retention_days,
         },
       });
     })
@@ -72,13 +77,14 @@ const getState = () => dispatch =>
           loginPageEnabled: null,
           authEnabled: null,
           consoleUiEnable: null,
+          authAdminRequest: null,
         },
       });
     });
 
 const getNotice = () => dispatch =>
   request
-    .get('v1/console/server/announcement?language=' + localStorage.getItem(LANGUAGE_KEY))
+    .get('v3/console/server/announcement?language=' + localStorage.getItem(LANGUAGE_KEY))
     .then(res => {
       dispatch({
         type: GET_NOTICE,
@@ -98,7 +104,7 @@ const getNotice = () => dispatch =>
 
 const getGuide = () => dispatch =>
   request
-    .get('v1/console/server/guide')
+    .get('v3/console/server/guide')
     .then(res => {
       dispatch({
         type: SERVER_GUIDE,
@@ -129,4 +135,4 @@ export default (state = initialState, action) => {
   }
 };
 
-export { getState, login, getNotice, getGuide, guide, state };
+export { getState, login, getNotice, getGuide, guide, state, admin };

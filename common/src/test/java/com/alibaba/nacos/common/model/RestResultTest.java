@@ -17,15 +17,15 @@
 package com.alibaba.nacos.common.model;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class RestResultTest {
+class RestResultTest {
     
     @Test
-    public void testSerialization() {
+    void testSerialization() {
         RestResult<String> result = new RestResult<>(200, "test", "content");
         String json = JacksonUtils.toJson(result);
         assertTrue(json.contains("\"code\":200"));
@@ -34,7 +34,7 @@ public class RestResultTest {
     }
     
     @Test
-    public void testDeserialization() {
+    void testDeserialization() {
         String json = "{\"code\":200,\"message\":\"test\",\"data\":\"content\"}";
         RestResult restResult = JacksonUtils.toObj(json, RestResult.class);
         assertEquals(200, restResult.getCode());

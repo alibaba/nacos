@@ -18,8 +18,8 @@ package com.alibaba.nacos.consistency;
 
 import com.alibaba.nacos.common.utils.Observable;
 import com.alibaba.nacos.common.utils.Observer;
+import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
-import org.javatuples.Pair;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -37,13 +37,17 @@ public final class ProtocolMetaData {
     
     private final Map<String, MetaData> metaDataMap = new ConcurrentHashMap<>(4);
     
+    /**
+     * used for jackson serialization.
+     *
+     * @return metaMap
+     */
     public Map<String, Map<Object, Object>> getMetaDataMap() {
         return metaDataMap.entrySet().stream().map(entry -> Pair.with(entry.getKey(),
-                entry.getValue().getItemMap().entrySet().stream()
-                        .collect(TreeMap::new, (m, e) -> m.put(e.getKey(), e.getValue().getData()), TreeMap::putAll)))
-                .collect(TreeMap::new, (m, e) -> m.put(e.getValue0(), e.getValue1()), TreeMap::putAll);
+                        entry.getValue().getItemMap().entrySet().stream()
+                                .collect(TreeMap::new, (m, e) -> m.put(e.getKey(), e.getValue().getData()), TreeMap::putAll)))
+                .collect(TreeMap::new, (m, e) -> m.put(e.getFirst(), e.getSecond()), TreeMap::putAll);
     }
-    
     // Does not guarantee thread safety, there may be two updates of
     // time-1 and time-2 (time-1 <time-2), but time-1 data overwrites time-2
     

@@ -16,11 +16,13 @@
 
 package com.alibaba.nacos.client.auth.ram.injector;
 
+import com.alibaba.nacos.client.auth.ram.RamConstants;
 import com.alibaba.nacos.client.auth.ram.RamContext;
 import com.alibaba.nacos.client.auth.ram.identify.IdentifyConstants;
 import com.alibaba.nacos.client.auth.ram.identify.StsConfig;
 import com.alibaba.nacos.client.auth.ram.identify.StsCredential;
 import com.alibaba.nacos.client.auth.ram.identify.StsCredentialHolder;
+import com.alibaba.nacos.client.auth.ram.utils.CalculateV4SigningKeyUtil;
 import com.alibaba.nacos.client.auth.ram.utils.SpasAdapter;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
@@ -54,8 +56,14 @@ public class ConfigResourceInjector extends AbstractResourceInjector {
         if (StringUtils.isNotEmpty(accessKey) && StringUtils.isNotBlank(secretKey)) {
             result.setParameter(ACCESS_KEY_HEADER, accessKey);
         }
+        String signatureKey = secretKey;
+        if (StringUtils.isNotEmpty(context.getRegionId())) {
+            signatureKey = CalculateV4SigningKeyUtil
+                    .finalSigningKeyStringWithDefaultInfo(secretKey, context.getRegionId());
+            result.setParameter(RamConstants.SIGNATURE_VERSION, RamConstants.V4);
+        }
         Map<String, String> signHeaders = SpasAdapter
-                .getSignHeaders(getResource(resource.getNamespace(), resource.getGroup()), secretKey);
+                .getSignHeaders(getResource(resource.getNamespace(), resource.getGroup()), signatureKey);
         result.setParameters(signHeaders);
     }
     

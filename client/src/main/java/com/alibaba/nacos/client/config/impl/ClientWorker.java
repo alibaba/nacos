@@ -43,11 +43,12 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.client.address.ServerListChangeEvent;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
-import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.env.SourceType;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.utils.AppNameUtils;
@@ -56,6 +57,7 @@ import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TenantUtil;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.common.labels.impl.DefaultLabelsCollectorManager;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -66,7 +68,9 @@ import com.alibaba.nacos.common.remote.client.ConnectionEventListener;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
+import com.alibaba.nacos.common.remote.client.RpcClientTlsConfigFactory;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
+import com.alibaba.nacos.common.utils.ConnLabelsUtils;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.GroupKeyPattern;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -89,6 +93,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -104,6 +109,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.alibaba.nacos.api.common.Constants.APP_CONN_PREFIX;
 import static com.alibaba.nacos.api.common.Constants.ENCODE;
 
 /**
@@ -137,12 +143,17 @@ public class ClientWorker implements Closeable {
      */
     private final AtomicReference<Map<String, FuzzyListenContext>> fuzzyListenContextMap = new AtomicReference<>(
             new HashMap<>());
+    private final DefaultLabelsCollectorManager defaultLabelsCollectorManager = new DefaultLabelsCollectorManager();
+    
+    private Map<String, String> appLables = new HashMap<>();
     
     private final ConfigFilterChainManager configFilterChainManager;
     
     private final String uuid = UUID.randomUUID().toString();
     
     private long timeout;
+    
+    private long requestTimeout;
     
     private final ConfigRpcTransportClient agent;
     
@@ -507,7 +518,7 @@ public class ClientWorker implements Closeable {
                 cache.setTaskId(taskId);
                 // fix issue # 1317
                 if (enableRemoteSyncConfig) {
-                    ConfigResponse response = getServerConfig(dataId, group, tenant, 3000L, false);
+                    ConfigResponse response = getServerConfig(dataId, group, tenant, requestTimeout, false);
                     cache.setEncryptedDataKey(response.getEncryptedDataKey());
                     cache.setContent(response.getContent());
                 }
@@ -734,6 +745,26 @@ public class ClientWorker implements Closeable {
         String groupKeyPattern = GroupKeyPattern.generateFuzzyListenGroupKeyPattern(dataIdPattern, group);
         return contextMap.containsKey(groupKeyPattern);
     }
+  
+    @SuppressWarnings("PMD.ThreadPoolCreationRule")
+    public ClientWorker(final ConfigFilterChainManager configFilterChainManager, ConfigServerListManager serverListManager,
+            final NacosClientProperties properties) throws NacosException {
+        this.configFilterChainManager = configFilterChainManager;
+        
+        init(properties);
+        
+        agent = new ConfigRpcTransportClient(properties, serverListManager);
+        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(initWorkerThreadCount(properties),
+                new NameThreadFactory("com.alibaba.nacos.client.Worker"));
+        agent.setExecutor(executorService);
+        agent.start();
+        
+    }
+    
+    void initAppLabels(Properties properties) {
+        this.appLables = ConnLabelsUtils.addPrefixForEachKey(defaultLabelsCollectorManager.getLabels(properties),
+                APP_CONN_PREFIX);
+    }
     
     private int initWorkerThreadCount(NacosClientProperties properties) {
         int count = ThreadUtils.getSuitableThreadCount(THREAD_MULTIPLE);
@@ -747,6 +778,8 @@ public class ClientWorker implements Closeable {
     
     private void init(NacosClientProperties properties) {
         
+        requestTimeout = ConvertUtils.toLong(properties.getProperty(PropertyKeyConst.CONFIG_REQUEST_TIMEOUT, "-1"));
+        
         timeout = Math.max(ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT),
                 Constants.CONFIG_LONG_POLL_TIMEOUT), Constants.MIN_CONFIG_LONG_POLL_TIMEOUT);
         
@@ -755,6 +788,7 @@ public class ClientWorker implements Closeable {
         
         this.enableRemoteSyncConfig = Boolean.parseBoolean(
                 properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
+        initAppLabels(properties.getProperties(SourceType.PROPERTIES));
     }
     
     Map<String, Object> getMetrics(List<ClientConfigMetricRequest.MetricsKey> metricsKeys) {
@@ -762,9 +796,8 @@ public class ClientWorker implements Closeable {
         metric.put("listenConfigSize", String.valueOf(this.cacheMap.get().size()));
         metric.put("clientVersion", VersionUtils.getFullClientVersion());
         metric.put("snapshotDir", LocalConfigInfoProcessor.LOCAL_SNAPSHOT_PATH);
-        boolean isFixServer = agent.serverListManager.isFixed;
-        metric.put("isFixedServer", isFixServer);
-        metric.put("addressUrl", agent.serverListManager.addressServerUrl);
+        metric.put("addressUrl", agent.serverListManager.getAddressSource());
+        metric.put("isFixedServer", agent.serverListManager.isFixed());
         metric.put("serverUrls", agent.serverListManager.getUrlString());
         
         Map<ClientConfigMetricRequest.MetricsKey, Object> metricValues = getMetricsValue(metricsKeys);
@@ -853,7 +886,7 @@ public class ClientWorker implements Closeable {
          */
         private long fuzzyListenLastAllSyncTime = System.currentTimeMillis();
         
-        public ConfigRpcTransportClient(NacosClientProperties properties, ServerListManager serverListManager) {
+        public ConfigRpcTransportClient(NacosClientProperties properties, ConfigServerListManager serverListManager) {
             super(properties, serverListManager);
         }
         
@@ -902,10 +935,17 @@ public class ClientWorker implements Closeable {
             labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
             labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_CONFIG);
             labels.put(Constants.APPNAME, AppNameUtils.getAppName());
-            labels.put(Constants.VIPSERVER_TAG, EnvUtil.getSelfVipserverTag());
-            labels.put(Constants.AMORY_TAG, EnvUtil.getSelfAmoryTag());
-            labels.put(Constants.LOCATION_TAG, EnvUtil.getSelfLocationTag());
+            if (EnvUtil.getSelfVipserverTag() != null) {
+                labels.put(Constants.VIPSERVER_TAG, EnvUtil.getSelfVipserverTag());
+            }
+            if (EnvUtil.getSelfAmoryTag() != null) {
+                labels.put(Constants.AMORY_TAG, EnvUtil.getSelfAmoryTag());
+            }
+            if (EnvUtil.getSelfLocationTag() != null) {
+                labels.put(Constants.LOCATION_TAG, EnvUtil.getSelfLocationTag());
+            }
             
+            labels.putAll(appLables);
             return labels;
         }
         
@@ -1020,7 +1060,8 @@ public class ClientWorker implements Closeable {
              */
             rpcClientInner.registerServerRequestHandler((request, connection) -> {
                 if (request instanceof ConfigChangeNotifyRequest) {
-                    handleConfigChangeNotifyRequest((ConfigChangeNotifyRequest) request, rpcClientInner.getName());
+                    return handleConfigChangeNotifyRequest((ConfigChangeNotifyRequest) request,
+                            rpcClientInner.getName());
                 }
                 if (request instanceof FuzzyListenNotifyDiffRequest) {
                     return handleFuzzyListenNotifyDiffRequest((FuzzyListenNotifyDiffRequest) request,
@@ -1085,19 +1126,19 @@ public class ClientWorker implements Closeable {
             rpcClientInner.serverListFactory(new ServerListFactory() {
                 @Override
                 public String genNextServer() {
-                    return ConfigRpcTransportClient.super.serverListManager.getNextServerAddr();
+                    return ConfigRpcTransportClient.super.serverListManager.genNextServer();
                     
                 }
                 
                 @Override
                 public String getCurrentServer() {
-                    return ConfigRpcTransportClient.super.serverListManager.getCurrentServerAddr();
+                    return ConfigRpcTransportClient.super.serverListManager.getCurrentServer();
                     
                 }
                 
                 @Override
                 public List<String> getServerList() {
-                    return ConfigRpcTransportClient.super.serverListManager.getServerUrls();
+                    return ConfigRpcTransportClient.super.serverListManager.getServerList();
                     
                 }
             });
@@ -1383,9 +1424,8 @@ public class ClientWorker implements Closeable {
                 cacheData.setUseLocalConfigInfo(true);
                 cacheData.setLocalConfigInfoVersion(file.lastModified());
                 cacheData.setContent(content);
-                LOGGER.warn(
-                        "[{}] [failover-change] failover file created. dataId={}, group={}, tenant={}, md5={}, content={}",
-                        envName, dataId, group, tenant, md5, ContentUtils.truncateContent(content));
+                LOGGER.warn("[{}] [failover-change] failover file created. dataId={}, group={}, tenant={}, md5={}",
+                        envName, dataId, group, tenant, md5);
                 return;
             }
             
@@ -1405,9 +1445,8 @@ public class ClientWorker implements Closeable {
                 cacheData.setUseLocalConfigInfo(true);
                 cacheData.setLocalConfigInfoVersion(file.lastModified());
                 cacheData.setContent(content);
-                LOGGER.warn(
-                        "[{}] [failover-change] failover file changed. dataId={}, group={}, tenant={}, md5={}, content={}",
-                        envName, dataId, group, tenant, md5, ContentUtils.truncateContent(content));
+                LOGGER.warn("[{}] [failover-change] failover file changed. dataId={}, group={}, tenant={}, md5={}",
+                        envName, dataId, group, tenant, md5);
             }
         }
         
@@ -1459,16 +1498,16 @@ public class ClientWorker implements Closeable {
             try {
                 
                 ConfigResponse response = this.queryConfigInner(rpcClient, cacheData.dataId, cacheData.group,
-                        cacheData.tenant, 3000L, notify);
+                        cacheData.tenant, requestTimeout, notify);
                 cacheData.setEncryptedDataKey(response.getEncryptedDataKey());
                 cacheData.setContent(response.getContent());
                 if (null != response.getConfigType()) {
                     cacheData.setType(response.getConfigType());
                 }
                 if (notify) {
-                    LOGGER.info("[{}] [data-received] dataId={}, group={}, tenant={}, md5={}, content={}, type={}",
-                            agent.getName(), cacheData.dataId, cacheData.group, cacheData.tenant, cacheData.getMd5(),
-                            ContentUtils.truncateContent(response.getContent()), response.getConfigType());
+                    LOGGER.info("[{}] [data-received] dataId={}, group={}, tenant={}, md5={}, type={}", agent.getName(),
+                            cacheData.dataId, cacheData.group, cacheData.tenant, cacheData.getMd5(),
+                            response.getConfigType());
                 }
                 cacheData.checkListenerMd5();
             } catch (Exception e) {
@@ -1618,18 +1657,19 @@ public class ClientWorker implements Closeable {
         
         private RpcClient ensureRpcClient(String taskId) throws NacosException {
             synchronized (ClientWorker.this) {
-                
                 Map<String, String> labels = getLabels();
                 Map<String, String> newLabels = new HashMap<>(labels);
                 newLabels.put("taskId", taskId);
+                RpcClientTlsConfig clientTlsConfig = RpcClientTlsConfigFactory.getInstance()
+                        .createSdkConfig(properties);
                 RpcClient rpcClient = RpcClientFactory.createClient(uuid + "_config-" + taskId, getConnectionType(),
-                        newLabels, RpcClientTlsConfig.properties(this.properties));
+                        newLabels, clientTlsConfig);
                 if (rpcClient.isWaitInitiated()) {
                     initRpcClientHandler(rpcClient);
                     rpcClient.setTenant(getTenant());
                     rpcClient.start();
                 }
-                
+    
                 return rpcClient;
             }
             
@@ -1750,7 +1790,7 @@ public class ClientWorker implements Closeable {
         }
         
         private Response requestProxy(RpcClient rpcClientInner, Request request) throws NacosException {
-            return requestProxy(rpcClientInner, request, 3000L);
+            return requestProxy(rpcClientInner, request, requestTimeout);
         }
         
         private Response requestProxy(RpcClient rpcClientInner, Request request, long timeoutMills)
@@ -1769,7 +1809,17 @@ public class ClientWorker implements Closeable {
                 throw new NacosException(NacosException.CLIENT_OVER_THRESHOLD,
                         "More than client-side current limit threshold");
             }
-            return rpcClientInner.request(request, timeoutMills);
+            Response response;
+            if (timeoutMills < 0) {
+                response = rpcClientInner.request(request);
+            } else {
+                response = rpcClientInner.request(request, timeoutMills);
+            }
+            // If the 403 login operation is triggered, refresh the accessToken of the client
+            if (response.getErrorCode() == ConfigQueryResponse.NO_RIGHT) {
+                reLogin();
+            }
+            return response;
         }
         
         private RequestResource resourceBuild(Request request) {
@@ -1817,8 +1867,8 @@ public class ClientWorker implements Closeable {
                             this.getName(), dataId, group, tenant, response.getErrorCode(), response.getMessage());
                     return false;
                 } else {
-                    LOGGER.info("[{}] [publish-single] ok, dataId={}, group={}, tenant={}, config={}", getName(),
-                            dataId, group, tenant, ContentUtils.truncateContent(content));
+                    LOGGER.info("[{}] [publish-single] ok, dataId={}, group={}, tenant={}", getName(),
+                            dataId, group, tenant);
                     return true;
                 }
             } catch (Exception e) {

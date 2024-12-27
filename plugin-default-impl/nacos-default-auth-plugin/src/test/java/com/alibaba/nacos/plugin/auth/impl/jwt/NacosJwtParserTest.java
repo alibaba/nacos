@@ -17,16 +17,16 @@
 package com.alibaba.nacos.plugin.auth.impl.jwt;
 
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * NacosJwtParserTest.
@@ -34,16 +34,16 @@ import static org.junit.Assert.assertTrue;
  * @author Weizhan▪Yun
  * @date 2023/2/1 16:32
  */
-@RunWith(MockitoJUnitRunner.class)
-public class NacosJwtParserTest {
+@ExtendWith(MockitoExtension.class)
+class NacosJwtParserTest {
     
     @Test
-    public void testParseWithOriginKey() {
+    void testParseWithOriginKey() {
         new NacosJwtParser("SecretKey012345678901234567890123456789012345678901234567890123456789");
     }
     
     @Test
-    public void testParseWith16Key() {
+    void testParseWith16Key() {
         Exception e = null;
         try {
             new NacosJwtParser("SecretKey0123456");
@@ -57,7 +57,7 @@ public class NacosJwtParserTest {
     }
     
     @Test
-    public void testParseWith32Key() {
+    void testParseWith32Key() {
         NacosJwtParser parser = new NacosJwtParser(encode("SecretKey01234567890123456789012"));
         String token = parser.jwtBuilder().setUserName("nacos").setExpiredTime(100L).compact();
         
@@ -65,7 +65,7 @@ public class NacosJwtParserTest {
     }
     
     @Test
-    public void testParseWith48Key() {
+    void testParseWith48Key() {
         NacosJwtParser parser = new NacosJwtParser(encode("SecretKey012345678901234567890120124568aa9012345"));
         String token = parser.jwtBuilder().setUserName("nacos").setExpiredTime(100L).compact();
         
@@ -73,18 +73,16 @@ public class NacosJwtParserTest {
     }
     
     @Test
-    public void testParseWith64Key() {
-        NacosJwtParser parser = new NacosJwtParser(
-                encode("SecretKey012345678901234567SecretKey0123456789012345678901289012"));
+    void testParseWith64Key() {
+        NacosJwtParser parser = new NacosJwtParser(encode("SecretKey012345678901234567SecretKey0123456789012345678901289012"));
         String token = parser.jwtBuilder().setUserName("nacos").setExpiredTime(100L).compact();
         
         assertTrue(token.startsWith(NacosSignatureAlgorithm.HS512.getHeader()));
     }
     
     @Test
-    public void testGetExpireTimeInSeconds() throws AccessException {
-        NacosJwtParser parser = new NacosJwtParser(
-                encode("SecretKey012345678901234567SecretKey0123456789012345678901289012"));
+    void testGetExpireTimeInSeconds() throws AccessException {
+        NacosJwtParser parser = new NacosJwtParser(encode("SecretKey012345678901234567SecretKey0123456789012345678901289012"));
         String token = parser.jwtBuilder().setUserName("nacos").setExpiredTime(100L).compact();
         long expiredTimeSeconds = parser.getExpireTimeInSeconds(token);
         assertTrue(expiredTimeSeconds * 1000 - System.currentTimeMillis() > 0);

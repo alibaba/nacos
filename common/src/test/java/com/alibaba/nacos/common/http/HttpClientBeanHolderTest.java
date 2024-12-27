@@ -18,24 +18,29 @@ package com.alibaba.nacos.common.http;
 
 import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.slf4j.Logger;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class HttpClientBeanHolderTest {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class HttpClientBeanHolderTest {
     
     private Map<String, NacosRestTemplate> cachedRestTemplateMap;
     
@@ -54,8 +59,8 @@ public class HttpClientBeanHolderTest {
     @Mock
     private HttpClientFactory mockFactory;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         cachedRestTemplateMap = new HashMap<>();
         cachedAsyncRestTemplateMap = new HashMap<>();
         restMap = (Map<String, NacosRestTemplate>) getCachedMap("SINGLETON_REST");
@@ -68,8 +73,8 @@ public class HttpClientBeanHolderTest {
         when(mockFactory.createNacosAsyncRestTemplate()).thenReturn(mockAsyncRestTemplate);
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         restMap.putAll(cachedRestTemplateMap);
         restAsyncMap.putAll(cachedAsyncRestTemplateMap);
         cachedRestTemplateMap.clear();
@@ -83,7 +88,7 @@ public class HttpClientBeanHolderTest {
     }
     
     @Test
-    public void testGetNacosRestTemplateWithDefault() {
+    void testGetNacosRestTemplateWithDefault() {
         assertTrue(restMap.isEmpty());
         NacosRestTemplate actual = HttpClientBeanHolder.getNacosRestTemplate((Logger) null);
         assertEquals(1, restMap.size());
@@ -92,13 +97,15 @@ public class HttpClientBeanHolderTest {
         assertEquals(actual, duplicateGet);
     }
     
-    @Test(expected = NullPointerException.class)
-    public void testGetNacosRestTemplateForNullFactory() {
-        HttpClientBeanHolder.getNacosRestTemplate((HttpClientFactory) null);
+    @Test
+    void testGetNacosRestTemplateForNullFactory() {
+        assertThrows(NullPointerException.class, () -> {
+            HttpClientBeanHolder.getNacosRestTemplate((HttpClientFactory) null);
+        });
     }
     
     @Test
-    public void testGetNacosRestTemplateWithCustomFactory() {
+    void testGetNacosRestTemplateWithCustomFactory() {
         assertTrue(restMap.isEmpty());
         HttpClientBeanHolder.getNacosRestTemplate((Logger) null);
         assertEquals(1, restMap.size());
@@ -108,7 +115,7 @@ public class HttpClientBeanHolderTest {
     }
     
     @Test
-    public void testGetNacosAsyncRestTemplateWithDefault() {
+    void testGetNacosAsyncRestTemplateWithDefault() {
         assertTrue(restAsyncMap.isEmpty());
         NacosAsyncRestTemplate actual = HttpClientBeanHolder.getNacosAsyncRestTemplate((Logger) null);
         assertEquals(1, restAsyncMap.size());
@@ -117,13 +124,15 @@ public class HttpClientBeanHolderTest {
         assertEquals(actual, duplicateGet);
     }
     
-    @Test(expected = NullPointerException.class)
-    public void testGetNacosAsyncRestTemplateForNullFactory() {
-        HttpClientBeanHolder.getNacosAsyncRestTemplate((HttpClientFactory) null);
+    @Test
+    void testGetNacosAsyncRestTemplateForNullFactory() {
+        assertThrows(NullPointerException.class, () -> {
+            HttpClientBeanHolder.getNacosAsyncRestTemplate((HttpClientFactory) null);
+        });
     }
     
     @Test
-    public void testGetNacosAsyncRestTemplateWithCustomFactory() {
+    void testGetNacosAsyncRestTemplateWithCustomFactory() {
         assertTrue(restAsyncMap.isEmpty());
         HttpClientBeanHolder.getNacosAsyncRestTemplate((Logger) null);
         assertEquals(1, restAsyncMap.size());
@@ -133,7 +142,7 @@ public class HttpClientBeanHolderTest {
     }
     
     @Test
-    public void shutdown() throws Exception {
+    void shutdown() throws Exception {
         HttpClientBeanHolder.getNacosRestTemplate((Logger) null);
         HttpClientBeanHolder.getNacosAsyncRestTemplate((Logger) null);
         assertEquals(1, restMap.size());

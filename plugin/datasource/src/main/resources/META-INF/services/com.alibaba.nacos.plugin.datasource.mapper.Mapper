@@ -14,20 +14,20 @@
 # limitations under the License.
 #
 
-com.alibaba.nacos.plugin.datasource.impl.mysql.ConfigInfoAggrMapperByMySql
 com.alibaba.nacos.plugin.datasource.impl.mysql.ConfigInfoBetaMapperByMySql
 com.alibaba.nacos.plugin.datasource.impl.mysql.ConfigInfoMapperByMySql
 com.alibaba.nacos.plugin.datasource.impl.mysql.ConfigInfoTagMapperByMySql
+com.alibaba.nacos.plugin.datasource.impl.mysql.ConfigInfoGrayMapperByMySql
 com.alibaba.nacos.plugin.datasource.impl.mysql.ConfigTagsRelationMapperByMySql
 com.alibaba.nacos.plugin.datasource.impl.mysql.HistoryConfigInfoMapperByMySql
 com.alibaba.nacos.plugin.datasource.impl.mysql.TenantInfoMapperByMySql
 com.alibaba.nacos.plugin.datasource.impl.mysql.TenantCapacityMapperByMySql
 com.alibaba.nacos.plugin.datasource.impl.mysql.GroupCapacityMapperByMysql
 
-com.alibaba.nacos.plugin.datasource.impl.derby.ConfigInfoAggrMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.ConfigInfoBetaMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.ConfigInfoMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.ConfigInfoTagMapperByDerby
+com.alibaba.nacos.plugin.datasource.impl.derby.ConfigInfoGrayMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.ConfigInfoTagsRelationMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.HistoryConfigInfoMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.TenantInfoMapperByDerby

@@ -37,6 +37,7 @@ public class ConfigBlurSearchHttpParamExtractor extends AbstractHttpParamExtract
     public List<ParamInfo> extractParam(HttpServletRequest request) {
         String searchMode = request.getParameter("search");
         ArrayList<ParamInfo> paramInfos = new ArrayList<>();
+        // TODO might replace '*' to empty char '' and still do check.
         if (StringUtils.equals(searchMode, BLUR_SEARCH_MODE)) {
             return paramInfos;
         }

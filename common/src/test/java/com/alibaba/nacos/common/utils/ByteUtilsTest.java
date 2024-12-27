@@ -17,8 +17,12 @@
 package com.alibaba.nacos.common.utils;
 
 import com.alibaba.nacos.common.utils.to.User;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * ByteUtils Test.
@@ -27,51 +31,51 @@ import org.junit.Test;
  * @Author: ChenHao26
  * @Date: 2022/8/22 10:58
  */
-public class ByteUtilsTest {
+class ByteUtilsTest {
     
     @Test
-    public void objectToByte() {
+    void objectToByte() {
         User user = new User(1, "google");
         byte[] bytes = ByteUtils.toBytes(user);
-        Assert.assertNotNull(bytes);
+        assertNotNull(bytes);
     }
     
     @Test
-    public void stringToByte() {
+    void stringToByte() {
         byte[] bytes = ByteUtils.toBytes("google");
-        Assert.assertNotNull(bytes);
+        assertNotNull(bytes);
     }
     
     @Test
-    public void toStringTest() {
+    void toStringTest() {
         byte[] bytes = ByteUtils.toBytes("google");
         String str = ByteUtils.toString(bytes);
-        Assert.assertEquals(str, "google");
+        assertEquals("google", str);
     }
     
     @Test
-    public void testForInputNull() {
-        Assert.assertEquals(0, ByteUtils.toBytes(null).length);
-        Assert.assertEquals(0, ByteUtils.toBytes((Object) null).length);
-        Assert.assertEquals("", ByteUtils.toString(null));
+    void testForInputNull() {
+        assertEquals(0, ByteUtils.toBytes(null).length);
+        assertEquals(0, ByteUtils.toBytes((Object) null).length);
+        assertEquals("", ByteUtils.toString(null));
     }
     
     @Test
-    public void isEmpty() {
+    void isEmpty() {
         byte[] bytes = ByteUtils.toBytes("");
-        Assert.assertTrue(ByteUtils.isEmpty(bytes));
+        assertTrue(ByteUtils.isEmpty(bytes));
         byte[] byte2 = new byte[1024];
-        Assert.assertFalse(ByteUtils.isEmpty(byte2));
+        assertFalse(ByteUtils.isEmpty(byte2));
         byte[] byte3 = null;
-        Assert.assertTrue(ByteUtils.isEmpty(byte3));
+        assertTrue(ByteUtils.isEmpty(byte3));
     }
     
     @Test
-    public void isNotEmpty() {
+    void isNotEmpty() {
         byte[] bytes = ByteUtils.toBytes("google");
-        Assert.assertTrue(ByteUtils.isNotEmpty(bytes));
+        assertTrue(ByteUtils.isNotEmpty(bytes));
         byte[] bytes2 = ByteUtils.toBytes("");
-        Assert.assertFalse(ByteUtils.isNotEmpty(bytes2));
+        assertFalse(ByteUtils.isNotEmpty(bytes2));
     }
 }
 

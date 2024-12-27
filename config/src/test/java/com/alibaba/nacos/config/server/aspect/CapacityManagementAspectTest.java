@@ -26,28 +26,38 @@ import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.aspectj.lang.ProceedingJoinPoint;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static com.alibaba.nacos.config.server.aspect.CapacityManagementAspect.LimitType.OVER_CLUSTER_QUOTA;
 import static com.alibaba.nacos.config.server.aspect.CapacityManagementAspect.LimitType.OVER_MAX_SIZE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-public class CapacityManagementAspectTest {
+@ExtendWith(SpringExtension.class)
+class CapacityManagementAspectTest {
+    
+    final String mockProceedingJoinPointResult = "mock success return";
+    
+    final String mockDataId = "mockDataId";
+    
+    final String mockGroup = "mockGroup";
+    
+    final String mockTenant = "mockTenant";
+    
+    final String mockContent = "mockContent";
     
     @Mock
     ProceedingJoinPoint proceedingJoinPoint;
@@ -69,18 +79,8 @@ public class CapacityManagementAspectTest {
     
     MockedStatic<EnvUtil> envUtilMockedStatic;
     
-    final String mockProceedingJoinPointResult = "mock success return";
-    
-    final String mockDataId = "mockDataId";
-    
-    final String mockGroup = "mockGroup";
-    
-    final String mockTenant = "mockTenant";
-    
-    final String mockContent = "mockContent";
-    
-    @Before
-    public void before() throws Throwable {
+    @BeforeEach
+    void before() throws Throwable {
         //PropertyUtil.isCapacityLimitCheck()
         propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
         when(PropertyUtil.getCorrectUsageDelay()).thenReturn(10 * 60);
@@ -97,14 +97,14 @@ public class CapacityManagementAspectTest {
         when(localMockProceedingJoinPoint.proceed()).thenThrow(mockException);
     }
     
-    @After
-    public void after() {
+    @AfterEach
+    void after() {
         propertyUtilMockedStatic.close();
         envUtilMockedStatic.close();
     }
     
     @Test
-    public void testAroundSyncUpdateConfigAllForInsertAspect() throws Throwable {
+    void testAroundSyncUpdateConfigAllForInsertAspect() throws Throwable {
         //test with insert
         //condition:
         //  1. has tenant: true
@@ -113,15 +113,16 @@ public class CapacityManagementAspectTest {
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
         MockHttpServletResponse mockHttpServletResponse = new MockHttpServletResponse();
         
-        String localMockResult = (String) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint, mockHttpServletRequest,
-                mockHttpServletResponse, mockDataId, mockGroup, mockContent, null, null, mockTenant, null);
+        String localMockResult = (String) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint,
+                mockHttpServletRequest, mockHttpServletResponse, mockDataId, mockGroup, mockContent, null, null,
+                mockTenant, null);
         Mockito.verify(proceedingJoinPoint, Mockito.times(1)).proceed();
         Mockito.verify(configInfoPersistService, Mockito.times(0)).findConfigInfo(any(), any(), any());
         assert localMockResult.equals(mockProceedingJoinPointResult);
     }
     
     @Test
-    public void testAroundSyncUpdateConfigAllForInsertAspect1() throws Throwable {
+    void testAroundSyncUpdateConfigAllForInsertAspect1() throws Throwable {
         //test with insert
         //condition:
         //  1. has tenant: true
@@ -134,14 +135,15 @@ public class CapacityManagementAspectTest {
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
         MockHttpServletResponse mockHttpServletResponse = new MockHttpServletResponse();
         
-        String localMockResult = (String) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint, mockHttpServletRequest,
-                mockHttpServletResponse, mockDataId, mockGroup, mockContent, null, null, mockTenant, null);
+        String localMockResult = (String) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint,
+                mockHttpServletRequest, mockHttpServletResponse, mockDataId, mockGroup, mockContent, null, null,
+                mockTenant, null);
         assertEquals(localMockResult, String.valueOf(OVER_CLUSTER_QUOTA.status));
         Mockito.verify(proceedingJoinPoint, Mockito.times(0)).proceed();
     }
     
     @Test
-    public void testAroundSyncUpdateConfigAllForInsertAspect2Tenant() throws Throwable {
+    void testAroundSyncUpdateConfigAllForInsertAspect2Tenant() throws Throwable {
         //test with insert
         //condition:
         //  1. has tenant: true
@@ -158,8 +160,9 @@ public class CapacityManagementAspectTest {
         
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
         MockHttpServletResponse mockHttpServletResponse = new MockHttpServletResponse();
-        String localMockResult = (String) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint, mockHttpServletRequest,
-                mockHttpServletResponse, mockDataId, mockGroup, mockContent, null, null, mockTenant, null);
+        String localMockResult = (String) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint,
+                mockHttpServletRequest, mockHttpServletResponse, mockDataId, mockGroup, mockContent, null, null,
+                mockTenant, null);
         assertEquals(localMockResult, mockProceedingJoinPointResult);
         Mockito.verify(capacityService, Mockito.times(1)).initTenantCapacity(eq(mockTenant));
         Mockito.verify(capacityService, Mockito.times(1)).updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant));
@@ -167,7 +170,7 @@ public class CapacityManagementAspectTest {
     }
     
     @Test
-    public void testAroundSyncUpdateConfigAllForInsertAspect2Group() throws Throwable {
+    void testAroundSyncUpdateConfigAllForInsertAspect2Group() throws Throwable {
         //test with insert
         //condition:
         //  1. has tenant: false
@@ -184,8 +187,9 @@ public class CapacityManagementAspectTest {
         
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
         MockHttpServletResponse mockHttpServletResponse = new MockHttpServletResponse();
-        String localMockResult = (String) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint, mockHttpServletRequest,
-                mockHttpServletResponse, mockDataId, mockGroup, mockContent, null, null, null, null);
+        String localMockResult = (String) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint,
+                mockHttpServletRequest, mockHttpServletResponse, mockDataId, mockGroup, mockContent, null, null, null,
+                null);
         assertEquals(localMockResult, mockProceedingJoinPointResult);
         Mockito.verify(capacityService, Mockito.times(1)).initGroupCapacity(eq(mockGroup));
         Mockito.verify(capacityService, Mockito.times(1)).updateGroupUsage(eq(CounterMode.INCREMENT), eq(mockGroup));
@@ -193,7 +197,7 @@ public class CapacityManagementAspectTest {
     }
     
     @Test
-    public void testAroundSyncUpdateConfigAllForInsertAspect3Tenant() throws Throwable {
+    void testAroundSyncUpdateConfigAllForInsertAspect3Tenant() throws Throwable {
         //test with insert
         //condition:
         //  1. has tenant: true
@@ -214,8 +218,9 @@ public class CapacityManagementAspectTest {
         
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
         MockHttpServletResponse mockHttpServletResponse = new MockHttpServletResponse();
-        String localMockResult = (String) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint, mockHttpServletRequest,
-                mockHttpServletResponse, mockDataId, mockGroup, mockContent, null, null, mockTenant, null);
+        String localMockResult = (String) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint,
+                mockHttpServletRequest, mockHttpServletResponse, mockDataId, mockGroup, mockContent, null, null,
+                mockTenant, null);
         assertEquals(localMockResult, mockProceedingJoinPointResult);
         Mockito.verify(capacityService, Mockito.times(0)).initTenantCapacity(eq(mockTenant));
         Mockito.verify(capacityService, Mockito.times(1)).updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant));
@@ -224,20 +229,22 @@ public class CapacityManagementAspectTest {
         //  5. over tenant max size: true
         localTenantCapacity.setMaxSize(1);
         localTenantCapacity.setMaxAggrCount(1);
-        localMockResult = (String) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint, mockHttpServletRequest,
-                mockHttpServletResponse, mockDataId, mockGroup, mockContent, null, null, mockTenant, null);
+        localMockResult = (String) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint,
+                mockHttpServletRequest, mockHttpServletResponse, mockDataId, mockGroup, mockContent, null, null,
+                mockTenant, null);
         assertEquals(localMockResult, String.valueOf(OVER_MAX_SIZE.status));
         
         //  5. over tenant max size: true
         localTenantCapacity.setMaxSize(10 * 1024);
         localTenantCapacity.setMaxAggrCount(1024);
-        localMockResult = (String) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint, mockHttpServletRequest,
-                mockHttpServletResponse, mockDataId, mockGroup, mockContent, null, null, mockTenant, null);
+        localMockResult = (String) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint,
+                mockHttpServletRequest, mockHttpServletResponse, mockDataId, mockGroup, mockContent, null, null,
+                mockTenant, null);
         assertEquals(localMockResult, mockProceedingJoinPointResult);
     }
     
     @Test
-    public void testAroundSyncUpdateConfigAllForInsertAspect3Group() throws Throwable {
+    void testAroundSyncUpdateConfigAllForInsertAspect3Group() throws Throwable {
         //test with insert
         //condition:
         //  1. has tenant: true
@@ -258,8 +265,9 @@ public class CapacityManagementAspectTest {
         
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
         MockHttpServletResponse mockHttpServletResponse = new MockHttpServletResponse();
-        String localMockResult = (String) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint, mockHttpServletRequest,
-                mockHttpServletResponse, mockDataId, mockGroup, mockContent, null, null, null, null);
+        String localMockResult = (String) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint,
+                mockHttpServletRequest, mockHttpServletResponse, mockDataId, mockGroup, mockContent, null, null, null,
+                null);
         assertEquals(localMockResult, mockProceedingJoinPointResult);
         Mockito.verify(capacityService, Mockito.times(0)).initGroupCapacity(eq(mockGroup));
         Mockito.verify(capacityService, Mockito.times(1)).updateGroupUsage(eq(CounterMode.INCREMENT), eq(mockGroup));
@@ -268,20 +276,22 @@ public class CapacityManagementAspectTest {
         //  5. over tenant max size: true
         localGroupCapacity.setMaxSize(1);
         localGroupCapacity.setMaxAggrCount(1);
-        localMockResult = (String) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint, mockHttpServletRequest,
-                mockHttpServletResponse, mockDataId, mockGroup, mockContent, null, null, null, null);
+        localMockResult = (String) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint,
+                mockHttpServletRequest, mockHttpServletResponse, mockDataId, mockGroup, mockContent, null, null, null,
+                null);
         assertEquals(localMockResult, String.valueOf(OVER_MAX_SIZE.status));
         
         //  5. over tenant max size: true
         localGroupCapacity.setMaxSize(10 * 1024);
         localGroupCapacity.setMaxAggrCount(1024);
-        localMockResult = (String) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint, mockHttpServletRequest,
-                mockHttpServletResponse, mockDataId, mockGroup, mockContent, null, null, null, null);
+        localMockResult = (String) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint,
+                mockHttpServletRequest, mockHttpServletResponse, mockDataId, mockGroup, mockContent, null, null, null,
+                null);
         assertEquals(localMockResult, mockProceedingJoinPointResult);
     }
     
     @Test
-    public void testAroundSyncUpdateConfigAllForUpdateAspectTenant() throws Throwable {
+    void testAroundSyncUpdateConfigAllForUpdateAspectTenant() throws Throwable {
         //condition:
         //  1. has tenant: true
         //  2. capacity limit check: true
@@ -301,8 +311,9 @@ public class CapacityManagementAspectTest {
         
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
         MockHttpServletResponse mockHttpServletResponse = new MockHttpServletResponse();
-        String localMockResult = (String) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint, mockHttpServletRequest,
-                mockHttpServletResponse, mockDataId, mockGroup, mockContent, null, null, mockTenant, null);
+        String localMockResult = (String) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint,
+                mockHttpServletRequest, mockHttpServletResponse, mockDataId, mockGroup, mockContent, null, null,
+                mockTenant, null);
         assertEquals(localMockResult, mockProceedingJoinPointResult);
         Mockito.verify(capacityService, Mockito.times(0)).initTenantCapacity(eq(mockTenant));
         Mockito.verify(capacityService, Mockito.times(0)).updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant));
@@ -311,7 +322,7 @@ public class CapacityManagementAspectTest {
     }
     
     @Test
-    public void testAroundSyncUpdateConfigAllForUpdateAspectGroup() throws Throwable {
+    void testAroundSyncUpdateConfigAllForUpdateAspectGroup() throws Throwable {
         //condition:
         //  1. has tenant: false
         //  2. capacity limit check: true
@@ -331,8 +342,9 @@ public class CapacityManagementAspectTest {
         
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
         MockHttpServletResponse mockHttpServletResponse = new MockHttpServletResponse();
-        String localMockResult = (String) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint, mockHttpServletRequest,
-                mockHttpServletResponse, mockDataId, mockGroup, mockContent, null, null, null, null);
+        String localMockResult = (String) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint,
+                mockHttpServletRequest, mockHttpServletResponse, mockDataId, mockGroup, mockContent, null, null, null,
+                null);
         assertEquals(localMockResult, mockProceedingJoinPointResult);
         Mockito.verify(capacityService, Mockito.times(0)).initGroupCapacity(eq(mockGroup));
         Mockito.verify(capacityService, Mockito.times(1)).getGroupCapacity(eq(mockGroup));
@@ -341,7 +353,7 @@ public class CapacityManagementAspectTest {
     }
     
     @Test
-    public void testAroundSyncUpdateConfigAllForInsertRollbackAspect() throws Throwable {
+    void testAroundSyncUpdateConfigAllForInsertRollbackAspect() throws Throwable {
         //test with insert
         //condition:
         //  1. has tenant: true
@@ -365,9 +377,9 @@ public class CapacityManagementAspectTest {
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
         MockHttpServletResponse mockHttpServletResponse = new MockHttpServletResponse();
         try {
-            localMockResult = (String) capacityManagementAspect.aroundSyncUpdateConfigAll(
-                    localMockProceedingJoinPoint, mockHttpServletRequest, mockHttpServletResponse,
-                    mockDataId, mockGroup, mockContent, null, null, mockTenant, null);
+            localMockResult = (String) capacityManagementAspect.aroundSyncUpdateConfigAll(localMockProceedingJoinPoint,
+                    mockHttpServletRequest, mockHttpServletResponse, mockDataId, mockGroup, mockContent, null, null,
+                    mockTenant, null);
         } catch (Throwable e) {
             assertEquals(e.getMessage(), mockException.getMessage());
         }
@@ -375,13 +387,14 @@ public class CapacityManagementAspectTest {
         Mockito.verify(capacityService, Mockito.times(0)).initTenantCapacity(eq(mockTenant));
         Mockito.verify(capacityService, Mockito.times(1)).updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant));
         Mockito.verify(capacityService, Mockito.times(1)).updateTenantUsage(eq(CounterMode.DECREMENT), eq(mockTenant));
-        Mockito.verify(capacityService, Mockito.times(1)).insertAndUpdateClusterUsage(eq(CounterMode.INCREMENT), anyBoolean());
+        Mockito.verify(capacityService, Mockito.times(1))
+                .insertAndUpdateClusterUsage(eq(CounterMode.INCREMENT), anyBoolean());
         Mockito.verify(capacityService, Mockito.times(1)).updateClusterUsage(eq(CounterMode.DECREMENT));
         Mockito.verify(localMockProceedingJoinPoint, Mockito.times(1)).proceed();
     }
     
     @Test
-    public void testAroundDeleteConfigForTenant() throws Throwable {
+    void testAroundDeleteConfigForTenant() throws Throwable {
         when(PropertyUtil.isManageCapacity()).thenReturn(true);
         when(configInfoPersistService.findConfigInfo(any(), any(), any())).thenReturn(null);
         when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean())).thenReturn(true);
@@ -391,17 +404,19 @@ public class CapacityManagementAspectTest {
         
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
         MockHttpServletResponse mockHttpServletResponse = new MockHttpServletResponse();
-        String localMockResult = (String) capacityManagementAspect.aroundDeleteConfig(proceedingJoinPoint, mockHttpServletRequest,
-                mockHttpServletResponse, mockDataId, mockGroup, mockTenant);
+        String localMockResult = (String) capacityManagementAspect.aroundDeleteConfig(proceedingJoinPoint,
+                mockHttpServletRequest, mockHttpServletResponse, mockDataId, mockGroup, mockTenant);
         assertEquals(localMockResult, mockProceedingJoinPointResult);
         Mockito.verify(proceedingJoinPoint, Mockito.times(1)).proceed();
         
         when(configInfoPersistService.findConfigInfo(any(), any(), any())).thenReturn(new ConfigInfoWrapper());
-        localMockResult = (String) capacityManagementAspect.aroundDeleteConfig(proceedingJoinPoint, mockHttpServletRequest,
-                mockHttpServletResponse, mockDataId, mockGroup, mockTenant);
+        localMockResult = (String) capacityManagementAspect.aroundDeleteConfig(proceedingJoinPoint,
+                mockHttpServletRequest, mockHttpServletResponse, mockDataId, mockGroup, mockTenant);
         assertEquals(localMockResult, mockProceedingJoinPointResult);
-        Mockito.verify(capacityService, Mockito.times(1)).insertAndUpdateClusterUsage(eq(CounterMode.DECREMENT), anyBoolean());
-        Mockito.verify(capacityService, Mockito.times(1)).insertAndUpdateTenantUsage(eq(CounterMode.DECREMENT), eq(mockTenant), anyBoolean());
+        Mockito.verify(capacityService, Mockito.times(1))
+                .insertAndUpdateClusterUsage(eq(CounterMode.DECREMENT), anyBoolean());
+        Mockito.verify(capacityService, Mockito.times(1))
+                .insertAndUpdateTenantUsage(eq(CounterMode.DECREMENT), eq(mockTenant), anyBoolean());
         Mockito.verify(proceedingJoinPoint, Mockito.times(2)).proceed();
         
         localMockResult = null;
@@ -412,15 +427,17 @@ public class CapacityManagementAspectTest {
             assertEquals(e.getMessage(), mockException.getMessage());
         }
         assertNull(localMockResult);
-        Mockito.verify(capacityService, Mockito.times(2)).insertAndUpdateClusterUsage(eq(CounterMode.DECREMENT), anyBoolean());
+        Mockito.verify(capacityService, Mockito.times(2))
+                .insertAndUpdateClusterUsage(eq(CounterMode.DECREMENT), anyBoolean());
         Mockito.verify(capacityService, Mockito.times(1)).updateClusterUsage(eq(CounterMode.INCREMENT));
-        Mockito.verify(capacityService, Mockito.times(2)).insertAndUpdateTenantUsage(eq(CounterMode.DECREMENT), eq(mockTenant), anyBoolean());
+        Mockito.verify(capacityService, Mockito.times(2))
+                .insertAndUpdateTenantUsage(eq(CounterMode.DECREMENT), eq(mockTenant), anyBoolean());
         Mockito.verify(capacityService, Mockito.times(1)).updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant));
         Mockito.verify(localMockProceedingJoinPoint, Mockito.times(1)).proceed();
     }
     
     @Test
-    public void testAroundDeleteConfigForGroup() throws Throwable {
+    void testAroundDeleteConfigForGroup() throws Throwable {
         when(PropertyUtil.isManageCapacity()).thenReturn(true);
         when(configInfoPersistService.findConfigInfo(any(), any(), any())).thenReturn(null);
         when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean())).thenReturn(true);
@@ -430,17 +447,19 @@ public class CapacityManagementAspectTest {
         
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
         MockHttpServletResponse mockHttpServletResponse = new MockHttpServletResponse();
-        String localMockResult = (String) capacityManagementAspect.aroundDeleteConfig(proceedingJoinPoint, mockHttpServletRequest,
-                mockHttpServletResponse, mockDataId, mockGroup, null);
+        String localMockResult = (String) capacityManagementAspect.aroundDeleteConfig(proceedingJoinPoint,
+                mockHttpServletRequest, mockHttpServletResponse, mockDataId, mockGroup, null);
         assertEquals(localMockResult, mockProceedingJoinPointResult);
         Mockito.verify(proceedingJoinPoint, Mockito.times(1)).proceed();
         
         when(configInfoPersistService.findConfigInfo(any(), any(), any())).thenReturn(new ConfigInfoWrapper());
-        localMockResult = (String) capacityManagementAspect.aroundDeleteConfig(proceedingJoinPoint, mockHttpServletRequest,
-                mockHttpServletResponse, mockDataId, mockGroup, null);
+        localMockResult = (String) capacityManagementAspect.aroundDeleteConfig(proceedingJoinPoint,
+                mockHttpServletRequest, mockHttpServletResponse, mockDataId, mockGroup, null);
         assertEquals(localMockResult, mockProceedingJoinPointResult);
-        Mockito.verify(capacityService, Mockito.times(1)).insertAndUpdateClusterUsage(eq(CounterMode.DECREMENT), anyBoolean());
-        Mockito.verify(capacityService, Mockito.times(1)).insertAndUpdateGroupUsage(eq(CounterMode.DECREMENT), eq(mockGroup), anyBoolean());
+        Mockito.verify(capacityService, Mockito.times(1))
+                .insertAndUpdateClusterUsage(eq(CounterMode.DECREMENT), anyBoolean());
+        Mockito.verify(capacityService, Mockito.times(1))
+                .insertAndUpdateGroupUsage(eq(CounterMode.DECREMENT), eq(mockGroup), anyBoolean());
         Mockito.verify(proceedingJoinPoint, Mockito.times(2)).proceed();
         
         localMockResult = null;
@@ -451,9 +470,11 @@ public class CapacityManagementAspectTest {
             assertEquals(e.getMessage(), mockException.getMessage());
         }
         assertNull(localMockResult);
-        Mockito.verify(capacityService, Mockito.times(2)).insertAndUpdateClusterUsage(eq(CounterMode.DECREMENT), anyBoolean());
+        Mockito.verify(capacityService, Mockito.times(2))
+                .insertAndUpdateClusterUsage(eq(CounterMode.DECREMENT), anyBoolean());
         Mockito.verify(capacityService, Mockito.times(1)).updateClusterUsage(eq(CounterMode.INCREMENT));
-        Mockito.verify(capacityService, Mockito.times(2)).insertAndUpdateGroupUsage(eq(CounterMode.DECREMENT), eq(mockGroup), anyBoolean());
+        Mockito.verify(capacityService, Mockito.times(2))
+                .insertAndUpdateGroupUsage(eq(CounterMode.DECREMENT), eq(mockGroup), anyBoolean());
         Mockito.verify(capacityService, Mockito.times(1)).updateGroupUsage(eq(CounterMode.INCREMENT), eq(mockGroup));
         Mockito.verify(localMockProceedingJoinPoint, Mockito.times(1)).proceed();
     }

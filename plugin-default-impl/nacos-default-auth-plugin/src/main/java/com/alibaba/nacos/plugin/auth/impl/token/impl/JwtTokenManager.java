@@ -76,10 +76,10 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
             this.jwtParser = new NacosJwtParser(encodedSecretKey);
         } catch (Exception e) {
             this.jwtParser = null;
-            if (authConfigs.isAuthEnabled()) {
+            if (authConfigs.isAuthEnabled() || authConfigs.isConsoleAuthEnabled()) {
                 throw new IllegalArgumentException(
                         "the length of secret key must great than or equal 32 bytes; And the secret key  must be encoded by base64."
-                                + "Please see https://nacos.io/zh-cn/docs/v2/guide/user/auth.html", e);
+                                + "Please see https://nacos.io/docs/latest/manual/admin/auth/", e);
             }
         }
         
@@ -103,10 +103,13 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
      * @return token
      */
     public String createToken(String userName) {
-        if (!authConfigs.isAuthEnabled()) {
+        // create a token when auth enabled or nacos.core.auth.plugin.nacos.token.secret.key is configured
+        if (!authConfigs.isAuthEnabled() && null == jwtParser) {
             return AUTH_DISABLED_TOKEN;
+        } else if (authConfigs.isAuthEnabled()) {
+            // check nacos.core.auth.plugin.nacos.token.secret.key only if auth enabled
+            checkJwtParser();
         }
-        checkJwtParser();
         return jwtParser.jwtBuilder().setUserName(userName).setExpiredTime(this.tokenValidityInSeconds).compact();
     }
     
@@ -147,7 +150,7 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
     @Override
     public long getTokenTtlInSeconds(String token) throws AccessException {
         if (!authConfigs.isAuthEnabled()) {
-            return TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()) + tokenValidityInSeconds;
+            return tokenValidityInSeconds;
         }
         return jwtParser.getExpireTimeInSeconds(token) - TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
     }
@@ -172,7 +175,7 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
     private void checkJwtParser() {
         if (null == jwtParser) {
             throw new NacosRuntimeException(NacosException.INVALID_PARAM,
-                    "Please config `nacos.core.auth.plugin.nacos.token.secret.key`, detail see https://nacos.io/zh-cn/docs/v2/guide/user/auth.html");
+                    "Please config `nacos.core.auth.plugin.nacos.token.secret.key`, detail see https://nacos.io/docs/latest/manual/admin/auth/");
         }
     }
 }

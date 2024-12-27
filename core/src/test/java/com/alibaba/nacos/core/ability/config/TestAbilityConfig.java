@@ -20,9 +20,11 @@ import com.alibaba.nacos.api.ability.constant.AbilityKey;
 
 import java.util.Set;
 
-/**.
+/**
+ * .
+ *
  * @author Daydreamer
- * @description  Dynamically load ability from config. just for test
+ * @description Dynamically load ability from config. just for test
  * @date 2022/8/31 12:27
  **/
 public class TestAbilityConfig extends AbilityConfigs {

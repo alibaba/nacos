@@ -17,59 +17,108 @@
 package com.alibaba.nacos.sys.utils;
 
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public class DiskUtilsTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+
+class DiskUtilsTest {
     
     private static File testFile;
     
-    @BeforeClass
-    public static void setup() throws IOException {
+    private static File openTestFile;
+    
+    private static File testLineFile;
+    
+    @BeforeAll
+    static void setup() throws IOException, URISyntaxException {
         testFile = DiskUtils.createTmpFile("nacostmp", ".ut");
+        testLineFile = new File(DiskUtilsTest.class.getClassLoader().getResource("line_iterator_test.txt").toURI());
+        openTestFile = new File(testLineFile.getParent(), "temp_open_file");
     }
     
-    @AfterClass
-    public static void tearDown() throws IOException {
+    @AfterAll
+    static void tearDown() throws IOException {
         testFile.deleteOnExit();
+        openTestFile.deleteOnExit();
     }
     
     @Test
-    public void testTouch() throws IOException {
+    void testTouch() throws IOException {
         File file = Paths.get(EnvUtil.getNacosTmpDir(), "touch.ut").toFile();
-        Assert.assertFalse(file.exists());
+        assertFalse(file.exists());
         DiskUtils.touch(file);
-        Assert.assertTrue(file.exists());
+        assertTrue(file.exists());
         file.deleteOnExit();
     }
     
     @Test
-    public void testTouchWithFileName() throws IOException {
+    void testTouchWithFileName() throws IOException {
         File file = Paths.get(EnvUtil.getNacosTmpDir(), UUID.randomUUID().toString()).toFile();
-        Assert.assertFalse(file.exists());
+        assertFalse(file.exists());
         DiskUtils.touch(file.getParent(), file.getName());
-        Assert.assertTrue(file.exists());
+        assertTrue(file.exists());
         file.deleteOnExit();
     }
     
     @Test
-    public void testCreateTmpFile() throws IOException {
+    void testTouchWithIllegalPath() throws IOException {
+        File tmpDir = new File(EnvUtil.getNacosTmpDir());
+        String fileName = UUID.randomUUID().toString();
+        File expectedFile = Paths.get(tmpDir.getParent(), fileName).toFile();
+        assertFalse(expectedFile.exists());
+        DiskUtils.touch(tmpDir.getAbsolutePath() + "/..", fileName);
+        assertFalse(expectedFile.exists());
+        expectedFile.deleteOnExit();
+    }
+    
+    @Test
+    void testTouchWithIllegalFileName() throws IOException {
+        File tmpDir = new File(EnvUtil.getNacosTmpDir());
+        String fileName = UUID.randomUUID().toString();
+        File expectedFile = Paths.get(tmpDir.getParent(), fileName).toFile();
+        assertFalse(expectedFile.exists());
+        DiskUtils.touch(tmpDir.getAbsolutePath(), "../" + fileName);
+        assertFalse(expectedFile.exists());
+        expectedFile.deleteOnExit();
+    }
+    
+    @Test
+    void testTouchWithIllegalFileName2() throws IOException {
+        String fileName = UUID.randomUUID().toString();
+        File expectedFile = Paths.get("/", fileName).toFile();
+        assertFalse(expectedFile.exists());
+        DiskUtils.touch("", "/" + fileName);
+        assertFalse(expectedFile.exists());
+        expectedFile.deleteOnExit();
+    }
+    
+    @Test
+    void testCreateTmpFile() throws IOException {
         File tmpFile = null;
         try {
             tmpFile = DiskUtils.createTmpFile("nacos1", ".ut");
-            Assert.assertTrue(tmpFile.getName().startsWith("nacos1"));
-            Assert.assertTrue(tmpFile.getName().endsWith(".ut"));
+            assertTrue(tmpFile.getName().startsWith("nacos1"));
+            assertTrue(tmpFile.getName().endsWith(".ut"));
         } finally {
             if (tmpFile != null) {
                 tmpFile.deleteOnExit();
@@ -78,13 +127,13 @@ public class DiskUtilsTest {
     }
     
     @Test
-    public void testCreateTmpFileWithPath() throws IOException {
+    void testCreateTmpFileWithPath() throws IOException {
         File tmpFile = null;
         try {
             tmpFile = DiskUtils.createTmpFile(EnvUtil.getNacosTmpDir(), "nacos1", ".ut");
-            Assert.assertEquals(EnvUtil.getNacosTmpDir(), tmpFile.getParent());
-            Assert.assertTrue(tmpFile.getName().startsWith("nacos1"));
-            Assert.assertTrue(tmpFile.getName().endsWith(".ut"));
+            assertEquals(EnvUtil.getNacosTmpDir(), tmpFile.getParent());
+            assertTrue(tmpFile.getName().startsWith("nacos1"));
+            assertTrue(tmpFile.getName().endsWith(".ut"));
         } finally {
             if (tmpFile != null) {
                 tmpFile.deleteOnExit();
@@ -93,94 +142,163 @@ public class DiskUtilsTest {
     }
     
     @Test
-    public void testReadFile() {
-        Assert.assertNotNull(DiskUtils.readFile(testFile));
+    void testReadFile() {
+        assertNotNull(DiskUtils.readFile(testFile));
     }
     
     @Test
-    public void testReadFileWithInputStream() throws FileNotFoundException {
-        Assert.assertNotNull(DiskUtils.readFile(new FileInputStream(testFile)));
+    void testReadNonExistFile() {
+        File file = new File("non-exist");
+        assertNull(DiskUtils.readFile(file));
     }
     
     @Test
-    public void testReadFileWithPath() {
-        Assert.assertNotNull(DiskUtils.readFile(testFile.getParent(), testFile.getName()));
+    void testReadNonExistFile2() {
+        File file = new File("non-path/non-exist");
+        file.deleteOnExit();
+        assertEquals("", DiskUtils.readFile(file.getParentFile().getAbsolutePath(), file.getName()));
     }
     
     @Test
-    public void testReadFileBytes() {
-        Assert.assertNotNull(DiskUtils.readFileBytes(testFile));
+    void testReadFileWithIllegalPath() {
+        String path = testFile.getParentFile().getAbsolutePath() + "/../" + testFile.getParentFile().getName();
+        assertNull(DiskUtils.readFile(path, testFile.getName()));
     }
     
     @Test
-    public void testReadFileBytesWithPath() {
-        Assert.assertNotNull(DiskUtils.readFileBytes(testFile.getParent(), testFile.getName()));
+    void testReadFileWithIllegalFileName() {
+        String path = testFile.getParentFile().getAbsolutePath();
+        String fileName = "../" + testFile.getParentFile().getName() + "/" + testFile.getName();
+        assertNull(DiskUtils.readFile(path, fileName));
     }
     
     @Test
-    public void writeFile() {
-        Assert.assertTrue(DiskUtils.writeFile(testFile, "unit test".getBytes(StandardCharsets.UTF_8), false));
-        Assert.assertEquals("unit test", DiskUtils.readFile(testFile));
+    void testReadFileWithInputStream() throws FileNotFoundException {
+        assertNotNull(DiskUtils.readFile(new FileInputStream(testFile)));
     }
     
     @Test
-    public void deleteQuietly() throws IOException {
+    void testReadFileWithInputStreamWithException() {
+        InputStream inputStream = mock(InputStream.class);
+        assertNull(DiskUtils.readFile(inputStream));
+    }
+    
+    @Test
+    void testReadFileWithPath() {
+        assertNotNull(DiskUtils.readFile(testFile.getParent(), testFile.getName()));
+    }
+    
+    @Test
+    void testReadFileBytes() {
+        assertNotNull(DiskUtils.readFileBytes(testFile));
+    }
+    
+    @Test
+    void testReadFileBytesNonExist() {
+        assertNull(DiskUtils.readFileBytes(new File("non-exist")));
+    }
+    
+    @Test
+    void testReadFileBytesWithPath() {
+        assertNotNull(DiskUtils.readFileBytes(testFile.getParent(), testFile.getName()));
+    }
+    
+    @Test
+    void testReadFileBytesWithIllegalPath() {
+        String path = testFile.getParentFile().getAbsolutePath() + "/../" + testFile.getParentFile().getName();
+        assertNull(DiskUtils.readFileBytes(path, testFile.getName()));
+    }
+    
+    @Test
+    void testReadFileBytesWithIllegalFileName() {
+        String path = testFile.getParentFile().getAbsolutePath();
+        String fileName = "/../" + testFile.getParentFile().getName() + "/" + testFile.getName();
+        assertNull(DiskUtils.readFileBytes(path, fileName));
+    }
+    
+    @Test
+    void writeFile() {
+        assertTrue(DiskUtils.writeFile(testFile, "unit test".getBytes(StandardCharsets.UTF_8), false));
+        assertEquals("unit test", DiskUtils.readFile(testFile));
+    }
+    
+    @Test
+    void writeFileWithNonExist() {
+        File file = new File("\u0000non-exist");
+        assertFalse(DiskUtils.writeFile(file, "unit test".getBytes(StandardCharsets.UTF_8), false));
+    }
+    
+    @Test
+    void deleteQuietly() throws IOException {
         File tmpFile = DiskUtils.createTmpFile(UUID.randomUUID().toString(), ".ut");
         DiskUtils.deleteQuietly(tmpFile);
-        Assert.assertFalse(tmpFile.exists());
+        assertFalse(tmpFile.exists());
     }
     
     @Test
-    public void testDeleteQuietlyWithPath() throws IOException {
+    void testDeleteQuietlyWithPath() throws IOException {
         String dir = EnvUtil.getNacosTmpDir() + "/" + "diskutils";
         DiskUtils.forceMkdir(dir);
         DiskUtils.createTmpFile(dir, "nacos", ".ut");
         Path path = Paths.get(dir);
         DiskUtils.deleteQuietly(path);
         
-        Assert.assertFalse(path.toFile().exists());
+        assertFalse(path.toFile().exists());
     }
     
     @Test
-    public void testDeleteFile() throws IOException {
+    void testDeleteFile() throws IOException {
         File tmpFile = DiskUtils.createTmpFile(UUID.randomUUID().toString(), ".ut");
-        Assert.assertTrue(DiskUtils.deleteFile(tmpFile.getParent(), tmpFile.getName()));
-        Assert.assertFalse(DiskUtils.deleteFile(tmpFile.getParent(), tmpFile.getName()));
+        assertTrue(DiskUtils.deleteFile(tmpFile.getParent(), tmpFile.getName()));
+        assertFalse(DiskUtils.deleteFile(tmpFile.getParent(), tmpFile.getName()));
     }
     
     @Test
-    public void deleteDirectory() throws IOException {
+    void testDeleteFileIllegalPath() {
+        String path = testFile.getParentFile().getAbsolutePath() + "/../" + testFile.getParentFile().getName();
+        assertFalse(DiskUtils.deleteFile(path, testFile.getName()));
+    }
+    
+    @Test
+    void testDeleteFileIllegalFileName() {
+        String path = testFile.getParentFile().getAbsolutePath();
+        String fileName = "../" + testFile.getParentFile().getName() + "/" + testFile.getName();
+        assertFalse(DiskUtils.deleteFile(path, fileName));
+    }
+    
+    @Test
+    void deleteDirectory() throws IOException {
         Path diskutils = Paths.get(EnvUtil.getNacosTmpDir(), "diskutils");
         File file = diskutils.toFile();
         if (!file.exists()) {
             file.mkdir();
         }
         
-        Assert.assertTrue(file.exists());
+        assertTrue(file.exists());
         DiskUtils.deleteDirectory(diskutils.toString());
-        Assert.assertFalse(file.exists());
+        assertFalse(file.exists());
     }
     
     @Test
-    public void testForceMkdir() throws IOException {
+    void testForceMkdir() throws IOException {
         File dir = Paths.get(EnvUtil.getNacosTmpDir(), UUID.randomUUID().toString(), UUID.randomUUID().toString())
                 .toFile();
         DiskUtils.forceMkdir(dir);
-        Assert.assertTrue(dir.exists());
+        assertTrue(dir.exists());
         dir.deleteOnExit();
     }
     
     @Test
-    public void testForceMkdirWithPath() throws IOException {
+    void testForceMkdirWithPath() throws IOException {
         Path path = Paths.get(EnvUtil.getNacosTmpDir(), UUID.randomUUID().toString(), UUID.randomUUID().toString());
         DiskUtils.forceMkdir(path.toString());
         File file = path.toFile();
-        Assert.assertTrue(file.exists());
+        assertTrue(file.exists());
         file.deleteOnExit();
     }
     
     @Test
-    public void deleteDirThenMkdir() throws IOException {
+    void deleteDirThenMkdir() throws IOException {
         Path path = Paths.get(EnvUtil.getNacosTmpDir(), UUID.randomUUID().toString());
         DiskUtils.forceMkdir(path.toString());
         
@@ -190,15 +308,15 @@ public class DiskUtilsTest {
         DiskUtils.deleteDirThenMkdir(path.toString());
         
         File file = path.toFile();
-        Assert.assertTrue(file.exists());
-        Assert.assertTrue(file.isDirectory());
-        Assert.assertTrue(file.list() == null || file.list().length == 0);
+        assertTrue(file.exists());
+        assertTrue(file.isDirectory());
+        assertTrue(file.list() == null || file.list().length == 0);
         
         file.deleteOnExit();
     }
     
     @Test
-    public void testCopyDirectory() throws IOException {
+    void testCopyDirectory() throws IOException {
         Path srcPath = Paths.get(EnvUtil.getNacosTmpDir(), UUID.randomUUID().toString());
         DiskUtils.forceMkdir(srcPath.toString());
         File nacos = DiskUtils.createTmpFile(srcPath.toString(), "nacos", ".ut");
@@ -207,36 +325,91 @@ public class DiskUtilsTest {
         DiskUtils.copyDirectory(srcPath.toFile(), destPath.toFile());
         
         File file = Paths.get(destPath.toString(), nacos.getName()).toFile();
-        Assert.assertTrue(file.exists());
+        assertTrue(file.exists());
         
         DiskUtils.deleteDirectory(srcPath.toString());
         DiskUtils.deleteDirectory(destPath.toString());
     }
     
     @Test
-    public void testCopyFile() throws IOException {
+    void testCopyFile() throws IOException {
         File nacos = DiskUtils.createTmpFile("nacos", ".ut");
         DiskUtils.copyFile(testFile, nacos);
         
-        Assert.assertEquals(DiskUtils.readFile(testFile), DiskUtils.readFile(nacos));
+        assertEquals(DiskUtils.readFile(testFile), DiskUtils.readFile(nacos));
         
         nacos.deleteOnExit();
     }
     
     @Test
-    public void openFile() {
+    void openFile() {
         File file = DiskUtils.openFile(testFile.getParent(), testFile.getName());
-        Assert.assertNotNull(file);
-        Assert.assertEquals(testFile.getPath(), file.getPath());
-        Assert.assertEquals(testFile.getName(), file.getName());
+        assertNotNull(file);
+        assertEquals(testFile.getPath(), file.getPath());
+        assertEquals(testFile.getName(), file.getName());
     }
     
     @Test
-    public void testOpenFileWithPath() {
-        File file = DiskUtils.openFile(testFile.getParent(), testFile.getName(), false);
-        Assert.assertNotNull(file);
-        Assert.assertEquals(testFile.getPath(), file.getPath());
-        Assert.assertEquals(testFile.getName(), file.getName());
+    void testOpenFileWithCreateFile() {
+        File file = DiskUtils.openFile(openTestFile.getParent(), openTestFile.getName(), true);
+        assertNotNull(file);
+        assertEquals(openTestFile.getPath(), file.getPath());
+        assertEquals(openTestFile.getName(), file.getName());
     }
     
+    @Test
+    void testOpenFileWithPath() {
+        File file = DiskUtils.openFile(testFile.getParent(), testFile.getName(), false);
+        assertNotNull(file);
+        assertEquals(testFile.getPath(), file.getPath());
+        assertEquals(testFile.getName(), file.getName());
+    }
+    
+    @Test
+    void testLineIteratorNextLine() throws IOException {
+        try (DiskUtils.LineIterator iterator = DiskUtils.lineIterator(testLineFile)) {
+            int lineCount = 0;
+            while (iterator.hasNext()) {
+                String lineContext = iterator.nextLine();
+                assertTrue(lineContext.contains("line"));
+                lineCount++;
+            }
+            assertEquals(3, lineCount);
+        }
+    }
+    
+    @Test
+    void testLineIteratorNext() throws IOException {
+        try (DiskUtils.LineIterator iterator = DiskUtils.lineIterator(testLineFile)) {
+            int lineCount = 0;
+            while (iterator.hasNext()) {
+                String lineContext = iterator.next();
+                assertTrue(lineContext.contains("line"));
+                lineCount++;
+            }
+            assertEquals(3, lineCount);
+        }
+    }
+    
+    @Test
+    void testLineIteratorForEachRemaining() throws IOException {
+        try (DiskUtils.LineIterator iterator = DiskUtils.lineIterator(testLineFile)) {
+            AtomicInteger lineCount = new AtomicInteger();
+            iterator.forEachRemaining(s -> {
+                if (s.contains("line")) {
+                    lineCount.incrementAndGet();
+                }
+            });
+            assertEquals(3, lineCount.get());
+        }
+    }
+    
+    @Test
+    void testLineIteratorRemove() {
+        assertThrows(UnsupportedOperationException.class, () -> {
+            try (DiskUtils.LineIterator iterator = DiskUtils.lineIterator(testLineFile, "UTF-8")) {
+                iterator.remove();
+            }
+        });
+    }
 }

@@ -39,6 +39,7 @@ class ConfigRollback extends React.Component {
       envName: '',
       visible: false,
       showmore: false,
+      extraInfo: {},
     };
     // this.params = window.location.hash.split('?')[1]||'';
   }
@@ -68,19 +69,20 @@ class ConfigRollback extends React.Component {
   toggleMore() {
     this.setState({
       showmore: !this.state.showmore,
+      extraInfo: data.extraInfo ? JSON.parse(data.extraInfo) : {},
     });
   }
 
   getDataDetail() {
     const self = this;
-    this.tenant = getParams('namespace') || '';
+    this.namespaceId = getParams('namespace') || 'public';
     this.serverId = getParams('serverId') || 'center';
-    const url = `v1/cs/history?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`;
+    const url = `v3/console/cs/history?dataId=${this.dataId}&groupName=${this.group}&nid=${this.nid}`;
     request({
       url,
       success(result) {
         if (result != null) {
-          const data = result;
+          const data = result.data;
           const envName = self.serverId;
           self.id = data.id; // 详情的id
           self.field.setValue('dataId', data.dataId);
@@ -93,6 +95,7 @@ class ConfigRollback extends React.Component {
           self.field.setValue('envName', envName);
           self.setState({
             envName,
+            extraInfo: data.extraInfo ? JSON.parse(data.extraInfo) : {},
           });
         }
       },
@@ -134,21 +137,28 @@ class ConfigRollback extends React.Component {
         </div>
       ),
       onOk() {
-        self.tenant = getParams('namespace') || '';
+        self.tenant = getParams('namespace') || 'public';
         self.serverId = getParams('serverId') || 'center';
         self.dataId = self.field.getValue('dataId');
         self.group = self.field.getValue('group');
+        const { extraInfo } = self.state;
         let postData = {
           appName: self.field.getValue('appName'),
           dataId: self.dataId,
-          group: self.group,
+          groupName: self.group,
           content: self.field.getValue('content'),
-          tenant: self.tenant,
+          namespaceId: self.tenant,
+          ...(extraInfo.type ? { type: extraInfo.type } : {}),
+          ...(extraInfo.config_tags ? { config_tags: extraInfo.config_tags } : {}),
+          ...(extraInfo.effect ? { effect: extraInfo.effect } : {}),
+          ...(extraInfo.c_desc ? { desc: extraInfo.c_desc } : {}),
+          ...(extraInfo.c_use ? { use: extraInfo.c_use } : {}),
+          ...(extraInfo.c_schema ? { schema: extraInfo.c_schema } : {}),
         };
 
-        let url = 'v1/cs/configs';
+        let url = 'v3/console/cs/config';
         if (self.opType.trim() === 'I') {
-          url = `v1/cs/configs?dataId=${self.dataId}&group=${self.group}`;
+          url = `v3/console/cs/config?dataId=${self.dataId}&groupName=${self.group}`;
           postData = {};
         }
 
@@ -158,8 +168,8 @@ class ConfigRollback extends React.Component {
           contentType: 'application/x-www-form-urlencoded',
           url,
           data: postData,
-          success(data) {
-            if (data === true) {
+          success(res) {
+            if (res.data === true) {
               Dialog.alert({ content: locale.rollbackSuccessful });
             }
           },
@@ -173,7 +183,7 @@ class ConfigRollback extends React.Component {
       const typeMap = {
         U: locale.update,
         I: locale.insert,
-        D: locale.deleteAction,
+        D: locale.rollbackDelete,
       };
       return typeMap[type];
     }

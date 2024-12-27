@@ -16,28 +16,29 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class AccumulateStatCountTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class AccumulateStatCountTest {
     
     @Test
-    public void testIncrease() {
+    void testIncrease() {
         AccumulateStatCount accumulateStatCount = new AccumulateStatCount();
         long result = accumulateStatCount.increase();
-        Assert.assertEquals(1, result);
+        assertEquals(1, result);
     }
     
     @Test
-    public void testStat() {
+    void testStat() {
         AccumulateStatCount accumulateStatCount = new AccumulateStatCount();
         long stat = accumulateStatCount.stat();
-        Assert.assertEquals(0, stat);
+        assertEquals(0, stat);
         accumulateStatCount.increase();
         stat = accumulateStatCount.stat();
-        Assert.assertEquals(1, stat);
+        assertEquals(1, stat);
         accumulateStatCount.increase();
         stat = accumulateStatCount.stat();
-        Assert.assertEquals(1, stat);
+        assertEquals(1, stat);
     }
 }

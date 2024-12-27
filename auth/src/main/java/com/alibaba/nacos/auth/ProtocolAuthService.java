@@ -17,6 +17,7 @@
 package com.alibaba.nacos.auth;
 
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.serveridentity.ServerIdentityResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
@@ -85,4 +86,13 @@ public interface ProtocolAuthService<R> {
      * @throws AccessException exception during validating
      */
     boolean validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException;
+    
+    /**
+     * check server identity.
+     *
+     * @param request protocol request
+     * @param secured secured api secured annotation
+     * @return server identity result
+     */
+    ServerIdentityResult checkServerIdentity(R request, Secured secured);
 }

@@ -520,6 +520,17 @@ public class JRaftServer {
         return null;
     }
     
+    public boolean isReady() {
+        if (raftConfig.isStrictMode()) {
+            for (RequestProcessor4CP each : processors) {
+                if (null == getLeader(each.group())) {
+                    return false;
+                }
+            }
+        }
+        return isStarted;
+    }
+    
     Map<String, RaftGroupTuple> getMultiRaftGroup() {
         return multiRaftGroup;
     }

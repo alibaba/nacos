@@ -41,8 +41,6 @@ public class ConfigTraceService {
     
     public static final String PERSISTENCE_EVENT_BETA = "persist-beta";
     
-    public static final String PERSISTENCE_EVENT_BATCH = "persist-batch";
-    
     public static final String PERSISTENCE_EVENT_TAG = "persist-tag";
     
     /**
@@ -101,12 +99,6 @@ public class ConfigTraceService {
      */
     public static final String PULL_EVENT = "pull";
     
-    public static final String PULL_EVENT_BETA = "pull-beta";
-    
-    public static final String PULL_EVENT_BATCH = "pull-batch";
-    
-    public static final String PULL_EVENT_TAG = "pull-tag";
-    
     /**
      * pull type.
      */
@@ -142,7 +134,6 @@ public class ConfigTraceService {
         //localIp | dataid | group | tenant | requestIpAppName | ts | client ip | event | type | [delayed = -1] | ext
         // (md5)
         String md5 = content == null ? null : MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE);
-        
         LogUtil.TRACE_LOG.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIP(), dataId, group, tenant,
                 requestIpAppName, ts, handleIp, event, type, -1, md5);
     }
@@ -165,17 +156,14 @@ public class ConfigTraceService {
         if (!LogUtil.TRACE_LOG.isInfoEnabled()) {
             return;
         }
-        
         if (delayed < 0) {
             delayed = 0;
         }
-        
         MetricsMonitor.getNotifyRtTimer().record(delayed, TimeUnit.MILLISECONDS);
         // Convenient tlog segmentation
         if (StringUtils.isBlank(tenant)) {
             tenant = null;
         }
-        
         //localIp | dataid | group | tenant | requestIpAppName | ts | handleIp | event | type | [delayed] | ext
         // (targetIp)
         LogUtil.TRACE_LOG.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIP(), dataId, group, tenant,
@@ -201,22 +189,10 @@ public class ConfigTraceService {
                 delayed, length);
     }
     
-    public static void logDumpBetaEvent(String dataId, String group, String tenant, String requestIpAppName, long ts,
-            String handleIp, String type, long delayed, long length) {
-        logDumpEventInner(dataId, group, tenant, requestIpAppName, ts, handleIp, ConfigTraceService.DUMP_EVENT_BETA,
-                type, delayed, length);
-    }
-    
-    public static void logDumpBatchEvent(String dataId, String group, String tenant, String requestIpAppName, long ts,
-            String handleIp, String type, long delayed, long length) {
-        logDumpEventInner(dataId, group, tenant, requestIpAppName, ts, handleIp, ConfigTraceService.DUMP_EVENT_BATCH,
-                type, delayed, length);
-    }
-    
-    public static void logDumpTagEvent(String dataId, String group, String tenant, String tag, String requestIpAppName,
-            long ts, String handleIp, String type, long delayed, long length) {
+    public static void logDumpGrayNameEvent(String dataId, String group, String tenant, String grayName,
+            String requestIpAppName, long ts, String handleIp, String type, long delayed, long length) {
         logDumpEventInner(dataId, group, tenant, requestIpAppName, ts, handleIp,
-                ConfigTraceService.DUMP_EVENT_TAG + "-" + tag, type, delayed, length);
+                ConfigTraceService.DUMP_EVENT + "-" + grayName, type, delayed, length);
     }
     
     private static void logDumpEventInner(String dataId, String group, String tenant, String requestIpAppName, long ts,
@@ -227,6 +203,7 @@ public class ConfigTraceService {
         if (delayed < 0) {
             delayed = 0;
         }
+        MetricsMonitor.getDumpRtTimer().record(delayed, TimeUnit.MILLISECONDS);
         // Convenient tlog segmentation
         if (StringUtils.isBlank(tenant)) {
             tenant = null;
@@ -284,11 +261,9 @@ public class ConfigTraceService {
         if (StringUtils.isBlank(tenant)) {
             tenant = null;
         }
-        
         if (isNotify && delayed < 0) {
             delayed = 0;
         }
-        
         // localIp | dataid | group | tenant| requestIpAppName| ts | event | type | [delayed] |clientIp| isNotify | mode（http/grpc)
         LogUtil.TRACE_LOG.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIP(), dataId, group, tenant,
                 requestIpAppName, ts, event, type, delayed, clientIp, isNotify, model);

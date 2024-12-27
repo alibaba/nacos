@@ -18,22 +18,22 @@ package com.alibaba.nacos.common.trace.publisher;
 
 import com.alibaba.nacos.common.notify.EventPublisher;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class TraceEventPublisherFactoryTest {
+class TraceEventPublisherFactoryTest {
     
     private Map<String, EventPublisher> originalEventPublisherMap;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         originalEventPublisherMap = new HashMap<>(NotifyCenter.getPublisherMap());
         NotifyCenter.getPublisherMap().clear();
         // Protect other unit test publisher affect this case.
@@ -43,15 +43,15 @@ public class TraceEventPublisherFactoryTest {
         map.clear();
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         NotifyCenter.getPublisherMap().clear();
         NotifyCenter.getPublisherMap().putAll(originalEventPublisherMap);
         originalEventPublisherMap = null;
     }
     
     @Test
-    public void testApply() {
+    void testApply() {
         TraceEventPublisherFactory.getInstance().apply(TraceTestEvent.TraceTestEvent1.class, Byte.SIZE);
         TraceEventPublisherFactory.getInstance().apply(TraceTestEvent.TraceTestEvent2.class, Byte.SIZE);
         TraceEventPublisherFactory.getInstance().apply(TraceTestEvent.class, Byte.SIZE);
@@ -61,7 +61,7 @@ public class TraceEventPublisherFactoryTest {
     }
     
     @Test
-    public void testApplyAfterAddEventType() {
+    void testApplyAfterAddEventType() {
         TraceEventPublisherFactory.getInstance().addPublisherEvent(TraceTestEvent.class);
         TraceEventPublisherFactory.getInstance().apply(TraceTestEvent.TraceTestEvent1.class, Byte.SIZE);
         TraceEventPublisherFactory.getInstance().apply(TraceTestEvent.TraceTestEvent2.class, Byte.SIZE);
