@@ -99,10 +99,6 @@ public class Constants {
     
     public static final Integer CLUSTER_GRPC_PORT_DEFAULT_OFFSET = 1001;
     
-    public static final String NAMESPACE_ID_SPLITTER = ">>";
-    
-    public static final String DATA_ID_SPLITTER = "@@";
-    
     /**
      * second.
      */
@@ -194,11 +190,7 @@ public class Constants {
     
     public static final int WRITE_REDIRECT_CODE = 307;
     
-    public static final String NAMESPACE_ID_SPLITER = ">>";
-    
     public static final String SERVICE_INFO_SPLITER = "@@";
-    
-    public static final String MATCH_PATTERN_SPLITER = "##";
     
     public static final int SERVICE_INFO_SPLIT_COUNT = 2;
     
@@ -215,8 +207,6 @@ public class Constants {
     public static final String HTTP_PREFIX = "http";
     
     public static final String ALL_PATTERN = "*";
-    
-    public static final String FUZZY_WATCH_PATTERN_WILDCARD = "*";
     
     public static final String COLON = ":";
     
@@ -241,16 +231,6 @@ public class Constants {
     
     public static final int DEFAULT_REDO_THREAD_COUNT = 1;
     
-    public static class ConfigChangeType {
-        
-        public static final String ADD_CONFIG = "ADD_CONFIG";
-        
-        public static final String DELETE_CONFIG = "DELETE_CONFIG";
-        
-        public static final String FINISH_LISTEN_INIT = "FINISH_LISTEN_INIT";
-        
-        public static final String LISTEN_INIT = "LISTEN_INIT";
-    }
     public static final String APP_CONN_LABELS_KEY = "nacos.app.conn.labels";
     
     public static final String DOT = ".";
@@ -296,8 +276,27 @@ public class Constants {
         public static final String CMDB_CONTEXT_TYPE = "CMDB";
     }
     
+    public static final String FUZZY_WATCH_PATTERN_SPLITTER = ">>";
+    
+    public static final String FUZZY_WATCH_INIT_NOTIFY = "FUZZY_WATCH_INIT_NOTIFY";
+    
+    public static final String FINISH_FUZZY_WATCH_INIT_NOTIFY = "FINISH_FUZZY_WATCH_INIT_NOTIFY";
+    
     /**
-     * The constants in fuzzy watch event type directory.
+     * The constants in config fuzzy watch event type directory.
+     */
+    public static class ConfigChangedType {
+        
+        public static final String ADD_CONFIG = "ADD_CONFIG";
+        
+        public static final String DELETE_CONFIG = "DELETE_CONFIG";
+        
+        public static final String CONFIG_CHANGED = "CONFIG_CHANGED";
+    
+    }
+    
+    /**
+     * The constants in service fuzzy watch event type directory.
      */
     public static class ServiceChangedType {
         
@@ -309,11 +308,6 @@ public class Constants {
         
         public static final String HEART_BEAT = "HEART_BEAT";
         
-        public static final String SERVICE_SUBSCRIBED = "SERVICE_SUBSCRIBED";
-        
-        public static final String WATCH_INITIAL_MATCH = "WATCH_INITIAL_MATCH";
-        
-        public static final String FINISH_WATCH_INIT = "FINISH_WATCH_INIT";
     }
     
     /**

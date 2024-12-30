@@ -164,7 +164,14 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientCancelFuzzyWatchEvent(completedPattern, clientId));
     }
     
-    private boolean clientIsLegal(Client client, String clientId) {
+    private boolean clientIsLegal(Client client, String clientId){
+        try{
+            checkClientIsLegal( client,  clientId);
+            return true;
+        }catch(NacosRuntimeException thr){
+            return false;
+        }
+    }
 
     private void checkClientIsLegal(Client client, String clientId) {
         if (client == null) {

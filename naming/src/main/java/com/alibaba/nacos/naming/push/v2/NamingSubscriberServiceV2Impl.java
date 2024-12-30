@@ -26,6 +26,7 @@ import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
 import com.alibaba.nacos.naming.core.v2.event.publisher.NamingEventPublisherFactory;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
+import com.alibaba.nacos.naming.core.v2.index.ClientFuzzyWatchIndexesManager;
 import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
@@ -67,13 +68,13 @@ public class NamingSubscriberServiceV2Impl extends SmartSubscriber implements Na
     private final FuzzyWatchPushDelayTaskEngine fuzzyWatchPushDelayTaskEngine;
     
     public NamingSubscriberServiceV2Impl(ClientManagerDelegate clientManager,
-            ClientServiceIndexesManager indexesManager, ServiceStorage serviceStorage,
+            ClientServiceIndexesManager indexesManager, ClientFuzzyWatchIndexesManager clientFuzzyWatchIndexesManager, ServiceStorage serviceStorage,
             NamingMetadataManager metadataManager, PushExecutorDelegate pushExecutor, SwitchDomain switchDomain) {
         this.clientManager = clientManager;
         this.indexesManager = indexesManager;
         this.delayTaskEngine = new PushDelayTaskExecuteEngine(clientManager, indexesManager, serviceStorage,
                 metadataManager, pushExecutor, switchDomain);
-        this.fuzzyWatchPushDelayTaskEngine = new FuzzyWatchPushDelayTaskEngine(clientManager, indexesManager,
+        this.fuzzyWatchPushDelayTaskEngine = new FuzzyWatchPushDelayTaskEngine(clientManager, clientFuzzyWatchIndexesManager,
                 serviceStorage, metadataManager, pushExecutor, switchDomain);
         NotifyCenter.registerSubscriber(this, NamingEventPublisherFactory.getInstance());
         

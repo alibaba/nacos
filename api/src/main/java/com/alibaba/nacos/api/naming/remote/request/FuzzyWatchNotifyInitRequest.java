@@ -42,11 +42,11 @@ public class FuzzyWatchNotifyInitRequest extends AbstractFuzzyWatchNotifyRequest
     }
     
     public static FuzzyWatchNotifyInitRequest buildInitRequest(String namespace, String pattern, Collection<String> servicesName) {
-        return new FuzzyWatchNotifyInitRequest(namespace, pattern, Constants.ServiceChangedType.WATCH_INITIAL_MATCH, servicesName);
+        return new FuzzyWatchNotifyInitRequest(namespace, pattern, Constants.FUZZY_WATCH_INIT_NOTIFY, servicesName);
     }
     
     public static FuzzyWatchNotifyInitRequest buildInitFinishRequest(String namespace, String pattern) {
-        return new FuzzyWatchNotifyInitRequest(namespace, pattern, Constants.ServiceChangedType.FINISH_WATCH_INIT, new HashSet<>(1));
+        return new FuzzyWatchNotifyInitRequest(namespace, pattern, Constants.FINISH_FUZZY_WATCH_INIT_NOTIFY, new HashSet<>(1));
     }
     
     public String getPattern() {

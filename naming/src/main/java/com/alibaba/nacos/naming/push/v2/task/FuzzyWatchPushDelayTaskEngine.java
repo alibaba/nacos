@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.task.NacosTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.common.task.engine.NacosDelayTaskExecuteEngine;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
+import com.alibaba.nacos.naming.core.v2.index.ClientFuzzyWatchIndexesManager;
 import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
@@ -38,7 +39,8 @@ public class FuzzyWatchPushDelayTaskEngine extends NacosDelayTaskExecuteEngine {
     
     private final ClientManager clientManager;
     
-    private final ClientServiceIndexesManager indexesManager;
+    private final ClientFuzzyWatchIndexesManager clientFuzzyWatchIndexesManager;
+    
     
     private final ServiceStorage serviceStorage;
     
@@ -48,12 +50,12 @@ public class FuzzyWatchPushDelayTaskEngine extends NacosDelayTaskExecuteEngine {
     
     private final SwitchDomain switchDomain;
     
-    public FuzzyWatchPushDelayTaskEngine(ClientManager clientManager, ClientServiceIndexesManager indexesManager,
+    public FuzzyWatchPushDelayTaskEngine(ClientManager clientManager, ClientFuzzyWatchIndexesManager clientFuzzyWatchIndexesManager,
             ServiceStorage serviceStorage, NamingMetadataManager metadataManager,
             PushExecutor pushExecutor, SwitchDomain switchDomain) {
         super(FuzzyWatchPushDelayTaskEngine.class.getSimpleName(), Loggers.PUSH);
         this.clientManager = clientManager;
-        this.indexesManager = indexesManager;
+        this.clientFuzzyWatchIndexesManager = clientFuzzyWatchIndexesManager;
         this.serviceStorage = serviceStorage;
         this.metadataManager = metadataManager;
         this.pushExecutor = pushExecutor;
@@ -65,8 +67,8 @@ public class FuzzyWatchPushDelayTaskEngine extends NacosDelayTaskExecuteEngine {
         return clientManager;
     }
     
-    public ClientServiceIndexesManager getIndexesManager() {
-        return indexesManager;
+    public ClientFuzzyWatchIndexesManager getClientFuzzyWatchIndexesManager() {
+        return clientFuzzyWatchIndexesManager;
     }
     
     public ServiceStorage getServiceStorage() {

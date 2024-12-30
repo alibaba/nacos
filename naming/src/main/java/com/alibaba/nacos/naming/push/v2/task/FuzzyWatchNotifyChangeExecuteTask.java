@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
+import com.alibaba.nacos.naming.core.v2.index.ClientFuzzyWatchIndexesManager;
 import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -81,7 +82,7 @@ public class FuzzyWatchNotifyChangeExecuteTask extends AbstractExecuteTask {
             return delayTask.getTargetClients();
         }
         Set<String> watchNotifyClientIds = new HashSet<>(16);
-        ClientServiceIndexesManager indexesManager = delayTaskEngine.getIndexesManager();
+        ClientFuzzyWatchIndexesManager indexesManager = delayTaskEngine.getClientFuzzyWatchIndexesManager();
         // get match result from index
         Collection<String> matchedPatterns = indexesManager.getServiceMatchedPatterns(service);
         

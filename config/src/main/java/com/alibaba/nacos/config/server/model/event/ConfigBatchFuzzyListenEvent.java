@@ -35,12 +35,12 @@ public class ConfigBatchFuzzyListenEvent extends Event {
     /**
      * ID of the client making the request.
      */
-    private String clientId;
+    private String connectionId;
     
     /**
      * Pattern for matching group keys.
      */
-    private String keyGroupPattern;
+    private String groupKeyPattern;
     
     /**
      * Set of existing group keys associated with the client.
@@ -55,16 +55,16 @@ public class ConfigBatchFuzzyListenEvent extends Event {
     /**
      * Constructs a new ConfigBatchFuzzyListenEvent with the specified parameters.
      *
-     * @param clientId                ID of the client making the request
+     * @param connectionId                ID of the client making the request
      * @param clientExistingGroupKeys Set of existing group keys associated with the client
-     * @param keyGroupPattern         Pattern for matching group keys
+     * @param groupKeyPattern         Pattern for matching group keys
      * @param isInitializing          Flag indicating whether the client is initializing
      */
-    public ConfigBatchFuzzyListenEvent(String clientId, Set<String> clientExistingGroupKeys, String keyGroupPattern,
+    public ConfigBatchFuzzyListenEvent(String connectionId, Set<String> clientExistingGroupKeys, String groupKeyPattern,
             boolean isInitializing) {
-        this.clientId = clientId;
+        this.connectionId = connectionId;
         this.clientExistingGroupKeys = clientExistingGroupKeys;
-        this.keyGroupPattern = keyGroupPattern;
+        this.groupKeyPattern = groupKeyPattern;
         this.isInitializing = isInitializing;
     }
     
@@ -73,17 +73,17 @@ public class ConfigBatchFuzzyListenEvent extends Event {
      *
      * @return The client ID
      */
-    public String getClientId() {
-        return clientId;
+    public String getConnectionId() {
+        return connectionId;
     }
     
     /**
      * Set the ID of the client making the request.
      *
-     * @param clientId The client ID to be set
+     * @param connectionId The client ID to be set
      */
-    public void setClientId(String clientId) {
-        this.clientId = clientId;
+    public void setConnectionId(String connectionId) {
+        this.connectionId = connectionId;
     }
     
     /**
@@ -91,17 +91,17 @@ public class ConfigBatchFuzzyListenEvent extends Event {
      *
      * @return The key group pattern
      */
-    public String getKeyGroupPattern() {
-        return keyGroupPattern;
+    public String getGroupKeyPattern() {
+        return groupKeyPattern;
     }
     
     /**
      * Set the pattern for matching group keys.
      *
-     * @param keyGroupPattern The key group pattern to be set
+     * @param groupKeyPattern The key group pattern to be set
      */
-    public void setKeyGroupPattern(String keyGroupPattern) {
-        this.keyGroupPattern = keyGroupPattern;
+    public void setGroupKeyPattern(String groupKeyPattern) {
+        this.groupKeyPattern = groupKeyPattern;
     }
     
     /**

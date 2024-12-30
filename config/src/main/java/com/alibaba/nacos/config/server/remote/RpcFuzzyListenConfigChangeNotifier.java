@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.remote;
 
-import com.alibaba.nacos.api.config.remote.request.FuzzyListenNotifyChangeRequest;
+import com.alibaba.nacos.api.config.remote.request.FuzzyWatchNotifyChangeRequest;
 import com.alibaba.nacos.api.remote.AbstractPushCallBack;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -62,6 +62,7 @@ public class RpcFuzzyListenConfigChangeNotifier extends Subscriber<LocalDataChan
     
     private final TpsControlManager tpsControlManager;
     
+    private final ConfigFuzzyWatchContext configFuzzyWatchContext;
     /**
      * Constructs RpcFuzzyListenConfigChangeNotifier with the specified dependencies.
      *
@@ -70,11 +71,12 @@ public class RpcFuzzyListenConfigChangeNotifier extends Subscriber<LocalDataChan
      * @param rpcPushService            The service for RPC push.
      */
     public RpcFuzzyListenConfigChangeNotifier(ConfigChangeListenContext configChangeListenContext,
-            ConnectionManager connectionManager, RpcPushService rpcPushService) {
+            ConnectionManager connectionManager, RpcPushService rpcPushService,ConfigFuzzyWatchContext configFuzzyWatchContext) {
         this.configChangeListenContext = configChangeListenContext;
         this.connectionManager = connectionManager;
         this.rpcPushService = rpcPushService;
         this.tpsControlManager = ControlManagerCenter.getInstance().getTpsControlManager();
+        this.configFuzzyWatchContext=configFuzzyWatchContext;
         NotifyCenter.registerSubscriber(this);
     }
     
@@ -86,7 +88,7 @@ public class RpcFuzzyListenConfigChangeNotifier extends Subscriber<LocalDataChan
         String group = parseKey[1];
         String tenant = parseKey.length > 2 ? parseKey[2] : "";
         
-        for (String clientId : configChangeListenContext.getConnectIdMatchedPatterns(groupKey)) {
+        for (String clientId : configFuzzyWatchContext.getConnectIdMatchedPatterns(groupKey)) {
             Connection connection = connectionManager.getConnection(clientId);
             if (null == connection) {
                 Loggers.REMOTE_PUSH.warn(
@@ -96,10 +98,9 @@ public class RpcFuzzyListenConfigChangeNotifier extends Subscriber<LocalDataChan
             }
             ConnectionMeta metaInfo = connection.getMetaInfo();
             String clientIp = metaInfo.getClientIp();
-            String clientTag = metaInfo.getTag();
             String appName = metaInfo.getAppName();
-            boolean exists = ConfigCacheService.containsAndEffectiveForClient(groupKey, clientIp, clientTag);
-            FuzzyListenNotifyChangeRequest request = new FuzzyListenNotifyChangeRequest(tenant, group, dataId, exists);
+            boolean exists = ConfigCacheService.getContentCache(groupKey)!=null;
+            FuzzyWatchNotifyChangeRequest request = new FuzzyWatchNotifyChangeRequest(tenant, group, dataId, exists);
             int maxPushRetryTimes = ConfigCommonConfig.getInstance().getMaxPushRetryTimes();
             RpcPushTask rpcPushTask = new RpcPushTask(request, maxPushRetryTimes, clientId, clientIp, appName);
             push(rpcPushTask);
@@ -117,7 +118,7 @@ public class RpcFuzzyListenConfigChangeNotifier extends Subscriber<LocalDataChan
      * @param retryTask The task for retrying to push notification.
      */
     private void push(RpcPushTask retryTask) {
-        FuzzyListenNotifyChangeRequest notifyRequest = retryTask.notifyRequest;
+        FuzzyWatchNotifyChangeRequest notifyRequest = retryTask.notifyRequest;
         if (retryTask.isOverTimes()) {
             Loggers.REMOTE_PUSH.warn(
                     "push callback retry fail over times. dataId={},group={},tenant={},clientId={}, will unregister client.",
@@ -142,7 +143,7 @@ public class RpcFuzzyListenConfigChangeNotifier extends Subscriber<LocalDataChan
      */
     class RpcPushTask implements Runnable {
         
-        FuzzyListenNotifyChangeRequest notifyRequest;
+        FuzzyWatchNotifyChangeRequest notifyRequest;
         
         int maxRetryTimes;
         
@@ -163,7 +164,7 @@ public class RpcFuzzyListenConfigChangeNotifier extends Subscriber<LocalDataChan
          * @param clientIp      The IP address of the client.
          * @param appName       The name of the application.
          */
-        public RpcPushTask(FuzzyListenNotifyChangeRequest notifyRequest, int maxRetryTimes, String connectionId,
+        public RpcPushTask(FuzzyWatchNotifyChangeRequest notifyRequest, int maxRetryTimes, String connectionId,
                 String clientIp, String appName) {
             this.notifyRequest = notifyRequest;
             this.maxRetryTimes = maxRetryTimes;

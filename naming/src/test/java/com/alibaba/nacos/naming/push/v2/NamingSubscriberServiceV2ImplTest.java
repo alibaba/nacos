@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
+import com.alibaba.nacos.naming.core.v2.index.ClientFuzzyWatchIndexesManager;
 import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -63,6 +64,9 @@ class NamingSubscriberServiceV2ImplTest {
     private ClientServiceIndexesManager indexesManager;
     
     @Mock
+    private ClientFuzzyWatchIndexesManager clientFuzzyWatchIndexesManager;
+    
+    @Mock
     private PushDelayTaskExecuteEngine delayTaskEngine;
     
     @Mock
@@ -75,7 +79,7 @@ class NamingSubscriberServiceV2ImplTest {
     
     @BeforeEach
     void setUp() throws Exception {
-        subscriberService = new NamingSubscriberServiceV2Impl(clientManager, indexesManager, null, null, null, switchDomain);
+        subscriberService = new NamingSubscriberServiceV2Impl(clientManager, indexesManager, clientFuzzyWatchIndexesManager, null, null,null, switchDomain);
         ReflectionTestUtils.setField(subscriberService, "delayTaskEngine", delayTaskEngine);
         when(indexesManager.getAllClientsSubscribeService(service)).thenReturn(Collections.singletonList(testClientId));
         when(indexesManager.getAllClientsSubscribeService(service1)).thenReturn(Collections.singletonList(testClientId));

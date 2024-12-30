@@ -31,7 +31,7 @@ import java.util.Set;
  * @author stone-98
  * @date 2024/3/6
  */
-public class FuzzyListenNotifyDiffRequest extends AbstractFuzzyListenNotifyRequest {
+public class FuzzyWatchNotifyDiffRequest extends AbstractFuzzyWatchNotifyRequest {
     
     /**
      * The pattern used to match group keys for the configurations.
@@ -46,7 +46,7 @@ public class FuzzyListenNotifyDiffRequest extends AbstractFuzzyListenNotifyReque
     /**
      * Constructs an empty FuzzyListenNotifyDiffRequest.
      */
-    public FuzzyListenNotifyDiffRequest() {
+    public FuzzyWatchNotifyDiffRequest() {
     }
     
     /**
@@ -56,7 +56,7 @@ public class FuzzyListenNotifyDiffRequest extends AbstractFuzzyListenNotifyReque
      * @param groupKeyPattern    The pattern used to match group keys for the configurations
      * @param contexts           The set of contexts containing information about the configurations
      */
-    public FuzzyListenNotifyDiffRequest(String serviceChangedType, String groupKeyPattern, Set<Context> contexts) {
+    public FuzzyWatchNotifyDiffRequest(String serviceChangedType, String groupKeyPattern, Set<Context> contexts) {
         super(serviceChangedType);
         this.groupKeyPattern = groupKeyPattern;
         this.contexts = contexts;
@@ -69,8 +69,8 @@ public class FuzzyListenNotifyDiffRequest extends AbstractFuzzyListenNotifyReque
      * @param groupKeyPattern The pattern used to match group keys for the configurations
      * @return An initial FuzzyListenNotifyDiffRequest
      */
-    public static FuzzyListenNotifyDiffRequest buildInitRequest(Set<Context> contexts, String groupKeyPattern) {
-        return new FuzzyListenNotifyDiffRequest(Constants.ConfigChangeType.LISTEN_INIT, groupKeyPattern, contexts);
+    public static FuzzyWatchNotifyDiffRequest buildInitRequest(Set<Context> contexts, String groupKeyPattern) {
+        return new FuzzyWatchNotifyDiffRequest(Constants.FUZZY_WATCH_INIT_NOTIFY, groupKeyPattern, contexts);
     }
     
     /**
@@ -79,8 +79,8 @@ public class FuzzyListenNotifyDiffRequest extends AbstractFuzzyListenNotifyReque
      * @param groupKeyPattern The pattern used to match group keys for the configurations
      * @return A final FuzzyListenNotifyDiffRequest
      */
-    public static FuzzyListenNotifyDiffRequest buildInitFinishRequest(String groupKeyPattern) {
-        return new FuzzyListenNotifyDiffRequest(Constants.ConfigChangeType.FINISH_LISTEN_INIT, groupKeyPattern,
+    public static FuzzyWatchNotifyDiffRequest buildInitFinishRequest(String groupKeyPattern) {
+        return new FuzzyWatchNotifyDiffRequest(Constants.FINISH_FUZZY_WATCH_INIT_NOTIFY, groupKeyPattern,
                 new HashSet<>());
     }
     

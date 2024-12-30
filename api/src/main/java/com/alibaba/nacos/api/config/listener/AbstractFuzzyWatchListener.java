@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.config.listener;
 
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * AbstractFuzzyListenListener is an abstract class that provides basic functionality for listening to fuzzy
@@ -25,12 +26,12 @@ import java.util.Objects;
  * @author stone-98
  * @date 2024/3/4
  */
-public abstract class AbstractFuzzyListenListener extends AbstractListener {
+public abstract class AbstractFuzzyWatchListener extends AbstractListener {
     
     /**
      * Unique identifier for the listener.
      */
-    private String uuid;
+    String uuid= UUID.randomUUID().toString();
     
     /**
      * Get the UUID (Unique Identifier) of the listener.
@@ -42,20 +43,11 @@ public abstract class AbstractFuzzyListenListener extends AbstractListener {
     }
     
     /**
-     * Set the UUID (Unique Identifier) of the listener.
-     *
-     * @param uuid The UUID to be set
-     */
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-    
-    /**
      * Callback method invoked when a fuzzy configuration change event occurs.
      *
      * @param event The fuzzy configuration change event
      */
-    public abstract void onEvent(FuzzyListenConfigChangeEvent event);
+    public abstract void onEvent(ConfigFuzzyWatchChangeEvent event);
     
     /**
      * Receive the configuration information. This method is overridden but does nothing in this abstract class.
@@ -63,7 +55,7 @@ public abstract class AbstractFuzzyListenListener extends AbstractListener {
      * @param configInfo The configuration information
      */
     @Override
-    public void receiveConfigInfo(String configInfo) {
+    public final void receiveConfigInfo(String configInfo) {
         // Do nothing by default
     }
     
@@ -92,7 +84,7 @@ public abstract class AbstractFuzzyListenListener extends AbstractListener {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        AbstractFuzzyListenListener that = (AbstractFuzzyListenListener) o;
+        AbstractFuzzyWatchListener that = (AbstractFuzzyWatchListener) o;
         return Objects.equals(uuid, that.uuid);
     }
 }

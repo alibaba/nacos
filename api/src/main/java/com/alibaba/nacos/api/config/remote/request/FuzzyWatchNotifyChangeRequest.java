@@ -24,7 +24,7 @@ package com.alibaba.nacos.api.config.remote.request;
  * @author stone-98
  * @date 2024/3/13
  */
-public class FuzzyListenNotifyChangeRequest extends AbstractFuzzyListenNotifyRequest {
+public class FuzzyWatchNotifyChangeRequest extends AbstractFuzzyWatchNotifyRequest {
     
     /**
      * The tenant of the configuration that has changed.
@@ -49,7 +49,7 @@ public class FuzzyListenNotifyChangeRequest extends AbstractFuzzyListenNotifyReq
     /**
      * Constructs an empty FuzzyListenNotifyChangeRequest.
      */
-    public FuzzyListenNotifyChangeRequest() {
+    public FuzzyWatchNotifyChangeRequest() {
     }
     
     /**
@@ -60,7 +60,7 @@ public class FuzzyListenNotifyChangeRequest extends AbstractFuzzyListenNotifyReq
      * @param dataId  The data ID of the configuration that has changed
      * @param isExist Indicates whether the configuration exists or not
      */
-    public FuzzyListenNotifyChangeRequest(String tenant, String group, String dataId, boolean isExist) {
+    public FuzzyWatchNotifyChangeRequest(String tenant, String group, String dataId, boolean isExist) {
         this.tenant = tenant;
         this.group = group;
         this.dataId = dataId;

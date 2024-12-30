@@ -33,11 +33,11 @@ import org.springframework.stereotype.Component;
  * @author tanyongquan
  */
 @Component("fuzzyWatchRequestHandler")
-public class FuzzyWatchRequestHandler extends RequestHandler<FuzzyWatchRequest, FuzzyWatchResponse> {
+public class NamingFuzzyWatchRequestHandler extends RequestHandler<FuzzyWatchRequest, FuzzyWatchResponse> {
     
     private final EphemeralClientOperationServiceImpl clientOperationService;
     
-    public FuzzyWatchRequestHandler(EphemeralClientOperationServiceImpl clientOperationService) {
+    public NamingFuzzyWatchRequestHandler(EphemeralClientOperationServiceImpl clientOperationService) {
         this.clientOperationService = clientOperationService;
     }
     

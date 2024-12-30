@@ -18,8 +18,8 @@ package com.alibaba.nacos.example;
 
 import com.alibaba.nacos.api.config.ConfigFactory;
 import com.alibaba.nacos.api.config.ConfigService;
-import com.alibaba.nacos.api.config.listener.AbstractFuzzyListenListener;
-import com.alibaba.nacos.api.config.listener.FuzzyListenConfigChangeEvent;
+import com.alibaba.nacos.api.config.listener.AbstractFuzzyWatchListener;
+import com.alibaba.nacos.api.config.listener.ConfigFuzzyWatchChangeEvent;
 import com.alibaba.nacos.api.exception.NacosException;
 
 import java.util.Properties;
@@ -66,15 +66,15 @@ public class FuzzyListenExample {
         }
         
         // Define a fuzzy listener to handle configuration changes
-        AbstractFuzzyListenListener listener = new AbstractFuzzyListenListener() {
+        AbstractFuzzyWatchListener listener = new AbstractFuzzyWatchListener() {
             @Override
-            public void onEvent(FuzzyListenConfigChangeEvent event) {
+            public void onEvent(ConfigFuzzyWatchChangeEvent event) {
                 System.out.println("[fuzzy listen config change]" + event.toString());
             }
         };
         
         // Add the fuzzy listener to monitor configurations starting with "test"
-        configService.addFuzzyListener("test*", "DEFAULT_GROUP", listener);
+        configService.fuzzyWatch("test*", "DEFAULT_GROUP", listener);
         System.out.println("[Fuzzy listening started.]");
         
         // Publish more configurations to trigger the listener

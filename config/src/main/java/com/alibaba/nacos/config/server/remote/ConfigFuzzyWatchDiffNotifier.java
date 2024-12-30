@@ -17,13 +17,12 @@
 package com.alibaba.nacos.config.server.remote;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.config.remote.request.FuzzyListenNotifyDiffRequest;
+import com.alibaba.nacos.api.config.remote.request.FuzzyWatchNotifyDiffRequest;
 import com.alibaba.nacos.api.remote.AbstractPushCallBack;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.common.utils.GroupKeyPattern;
 import com.alibaba.nacos.config.server.configuration.ConfigCommonConfig;
 import com.alibaba.nacos.config.server.model.event.ConfigBatchFuzzyListenEvent;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
@@ -55,8 +54,8 @@ import java.util.stream.Stream;
  * @author stone-98
  * @date 2024/3/18
  */
-@Component(value = "rpcFuzzyListenConfigDiffNotifier")
-public class RpcFuzzyListenConfigDiffNotifier extends Subscriber<ConfigBatchFuzzyListenEvent> {
+@Component(value = "configFuzzyWatchDiffNotifier")
+public class ConfigFuzzyWatchDiffNotifier extends Subscriber<ConfigBatchFuzzyListenEvent> {
     
     private static final String FUZZY_LISTEN_CONFIG_DIFF_PUSH = "FUZZY_LISTEN_CONFIG_DIFF_PUSH_COUNT";
     
@@ -70,7 +69,7 @@ public class RpcFuzzyListenConfigDiffNotifier extends Subscriber<ConfigBatchFuzz
     
     private final RpcPushService rpcPushService;
     
-    public RpcFuzzyListenConfigDiffNotifier(ConnectionManager connectionManager, RpcPushService rpcPushService) {
+    public ConfigFuzzyWatchDiffNotifier(ConnectionManager connectionManager, RpcPushService rpcPushService) {
         this.connectionManager = connectionManager;
         this.tpsControlManager = ControlManagerCenter.getInstance().getTpsControlManager();
         this.rpcPushService = rpcPushService;
@@ -83,8 +82,8 @@ public class RpcFuzzyListenConfigDiffNotifier extends Subscriber<ConfigBatchFuzz
      * @param retryTask         The retry task containing the RPC push request
      * @param connectionManager The connection manager for managing client connections
      */
-    private static void push(RpcPushTask retryTask, ConnectionManager connectionManager) {
-        FuzzyListenNotifyDiffRequest notifyRequest = retryTask.notifyRequest;
+    private static void push(FuzzyWatchRpcPushTask retryTask, ConnectionManager connectionManager) {
+        FuzzyWatchNotifyDiffRequest notifyRequest = retryTask.notifyRequest;
         // Check if the maximum retry times have been reached
         if (retryTask.isOverTimes()) {
             // If over the maximum retry times, log a warning and unregister the client connection
@@ -112,11 +111,11 @@ public class RpcFuzzyListenConfigDiffNotifier extends Subscriber<ConfigBatchFuzz
     @Override
     public void onEvent(ConfigBatchFuzzyListenEvent event) {
         // Get the connection for the client
-        Connection connection = connectionManager.getConnection(event.getClientId());
+        Connection connection = connectionManager.getConnection(event.getConnectionId());
         if (connection == null) {
             Loggers.REMOTE_PUSH.warn(
-                    "clientId not found, Config diff notification not sent. clientId={},keyGroupPattern={}",
-                    event.getClientId(), event.getKeyGroupPattern());
+                    "connectionId not found, Config diff notification not sent. connectionId={},keyGroupPattern={}",
+                    event.getConnectionId(), event.getGroupKeyPattern());
             // If connection is not available, return
             return;
         }
@@ -124,11 +123,9 @@ public class RpcFuzzyListenConfigDiffNotifier extends Subscriber<ConfigBatchFuzz
         // Retrieve meta information for the connection
         ConnectionMeta metaInfo = connection.getMetaInfo();
         String clientIp = metaInfo.getClientIp();
-        String clientTag = metaInfo.getTag();
         
         // Match client effective group keys based on the event pattern, client IP, and tag
-        Set<String> matchGroupKeys = ConfigCacheService.matchClientEffectiveGroupKeys(event.getKeyGroupPattern(),
-                clientIp, clientTag);
+        Set<String> matchGroupKeys = ConfigCacheService.matchGroupKeys(event.getGroupKeyPattern());
         
         // Retrieve existing group keys for the client from the event
         Set<String> clientExistingGroupKeys = event.getClientExistingGroupKeys();
@@ -141,7 +138,7 @@ public class RpcFuzzyListenConfigDiffNotifier extends Subscriber<ConfigBatchFuzz
         // Calculate and merge configuration states based on matched and existing group keys
         List<ConfigState> configStates = calculateAndMergeToConfigState(matchGroupKeys, clientExistingGroupKeys);
         
-        // If no config states are available, return
+        // If no diff config states are available, return
         if (CollectionUtils.isEmpty(configStates)) {
             return;
         }
@@ -157,29 +154,26 @@ public class RpcFuzzyListenConfigDiffNotifier extends Subscriber<ConfigBatchFuzz
         // Iterate over each batch of config states
         for (List<ConfigState> configStateList : divideConfigStatesIntoBatches) {
             // Map config states to FuzzyListenNotifyDiffRequest.Context objects
-            Set<FuzzyListenNotifyDiffRequest.Context> contexts = configStateList.stream().map(state -> {
+            Set<FuzzyWatchNotifyDiffRequest.Context> contexts = configStateList.stream().map(state -> {
                 String[] parseKey = GroupKey.parseKey(state.getGroupKey());
                 String dataId = parseKey[0];
                 String group = parseKey[1];
                 String tenant = parseKey.length > 2 ? parseKey[2] : Constants.DEFAULT_NAMESPACE_ID;
-                String changeType = event.isInitializing() ? Constants.ConfigChangeType.LISTEN_INIT
-                        : (state.isExist() ? Constants.ConfigChangeType.ADD_CONFIG
-                                : Constants.ConfigChangeType.DELETE_CONFIG);
-                return FuzzyListenNotifyDiffRequest.Context.build(tenant, group, dataId, changeType);
+                String changeType = event.isInitializing() ? Constants.FUZZY_WATCH_INIT_NOTIFY
+                        : (state.isExist() ? Constants.ConfigChangedType.ADD_CONFIG
+                                : Constants.ConfigChangedType.DELETE_CONFIG);
+                return FuzzyWatchNotifyDiffRequest.Context.build(tenant, group, dataId, changeType);
             }).collect(Collectors.toSet());
             
-            // Remove namespace from the pattern
-            String patternWithoutNameSpace = GroupKeyPattern.getPatternRemovedNamespace(event.getKeyGroupPattern());
-            
             // Build FuzzyListenNotifyDiffRequest with contexts and pattern
-            FuzzyListenNotifyDiffRequest request = FuzzyListenNotifyDiffRequest.buildInitRequest(contexts,
-                    patternWithoutNameSpace);
+            FuzzyWatchNotifyDiffRequest request = FuzzyWatchNotifyDiffRequest.buildInitRequest(contexts,
+                    event.getGroupKeyPattern());
             
             int maxPushRetryTimes = ConfigCommonConfig.getInstance().getMaxPushRetryTimes();
             // Create RPC push task and push the request to the client
-            RpcPushTask rpcPushTask = new RpcPushTask(request, pushBatchFinishCount, originBatchSize, maxPushRetryTimes,
-                    event.getClientId(), clientIp, metaInfo.getAppName());
-            push(rpcPushTask, connectionManager);
+            FuzzyWatchRpcPushTask fuzzyWatchRpcPushTask = new FuzzyWatchRpcPushTask(request, pushBatchFinishCount, originBatchSize, maxPushRetryTimes,
+                    event.getConnectionId(), clientIp, metaInfo.getAppName());
+            push(fuzzyWatchRpcPushTask, connectionManager);
         }
     }
     
@@ -305,12 +299,12 @@ public class RpcFuzzyListenConfigDiffNotifier extends Subscriber<ConfigBatchFuzz
     /**
      * Represents a task for pushing FuzzyListenNotifyDiffRequest to clients.
      */
-    class RpcPushTask implements Runnable {
+    class FuzzyWatchRpcPushTask implements Runnable {
         
         /**
          * The FuzzyListenNotifyDiffRequest to be pushed.
          */
-        FuzzyListenNotifyDiffRequest notifyRequest;
+        FuzzyWatchNotifyDiffRequest notifyRequest;
         
         /**
          * The maximum number of times to retry pushing the request.
@@ -358,7 +352,7 @@ public class RpcFuzzyListenConfigDiffNotifier extends Subscriber<ConfigBatchFuzz
          * @param clientIp             The IP address of the client
          * @param appName              The name of the client's application
          */
-        public RpcPushTask(FuzzyListenNotifyDiffRequest notifyRequest, AtomicInteger pushBatchFinishCount,
+        public FuzzyWatchRpcPushTask(FuzzyWatchNotifyDiffRequest notifyRequest, AtomicInteger pushBatchFinishCount,
                 int originBatchSize, int maxRetryTimes, String connectionId, String clientIp, String appName) {
             this.notifyRequest = notifyRequest;
             this.pushBatchFinishCount = pushBatchFinishCount;
@@ -391,7 +385,7 @@ public class RpcFuzzyListenConfigDiffNotifier extends Subscriber<ConfigBatchFuzz
                 push(this, connectionManager);
             } else {
                 rpcPushService.pushWithCallback(connectionId, notifyRequest,
-                        new RpcPushCallback(this, tpsControlManager, connectionManager, pushBatchFinishCount,
+                        new FuzzyWatchRpcPushCallback(this, tpsControlManager, connectionManager, pushBatchFinishCount,
                                 originBatchSize), ConfigExecutor.getClientConfigNotifierServiceExecutor());
             }
         }
@@ -400,12 +394,12 @@ public class RpcFuzzyListenConfigDiffNotifier extends Subscriber<ConfigBatchFuzz
     /**
      * Represents a callback for handling the result of an RPC push operation.
      */
-    class RpcPushCallback extends AbstractPushCallBack {
+    class FuzzyWatchRpcPushCallback extends AbstractPushCallBack {
         
         /**
          * The RpcPushTask associated with the callback.
          */
-        RpcPushTask rpcPushTask;
+        FuzzyWatchRpcPushTask fuzzyWatchRpcPushTask;
         
         /**
          * The TpsControlManager for checking TPS limits.
@@ -430,17 +424,17 @@ public class RpcFuzzyListenConfigDiffNotifier extends Subscriber<ConfigBatchFuzz
         /**
          * Constructs a new RpcPushCallback with the specified parameters.
          *
-         * @param rpcPushTask       The RpcPushTask associated with the callback
+         * @param fuzzyWatchRpcPushTask       The RpcPushTask associated with the callback
          * @param tpsControlManager The TpsControlManager for checking TPS limits
          * @param connectionManager The ConnectionManager for managing client connections
          * @param pushBatchCount    The counter for tracking the number of pushed batches
          * @param originBatchSize   The original size of the batch before splitting
          */
-        public RpcPushCallback(RpcPushTask rpcPushTask, TpsControlManager tpsControlManager,
+        public FuzzyWatchRpcPushCallback(FuzzyWatchRpcPushTask fuzzyWatchRpcPushTask, TpsControlManager tpsControlManager,
                 ConnectionManager connectionManager, AtomicInteger pushBatchCount, int originBatchSize) {
             // Set the timeout for the callback
             super(3000L);
-            this.rpcPushTask = rpcPushTask;
+            this.fuzzyWatchRpcPushTask = fuzzyWatchRpcPushTask;
             this.tpsControlManager = tpsControlManager;
             this.connectionManager = connectionManager;
             this.pushBatchCount = pushBatchCount;
@@ -460,10 +454,10 @@ public class RpcFuzzyListenConfigDiffNotifier extends Subscriber<ConfigBatchFuzz
             if (pushBatchCount.get() < originBatchSize) {
                 pushBatchCount.incrementAndGet();
             } else if (pushBatchCount.get() == originBatchSize) {
-                FuzzyListenNotifyDiffRequest request = FuzzyListenNotifyDiffRequest.buildInitFinishRequest(
-                        rpcPushTask.notifyRequest.getGroupKeyPattern());
-                push(new RpcPushTask(request, pushBatchCount, originBatchSize, 50, rpcPushTask.connectionId,
-                        rpcPushTask.clientIp, rpcPushTask.appName), connectionManager);
+                FuzzyWatchNotifyDiffRequest request = FuzzyWatchNotifyDiffRequest.buildInitFinishRequest(
+                        fuzzyWatchRpcPushTask.notifyRequest.getGroupKeyPattern());
+                push(new FuzzyWatchRpcPushTask(request, pushBatchCount, originBatchSize, 50, fuzzyWatchRpcPushTask.connectionId,
+                        fuzzyWatchRpcPushTask.clientIp, fuzzyWatchRpcPushTask.appName), connectionManager);
             }
         }
         
@@ -481,8 +475,8 @@ public class RpcFuzzyListenConfigDiffNotifier extends Subscriber<ConfigBatchFuzz
             
             // Log the failure and retry the task
             Loggers.REMOTE_PUSH.warn("Push fail, groupKeyPattern={}, clientId={}",
-                    rpcPushTask.notifyRequest.getGroupKeyPattern(), rpcPushTask.connectionId, e);
-            push(rpcPushTask, connectionManager);
+                    fuzzyWatchRpcPushTask.notifyRequest.getGroupKeyPattern(), fuzzyWatchRpcPushTask.connectionId, e);
+            push(fuzzyWatchRpcPushTask, connectionManager);
         }
     }
 }

@@ -48,7 +48,7 @@ public abstract class AbstractClient implements Client {
     
     protected final ConcurrentHashMap<Service, Subscriber> subscribers = new ConcurrentHashMap<>(16, 0.75f, 1);
     
-    protected final ConcurrentHashSet<String> watchedPattern = new ConcurrentHashSet<>();
+    protected final ConcurrentHashSet<String> fuzzyWatchedPattern = new ConcurrentHashSet<>();
     
     protected volatile long lastUpdatedTime;
     
@@ -139,7 +139,7 @@ public abstract class AbstractClient implements Client {
     
     @Override
     public boolean addWatchedPattern(String watchPattern) {
-        if (watchedPattern.add(watchPattern)) {
+        if (fuzzyWatchedPattern.add(watchPattern)) {
             // TODO:Watch MetricsMonitor
             return true;
         }
@@ -148,7 +148,7 @@ public abstract class AbstractClient implements Client {
     
     @Override
     public boolean removeWatchedPattern(String watchPattern) {
-        if (watchedPattern.remove(watchPattern)) {
+        if (fuzzyWatchedPattern.remove(watchPattern)) {
             // TODO:Watch MetricsMonitor
             return true;
         }
@@ -157,12 +157,12 @@ public abstract class AbstractClient implements Client {
     
     @Override
     public boolean isWatchedPattern(String watchPattern) {
-        return watchedPattern.contains(watchPattern);
+        return fuzzyWatchedPattern.contains(watchPattern);
     }
     
     @Override
-    public Collection<String> getAllFuzzyWatchPattern() {
-        return watchedPattern;
+    public Collection<String> getFuzzyWatchedPattern() {
+        return fuzzyWatchedPattern;
     }
     
     @Override

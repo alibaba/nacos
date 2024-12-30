@@ -26,14 +26,14 @@ import static com.alibaba.nacos.api.common.Constants.Config.CONFIG_MODULE;
  * @author stone-98
  * @date 2024/3/14
  */
-public abstract class AbstractFuzzyListenNotifyRequest extends ServerRequest {
+public abstract class AbstractFuzzyWatchNotifyRequest extends ServerRequest {
     
     private String serviceChangedType;
     
-    public AbstractFuzzyListenNotifyRequest() {
+    public AbstractFuzzyWatchNotifyRequest() {
     }
     
-    public AbstractFuzzyListenNotifyRequest(String serviceChangedType) {
+    public AbstractFuzzyWatchNotifyRequest(String serviceChangedType) {
         this.serviceChangedType = serviceChangedType;
     }
     

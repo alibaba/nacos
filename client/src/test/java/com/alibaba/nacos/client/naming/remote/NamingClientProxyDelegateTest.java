@@ -81,7 +81,7 @@ class NamingClientProxyDelegateTest {
         props.setProperty("serverAddr", "localhost");
         nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
         notifier = new InstancesChangeNotifier();
-        delegate = new NamingClientProxyDelegate(TEST_NAMESPACE, holder, nacosClientProperties,fuzzyWatchServiceListHolder, notifier);
+        delegate = new NamingClientProxyDelegate(TEST_NAMESPACE, holder,fuzzyWatchServiceListHolder, nacosClientProperties, notifier);
         Field grpcClientProxyField = NamingClientProxyDelegate.class.getDeclaredField("grpcClientProxy");
         grpcClientProxyField.setAccessible(true);
         grpcClientProxyField.set(delegate, mockGrpcClient);
@@ -106,7 +106,7 @@ class NamingClientProxyDelegateTest {
         verify(mockGrpcClient, times(1)).registerService(serviceName, groupName, instance);
     }
     
-
+    @Test
     void testBatchRegisterServiceByGrpc() throws NacosException {
         String serviceName = "service1";
         String groupName = "group1";
@@ -173,7 +173,7 @@ class NamingClientProxyDelegateTest {
         verify(mockHttpClient, times(1)).registerService(serviceName, groupName, instance);
     }
     
-
+    @Test
     void testDeregisterEphemeralServiceGrpc() throws NacosException {
         String serviceName = "service1";
         String groupName = "group1";
@@ -225,7 +225,8 @@ class NamingClientProxyDelegateTest {
         delegate.deregisterService(serviceName, groupName, instance);
         verify(mockHttpClient, times(1)).deregisterService(serviceName, groupName, instance);
     }
-  
+    
+    @Test
     void testUpdateInstance() {
         String serviceName = "service1";
         String groupName = "group1";
@@ -234,7 +235,8 @@ class NamingClientProxyDelegateTest {
             delegate.updateInstance(serviceName, groupName, instance);
         });
     }
-
+    
+    @Test
     void testQueryInstancesOfService() throws NacosException {
         String serviceName = "service1";
         String groupName = "group1";
@@ -243,13 +245,13 @@ class NamingClientProxyDelegateTest {
         verify(mockGrpcClient, times(1)).queryInstancesOfService(serviceName, groupName, clusters, false);
     }
     
-  
+    @Test
     void testQueryService() throws NacosException {
         Service service = delegate.queryService("a", "b");
         assertNull(service);
     }
     
-   
+    @Test
     void testCreateService() {
         Service service = new Service();
         Assertions.assertDoesNotThrow(() -> {
@@ -257,7 +259,7 @@ class NamingClientProxyDelegateTest {
         });
     }
     
-
+    @Test
     void testDeleteService() throws NacosException {
         assertFalse(delegate.deleteService("service", "group1"));
     }
@@ -270,7 +272,7 @@ class NamingClientProxyDelegateTest {
         });
     }
     
-
+    @Test
     void testGetServiceList() throws NacosException {
         AbstractSelector selector = new ExpressionSelector();
         int pageNo = 1;

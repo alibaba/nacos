@@ -60,7 +60,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
-import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_PATTERN_WILDCARD;
+import static com.alibaba.nacos.api.common.Constants.ANY_PATTERN;
 import static com.alibaba.nacos.client.naming.selector.NamingSelectorFactory.getUniqueClusterString;
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
@@ -541,15 +541,15 @@ public class NacosNamingService implements NamingService {
     
     @Override
     public void fuzzyWatch(String fixedGroupName, AbstractFuzzyWatchEventListener listener) throws NacosException {
-        doFuzzyWatch(FUZZY_WATCH_PATTERN_WILDCARD, fixedGroupName, listener);
+        doFuzzyWatch(ANY_PATTERN, fixedGroupName, listener);
     }
     
     @Override
     public void fuzzyWatch(String serviceNamePattern, String fixedGroupName,
             AbstractFuzzyWatchEventListener listener) throws NacosException {
         // only support prefix match right now
-        if (!serviceNamePattern.endsWith(FUZZY_WATCH_PATTERN_WILDCARD)) {
-            if (serviceNamePattern.startsWith(FUZZY_WATCH_PATTERN_WILDCARD)) {
+        if (!serviceNamePattern.endsWith(ANY_PATTERN)) {
+            if (serviceNamePattern.startsWith(ANY_PATTERN)) {
                 throw new UnsupportedOperationException("Suffix matching for service names is not supported yet."
                         + " It will be supported in future updates if needed.");
             } else {
@@ -572,7 +572,7 @@ public class NacosNamingService implements NamingService {
     
     @Override
     public void cancelFuzzyWatch(String fixedGroupName, AbstractFuzzyWatchEventListener listener) throws NacosException {
-        doCancelFuzzyWatch(FUZZY_WATCH_PATTERN_WILDCARD, fixedGroupName, listener);
+        doCancelFuzzyWatch(ANY_PATTERN, fixedGroupName, listener);
     }
     
     @Override

@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.config.listener;
 
+import com.alibaba.nacos.api.common.Constants;
+
 /**
  * Represents a fuzzy listening configuration change event.
  *
@@ -24,7 +26,7 @@ package com.alibaba.nacos.api.config.listener;
  * @author stone-98
  * @date 2024/3/12
  */
-public class FuzzyListenConfigChangeEvent {
+public class ConfigFuzzyWatchChangeEvent {
     
     /**
      * The group of the configuration that has changed.
@@ -36,15 +38,18 @@ public class FuzzyListenConfigChangeEvent {
      */
     private String dataId;
     
+    
+    private String tenant;
     /**
      * The type of change that has occurred (e.g., "ADD_CONFIG", "DELETE_CONFIG").
+     * see {@link Constants.ConfigChangedType}
      */
-    private String type;
+    private String changedType;
     
     /**
      * Constructs an empty FuzzyListenConfigChangeEvent.
      */
-    public FuzzyListenConfigChangeEvent() {
+    public ConfigFuzzyWatchChangeEvent() {
     }
     
     /**
@@ -52,12 +57,12 @@ public class FuzzyListenConfigChangeEvent {
      *
      * @param group  The group of the configuration that has changed
      * @param dataId The data ID of the configuration that has changed
-     * @param type   The type of change that has occurred
+     * @param changedType   The type of change that has occurred
      */
-    public FuzzyListenConfigChangeEvent(String group, String dataId, String type) {
+    public ConfigFuzzyWatchChangeEvent(String group, String dataId, String changedType) {
         this.group = group;
         this.dataId = dataId;
-        this.type = type;
+        this.changedType = changedType;
     }
     
     /**
@@ -68,8 +73,8 @@ public class FuzzyListenConfigChangeEvent {
      * @param type   The type of change that has occurred
      * @return A new FuzzyListenConfigChangeEvent instance
      */
-    public static FuzzyListenConfigChangeEvent build(String group, String dataId, String type) {
-        return new FuzzyListenConfigChangeEvent(group, dataId, type);
+    public static ConfigFuzzyWatchChangeEvent build(String group, String dataId, String type) {
+        return new ConfigFuzzyWatchChangeEvent(group, dataId, type);
     }
     
     public String getGroup() {
@@ -88,12 +93,12 @@ public class FuzzyListenConfigChangeEvent {
         this.dataId = dataId;
     }
     
-    public String getType() {
-        return type;
+    public String getChangedType() {
+        return changedType;
     }
     
-    public void setType(String type) {
-        this.type = type;
+    public void setChangedType(String changedType) {
+        this.changedType = changedType;
     }
     
     /**
@@ -104,6 +109,6 @@ public class FuzzyListenConfigChangeEvent {
     @Override
     public String toString() {
         return "FuzzyListenConfigChangeEvent{" + "group='" + group + '\'' + ", dataId='" + dataId + '\'' + ", type='"
-                + type + '\'' + '}';
+                + changedType + '\'' + '}';
     }
 }

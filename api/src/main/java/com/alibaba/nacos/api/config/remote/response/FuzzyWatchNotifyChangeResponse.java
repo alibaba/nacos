@@ -19,11 +19,11 @@ package com.alibaba.nacos.api.config.remote.response;
 import com.alibaba.nacos.api.remote.response.Response;
 
 /**
- * FuzzyListenNotifyDiffResponse.
+ * FuzzyListenNotifyChangeResponse.
  *
  * @author stone-98
  * @date 2024/3/18
  */
-public class FuzzyListenNotifyDiffResponse extends Response {
+public class FuzzyWatchNotifyChangeResponse extends Response {
 
 }

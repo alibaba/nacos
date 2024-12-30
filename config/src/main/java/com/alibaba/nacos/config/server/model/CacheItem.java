@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.config.server.model;
 
-import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.utils.SimpleReadWriteLock;
 import com.alibaba.nacos.core.utils.StringPool;
 
@@ -128,20 +126,6 @@ public class CacheItem {
     public void clearConfigGrays() {
         this.configCacheGray = null;
         this.sortedConfigCacheGrayList = null;
-    }
-    
-    /**
-     * Checks if the configuration is effective for the specified client IP and tag.
-     *
-     * @param tag      The tag associated with the configuration.
-     * @param clientIp The IP address of the client.
-     * @return true if the configuration is effective for the client, false otherwise.
-     */
-    public boolean effectiveForClient(String tag, String clientIp) {
-        if (isBeta && CollectionUtils.isNotEmpty(ips4Beta) && !ips4Beta.contains(clientIp)) {
-            return false;
-        }
-        return StringUtils.isBlank(tag) || (getConfigCacheTags() != null && getConfigCacheTags().containsKey(tag));
     }
 
 }

@@ -16,16 +16,13 @@
 
 package com.alibaba.nacos.config.server.remote;
 
-import com.alibaba.nacos.api.config.remote.request.ConfigBatchFuzzyListenRequest;
-import com.alibaba.nacos.api.config.remote.response.ConfigBatchFuzzyListenResponse;
+import com.alibaba.nacos.api.config.remote.request.ConfigBatchFuzzyWatchRequest;
+import com.alibaba.nacos.api.config.remote.response.ConfigBatchFuzzyWatchResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.common.utils.GroupKeyPattern;
 import com.alibaba.nacos.config.server.model.event.ConfigBatchFuzzyListenEvent;
-import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.ConfigBatchFuzzyListenRequestParamsExtractor;
@@ -37,7 +34,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Handler for processing batch fuzzy listen requests.
@@ -51,14 +47,14 @@ import java.util.stream.Collectors;
  * @date 2024/3/4
  */
 @Component
-public class ConfigBatchFuzzyListenRequestHandler
-        extends RequestHandler<ConfigBatchFuzzyListenRequest, ConfigBatchFuzzyListenResponse> {
+public class ConfigBatchFuzzyWatchRequestHandler
+        extends RequestHandler<ConfigBatchFuzzyWatchRequest, ConfigBatchFuzzyWatchResponse> {
     
     /**
      * Context for managing fuzzy listen changes.
      */
     @Autowired
-    private ConfigChangeListenContext configChangeListenContext;
+    private ConfigFuzzyWatchContext configFuzzyWatchContext;
     
     /**
      * Handles the batch fuzzy listen request.
@@ -76,32 +72,25 @@ public class ConfigBatchFuzzyListenRequestHandler
     @TpsControl(pointName = "ConfigFuzzyListen")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     @ExtractorManager.Extractor(rpcExtractor = ConfigBatchFuzzyListenRequestParamsExtractor.class)
-    public ConfigBatchFuzzyListenResponse handle(ConfigBatchFuzzyListenRequest request, RequestMeta meta)
+    public ConfigBatchFuzzyWatchResponse handle(ConfigBatchFuzzyWatchRequest request, RequestMeta meta)
             throws NacosException {
         String connectionId = StringPool.get(meta.getConnectionId());
-        for (ConfigBatchFuzzyListenRequest.Context context : request.getContexts()) {
-            String groupKeyPattern = GroupKeyPattern.generateFuzzyListenGroupKeyPattern(context.getDataIdPattern(),
-                    context.getGroup(), context.getTenant());
-            groupKeyPattern = StringPool.get(groupKeyPattern);
+        for (ConfigBatchFuzzyWatchRequest.Context context : request.getContexts()) {
+            String groupKeyPattern = context.getGroupKeyPattern();
             if (context.isListen()) {
                 // Add client to the fuzzy listening context
-                configChangeListenContext.addFuzzyListen(groupKeyPattern, connectionId);
+                configFuzzyWatchContext.addFuzzyListen(groupKeyPattern, connectionId);
                 // Get existing group keys for the client and publish initialization event
-                Set<String> clientExistingGroupKeys = null;
-                if (CollectionUtils.isNotEmpty(context.getDataIds())) {
-                    clientExistingGroupKeys = context.getDataIds().stream()
-                            .map(dataId -> GroupKey.getKeyTenant(dataId, context.getGroup(), context.getTenant()))
-                            .collect(Collectors.toSet());
-                }
+                Set<String> clientExistingGroupKeys = context.getReceivedGroupKeys();
                 NotifyCenter.publishEvent(
                         new ConfigBatchFuzzyListenEvent(connectionId, clientExistingGroupKeys, groupKeyPattern,
                                 context.isInitializing()));
             } else {
                 // Remove client from the fuzzy listening context
-                configChangeListenContext.removeFuzzyListen(groupKeyPattern, connectionId);
+                configFuzzyWatchContext.removeFuzzyListen(groupKeyPattern, connectionId);
             }
         }
         // Return response
-        return new ConfigBatchFuzzyListenResponse();
+        return new ConfigBatchFuzzyWatchResponse();
     }
 }

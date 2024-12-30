@@ -27,6 +27,7 @@ import com.alibaba.nacos.client.naming.event.FuzzyWatchNotifyEvent;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
+import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
 
 import java.util.Collection;
 import java.util.Map;
@@ -72,8 +73,7 @@ public class FuzzyWatchServiceListHolder {
             }
         } else if (request instanceof FuzzyWatchNotifyChangeRequest) {
             FuzzyWatchNotifyChangeRequest notifyChangeRequest = (FuzzyWatchNotifyChangeRequest) request;
-            Collection<String> matchedPattern = NamingUtils.getServiceMatchedPatterns(notifyChangeRequest.getServiceName(),
-                    notifyChangeRequest.getGroupName(),  patternMatchMap.keySet());
+            Collection<String> matchedPattern = FuzzyGroupKeyPattern.filterMatchedPatterns(patternMatchMap.keySet(),notifyChangeRequest.getNamespace(),notifyChangeRequest.getGroupName(),notifyChangeRequest.getServiceName());
             Service service = new Service(notifyChangeRequest.getServiceName(), notifyChangeRequest.getGroupName());
             String serviceChangeType = request.getServiceChangedType();
             

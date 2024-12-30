@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.client.config.impl;
 
-import com.alibaba.nacos.api.config.listener.AbstractFuzzyListenListener;
-import com.alibaba.nacos.api.config.listener.FuzzyListenConfigChangeEvent;
+import com.alibaba.nacos.api.config.listener.AbstractFuzzyWatchListener;
+import com.alibaba.nacos.api.config.listener.ConfigFuzzyWatchChangeEvent;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -60,20 +60,12 @@ public class FuzzyListenContext {
      */
     private int taskId;
     
-    /**
-     * Data ID pattern.
-     */
-    private String dataIdPattern;
+    private String groupKeyPattern;
     
     /**
-     * Group name.
+     * Set of data IDs associated with the context.
      */
-    private String group;
-    
-    /**
-     * Tenant name.
-     */
-    private String tenant;
+    private Set<String> receivedGroupKeys = new ConcurrentHashSet<>();
     
     /**
      * Flag indicating whether the context is consistent with the server.
@@ -99,28 +91,22 @@ public class FuzzyListenContext {
      * Flag indicating whether the context is discarded.
      */
     private volatile boolean isDiscard = false;
-    
-    /**
-     * Set of data IDs associated with the context.
-     */
-    private Set<String> dataIds = new ConcurrentHashSet<>();
-    
+
     /**
      * Set of listeners associated with the context.
      */
-    private Set<AbstractFuzzyListenListener> listeners = new HashSet<>();
+    private Set<AbstractFuzzyWatchListener> listeners = new HashSet<>();
     
     /**
      * Constructor with environment name, data ID pattern, and group.
      *
      * @param envName       Environment name
-     * @param dataIdPattern Data ID pattern
-     * @param group         Group name
+     * @param groupKeyPattern groupKeyPattern
      */
-    public FuzzyListenContext(String envName, String dataIdPattern, String group) {
+    public FuzzyListenContext(String envName, String groupKeyPattern) {
         this.envName = envName;
-        this.dataIdPattern = dataIdPattern;
-        this.group = group;
+        this.groupKeyPattern=groupKeyPattern;
+     
     }
     
     /**
@@ -129,12 +115,12 @@ public class FuzzyListenContext {
      * @param uuid UUID to filter listeners
      * @return Set of listeners to notify
      */
-    public Set<AbstractFuzzyListenListener> calculateListenersToNotify(String uuid) {
-        Set<AbstractFuzzyListenListener> listenersToNotify = new HashSet<>();
+    public Set<AbstractFuzzyWatchListener> calculateListenersToNotify(String uuid) {
+        Set<AbstractFuzzyWatchListener> listenersToNotify = new HashSet<>();
         if (StringUtils.isEmpty(uuid)) {
             listenersToNotify = listeners;
         } else {
-            for (AbstractFuzzyListenListener listener : listeners) {
+            for (AbstractFuzzyWatchListener listener : listeners) {
                 if (uuid.equals(listener.getUuid())) {
                     listenersToNotify.add(listener);
                 }
@@ -150,9 +136,9 @@ public class FuzzyListenContext {
      * @param type   Type of the event
      * @param uuid   UUID to filter listeners
      */
-    public void notifyListener(final String dataId, final String type, final String uuid) {
-        Set<AbstractFuzzyListenListener> listenersToNotify = calculateListenersToNotify(uuid);
-        doNotifyListener(dataId, type, listenersToNotify);
+    public void notifyListener(final String dataId,final String group,String tenant, final String type, final String uuid) {
+        Set<AbstractFuzzyWatchListener> listenersToNotify = calculateListenersToNotify(uuid);
+        doNotifyListener(dataId,group,tenant, type, listenersToNotify);
     }
     
     /**
@@ -162,14 +148,14 @@ public class FuzzyListenContext {
      * @param type              Type of the event
      * @param listenersToNotify Set of listeners to notify
      */
-    private void doNotifyListener(final String dataId, final String type,
-            Set<AbstractFuzzyListenListener> listenersToNotify) {
-        for (AbstractFuzzyListenListener listener : listenersToNotify) {
+    private void doNotifyListener(final String dataId, final String group,String tenant,final String type,
+            Set<AbstractFuzzyWatchListener> listenersToNotify) {
+        for (AbstractFuzzyWatchListener listener : listenersToNotify) {
             AbstractFuzzyNotifyTask job = new AbstractFuzzyNotifyTask() {
                 @Override
                 public void run() {
                     long start = System.currentTimeMillis();
-                    FuzzyListenConfigChangeEvent event = FuzzyListenConfigChangeEvent.build(group, dataId, type);
+                    ConfigFuzzyWatchChangeEvent event = ConfigFuzzyWatchChangeEvent.build(group, dataId, type);
                     if (listener != null) {
                         listener.onEvent(event);
                     }
@@ -213,7 +199,7 @@ public class FuzzyListenContext {
             while (isInitializing) {
                 initializationCompleted.await();
             }
-            future.complete(Collections.unmodifiableCollection(dataIds));
+            future.complete(Collections.unmodifiableCollection(receivedGroupKeys));
         } catch (InterruptedException e) {
             future.completeExceptionally(e);
         } finally {
@@ -240,7 +226,7 @@ public class FuzzyListenContext {
      *
      * @param listener Listener to be removed
      */
-    public void removeListener(AbstractFuzzyListenListener listener) {
+    public void removeListener(AbstractFuzzyWatchListener listener) {
         listeners.remove(listener);
     }
     
@@ -249,7 +235,7 @@ public class FuzzyListenContext {
      *
      * @param listener Listener to be added
      */
-    public void addListener(AbstractFuzzyListenListener listener) {
+    public void addListener(AbstractFuzzyWatchListener listener) {
         listeners.add(listener);
     }
     
@@ -289,60 +275,22 @@ public class FuzzyListenContext {
         this.taskId = taskId;
     }
     
-    /**
-     * Get the data ID pattern.
-     *
-     * @return Data ID pattern
-     */
-    public String getDataIdPattern() {
-        return dataIdPattern;
+    public String getGroupKeyPattern() {
+        return groupKeyPattern;
     }
     
-    /**
-     * Set the data ID pattern.
-     *
-     * @param dataIdPattern Data ID pattern to be set
-     */
-    public void setDataIdPattern(String dataIdPattern) {
-        this.dataIdPattern = dataIdPattern;
+    public void setGroupKeyPattern(String groupKeyPattern) {
+        this.groupKeyPattern = groupKeyPattern;
     }
+    
     
     /**
      * Get the group name.
      *
      * @return Group name
      */
-    public String getGroup() {
-        return group;
-    }
-    
-    /**
-     * Set the group name.
-     *
-     * @param group Group name to be set
-     */
-    public void setGroup(String group) {
-        this.group = group;
-    }
-    
-    /**
-     * Get the tenant name.
-     *
-     * @return Tenant name
-     */
-    public String getTenant() {
-        return tenant;
-    }
-    
-    /**
-     * Set the tenant name.
-     *
-     * @param tenant Tenant name to be set
-     */
-    public void setTenant(String tenant) {
-        this.tenant = tenant;
-    }
-    
+
+
     /**
      * Get the flag indicating whether the context is consistent with the server.
      *
@@ -393,25 +341,17 @@ public class FuzzyListenContext {
      *
      * @return Set of data IDs
      */
-    public Set<String> getDataIds() {
-        return Collections.unmodifiableSet(dataIds);
+    public Set<String> getReceivedGroupKeys() {
+        return Collections.unmodifiableSet(receivedGroupKeys);
     }
-    
-    /**
-     * Set the set of data IDs associated with the context.
-     *
-     * @param dataIds Set of data IDs to be set
-     */
-    public void setDataIds(Set<String> dataIds) {
-        this.dataIds = dataIds;
-    }
+
     
     /**
      * Get the set of listeners associated with the context.
      *
      * @return Set of listeners
      */
-    public Set<AbstractFuzzyListenListener> getListeners() {
+    public Set<AbstractFuzzyWatchListener> getListeners() {
         return listeners;
     }
     
@@ -420,7 +360,7 @@ public class FuzzyListenContext {
      *
      * @param listeners Set of listeners to be set
      */
-    public void setListeners(Set<AbstractFuzzyListenListener> listeners) {
+    public void setListeners(Set<AbstractFuzzyWatchListener> listeners) {
         this.listeners = listeners;
     }
     

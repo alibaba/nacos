@@ -38,6 +38,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Properties;
 import java.util.concurrent.Executor;
@@ -157,7 +158,6 @@ class NacosConfigServiceTest {
                     .thenThrow(new NacosException(NacosException.NO_RIGHT, "no right"));
             try {
                 nacosConfigService.getConfig(dataId, group, timeout);
-                Assert.fail();
                 assertTrue(false);
             } catch (NacosException e) {
                 assertEquals(NacosException.NO_RIGHT, e.getErrCode());
@@ -196,12 +196,12 @@ class NacosConfigServiceTest {
             public void startInternal() throws NacosException {
                 // NOOP
             }
-    
+            
             @Override
             public String getName() {
                 return "TestConfigTransportClient";
             }
-    
+            
             @Override
             public void notifyListenConfig() {
                 // NOOP
@@ -257,7 +257,7 @@ class NacosConfigServiceTest {
         Mockito.when(mockWoker.getAgent()).thenReturn(client);
         
         final String config = nacosConfigService.getConfigAndSignListener(dataId, group, timeout, listener);
-        Assert.assertEquals(content, config);
+        assertEquals(content, config);
     
         Mockito.verify(mockWoker, Mockito.times(1))
                 .addTenantListenersWithContent(dataId, group, content, null, Collections.singletonList(listener));
@@ -275,16 +275,15 @@ class NacosConfigServiceTest {
             public Executor getExecutor() {
                 return null;
             }
-    
+            
             @Override
             public void receiveConfigInfo(String configInfo) {
-        
+            
             }
         };
-    
+        
         nacosConfigService.addListener(dataId, group, listener);
-        Mockito.verify(mockWoker, Mockito.times(1))
-                .addTenantListeners(dataId, group, Collections.singletonList(listener));
+        Mockito.verify(mockWoker, Mockito.times(1)).addTenantListeners(dataId, group, Arrays.asList(listener));
     }
     
     @Test
