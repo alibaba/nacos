@@ -33,7 +33,7 @@ public abstract class AbstractNacosStartUp implements NacosStartUp {
     
     private final String phase;
     
-    private final ScheduledExecutorService startLoggingScheduledExecutor;
+    private volatile ScheduledExecutorService startLoggingScheduledExecutor;
     
     private volatile boolean starting;
     
@@ -41,8 +41,6 @@ public abstract class AbstractNacosStartUp implements NacosStartUp {
     
     protected AbstractNacosStartUp(String phase) {
         this.phase = phase;
-        this.startLoggingScheduledExecutor = ExecutorFactory.newSingleScheduledExecutorService(
-                new NameThreadFactory(String.format("com.alibaba.nacos.%s.nacos-starting", phase)));
     }
     
     @Override
@@ -54,6 +52,8 @@ public abstract class AbstractNacosStartUp implements NacosStartUp {
     public void starting() {
         starting = true;
         startTimestamp = System.currentTimeMillis();
+        this.startLoggingScheduledExecutor = ExecutorFactory.newSingleScheduledExecutorService(
+                new NameThreadFactory(String.format("com.alibaba.nacos.%s.nacos-starting", phase)));
     }
     
     @Override

@@ -24,7 +24,6 @@ import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import com.alibaba.nacos.plugin.auth.impl.authenticate.DefaultAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
@@ -124,7 +123,7 @@ public class NacosAuthPluginService implements AuthPluginService {
     
     protected void checkNacosAuthManager() {
         if (null == authenticationManager) {
-            authenticationManager = ApplicationUtils.getBean(DefaultAuthenticationManager.class);
+            authenticationManager = ApplicationUtils.getBean(IAuthenticationManager.class);
         }
     }
 }

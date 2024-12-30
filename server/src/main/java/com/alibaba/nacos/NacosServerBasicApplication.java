@@ -19,22 +19,23 @@ package com.alibaba.nacos;
 import com.alibaba.nacos.server.NacosWebBeanTypeFilter;
 import com.alibaba.nacos.sys.filter.NacosTypeExcludeFilter;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.AutoConfigurationExcludeFilter;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.ldap.LdapAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.FilterType;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Nacos Server basic starter class, which load common non-web container beans.
  *
  * @author xiweng.yy
  */
-@SpringBootApplication
+@SpringBootApplication(exclude = {LdapAutoConfiguration.class})
 @ComponentScan(basePackages = "com.alibaba.nacos", excludeFilters = {
         @Filter(type = FilterType.REGEX, pattern = "com\\.alibaba\\.nacos\\.console.*"),
-        @Filter(type = FilterType.CUSTOM, classes = {NacosTypeExcludeFilter.class, AutoConfigurationExcludeFilter.class,
-                NacosWebBeanTypeFilter.class})})
+        @Filter(type = FilterType.CUSTOM, classes = {NacosTypeExcludeFilter.class, NacosWebBeanTypeFilter.class})})
+@EnableScheduling
 public class NacosServerBasicApplication {
     
     public static void main(String[] args) {
