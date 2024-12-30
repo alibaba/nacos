@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.remote.rpc.handler;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
-import com.alibaba.nacos.api.naming.remote.request.FuzzyWatchRequest;
+import com.alibaba.nacos.api.naming.remote.request.NamingFuzzyWatchRequest;
 import com.alibaba.nacos.api.naming.remote.response.FuzzyWatchResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
@@ -33,7 +33,7 @@ import org.springframework.stereotype.Component;
  * @author tanyongquan
  */
 @Component("fuzzyWatchRequestHandler")
-public class NamingFuzzyWatchRequestHandler extends RequestHandler<FuzzyWatchRequest, FuzzyWatchResponse> {
+public class NamingFuzzyWatchRequestHandler extends RequestHandler<NamingFuzzyWatchRequest, FuzzyWatchResponse> {
     
     private final EphemeralClientOperationServiceImpl clientOperationService;
     
@@ -43,7 +43,7 @@ public class NamingFuzzyWatchRequestHandler extends RequestHandler<FuzzyWatchReq
     
     @Override
     @Secured(action = ActionTypes.READ)
-    public FuzzyWatchResponse handle(FuzzyWatchRequest request, RequestMeta meta) throws NacosException {
+    public FuzzyWatchResponse handle(NamingFuzzyWatchRequest request, RequestMeta meta) throws NacosException {
         String serviceNamePattern = request.getServiceName();
         String groupNamePattern = request.getGroupName();
         String namespaceId = request.getNamespace();

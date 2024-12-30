@@ -75,7 +75,7 @@ public class FuzzyWatchServiceListHolder {
             FuzzyWatchNotifyChangeRequest notifyChangeRequest = (FuzzyWatchNotifyChangeRequest) request;
             Collection<String> matchedPattern = FuzzyGroupKeyPattern.filterMatchedPatterns(patternMatchMap.keySet(),notifyChangeRequest.getNamespace(),notifyChangeRequest.getGroupName(),notifyChangeRequest.getServiceName());
             Service service = new Service(notifyChangeRequest.getServiceName(), notifyChangeRequest.getGroupName());
-            String serviceChangeType = request.getServiceChangedType();
+            String serviceChangeType = request.getChangedType();
             
             switch (serviceChangeType) {
                 case Constants.ServiceChangedType.ADD_SERVICE:

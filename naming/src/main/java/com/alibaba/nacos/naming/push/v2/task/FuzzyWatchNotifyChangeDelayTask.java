@@ -31,24 +31,24 @@ import java.util.Set;
 public class FuzzyWatchNotifyChangeDelayTask extends AbstractDelayTask {
     private final Service service;
     
-    private final String serviceChangedType;
+    private final String changedType;
     
     private boolean pushToAll;
     
     private Set<String> targetClients;
     
-    public FuzzyWatchNotifyChangeDelayTask(Service service, String serviceChangedType, long delay) {
+    public FuzzyWatchNotifyChangeDelayTask(Service service, String changedType, long delay) {
         this.service = service;
-        this.serviceChangedType = serviceChangedType;
+        this.changedType = changedType;
         pushToAll = true;
         targetClients = null;
         setTaskInterval(delay);
         setLastProcessTime(System.currentTimeMillis());
     }
     
-    public FuzzyWatchNotifyChangeDelayTask(Service service, String serviceChangedType, long delay, String targetClient) {
+    public FuzzyWatchNotifyChangeDelayTask(Service service, String changedType, long delay, String targetClient) {
         this.service = service;
-        this.serviceChangedType = serviceChangedType;
+        this.changedType = changedType;
         this.pushToAll = false;
         this.targetClients = new HashSet<>(1);
         this.targetClients.add(targetClient);
@@ -80,8 +80,8 @@ public class FuzzyWatchNotifyChangeDelayTask extends AbstractDelayTask {
         return pushToAll;
     }
     
-    public String getServiceChangedType() {
-        return serviceChangedType;
+    public String getChangedType() {
+        return changedType;
     }
     
     public Set<String> getTargetClients() {

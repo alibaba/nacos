@@ -23,7 +23,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Represents a request to notify the difference in configurations for fuzzy listening.
+ * Represents a request to notify the difference between client and server side.
  *
  * <p>This request is used to notify clients about the difference in configurations that match fuzzy listening
  * patterns.
@@ -31,7 +31,7 @@ import java.util.Set;
  * @author stone-98
  * @date 2024/3/6
  */
-public class FuzzyWatchNotifyDiffRequest extends AbstractFuzzyWatchNotifyRequest {
+public class FuzzyWatchDiffSyncRequest extends AbstractFuzzyWatchNotifyRequest {
     
     /**
      * The pattern used to match group keys for the configurations.
@@ -44,22 +44,35 @@ public class FuzzyWatchNotifyDiffRequest extends AbstractFuzzyWatchNotifyRequest
     private Set<Context> contexts;
     
     /**
+     *see FUZZY_WATCH_INIT_NOTIFY,FINISH_FUZZY_WATCH_INIT_NOTIFY,FUZZY_WATCH_DIFF_SYNC_NOTIFY
+     */
+    private String syncType;
+    
+    public String getSyncType() {
+        return syncType;
+    }
+    
+    public void setSyncType(String syncType) {
+        this.syncType = syncType;
+    }
+    
+    /**
      * Constructs an empty FuzzyListenNotifyDiffRequest.
      */
-    public FuzzyWatchNotifyDiffRequest() {
+    public FuzzyWatchDiffSyncRequest() {
     }
     
     /**
      * Constructs a FuzzyListenNotifyDiffRequest with the specified parameters.
      *
-     * @param serviceChangedType The type of service change
-     * @param groupKeyPattern    The pattern used to match group keys for the configurations
-     * @param contexts           The set of contexts containing information about the configurations
+     * @param groupKeyPattern The pattern used to match group keys for the configurations
+     * @param contexts        The set of contexts containing information about the configurations
      */
-    public FuzzyWatchNotifyDiffRequest(String serviceChangedType, String groupKeyPattern, Set<Context> contexts) {
-        super(serviceChangedType);
+    public FuzzyWatchDiffSyncRequest(String syncType, String groupKeyPattern, Set<Context> contexts) {
         this.groupKeyPattern = groupKeyPattern;
         this.contexts = contexts;
+        this.syncType = syncType;
+        
     }
     
     /**
@@ -69,8 +82,19 @@ public class FuzzyWatchNotifyDiffRequest extends AbstractFuzzyWatchNotifyRequest
      * @param groupKeyPattern The pattern used to match group keys for the configurations
      * @return An initial FuzzyListenNotifyDiffRequest
      */
-    public static FuzzyWatchNotifyDiffRequest buildInitRequest(Set<Context> contexts, String groupKeyPattern) {
-        return new FuzzyWatchNotifyDiffRequest(Constants.FUZZY_WATCH_INIT_NOTIFY, groupKeyPattern, contexts);
+    public static FuzzyWatchDiffSyncRequest buildInitRequest(Set<Context> contexts, String groupKeyPattern) {
+        return new FuzzyWatchDiffSyncRequest(Constants.FUZZY_WATCH_INIT_NOTIFY, groupKeyPattern, contexts);
+    }
+    
+    /**
+     * Builds an initial FuzzyListenNotifyDiffRequest with the specified set of contexts and group key pattern.
+     *
+     * @param contexts        The set of contexts containing information about the configurations
+     * @param groupKeyPattern The pattern used to match group keys for the configurations
+     * @return An initial FuzzyListenNotifyDiffRequest
+     */
+    public static FuzzyWatchDiffSyncRequest buildDiffSyncRequest(Set<Context> contexts, String groupKeyPattern) {
+        return new FuzzyWatchDiffSyncRequest(Constants.FUZZY_WATCH_DIFF_SYNC_NOTIFY, groupKeyPattern, contexts);
     }
     
     /**
@@ -79,8 +103,8 @@ public class FuzzyWatchNotifyDiffRequest extends AbstractFuzzyWatchNotifyRequest
      * @param groupKeyPattern The pattern used to match group keys for the configurations
      * @return A final FuzzyListenNotifyDiffRequest
      */
-    public static FuzzyWatchNotifyDiffRequest buildInitFinishRequest(String groupKeyPattern) {
-        return new FuzzyWatchNotifyDiffRequest(Constants.FINISH_FUZZY_WATCH_INIT_NOTIFY, groupKeyPattern,
+    public static FuzzyWatchDiffSyncRequest buildInitFinishRequest(String groupKeyPattern) {
+        return new FuzzyWatchDiffSyncRequest(Constants.FINISH_FUZZY_WATCH_INIT_NOTIFY, groupKeyPattern,
                 new HashSet<>());
     }
     
@@ -111,7 +135,11 @@ public class FuzzyWatchNotifyDiffRequest extends AbstractFuzzyWatchNotifyRequest
         
         private String dataId;
         
-        private String type;
+        /**
+         * see {@link com.alibaba.nacos.api.common.Constants.ConfigChangedType ADD_CONFIG&} ADD_CONFIG: a new config
+         * should be added for  clientside . DELETE_CONFIG: a  config should be removed for  clientside .
+         */
+        private String changedType;
         
         /**
          * Constructs an empty Context object.
@@ -122,18 +150,18 @@ public class FuzzyWatchNotifyDiffRequest extends AbstractFuzzyWatchNotifyRequest
         /**
          * Builds a new context object with the provided parameters.
          *
-         * @param tenant The tenant associated with the configuration.
-         * @param group  The group associated with the configuration.
-         * @param dataId The data ID of the configuration.
-         * @param type   The type of the configuration change event.
+         * @param tenant      The tenant associated with the configuration.
+         * @param group       The group associated with the configuration.
+         * @param dataId      The data ID of the configuration.
+         * @param changedType The type of the configuration change event.
          * @return A new context object initialized with the provided parameters.
          */
-        public static Context build(String tenant, String group, String dataId, String type) {
+        public static Context build(String tenant, String group, String dataId, String changedType) {
             Context context = new Context();
             context.setTenant(tenant);
             context.setGroup(group);
             context.setDataId(dataId);
-            context.setType(type);
+            context.setChangedType(changedType);
             return context;
         }
         
@@ -152,7 +180,7 @@ public class FuzzyWatchNotifyDiffRequest extends AbstractFuzzyWatchNotifyRequest
             }
             Context that = (Context) o;
             return Objects.equals(tenant, that.tenant) && Objects.equals(group, that.group) && Objects.equals(dataId,
-                    that.dataId) && Objects.equals(type, that.type);
+                    that.dataId) && Objects.equals(changedType, that.changedType);
         }
         
         public String getTenant() {
@@ -179,12 +207,12 @@ public class FuzzyWatchNotifyDiffRequest extends AbstractFuzzyWatchNotifyRequest
             this.dataId = dataId;
         }
         
-        public String getType() {
-            return type;
+        public String getChangedType() {
+            return changedType;
         }
         
-        public void setType(String type) {
-            this.type = type;
+        public void setChangedType(String changedType) {
+            this.changedType = changedType;
         }
     }
     

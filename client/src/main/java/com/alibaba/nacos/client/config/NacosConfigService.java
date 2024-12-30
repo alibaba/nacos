@@ -21,7 +21,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.filter.IConfigFilter;
-import com.alibaba.nacos.api.config.listener.AbstractFuzzyWatchListener;
+import com.alibaba.nacos.api.config.listener.ConfigFuzzyWatcher;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
@@ -29,7 +29,7 @@ import com.alibaba.nacos.client.config.filter.impl.ConfigRequest;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
-import com.alibaba.nacos.client.config.impl.FuzzyListenContext;
+import com.alibaba.nacos.client.config.impl.ConfigFuzzyWatchContext;
 import com.alibaba.nacos.client.config.impl.ConfigServerListManager;
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
 import com.alibaba.nacos.client.config.impl.LocalEncryptedDataKeyProcessor;
@@ -45,7 +45,7 @@ import org.slf4j.Logger;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Properties;
-import java.util.UUID;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
@@ -134,69 +134,48 @@ public class NacosConfigService implements ConfigService {
     }
     
     @Override
-    public void fuzzyWatch(String fixedGroupName, AbstractFuzzyWatchListener listener) throws NacosException {
-        doFuzzyListen(ANY_PATTERN, fixedGroupName, listener);
+    public void fuzzyWatch(String fixedGroupName, ConfigFuzzyWatcher watcher) throws NacosException {
+        doAddFuzzyWatch(ANY_PATTERN, fixedGroupName, watcher);
     }
     
     @Override
-    public void fuzzyWatch(String dataIdPattern, String fixedGroupName, AbstractFuzzyWatchListener listener)
+    public void fuzzyWatch(String dataIdPattern, String fixedGroupName, ConfigFuzzyWatcher watcher)
             throws NacosException {
-        doFuzzyListen(dataIdPattern, fixedGroupName, listener);
+        doAddFuzzyWatch(dataIdPattern, fixedGroupName, watcher);
     }
     
     @Override
-    public Future<Collection<String>> fuzzyWatchWithGroupKeys(String fixedGroupName,
-            AbstractFuzzyWatchListener listener) throws NacosException {
-        return doAddFuzzyListenerAndGetConfigs(ANY_PATTERN, fixedGroupName, listener);
+    public Future<Set<String>> fuzzyWatchWithGroupKeys(String fixedGroupName,
+            ConfigFuzzyWatcher watcher) throws NacosException {
+        return doAddFuzzyWatch(ANY_PATTERN, fixedGroupName, watcher);
     }
     
     @Override
-    public Future<Collection<String>> fuzzyWatchWithGroupKeys(String dataIdPattern,
-            String fixedGroupName, AbstractFuzzyWatchListener listener) throws NacosException {
-        return doAddFuzzyListenerAndGetConfigs(dataIdPattern, fixedGroupName, listener);
+    public Future<Set<String>> fuzzyWatchWithGroupKeys(String dataIdPattern,
+            String fixedGroupName, ConfigFuzzyWatcher watcher) throws NacosException {
+        return doAddFuzzyWatch(dataIdPattern, fixedGroupName, watcher);
     }
     
-    private CompletableFuture<Collection<String>> doAddFuzzyListenerAndGetConfigs(String dataIdPattern,
-            String fixedGroupName, AbstractFuzzyWatchListener listener) throws NacosException {
-        CompletableFuture<Collection<String>> future = new CompletableFuture<>();
-        if (listener == null) {
-            future.completeExceptionally(new IllegalArgumentException("Listener cannot be null"));
-            return future;
-        }
-        fuzzyWatch(dataIdPattern, fixedGroupName, listener);
-        FuzzyListenContext context = worker.getFuzzyListenContext(dataIdPattern, fixedGroupName);
-        if (context == null) {
-            future.complete(Collections.emptyList());
-            return future;
-        }
-        return context.waitForInitializationComplete(future);
+    
+    private CompletableFuture<Set<String>> doAddFuzzyWatch(String dataIdPattern,
+            String fixedGroupName, ConfigFuzzyWatcher watcher) throws NacosException {
+        ConfigFuzzyWatchContext configFuzzyWatchContext = worker.registerFuzzyWatcher(dataIdPattern, fixedGroupName,watcher);
+        return worker.createNewFuture(configFuzzyWatchContext);
     }
     
-    private void doFuzzyListen(String dataIdPattern, String fixedGroupName, AbstractFuzzyWatchListener listener)
+    @Override
+    public void cancelFuzzyWatch(String fixedGroupName, ConfigFuzzyWatcher watcher) throws NacosException {
+        cancelFuzzyWatch(ANY_PATTERN, fixedGroupName, watcher);
+    }
+    
+    @Override
+    public void cancelFuzzyWatch(String dataIdPattern, String fixedGroupName, ConfigFuzzyWatcher watcher)
             throws NacosException {
-        if (listener == null) {
-            return;
-        }
-        if (!worker.containsPatternMatchCache(dataIdPattern, fixedGroupName)) {
-            worker.addTenantFuzzyListenListens(dataIdPattern, fixedGroupName, Collections.singletonList(listener));
-        } else {
-            worker.duplicateFuzzyListenInit(dataIdPattern, fixedGroupName, listener);
-        }
-    }
-    
-    @Override
-    public void cancelFuzzyListen(String fixedGroupName, AbstractFuzzyWatchListener listener) throws NacosException {
-        cancelFuzzyListen(ANY_PATTERN, fixedGroupName, listener);
-    }
-    
-    @Override
-    public void cancelFuzzyListen(String dataIdPattern, String fixedGroupName, AbstractFuzzyWatchListener listener)
-            throws NacosException {
-        doCancelFuzzyListen(dataIdPattern, fixedGroupName, listener);
+        doCancelFuzzyListen(dataIdPattern, fixedGroupName, watcher);
     }
     
     private void doCancelFuzzyListen(String dataIdPattern, String groupNamePattern,
-            AbstractFuzzyWatchListener listener) throws NacosException {
+            ConfigFuzzyWatcher listener) throws NacosException {
         if (null == listener) {
             return;
         }

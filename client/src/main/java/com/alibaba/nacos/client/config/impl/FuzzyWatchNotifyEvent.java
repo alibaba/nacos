@@ -28,10 +28,10 @@ import com.alibaba.nacos.common.notify.Event;
  * @author stone-98
  * @date 2024/3/4
  */
-public class FuzzyListenNotifyEvent extends Event {
+public class FuzzyWatchNotifyEvent extends Event {
     
     /**
-     * The unique identifier for the listener.
+     * The uuid of this watcher for which that this notify event .
      */
     private String uuid;
     
@@ -39,6 +39,11 @@ public class FuzzyListenNotifyEvent extends Event {
      * The groupKeyPattern of configuration.
      */
     private String groupKeyPattern;
+    
+    /**
+     * The namespace of the configuration.
+     */
+    private String namespace;
     
     /**
      * The group of the configuration.
@@ -58,25 +63,9 @@ public class FuzzyListenNotifyEvent extends Event {
     /**
      * Constructs a new FuzzyListenNotifyEvent.
      */
-    public FuzzyListenNotifyEvent() {
+    public FuzzyWatchNotifyEvent() {
     }
-    
-    /**
-     * Constructs a new FuzzyListenNotifyEvent with the specified group, dataId, type, and UUID.
-     *
-     * @param group  The group of the configuration.
-     * @param dataId The dataId of the configuration.
-     * @param type   The type of notification.
-     * @param uuid   The UUID (Unique Identifier) of the listener.
-     */
-    public FuzzyListenNotifyEvent(String group, String dataId, String type, String groupKeyPattern, String uuid) {
-        this.group = group;
-        this.dataId = dataId;
-        this.type = type;
-        this.groupKeyPattern = groupKeyPattern;
-        this.uuid = uuid;
-    }
-    
+
     /**
      * Constructs a new FuzzyListenNotifyEvent with the specified group, dataId, and type.
      *
@@ -84,26 +73,14 @@ public class FuzzyListenNotifyEvent extends Event {
      * @param dataId The dataId of the configuration.
      * @param type   The type of notification.
      */
-    public FuzzyListenNotifyEvent(String group, String dataId, String type, String groupKeyPattern) {
+    public FuzzyWatchNotifyEvent(String namespace,String group, String dataId, String type, String groupKeyPattern) {
         this.group = group;
         this.dataId = dataId;
+        this.namespace=namespace;
         this.type = type;
         this.groupKeyPattern = groupKeyPattern;
     }
     
-    /**
-     * Builds a new FuzzyListenNotifyEvent with the specified group, dataId, type, and UUID.
-     *
-     * @param group  The group of the configuration.
-     * @param dataId The dataId of the configuration.
-     * @param type   The type of notification.
-     * @param uuid   The UUID (Unique Identifier) of the listener.
-     * @return A new FuzzyListenNotifyEvent instance.
-     */
-    public static FuzzyListenNotifyEvent buildNotifyPatternSpecificListenerEvent(String group, String dataId,
-            String type, String groupKeyPattern, String uuid) {
-        return new FuzzyListenNotifyEvent(group, dataId, type, groupKeyPattern, uuid);
-    }
     
     /**
      * Builds a new FuzzyListenNotifyEvent with the specified group, dataId, and type.
@@ -113,9 +90,9 @@ public class FuzzyListenNotifyEvent extends Event {
      * @param type   The type of notification.
      * @return A new FuzzyListenNotifyEvent instance.
      */
-    public static FuzzyListenNotifyEvent buildNotifyPatternAllListenersEvent(String group, String dataId,
+    public static FuzzyWatchNotifyEvent buildNotifyPatternAllListenersEvent(String namespace,String group, String dataId,
             String groupKeyPattern, String type) {
-        return new FuzzyListenNotifyEvent(group, dataId, type, groupKeyPattern);
+        return new FuzzyWatchNotifyEvent(namespace,group, dataId, type, groupKeyPattern);
     }
     
     /**

@@ -24,12 +24,12 @@ package com.alibaba.nacos.api.config.remote.request;
  * @author stone-98
  * @date 2024/3/13
  */
-public class FuzzyWatchNotifyChangeRequest extends AbstractFuzzyWatchNotifyRequest {
+public class FuzzyWatchChangeNotifyRequest extends AbstractFuzzyWatchNotifyRequest {
     
     /**
      * The tenant of the configuration that has changed.
      */
-    private String tenant;
+    private String namespace;
     
     /**
      * The group of the configuration that has changed.
@@ -49,30 +49,30 @@ public class FuzzyWatchNotifyChangeRequest extends AbstractFuzzyWatchNotifyReque
     /**
      * Constructs an empty FuzzyListenNotifyChangeRequest.
      */
-    public FuzzyWatchNotifyChangeRequest() {
+    public FuzzyWatchChangeNotifyRequest() {
     }
     
     /**
      * Constructs a FuzzyListenNotifyChangeRequest with the specified parameters.
      *
-     * @param tenant  The tenant of the configuration that has changed
+     * @param namespace  The tenant of the configuration that has changed
      * @param group   The group of the configuration that has changed
      * @param dataId  The data ID of the configuration that has changed
      * @param isExist Indicates whether the configuration exists or not
      */
-    public FuzzyWatchNotifyChangeRequest(String tenant, String group, String dataId, boolean isExist) {
-        this.tenant = tenant;
+    public FuzzyWatchChangeNotifyRequest(String namespace, String group, String dataId, boolean isExist) {
+        this.namespace = namespace;
         this.group = group;
         this.dataId = dataId;
         this.isExist = isExist;
     }
     
-    public String getTenant() {
-        return tenant;
+    public String getNamespace() {
+        return namespace;
     }
     
-    public void setTenant(String tenant) {
-        this.tenant = tenant;
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
     }
     
     public String getGroup() {
@@ -106,7 +106,7 @@ public class FuzzyWatchNotifyChangeRequest extends AbstractFuzzyWatchNotifyReque
      */
     @Override
     public String toString() {
-        return "FuzzyListenNotifyChangeRequest{" + "tenant='" + tenant + '\'' + ", group='" + group + '\''
+        return "FuzzyListenNotifyChangeRequest{" + "tenant='" + namespace + '\'' + ", group='" + group + '\''
                 + ", dataId='" + dataId + '\'' + ", isExist=" + isExist + '}';
     }
     

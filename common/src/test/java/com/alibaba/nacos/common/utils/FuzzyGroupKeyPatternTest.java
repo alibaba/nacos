@@ -35,7 +35,7 @@ public class FuzzyGroupKeyPatternTest {
         String group = "exampleGroup";
         String namespace = "exampleNamespace";
         
-        String groupKeyPattern = FuzzyGroupKeyPattern.generateFuzzyWatchGroupKeyPattern(dataIdPattern, group, namespace);
+        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern(dataIdPattern, group, namespace);
         
         assertEquals("exampleNamespace>>exampleGroup@@examplePattern*", groupKeyPattern);
     }

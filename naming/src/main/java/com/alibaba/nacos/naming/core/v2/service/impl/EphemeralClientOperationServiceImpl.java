@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
@@ -139,9 +140,8 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
     
     @Override
     public void fuzzyWatch(String namespaceId, String serviceNamePattern, String groupNamePattern, String clientId) {
-        String patternWithoutNamespace = NamingUtils.getGroupedName(serviceNamePattern, groupNamePattern);
         // need store namespace id in server side
-        String completedPattern =  NamingUtils.getPatternWithNamespace(namespaceId, patternWithoutNamespace);
+        String completedPattern =  FuzzyGroupKeyPattern.generatePattern(serviceNamePattern,groupNamePattern, namespaceId);
         Client client = clientManager.getClient(clientId);
         if (!clientIsLegal(client, clientId)) {
             return;
@@ -153,8 +153,7 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
     
     @Override
     public void cancelFuzzyWatch(String namespaceId, String serviceNamePattern, String groupNamePattern, String clientId) {
-        String patternWithoutNamespace = NamingUtils.getGroupedName(serviceNamePattern, groupNamePattern);
-        String completedPattern =  NamingUtils.getPatternWithNamespace(namespaceId, patternWithoutNamespace);
+        String completedPattern = FuzzyGroupKeyPattern.generatePattern(serviceNamePattern,groupNamePattern, namespaceId);
         Client client = clientManager.getClient(clientId);
         if (!clientIsLegal(client, clientId)) {
             return;

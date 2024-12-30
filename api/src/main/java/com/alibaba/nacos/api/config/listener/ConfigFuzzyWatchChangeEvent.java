@@ -38,10 +38,13 @@ public class ConfigFuzzyWatchChangeEvent {
      */
     private String dataId;
     
-    
-    private String tenant;
     /**
-     * The type of change that has occurred (e.g., "ADD_CONFIG", "DELETE_CONFIG").
+     * The namaspace of the configuration that has changed.
+     */
+    private String namespace;
+    
+    /**
+     * The type of change that has occurred ("FUZZY_WATCH_INIT_NOTIFY", "ADD_CONFIG", "DELETE_CONFIG").
      * see {@link Constants.ConfigChangedType}
      */
     private String changedType;
@@ -59,9 +62,10 @@ public class ConfigFuzzyWatchChangeEvent {
      * @param dataId The data ID of the configuration that has changed
      * @param changedType   The type of change that has occurred
      */
-    public ConfigFuzzyWatchChangeEvent(String group, String dataId, String changedType) {
+    public ConfigFuzzyWatchChangeEvent(String namespace,String group, String dataId, String changedType) {
         this.group = group;
         this.dataId = dataId;
+        this.namespace=namespace;
         this.changedType = changedType;
     }
     
@@ -73,8 +77,16 @@ public class ConfigFuzzyWatchChangeEvent {
      * @param type   The type of change that has occurred
      * @return A new FuzzyListenConfigChangeEvent instance
      */
-    public static ConfigFuzzyWatchChangeEvent build(String group, String dataId, String type) {
-        return new ConfigFuzzyWatchChangeEvent(group, dataId, type);
+    public static ConfigFuzzyWatchChangeEvent build(String namespace,String group, String dataId, String type) {
+        return new ConfigFuzzyWatchChangeEvent(namespace,group, dataId, type);
+    }
+    
+    public String getNamespace() {
+        return namespace;
+    }
+    
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
     }
     
     public String getGroup() {

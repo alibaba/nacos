@@ -24,6 +24,6 @@ import com.alibaba.nacos.api.remote.response.Response;
  * @author stone-98
  * @date 2024/3/18
  */
-public class FuzzyWatchNotifyChangeResponse extends Response {
+public class FuzzyWatchChangeNotifyResponse extends Response {
 
 }

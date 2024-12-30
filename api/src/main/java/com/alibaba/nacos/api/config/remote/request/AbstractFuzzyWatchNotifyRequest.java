@@ -28,21 +28,7 @@ import static com.alibaba.nacos.api.common.Constants.Config.CONFIG_MODULE;
  */
 public abstract class AbstractFuzzyWatchNotifyRequest extends ServerRequest {
     
-    private String serviceChangedType;
-    
     public AbstractFuzzyWatchNotifyRequest() {
-    }
-    
-    public AbstractFuzzyWatchNotifyRequest(String serviceChangedType) {
-        this.serviceChangedType = serviceChangedType;
-    }
-    
-    public String getServiceChangedType() {
-        return serviceChangedType;
-    }
-    
-    public void setServiceChangedType(String serviceChangedType) {
-        this.serviceChangedType = serviceChangedType;
     }
     
     @Override

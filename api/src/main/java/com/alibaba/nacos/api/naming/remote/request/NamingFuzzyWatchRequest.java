@@ -16,36 +16,46 @@
 
 package com.alibaba.nacos.api.naming.remote.request;
 
-import com.alibaba.nacos.api.remote.request.ServerRequest;
-
 import static com.alibaba.nacos.api.common.Constants.Naming.NAMING_MODULE;
 
 /**
- * Abstract fuzzy watch notify request, including basic fuzzy watch notify information.
+ * Nacos naming fuzzy watch service request.
  *
  * @author tanyongquan
  */
-public abstract class AbstractFuzzyWatchNotifyRequest extends ServerRequest {
+public class NamingFuzzyWatchRequest extends AbstractNamingRequest {
     
-    private String changedType;
+    private String groupKeyPattern;
     
-    public AbstractFuzzyWatchNotifyRequest(){
+    private String watchType;
+    
+    public NamingFuzzyWatchRequest() {
     }
     
-    public AbstractFuzzyWatchNotifyRequest( String changedType) {
-        this.changedType = changedType;
+    public NamingFuzzyWatchRequest(String groupKeyPattern, String watchType) {
+        this.watchType=watchType;
+        this.groupKeyPattern = groupKeyPattern;
     }
     
-    public String getChangedType() {
-        return changedType;
+    public String getGroupKeyPattern() {
+        return groupKeyPattern;
     }
     
-    public void setChangedType(String changedType) {
-        this.changedType = changedType;
+    public void setGroupKeyPattern(String groupKeyPattern) {
+        this.groupKeyPattern = groupKeyPattern;
+    }
+    
+    public String getWatchType() {
+        return watchType;
+    }
+    
+    public void setWatchType(String watchType) {
+        this.watchType = watchType;
     }
     
     @Override
     public String getModule() {
         return NAMING_MODULE;
     }
+    
 }

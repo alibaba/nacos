@@ -282,6 +282,8 @@ public class Constants {
     
     public static final String FINISH_FUZZY_WATCH_INIT_NOTIFY = "FINISH_FUZZY_WATCH_INIT_NOTIFY";
     
+    public static final String FUZZY_WATCH_DIFF_SYNC_NOTIFY = "FUZZY_WATCH_DIFF_SYNC_NOTIFY";
+    
     /**
      * The constants in config fuzzy watch event type directory.
      */

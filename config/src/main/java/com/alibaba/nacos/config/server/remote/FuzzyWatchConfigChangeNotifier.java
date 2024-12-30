@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.remote;
 
-import com.alibaba.nacos.api.config.remote.request.FuzzyWatchNotifyChangeRequest;
+import com.alibaba.nacos.api.config.remote.request.FuzzyWatchChangeNotifyRequest;
 import com.alibaba.nacos.api.remote.AbstractPushCallBack;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -45,14 +45,14 @@ import java.util.concurrent.TimeUnit;
  * @author stone-98
  * @date 2024/3/18
  */
-@Component(value = "rpcFuzzyListenConfigChangeNotifier")
-public class RpcFuzzyListenConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
+@Component(value = "fuzzyWatchConfigChangeNotifier")
+public class FuzzyWatchConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     
-    private static final String POINT_FUZZY_LISTEN_CONFIG_PUSH = "POINT_FUZZY_LISTEN_CONFIG_PUSH";
+    private static final String POINT_FUZZY_WATCH_CONFIG_PUSH = "POINT_FUZZY_WATCH_CONFIG_PUSH";
     
-    private static final String POINT_FUZZY_LISTEN_CONFIG_PUSH_SUCCESS = "POINT_FUZZY_LISTEN_CONFIG_PUSH_SUCCESS";
+    private static final String POINT_FUZZY_WATCH_CONFIG_PUSH_SUCCESS = "POINT_FUZZY_WATCH_CONFIG_PUSH_SUCCESS";
     
-    private static final String POINT_FUZZY_LISTEN_CONFIG_PUSH_FAIL = "POINT_FUZZY_LISTEN_CONFIG_PUSH_FAIL";
+    private static final String POINT_FUZZY_WATCH_CONFIG_PUSH_FAIL = "POINT_FUZZY_WATCH_CONFIG_PUSH_FAIL";
     
     private final ConfigChangeListenContext configChangeListenContext;
     
@@ -70,7 +70,7 @@ public class RpcFuzzyListenConfigChangeNotifier extends Subscriber<LocalDataChan
      * @param connectionManager         The manager for connections.
      * @param rpcPushService            The service for RPC push.
      */
-    public RpcFuzzyListenConfigChangeNotifier(ConfigChangeListenContext configChangeListenContext,
+    public FuzzyWatchConfigChangeNotifier(ConfigChangeListenContext configChangeListenContext,
             ConnectionManager connectionManager, RpcPushService rpcPushService,ConfigFuzzyWatchContext configFuzzyWatchContext) {
         this.configChangeListenContext = configChangeListenContext;
         this.connectionManager = connectionManager;
@@ -100,7 +100,7 @@ public class RpcFuzzyListenConfigChangeNotifier extends Subscriber<LocalDataChan
             String clientIp = metaInfo.getClientIp();
             String appName = metaInfo.getAppName();
             boolean exists = ConfigCacheService.getContentCache(groupKey)!=null;
-            FuzzyWatchNotifyChangeRequest request = new FuzzyWatchNotifyChangeRequest(tenant, group, dataId, exists);
+            FuzzyWatchChangeNotifyRequest request = new FuzzyWatchChangeNotifyRequest(tenant, group, dataId, exists);
             int maxPushRetryTimes = ConfigCommonConfig.getInstance().getMaxPushRetryTimes();
             RpcPushTask rpcPushTask = new RpcPushTask(request, maxPushRetryTimes, clientId, clientIp, appName);
             push(rpcPushTask);
@@ -118,11 +118,11 @@ public class RpcFuzzyListenConfigChangeNotifier extends Subscriber<LocalDataChan
      * @param retryTask The task for retrying to push notification.
      */
     private void push(RpcPushTask retryTask) {
-        FuzzyWatchNotifyChangeRequest notifyRequest = retryTask.notifyRequest;
+        FuzzyWatchChangeNotifyRequest notifyRequest = retryTask.notifyRequest;
         if (retryTask.isOverTimes()) {
             Loggers.REMOTE_PUSH.warn(
                     "push callback retry fail over times. dataId={},group={},tenant={},clientId={}, will unregister client.",
-                    notifyRequest.getDataId(), notifyRequest.getGroup(), notifyRequest.getTenant(),
+                    notifyRequest.getDataId(), notifyRequest.getGroup(), notifyRequest.getNamespace(),
                     retryTask.connectionId);
             connectionManager.unregister(retryTask.connectionId);
         } else if (connectionManager.getConnection(retryTask.connectionId) != null) {
@@ -133,7 +133,7 @@ public class RpcFuzzyListenConfigChangeNotifier extends Subscriber<LocalDataChan
             // Client is already offline, ignore the task.
             Loggers.REMOTE_PUSH.warn(
                     "Client is already offline, ignore the task. dataId={},group={},tenant={},clientId={}",
-                    notifyRequest.getDataId(), notifyRequest.getGroup(), notifyRequest.getTenant(),
+                    notifyRequest.getDataId(), notifyRequest.getGroup(), notifyRequest.getNamespace(),
                     retryTask.connectionId);
         }
     }
@@ -143,7 +143,7 @@ public class RpcFuzzyListenConfigChangeNotifier extends Subscriber<LocalDataChan
      */
     class RpcPushTask implements Runnable {
         
-        FuzzyWatchNotifyChangeRequest notifyRequest;
+        FuzzyWatchChangeNotifyRequest notifyRequest;
         
         int maxRetryTimes;
         
@@ -164,7 +164,7 @@ public class RpcFuzzyListenConfigChangeNotifier extends Subscriber<LocalDataChan
          * @param clientIp      The IP address of the client.
          * @param appName       The name of the application.
          */
-        public RpcPushTask(FuzzyWatchNotifyChangeRequest notifyRequest, int maxRetryTimes, String connectionId,
+        public RpcPushTask(FuzzyWatchChangeNotifyRequest notifyRequest, int maxRetryTimes, String connectionId,
                 String clientIp, String appName) {
             this.notifyRequest = notifyRequest;
             this.maxRetryTimes = maxRetryTimes;
@@ -186,7 +186,7 @@ public class RpcFuzzyListenConfigChangeNotifier extends Subscriber<LocalDataChan
         public void run() {
             tryTimes++;
             TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
-            tpsCheckRequest.setPointName(POINT_FUZZY_LISTEN_CONFIG_PUSH);
+            tpsCheckRequest.setPointName(POINT_FUZZY_WATCH_CONFIG_PUSH);
             if (!tpsControlManager.check(tpsCheckRequest).isSuccess()) {
                 push(this);
             } else {
@@ -195,17 +195,17 @@ public class RpcFuzzyListenConfigChangeNotifier extends Subscriber<LocalDataChan
                     @Override
                     public void onSuccess() {
                         TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
-                        tpsCheckRequest.setPointName(POINT_FUZZY_LISTEN_CONFIG_PUSH_SUCCESS);
+                        tpsCheckRequest.setPointName(POINT_FUZZY_WATCH_CONFIG_PUSH_SUCCESS);
                         tpsControlManager.check(tpsCheckRequest);
                     }
                     
                     @Override
                     public void onFail(Throwable e) {
                         TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
-                        tpsCheckRequest.setPointName(POINT_FUZZY_LISTEN_CONFIG_PUSH_FAIL);
+                        tpsCheckRequest.setPointName(POINT_FUZZY_WATCH_CONFIG_PUSH_FAIL);
                         tpsControlManager.check(tpsCheckRequest);
                         Loggers.REMOTE_PUSH.warn("Push fail, dataId={}, group={}, tenant={}, clientId={}",
-                                notifyRequest.getDataId(), notifyRequest.getGroup(), notifyRequest.getTenant(),
+                                notifyRequest.getDataId(), notifyRequest.getGroup(), notifyRequest.getNamespace(),
                                 connectionId, e);
                         push(RpcPushTask.this);
                     }

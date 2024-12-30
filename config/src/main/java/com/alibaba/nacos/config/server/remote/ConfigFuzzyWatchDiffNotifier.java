@@ -17,12 +17,13 @@
 package com.alibaba.nacos.config.server.remote;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.config.remote.request.FuzzyWatchNotifyDiffRequest;
+import com.alibaba.nacos.api.config.remote.request.FuzzyWatchDiffSyncRequest;
 import com.alibaba.nacos.api.remote.AbstractPushCallBack;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
 import com.alibaba.nacos.config.server.configuration.ConfigCommonConfig;
 import com.alibaba.nacos.config.server.model.event.ConfigBatchFuzzyListenEvent;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
@@ -83,7 +84,7 @@ public class ConfigFuzzyWatchDiffNotifier extends Subscriber<ConfigBatchFuzzyLis
      * @param connectionManager The connection manager for managing client connections
      */
     private static void push(FuzzyWatchRpcPushTask retryTask, ConnectionManager connectionManager) {
-        FuzzyWatchNotifyDiffRequest notifyRequest = retryTask.notifyRequest;
+        FuzzyWatchDiffSyncRequest notifyRequest = retryTask.notifyRequest;
         // Check if the maximum retry times have been reached
         if (retryTask.isOverTimes()) {
             // If over the maximum retry times, log a warning and unregister the client connection
@@ -136,7 +137,7 @@ public class ConfigFuzzyWatchDiffNotifier extends Subscriber<ConfigBatchFuzzyLis
         }
         
         // Calculate and merge configuration states based on matched and existing group keys
-        List<ConfigState> configStates = calculateAndMergeToConfigState(matchGroupKeys, clientExistingGroupKeys);
+        List<FuzzyGroupKeyPattern.GroupKeyState> configStates = FuzzyGroupKeyPattern.diffGroupKeys(matchGroupKeys, clientExistingGroupKeys);
         
         // If no diff config states are available, return
         if (CollectionUtils.isEmpty(configStates)) {
@@ -145,71 +146,40 @@ public class ConfigFuzzyWatchDiffNotifier extends Subscriber<ConfigBatchFuzzyLis
         
         int batchSize = ConfigCommonConfig.getInstance().getBatchSize();
         // Divide config states into batches
-        List<List<ConfigState>> divideConfigStatesIntoBatches = divideConfigStatesIntoBatches(configStates, batchSize);
+        List<List<FuzzyGroupKeyPattern.GroupKeyState>> divideConfigStatesIntoBatches = divideConfigStatesIntoBatches(configStates, batchSize);
         
         // Calculate the number of batches and initialize push batch finish count
         int originBatchSize = divideConfigStatesIntoBatches.size();
         AtomicInteger pushBatchFinishCount = new AtomicInteger(0);
         
         // Iterate over each batch of config states
-        for (List<ConfigState> configStateList : divideConfigStatesIntoBatches) {
+        for (List<FuzzyGroupKeyPattern.GroupKeyState> configStateList : divideConfigStatesIntoBatches) {
             // Map config states to FuzzyListenNotifyDiffRequest.Context objects
-            Set<FuzzyWatchNotifyDiffRequest.Context> contexts = configStateList.stream().map(state -> {
+            Set<FuzzyWatchDiffSyncRequest.Context> contexts = configStateList.stream().map(state -> {
                 String[] parseKey = GroupKey.parseKey(state.getGroupKey());
                 String dataId = parseKey[0];
                 String group = parseKey[1];
                 String tenant = parseKey.length > 2 ? parseKey[2] : Constants.DEFAULT_NAMESPACE_ID;
-                String changeType = event.isInitializing() ? Constants.FUZZY_WATCH_INIT_NOTIFY
-                        : (state.isExist() ? Constants.ConfigChangedType.ADD_CONFIG
-                                : Constants.ConfigChangedType.DELETE_CONFIG);
-                return FuzzyWatchNotifyDiffRequest.Context.build(tenant, group, dataId, changeType);
+                String changeType = state.isExist() ? Constants.ConfigChangedType.ADD_CONFIG
+                        : Constants.ConfigChangedType.DELETE_CONFIG;
+                return FuzzyWatchDiffSyncRequest.Context.build(tenant, group, dataId, changeType);
             }).collect(Collectors.toSet());
             
             // Build FuzzyListenNotifyDiffRequest with contexts and pattern
-            FuzzyWatchNotifyDiffRequest request = FuzzyWatchNotifyDiffRequest.buildInitRequest(contexts,
-                    event.getGroupKeyPattern());
+            FuzzyWatchDiffSyncRequest request =
+                    event.isInitializing() ? FuzzyWatchDiffSyncRequest.buildInitRequest(contexts,
+                            event.getGroupKeyPattern())
+                            : FuzzyWatchDiffSyncRequest.buildDiffSyncRequest(contexts, event.getGroupKeyPattern());
             
             int maxPushRetryTimes = ConfigCommonConfig.getInstance().getMaxPushRetryTimes();
             // Create RPC push task and push the request to the client
-            FuzzyWatchRpcPushTask fuzzyWatchRpcPushTask = new FuzzyWatchRpcPushTask(request, pushBatchFinishCount, originBatchSize, maxPushRetryTimes,
-                    event.getConnectionId(), clientIp, metaInfo.getAppName());
+            FuzzyWatchRpcPushTask fuzzyWatchRpcPushTask = new FuzzyWatchRpcPushTask(request, pushBatchFinishCount,
+                    originBatchSize, maxPushRetryTimes, event.getConnectionId(), clientIp, metaInfo.getAppName());
             push(fuzzyWatchRpcPushTask, connectionManager);
         }
     }
     
-    /**
-     * Calculates and merges the differences between the matched group keys and the client's existing group keys into a
-     * list of ConfigState objects.
-     *
-     * @param matchGroupKeys          The matched group keys set
-     * @param clientExistingGroupKeys The client's existing group keys set
-     * @return The merged list of ConfigState objects representing the states to be added or removed
-     */
-    private List<ConfigState> calculateAndMergeToConfigState(Set<String> matchGroupKeys,
-            Set<String> clientExistingGroupKeys) {
-        // Calculate the set of group keys to be added and removed
-        Set<String> addGroupKeys = new HashSet<>();
-        if (CollectionUtils.isNotEmpty(matchGroupKeys)) {
-            addGroupKeys.addAll(matchGroupKeys);
-        }
-        if (CollectionUtils.isNotEmpty(clientExistingGroupKeys)) {
-            addGroupKeys.removeAll(clientExistingGroupKeys);
-        }
-        
-        Set<String> removeGroupKeys = new HashSet<>();
-        if (CollectionUtils.isNotEmpty(clientExistingGroupKeys)) {
-            removeGroupKeys.addAll(clientExistingGroupKeys);
-        }
-        if (CollectionUtils.isNotEmpty(matchGroupKeys)) {
-            removeGroupKeys.removeAll(matchGroupKeys);
-        }
-        
-        // Convert the group keys to be added and removed into corresponding ConfigState objects and merge them into a list
-        return Stream.concat(addGroupKeys.stream().map(groupKey -> new ConfigState(groupKey, true)),
-                        removeGroupKeys.stream().map(groupKey -> new ConfigState(groupKey, false)))
-                .collect(Collectors.toList());
-    }
-    
+ 
     @Override
     public Class<? extends Event> subscribeType() {
         return ConfigBatchFuzzyListenEvent.class;
@@ -233,68 +203,6 @@ public class ConfigFuzzyWatchDiffNotifier extends Subscriber<ConfigBatchFuzzyLis
                         .values());
     }
     
-    /**
-     * ConfigState.
-     */
-    public static class ConfigState {
-        
-        /**
-         * The group key associated with the configuration.
-         */
-        private String groupKey;
-        
-        /**
-         * Indicates whether the configuration exists or not.
-         */
-        private boolean exist;
-        
-        /**
-         * Constructs a new ConfigState instance with the given group key and existence flag.
-         *
-         * @param groupKey The group key associated with the configuration.
-         * @param exist    {@code true} if the configuration exists, {@code false} otherwise.
-         */
-        public ConfigState(String groupKey, boolean exist) {
-            this.groupKey = groupKey;
-            this.exist = exist;
-        }
-        
-        /**
-         * Retrieves the group key associated with the configuration.
-         *
-         * @return The group key.
-         */
-        public String getGroupKey() {
-            return groupKey;
-        }
-        
-        /**
-         * Sets the group key associated with the configuration.
-         *
-         * @param groupKey The group key to set.
-         */
-        public void setGroupKey(String groupKey) {
-            this.groupKey = groupKey;
-        }
-        
-        /**
-         * Checks whether the configuration exists or not.
-         *
-         * @return {@code true} if the configuration exists, {@code false} otherwise.
-         */
-        public boolean isExist() {
-            return exist;
-        }
-        
-        /**
-         * Sets the existence flag of the configuration.
-         *
-         * @param exist {@code true} if the configuration exists, {@code false} otherwise.
-         */
-        public void setExist(boolean exist) {
-            this.exist = exist;
-        }
-    }
     
     /**
      * Represents a task for pushing FuzzyListenNotifyDiffRequest to clients.
@@ -304,7 +212,7 @@ public class ConfigFuzzyWatchDiffNotifier extends Subscriber<ConfigBatchFuzzyLis
         /**
          * The FuzzyListenNotifyDiffRequest to be pushed.
          */
-        FuzzyWatchNotifyDiffRequest notifyRequest;
+        FuzzyWatchDiffSyncRequest notifyRequest;
         
         /**
          * The maximum number of times to retry pushing the request.
@@ -352,7 +260,7 @@ public class ConfigFuzzyWatchDiffNotifier extends Subscriber<ConfigBatchFuzzyLis
          * @param clientIp             The IP address of the client
          * @param appName              The name of the client's application
          */
-        public FuzzyWatchRpcPushTask(FuzzyWatchNotifyDiffRequest notifyRequest, AtomicInteger pushBatchFinishCount,
+        public FuzzyWatchRpcPushTask(FuzzyWatchDiffSyncRequest notifyRequest, AtomicInteger pushBatchFinishCount,
                 int originBatchSize, int maxRetryTimes, String connectionId, String clientIp, String appName) {
             this.notifyRequest = notifyRequest;
             this.pushBatchFinishCount = pushBatchFinishCount;
@@ -424,14 +332,15 @@ public class ConfigFuzzyWatchDiffNotifier extends Subscriber<ConfigBatchFuzzyLis
         /**
          * Constructs a new RpcPushCallback with the specified parameters.
          *
-         * @param fuzzyWatchRpcPushTask       The RpcPushTask associated with the callback
-         * @param tpsControlManager The TpsControlManager for checking TPS limits
-         * @param connectionManager The ConnectionManager for managing client connections
-         * @param pushBatchCount    The counter for tracking the number of pushed batches
-         * @param originBatchSize   The original size of the batch before splitting
+         * @param fuzzyWatchRpcPushTask The RpcPushTask associated with the callback
+         * @param tpsControlManager     The TpsControlManager for checking TPS limits
+         * @param connectionManager     The ConnectionManager for managing client connections
+         * @param pushBatchCount        The counter for tracking the number of pushed batches
+         * @param originBatchSize       The original size of the batch before splitting
          */
-        public FuzzyWatchRpcPushCallback(FuzzyWatchRpcPushTask fuzzyWatchRpcPushTask, TpsControlManager tpsControlManager,
-                ConnectionManager connectionManager, AtomicInteger pushBatchCount, int originBatchSize) {
+        public FuzzyWatchRpcPushCallback(FuzzyWatchRpcPushTask fuzzyWatchRpcPushTask,
+                TpsControlManager tpsControlManager, ConnectionManager connectionManager, AtomicInteger pushBatchCount,
+                int originBatchSize) {
             // Set the timeout for the callback
             super(3000L);
             this.fuzzyWatchRpcPushTask = fuzzyWatchRpcPushTask;
@@ -454,10 +363,11 @@ public class ConfigFuzzyWatchDiffNotifier extends Subscriber<ConfigBatchFuzzyLis
             if (pushBatchCount.get() < originBatchSize) {
                 pushBatchCount.incrementAndGet();
             } else if (pushBatchCount.get() == originBatchSize) {
-                FuzzyWatchNotifyDiffRequest request = FuzzyWatchNotifyDiffRequest.buildInitFinishRequest(
+                FuzzyWatchDiffSyncRequest request = FuzzyWatchDiffSyncRequest.buildInitFinishRequest(
                         fuzzyWatchRpcPushTask.notifyRequest.getGroupKeyPattern());
-                push(new FuzzyWatchRpcPushTask(request, pushBatchCount, originBatchSize, 50, fuzzyWatchRpcPushTask.connectionId,
-                        fuzzyWatchRpcPushTask.clientIp, fuzzyWatchRpcPushTask.appName), connectionManager);
+                push(new FuzzyWatchRpcPushTask(request, pushBatchCount, originBatchSize, 50,
+                        fuzzyWatchRpcPushTask.connectionId, fuzzyWatchRpcPushTask.clientIp,
+                        fuzzyWatchRpcPushTask.appName), connectionManager);
             }
         }
         

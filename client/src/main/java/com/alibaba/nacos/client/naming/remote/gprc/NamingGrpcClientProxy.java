@@ -28,7 +28,7 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest;
 import com.alibaba.nacos.api.naming.remote.request.BatchInstanceRequest;
-import com.alibaba.nacos.api.naming.remote.request.FuzzyWatchRequest;
+import com.alibaba.nacos.api.naming.remote.request.NamingFuzzyWatchRequest;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
 import com.alibaba.nacos.api.naming.remote.request.PersistentInstanceRequest;
 import com.alibaba.nacos.api.naming.remote.request.ServiceListRequest;
@@ -64,6 +64,7 @@ import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfigFactory;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 
 import java.util.ArrayList;
@@ -446,7 +447,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
      * @throws NacosException nacos exception
      */
     public void doFuzzyWatch(String serviceNamePattern, String groupNamePattern) throws NacosException {
-        FuzzyWatchRequest request = new FuzzyWatchRequest(namespaceId, serviceNamePattern, groupNamePattern,
+        NamingFuzzyWatchRequest request = new NamingFuzzyWatchRequest(FuzzyGroupKeyPattern.generatePattern(serviceNamePattern,groupNamePattern,namespaceId),
                 NamingRemoteConstants.FUZZY_WATCH_SERVICE);
         requestToServer(request, FuzzyWatchResponse.class);
         redoService.fuzzyWatcherRegistered(serviceNamePattern, groupNamePattern);
@@ -475,7 +476,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
      * @throws NacosException nacos exception
      */
     public void doCancelFuzzyWatch(String serviceNamePattern, String groupNamePattern) throws NacosException {
-        FuzzyWatchRequest request = new FuzzyWatchRequest(namespaceId, serviceNamePattern, groupNamePattern,
+        NamingFuzzyWatchRequest request = new NamingFuzzyWatchRequest(FuzzyGroupKeyPattern.generatePattern(serviceNamePattern,groupNamePattern,namespaceId),
                 NamingRemoteConstants.CANCEL_FUZZY_WATCH_SERVICE);
         requestToServer(request, FuzzyWatchResponse.class);
         redoService.removeFuzzyWatcherForRedo(serviceNamePattern, groupNamePattern);

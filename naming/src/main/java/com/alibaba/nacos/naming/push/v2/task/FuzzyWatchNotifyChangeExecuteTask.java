@@ -22,7 +22,6 @@ import com.alibaba.nacos.common.task.AbstractExecuteTask;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.index.ClientFuzzyWatchIndexesManager;
-import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.push.v2.NoRequiredRetryException;
@@ -56,19 +55,19 @@ public class FuzzyWatchNotifyChangeExecuteTask extends AbstractExecuteTask {
     public void run() {
         try {
             ClientManager clientManager = delayTaskEngine.getClientManager();
-            String serviceChangedType = delayTask.getServiceChangedType();
+            String changedType = delayTask.getChangedType();
             for (String clientId : getWatchTargetClientIds()) {
                 Client client = clientManager.getClient(clientId);
                 if (null == client) {
                     continue;
                 }
                 delayTaskEngine.getPushExecutor().doFuzzyWatchNotifyPushWithCallBack(clientId, new FuzzyWatchNotifyChangeRequest(
-                                service.getNamespace(), service.getName(), service.getGroup(), serviceChangedType),
-                        new WatchNotifyPushCallback(clientId, serviceChangedType));
+                                service.getNamespace(), service.getName(), service.getGroup(), changedType),
+                        new WatchNotifyPushCallback(clientId, changedType));
             }
         } catch (Exception e) {
             Loggers.PUSH.error("Fuzzy watch notify task for service" + service.getGroupedServiceName() + " execute failed ", e);
-            delayTaskEngine.addTask(service, new FuzzyWatchNotifyChangeDelayTask(service, delayTask.getServiceChangedType(), 1000L));
+            delayTaskEngine.addTask(service, new FuzzyWatchNotifyChangeDelayTask(service, delayTask.getChangedType(), 1000L));
         }
     }
     

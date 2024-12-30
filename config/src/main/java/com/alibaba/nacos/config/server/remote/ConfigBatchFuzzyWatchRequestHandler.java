@@ -69,7 +69,7 @@ public class ConfigBatchFuzzyWatchRequestHandler
      * @throws NacosException If an error occurs while processing the request
      */
     @Override
-    @TpsControl(pointName = "ConfigFuzzyListen")
+    @TpsControl(pointName = "ConfigFuzzyWatch")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     @ExtractorManager.Extractor(rpcExtractor = ConfigBatchFuzzyListenRequestParamsExtractor.class)
     public ConfigBatchFuzzyWatchResponse handle(ConfigBatchFuzzyWatchRequest request, RequestMeta meta)

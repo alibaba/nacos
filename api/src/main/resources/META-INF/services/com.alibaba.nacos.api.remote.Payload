@@ -54,7 +54,7 @@ com.alibaba.nacos.api.naming.remote.request.FuzzyWatchNotifyInitRequest
 com.alibaba.nacos.api.naming.remote.request.ServiceListRequest
 com.alibaba.nacos.api.naming.remote.request.ServiceQueryRequest
 com.alibaba.nacos.api.naming.remote.request.SubscribeServiceRequest
-com.alibaba.nacos.api.naming.remote.request.FuzzyWatchRequest
+com.alibaba.nacos.api.naming.remote.request.NamingFuzzyWatchRequest
 com.alibaba.nacos.api.naming.remote.response.BatchInstanceResponse
 com.alibaba.nacos.api.naming.remote.response.InstanceResponse
 com.alibaba.nacos.api.naming.remote.response.NotifySubscriberResponse
@@ -65,7 +65,7 @@ com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse
 com.alibaba.nacos.api.naming.remote.response.FuzzyWatchResponse
 com.alibaba.nacos.api.config.remote.request.ConfigBatchFuzzyWatchRequest
 com.alibaba.nacos.api.config.remote.response.ConfigBatchFuzzyWatchResponse
-com.alibaba.nacos.api.config.remote.request.FuzzyWatchNotifyChangeRequest
-com.alibaba.nacos.api.config.remote.response.FuzzyWatchNotifyChangeResponse
-com.alibaba.nacos.api.config.remote.request.FuzzyWatchNotifyDiffRequest
+com.alibaba.nacos.api.config.remote.request.FuzzyWatchChangeNotifyRequest
+com.alibaba.nacos.api.config.remote.response.FuzzyWatchChangeNotifyResponse
+com.alibaba.nacos.api.config.remote.request.FuzzyWatchDiffSyncRequest
 com.alibaba.nacos.api.config.remote.response.FuzzyWatchNotifyDiffResponse

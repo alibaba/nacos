@@ -17,9 +17,12 @@
 package com.alibaba.nacos.api.naming.remote.request;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.remote.request.ServerRequest;
 
 import java.util.Collection;
 import java.util.HashSet;
+
+import static com.alibaba.nacos.api.common.Constants.Naming.NAMING_MODULE;
 
 /**
  * Nacos fuzzy watch initial notify request, use it when init a watch request, push service by batch.
@@ -35,18 +38,18 @@ public class FuzzyWatchNotifyInitRequest extends AbstractFuzzyWatchNotifyRequest
     public FuzzyWatchNotifyInitRequest() {
     }
     
-    private FuzzyWatchNotifyInitRequest(String namespace, String pattern, String serviceChangedType, Collection<String> servicesName) {
-        super(namespace, serviceChangedType);
+    private FuzzyWatchNotifyInitRequest(String pattern, String changedType, Collection<String> servicesName) {
+        super(changedType);
         this.servicesName = servicesName;
         this.pattern = pattern;
     }
     
-    public static FuzzyWatchNotifyInitRequest buildInitRequest(String namespace, String pattern, Collection<String> servicesName) {
-        return new FuzzyWatchNotifyInitRequest(namespace, pattern, Constants.FUZZY_WATCH_INIT_NOTIFY, servicesName);
+    public static FuzzyWatchNotifyInitRequest buildInitRequest(String pattern, Collection<String> servicesName) {
+        return new FuzzyWatchNotifyInitRequest(pattern, Constants.FUZZY_WATCH_INIT_NOTIFY, servicesName);
     }
     
-    public static FuzzyWatchNotifyInitRequest buildInitFinishRequest(String namespace, String pattern) {
-        return new FuzzyWatchNotifyInitRequest(namespace, pattern, Constants.FINISH_FUZZY_WATCH_INIT_NOTIFY, new HashSet<>(1));
+    public static FuzzyWatchNotifyInitRequest buildInitFinishRequest(String pattern) {
+        return new FuzzyWatchNotifyInitRequest(pattern, Constants.FINISH_FUZZY_WATCH_INIT_NOTIFY, new HashSet<>(1));
     }
     
     public String getPattern() {
@@ -64,4 +67,5 @@ public class FuzzyWatchNotifyInitRequest extends AbstractFuzzyWatchNotifyRequest
     public void setServicesName(Collection<String> servicesName) {
         this.servicesName = servicesName;
     }
+    
 }

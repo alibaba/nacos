@@ -16,8 +16,11 @@
 
 package com.alibaba.nacos.api.config.listener;
 
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Executor;
 
 /**
  * AbstractFuzzyListenListener is an abstract class that provides basic functionality for listening to fuzzy
@@ -26,12 +29,14 @@ import java.util.UUID;
  * @author stone-98
  * @date 2024/3/4
  */
-public abstract class AbstractFuzzyWatchListener extends AbstractListener {
+public abstract class ConfigFuzzyWatcher {
     
     /**
      * Unique identifier for the listener.
      */
     String uuid= UUID.randomUUID().toString();
+    
+    private Set<String> syncGroupKeys = new HashSet<>();
     
     /**
      * Get the UUID (Unique Identifier) of the listener.
@@ -49,14 +54,14 @@ public abstract class AbstractFuzzyWatchListener extends AbstractListener {
      */
     public abstract void onEvent(ConfigFuzzyWatchChangeEvent event);
     
+    
     /**
-     * Receive the configuration information. This method is overridden but does nothing in this abstract class.
+     * Get executor for execute this receive.
      *
-     * @param configInfo The configuration information
+     * @return Executor
      */
-    @Override
-    public final void receiveConfigInfo(String configInfo) {
-        // Do nothing by default
+    public  Executor getExecutor(){
+        return null;
     }
     
     /**
@@ -84,7 +89,12 @@ public abstract class AbstractFuzzyWatchListener extends AbstractListener {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        AbstractFuzzyWatchListener that = (AbstractFuzzyWatchListener) o;
+        ConfigFuzzyWatcher that = (ConfigFuzzyWatcher) o;
         return Objects.equals(uuid, that.uuid);
     }
+    
+    public Set<String> getSyncGroupKeys() {
+        return syncGroupKeys;
+    }
+
 }

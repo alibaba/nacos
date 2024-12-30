@@ -16,12 +16,19 @@
 
 package com.alibaba.nacos.api.naming.remote.request;
 
+import com.alibaba.nacos.api.remote.request.ServerRequest;
+
+import static com.alibaba.nacos.api.common.Constants.Naming.NAMING_MODULE;
+
 /**
  * Nacos fuzzy watch notify service change request, use it when one of the services changes.
  *
  * @author tanyongquan
  */
 public class FuzzyWatchNotifyChangeRequest extends AbstractFuzzyWatchNotifyRequest {
+    
+    
+    private String namespace;
     
     String serviceName;
     
@@ -32,9 +39,18 @@ public class FuzzyWatchNotifyChangeRequest extends AbstractFuzzyWatchNotifyReque
     
     public FuzzyWatchNotifyChangeRequest(String namespace, String serviceName,
             String groupName, String serviceChangedType) {
-        super(namespace, serviceChangedType);
+        super(serviceChangedType);
+       this.namespace=namespace;
         this.serviceName = serviceName;
         this.groupName = groupName;
+    }
+    
+    public String getNamespace() {
+        return namespace;
+    }
+    
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
     }
     
     public String getServiceName() {
@@ -52,4 +68,5 @@ public class FuzzyWatchNotifyChangeRequest extends AbstractFuzzyWatchNotifyReque
     public void setGroupName(String groupName) {
         this.groupName = groupName;
     }
+
 }

@@ -1,6 +1,5 @@
 package com.alibaba.nacos.naming.core.v2.index;
 
-import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
@@ -23,7 +22,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern.getNamespaceFromGroupKeyPattern;
+import static com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern.getNamespaceFromPattern;
 
 @Component
 public class ClientFuzzyWatchIndexesManager extends SmartSubscriber {
@@ -149,7 +148,7 @@ public class ClientFuzzyWatchIndexesManager extends SmartSubscriber {
      */
     public Collection<Service> updateWatchMatchIndex(String completedPattern) {
         long matchBeginTime = System.currentTimeMillis();
-        Collection<Service> serviceSet = ServiceManager.getInstance().getSingletons(getNamespaceFromGroupKeyPattern(completedPattern));
+        Collection<Service> serviceSet = ServiceManager.getInstance().getSingletons(getNamespaceFromPattern(completedPattern));
         
         Set<Service> matchedService = new HashSet<>();
         for (Service service : serviceSet) {

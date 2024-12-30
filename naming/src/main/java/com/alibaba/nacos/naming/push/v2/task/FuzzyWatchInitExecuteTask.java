@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.naming.remote.request.FuzzyWatchNotifyInitRequest;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
+import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -86,8 +87,6 @@ public class FuzzyWatchInitExecuteTask extends AbstractExecuteTask {
         ClientManager clientManager = delayTaskEngine.getClientManager();
         Collection<Collection<String>> dividedServices = divideServiceByBatch(delayTask.getMatchedService());
         Client client = clientManager.getClient(clientId);
-        String patternWithoutNameSpace = NamingUtils.getPatternRemovedNamespace(pattern);
-        String nameSpaceId = NamingUtils.getNamespaceFromPattern(pattern);
         if (null == client) {
             return;
         }
@@ -97,12 +96,12 @@ public class FuzzyWatchInitExecuteTask extends AbstractExecuteTask {
         if (isFinishInitTask || delayTask.getMatchedService().isEmpty()) {
             // do not match any exist service, just finish init
             delayTaskEngine.getPushExecutor().doFuzzyWatchNotifyPushWithCallBack(clientId,
-                    FuzzyWatchNotifyInitRequest.buildInitFinishRequest(nameSpaceId, patternWithoutNameSpace),
+                    FuzzyWatchNotifyInitRequest.buildInitFinishRequest(pattern),
                     new FuzzyWatchInitPushCallback(clientId, null, originSize, true, haveFailPush));
         } else {
             for (Collection<String> batchData : dividedServices) {
                 delayTaskEngine.getPushExecutor().doFuzzyWatchNotifyPushWithCallBack(clientId, FuzzyWatchNotifyInitRequest.buildInitRequest(
-                                nameSpaceId, patternWithoutNameSpace, batchData),
+                                pattern, batchData),
                         new FuzzyWatchInitPushCallback(clientId, batchData, originSize, false, haveFailPush));
             }
         }

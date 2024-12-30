@@ -18,7 +18,10 @@ package com.alibaba.nacos.common.utils;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.alibaba.nacos.api.common.Constants.ANY_PATTERN;
 import static com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
@@ -45,7 +48,7 @@ public class FuzzyGroupKeyPattern {
      * @return A unique group key pattern for fuzzy listen.
      * @throws IllegalArgumentException If the dataId pattern or group is blank.
      */
-    public static String generateFuzzyWatchGroupKeyPattern(final String resourcePattern, final String groupPattern,
+    public static String generatePattern(final String resourcePattern, final String groupPattern,
              String fixNamespace) {
         if (StringUtils.isBlank(resourcePattern)) {
             throw new IllegalArgumentException("Param 'resourcePattern' is illegal, resourcePattern is blank");
@@ -89,6 +92,8 @@ public class FuzzyGroupKeyPattern {
         return matchedPatternList;
     }
     
+    
+    
     public static boolean matchPattern(String groupKeyPattern,String namespace,String group,String resourceName){
         if(StringUtils.isBlank(namespace)){
             namespace=DEFAULT_NAMESPACE_ID;
@@ -97,7 +102,7 @@ public class FuzzyGroupKeyPattern {
         return splitPatterns[0].equals(namespace)&&itemMatched(splitPatterns[1],group)&&itemMatched(splitPatterns[2],resourceName);
     }
     
-    public static String getNamespaceFromGroupKeyPattern(String groupKeyPattern){
+    public static String getNamespaceFromPattern(String groupKeyPattern){
         return groupKeyPattern.split(FUZZY_WATCH_PATTERN_SPLITTER)[0];
     }
     /**
@@ -137,5 +142,93 @@ public class FuzzyGroupKeyPattern {
         }
     
         return false;
+    }
+    
+    
+    /**
+     * Calculates and merges the differences between the matched group keys and the client's existing group keys into a
+     * list of ConfigState objects.
+     *
+     * @param matchGroupKeys          The matched group keys set
+     * @param clientExistingGroupKeys The client's existing group keys set
+     * @return The merged list of ConfigState objects representing the states to be added or removed
+     */
+    public static List<GroupKeyState> diffGroupKeys(Set<String> basedGroupKeys,
+            Set<String> followedGroupKeys) {
+        // Calculate the set of group keys to be added and removed
+        Set<String> addGroupKeys = new HashSet<>();
+        if (CollectionUtils.isNotEmpty(basedGroupKeys)) {
+            addGroupKeys.addAll(basedGroupKeys);
+        }
+        if (CollectionUtils.isNotEmpty(followedGroupKeys)) {
+            addGroupKeys.removeAll(followedGroupKeys);
+        }
+        
+        Set<String> removeGroupKeys = new HashSet<>();
+        if (CollectionUtils.isNotEmpty(followedGroupKeys)) {
+            removeGroupKeys.addAll(followedGroupKeys);
+        }
+        if (CollectionUtils.isNotEmpty(basedGroupKeys)) {
+            removeGroupKeys.removeAll(basedGroupKeys);
+        }
+        
+        // Convert the group keys to be added and removed into corresponding ConfigState objects and merge them into a list
+        return Stream.concat(addGroupKeys.stream().map(groupKey -> new GroupKeyState(groupKey, true)),
+                        removeGroupKeys.stream().map(groupKey -> new GroupKeyState(groupKey, false)))
+                .collect(Collectors.toList());
+    }
+    
+    
+    public static class GroupKeyState{
+        String groupKey;
+        
+        boolean exist;
+    
+        /**
+         * Constructs a new ConfigState instance with the given group key and existence flag.
+         *
+         * @param groupKey The group key associated with the configuration.
+         * @param exist    {@code true} if the configuration exists, {@code false} otherwise.
+         */
+        public GroupKeyState(String groupKey, boolean exist) {
+            this.groupKey = groupKey;
+            this.exist = exist;
+        }
+    
+        /**
+         * Retrieves the group key associated with the configuration.
+         *
+         * @return The group key.
+         */
+        public String getGroupKey() {
+            return groupKey;
+        }
+    
+        /**
+         * Sets the group key associated with the configuration.
+         *
+         * @param groupKey The group key to set.
+         */
+        public void setGroupKey(String groupKey) {
+            this.groupKey = groupKey;
+        }
+    
+        /**
+         * Checks whether the configuration exists or not.
+         *
+         * @return {@code true} if the configuration exists, {@code false} otherwise.
+         */
+        public boolean isExist() {
+            return exist;
+        }
+    
+        /**
+         * Sets the existence flag of the configuration.
+         *
+         * @param exist {@code true} if the configuration exists, {@code false} otherwise.
+         */
+        public void setExist(boolean exist) {
+            this.exist = exist;
+        }
     }
 }
