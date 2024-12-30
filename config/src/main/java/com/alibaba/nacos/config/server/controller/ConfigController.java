@@ -303,34 +303,15 @@ public class ConfigController {
     }
     
     /**
-     * Execute delete config operation.
-     *
-     * @return java.lang.Boolean
-     * @author klw
-     * @Description: delete configuration based on multiple config ids
-     * @Date 2019/7/5 10:26
-     * @Param [request, response, dataId, group, tenant, tag]
+     * delete configs based on the IDs list.
      */
     @DeleteMapping(params = "delType=ids")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
     public RestResult<Boolean> deleteConfigs(HttpServletRequest request, @RequestParam(value = "ids") List<Long> ids) {
         String clientIp = RequestUtil.getRemoteIp(request);
         String srcUser = RequestUtil.getSrcUserName(request);
-        final Timestamp time = TimeUtils.getCurrentTime();
-        List<ConfigAllInfo> configInfoList = configInfoPersistService.removeConfigInfoByIds(ids, clientIp, srcUser);
-        if (CollectionUtils.isEmpty(configInfoList)) {
-            return RestResultUtils.success(true);
-        }
-        for (ConfigAllInfo configInfo : configInfoList) {
-            ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
-                            time.getTime()));
-            
-            ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
-                    configInfo.getTenant(), null, time.getTime(), clientIp, ConfigTraceService.PERSISTENCE_EVENT,
-                    ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
-        }
-        return RestResultUtils.success(true);
+        
+        return RestResultUtils.success(configOperationService.deleteConfigs(ids, clientIp, srcUser));
     }
     
     @GetMapping("/catalog")

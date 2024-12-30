@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.common.utils.NumberUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
@@ -299,7 +300,7 @@ public class ConfigOperationService {
         if (StringUtils.isBlank(tag)) {
             configInfoPersistService.removeConfigInfo(dataId, group, namespaceId, clientIp, srcUser);
         } else {
-            persistEvent = ConfigTraceService.PERSISTENCE_EVENT_TAG + "-" + tag;
+            persistEvent = ConfigTraceService.PERSISTENCE_EVENT_TAG + "_" + tag;
             grayName = TagGrayRule.TYPE_TAG + "_" + tag;
             configInfoGrayPersistService.removeConfigInfoGray(dataId, group, namespaceId, grayName, clientIp, srcUser);
             deleteConfigTagv1(dataId, group, namespaceId, tag, clientIp, srcUser);
@@ -318,6 +319,28 @@ public class ConfigOperationService {
         if (PropertyUtil.isGrayCompatibleModel()) {
             configInfoTagPersistService.removeConfigInfoTag(dataId, group, namespaceId, tag, clientIp, srcUser);
         }
+    }
+
+    /**
+     * Deletes configuration information based on the IDs list.
+     */
+    public Boolean deleteConfigs(List<Long> ids, String srcIp, String srcUser) {
+        List<ConfigAllInfo> configInfoList = configInfoPersistService.removeConfigInfoByIds(ids, srcIp, srcUser);
+        if (configInfoList == null || configInfoList.isEmpty()) {
+            return true;
+        }
+        
+        Timestamp time = TimeUtils.getCurrentTime();
+        for (ConfigAllInfo configInfo : configInfoList) {
+            ConfigChangePublisher.notifyConfigChange(
+                    new ConfigDataChangeEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
+                            time.getTime()));
+            ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
+                    configInfo.getTenant(), null, time.getTime(), srcIp, ConfigTraceService.PERSISTENCE_EVENT,
+                    ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
+        }
+        
+        return true;
     }
     
     public Map<String, Object> getConfigAdvanceInfo(ConfigForm configForm) {
