@@ -25,7 +25,7 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.auth.GrpcProtocolAuthService;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.core.remote.HealthCheckRequestHandler;
 import com.alibaba.nacos.core.remote.RequestHandler;
@@ -62,7 +62,7 @@ class RemoteRequestAuthFilterTest {
     private RemoteRequestAuthFilter authFilter;
     
     @Mock
-    private AuthConfigs authConfigs;
+    private NacosAuthConfig authConfig;
     
     @Mock
     Request request;
@@ -72,7 +72,11 @@ class RemoteRequestAuthFilterTest {
     
     @BeforeEach
     void setUp() {
-        authFilter = new RemoteRequestAuthFilter(authConfigs);
+        authFilter = new RemoteRequestAuthFilter();
+        GrpcProtocolAuthService protocolAuthService = new GrpcProtocolAuthService(authConfig);
+        protocolAuthService.initialize();
+        ReflectionTestUtils.setField(authFilter, "protocolAuthService", protocolAuthService);
+        ReflectionTestUtils.setField(authFilter, "authConfig", authConfig);
     }
     
     @AfterEach
@@ -88,7 +92,7 @@ class RemoteRequestAuthFilterTest {
     
     @Test
     void testFilterDisabledAuth() throws NacosException {
-        when(authConfigs.isAuthEnabled()).thenReturn(false);
+        when(authConfig.isAuthEnabled()).thenReturn(false);
         Response actual = authFilter.filter(request, requestMeta, MockRequestHandler.class);
         assertNull(actual);
     }
@@ -106,16 +110,16 @@ class RemoteRequestAuthFilterTest {
     
     @Test
     void testFilterDisabledAuthWithInnerApi() throws NacosException {
-        when(authConfigs.getServerIdentityKey()).thenReturn("1");
-        when(authConfigs.getServerIdentityValue()).thenReturn("2");
+        when(authConfig.getServerIdentityKey()).thenReturn("1");
+        when(authConfig.getServerIdentityValue()).thenReturn("2");
         Response actual = authFilter.filter(request, requestMeta, MockInnerRequestHandler.class);
         assertNull(actual);
     }
     
     @Test
     void testFilterWithServerIdentity() throws NacosException {
-        when(authConfigs.getServerIdentityKey()).thenReturn("1");
-        when(authConfigs.getServerIdentityValue()).thenReturn("2");
+        when(authConfig.getServerIdentityKey()).thenReturn("1");
+        when(authConfig.getServerIdentityValue()).thenReturn("2");
         when(request.getHeader("1")).thenReturn("2");
         Response actual = authFilter.filter(request, requestMeta, MockInnerRequestHandler.class);
         assertNull(actual);
@@ -123,7 +127,7 @@ class RemoteRequestAuthFilterTest {
     
     @Test
     void testFilterWithNoNeedAuthSecured() throws NacosException {
-        when(authConfigs.isAuthEnabled()).thenReturn(true);
+        when(authConfig.isAuthEnabled()).thenReturn(true);
         GrpcProtocolAuthService protocolAuthService = injectMockPlugins();
         when(protocolAuthService.enableAuth(any(Secured.class))).thenReturn(false);
         Response actual = authFilter.filter(request, requestMeta, MockRequestHandler.class);
@@ -132,7 +136,7 @@ class RemoteRequestAuthFilterTest {
     
     @Test
     void testFilterWithNeedAuthSecuredSuccess() throws NacosException {
-        when(authConfigs.isAuthEnabled()).thenReturn(true);
+        when(authConfig.isAuthEnabled()).thenReturn(true);
         GrpcProtocolAuthService protocolAuthService = injectMockPlugins();
         when(protocolAuthService.enableAuth(any(Secured.class))).thenReturn(true);
         doReturn(new IdentityContext()).when(protocolAuthService).parseIdentity(eq(request));
@@ -146,7 +150,7 @@ class RemoteRequestAuthFilterTest {
     @Test
     @Secured
     void testFilterWithNeedAuthSecuredIdentityFailure() throws NacosException {
-        when(authConfigs.isAuthEnabled()).thenReturn(true);
+        when(authConfig.isAuthEnabled()).thenReturn(true);
         GrpcProtocolAuthService protocolAuthService = injectMockPlugins();
         when(protocolAuthService.enableAuth(any(Secured.class))).thenReturn(true);
         doReturn(new IdentityContext()).when(protocolAuthService).parseIdentity(eq(request));
@@ -161,7 +165,7 @@ class RemoteRequestAuthFilterTest {
     @Test
     @Secured
     void testDoFilterWithNeedAuthSecuredAuthorityFailure() throws NacosException {
-        when(authConfigs.isAuthEnabled()).thenReturn(true);
+        when(authConfig.isAuthEnabled()).thenReturn(true);
         GrpcProtocolAuthService protocolAuthService = injectMockPlugins();
         when(protocolAuthService.enableAuth(any(Secured.class))).thenReturn(true);
         doReturn(new IdentityContext()).when(protocolAuthService).parseIdentity(eq(request));
@@ -176,7 +180,7 @@ class RemoteRequestAuthFilterTest {
     }
     
     private GrpcProtocolAuthService injectMockPlugins() {
-        GrpcProtocolAuthService protocolAuthService = new GrpcProtocolAuthService(authConfigs);
+        GrpcProtocolAuthService protocolAuthService = new GrpcProtocolAuthService(authConfig);
         protocolAuthService.initialize();
         GrpcProtocolAuthService spyProtocolAuthService = spy(protocolAuthService);
         ReflectionTestUtils.setField(authFilter, "protocolAuthService", spyProtocolAuthService);

@@ -20,7 +20,7 @@ package com.alibaba.nacos.console.controller.v3.config;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
@@ -60,7 +60,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import javax.servlet.http.HttpServletRequest;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -99,7 +98,7 @@ public class ConsoleConfigControllerTest {
     private AuthFilter authFilter;
     
     @Mock
-    private AuthConfigs authConfigs;
+    private NacosAuthConfig authConfig;
     
     private ConsoleConfigController consoleConfigController;
     
@@ -113,7 +112,7 @@ public class ConsoleConfigControllerTest {
         EnvUtil.setEnvironment(new StandardEnvironment());
         consoleConfigController = new ConsoleConfigController(configProxy);
         mockmvc = MockMvcBuilders.standaloneSetup(consoleConfigController).addFilter(authFilter).build();
-        when(authConfigs.isAuthEnabled()).thenReturn(false);
+        when(authConfig.isAuthEnabled()).thenReturn(false);
     }
     
     @Test
@@ -163,8 +162,8 @@ public class ConsoleConfigControllerTest {
     @Test
     void testDeleteConfig() throws Exception {
         
-        when(configProxy.deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(Constants.DEFAULT_NAMESPACE_ID), eq(TEST_TAG), any(),
-                any())).thenReturn(true);
+        when(configProxy.deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(Constants.DEFAULT_NAMESPACE_ID),
+                eq(TEST_TAG), any(), any())).thenReturn(true);
         
         ConfigFormV3 configForm = new ConfigFormV3();
         configForm.setDataId(TEST_DATA_ID);
@@ -174,8 +173,8 @@ public class ConsoleConfigControllerTest {
         MockHttpServletRequest request = new MockHttpServletRequest();
         Result<Boolean> booleanResult = consoleConfigController.deleteConfig(request, configForm);
         
-        verify(configProxy).deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(Constants.DEFAULT_NAMESPACE_ID), eq(TEST_TAG), any(),
-                any());
+        verify(configProxy).deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(Constants.DEFAULT_NAMESPACE_ID),
+                eq(TEST_TAG), any(), any());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
         assertTrue(booleanResult.getData());
@@ -264,7 +263,8 @@ public class ConsoleConfigControllerTest {
         Map<String, Object> configAdvanceInfo = new HashMap<>(8);
         configAdvanceInfo.put("content", "server.port");
         
-        when(configProxy.getConfigListByContent("blur", 1, 10, "test", "test", "public", configAdvanceInfo)).thenReturn(page);
+        when(configProxy.getConfigListByContent("blur", 1, 10, "test", "test", "public", configAdvanceInfo)).thenReturn(
+                page);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/config/searchDetail")
                 .param("dataId", "test").param("groupName", "test").param("appName", "").param("namespaceId", "")

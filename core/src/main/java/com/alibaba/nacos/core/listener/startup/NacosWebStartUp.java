@@ -14,30 +14,30 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.auth.serveridentity;
+package com.alibaba.nacos.core.listener.startup;
 
-import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.config.NacosAuthConfig;
+import org.slf4j.Logger;
 
 /**
- * Nacos default server identity checker.
+ * Nacos Server Web API start up phase.
  *
  * @author xiweng.yy
  */
-public class DefaultChecker implements ServerIdentityChecker {
+public class NacosWebStartUp extends AbstractNacosStartUp {
     
-    private NacosAuthConfig authConfig;
-    
-    @Override
-    public void init(NacosAuthConfig authConfigs) {
-        this.authConfig = authConfigs;
+    public NacosWebStartUp() {
+        super(NacosStartUp.WEB_START_UP_PHASE);
     }
     
     @Override
-    public ServerIdentityResult check(ServerIdentity serverIdentity, Secured secured) {
-        if (authConfig.getServerIdentityValue().equals(serverIdentity.getIdentityValue())) {
-            return ServerIdentityResult.success();
-        }
-        return ServerIdentityResult.noMatched();
+    protected String getPhaseNameInStartingInfo() {
+        return "Nacos Server API";
+    }
+    
+    @Override
+    public void logStarted(Logger logger) {
+        long endTimestamp = System.currentTimeMillis();
+        long startupCost = endTimestamp - getStartTimestamp();
+        logger.info("Nacos Server API started successfully in {} ms", startupCost);
     }
 }

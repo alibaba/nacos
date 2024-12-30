@@ -18,8 +18,8 @@ package com.alibaba.nacos;
 
 import com.alibaba.nacos.server.NacosNormalBeanTypeFilter;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.AutoConfigurationExcludeFilter;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.ldap.LdapAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.FilterType;
@@ -30,11 +30,10 @@ import org.springframework.context.annotation.PropertySource;
  *
  * @author xiweng.yy
  */
-@SpringBootApplication()
+@SpringBootApplication(exclude = LdapAutoConfiguration.class)
 @ComponentScan(basePackages = "com.alibaba.nacos", excludeFilters = {
         @Filter(type = FilterType.REGEX, pattern = "com\\.alibaba\\.nacos\\.console.*"),
-        @Filter(type = FilterType.CUSTOM, classes = {NacosNormalBeanTypeFilter.class,
-                AutoConfigurationExcludeFilter.class})})
+        @Filter(type = FilterType.CUSTOM, classes = {NacosNormalBeanTypeFilter.class})})
 @PropertySource("classpath:nacos-server.properties")
 public class NacosServerWebApplication {
     

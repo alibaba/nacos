@@ -17,7 +17,7 @@
 package com.alibaba.nacos.auth.serveridentity;
 
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -77,7 +77,7 @@ class ServerIdentityCheckerHolderTest {
     public static class MockChecker implements ServerIdentityChecker {
         
         @Override
-        public void init(AuthConfigs authConfigs) {
+        public void init(NacosAuthConfig authConfig) {
         }
         
         @Override

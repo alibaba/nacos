@@ -19,6 +19,9 @@ package com.alibaba.nacos.console.exception;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.console.controller.v2.NamespaceControllerV2;
+import com.alibaba.nacos.core.listener.startup.NacosStartUp;
+import com.alibaba.nacos.core.listener.startup.NacosStartUpManager;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +48,11 @@ class NacosApiExceptionHandlerTest {
     @MockBean
     private NamespaceControllerV2 namespaceControllerV2;
     
+    @BeforeAll
+    static void beforeAll() {
+        NacosStartUpManager.start(NacosStartUp.CONSOLE_START_UP_PHASE);
+    }
+    
     @BeforeEach
     void before() {
         mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
@@ -53,8 +61,10 @@ class NacosApiExceptionHandlerTest {
     @Test
     void testNacosRunTimeExceptionHandler() throws Exception {
         // 设置NamespaceControllerV2的行为，使其抛出NacosRuntimeException并被NacosApiExceptionHandler捕获处理
-        when(namespaceControllerV2.createNamespace(any())).thenThrow(new NacosRuntimeException(NacosException.INVALID_PARAM))
-                .thenThrow(new NacosRuntimeException(NacosException.SERVER_ERROR)).thenThrow(new NacosRuntimeException(503));
+        when(namespaceControllerV2.createNamespace(any())).thenThrow(
+                        new NacosRuntimeException(NacosException.INVALID_PARAM))
+                .thenThrow(new NacosRuntimeException(NacosException.SERVER_ERROR))
+                .thenThrow(new NacosRuntimeException(503));
         
         // 执行请求并验证响应码
         ResultActions resultActions = mockMvc.perform(post("/v2/console/namespace"));

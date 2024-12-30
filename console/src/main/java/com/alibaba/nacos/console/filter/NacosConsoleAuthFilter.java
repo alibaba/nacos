@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,26 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.auth;
+package com.alibaba.nacos.console.filter;
 
-import com.alibaba.nacos.auth.config.NacosAuthConfig;
+import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.serveridentity.ServerIdentityResult;
+import com.alibaba.nacos.console.config.NacosConsoleAuthConfig;
+import com.alibaba.nacos.core.auth.AbstractWebAuthFilter;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 
+import javax.servlet.http.HttpServletRequest;
+
 /**
- * Unified filter to handle authentication and authorization.
+ * Nacos Console web auth filter.
  *
- * @author nkorange
- * @since 1.2.0
+ * @author xiweng.yy
  */
-public class AuthFilter extends AbstractWebAuthFilter {
+public class NacosConsoleAuthFilter extends AbstractWebAuthFilter {
     
-    private final NacosAuthConfig authConfig;
+    private final NacosConsoleAuthConfig authConfig;
     
-    public AuthFilter(NacosAuthConfig authConfig, ControllerMethodsCache methodsCache) {
+    public NacosConsoleAuthFilter(NacosConsoleAuthConfig authConfig, ControllerMethodsCache methodsCache) {
         super(authConfig, methodsCache);
         this.authConfig = authConfig;
     }
@@ -37,5 +41,10 @@ public class AuthFilter extends AbstractWebAuthFilter {
     @Override
     protected boolean isAuthEnabled() {
         return authConfig.isAuthEnabled();
+    }
+    
+    @Override
+    protected ServerIdentityResult checkServerIdentity(HttpServletRequest request, Secured secured) {
+        return ServerIdentityResult.noMatched();
     }
 }

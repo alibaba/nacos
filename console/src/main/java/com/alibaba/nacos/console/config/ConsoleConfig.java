@@ -16,13 +16,15 @@
 
 package com.alibaba.nacos.console.config;
 
+import com.alibaba.nacos.console.filter.NacosConsoleAuthFilter;
 import com.alibaba.nacos.console.filter.XssFilter;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.stereotype.Component;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -39,8 +41,6 @@ import java.time.ZoneId;
  * @since 1.2.0
  */
 @Component
-@EnableScheduling
-@PropertySource("/application.properties")
 public class ConsoleConfig {
     
     private final ControllerMethodsCache methodsCache;
@@ -82,8 +82,28 @@ public class ConsoleConfig {
     }
     
     @Bean
+    public FilterRegistrationBean<NacosConsoleAuthFilter> authFilterRegistration(NacosConsoleAuthFilter authFilter) {
+        FilterRegistrationBean<NacosConsoleAuthFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(authFilter);
+        registration.addUrlPatterns("/*");
+        registration.setName("consoleAuthFilter");
+        registration.setOrder(6);
+        return registration;
+    }
+    
+    @Bean
+    public NacosConsoleAuthFilter consoleAuthFilter(ControllerMethodsCache methodsCache) {
+        return new NacosConsoleAuthFilter(NacosConsoleAuthConfig.getInstance(), methodsCache);
+    }
+    
+    @Bean
     public Jackson2ObjectMapperBuilderCustomizer jacksonObjectMapperCustomization() {
         return jacksonObjectMapperBuilder -> jacksonObjectMapperBuilder.timeZone(ZoneId.systemDefault().toString());
+    }
+    
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        return http.authorizeHttpRequests().requestMatchers("/**").permitAll().and().csrf().disable().build();
     }
     
     public boolean isConsoleUiEnabled() {

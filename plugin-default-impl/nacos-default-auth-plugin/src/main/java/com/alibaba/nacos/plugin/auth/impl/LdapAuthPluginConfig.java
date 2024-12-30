@@ -31,6 +31,8 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.support.LdapContextSource;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.authentication.configuration.GlobalAuthenticationConfigurerAdapter;
 
 /**
  * ldap auth config.
@@ -39,7 +41,8 @@ import org.springframework.ldap.core.support.LdapContextSource;
  */
 @Configuration(proxyBeanMethods = false)
 @EnableAutoConfiguration(exclude = LdapAutoConfiguration.class)
-public class LdapAuthConfig {
+@Conditional(ConditionOnLdapAuth.class)
+public class LdapAuthPluginConfig {
     
     @Value(("${" + AuthConstants.NACOS_CORE_AUTH_LDAP_URL + ":ldap://localhost:389}"))
     private String ldapUrl;
@@ -69,7 +72,6 @@ public class LdapAuthConfig {
     private boolean ignorePartialResultException;
     
     @Bean
-    @Conditional(ConditionOnLdapAuth.class)
     public LdapTemplate ldapTemplate(LdapContextSource ldapContextSource) {
         LdapTemplate ldapTemplate = new LdapTemplate(ldapContextSource);
         ldapTemplate.setIgnorePartialResultException(ignorePartialResultException);
@@ -82,7 +84,6 @@ public class LdapAuthConfig {
     }
     
     @Bean
-    @Conditional(ConditionOnLdapAuth.class)
     public LdapAuthenticationProvider ldapAuthenticationProvider(LdapTemplate ldapTemplate,
             NacosUserDetailsServiceImpl userDetailsService, NacosRoleServiceImpl nacosRoleService) {
         return new LdapAuthenticationProvider(ldapTemplate, userDetailsService, nacosRoleService, filterPrefix,
@@ -90,12 +91,22 @@ public class LdapAuthConfig {
     }
     
     @Bean
-    @Conditional(ConditionOnLdapAuth.class)
     public IAuthenticationManager ldapAuthenticatoinManager(LdapTemplate ldapTemplate,
             NacosUserDetailsServiceImpl userDetailsService, TokenManagerDelegate jwtTokenManager,
             NacosRoleServiceImpl roleService) {
         return new LdapAuthenticationManager(ldapTemplate, userDetailsService, jwtTokenManager, roleService,
                 filterPrefix, caseSensitive);
+    }
+    
+    @Bean
+    public GlobalAuthenticationConfigurerAdapter authenticationConfigurer(
+            LdapAuthenticationProvider ldapAuthenticationProvider) {
+        return new GlobalAuthenticationConfigurerAdapter() {
+            @Override
+            public void init(AuthenticationManagerBuilder auth) throws Exception {
+                auth.authenticationProvider(ldapAuthenticationProvider);
+            }
+        };
     }
     
 }

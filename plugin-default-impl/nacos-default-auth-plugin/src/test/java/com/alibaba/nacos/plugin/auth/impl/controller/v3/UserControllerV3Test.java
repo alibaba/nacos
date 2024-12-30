@@ -171,7 +171,7 @@ class UserControllerV3Test {
         when(authConfigs.getNacosAuthSystemType()).thenReturn(AuthSystemTypes.NACOS.name());
         when(jwtTokenManager.getTokenTtlInSeconds(anyString())).thenReturn(18000L);
         MockHttpServletResponse response = new MockHttpServletResponse();
-        Object actual = userControllerV3.login("nacos", "nacos", response, request);
+        Object actual = userControllerV3.login(response, request);
         
         assertTrue(actual instanceof ObjectNode);
         
