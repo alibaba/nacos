@@ -187,11 +187,9 @@ public class RequestLogAspect {
         final long st = System.currentTimeMillis();
         Response retVal = (Response) pjp.proceed();
         final long rt = System.currentTimeMillis() - st;
-        // rt | status | requestIp | opType | listen size | listen or cancel | empty | empty |
-        // appName
-        LogUtil.CLIENT_LOG.info("{}|{}|{}|{}|{}|{}|{}|{}|{}", rt,
-                retVal.isSuccess() ? retVal.getResultCode() : retVal.getErrorCode(), requestIp, "listen", request.getConfigListenContexts().size(),
-                request.isListen(), "", "", appName);
+        LogUtil.CLIENT_LOG.info("opType: {} | rt: {}ms | status: {} | requestIp: {} | listenSize: {} | listenOrCancel: {} | appName: {}", "listen",
+                rt, retVal.isSuccess() ? retVal.getResultCode() : retVal.getErrorCode(), requestIp, request.getConfigListenContexts().size(),
+                request.isListen(), appName);
         return retVal;
     }
 }

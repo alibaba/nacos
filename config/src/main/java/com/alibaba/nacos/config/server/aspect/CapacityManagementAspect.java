@@ -431,10 +431,10 @@ public class CapacityManagementAspect {
         /**
          * over limit.
          */
-        OVER_CLUSTER_QUOTA("超过集群配置个数上限", LIMIT_ERROR_CODE),
-        OVER_GROUP_QUOTA("超过该Group配置个数上限", LIMIT_ERROR_CODE),
-        OVER_TENANT_QUOTA("超过该租户配置个数上限", LIMIT_ERROR_CODE),
-        OVER_MAX_SIZE("超过配置的内容大小上限", LIMIT_ERROR_CODE);
+        OVER_CLUSTER_QUOTA("Exceeded the maximum number of configurations in the cluster", LIMIT_ERROR_CODE),
+        OVER_GROUP_QUOTA("Exceeded the maximum number of configurations in this group", LIMIT_ERROR_CODE),
+        OVER_TENANT_QUOTA("Exceeded the maximum number of configurations for this tenant", LIMIT_ERROR_CODE),
+        OVER_MAX_SIZE("Exceeded the maximum size limit of the configuration content", LIMIT_ERROR_CODE);
         
         public final String description;
         
