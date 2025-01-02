@@ -113,4 +113,18 @@ public class PermissionControllerV3 {
         }
         return Result.success(permissionPage);
     }
+    
+    /**
+     * Judge whether a permission is duplicate.
+     *
+     * @param role     the role
+     * @param resource the related resource
+     * @param action   the related action
+     * @return true if duplicate, false otherwise
+     */
+    @GetMapping
+    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.READ)
+    public Result<Boolean> isDuplicatePermission(@RequestParam String role, @RequestParam String resource, @RequestParam String action) {
+        return nacosRoleService.isDuplicatePermission(role, resource, action);
+    }
 }
