@@ -261,8 +261,7 @@ public class ClientInfoControllerV2 {
             @RequestParam(value = "groupName", required = false, defaultValue = Constants.DEFAULT_GROUP) String groupName,
             @RequestParam(value = "ephemeral", required = false, defaultValue = "true") Boolean ephemeral,
             @RequestParam("serviceName") String serviceName, @RequestParam(value = "ip", required = false) String ip,
-            @RequestParam(value = "port", required = false) Integer port,
-            @RequestParam(value = "ignoreNull", required = false, defaultValue = "false") boolean ignoreNull) {
+            @RequestParam(value = "port", required = false) Integer port) {
         Service service = Service.newService(namespaceId, groupName, serviceName, ephemeral);
         Collection<String> allClientsSubscribeService = clientServiceIndexesManager
                 .getAllClientsSubscribeService(service);
@@ -270,8 +269,8 @@ public class ClientInfoControllerV2 {
         for (String clientId : allClientsSubscribeService) {
             Client client = clientManager.getClient(clientId);
             Subscriber subscriber = client.getSubscriber(service);
-            boolean ipMatch = (ignoreNull && Objects.isNull(ip)) || Objects.equals(ip, subscriber.getIp());
-            boolean portMatch = (ignoreNull && Objects.isNull(port)) || Objects.equals(port, subscriber.getPort());
+            boolean ipMatch = Objects.isNull(ip) || Objects.equals(ip, subscriber.getIp());
+            boolean portMatch = Objects.isNull(port) || Objects.equals(port, subscriber.getPort());
             if (!ipMatch || !portMatch) {
                 continue;
             }
