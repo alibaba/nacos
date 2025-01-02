@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.auth.impl;
+package com.alibaba.nacos.plugin.auth.impl.configuration;
 
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.auth.NacosServerAuthConfig;

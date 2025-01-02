@@ -19,7 +19,7 @@ package com.alibaba.nacos.console.proxy.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.console.config.ConsoleConfig;
+import com.alibaba.nacos.console.config.ConsoleWebConfig;
 import com.alibaba.nacos.console.handler.inner.naming.InstanceInnerHandler;
 import com.alibaba.nacos.console.handler.naming.InstanceHandler;
 import com.alibaba.nacos.naming.model.form.InstanceForm;
@@ -39,7 +39,7 @@ public class InstanceProxy {
     
     private final Map<String, InstanceHandler> instanceHandlerMap = new HashMap<>();
     
-    private final ConsoleConfig consoleConfig;
+    private final ConsoleWebConfig consoleConfig;
     
     /**
      * Constructs a new InstanceProxy with the given InstanceInnerHandler and ConsoleConfig.
@@ -47,7 +47,7 @@ public class InstanceProxy {
      * @param instanceInnerHandler the default implementation of InstanceHandler
      * @param consoleConfig        the console configuration used to determine the deployment type
      */
-    public InstanceProxy(InstanceInnerHandler instanceInnerHandler, ConsoleConfig consoleConfig) {
+    public InstanceProxy(InstanceInnerHandler instanceInnerHandler, ConsoleWebConfig consoleConfig) {
         this.instanceHandlerMap.put("merged", instanceInnerHandler);
         this.consoleConfig = consoleConfig;
     }

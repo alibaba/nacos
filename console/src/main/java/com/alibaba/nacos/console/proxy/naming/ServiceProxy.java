@@ -18,7 +18,7 @@
 package com.alibaba.nacos.console.proxy.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.console.config.ConsoleConfig;
+import com.alibaba.nacos.console.config.ConsoleWebConfig;
 import com.alibaba.nacos.console.handler.inner.naming.ServiceInnerHandler;
 import com.alibaba.nacos.console.handler.naming.ServiceHandler;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
@@ -42,7 +42,7 @@ public class ServiceProxy {
     
     private final Map<String, ServiceHandler> serviceHandlerMap = new HashMap<>();
     
-    private final ConsoleConfig consoleConfig;
+    private final ConsoleWebConfig consoleConfig;
     
     /**
      * Constructs a new ServiceProxy with the given ServiceInnerHandler and ConsoleConfig. The handler is mapped to a
@@ -51,7 +51,7 @@ public class ServiceProxy {
      * @param serviceInnerHandler the default implementation of ServiceHandler
      * @param consoleConfig       the console configuration used to determine the deployment type
      */
-    public ServiceProxy(ServiceInnerHandler serviceInnerHandler, ConsoleConfig consoleConfig) {
+    public ServiceProxy(ServiceInnerHandler serviceInnerHandler, ConsoleWebConfig consoleConfig) {
         this.serviceHandlerMap.put("merged", serviceInnerHandler);
         this.consoleConfig = consoleConfig;
     }

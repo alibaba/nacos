@@ -123,6 +123,7 @@ public class PermissionController {
      */
     @GetMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.READ)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/auth/permission")
     public Result<Boolean> isDuplicatePermission(@RequestParam String role, @RequestParam String resource, @RequestParam String action) {
         return nacosRoleService.isDuplicatePermission(role, resource, action);
     }

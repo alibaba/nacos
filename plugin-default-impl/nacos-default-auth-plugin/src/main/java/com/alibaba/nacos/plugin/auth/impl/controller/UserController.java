@@ -19,7 +19,6 @@ package com.alibaba.nacos.plugin.auth.impl.controller;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.AuthConfigs;
-import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -49,7 +48,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.HttpSessionRequiredException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -307,35 +305,6 @@ public class UserController {
             return RestResultUtils.success("Bearer " + token);
         } catch (BadCredentialsException authentication) {
             return RestResultUtils.failed(HttpStatus.UNAUTHORIZED.value(), null, "Login failed");
-        }
-    }
-    
-    /**
-     * Update password.
-     *
-     * @param oldPassword old password
-     * @param newPassword new password
-     * @return Code 200 if update successfully, Code 401 if old password invalid, otherwise 500
-     */
-    @PutMapping("/password")
-    @Deprecated
-    @Compatibility(apiType = ApiType.ADMIN_API)
-    public RestResult<String> updatePassword(@RequestParam(value = "oldPassword") String oldPassword,
-            @RequestParam(value = "newPassword") String newPassword) {
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String username = ((UserDetails) principal).getUsername();
-        User user = userDetailsService.getUserFromDatabase(username);
-        String password = user.getPassword();
-        
-        // TODO: throw out more fine grained exceptions
-        try {
-            if (PasswordEncoderUtil.matches(oldPassword, password)) {
-                userDetailsService.updateUserPassword(username, PasswordEncoderUtil.encode(newPassword));
-                return RestResultUtils.success("Update password success");
-            }
-            return RestResultUtils.failed(HttpStatus.UNAUTHORIZED.value(), "Old password is invalid");
-        } catch (Exception e) {
-            return RestResultUtils.failed(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Update userpassword failed");
         }
     }
     

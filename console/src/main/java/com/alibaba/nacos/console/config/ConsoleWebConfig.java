@@ -19,6 +19,8 @@ package com.alibaba.nacos.console.config;
 import com.alibaba.nacos.console.filter.NacosConsoleAuthFilter;
 import com.alibaba.nacos.console.filter.XssFilter;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import com.alibaba.nacos.core.controller.compatibility.ApiCompatibilityFilter;
+import com.alibaba.nacos.core.paramcheck.ParamCheckerFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -41,7 +43,7 @@ import java.time.ZoneId;
  * @since 1.2.0
  */
 @Component
-public class ConsoleConfig {
+public class ConsoleWebConfig {
     
     private final ControllerMethodsCache methodsCache;
     
@@ -51,7 +53,7 @@ public class ConsoleConfig {
     @Value("${nacos.deployment.type:merged}")
     private String type;
     
-    public ConsoleConfig(ControllerMethodsCache methodsCache) {
+    public ConsoleWebConfig(ControllerMethodsCache methodsCache) {
         this.methodsCache = methodsCache;
     }
     
@@ -94,6 +96,38 @@ public class ConsoleConfig {
     @Bean
     public NacosConsoleAuthFilter consoleAuthFilter(ControllerMethodsCache methodsCache) {
         return new NacosConsoleAuthFilter(NacosConsoleAuthConfig.getInstance(), methodsCache);
+    }
+    
+    @Bean
+    public FilterRegistrationBean<ParamCheckerFilter> consoleParamCheckerFilterRegistration(
+            ParamCheckerFilter consoleParamCheckerFilter) {
+        FilterRegistrationBean<ParamCheckerFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(consoleParamCheckerFilter);
+        registration.addUrlPatterns("/*");
+        registration.setName("consoleParamCheckerFilter");
+        registration.setOrder(8);
+        return registration;
+    }
+    
+    @Bean
+    public ParamCheckerFilter consoleParamCheckerFilter(ControllerMethodsCache methodsCache) {
+        return new ParamCheckerFilter(methodsCache);
+    }
+    
+    @Bean
+    public ApiCompatibilityFilter consoleApiCompatibilityFilter(ControllerMethodsCache methodsCache) {
+        return new ApiCompatibilityFilter(methodsCache);
+    }
+    
+    @Bean
+    public FilterRegistrationBean<ApiCompatibilityFilter> consoleApiCompatibilityFilterRegistration(
+            ApiCompatibilityFilter consoleApiCompatibilityFilter) {
+        FilterRegistrationBean<ApiCompatibilityFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(consoleApiCompatibilityFilter);
+        registration.addUrlPatterns("/v1/*", "/v2/*");
+        registration.setName("consoleApiCompatibilityFilter");
+        registration.setOrder(5);
+        return registration;
     }
     
     @Bean

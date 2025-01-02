@@ -21,7 +21,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
-import com.alibaba.nacos.console.config.ConsoleConfig;
+import com.alibaba.nacos.console.config.ConsoleWebConfig;
 import com.alibaba.nacos.console.handler.config.HistoryHandler;
 import com.alibaba.nacos.console.handler.inner.config.HistoryInnerHandler;
 import com.alibaba.nacos.persistence.model.Page;
@@ -42,7 +42,7 @@ public class HistoryProxy {
     
     private final Map<String, HistoryHandler> historyHandlerMap = new HashMap<>();
     
-    private final ConsoleConfig consoleConfig;
+    private final ConsoleWebConfig consoleConfig;
     
     /**
      * Constructs a new HistoryProxy with the given HistoryInnerHandler and ConsoleConfig.
@@ -51,7 +51,7 @@ public class HistoryProxy {
      * @param consoleConfig       the console configuration used to determine the deployment type
      */
     @Autowired
-    public HistoryProxy(HistoryInnerHandler historyInnerHandler, ConsoleConfig consoleConfig) {
+    public HistoryProxy(HistoryInnerHandler historyInnerHandler, ConsoleWebConfig consoleConfig) {
         this.historyHandlerMap.put("merged", historyInnerHandler);
         this.consoleConfig = consoleConfig;
     }

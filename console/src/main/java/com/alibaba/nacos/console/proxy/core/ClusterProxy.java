@@ -17,7 +17,7 @@
 
 package com.alibaba.nacos.console.proxy.core;
 
-import com.alibaba.nacos.console.config.ConsoleConfig;
+import com.alibaba.nacos.console.config.ConsoleWebConfig;
 import com.alibaba.nacos.console.handler.core.ClusterHandler;
 import com.alibaba.nacos.console.handler.inner.core.ClusterInnerHandler;
 import com.alibaba.nacos.core.cluster.Member;
@@ -37,7 +37,7 @@ public class ClusterProxy {
     
     private final Map<String, ClusterHandler> clusterHandlerMap = new HashMap<>();
     
-    private final ConsoleConfig consoleConfig;
+    private final ConsoleWebConfig consoleConfig;
     
     /**
      * Constructs a new ClusterProxy with the given ClusterInnerHandler and ConsoleConfig.
@@ -45,7 +45,7 @@ public class ClusterProxy {
      * @param clusterInnerHandler the default implementation of ClusterHandler
      * @param consoleConfig       the console configuration used to determine the deployment type
      */
-    public ClusterProxy(ClusterInnerHandler clusterInnerHandler, ConsoleConfig consoleConfig) {
+    public ClusterProxy(ClusterInnerHandler clusterInnerHandler, ConsoleWebConfig consoleConfig) {
         this.clusterHandlerMap.put("merged", clusterInnerHandler);
         this.consoleConfig = consoleConfig;
     }

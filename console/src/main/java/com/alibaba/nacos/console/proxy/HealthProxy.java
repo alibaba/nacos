@@ -19,7 +19,7 @@ package com.alibaba.nacos.console.proxy;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
-import com.alibaba.nacos.console.config.ConsoleConfig;
+import com.alibaba.nacos.console.config.ConsoleWebConfig;
 import com.alibaba.nacos.console.handler.HealthHandler;
 import com.alibaba.nacos.console.handler.inner.HealthInnerHandler;
 import org.springframework.stereotype.Service;
@@ -37,9 +37,9 @@ public class HealthProxy {
     
     private final Map<String, HealthHandler> healthHandlerMap = new HashMap<>();
     
-    private final ConsoleConfig consoleConfig;
+    private final ConsoleWebConfig consoleConfig;
     
-    public HealthProxy(HealthInnerHandler healthInnerHandler, ConsoleConfig consoleConfig) {
+    public HealthProxy(HealthInnerHandler healthInnerHandler, ConsoleWebConfig consoleConfig) {
         this.healthHandlerMap.put("merged", healthInnerHandler);
         this.consoleConfig = consoleConfig;
     }

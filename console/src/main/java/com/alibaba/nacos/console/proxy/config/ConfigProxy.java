@@ -27,7 +27,7 @@ import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
-import com.alibaba.nacos.console.config.ConsoleConfig;
+import com.alibaba.nacos.console.config.ConsoleWebConfig;
 import com.alibaba.nacos.console.handler.config.ConfigHandler;
 import com.alibaba.nacos.console.handler.inner.config.ConfigInnerHandler;
 import com.alibaba.nacos.persistence.model.Page;
@@ -52,10 +52,10 @@ public class ConfigProxy {
     
     private final Map<String, ConfigHandler> configHandlerMap = new HashMap<>();
     
-    private final ConsoleConfig consoleConfig;
+    private final ConsoleWebConfig consoleConfig;
     
     @Autowired
-    public ConfigProxy(ConfigInnerHandler configInnerHandler, ConsoleConfig consoleConfig) {
+    public ConfigProxy(ConfigInnerHandler configInnerHandler, ConsoleWebConfig consoleConfig) {
         this.configHandlerMap.put("merged", configInnerHandler);
         this.consoleConfig = consoleConfig;
     }

@@ -35,7 +35,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -46,7 +45,6 @@ import java.util.concurrent.TimeUnit;
  * @author wfnuser
  * @author nkorange
  */
-@Component
 public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> implements TokenManager {
     
     private static final String AUTH_DISABLED_TOKEN = "AUTH_DISABLED";
@@ -70,8 +68,8 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
         this.tokenValidityInSeconds = EnvUtil.getProperty(AuthConstants.TOKEN_EXPIRE_SECONDS, Long.class,
                 AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS);
         
-        String encodedSecretKey = EnvUtil
-                .getProperty(AuthConstants.TOKEN_SECRET_KEY, AuthConstants.DEFAULT_TOKEN_SECRET_KEY);
+        String encodedSecretKey = EnvUtil.getProperty(AuthConstants.TOKEN_SECRET_KEY,
+                AuthConstants.DEFAULT_TOKEN_SECRET_KEY);
         try {
             this.jwtParser = new NacosJwtParser(encodedSecretKey);
         } catch (Exception e) {

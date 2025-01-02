@@ -18,7 +18,7 @@
 package com.alibaba.nacos.console.proxy.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.console.config.ConsoleConfig;
+import com.alibaba.nacos.console.config.ConsoleWebConfig;
 import com.alibaba.nacos.console.handler.core.NamespaceHandler;
 import com.alibaba.nacos.console.handler.inner.core.NamespaceInnerHandler;
 import com.alibaba.nacos.core.namespace.model.Namespace;
@@ -39,9 +39,9 @@ public class NamespaceProxy {
     
     private final Map<String, NamespaceHandler> namespaceHandlerMap = new HashMap<>();
     
-    private final ConsoleConfig consoleConfig;
+    private final ConsoleWebConfig consoleConfig;
     
-    public NamespaceProxy(NamespaceInnerHandler namespaceInnerHandler, ConsoleConfig consoleConfig) {
+    public NamespaceProxy(NamespaceInnerHandler namespaceInnerHandler, ConsoleWebConfig consoleConfig) {
         this.namespaceHandlerMap.put("merged", namespaceInnerHandler);
         this.consoleConfig = consoleConfig;
     }
