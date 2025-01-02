@@ -185,18 +185,15 @@ class LdapAuthenticationProviderTest {
     @Test
     void testCloseCaseSensitive() {
         when(ldapTemplate.authenticate("", "(" + filterPrefix + "=" + normalUserName + ")",
-                defaultPassWord)).thenAnswer(new Answer<Boolean>() {
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
-                Object[] args = invocation.getArguments();
-                String b = (String) args[1];
-                String c = (String) args[2];
-                if (defaultPassWord.equals(c)) {
-                    return true;
-                }
-                return false;
-            }
-        });
+                defaultPassWord)).thenAnswer((Answer<Boolean>) invocation -> {
+                    Object[] args = invocation.getArguments();
+                    String b = (String) args[1];
+                    String c = (String) args[2];
+                    if (defaultPassWord.equals(c)) {
+                        return true;
+                    }
+                    return false;
+                });
         User user = new User();
         user.setUsername(LDAP_PREFIX + normalUserName);
         user.setPassword(defaultPassWord);

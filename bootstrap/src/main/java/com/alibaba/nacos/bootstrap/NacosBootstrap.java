@@ -29,7 +29,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.jmx.support.MBeanRegistrationSupport;
+import org.springframework.jmx.export.MBeanExporter;
 import org.springframework.jmx.support.RegistrationPolicy;
 
 /**
@@ -40,11 +40,11 @@ import org.springframework.jmx.support.RegistrationPolicy;
 @SpringBootApplication
 public class NacosBootstrap {
     
+    private static final String SPRING_JXM_ENABLED = "spring.jmx.enabled";
+    
     public static void main(String[] args) {
         ConfigurableApplicationContext coreContext = startCoreContext(args);
-        coreContext.getBean(MBeanRegistrationSupport.class).setRegistrationPolicy(RegistrationPolicy.IGNORE_EXISTING);
-        String type = coreContext.getEnvironment()
-                .getProperty(Constants.NACOS_DEPLOYMENT_TYPE, Constants.NACOS_DEPLOYMENT_TYPE_MERGED);
+        String type = prepareCoreContext(coreContext);
         if (Constants.NACOS_DEPLOYMENT_TYPE_MERGED.equals(type)) {
             startWithConsole(args, coreContext);
         } else if (Constants.NACOS_DEPLOYMENT_TYPE_SERVER.equals(type)) {
@@ -52,6 +52,15 @@ public class NacosBootstrap {
         } else {
             throw new IllegalArgumentException("Unsupported type " + type);
         }
+    }
+    
+    private static String prepareCoreContext(ConfigurableApplicationContext coreContext) {
+        if (coreContext.getEnvironment().getProperty(SPRING_JXM_ENABLED, Boolean.class, false)) {
+            // Avoid duplicate registration MBean to exporter.
+            coreContext.getBean(MBeanExporter.class).setRegistrationPolicy(RegistrationPolicy.IGNORE_EXISTING);
+        }
+        return coreContext.getEnvironment()
+                .getProperty(Constants.NACOS_DEPLOYMENT_TYPE, Constants.NACOS_DEPLOYMENT_TYPE_MERGED);
     }
     
     private static void startWithoutConsole(String[] args, ConfigurableApplicationContext coreContext) {
