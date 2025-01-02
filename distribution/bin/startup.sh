@@ -61,7 +61,8 @@ export MODE="cluster"
 export FUNCTION_MODE="all"
 export MEMBER_LIST=""
 export EMBEDDED_STORAGE=""
-while getopts ":m:f:s:c:p:" opt
+export DEPLOYMENT="merged"
+while getopts ":m:f:s:c:p:d:" opt
 do
     case $opt in
         m)
@@ -74,6 +75,8 @@ do
             MEMBER_LIST=$OPTARG;;
         p)
             EMBEDDED_STORAGE=$OPTARG;;
+        d)
+            DEPLOYMENT=$OPTARG;;
         ?)
         echo "Unknown parameter"
         exit 1;;
@@ -117,6 +120,7 @@ else
   JAVA_OPT="${JAVA_OPT} -Xloggc:${BASE_DIR}/logs/nacos_gc.log -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=100M"
 fi
 
+JAVA_OPT="${JAVA_OPT} -Dnacos.deployment.type=${DEPLOYMENT}"
 JAVA_OPT="${JAVA_OPT} -Dloader.path=${BASE_DIR}/plugins,${BASE_DIR}/plugins/health,${BASE_DIR}/plugins/cmdb,${BASE_DIR}/plugins/selector"
 JAVA_OPT="${JAVA_OPT} -Dnacos.home=${BASE_DIR}"
 JAVA_OPT="${JAVA_OPT} -jar ${BASE_DIR}/target/${SERVER}.jar"

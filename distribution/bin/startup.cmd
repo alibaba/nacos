@@ -31,7 +31,8 @@ set FUNCTION_MODE_INDEX=-1
 set SERVER_INDEX=-1
 set EMBEDDED_STORAGE_INDEX=-1
 set EMBEDDED_STORAGE=""
-
+set DEPLOYMENT_INDEX=-1
+set DEPLOYMENT="merged"
 
 set i=0
 for %%a in (%*) do (
@@ -39,6 +40,7 @@ for %%a in (%*) do (
     if "%%a" == "-f" ( set /a FUNCTION_MODE_INDEX=!i!+1 )
     if "%%a" == "-s" ( set /a SERVER_INDEX=!i!+1 )
     if "%%a" == "-p" ( set /a EMBEDDED_STORAGE_INDEX=!i!+1 )
+    if "%%a" == "-d" ( set /a DEPLOYMENT_INDEX=!i!+1 )
     set /a i+=1
 )
 
@@ -48,6 +50,7 @@ for %%a in (%*) do (
     if %FUNCTION_MODE_INDEX% == !i! ( set FUNCTION_MODE="%%a" )
     if %SERVER_INDEX% == !i! (set SERVER="%%a")
     if %EMBEDDED_STORAGE_INDEX% == !i! (set EMBEDDED_STORAGE="%%a")
+    if %DEPLOYMENT_INDEX% == !i! (set DEPLOYMENT="%%a")
     set /a i+=1
 )
 
@@ -79,6 +82,7 @@ if %FUNCTION_MODE% == "naming" (
 )
 
 rem set nacos options
+set "NACOS_OPTS=%NACOS_OPTS% -Dnacos.deployment.mode=%DEPLOYMENT%"
 set "NACOS_OPTS=%NACOS_OPTS% -Dloader.path=%BASE_DIR%/plugins,%BASE_DIR%/plugins/health,%BASE_DIR%/plugins/cmdb,%BASE_DIR%/plugins/selector"
 set "NACOS_OPTS=%NACOS_OPTS% -Dnacos.home=%BASE_DIR%"
 set "NACOS_OPTS=%NACOS_OPTS% -jar %BASE_DIR%\target\%SERVER%.jar"
