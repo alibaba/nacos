@@ -49,7 +49,9 @@ public final class NacosMeterRegistryCenter {
     
     // control plugin registeres.
     public static final String CONTROL_DENIED_REGISTRY = "CONTROL_DENIED_REGISTRY";
-    
+
+    public static final String LOCK_STABLE_REGISTRY = "LOCK_STABLE_REGISTRY";
+
     private static final ConcurrentHashMap<String, CompositeMeterRegistry> METER_REGISTRIES = new ConcurrentHashMap<>();
     
     private static CompositeMeterRegistry METER_REGISTRY = null;
@@ -61,7 +63,7 @@ public final class NacosMeterRegistryCenter {
             Loggers.CORE.warn("Metrics init failed :", t);
         }
         registry(CORE_STABLE_REGISTRY, CONFIG_STABLE_REGISTRY, NAMING_STABLE_REGISTRY, TOPN_CONFIG_CHANGE_REGISTRY,
-                TOPN_SERVICE_CHANGE_REGISTRY, CONTROL_DENIED_REGISTRY);
+                TOPN_SERVICE_CHANGE_REGISTRY, CONTROL_DENIED_REGISTRY, LOCK_STABLE_REGISTRY);
         
     }
     
