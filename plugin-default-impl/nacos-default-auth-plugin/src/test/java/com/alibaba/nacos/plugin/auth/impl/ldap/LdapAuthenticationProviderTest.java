@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.auth.impl;
+package com.alibaba.nacos.plugin.auth.impl.ldap;
 
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
@@ -104,10 +104,10 @@ class LdapAuthenticationProviderTest {
                         return false;
                     }
                 });
-        this.ldapAuthenticationProvider = new LdapAuthenticationProvider(ldapTemplate, userDetailsService, nacosRoleService, filterPrefix,
-                caseSensitive);
-        this.ldapAuthenticationProviderForCloseCaseSensitive = new LdapAuthenticationProvider(ldapTemplate, userDetailsService,
-                nacosRoleService, filterPrefix, !caseSensitive);
+        this.ldapAuthenticationProvider = new LdapAuthenticationProvider(ldapTemplate, userDetailsService,
+                nacosRoleService, filterPrefix, caseSensitive);
+        this.ldapAuthenticationProviderForCloseCaseSensitive = new LdapAuthenticationProvider(ldapTemplate,
+                userDetailsService, nacosRoleService, filterPrefix, !caseSensitive);
         isAdmin = LdapAuthenticationProvider.class.getDeclaredMethod("isAdmin", String.class);
         isAdmin.setAccessible(true);
         ldapLogin = LdapAuthenticationProvider.class.getDeclaredMethod("ldapLogin", String.class, String.class);
@@ -158,31 +158,7 @@ class LdapAuthenticationProviderTest {
     @Test
     void testDefaultCaseSensitive() {
         String userName = StringUtils.upperCase(normalUserName);
-        when(ldapTemplate.authenticate("", "(" + filterPrefix + "=" + userName + ")", defaultPassWord)).thenAnswer(new Answer<Boolean>() {
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
-                Object[] args = invocation.getArguments();
-                String b = (String) args[1];
-                String c = (String) args[2];
-                if (defaultPassWord.equals(c)) {
-                    return true;
-                }
-                return false;
-            }
-        });
-        User userUpperCase = new User();
-        userUpperCase.setUsername(LDAP_PREFIX + userName);
-        userUpperCase.setPassword(defaultPassWord);
-        when(userDetailsService.loadUserByUsername(LDAP_PREFIX + userName)).thenReturn(new NacosUserDetails(userUpperCase));
-        Authentication authentication = new UsernamePasswordAuthenticationToken(userName, defaultPassWord);
-        Authentication result = ldapAuthenticationProvider.authenticate(authentication);
-        NacosUserDetails nacosUserDetails = (NacosUserDetails) result.getPrincipal();
-        assertEquals(nacosUserDetails.getUsername(), LDAP_PREFIX + userName);
-    }
-    
-    @Test
-    void testCloseCaseSensitive() {
-        when(ldapTemplate.authenticate("", "(" + filterPrefix + "=" + normalUserName + ")", defaultPassWord)).thenAnswer(
+        when(ldapTemplate.authenticate("", "(" + filterPrefix + "=" + userName + ")", defaultPassWord)).thenAnswer(
                 new Answer<Boolean>() {
                     @Override
                     public Boolean answer(InvocationOnMock invocation) throws Throwable {
@@ -195,11 +171,39 @@ class LdapAuthenticationProviderTest {
                         return false;
                     }
                 });
+        User userUpperCase = new User();
+        userUpperCase.setUsername(LDAP_PREFIX + userName);
+        userUpperCase.setPassword(defaultPassWord);
+        when(userDetailsService.loadUserByUsername(LDAP_PREFIX + userName)).thenReturn(
+                new NacosUserDetails(userUpperCase));
+        Authentication authentication = new UsernamePasswordAuthenticationToken(userName, defaultPassWord);
+        Authentication result = ldapAuthenticationProvider.authenticate(authentication);
+        NacosUserDetails nacosUserDetails = (NacosUserDetails) result.getPrincipal();
+        assertEquals(nacosUserDetails.getUsername(), LDAP_PREFIX + userName);
+    }
+    
+    @Test
+    void testCloseCaseSensitive() {
+        when(ldapTemplate.authenticate("", "(" + filterPrefix + "=" + normalUserName + ")",
+                defaultPassWord)).thenAnswer(new Answer<Boolean>() {
+            @Override
+            public Boolean answer(InvocationOnMock invocation) throws Throwable {
+                Object[] args = invocation.getArguments();
+                String b = (String) args[1];
+                String c = (String) args[2];
+                if (defaultPassWord.equals(c)) {
+                    return true;
+                }
+                return false;
+            }
+        });
         User user = new User();
         user.setUsername(LDAP_PREFIX + normalUserName);
         user.setPassword(defaultPassWord);
-        when(userDetailsService.loadUserByUsername(LDAP_PREFIX + normalUserName)).thenReturn(new NacosUserDetails(user));
-        Authentication authentication = new UsernamePasswordAuthenticationToken(StringUtils.upperCase(normalUserName), defaultPassWord);
+        when(userDetailsService.loadUserByUsername(LDAP_PREFIX + normalUserName)).thenReturn(
+                new NacosUserDetails(user));
+        Authentication authentication = new UsernamePasswordAuthenticationToken(StringUtils.upperCase(normalUserName),
+                defaultPassWord);
         Authentication result = ldapAuthenticationProviderForCloseCaseSensitive.authenticate(authentication);
         NacosUserDetails nacosUserDetails = (NacosUserDetails) result.getPrincipal();
         assertEquals(nacosUserDetails.getUsername(), LDAP_PREFIX + normalUserName);

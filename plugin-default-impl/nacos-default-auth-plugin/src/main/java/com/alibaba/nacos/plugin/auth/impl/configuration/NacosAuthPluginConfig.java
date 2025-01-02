@@ -14,17 +14,22 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.auth.impl;
+package com.alibaba.nacos.plugin.auth.impl.configuration;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.core.auth.NacosServerAuthConfig;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.DefaultAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.token.TokenManager;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
+import com.alibaba.nacos.plugin.auth.impl.token.impl.CachedJwtTokenManager;
+import com.alibaba.nacos.plugin.auth.impl.token.impl.JwtTokenManager;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -42,15 +47,11 @@ import javax.annotation.PostConstruct;
 @Configuration
 public class NacosAuthPluginConfig {
     
-    private final AuthConfigs authConfigs;
-    
     private final NacosUserDetailsServiceImpl userDetailsService;
     
     private final ControllerMethodsCache methodsCache;
     
-    public NacosAuthPluginConfig(AuthConfigs authConfigs, NacosUserDetailsServiceImpl userDetailsService,
-            ControllerMethodsCache methodsCache) {
-        this.authConfigs = authConfigs;
+    public NacosAuthPluginConfig(NacosUserDetailsServiceImpl userDetailsService, ControllerMethodsCache methodsCache) {
         this.userDetailsService = userDetailsService;
         this.methodsCache = methodsCache;
         
@@ -70,7 +71,8 @@ public class NacosAuthPluginConfig {
         return new GlobalAuthenticationConfigurerAdapter() {
             @Override
             public void init(AuthenticationManagerBuilder auth) throws Exception {
-                if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
+                if (AuthSystemTypes.NACOS.name()
+                        .equalsIgnoreCase(NacosServerAuthConfig.getInstance().getNacosAuthSystemType())) {
                     auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
                 }
             }
@@ -87,5 +89,22 @@ public class NacosAuthPluginConfig {
     public IAuthenticationManager defaultAuthenticationManager(NacosUserDetailsServiceImpl userDetailsService,
             TokenManagerDelegate jwtTokenManager, NacosRoleServiceImpl roleService) {
         return new DefaultAuthenticationManager(userDetailsService, jwtTokenManager, roleService);
+    }
+    
+    @Bean
+    @ConditionalOnProperty(value = TokenManagerDelegate.NACOS_AUTH_TOKEN_CACHING_ENABLED, havingValue = "false", matchIfMissing = true)
+    public TokenManager tokenManager(AuthConfigs authConfigs) {
+        return new JwtTokenManager(authConfigs);
+    }
+    
+    @Bean
+    @ConditionalOnProperty(value = TokenManagerDelegate.NACOS_AUTH_TOKEN_CACHING_ENABLED, havingValue = "true")
+    public TokenManager cachedTokenManager(AuthConfigs authConfigs) {
+        return new CachedJwtTokenManager(new JwtTokenManager(authConfigs));
+    }
+    
+    @Bean
+    public TokenManagerDelegate tokenManagerDelegate(TokenManager tokenManager) {
+        return new TokenManagerDelegate(tokenManager);
     }
 }
