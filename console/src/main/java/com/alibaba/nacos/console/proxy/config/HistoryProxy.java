@@ -21,16 +21,12 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
-import com.alibaba.nacos.console.config.ConsoleWebConfig;
 import com.alibaba.nacos.console.handler.config.HistoryHandler;
-import com.alibaba.nacos.console.handler.impl.inner.config.HistoryInnerHandler;
 import com.alibaba.nacos.persistence.model.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * .
@@ -40,20 +36,16 @@ import java.util.Map;
 @Service
 public class HistoryProxy {
     
-    private final Map<String, HistoryHandler> historyHandlerMap = new HashMap<>();
-    
-    private final ConsoleWebConfig consoleConfig;
+    private final HistoryHandler historyHandler;
     
     /**
      * Constructs a new HistoryProxy with the given HistoryInnerHandler and ConsoleConfig.
      *
-     * @param historyInnerHandler the default implementation of HistoryHandler
-     * @param consoleConfig       the console configuration used to determine the deployment type
+     * @param historyHandler the default implementation of HistoryHandler
      */
     @Autowired
-    public HistoryProxy(HistoryInnerHandler historyInnerHandler, ConsoleWebConfig consoleConfig) {
-        this.historyHandlerMap.put("merged", historyInnerHandler);
-        this.consoleConfig = consoleConfig;
+    public HistoryProxy(HistoryHandler historyHandler) {
+        this.historyHandler = historyHandler;
     }
     
     /**
@@ -68,10 +60,6 @@ public class HistoryProxy {
      */
     public ConfigHistoryInfo getConfigHistoryInfo(String dataId, String group, String namespaceId, Long nid)
             throws NacosException {
-        HistoryHandler historyHandler = historyHandlerMap.get(consoleConfig.getType());
-        if (historyHandler == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
-        }
         return historyHandler.getConfigHistoryInfo(dataId, group, namespaceId, nid);
     }
     
@@ -88,10 +76,6 @@ public class HistoryProxy {
      */
     public Page<ConfigHistoryInfo> listConfigHistory(String dataId, String group, String namespaceId, Integer pageNo,
             Integer pageSize) throws NacosException {
-        HistoryHandler historyHandler = historyHandlerMap.get(consoleConfig.getType());
-        if (historyHandler == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
-        }
         return historyHandler.listConfigHistory(dataId, group, namespaceId, pageNo, pageSize);
     }
     
@@ -107,10 +91,6 @@ public class HistoryProxy {
      */
     public ConfigHistoryInfo getPreviousConfigHistoryInfo(String dataId, String group, String namespaceId, Long id)
             throws NacosException {
-        HistoryHandler historyHandler = historyHandlerMap.get(consoleConfig.getType());
-        if (historyHandler == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
-        }
         return historyHandler.getPreviousConfigHistoryInfo(dataId, group, namespaceId, id);
     }
     
@@ -122,10 +102,6 @@ public class HistoryProxy {
      * @throws NacosApiException if any error occurs during the operation
      */
     public List<ConfigInfoWrapper> getConfigsByTenant(String namespaceId) throws NacosException {
-        HistoryHandler historyHandler = historyHandlerMap.get(consoleConfig.getType());
-        if (historyHandler == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
-        }
         return historyHandler.getConfigsByTenant(namespaceId);
     }
 }

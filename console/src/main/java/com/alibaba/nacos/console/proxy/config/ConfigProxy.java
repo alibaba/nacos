@@ -27,9 +27,7 @@ import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
-import com.alibaba.nacos.console.config.ConsoleWebConfig;
 import com.alibaba.nacos.console.handler.config.ConfigHandler;
-import com.alibaba.nacos.console.handler.impl.inner.config.ConfigInnerHandler;
 import com.alibaba.nacos.persistence.model.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -38,7 +36,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -50,14 +47,11 @@ import java.util.Map;
 @Service
 public class ConfigProxy {
     
-    private final Map<String, ConfigHandler> configHandlerMap = new HashMap<>();
-    
-    private final ConsoleWebConfig consoleConfig;
+    private final ConfigHandler configHandler;
     
     @Autowired
-    public ConfigProxy(ConfigInnerHandler configInnerHandler, ConsoleWebConfig consoleConfig) {
-        this.configHandlerMap.put("merged", configInnerHandler);
-        this.consoleConfig = consoleConfig;
+    public ConfigProxy(ConfigHandler configHandler) {
+        this.configHandler = configHandler;
     }
     
     /**
@@ -65,10 +59,6 @@ public class ConfigProxy {
      */
     public Page<ConfigInfo> getConfigList(int pageNo, int pageSize, String dataId, String group, String namespaceId,
             Map<String, Object> configAdvanceInfo) throws IOException, ServletException, NacosException {
-        ConfigHandler configHandler = configHandlerMap.get(consoleConfig.getType());
-        if (configHandler == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
-        }
         return configHandler.getConfigList(pageNo, pageSize, dataId, group, namespaceId, configAdvanceInfo);
     }
     
@@ -76,10 +66,6 @@ public class ConfigProxy {
      * Get the specific configuration information.
      */
     public ConfigAllInfo getConfigDetail(String dataId, String group, String namespaceId) throws NacosException {
-        ConfigHandler configHandler = configHandlerMap.get(consoleConfig.getType());
-        if (configHandler == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
-        }
         return configHandler.getConfigDetail(dataId, group, namespaceId);
     }
     
@@ -87,10 +73,6 @@ public class ConfigProxy {
      * Add or update configuration.
      */
     public Boolean publishConfig(ConfigForm configForm, ConfigRequestInfo configRequestInfo) throws NacosException {
-        ConfigHandler configHandler = configHandlerMap.get(consoleConfig.getType());
-        if (configHandler == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
-        }
         return configHandler.publishConfig(configForm, configRequestInfo);
     }
     
@@ -99,10 +81,6 @@ public class ConfigProxy {
      */
     public Boolean deleteConfig(String dataId, String group, String namespaceId, String tag, String clientIp,
             String srcUser) throws NacosException {
-        ConfigHandler configHandler = configHandlerMap.get(consoleConfig.getType());
-        if (configHandler == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
-        }
         return configHandler.deleteConfig(dataId, group, namespaceId, tag, clientIp, srcUser);
     }
     
@@ -110,10 +88,6 @@ public class ConfigProxy {
      * Batch delete configurations.
      */
     public Boolean batchDeleteConfigs(List<Long> ids, String clientIp, String srcUser) throws NacosException {
-        ConfigHandler configHandler = configHandlerMap.get(consoleConfig.getType());
-        if (configHandler == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
-        }
         return configHandler.batchDeleteConfigs(ids, clientIp, srcUser);
     }
     
@@ -122,10 +96,6 @@ public class ConfigProxy {
      */
     public Page<ConfigInfo> getConfigListByContent(String search, int pageNo, int pageSize, String dataId, String group,
             String namespaceId, Map<String, Object> configAdvanceInfo) throws NacosException {
-        ConfigHandler configHandler = configHandlerMap.get(consoleConfig.getType());
-        if (configHandler == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
-        }
         return configHandler.getConfigListByContent(search, pageNo, pageSize, dataId, group, namespaceId,
                 configAdvanceInfo);
     }
@@ -135,21 +105,14 @@ public class ConfigProxy {
      */
     public GroupkeyListenserStatus getListeners(String dataId, String group, String namespaceId, int sampleTime)
             throws Exception {
-        ConfigHandler configHandler = configHandlerMap.get(consoleConfig.getType());
-        if (configHandler == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
-        }
         return configHandler.getListeners(dataId, group, namespaceId, sampleTime);
     }
     
     /**
      * Get subscription information based on IP, tenant, and other parameters.
      */
-    public GroupkeyListenserStatus getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime) throws NacosException {
-        ConfigHandler configHandler = configHandlerMap.get(consoleConfig.getType());
-        if (configHandler == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
-        }
+    public GroupkeyListenserStatus getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime)
+            throws NacosException {
         return configHandler.getAllSubClientConfigByIp(ip, all, namespaceId, sampleTime);
     }
     
@@ -158,10 +121,6 @@ public class ConfigProxy {
      */
     public ResponseEntity<byte[]> exportConfig(String dataId, String group, String namespaceId, String appName,
             List<Long> ids) throws Exception {
-        ConfigHandler configHandler = configHandlerMap.get(consoleConfig.getType());
-        if (configHandler == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
-        }
         return configHandler.exportConfig(dataId, group, namespaceId, appName, ids);
     }
     
@@ -170,10 +129,6 @@ public class ConfigProxy {
      */
     public ResponseEntity<byte[]> exportConfigV2(String dataId, String group, String namespaceId, String appName,
             List<Long> ids) throws Exception {
-        ConfigHandler configHandler = configHandlerMap.get(consoleConfig.getType());
-        if (configHandler == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
-        }
         return configHandler.exportConfigV2(dataId, group, namespaceId, appName, ids);
     }
     
@@ -182,10 +137,6 @@ public class ConfigProxy {
      */
     public Result<Map<String, Object>> importAndPublishConfig(String srcUser, String namespaceId,
             SameConfigPolicy policy, MultipartFile file, String srcIp, String requestIpApp) throws NacosException {
-        ConfigHandler configHandler = configHandlerMap.get(consoleConfig.getType());
-        if (configHandler == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
-        }
         return configHandler.importAndPublishConfig(srcUser, namespaceId, policy, file, srcIp, requestIpApp);
     }
     
@@ -195,10 +146,6 @@ public class ConfigProxy {
     public Result<Map<String, Object>> cloneConfig(String srcUser, String namespaceId,
             List<SameNamespaceCloneConfigBean> configBeansList, SameConfigPolicy policy, String srcIp,
             String requestIpApp) throws NacosException {
-        ConfigHandler configHandler = configHandlerMap.get(consoleConfig.getType());
-        if (configHandler == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
-        }
         return configHandler.cloneConfig(srcUser, namespaceId, configBeansList, policy, srcIp, requestIpApp);
     }
     
@@ -207,21 +154,14 @@ public class ConfigProxy {
      */
     public boolean removeBetaConfig(String dataId, String group, String namespaceId, String remoteIp,
             String requestIpApp) throws NacosException {
-        ConfigHandler configHandler = configHandlerMap.get(consoleConfig.getType());
-        if (configHandler == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
-        }
         return configHandler.removeBetaConfig(dataId, group, namespaceId, remoteIp, requestIpApp);
     }
     
     /**
      * Query beta configuration based on dataId, group, and namespaceId.
      */
-    public Result<ConfigInfo4Beta> queryBetaConfig(String dataId, String group, String namespaceId) throws NacosException {
-        ConfigHandler configHandler = configHandlerMap.get(consoleConfig.getType());
-        if (configHandler == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
-        }
+    public Result<ConfigInfo4Beta> queryBetaConfig(String dataId, String group, String namespaceId)
+            throws NacosException {
         return configHandler.queryBetaConfig(dataId, group, namespaceId);
     }
 }
