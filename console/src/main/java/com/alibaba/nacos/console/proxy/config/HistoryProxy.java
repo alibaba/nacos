@@ -23,7 +23,7 @@ import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.console.config.ConsoleWebConfig;
 import com.alibaba.nacos.console.handler.config.HistoryHandler;
-import com.alibaba.nacos.console.handler.inner.config.HistoryInnerHandler;
+import com.alibaba.nacos.console.handler.impl.inner.config.HistoryInnerHandler;
 import com.alibaba.nacos.persistence.model.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

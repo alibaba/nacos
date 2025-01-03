@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2024 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,9 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-package com.alibaba.nacos.console.handler.inner.config;
+package com.alibaba.nacos.console.handler.impl.inner.config;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -50,6 +49,7 @@ import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.console.handler.config.ConfigHandler;
+import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
@@ -81,6 +81,7 @@ import java.util.stream.Collectors;
  * @author zhangyukun
  */
 @Service
+@EnabledInnerHandler
 public class ConfigInnerHandler implements ConfigHandler {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigInnerHandler.class);

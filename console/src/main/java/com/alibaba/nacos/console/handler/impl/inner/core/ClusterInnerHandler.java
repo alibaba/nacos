@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2024 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,13 +12,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-package com.alibaba.nacos.console.handler.inner.core;
+package com.alibaba.nacos.console.handler.impl.inner.core;
 
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.handler.core.ClusterHandler;
+import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +33,7 @@ import java.util.Collection;
  * @author zhangyukun
  */
 @Service
+@EnabledInnerHandler
 public class ClusterInnerHandler implements ClusterHandler {
     
     private final ServerMemberManager memberManager;

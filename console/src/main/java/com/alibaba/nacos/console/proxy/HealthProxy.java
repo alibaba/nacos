@@ -21,7 +21,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.console.config.ConsoleWebConfig;
 import com.alibaba.nacos.console.handler.HealthHandler;
-import com.alibaba.nacos.console.handler.inner.HealthInnerHandler;
+import com.alibaba.nacos.console.handler.impl.inner.HealthInnerHandler;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;

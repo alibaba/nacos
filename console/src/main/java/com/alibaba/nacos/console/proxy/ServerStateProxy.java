@@ -18,7 +18,7 @@
 package com.alibaba.nacos.console.proxy;
 
 import com.alibaba.nacos.console.handler.ServerStateHandler;
-import com.alibaba.nacos.console.handler.inner.ServerStateInnerHandler;
+import com.alibaba.nacos.console.handler.impl.inner.ServerStateInnerHandler;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;

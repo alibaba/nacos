@@ -20,7 +20,7 @@ package com.alibaba.nacos.console.proxy.naming;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.console.config.ConsoleWebConfig;
-import com.alibaba.nacos.console.handler.inner.naming.InstanceInnerHandler;
+import com.alibaba.nacos.console.handler.impl.inner.naming.InstanceInnerHandler;
 import com.alibaba.nacos.console.handler.naming.InstanceHandler;
 import com.alibaba.nacos.naming.model.form.InstanceForm;
 import com.fasterxml.jackson.databind.node.ObjectNode;

@@ -20,7 +20,7 @@ package com.alibaba.nacos.console.proxy.core;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.console.config.ConsoleWebConfig;
 import com.alibaba.nacos.console.handler.core.NamespaceHandler;
-import com.alibaba.nacos.console.handler.inner.core.NamespaceInnerHandler;
+import com.alibaba.nacos.console.handler.impl.inner.core.NamespaceInnerHandler;
 import com.alibaba.nacos.core.namespace.model.Namespace;
 import com.alibaba.nacos.core.namespace.model.form.NamespaceForm;
 import org.springframework.stereotype.Service;

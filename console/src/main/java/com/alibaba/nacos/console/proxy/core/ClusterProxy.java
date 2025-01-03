@@ -19,7 +19,7 @@ package com.alibaba.nacos.console.proxy.core;
 
 import com.alibaba.nacos.console.config.ConsoleWebConfig;
 import com.alibaba.nacos.console.handler.core.ClusterHandler;
-import com.alibaba.nacos.console.handler.inner.core.ClusterInnerHandler;
+import com.alibaba.nacos.console.handler.impl.inner.core.ClusterInnerHandler;
 import com.alibaba.nacos.core.cluster.Member;
 import org.springframework.stereotype.Service;
 

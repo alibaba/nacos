@@ -29,7 +29,7 @@ import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.console.config.ConsoleWebConfig;
 import com.alibaba.nacos.console.handler.config.ConfigHandler;
-import com.alibaba.nacos.console.handler.inner.config.ConfigInnerHandler;
+import com.alibaba.nacos.console.handler.impl.inner.config.ConfigInnerHandler;
 import com.alibaba.nacos.persistence.model.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
