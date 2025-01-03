@@ -18,16 +18,12 @@
 package com.alibaba.nacos.console.proxy.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.console.config.ConsoleWebConfig;
 import com.alibaba.nacos.console.handler.core.NamespaceHandler;
-import com.alibaba.nacos.console.handler.inner.core.NamespaceInnerHandler;
 import com.alibaba.nacos.core.namespace.model.Namespace;
 import com.alibaba.nacos.core.namespace.model.form.NamespaceForm;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Proxy class for handling namespace operations.
@@ -37,23 +33,16 @@ import java.util.Map;
 @Service
 public class NamespaceProxy {
     
-    private final Map<String, NamespaceHandler> namespaceHandlerMap = new HashMap<>();
+    private final NamespaceHandler namespaceHandler;
     
-    private final ConsoleWebConfig consoleConfig;
-    
-    public NamespaceProxy(NamespaceInnerHandler namespaceInnerHandler, ConsoleWebConfig consoleConfig) {
-        this.namespaceHandlerMap.put("merged", namespaceInnerHandler);
-        this.consoleConfig = consoleConfig;
+    public NamespaceProxy(NamespaceHandler namespaceHandler) {
+        this.namespaceHandler = namespaceHandler;
     }
     
     /**
      * Get namespace list.
      */
-    public List<Namespace> getNamespaceList() throws NacosException {
-        NamespaceHandler namespaceHandler = namespaceHandlerMap.get(consoleConfig.getType());
-        if (namespaceHandler == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
-        }
+    public List<Namespace> getNamespaceList() {
         return namespaceHandler.getNamespaceList();
     }
     
@@ -61,10 +50,6 @@ public class NamespaceProxy {
      * Get the specific namespace information.
      */
     public Namespace getNamespaceDetail(String namespaceId) throws NacosException {
-        NamespaceHandler namespaceHandler = namespaceHandlerMap.get(consoleConfig.getType());
-        if (namespaceHandler == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
-        }
         return namespaceHandler.getNamespaceDetail(namespaceId);
     }
     
@@ -73,10 +58,6 @@ public class NamespaceProxy {
      */
     public Boolean createNamespace(String namespaceId, String namespaceName, String namespaceDesc)
             throws NacosException {
-        NamespaceHandler namespaceHandler = namespaceHandlerMap.get(consoleConfig.getType());
-        if (namespaceHandler == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
-        }
         return namespaceHandler.createNamespace(namespaceId, namespaceName, namespaceDesc);
     }
     
@@ -84,32 +65,20 @@ public class NamespaceProxy {
      * Edit namespace.
      */
     public Boolean updateNamespace(NamespaceForm namespaceForm) throws NacosException {
-        NamespaceHandler namespaceHandler = namespaceHandlerMap.get(consoleConfig.getType());
-        if (namespaceHandler == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
-        }
         return namespaceHandler.updateNamespace(namespaceForm);
     }
     
     /**
      * Delete namespace.
      */
-    public Boolean deleteNamespace(String namespaceId) throws NacosException {
-        NamespaceHandler namespaceHandler = namespaceHandlerMap.get(consoleConfig.getType());
-        if (namespaceHandler == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
-        }
+    public Boolean deleteNamespace(String namespaceId) {
         return namespaceHandler.deleteNamespace(namespaceId);
     }
     
     /**
      * Check if namespace exists.
      */
-    public Boolean checkNamespaceIdExist(String namespaceId) throws NacosException {
-        NamespaceHandler namespaceHandler = namespaceHandlerMap.get(consoleConfig.getType());
-        if (namespaceHandler == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
-        }
+    public Boolean checkNamespaceIdExist(String namespaceId) {
         return namespaceHandler.checkNamespaceIdExist(namespaceId);
     }
 }

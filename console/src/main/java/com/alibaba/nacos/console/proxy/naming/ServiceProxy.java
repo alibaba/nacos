@@ -18,17 +18,13 @@
 package com.alibaba.nacos.console.proxy.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.console.config.ConsoleWebConfig;
-import com.alibaba.nacos.console.handler.inner.naming.ServiceInnerHandler;
 import com.alibaba.nacos.console.handler.naming.ServiceHandler;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
-
 import com.alibaba.nacos.naming.model.form.ServiceForm;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -40,20 +36,16 @@ import java.util.Map;
 @Service
 public class ServiceProxy {
     
-    private final Map<String, ServiceHandler> serviceHandlerMap = new HashMap<>();
-    
-    private final ConsoleWebConfig consoleConfig;
+    private final ServiceHandler serviceHandler;
     
     /**
      * Constructs a new ServiceProxy with the given ServiceInnerHandler and ConsoleConfig. The handler is mapped to a
      * deployment type key.
      *
-     * @param serviceInnerHandler the default implementation of ServiceHandler
-     * @param consoleConfig       the console configuration used to determine the deployment type
+     * @param serviceHandler the default implementation of ServiceHandler
      */
-    public ServiceProxy(ServiceInnerHandler serviceInnerHandler, ConsoleWebConfig consoleConfig) {
-        this.serviceHandlerMap.put("merged", serviceInnerHandler);
-        this.consoleConfig = consoleConfig;
+    public ServiceProxy(ServiceHandler serviceHandler) {
+        this.serviceHandler = serviceHandler;
     }
     
     /**
@@ -63,10 +55,6 @@ public class ServiceProxy {
      * @throws Exception if an error occurs during service creation
      */
     public void createService(ServiceForm serviceForm, ServiceMetadata serviceMetadata) throws Exception {
-        ServiceHandler serviceHandler = serviceHandlerMap.get(consoleConfig.getType());
-        if (serviceHandler == null) {
-            throw new IllegalArgumentException("Invalid deployment type");
-        }
         serviceHandler.createService(serviceForm, serviceMetadata);
     }
     
@@ -79,10 +67,6 @@ public class ServiceProxy {
      * @throws Exception if an error occurs during service deletion
      */
     public void deleteService(String namespaceId, String serviceName, String groupName) throws Exception {
-        ServiceHandler serviceHandler = serviceHandlerMap.get(consoleConfig.getType());
-        if (serviceHandler == null) {
-            throw new IllegalArgumentException("Invalid deployment type");
-        }
         serviceHandler.deleteService(namespaceId, serviceName, groupName);
     }
     
@@ -96,10 +80,6 @@ public class ServiceProxy {
      */
     public void updateService(ServiceForm serviceForm, com.alibaba.nacos.naming.core.v2.pojo.Service service,
             ServiceMetadata serviceMetadata, Map<String, String> metadata) throws Exception {
-        ServiceHandler serviceHandler = serviceHandlerMap.get(consoleConfig.getType());
-        if (serviceHandler == null) {
-            throw new IllegalArgumentException("Invalid deployment type");
-        }
         serviceHandler.updateService(serviceForm, service, serviceMetadata, metadata);
     }
     
@@ -109,10 +89,6 @@ public class ServiceProxy {
      * @return a list of selector types
      */
     public List<String> getSelectorTypeList() {
-        ServiceHandler serviceHandler = serviceHandlerMap.get(consoleConfig.getType());
-        if (serviceHandler == null) {
-            throw new IllegalArgumentException("Invalid deployment type");
-        }
         return serviceHandler.getSelectorTypeList();
     }
     
@@ -130,10 +106,6 @@ public class ServiceProxy {
      */
     public ObjectNode getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName, String groupName,
             boolean aggregation) throws Exception {
-        ServiceHandler serviceHandler = serviceHandlerMap.get(consoleConfig.getType());
-        if (serviceHandler == null) {
-            throw new IllegalArgumentException("Invalid deployment type");
-        }
         return serviceHandler.getSubscribers(pageNo, pageSize, namespaceId, serviceName, groupName, aggregation);
     }
     
@@ -152,10 +124,6 @@ public class ServiceProxy {
      */
     public Object getServiceList(boolean withInstances, String namespaceId, int pageNo, int pageSize,
             String serviceName, String groupName, boolean hasIpCount) throws NacosException {
-        ServiceHandler serviceHandler = serviceHandlerMap.get(consoleConfig.getType());
-        if (serviceHandler == null) {
-            throw new IllegalArgumentException("Invalid deployment type");
-        }
         return serviceHandler.getServiceList(withInstances, namespaceId, pageNo, pageSize, serviceName, groupName,
                 hasIpCount);
     }
@@ -169,12 +137,7 @@ public class ServiceProxy {
      * @return service detail information
      * @throws NacosException if an error occurs during fetching service details
      */
-    public Object getServiceDetail(String namespaceId, String serviceName, String groupName)
-            throws NacosException {
-        ServiceHandler serviceHandler = serviceHandlerMap.get(consoleConfig.getType());
-        if (serviceHandler == null) {
-            throw new IllegalArgumentException("Invalid deployment type");
-        }
+    public Object getServiceDetail(String namespaceId, String serviceName, String groupName) throws NacosException {
         return serviceHandler.getServiceDetail(namespaceId, serviceName, groupName);
     }
     
@@ -190,10 +153,6 @@ public class ServiceProxy {
      */
     public void updateClusterMetadata(String namespaceId, String serviceName, String clusterName,
             ClusterMetadata clusterMetadata) throws Exception {
-        ServiceHandler serviceHandler = serviceHandlerMap.get(consoleConfig.getType());
-        if (serviceHandler == null) {
-            throw new IllegalArgumentException("Invalid deployment type");
-        }
         serviceHandler.updateClusterMetadata(namespaceId, serviceName, clusterName, clusterMetadata);
     }
 }

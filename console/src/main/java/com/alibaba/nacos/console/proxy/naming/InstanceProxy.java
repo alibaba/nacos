@@ -19,15 +19,10 @@ package com.alibaba.nacos.console.proxy.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.console.config.ConsoleWebConfig;
-import com.alibaba.nacos.console.handler.inner.naming.InstanceInnerHandler;
 import com.alibaba.nacos.console.handler.naming.InstanceHandler;
 import com.alibaba.nacos.naming.model.form.InstanceForm;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.stereotype.Service;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Proxy class for handling instance-related operations.
@@ -37,19 +32,15 @@ import java.util.Map;
 @Service
 public class InstanceProxy {
     
-    private final Map<String, InstanceHandler> instanceHandlerMap = new HashMap<>();
-    
-    private final ConsoleWebConfig consoleConfig;
+    private final InstanceHandler instanceHandler;
     
     /**
      * Constructs a new InstanceProxy with the given InstanceInnerHandler and ConsoleConfig.
      *
-     * @param instanceInnerHandler the default implementation of InstanceHandler
-     * @param consoleConfig        the console configuration used to determine the deployment type
+     * @param instanceHandler the default implementation of InstanceHandler
      */
-    public InstanceProxy(InstanceInnerHandler instanceInnerHandler, ConsoleWebConfig consoleConfig) {
-        this.instanceHandlerMap.put("merged", instanceInnerHandler);
-        this.consoleConfig = consoleConfig;
+    public InstanceProxy(InstanceHandler instanceHandler) {
+        this.instanceHandler = instanceHandler;
     }
     
     /**
@@ -67,10 +58,6 @@ public class InstanceProxy {
      */
     public ObjectNode listInstances(String namespaceId, String serviceNameWithoutGroup, String groupName, int page,
             int pageSize, Boolean healthyOnly, Boolean enabledOnly) {
-        InstanceHandler instanceHandler = instanceHandlerMap.get(consoleConfig.getType());
-        if (instanceHandler == null) {
-            throw new IllegalArgumentException("Invalid deployment type");
-        }
         return instanceHandler.listInstances(namespaceId, serviceNameWithoutGroup, groupName, page, pageSize,
                 healthyOnly, enabledOnly);
     }
@@ -84,10 +71,6 @@ public class InstanceProxy {
      * @throws IllegalArgumentException if the deployment type is invalid
      */
     public void updateInstance(InstanceForm instanceForm, Instance instance) throws NacosException {
-        InstanceHandler instanceHandler = instanceHandlerMap.get(consoleConfig.getType());
-        if (instanceHandler == null) {
-            throw new IllegalArgumentException("Invalid deployment type");
-        }
         instanceHandler.updateInstance(instanceForm, instance);
     }
 }

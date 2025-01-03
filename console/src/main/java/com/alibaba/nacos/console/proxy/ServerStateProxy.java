@@ -18,7 +18,6 @@
 package com.alibaba.nacos.console.proxy;
 
 import com.alibaba.nacos.console.handler.ServerStateHandler;
-import com.alibaba.nacos.console.handler.inner.ServerStateInnerHandler;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -33,7 +32,7 @@ public class ServerStateProxy {
     
     private final ServerStateHandler serverStateHandler;
     
-    public ServerStateProxy(ServerStateInnerHandler serverStateHandler) {
+    public ServerStateProxy(ServerStateHandler serverStateHandler) {
         this.serverStateHandler = serverStateHandler;
     }
     

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2024 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,9 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-package com.alibaba.nacos.console.handler.inner;
+package com.alibaba.nacos.console.handler.impl.inner;
 
 import com.alibaba.nacos.console.handler.ServerStateHandler;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -38,6 +37,7 @@ import static com.alibaba.nacos.common.utils.StringUtils.WINDOWS_FOLDER_SEPARATO
  * @author zhangyukun
  */
 @Service
+@EnabledInnerHandler
 public class ServerStateInnerHandler implements ServerStateHandler {
     
     private static final String ANNOUNCEMENT_FILE = "announcement.conf";
