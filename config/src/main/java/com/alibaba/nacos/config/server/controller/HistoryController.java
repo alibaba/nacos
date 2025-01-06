@@ -106,7 +106,7 @@ public class HistoryController {
         tenant = NamespaceUtil.processNamespaceParameter(tenant);
         return historyService.getConfigHistoryInfo(dataId, group, tenant, nid);
     }
-    
+
     /**
      * Query previous config history information. notes:
      *

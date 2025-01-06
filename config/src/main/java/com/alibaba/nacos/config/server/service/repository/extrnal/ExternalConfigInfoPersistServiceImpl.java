@@ -152,7 +152,8 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 Timestamp now = new Timestamp(System.currentTimeMillis());
                 
                 historyConfigInfoPersistService.insertConfigHistoryAtomic(0, configInfo, srcIp, srcUser, now, "I",
-                        Constants.FORMAL, ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser));
+                        Constants.FORMAL, null,
+                        ConfigExtInfoUtil.getExtraInfoFromAdvanceInfoMap(configAdvanceInfo, srcUser));
                 ConfigInfoStateWrapper configInfoCurrent = this.findConfigInfoState(configInfo.getDataId(),
                         configInfo.getGroup(), configInfo.getTenant());
                 if (configInfoCurrent == null) {
@@ -176,6 +177,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
      * @param configAdvanceInfo advance info
      * @return
      */
+    @Override
     public ConfigOperateResult insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo,
             Map<String, Object> configAdvanceInfo) {
         try {
@@ -249,7 +251,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         final String encryptedDataKey =
                 configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY : configInfo.getEncryptedDataKey();
         final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
-
+        
         String insertSql = configInfoMapper.insert(
                 Arrays.asList("data_id", "group_id", "tenant_id", "app_name", "content", "md5", "src_ip", "src_user",
                         "gmt_create@NOW()", "gmt_modified@NOW()", "c_desc", "c_use", "effect", "type", "c_schema",
@@ -403,8 +405,9 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                     if (oldConfigAllInfo != null) {
                         removeConfigInfoAtomic(dataId, group, tenant, srcIp, srcUser);
                         removeTagByIdAtomic(oldConfigAllInfo.getId());
-                        historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo.getId(), oldConfigAllInfo,
-                                srcIp, srcUser, time, "D", Constants.FORMAL, ConfigExtInfoUtil.getExtInfoFromAllInfo(oldConfigAllInfo));
+                        historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo.getId(),
+                                oldConfigAllInfo, srcIp, srcUser, time, "D", Constants.FORMAL, null,
+                                ConfigExtInfoUtil.getExtInfoFromAllInfo(oldConfigAllInfo));
                     }
                 } catch (CannotGetJdbcConnectionException e) {
                     LogUtil.FATAL_LOG.error("[db-error] " + e, e);
@@ -434,7 +437,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                         for (ConfigAllInfo configAllInfo : oldConfigAllInfoList) {
                             removeTagByIdAtomic(configAllInfo.getId());
                             historyConfigInfoPersistService.insertConfigHistoryAtomic(configAllInfo.getId(),
-                                    configAllInfo, srcIp, srcUser, time, "D", Constants.FORMAL,
+                                    configAllInfo, srcIp, srcUser, time, "D", Constants.FORMAL, null,
                                     ConfigExtInfoUtil.getExtInfoFromAllInfo(configAllInfo));
                         }
                     }
@@ -530,8 +533,9 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 }
                 
                 Timestamp now = new Timestamp(System.currentTimeMillis());
-                historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo.getId(), oldConfigAllInfo, srcIp, srcUser,
-                        now, "U", Constants.FORMAL, ConfigExtInfoUtil.getExtInfoFromAllInfo(oldConfigAllInfo));
+                historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo.getId(), oldConfigAllInfo,
+                        srcIp, srcUser, now, "U", Constants.FORMAL, null,
+                        ConfigExtInfoUtil.getExtInfoFromAllInfo(oldConfigAllInfo));
                 return getConfigInfoOperateResult(configInfo.getDataId(), configInfo.getGroup(),
                         configInfo.getTenant());
             } catch (CannotGetJdbcConnectionException e) {
@@ -585,8 +589,9 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 }
                 Timestamp now = new Timestamp(System.currentTimeMillis());
                 
-                historyConfigInfoPersistService.insertConfigHistoryAtomic(oldAllConfigInfo.getId(), oldAllConfigInfo, srcIp, srcUser, now,
-                        "U", Constants.FORMAL, ConfigExtInfoUtil.getExtInfoFromAllInfo(oldAllConfigInfo));
+                historyConfigInfoPersistService.insertConfigHistoryAtomic(oldAllConfigInfo.getId(), oldAllConfigInfo,
+                        srcIp, srcUser, now, "U", Constants.FORMAL, null,
+                        ConfigExtInfoUtil.getExtInfoFromAllInfo(oldAllConfigInfo));
                 ConfigInfoStateWrapper configInfoLast = this.findConfigInfoState(configInfo.getDataId(),
                         configInfo.getGroup(), configInfo.getTenant());
                 if (configInfoLast == null) {
@@ -658,11 +663,11 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO);
             jt.update(configInfoMapper.update(
-                            Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified@NOW()",
-                                    "app_name", "c_desc", "c_use", "effect", "type", "c_schema", "encrypted_data_key"),
-                            Arrays.asList("data_id", "group_id", "tenant_id")),
-                    configInfo.getContent(), md5Tmp, srcIp, srcUser, appNameTmp, desc, use, effect, type, schema,
-                    encryptedDataKey, configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
+                            Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified@NOW()", "app_name", "c_desc",
+                                    "c_use", "effect", "type", "c_schema", "encrypted_data_key"),
+                            Arrays.asList("data_id", "group_id", "tenant_id")), configInfo.getContent(), md5Tmp, srcIp, srcUser,
+                    appNameTmp, desc, use, effect, type, schema, encryptedDataKey, configInfo.getDataId(),
+                    configInfo.getGroup(), tenantTmp);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;
@@ -842,7 +847,8 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
         final String content = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("content");
-        final String types = Optional.ofNullable(configAdvanceInfo).map(e -> (String) e.get(ParametersField.TYPES)).orElse(null);
+        final String types = Optional.ofNullable(configAdvanceInfo).map(e -> (String) e.get(ParametersField.TYPES))
+                .orElse(null);
         final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
         MapperResult sqlCountRows;
@@ -1032,10 +1038,10 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         try {
             ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO);
-            return this.jt.queryForObject(configInfoMapper.select(
-                            Arrays.asList("id", "data_id", "group_id", "tenant_id", "gmt_modified"),
-                            Arrays.asList("data_id", "group_id", "tenant_id")),
-                    new Object[] {dataId, group, tenantTmp}, CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER);
+            return this.jt.queryForObject(
+                    configInfoMapper.select(Arrays.asList("id", "data_id", "group_id", "tenant_id", "gmt_modified"),
+                            Arrays.asList("data_id", "group_id", "tenant_id")), new Object[] {dataId, group, tenantTmp},
+                    CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER);
         } catch (EmptyResultDataAccessException e) { // Indicates that the data does not exist, returns null.
             return null;
         } catch (CannotGetJdbcConnectionException e) {
