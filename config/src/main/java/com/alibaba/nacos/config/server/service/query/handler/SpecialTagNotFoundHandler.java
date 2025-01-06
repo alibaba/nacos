@@ -24,8 +24,6 @@ import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRespo
 
 import java.io.IOException;
 
-import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
-
 /**
  * SpecialTagNotFound Handler.
  * This class represents special tag not found handler in the configuration query processing chain.
@@ -51,7 +49,7 @@ public class SpecialTagNotFoundHandler extends AbstractConfigQueryHandler {
             String tenant = request.getTenant();
             
             CacheItem cacheItem = ConfigChainEntryHandler.getThreadLocalCacheItem();
-            String md5 = cacheItem.getConfigCache().getMd5(ENCODE_UTF8);
+            String md5 = cacheItem.getConfigCache().getMd5();
             long lastModified = cacheItem.getConfigCache().getLastModifiedTs();
             String encryptedDataKey = cacheItem.getConfigCache().getEncryptedDataKey();
             String contentType = cacheItem.getType();

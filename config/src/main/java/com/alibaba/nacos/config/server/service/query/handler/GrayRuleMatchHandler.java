@@ -24,8 +24,6 @@ import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRespo
 
 import java.io.IOException;
 
-import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
-
 /**
  * GrayRuleMatchHandler.
  * This class represents a gray rule handler in the configuration query processing chain.
@@ -60,7 +58,7 @@ public class GrayRuleMatchHandler extends AbstractConfigQueryHandler {
             ConfigQueryChainResponse response = new ConfigQueryChainResponse();
             
             long lastModified = matchedGray.getLastModifiedTs();
-            String md5 = matchedGray.getMd5(ENCODE_UTF8);
+            String md5 = matchedGray.getMd5();
             String encryptedDataKey = matchedGray.getEncryptedDataKey();
             String content = ConfigDiskServiceFactory.getInstance()
                     .getGrayContent(request.getDataId(), request.getGroup(), request.getTenant(),

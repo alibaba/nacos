@@ -39,7 +39,7 @@ class ConfigRollback extends React.Component {
       envName: '',
       visible: false,
       showmore: false,
-      extraInfo: {},
+      extInfo: {},
     };
     // this.params = window.location.hash.split('?')[1]||'';
   }
@@ -69,7 +69,6 @@ class ConfigRollback extends React.Component {
   toggleMore() {
     this.setState({
       showmore: !this.state.showmore,
-      extraInfo: data.extraInfo ? JSON.parse(data.extraInfo) : {},
     });
   }
 
@@ -95,7 +94,7 @@ class ConfigRollback extends React.Component {
           self.field.setValue('envName', envName);
           self.setState({
             envName,
-            extraInfo: data.extraInfo ? JSON.parse(data.extraInfo) : {},
+            extInfo: data.extInfo ? JSON.parse(data.extInfo) : {},
           });
         }
       },
@@ -141,19 +140,19 @@ class ConfigRollback extends React.Component {
         self.serverId = getParams('serverId') || 'center';
         self.dataId = self.field.getValue('dataId');
         self.group = self.field.getValue('group');
-        const { extraInfo } = self.state;
+        const { extInfo } = self.state;
         let postData = {
           appName: self.field.getValue('appName'),
           dataId: self.dataId,
           groupName: self.group,
           content: self.field.getValue('content'),
           namespaceId: self.tenant,
-          ...(extraInfo.type ? { type: extraInfo.type } : {}),
-          ...(extraInfo.config_tags ? { config_tags: extraInfo.config_tags } : {}),
-          ...(extraInfo.effect ? { effect: extraInfo.effect } : {}),
-          ...(extraInfo.c_desc ? { desc: extraInfo.c_desc } : {}),
-          ...(extraInfo.c_use ? { use: extraInfo.c_use } : {}),
-          ...(extraInfo.c_schema ? { schema: extraInfo.c_schema } : {}),
+          ...(extInfo.type ? { type: extInfo.type } : {}),
+          ...(extInfo.config_tags ? { config_tags: extInfo.config_tags } : {}),
+          ...(extInfo.effect ? { effect: extInfo.effect } : {}),
+          ...(extInfo.c_desc ? { desc: extInfo.c_desc } : {}),
+          ...(extInfo.c_use ? { use: extInfo.c_use } : {}),
+          ...(extInfo.c_schema ? { schema: extInfo.c_schema } : {}),
         };
 
         let url = 'v3/console/cs/config';

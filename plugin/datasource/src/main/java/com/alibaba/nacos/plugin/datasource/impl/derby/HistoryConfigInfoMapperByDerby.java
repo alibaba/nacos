@@ -42,7 +42,7 @@ public class HistoryConfigInfoMapperByDerby extends AbstractMapperByDerby implem
     @Override
     public MapperResult pageFindConfigHistoryFetchRows(MapperContext context) {
         String sql =
-                "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,ext_info,publish_type,gmt_create,gmt_modified "
+                "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gray_name,ext_info,publish_type,gmt_create,gmt_modified "
                         + "FROM his_config_info "
                         + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC  OFFSET "
                         + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY";
@@ -59,7 +59,7 @@ public class HistoryConfigInfoMapperByDerby extends AbstractMapperByDerby implem
     public MapperResult findDeletedConfig(MapperContext context) {
         return new MapperResult(
                 "SELECT id, nid, data_id, group_id, app_name, content, md5, gmt_create, gmt_modified, src_user, src_ip, op_type, tenant_id, "
-                        + "publish_type, ext_info, encrypted_data_key FROM his_config_info WHERE op_type = 'D' AND "
+                        + "publish_type,gray_name, ext_info, encrypted_data_key FROM his_config_info WHERE op_type = 'D' AND "
                         + "publish_type = ? and gmt_modified >= ? and nid > ? order by nid OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY",
                 CollectionUtils.list(context.getWhereParameter(FieldConstant.PUBLISH_TYPE),
                         context.getWhereParameter(FieldConstant.START_TIME),

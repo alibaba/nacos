@@ -17,7 +17,6 @@
 package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.core.utils.StringPool;
 import com.alibaba.nacos.common.utils.StringUtils;
 
@@ -35,7 +34,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG;
 import static com.alibaba.nacos.config.server.constant.Constants.LINE_SEPARATOR;
 import static com.alibaba.nacos.config.server.constant.Constants.WORD_SEPARATOR;
 
@@ -52,18 +50,7 @@ public class MD5Util {
      */
     public static List<String> compareMd5(HttpServletRequest request, HttpServletResponse response,
             Map<String, String> clientMd5Map) {
-        List<String> changedGroupKeys = new ArrayList<>();
-        String tag = request.getHeader(VIPSERVER_TAG);
-        for (Map.Entry<String, String> entry : clientMd5Map.entrySet()) {
-            String groupKey = entry.getKey();
-            String clientMd5 = entry.getValue();
-            String ip = RequestUtil.getRemoteIp(request);
-            boolean isUptodate = ConfigCacheService.isUptodate(groupKey, clientMd5, ip, tag);
-            if (!isUptodate) {
-                changedGroupKeys.add(groupKey);
-            }
-        }
-        return changedGroupKeys;
+        return Md5ComparatorDelegate.getInstance().compareMd5(request, response, clientMd5Map);
     }
     
     /**
