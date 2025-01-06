@@ -63,9 +63,7 @@ class TokenManagerDelegateTest {
     
     @BeforeEach
     void setUp() throws Exception {
-        tokenManagerDelegate = new TokenManagerDelegate();
-        injectObject("jwtTokenManager", jwtTokenManager);
-        injectObject("cachedJwtTokenManager", cachedJwtTokenManager);
+        tokenManagerDelegate = new TokenManagerDelegate(jwtTokenManager);
         injectObject("tokenCacheEnabled", Boolean.TRUE);
         when(cachedJwtTokenManager.getTokenValidityInSeconds()).thenReturn(100L);
         when(cachedJwtTokenManager.getTokenTtlInSeconds(anyString())).thenReturn(100L);
