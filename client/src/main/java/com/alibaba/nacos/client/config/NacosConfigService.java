@@ -160,7 +160,7 @@ public class NacosConfigService implements ConfigService {
     private CompletableFuture<Set<String>> doAddFuzzyWatch(String dataIdPattern,
             String fixedGroupName, ConfigFuzzyWatcher watcher) throws NacosException {
         ConfigFuzzyWatchContext configFuzzyWatchContext = worker.registerFuzzyWatcher(dataIdPattern, fixedGroupName,watcher);
-        return worker.createNewFuture(configFuzzyWatchContext);
+        return configFuzzyWatchContext.createNewFuture();
     }
     
     @Override

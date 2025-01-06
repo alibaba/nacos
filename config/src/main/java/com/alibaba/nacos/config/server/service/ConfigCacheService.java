@@ -65,27 +65,13 @@ public class ConfigCacheService {
     /**
      * groupKey -> cacheItem.
      */
-    private static final ConcurrentHashMap<String, CacheItem> CACHE = new ConcurrentHashMap<>();
+    static final ConcurrentHashMap<String, CacheItem> CACHE = new ConcurrentHashMap<>();
     
     public static int groupCount() {
         return CACHE.size();
     }
     
-    /**
-     * Matches the client effective group keys based on the specified group key pattern, client IP, and tag.
-     *
-     * @param groupKeyPattern The pattern to match group keys.
-     * @return A set of group keys that match the pattern and are effective for the client.
-     */
-    public static Set<String> matchGroupKeys(String groupKeyPattern) {
-    
-        String[] groupKeyItems = GroupKey2.parseKey(groupKeyPattern);
-        return CACHE.entrySet().stream()
-                .filter(entry -> FuzzyGroupKeyPattern.matchPattern(groupKeyPattern,groupKeyItems[0],groupKeyItems[1],groupKeyItems[2]))
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toSet());
-    }
-    
+
     /**
      * Save config file and update md5 value in cache.
      *

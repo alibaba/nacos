@@ -182,33 +182,6 @@ public interface NamingClientProxy extends Closeable {
     boolean isSubscribed(String serviceName, String groupName, String clusters) throws NacosException;
     
     /**
-     * Fuzzy watch services change by pattern.
-     *
-     * @param serviceNamePattern service name pattern
-     * @param groupNamePattern group name pattern
-     * @param uuid UUID used to identify the Listener. Used for local initialization when repeating fuzzy watch
-     * @throws NacosException nacos exception
-     */
-    void fuzzyWatch(String serviceNamePattern, String groupNamePattern, String uuid) throws NacosException;
-    
-    /** Judge whether pattern has been watched.
-     *
-     * @param serviceNamePattern service name pattern
-     * @param groupNamePattern group name pattern
-     * @return {@code true} if subscribed, otherwise {@code false}
-     * @throws NacosException nacos exception
-     */
-    boolean isFuzzyWatched(String serviceNamePattern, String groupNamePattern) throws NacosException;
-    
-    /** Cancel fuzzy watch pattern.
-     *
-     * @param serviceNamePattern service name pattern
-     * @param groupNamePattern group name pattern
-     * @throws NacosException nacos exception
-     */
-    void cancelFuzzyWatch(String serviceNamePattern, String groupNamePattern) throws NacosException;
-    
-    /**
      * Check Server healthy.
      *
      * @return true if server is healthy

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.remote;
 
+import com.alibaba.nacos.config.server.service.ConfigFuzzyWatchContextService;
 import com.alibaba.nacos.core.remote.ClientConnectionEventListener;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -32,8 +33,11 @@ public class ConfigConnectionEventListener extends ClientConnectionEventListener
     
     final ConfigChangeListenContext configChangeListenContext;
     
-    public ConfigConnectionEventListener(ConfigChangeListenContext configChangeListenContext) {
+    final ConfigFuzzyWatchContextService configFuzzyWatchContextService;
+    
+    public ConfigConnectionEventListener(ConfigChangeListenContext configChangeListenContext,ConfigFuzzyWatchContextService configFuzzyWatchContextService) {
         this.configChangeListenContext = configChangeListenContext;
+        this.configFuzzyWatchContextService=configFuzzyWatchContextService;
     }
     
     @Override
@@ -46,6 +50,7 @@ public class ConfigConnectionEventListener extends ClientConnectionEventListener
         String connectionId = connect.getMetaInfo().getConnectionId();
         Loggers.REMOTE_DIGEST.info("[{}]client disconnected,clear config listen context", connectionId);
         configChangeListenContext.clearContextForConnectionId(connectionId);
+        configFuzzyWatchContextService.clearFuzzyWatchContext(connectionId);
     }
     
 }

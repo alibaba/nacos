@@ -16,6 +16,10 @@
 
 package com.alibaba.nacos.api.naming.remote.request;
 
+import com.alibaba.nacos.api.remote.request.Request;
+
+import java.util.Set;
+
 import static com.alibaba.nacos.api.common.Constants.Naming.NAMING_MODULE;
 
 /**
@@ -23,9 +27,18 @@ import static com.alibaba.nacos.api.common.Constants.Naming.NAMING_MODULE;
  *
  * @author tanyongquan
  */
-public class NamingFuzzyWatchRequest extends AbstractNamingRequest {
+public class NamingFuzzyWatchRequest extends Request {
     
+    private boolean isInitializing;
+    
+    private String namespace;
+    
+    /**
+     * The namespace or tenant associated with the configurations.
+     */
     private String groupKeyPattern;
+    
+    private Set<String> receivedGroupKeys;
     
     private String watchType;
     
@@ -51,6 +64,30 @@ public class NamingFuzzyWatchRequest extends AbstractNamingRequest {
     
     public void setWatchType(String watchType) {
         this.watchType = watchType;
+    }
+    
+    public Set<String> getReceivedGroupKeys() {
+        return receivedGroupKeys;
+    }
+    
+    public String getNamespace() {
+        return namespace;
+    }
+    
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
+    }
+    
+    public boolean isInitializing() {
+        return isInitializing;
+    }
+    
+    public void setInitializing(boolean initializing) {
+        isInitializing = initializing;
+    }
+    
+    public void setReceivedGroupKeys(Set<String> receivedGroupKeys) {
+        this.receivedGroupKeys = receivedGroupKeys;
     }
     
     @Override

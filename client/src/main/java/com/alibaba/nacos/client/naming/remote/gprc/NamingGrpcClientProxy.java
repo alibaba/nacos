@@ -35,12 +35,13 @@ import com.alibaba.nacos.api.naming.remote.request.ServiceListRequest;
 import com.alibaba.nacos.api.naming.remote.request.ServiceQueryRequest;
 import com.alibaba.nacos.api.naming.remote.request.SubscribeServiceRequest;
 import com.alibaba.nacos.api.naming.remote.response.BatchInstanceResponse;
-import com.alibaba.nacos.api.naming.remote.response.FuzzyWatchResponse;
+import com.alibaba.nacos.api.naming.remote.response.NamingFuzzyWatchResponse;
 import com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse;
 import com.alibaba.nacos.api.naming.remote.response.ServiceListResponse;
 import com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.remote.RemoteConstants;
+import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.selector.AbstractSelector;
@@ -48,6 +49,7 @@ import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.cache.FuzzyWatchServiceListHolder;
+import com.alibaba.nacos.client.naming.cache.NamingFuzzyWatchContext;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.address.ServerListChangeEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
@@ -110,7 +112,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         labels.put(Constants.APPNAME, AppNameUtils.getAppName());
         this.rpcClient = RpcClientFactory.createClient(uuid, ConnectionType.GRPC, labels,
                 RpcClientTlsConfigFactory.getInstance().createSdkConfig(properties.asProperties()));
-        this.redoService = new NamingGrpcRedoService(this, properties);
+        this.redoService = new NamingGrpcRedoService(this,fuzzyWatchServiceListHolder, properties);
         NAMING_LOGGER.info("Create naming rpc client for uuid->{}", uuid);
         start(serverListFactory, serviceInfoHolder, fuzzyWatchServiceListHolder);
     }
@@ -119,8 +121,8 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
             FuzzyWatchServiceListHolder fuzzyWatchServiceListHolder) throws NacosException {
         rpcClient.serverListFactory(serverListFactory);
         rpcClient.registerConnectionListener(redoService);
-        rpcClient.registerServerRequestHandler(new NamingPushRequestHandler(serviceInfoHolder,
-                fuzzyWatchServiceListHolder));
+        rpcClient.registerServerRequestHandler(new NamingPushRequestHandler(serviceInfoHolder));
+        rpcClient.registerServerRequestHandler(new NamingFuzzyWatchRequestHandler(fuzzyWatchServiceListHolder));
         rpcClient.start();
         NotifyCenter.registerSubscriber(this);
     }
@@ -431,58 +433,6 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     }
     
     @Override
-    public void fuzzyWatch(String serviceNamePattern, String groupNamePattern, String watcherUuid) throws NacosException {
-        if (NAMING_LOGGER.isDebugEnabled()) {
-            NAMING_LOGGER.debug("[GRPC-FUZZY-WATCH] servicePattern:{}, groupPattern:{}", serviceNamePattern, groupNamePattern);
-        }
-        redoService.cacheFuzzyWatcherForRedo(serviceNamePattern, groupNamePattern);
-        doFuzzyWatch(serviceNamePattern, groupNamePattern);
-    }
-    
-    /**
-     * Execute fuzzy watch operation.
-     *
-     * @param serviceNamePattern service name pattern
-     * @param groupNamePattern   group name pattern
-     * @throws NacosException nacos exception
-     */
-    public void doFuzzyWatch(String serviceNamePattern, String groupNamePattern) throws NacosException {
-        NamingFuzzyWatchRequest request = new NamingFuzzyWatchRequest(FuzzyGroupKeyPattern.generatePattern(serviceNamePattern,groupNamePattern,namespaceId),
-                NamingRemoteConstants.FUZZY_WATCH_SERVICE);
-        requestToServer(request, FuzzyWatchResponse.class);
-        redoService.fuzzyWatcherRegistered(serviceNamePattern, groupNamePattern);
-    }
-    
-    @Override
-    public boolean isFuzzyWatched(String serviceNamePattern, String groupNamePattern) {
-        return redoService.isFuzzyWatcherRegistered(serviceNamePattern, groupNamePattern);
-    }
-    
-    @Override
-    public void cancelFuzzyWatch(String serviceNamePattern, String groupNamePattern) throws NacosException {
-        if (NAMING_LOGGER.isDebugEnabled()) {
-            NAMING_LOGGER
-                    .debug("[GRPC-CANCEL-FUZZY-WATCH] serviceNamePattern:{}, groupNamePattern:{}", serviceNamePattern, groupNamePattern);
-        }
-        redoService.fuzzyWatcherDeregister(serviceNamePattern, groupNamePattern);
-        doCancelFuzzyWatch(serviceNamePattern, groupNamePattern);
-    }
-    
-    /**
-     * Execute cancel fuzzy watch operation.
-     *
-     * @param serviceNamePattern service name pattern
-     * @param groupNamePattern   group name pattern
-     * @throws NacosException nacos exception
-     */
-    public void doCancelFuzzyWatch(String serviceNamePattern, String groupNamePattern) throws NacosException {
-        NamingFuzzyWatchRequest request = new NamingFuzzyWatchRequest(FuzzyGroupKeyPattern.generatePattern(serviceNamePattern,groupNamePattern,namespaceId),
-                NamingRemoteConstants.CANCEL_FUZZY_WATCH_SERVICE);
-        requestToServer(request, FuzzyWatchResponse.class);
-        redoService.removeFuzzyWatcherForRedo(serviceNamePattern, groupNamePattern);
-    }
-    
-    @Override
     public boolean serverHealthy() {
         return rpcClient.isRunning();
     }
@@ -497,12 +447,34 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         return rpcClient.getConnectionAbility(abilityKey) == AbilityStatus.SUPPORTED;
     }
     
-    private <T extends Response> T requestToServer(AbstractNamingRequest request, Class<T> responseClass)
+    
+    /**
+     * Execute unsubscribe operation.
+     *
+     * @param namingFuzzyWatchRequest namingFuzzyWatchRequest
+     * @throws NacosException nacos exception
+     */
+    public NamingFuzzyWatchResponse fuzzyWatchRequest(NamingFuzzyWatchRequest namingFuzzyWatchRequest) throws NacosException {
+       
+       return requestToServer(namingFuzzyWatchRequest, NamingFuzzyWatchResponse.class);
+    }
+    
+    
+    private <T extends Response> T requestToServer(Request request, Class<T> responseClass)
             throws NacosException {
         Response response = null;
         try {
-            request.putAllHeader(
-                    getSecurityHeaders(request.getNamespace(), request.getGroupName(), request.getServiceName()));
+            if (request instanceof AbstractNamingRequest){
+                
+                request.putAllHeader(
+                        getSecurityHeaders(((AbstractNamingRequest)request).getNamespace(), ((AbstractNamingRequest)request).getGroupName(), ((AbstractNamingRequest)request).getServiceName()));
+            }else if(request instanceof NamingFuzzyWatchRequest){
+                request.putAllHeader(
+                        getSecurityHeaders(((NamingFuzzyWatchRequest)request).getNamespace(),null, null));
+            }else{
+                throw  new NacosException(400,"unknown naming request type");
+            }
+            
             response = requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
             if (ResponseCode.SUCCESS.getCode() != response.getResultCode()) {
                 // If the 403 login operation is triggered, refresh the accessToken of the client
@@ -534,7 +506,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
      *                  successful.
      * @param response  The response object containing registration result information, or null if registration failed.
      */
-    private void recordRequestFailedMetrics(AbstractNamingRequest request, Exception exception, Response response) {
+    private void recordRequestFailedMetrics(Request request, Exception exception, Response response) {
         if (Objects.isNull(response)) {
             MetricsMonitor.getNamingRequestFailedMonitor(request.getClass().getSimpleName(), MONITOR_LABEL_NONE,
                     MONITOR_LABEL_NONE, exception.getClass().getSimpleName()).inc();

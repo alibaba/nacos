@@ -62,7 +62,7 @@ com.alibaba.nacos.api.naming.remote.response.NotifyFuzzyWatcherResponse
 com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse
 com.alibaba.nacos.api.naming.remote.response.ServiceListResponse
 com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse
-com.alibaba.nacos.api.naming.remote.response.FuzzyWatchResponse
+com.alibaba.nacos.api.naming.remote.response.NamingFuzzyWatchResponse
 com.alibaba.nacos.api.config.remote.request.ConfigBatchFuzzyWatchRequest
 com.alibaba.nacos.api.config.remote.response.ConfigBatchFuzzyWatchResponse
 com.alibaba.nacos.api.config.remote.request.FuzzyWatchChangeNotifyRequest

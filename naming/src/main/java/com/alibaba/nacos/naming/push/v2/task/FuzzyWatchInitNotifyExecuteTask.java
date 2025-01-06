@@ -17,12 +17,8 @@
 package com.alibaba.nacos.naming.push.v2.task;
 
 import com.alibaba.nacos.api.naming.remote.request.FuzzyWatchNotifyInitRequest;
-import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
-import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
-import com.alibaba.nacos.naming.core.v2.client.Client;
-import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.push.v2.NoRequiredRetryException;
 import com.alibaba.nacos.naming.push.v2.PushConfig;
@@ -37,17 +33,15 @@ import java.util.Set;
  *
  * @author tanyongquan
  */
-public class FuzzyWatchInitExecuteTask extends AbstractExecuteTask {
-    
-    private final String taskKey;
+public class FuzzyWatchInitNotifyExecuteTask extends AbstractExecuteTask {
     
     private final String clientId;
     
     private final String pattern;
     
-    private final FuzzyWatchPushDelayTaskEngine delayTaskEngine;
+    private final FuzzyWatchPushDelayTaskEngine fuzzyWatchPushDelayTaskEngine;
     
-    private final FuzzyWatchInitDelayTask delayTask;
+    private final FuzzyWatchInitNotifyTask delayTask;
     
     /**
      * Fuzzy watch origin push matched service size, if there is no failure while executing push, {@code originSize == latch}.
@@ -68,12 +62,11 @@ public class FuzzyWatchInitExecuteTask extends AbstractExecuteTask {
     
     private boolean haveFailPush;
     
-    public FuzzyWatchInitExecuteTask(String taskKey, String clientId, String pattern, int originSize,
-            FuzzyWatchPushDelayTaskEngine delayTaskEngine, FuzzyWatchInitDelayTask delayTask, boolean isFinishInitTask) {
-        this.taskKey = taskKey;
+    public FuzzyWatchInitNotifyExecuteTask( String clientId, String pattern, int originSize,
+            FuzzyWatchPushDelayTaskEngine fuzzyWatchPushDelayTaskEngine, FuzzyWatchInitNotifyTask delayTask, boolean isFinishInitTask) {
         this.clientId = clientId;
         this.pattern = pattern;
-        this.delayTaskEngine = delayTaskEngine;
+        this.fuzzyWatchPushDelayTaskEngine = fuzzyWatchPushDelayTaskEngine;
         this.delayTask = delayTask;
         this.originSize = originSize;
         this.latch = delayTask.getMatchedService().size();
@@ -84,25 +77,18 @@ public class FuzzyWatchInitExecuteTask extends AbstractExecuteTask {
     
     @Override
     public void run() {
-        ClientManager clientManager = delayTaskEngine.getClientManager();
         Collection<Collection<String>> dividedServices = divideServiceByBatch(delayTask.getMatchedService());
-        Client client = clientManager.getClient(clientId);
-        if (null == client) {
-            return;
-        }
-        if (!client.isWatchedPattern(pattern)) {
-            return;
-        }
+        
         if (isFinishInitTask || delayTask.getMatchedService().isEmpty()) {
             // do not match any exist service, just finish init
-            delayTaskEngine.getPushExecutor().doFuzzyWatchNotifyPushWithCallBack(clientId,
+            fuzzyWatchPushDelayTaskEngine.getPushExecutor().doFuzzyWatchNotifyPushWithCallBack(clientId,
                     FuzzyWatchNotifyInitRequest.buildInitFinishRequest(pattern),
-                    new FuzzyWatchInitPushCallback(clientId, null, originSize, true, haveFailPush));
+                    new FuzzyWatchInitNotifyCallback(clientId, null, originSize, true, haveFailPush));
         } else {
             for (Collection<String> batchData : dividedServices) {
-                delayTaskEngine.getPushExecutor().doFuzzyWatchNotifyPushWithCallBack(clientId, FuzzyWatchNotifyInitRequest.buildInitRequest(
+                fuzzyWatchPushDelayTaskEngine.getPushExecutor().doFuzzyWatchNotifyPushWithCallBack(clientId, FuzzyWatchNotifyInitRequest.buildInitRequest(
                                 pattern, batchData),
-                        new FuzzyWatchInitPushCallback(clientId, batchData, originSize, false, haveFailPush));
+                        new FuzzyWatchInitNotifyCallback(clientId, batchData, originSize, false, haveFailPush));
             }
         }
         
@@ -127,7 +113,7 @@ public class FuzzyWatchInitExecuteTask extends AbstractExecuteTask {
         return result;
     }
     
-    private class FuzzyWatchInitPushCallback implements PushCallBack {
+    private class FuzzyWatchInitNotifyCallback implements PushCallBack {
         
         private final String clientId;
         
@@ -144,7 +130,7 @@ public class FuzzyWatchInitExecuteTask extends AbstractExecuteTask {
         
         private boolean haveFailPush;
         
-        private FuzzyWatchInitPushCallback(String clientId, Collection<String> groupedServiceName, int originSize,
+        private FuzzyWatchInitNotifyCallback(String clientId, Collection<String> groupedServiceName, int originSize,
                 boolean isFinishInitTask, boolean haveFailPush) {
             this.clientId = clientId;
             this.groupedServiceName = groupedServiceName;
@@ -176,7 +162,7 @@ public class FuzzyWatchInitExecuteTask extends AbstractExecuteTask {
                 sendCount += groupedServiceName.size();
                 // this task is an init push task(not finish notify), and with no failure in this task when executing push batched services
                 if (!haveFailPush && sendCount >= latch) {
-                    delayTaskEngine.addTask(taskKey, new FuzzyWatchInitDelayTask(taskKey, clientId, pattern, null,
+                    fuzzyWatchPushDelayTaskEngine.addTask(System.currentTimeMillis(), new FuzzyWatchInitNotifyTask(clientId, pattern, null,
                             originSize, PushConfig.getInstance().getPushTaskDelay(), true));
                 }
             }
@@ -191,10 +177,10 @@ public class FuzzyWatchInitExecuteTask extends AbstractExecuteTask {
             if (!(e instanceof NoRequiredRetryException)) {
                 Loggers.PUSH.error("Reason detail: ", e);
                 if (isFinishInitTask) {
-                    delayTaskEngine.addTask(taskKey, new FuzzyWatchInitDelayTask(taskKey, clientId, pattern, null,
+                    fuzzyWatchPushDelayTaskEngine.addTask(System.currentTimeMillis(),new FuzzyWatchInitNotifyTask(clientId, pattern, null,
                             originSize, PushConfig.getInstance().getPushTaskRetryDelay(), true));
                 } else {
-                    delayTaskEngine.addTask(taskKey, new FuzzyWatchInitDelayTask(taskKey, clientId, pattern, groupedServiceName,
+                    fuzzyWatchPushDelayTaskEngine.addTask(System.currentTimeMillis(),new FuzzyWatchInitNotifyTask(clientId, pattern, groupedServiceName,
                             originSize, PushConfig.getInstance().getPushTaskRetryDelay(), false));
                 }
                 

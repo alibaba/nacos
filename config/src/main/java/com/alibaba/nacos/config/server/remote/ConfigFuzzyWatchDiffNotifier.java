@@ -26,7 +26,7 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
 import com.alibaba.nacos.config.server.configuration.ConfigCommonConfig;
 import com.alibaba.nacos.config.server.model.event.ConfigBatchFuzzyListenEvent;
-import com.alibaba.nacos.config.server.service.ConfigCacheService;
+import com.alibaba.nacos.config.server.service.ConfigFuzzyWatchContextService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.core.remote.Connection;
@@ -41,13 +41,11 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Handles batch fuzzy listen events and pushes corresponding notifications to clients.
@@ -70,10 +68,14 @@ public class ConfigFuzzyWatchDiffNotifier extends Subscriber<ConfigBatchFuzzyLis
     
     private final RpcPushService rpcPushService;
     
-    public ConfigFuzzyWatchDiffNotifier(ConnectionManager connectionManager, RpcPushService rpcPushService) {
+    private final ConfigFuzzyWatchContextService configFuzzyWatchContextService;
+    
+    public ConfigFuzzyWatchDiffNotifier(ConnectionManager connectionManager, RpcPushService rpcPushService,
+            ConfigFuzzyWatchContextService configFuzzyWatchContextService) {
         this.connectionManager = connectionManager;
         this.tpsControlManager = ControlManagerCenter.getInstance().getTpsControlManager();
         this.rpcPushService = rpcPushService;
+        this.configFuzzyWatchContextService = configFuzzyWatchContextService;
         NotifyCenter.registerSubscriber(this);
     }
     
@@ -126,7 +128,7 @@ public class ConfigFuzzyWatchDiffNotifier extends Subscriber<ConfigBatchFuzzyLis
         String clientIp = metaInfo.getClientIp();
         
         // Match client effective group keys based on the event pattern, client IP, and tag
-        Set<String> matchGroupKeys = ConfigCacheService.matchGroupKeys(event.getGroupKeyPattern());
+        Set<String> matchGroupKeys = configFuzzyWatchContextService.matchGroupKeys(event.getGroupKeyPattern());
         
         // Retrieve existing group keys for the client from the event
         Set<String> clientExistingGroupKeys = event.getClientExistingGroupKeys();

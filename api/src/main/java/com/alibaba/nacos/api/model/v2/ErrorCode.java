@@ -221,7 +221,14 @@ public enum ErrorCode {
     
     DATA_EMPTY(100005, "导入的文件数据为空"),
     
-    NO_SELECTED_CONFIG(100006, "没有选择任何配置");
+    NO_SELECTED_CONFIG(100006, "没有选择任何配置"),
+    
+    
+    FUZZY_WATCH_PATTERN_OVER_LIMIT(50310, "fuzzy watch pattern over limit"),
+    
+    FUZZY_WATCH_PATTERN_MATCH_GROUP_KEY_OVER_LIMIT(50311,"fuzzy watch pattern matched group key over limit");
+    
+    
     
     private final Integer code;
     

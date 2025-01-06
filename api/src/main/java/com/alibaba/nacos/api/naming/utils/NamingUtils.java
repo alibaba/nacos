@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import static com.alibaba.nacos.api.common.Constants.CLUSTER_NAME_PATTERN_STRING;
+import static com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
 import static com.alibaba.nacos.api.common.Constants.NUMBER_PATTERN_STRING;
 
 /**
@@ -65,6 +66,25 @@ public class NamingUtils {
         }
         final String resultGroupedName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
         return resultGroupedName.intern();
+    }
+    
+    public static String getServiceKey(String namespace,String group,String serviceName){
+        if (StringUtils.isBlank(namespace)){
+            namespace=DEFAULT_NAMESPACE_ID;
+        }
+        return namespace + Constants.SERVICE_INFO_SPLITER +group+  Constants.SERVICE_INFO_SPLITER +serviceName;
+    }
+    
+    /**
+     * parse service key items for servicekey.
+     * item[0] for namespace
+     * item[1] for group
+     * item[2] for service name
+     * @param serviceKey
+     * @return
+     */
+    public static String[] parseServiceKey(String serviceKey){
+        return  serviceKey.split(Constants.SERVICE_INFO_SPLITER);
     }
     
     public static String getServiceName(final String serviceNameWithGroup) {

@@ -85,7 +85,7 @@ public class FuzzyGroupKeyPattern {
         }
         Set<String> matchedPatternList = new HashSet<>();
         for (String keyPattern : groupKeyPatterns) {
-            if (matchPattern(keyPattern,namespace, group,resourceName)) {
+            if (matchPattern(keyPattern,resourceName, group,namespace)) {
                 matchedPatternList.add(keyPattern);
             }
         }
@@ -94,7 +94,7 @@ public class FuzzyGroupKeyPattern {
     
     
     
-    public static boolean matchPattern(String groupKeyPattern,String namespace,String group,String resourceName){
+    public static boolean matchPattern(String groupKeyPattern,String resourceName,String group,String namespace){
         if(StringUtils.isBlank(namespace)){
             namespace=DEFAULT_NAMESPACE_ID;
         }
@@ -149,8 +149,8 @@ public class FuzzyGroupKeyPattern {
      * Calculates and merges the differences between the matched group keys and the client's existing group keys into a
      * list of ConfigState objects.
      *
-     * @param matchGroupKeys          The matched group keys set
-     * @param clientExistingGroupKeys The client's existing group keys set
+     * @param basedGroupKeys          The matched group keys set
+     * @param followedGroupKeys The client's existing group keys set
      * @return The merged list of ConfigState objects representing the states to be added or removed
      */
     public static List<GroupKeyState> diffGroupKeys(Set<String> basedGroupKeys,
@@ -180,6 +180,7 @@ public class FuzzyGroupKeyPattern {
     
     
     public static class GroupKeyState{
+        
         String groupKey;
         
         boolean exist;

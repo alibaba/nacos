@@ -62,12 +62,7 @@ public class PushExecutorRpcImpl implements PushExecutor {
                 .selectInstancesWithHealthyProtection(data.getOriginalData(), data.getServiceMetadata(), false, true,
                         subscriber);
     }
-    
-    @Override
-    public void doWatcherNotifyPush(String clientId, AbstractFuzzyWatchNotifyRequest watchNotifyRequest) {
-        pushService.pushWithoutAck(clientId, watchNotifyRequest);
-    }
-    
+
     @Override
     public void doFuzzyWatchNotifyPushWithCallBack(String clientId, AbstractFuzzyWatchNotifyRequest watchNotifyRequest, PushCallBack callBack) {
         pushService.pushWithCallback(clientId, watchNotifyRequest, callBack, GlobalExecutor.getCallbackExecutor());

@@ -27,46 +27,19 @@ import static com.alibaba.nacos.api.common.Constants.Naming.NAMING_MODULE;
  */
 public class FuzzyWatchNotifyChangeRequest extends AbstractFuzzyWatchNotifyRequest {
     
-    
-    private String namespace;
-    
-    String serviceName;
-    
-    String groupName;
-    
-    public FuzzyWatchNotifyChangeRequest() {
-    }
-    
-    public FuzzyWatchNotifyChangeRequest(String namespace, String serviceName,
-            String groupName, String serviceChangedType) {
-        super(serviceChangedType);
-       this.namespace=namespace;
-        this.serviceName = serviceName;
-        this.groupName = groupName;
-    }
-    
-    public String getNamespace() {
-        return namespace;
-    }
-    
-    public void setNamespace(String namespace) {
-        this.namespace = namespace;
-    }
-    
-    public String getServiceName() {
-        return serviceName;
-    }
-    
-    public void setServiceName(String serviceName) {
-        this.serviceName = serviceName;
-    }
-    
-    public String getGroupName() {
-        return groupName;
-    }
-    
-    public void setGroupName(String groupName) {
-        this.groupName = groupName;
-    }
+    private String serviceKey;
 
+    
+    public FuzzyWatchNotifyChangeRequest(String serviceKey, String serviceChangedType) {
+        super(serviceChangedType);
+       this.serviceKey=serviceKey;
+    }
+    
+    public String getServiceKey() {
+        return serviceKey;
+    }
+    
+    public void setServiceKey(String serviceKey) {
+        this.serviceKey = serviceKey;
+    }
 }

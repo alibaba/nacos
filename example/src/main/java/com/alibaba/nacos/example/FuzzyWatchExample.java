@@ -19,8 +19,9 @@ package com.alibaba.nacos.example;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
-import com.alibaba.nacos.api.naming.listener.AbstractFuzzyWatchEventListener;
-import com.alibaba.nacos.api.naming.listener.FuzzyWatchNotifyEvent;
+import com.alibaba.nacos.api.naming.listener.FuzzyWatchEventWatcher;
+import com.alibaba.nacos.api.naming.listener.FuzzyWatchChangeEvent;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 
 import java.util.Properties;
 import java.util.concurrent.Executor;
@@ -62,7 +63,7 @@ public class FuzzyWatchExample {
                     return thread;
                 });
         
-        naming.fuzzyWatch(DEFAULT_GROUP, new AbstractFuzzyWatchEventListener() {
+        naming.fuzzyWatch(DEFAULT_GROUP, new FuzzyWatchEventWatcher() {
             
             //EventListener onEvent is sync to handle, If process too low in onEvent, maybe block other onEvent callback.
             //So you can override getExecutor() to async handle event.
@@ -72,13 +73,13 @@ public class FuzzyWatchExample {
             }
             
             @Override
-            public void onEvent(FuzzyWatchNotifyEvent event) {
-                System.out.println("[Fuzzy-Watch-GROUP]changed service name: " + event.getService().getGroupedServiceName());
+            public void onEvent(FuzzyWatchChangeEvent event) {
+                System.out.println("[Fuzzy-Watch-GROUP]changed service name: " + NamingUtils.getServiceKey(event.getNamespace(),event.getGroupName(),event.getServiceName()));
                 System.out.println("[Fuzzy-Watch-GROUP]change type: " + event.getChangeType());
             }
         });
         
-        naming.fuzzyWatch("nacos.test.*", DEFAULT_GROUP, new AbstractFuzzyWatchEventListener() {
+        naming.fuzzyWatch("nacos.test.*", DEFAULT_GROUP, new FuzzyWatchEventWatcher() {
             
             @Override
             public Executor getExecutor() {
@@ -86,8 +87,8 @@ public class FuzzyWatchExample {
             }
             
             @Override
-            public void onEvent(FuzzyWatchNotifyEvent event) {
-                System.out.println("[Prefix-Fuzzy-Watch]changed service name: " + event.getService().getGroupedServiceName());
+            public void onEvent(FuzzyWatchChangeEvent event) {
+                System.out.println("[Prefix-Fuzzy-Watch]changed service name: " + NamingUtils.getServiceKey(event.getNamespace(),event.getGroupName(),event.getServiceName()));
                 System.out.println("[Prefix-Fuzzy-Watch]change type: " + event.getChangeType());
             }
         });

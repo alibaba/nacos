@@ -19,45 +19,44 @@ package com.alibaba.nacos.naming.remote.rpc.handler;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.NamingFuzzyWatchRequest;
-import com.alibaba.nacos.api.naming.remote.response.FuzzyWatchResponse;
+import com.alibaba.nacos.api.naming.remote.response.NamingFuzzyWatchResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.core.remote.RequestHandler;
-import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
+import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import org.springframework.stereotype.Component;
+
+import java.util.Set;
 
 /**
  * Fuzzy watch service request handler.
  *
  * @author tanyongquan
  */
-@Component("fuzzyWatchRequestHandler")
-public class NamingFuzzyWatchRequestHandler extends RequestHandler<NamingFuzzyWatchRequest, FuzzyWatchResponse> {
+@Component("namingFuzzyWatchRequestHandler")
+public class NamingFuzzyWatchRequestHandler extends RequestHandler<NamingFuzzyWatchRequest, NamingFuzzyWatchResponse> {
     
-    private final EphemeralClientOperationServiceImpl clientOperationService;
-    
-    public NamingFuzzyWatchRequestHandler(EphemeralClientOperationServiceImpl clientOperationService) {
-        this.clientOperationService = clientOperationService;
+    public NamingFuzzyWatchRequestHandler() {
     }
     
     @Override
     @Secured(action = ActionTypes.READ)
-    public FuzzyWatchResponse handle(NamingFuzzyWatchRequest request, RequestMeta meta) throws NacosException {
-        String serviceNamePattern = request.getServiceName();
-        String groupNamePattern = request.getGroupName();
-        String namespaceId = request.getNamespace();
+    public NamingFuzzyWatchResponse handle(NamingFuzzyWatchRequest request, RequestMeta meta) throws NacosException {
         
-        switch (request.getType()) {
+        String groupKeyPattern = request.getGroupKeyPattern();
+        
+        switch (request.getWatchType()) {
             case NamingRemoteConstants.FUZZY_WATCH_SERVICE:
-                clientOperationService.fuzzyWatch(namespaceId, serviceNamePattern, groupNamePattern, meta.getConnectionId());
-                return FuzzyWatchResponse.buildSuccessResponse(NamingRemoteConstants.FUZZY_WATCH_SERVICE);
+                NotifyCenter.publishEvent(new ClientOperationEvent.ClientFuzzyWatchEvent(groupKeyPattern, meta.getConnectionId(),request.getReceivedGroupKeys(),request.isInitializing()));
+                return NamingFuzzyWatchResponse.buildSuccessResponse(NamingRemoteConstants.FUZZY_WATCH_SERVICE);
             case NamingRemoteConstants.CANCEL_FUZZY_WATCH_SERVICE:
-                clientOperationService.cancelFuzzyWatch(namespaceId, serviceNamePattern, groupNamePattern, meta.getConnectionId());
-                return FuzzyWatchResponse.buildSuccessResponse(NamingRemoteConstants.CANCEL_FUZZY_WATCH_SERVICE);
+                NotifyCenter.publishEvent(new ClientOperationEvent.ClientCancelFuzzyWatchEvent(groupKeyPattern, meta.getConnectionId()));
+                return NamingFuzzyWatchResponse.buildSuccessResponse(NamingRemoteConstants.CANCEL_FUZZY_WATCH_SERVICE);
             default:
                 throw new NacosException(NacosException.INVALID_PARAM,
-                        String.format("Unsupported request type %s", request.getType()));
+                        String.format("Unsupported request type %s", request.getWatchType()));
         }
     }
 }

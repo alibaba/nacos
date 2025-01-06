@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.client.naming.event;
 
-import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.common.notify.Event;
 
 /**
@@ -26,40 +25,25 @@ import com.alibaba.nacos.common.notify.Event;
  */
 public class FuzzyWatchNotifyEvent extends Event {
     
-    private final String eventScope;
+    private final String scope;
     
-    private final Service changedService;
+    private String serviceKey;
     
     private String pattern;
     
-    private String uuid;
+    private final String changedType;
     
-    private final String serviceChangedType;
     
-    private FuzzyWatchNotifyEvent(String eventScope, Service changedService, String pattern, String uuid, String serviceChangedType) {
-        this(eventScope, changedService, pattern, serviceChangedType);
-        this.uuid = uuid;
+    public FuzzyWatchNotifyEvent(String scope,
+            String pattern, String serviceKey,String changedType){
+        this.scope = scope;
+        this.pattern=pattern;
+      this.serviceKey=serviceKey;
+        this.changedType=changedType;
     }
-    
-    private FuzzyWatchNotifyEvent(String eventScope, Service changedService, String pattern, String serviceChangedType) {
-        this.eventScope = eventScope;
-        this.changedService = changedService;
-        this.serviceChangedType = serviceChangedType;
-        this.pattern = pattern;
-    }
-    
-    public static FuzzyWatchNotifyEvent buildNotifyPatternSpecificListenerEvent(String eventScope, Service changedService,
-            String pattern, String uuid, String serviceChangedType) {
-        return new FuzzyWatchNotifyEvent(eventScope, changedService, pattern, uuid, serviceChangedType);
-    }
-    
-    public static FuzzyWatchNotifyEvent buildNotifyPatternAllListenersEvent(String eventScope, Service changedService,
-            String pattern, String serviceChangedType) {
-        return new FuzzyWatchNotifyEvent(eventScope, changedService, pattern, serviceChangedType);
-    }
-    
-    public Service getChangedService() {
-        return changedService;
+    public static FuzzyWatchNotifyEvent build(String eventScope,
+            String pattern, String serviceKey,String changedType) {
+        return new FuzzyWatchNotifyEvent(eventScope,pattern, serviceKey, changedType);
     }
     
     public String getPattern() {
@@ -70,16 +54,20 @@ public class FuzzyWatchNotifyEvent extends Event {
         this.pattern = pattern;
     }
     
-    public String getUuid() {
-        return uuid;
-    }
-    
-    public String getServiceChangedType() {
-        return serviceChangedType;
+    public String getChangedType() {
+        return changedType;
     }
     
     @Override
     public String scope() {
-        return this.eventScope;
+        return this.scope;
+    }
+    
+    public String getServiceKey() {
+        return serviceKey;
+    }
+    
+    public void setServiceKey(String serviceKey) {
+        this.serviceKey = serviceKey;
     }
 }

@@ -22,11 +22,11 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.naming.cache.FuzzyWatchServiceListHolder;
 import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.BatchInstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.InstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.SubscriberRedoData;
-import com.alibaba.nacos.client.naming.remote.gprc.redo.data.FuzzyWatcherRedoData;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.remote.client.Connection;
@@ -60,14 +60,15 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     
     private final ConcurrentMap<String, SubscriberRedoData> subscribes = new ConcurrentHashMap<>();
     
-    private final ConcurrentMap<String, FuzzyWatcherRedoData> fuzzyWatcher = new ConcurrentHashMap<>();
+    private final FuzzyWatchServiceListHolder fuzzyWatchServiceListHolder;
     
     private final ScheduledExecutorService redoExecutor;
     
     private volatile boolean connected = false;
     
-    public NamingGrpcRedoService(NamingGrpcClientProxy clientProxy, NacosClientProperties properties) {
+    public NamingGrpcRedoService(NamingGrpcClientProxy clientProxy,FuzzyWatchServiceListHolder fuzzyWatchServiceListHolder, NacosClientProperties properties) {
         setProperties(properties);
+        this.fuzzyWatchServiceListHolder=fuzzyWatchServiceListHolder;
         this.redoExecutor = new ScheduledThreadPoolExecutor(redoThreadCount, new NameThreadFactory(REDO_THREAD_NAME));
         this.redoExecutor.scheduleWithFixedDelay(new RedoScheduledTask(clientProxy, this), redoDelayTime, redoDelayTime,
                 TimeUnit.MILLISECONDS);
@@ -103,8 +104,8 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
         synchronized (subscribes) {
             subscribes.values().forEach(subscriberRedoData -> subscriberRedoData.setRegistered(false));
         }
-        synchronized (fuzzyWatcher) {
-            fuzzyWatcher.values().forEach(fuzzyWatcherRedoData -> fuzzyWatcherRedoData.setRegistered(false));
+        synchronized (fuzzyWatchServiceListHolder) {
+            fuzzyWatchServiceListHolder.getFuzzyMatchContextMap().values().forEach(fuzzyWatcherContext -> fuzzyWatcherContext.setConsistentWithServer(false));
         }
         LogUtils.NAMING_LOGGER.warn("mark to redo completed");
     }
@@ -313,101 +314,6 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
         Set<SubscriberRedoData> result = new HashSet<>();
         synchronized (subscribes) {
             for (SubscriberRedoData each : subscribes.values()) {
-                if (each.isNeedRedo()) {
-                    result.add(each);
-                }
-            }
-        }
-        return result;
-    }
-    
-    /**
-     * Cache fuzzy watcher for redo.
-     *
-     * @param serviceNamePattern service name pattern
-     * @param groupNamePattern group name pattern
-     */
-    public void cacheFuzzyWatcherForRedo(String serviceNamePattern, String groupNamePattern) {
-        String key = NamingUtils.getGroupedName(serviceNamePattern, groupNamePattern);
-        FuzzyWatcherRedoData redoData = FuzzyWatcherRedoData.build(serviceNamePattern, groupNamePattern);
-        synchronized (fuzzyWatcher) {
-            fuzzyWatcher.put(key, redoData);
-        }
-    }
-    
-    /**
-     * Fuzzy watcher register successfully, mark registered status as {@code true}.
-     *
-     * @param serviceNamePattern service name pattern
-     * @param groupNamePattern group name pattern
-     */
-    public void fuzzyWatcherRegistered(String serviceNamePattern, String groupNamePattern) {
-        String key = NamingUtils.getGroupedName(serviceNamePattern, groupNamePattern);
-        synchronized (fuzzyWatcher) {
-            FuzzyWatcherRedoData redoData = fuzzyWatcher.get(key);
-            if (null != redoData) {
-                redoData.setRegistered(true);
-            }
-        }
-    }
-    
-    /**
-     * Fuzzy watcher deregister, mark unregistering status as {@code true}.
-     *
-     * @param serviceNamePattern service name pattern
-     * @param groupNamePattern group name pattern
-     */
-    public void fuzzyWatcherDeregister(String serviceNamePattern, String groupNamePattern) {
-        String key = NamingUtils.getGroupedName(serviceNamePattern, groupNamePattern);
-        synchronized (fuzzyWatcher) {
-            FuzzyWatcherRedoData redoData = fuzzyWatcher.get(key);
-            if (null != redoData) {
-                redoData.setUnregistering(true);
-                redoData.setExpectedRegistered(false);
-            }
-        }
-    }
-    
-    /**
-     * Remove fuzzy watcher for redo.
-     *
-     * @param serviceNamePattern service name pattern
-     * @param groupNamePattern group name pattern
-     */
-    public void removeFuzzyWatcherForRedo(String serviceNamePattern, String groupNamePattern) {
-        String key = NamingUtils.getGroupedName(serviceNamePattern, groupNamePattern);
-        synchronized (fuzzyWatcher) {
-            FuzzyWatcherRedoData redoData = fuzzyWatcher.get(key);
-            if (null != redoData && !redoData.isExpectedRegistered()) {
-                fuzzyWatcher.remove(key);
-            }
-        }
-    }
-    
-    /**
-     * Judge fuzzy watcher has registered to server.
-     *
-     * @param serviceNamePattern service name pattern
-     * @param groupNamePattern group name pattern
-     * @return {@code true} if watched, otherwise {@code false}
-     */
-    public boolean isFuzzyWatcherRegistered(String serviceNamePattern, String groupNamePattern) {
-        String key = NamingUtils.getGroupedName(serviceNamePattern, groupNamePattern);
-        synchronized (fuzzyWatcher) {
-            FuzzyWatcherRedoData redoData = fuzzyWatcher.get(key);
-            return null != redoData && redoData.isRegistered();
-        }
-    }
-    
-    /**
-     * Find all fuzzy watcher redo data which need to redo.
-     *
-     * @return set of {@code WatcherRedoData} need to redo.
-     */
-    public Set<FuzzyWatcherRedoData> findFuzzyWatcherRedoData() {
-        Set<FuzzyWatcherRedoData> result = new HashSet<>();
-        synchronized (fuzzyWatcher) {
-            for (FuzzyWatcherRedoData each : fuzzyWatcher.values()) {
                 if (each.isNeedRedo()) {
                     result.add(each);
                 }

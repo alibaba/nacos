@@ -56,12 +56,6 @@ public class PushExecutorDelegate implements PushExecutor {
     }
     
     @Override
-    public void doWatcherNotifyPush(String clientId, AbstractFuzzyWatchNotifyRequest watchNotifyRequest) {
-        // only support fuzzy watch by rpc
-        rpcPushExecuteService.doWatcherNotifyPush(clientId, watchNotifyRequest);
-    }
-    
-    @Override
     public void doFuzzyWatchNotifyPushWithCallBack(String clientId, AbstractFuzzyWatchNotifyRequest watchNotifyRequest,
             PushCallBack callBack) {
         // only support fuzzy watch by rpc

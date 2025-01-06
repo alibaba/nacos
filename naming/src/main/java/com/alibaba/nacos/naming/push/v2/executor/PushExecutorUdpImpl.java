@@ -97,11 +97,6 @@ public class PushExecutorUdpImpl implements PushExecutor {
     }
     
     @Override
-    public void doWatcherNotifyPush(String clientId, AbstractFuzzyWatchNotifyRequest watchNotifyRequest) {
-    
-    }
-    
-    @Override
     public void doFuzzyWatchNotifyPushWithCallBack(String clientId, AbstractFuzzyWatchNotifyRequest watchNotifyRequest, PushCallBack callBack) {
     
     }

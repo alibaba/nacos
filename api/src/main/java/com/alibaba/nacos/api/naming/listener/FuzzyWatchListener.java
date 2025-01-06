@@ -16,17 +16,26 @@
 
 package com.alibaba.nacos.api.naming.listener;
 
+import java.util.UUID;
+import java.util.concurrent.Executor;
+
 /**
  * Fuzzy Watch Listener.
  *
  * @author tanyongquan
  */
-public interface FuzzyWatchListener {
+public abstract class FuzzyWatchListener {
+    
+    
+    String uuid= UUID.randomUUID().toString();
+    
+    public Executor getExecutor() {
+        return null;
+    }
     
     /**
      * callback event.
      *
      * @param event event
      */
-    void onEvent(FuzzyWatchNotifyEvent event);
 }

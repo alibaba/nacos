@@ -27,6 +27,7 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.client.auth.ram.utils.SignUtil;
 import com.alibaba.nacos.client.address.ServerListChangeEvent;
+import com.alibaba.nacos.client.naming.cache.NamingFuzzyWatchContext;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.common.notify.Event;
@@ -39,6 +40,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -171,21 +173,6 @@ class AbstractNamingClientProxyTest {
         
         @Override
         public boolean isSubscribed(String serviceName, String groupName, String clusters) throws NacosException {
-            return false;
-        }
-        
-        @Override
-        public void fuzzyWatch(String serviceNamePattern, String groupNamePattern, String uuid) throws NacosException {
-        
-        }
-        
-        @Override
-        public void cancelFuzzyWatch(String serviceNamePattern, String groupNamePattern) throws NacosException {
-        
-        }
-        
-        @Override
-        public boolean isFuzzyWatched(String serviceNamePattern, String groupNamePattern) {
             return false;
         }
         

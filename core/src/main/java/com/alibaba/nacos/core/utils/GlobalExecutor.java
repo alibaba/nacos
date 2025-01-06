@@ -72,6 +72,13 @@ public class GlobalExecutor {
         COMMON_EXECUTOR.schedule(runnable, delayMs, TimeUnit.MILLISECONDS);
     }
     
+    public static void scheduleWithFixDelayByCommon(Runnable runnable, long delayMs) {
+        if (COMMON_EXECUTOR.isShutdown()) {
+            return;
+        }
+        COMMON_EXECUTOR.scheduleWithFixedDelay(runnable, delayMs, delayMs, TimeUnit.MILLISECONDS);
+    }
+    
     public static void submitLoadDataTask(Runnable runnable) {
         DISTRO_EXECUTOR.submit(runnable);
     }

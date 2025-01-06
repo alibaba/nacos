@@ -49,15 +49,6 @@ public interface PushExecutor {
      */
     void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data, NamingPushCallback callBack);
     
-    
-    /**
-     * Do push to notify fuzzy watcher.
-     *
-     * @param clientId client id
-     * @param fuzzyWatchNotifyRequest request for fuzzy watch notification
-     */
-    void doWatcherNotifyPush(String clientId, AbstractFuzzyWatchNotifyRequest fuzzyWatchNotifyRequest);
-    
     /**
      * Do push to notify fuzzy watcher with call back.
      *

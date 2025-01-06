@@ -26,9 +26,7 @@ import java.util.Collection;
  *
  * @author tanyongquan
  */
-public class FuzzyWatchInitDelayTask extends AbstractDelayTask {
-    
-    private final String taskKey;
+public class FuzzyWatchInitNotifyTask extends AbstractDelayTask {
     
     private final String clientId;
     
@@ -40,9 +38,8 @@ public class FuzzyWatchInitDelayTask extends AbstractDelayTask {
     
     private final boolean isFinishInit;
     
-    public FuzzyWatchInitDelayTask(String taskKey, String clientId, String pattern, Collection<String> matchedService,
+    public FuzzyWatchInitNotifyTask(String clientId, String pattern, Collection<String> matchedService,
             int originSize, long delay, boolean isFinishInit) {
-        this.taskKey = taskKey;
         this.clientId = clientId;
         this.pattern = pattern;
         this.matchedService = matchedService;
@@ -54,19 +51,15 @@ public class FuzzyWatchInitDelayTask extends AbstractDelayTask {
     
     @Override
     public void merge(AbstractDelayTask task) {
-        if (!(task instanceof FuzzyWatchInitDelayTask)) {
+        if (!(task instanceof FuzzyWatchInitNotifyTask)) {
             return;
         }
-        FuzzyWatchInitDelayTask oldTask = (FuzzyWatchInitDelayTask) task;
+        FuzzyWatchInitNotifyTask oldTask = (FuzzyWatchInitNotifyTask) task;
         if (!isFinishInit) {
             matchedService.addAll(oldTask.getMatchedService());
         }
         setLastProcessTime(Math.min(getLastProcessTime(), task.getLastProcessTime()));
         Loggers.PUSH.info("[FUZZY-WATCH-INIT-PUSH] Task merge for pattern {}", pattern);
-    }
-    
-    public String getTaskKey() {
-        return taskKey;
     }
     
     public String getPattern() {

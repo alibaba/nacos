@@ -17,7 +17,7 @@
 package com.alibaba.nacos.api.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.listener.AbstractFuzzyWatchEventListener;
+import com.alibaba.nacos.api.naming.listener.FuzzyWatchEventWatcher;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
@@ -26,6 +26,7 @@ import com.alibaba.nacos.api.naming.selector.NamingSelector;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 
 import java.util.List;
+import java.util.concurrent.Future;
 
 /**
  * Naming Service.
@@ -561,11 +562,11 @@ public interface NamingService {
      * changes occur in the services within the scope.
      * When given a fixed group name, watch changes in all services under this group.
      *
-     * @param fixedGroupName fixed group name for fuzzy watch
+     * @param groupNamePattern  group name pattern for fuzzy watch
      * @param listener event listener
      * @throws NacosException nacos exception
      */
-    void fuzzyWatch(String fixedGroupName, AbstractFuzzyWatchEventListener listener) throws NacosException;
+    void fuzzyWatch(String groupNamePattern, FuzzyWatchEventWatcher listener) throws NacosException;
     
     /**
      * According to matching rules, watch services within a specific scope, and receive notifications when
@@ -574,31 +575,56 @@ public interface NamingService {
      * this group that match the specified pattern.
      *
      * @param serviceNamePattern service name pattern for fuzzy watch
-     * @param fixedGroupName fixed group name for fuzzy watch
+     * @param groupNamePattern  group name pattern for fuzzy watch
      * @param listener event listener
      * @throws NacosException nacos exception
      */
-    void fuzzyWatch(String serviceNamePattern, String fixedGroupName,
-            AbstractFuzzyWatchEventListener listener) throws NacosException;
+    void fuzzyWatch(String serviceNamePattern, String groupNamePattern,
+            FuzzyWatchEventWatcher listener) throws NacosException;
+    
+    /**
+     * According to matching rules, watch services within a specific scope, and receive notifications when
+     * changes occur in the services within the scope.
+     * When given a fixed group name, watch changes in all services under this group.
+     *
+     * @param groupNamePattern  group name pattern for fuzzy watch
+     * @param listener event listener
+     * @throws NacosException nacos exception
+     */
+    Future<ListView<String>> fuzzyWatchWithServiceKeys(String groupNamePattern, FuzzyWatchEventWatcher listener) throws NacosException;
+    
+    /**
+     * According to matching rules, watch services within a specific scope, and receive notifications when
+     * changes occur in the services within the scope.
+     * When provided with a fixed group name and pattern of service name, watch changes in services under
+     * this group that match the specified pattern.
+     *
+     * @param serviceNamePattern service name pattern for fuzzy watch
+     * @param groupNamePattern  group name pattern for fuzzy watch
+     * @param listener event listener
+     * @throws NacosException nacos exception
+     */
+    Future<ListView<String>> fuzzyWatchWithServiceKeys(String serviceNamePattern, String groupNamePattern,
+            FuzzyWatchEventWatcher listener) throws NacosException;
     
     /**
      * Cancel fuzzy watch, and remove event listener of a pattern.
      *
-     * @param fixedGroupName fixed group name for fuzzy watch
+     * @param groupNamePattern  group name for fuzzy watch
      * @param listener event listener
      * @throws NacosException nacos exception
      */
-    void cancelFuzzyWatch(String fixedGroupName, AbstractFuzzyWatchEventListener listener) throws NacosException;
+    void cancelFuzzyWatch(String groupNamePattern, FuzzyWatchEventWatcher listener) throws NacosException;
     
     /**
      * Cancel fuzzy watch, and remove event listener of a pattern.
      *
      * @param serviceNamePattern service name pattern for fuzzy watch
-     * @param fixedGroupName fixed group name for fuzzy watch
+     * @param groupNamePattern fixed group name for fuzzy watch
      * @param listener event listener
      * @throws NacosException nacos exception
      */
-    void cancelFuzzyWatch(String serviceNamePattern, String fixedGroupName, AbstractFuzzyWatchEventListener listener) throws NacosException;
+    void cancelFuzzyWatch(String serviceNamePattern, String groupNamePattern, FuzzyWatchEventWatcher listener) throws NacosException;
 
     /**
      * Unsubscribe event listener of service.

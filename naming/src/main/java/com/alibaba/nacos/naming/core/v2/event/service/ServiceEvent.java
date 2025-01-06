@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 
 import java.util.Collection;
+import java.util.Set;
 
 /**
  * Service event.
@@ -101,13 +102,13 @@ public class ServiceEvent extends Event {
         
         private final String pattern;
         
-        private final Collection<Service> matchedService;
+        private final Set<String> matchedServiceKeys;
         
-        public ServiceFuzzyWatchInitEvent(String clientId, String pattern, Collection<Service> matchedService) {
+        public ServiceFuzzyWatchInitEvent(String clientId, String pattern, Set<String> matchedServiceKeys) {
             super();
             this.clientId = clientId;
             this.pattern = pattern;
-            this.matchedService = matchedService;
+            this.matchedServiceKeys = matchedServiceKeys;
         }
         
         public String getClientId() {
@@ -118,8 +119,8 @@ public class ServiceEvent extends Event {
             return pattern;
         }
         
-        public Collection<Service> getMatchedService() {
-            return matchedService;
+        public Set<String> getMatchedServicKeys() {
+            return matchedServiceKeys;
         }
     }
 }

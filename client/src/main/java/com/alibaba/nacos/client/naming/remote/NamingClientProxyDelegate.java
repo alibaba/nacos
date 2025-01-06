@@ -192,31 +192,6 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     }
     
     @Override
-    public void fuzzyWatch(String serviceNamePattern, String groupNamePattern, String uuid) throws NacosException {
-        NAMING_LOGGER.info("[FUZZY-WATCH] serviceNamePattern:{}, groupNamePattern:{}", serviceNamePattern, groupNamePattern);
-        if (!fuzzyWatchServiceListHolder.containsPatternMatchCache(serviceNamePattern, groupNamePattern)
-                || !isFuzzyWatched(serviceNamePattern, groupNamePattern)) {
-            fuzzyWatchServiceListHolder.addPatternMatchCache(serviceNamePattern, groupNamePattern);
-            grpcClientProxy.fuzzyWatch(serviceNamePattern, groupNamePattern, "");
-        } else {
-            fuzzyWatchServiceListHolder.duplicateFuzzyWatchInit(serviceNamePattern, groupNamePattern, uuid);
-        }
-    }
-    
-    @Override
-    public boolean isFuzzyWatched(String serviceNamePattern, String groupNamePattern) {
-        return grpcClientProxy.isFuzzyWatched(serviceNamePattern, groupNamePattern);
-    }
-    
-    @Override
-    public void cancelFuzzyWatch(String serviceNamePattern, String groupNamePattern) throws NacosException {
-        NAMING_LOGGER
-                .debug("[CANCEL-FUZZY-WATCH] serviceNamePattern:{}, groupNamePattern:{} ", serviceNamePattern, groupNamePattern);
-        fuzzyWatchServiceListHolder.removePatternMatchCache(serviceNamePattern, groupNamePattern);
-        grpcClientProxy.cancelFuzzyWatch(serviceNamePattern, groupNamePattern);
-    }
-    
-    @Override
     public boolean serverHealthy() {
         return grpcClientProxy.serverHealthy() || httpClientProxy.serverHealthy();
     }

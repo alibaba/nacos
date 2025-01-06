@@ -17,26 +17,21 @@
 package com.alibaba.nacos.naming.core.v2.index;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.trace.DeregisterInstanceReason;
 import com.alibaba.nacos.common.trace.event.naming.DeregisterInstanceTraceEvent;
-import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
-import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.event.publisher.NamingEventPublisherFactory;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -55,10 +50,10 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
     
     private final ConcurrentMap<Service, Set<String>> subscriberIndexes = new ConcurrentHashMap<>();
     
-    private ClientFuzzyWatchIndexesManager clientFuzzyWatchIndexesManager;
+    private NamingFuzzyWatchContextService namingFuzzyWatchContextService;
     
-    public ClientServiceIndexesManager(ClientFuzzyWatchIndexesManager clientFuzzyWatchIndexesManager){
-        this.clientFuzzyWatchIndexesManager=clientFuzzyWatchIndexesManager;
+    public ClientServiceIndexesManager(NamingFuzzyWatchContextService namingFuzzyWatchContextService){
+        this.namingFuzzyWatchContextService = namingFuzzyWatchContextService;
     }
     
     public ClientServiceIndexesManager() {
@@ -85,7 +80,6 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
     public void removePublisherIndexesByEmptyService(Service service) {
         if (publisherIndexes.containsKey(service) && publisherIndexes.get(service).isEmpty()) {
             publisherIndexes.remove(service);
-            clientFuzzyWatchIndexesManager.removeWatchMatchIndex(service);
         }
     }
     
@@ -96,8 +90,6 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
         result.add(ClientOperationEvent.ClientDeregisterServiceEvent.class);
         result.add(ClientOperationEvent.ClientSubscribeServiceEvent.class);
         result.add(ClientOperationEvent.ClientUnsubscribeServiceEvent.class);
-        result.add(ClientOperationEvent.ClientFuzzyWatchEvent.class);
-        result.add(ClientOperationEvent.ClientCancelFuzzyWatchEvent.class);
         result.add(ClientOperationEvent.ClientReleaseEvent.class);
         return result;
     }
@@ -116,7 +108,6 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
         for (Service each : client.getAllSubscribeService()) {
             removeSubscriberIndexes(each, client.getClientId());
         }
-        
         DeregisterInstanceReason reason = event.isNative()
                 ? DeregisterInstanceReason.NATIVE_DISCONNECTED : DeregisterInstanceReason.SYNCED_DISCONNECTED;
         long currentTimeMillis = System.currentTimeMillis();
@@ -147,7 +138,7 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
         String serviceChangedType = Constants.ServiceChangedType.INSTANCE_CHANGED;
         if (!publisherIndexes.containsKey(service)) {
             // The only time the index needs to be updated is when the service is first created
-            clientFuzzyWatchIndexesManager.updateWatchMatchIndex(service);
+            namingFuzzyWatchContextService.addNewSevice(service);
             serviceChangedType = Constants.ServiceChangedType.ADD_SERVICE;
         }
         NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, serviceChangedType, true));

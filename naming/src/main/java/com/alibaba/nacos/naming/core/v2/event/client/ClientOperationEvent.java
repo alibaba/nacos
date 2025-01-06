@@ -20,6 +20,8 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 
+import java.util.Set;
+
 /**
  * Operation client event.
  *
@@ -102,16 +104,37 @@ public class ClientOperationEvent extends Event {
         private static final long serialVersionUID = -4518919987813223119L;
         
         private final String pattern;
-        
-        public ClientFuzzyWatchEvent(String pattern, String clientId) {
+    
+        private Set<String> clientReceivedGroupKeys;
+    
+        private boolean isInitializing;
+    
+        public ClientFuzzyWatchEvent(String pattern, String clientId,Set<String> clientReceivedGroupKeys,boolean isInitializing) {
             super(clientId, null);
             this.pattern = pattern;
+            this.clientReceivedGroupKeys = clientReceivedGroupKeys;
+            this.isInitializing=isInitializing;
         }
         
         public String getPattern() {
             return pattern;
         }
-        
+    
+        public Set<String> getClientReceivedGroupKeys() {
+            return clientReceivedGroupKeys;
+        }
+    
+        public void setClientReceivedGroupKeys(Set<String> clientReceivedGroupKeys) {
+            this.clientReceivedGroupKeys = clientReceivedGroupKeys;
+        }
+    
+        public boolean isInitializing() {
+            return isInitializing;
+        }
+    
+        public void setInitializing(boolean initializing) {
+            isInitializing = initializing;
+        }
     }
     
     /**

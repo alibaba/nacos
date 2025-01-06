@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.config.server.model.event.ConfigBatchFuzzyListenEvent;
+import com.alibaba.nacos.config.server.service.ConfigFuzzyWatchContextService;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.ConfigBatchFuzzyListenRequestParamsExtractor;
@@ -54,7 +55,7 @@ public class ConfigBatchFuzzyWatchRequestHandler
      * Context for managing fuzzy listen changes.
      */
     @Autowired
-    private ConfigFuzzyWatchContext configFuzzyWatchContext;
+    private ConfigFuzzyWatchContextService configFuzzyWatchContextService;
     
     /**
      * Handles the batch fuzzy listen request.
@@ -79,7 +80,7 @@ public class ConfigBatchFuzzyWatchRequestHandler
             String groupKeyPattern = context.getGroupKeyPattern();
             if (context.isListen()) {
                 // Add client to the fuzzy listening context
-                configFuzzyWatchContext.addFuzzyListen(groupKeyPattern, connectionId);
+                configFuzzyWatchContextService.addFuzzyListen(groupKeyPattern, connectionId);
                 // Get existing group keys for the client and publish initialization event
                 Set<String> clientExistingGroupKeys = context.getReceivedGroupKeys();
                 NotifyCenter.publishEvent(
@@ -87,7 +88,7 @@ public class ConfigBatchFuzzyWatchRequestHandler
                                 context.isInitializing()));
             } else {
                 // Remove client from the fuzzy listening context
-                configFuzzyWatchContext.removeFuzzyListen(groupKeyPattern, connectionId);
+                configFuzzyWatchContextService.removeFuzzyListen(groupKeyPattern, connectionId);
             }
         }
         // Return response

@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
@@ -136,40 +135,6 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
         client.removeServiceSubscriber(singleton);
         client.setLastUpdatedTime();
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientUnsubscribeServiceEvent(singleton, clientId));
-    }
-    
-    @Override
-    public void fuzzyWatch(String namespaceId, String serviceNamePattern, String groupNamePattern, String clientId) {
-        // need store namespace id in server side
-        String completedPattern =  FuzzyGroupKeyPattern.generatePattern(serviceNamePattern,groupNamePattern, namespaceId);
-        Client client = clientManager.getClient(clientId);
-        if (!clientIsLegal(client, clientId)) {
-            return;
-        }
-        client.addWatchedPattern(completedPattern);
-        client.setLastUpdatedTime();
-        NotifyCenter.publishEvent(new ClientOperationEvent.ClientFuzzyWatchEvent(completedPattern, clientId));
-    }
-    
-    @Override
-    public void cancelFuzzyWatch(String namespaceId, String serviceNamePattern, String groupNamePattern, String clientId) {
-        String completedPattern = FuzzyGroupKeyPattern.generatePattern(serviceNamePattern,groupNamePattern, namespaceId);
-        Client client = clientManager.getClient(clientId);
-        if (!clientIsLegal(client, clientId)) {
-            return;
-        }
-        client.removeWatchedPattern(completedPattern);
-        client.setLastUpdatedTime();
-        NotifyCenter.publishEvent(new ClientOperationEvent.ClientCancelFuzzyWatchEvent(completedPattern, clientId));
-    }
-    
-    private boolean clientIsLegal(Client client, String clientId){
-        try{
-            checkClientIsLegal( client,  clientId);
-            return true;
-        }catch(NacosRuntimeException thr){
-            return false;
-        }
     }
 
     private void checkClientIsLegal(Client client, String clientId) {

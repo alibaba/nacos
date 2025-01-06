@@ -24,19 +24,19 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
  *
  * @author tanyongquan
  */
-public class FuzzyWatchResponse extends Response {
+public class NamingFuzzyWatchResponse extends Response {
     
-    private String type;
+    private String watchType;
     
-    public FuzzyWatchResponse(){
+    public NamingFuzzyWatchResponse(){
     }
     
-    public FuzzyWatchResponse(String type) {
-        this.type = type;
+    public NamingFuzzyWatchResponse(String watchType) {
+        this.watchType = watchType;
     }
     
-    public static FuzzyWatchResponse buildSuccessResponse(String type) {
-        return new FuzzyWatchResponse(type);
+    public static NamingFuzzyWatchResponse buildSuccessResponse(String watchType) {
+        return new NamingFuzzyWatchResponse(watchType);
     }
     
     /**
@@ -45,17 +45,17 @@ public class FuzzyWatchResponse extends Response {
      * @param message error message
      * @return fail response
      */
-    public static FuzzyWatchResponse buildFailResponse(String message) {
-        FuzzyWatchResponse result = new FuzzyWatchResponse();
+    public static NamingFuzzyWatchResponse buildFailResponse(String message) {
+        NamingFuzzyWatchResponse result = new NamingFuzzyWatchResponse();
         result.setErrorInfo(ResponseCode.FAIL.getCode(), message);
         return result;
     }
     
-    public String getType() {
-        return type;
+    public String getWatchType() {
+        return watchType;
     }
     
-    public void setType(String type) {
-        this.type = type;
+    public void setWatchType(String watchType) {
+        this.watchType = watchType;
     }
 }

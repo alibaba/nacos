@@ -24,6 +24,7 @@ import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.config.server.configuration.ConfigCommonConfig;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
+import com.alibaba.nacos.config.server.service.ConfigFuzzyWatchContextService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.core.remote.Connection;
@@ -62,7 +63,7 @@ public class FuzzyWatchConfigChangeNotifier extends Subscriber<LocalDataChangeEv
     
     private final TpsControlManager tpsControlManager;
     
-    private final ConfigFuzzyWatchContext configFuzzyWatchContext;
+    private final ConfigFuzzyWatchContextService configFuzzyWatchContextService;
     /**
      * Constructs RpcFuzzyListenConfigChangeNotifier with the specified dependencies.
      *
@@ -71,12 +72,13 @@ public class FuzzyWatchConfigChangeNotifier extends Subscriber<LocalDataChangeEv
      * @param rpcPushService            The service for RPC push.
      */
     public FuzzyWatchConfigChangeNotifier(ConfigChangeListenContext configChangeListenContext,
-            ConnectionManager connectionManager, RpcPushService rpcPushService,ConfigFuzzyWatchContext configFuzzyWatchContext) {
+            ConnectionManager connectionManager, RpcPushService rpcPushService,
+            ConfigFuzzyWatchContextService configFuzzyWatchContextService) {
         this.configChangeListenContext = configChangeListenContext;
         this.connectionManager = connectionManager;
         this.rpcPushService = rpcPushService;
         this.tpsControlManager = ControlManagerCenter.getInstance().getTpsControlManager();
-        this.configFuzzyWatchContext=configFuzzyWatchContext;
+        this.configFuzzyWatchContextService = configFuzzyWatchContextService;
         NotifyCenter.registerSubscriber(this);
     }
     
@@ -88,7 +90,7 @@ public class FuzzyWatchConfigChangeNotifier extends Subscriber<LocalDataChangeEv
         String group = parseKey[1];
         String tenant = parseKey.length > 2 ? parseKey[2] : "";
         
-        for (String clientId : configFuzzyWatchContext.getConnectIdMatchedPatterns(groupKey)) {
+        for (String clientId : configFuzzyWatchContextService.getMatchedClients(groupKey)) {
             Connection connection = connectionManager.getConnection(clientId);
             if (null == connection) {
                 Loggers.REMOTE_PUSH.warn(

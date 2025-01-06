@@ -17,12 +17,9 @@
 package com.alibaba.nacos.api.naming.remote.request;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.remote.request.ServerRequest;
 
 import java.util.Collection;
 import java.util.HashSet;
-
-import static com.alibaba.nacos.api.common.Constants.Naming.NAMING_MODULE;
 
 /**
  * Nacos fuzzy watch initial notify request, use it when init a watch request, push service by batch.
@@ -33,14 +30,14 @@ public class FuzzyWatchNotifyInitRequest extends AbstractFuzzyWatchNotifyRequest
     
     private String pattern;
     
-    private Collection<String> servicesName;
+    private Collection<String> serviceKeys;
     
     public FuzzyWatchNotifyInitRequest() {
     }
     
-    private FuzzyWatchNotifyInitRequest(String pattern, String changedType, Collection<String> servicesName) {
+    private FuzzyWatchNotifyInitRequest(String pattern, String changedType, Collection<String> serviceKeys) {
         super(changedType);
-        this.servicesName = servicesName;
+        this.serviceKeys = serviceKeys;
         this.pattern = pattern;
     }
     
@@ -60,12 +57,12 @@ public class FuzzyWatchNotifyInitRequest extends AbstractFuzzyWatchNotifyRequest
         this.pattern = pattern;
     }
     
-    public Collection<String> getServicesName() {
-        return servicesName;
+    public Collection<String> getServiceKeys() {
+        return serviceKeys;
     }
     
-    public void setServicesName(Collection<String> servicesName) {
-        this.servicesName = servicesName;
+    public void setServiceKeys(Collection<String> serviceKeys) {
+        this.serviceKeys = serviceKeys;
     }
     
 }
