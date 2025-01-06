@@ -40,6 +40,7 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  * @author hexu.hxy
  */
+@Deprecated
 @RestController
 @RequestMapping(Constants.CAPACITY_CONTROLLER_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)

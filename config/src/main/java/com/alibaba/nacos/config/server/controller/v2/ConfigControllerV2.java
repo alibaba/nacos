@@ -66,7 +66,7 @@ import java.util.Map;
  * @author dongyafei
  * @date 2022/7/22
  */
-
+@Deprecated
 @NacosApi
 @RestController
 @RequestMapping(Constants.CONFIG_CONTROLLER_V2_PATH)

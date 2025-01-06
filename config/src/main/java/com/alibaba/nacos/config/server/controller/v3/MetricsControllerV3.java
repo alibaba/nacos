@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-$toady.year Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.controller;
+package com.alibaba.nacos.config.server.controller.v3;
 
 import com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest;
 import com.alibaba.nacos.api.config.remote.response.ClientConfigMetricResponse;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
@@ -45,7 +46,6 @@ import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -62,43 +62,39 @@ import static com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequ
 import static com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest.MetricsKey.SNAPSHOT_DATA;
 
 /**
- * ClientMetricsController.
+ * Metric management.
  *
- * @author zunfei.lzf
+ * @author Nacos
  */
-@Deprecated
 @RestController
-@RequestMapping(Constants.METRICS_CONTROLLER_PATH)
+@RequestMapping(Constants.METRICS_CONTROLLER_V3_ADMIN_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
-public class ClientMetricsController {
+public class MetricsControllerV3 {
     
     private final ServerMemberManager serverMemberManager;
     
     private final ConnectionManager connectionManager;
     
-    public ClientMetricsController(ServerMemberManager serverMemberManager, ConnectionManager connectionManager) {
+    public MetricsControllerV3(ServerMemberManager serverMemberManager, ConnectionManager connectionManager) {
         this.serverMemberManager = serverMemberManager;
         this.connectionManager = connectionManager;
     }
     
     /**
      * get client metric.
-     *
-     * @param ip client ip .
-     * @return ResponseEntity
      */
     @GetMapping("/cluster")
-    @Secured(resource = Constants.METRICS_CONTROLLER_PATH, action = ActionTypes.READ, signType = SignType.CONFIG)
-    @Compatibility(apiType = ApiType.ADMIN_API)
-    public ResponseEntity metric(@RequestParam("ip") String ip,
+    @Secured(resource = Constants.METRICS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
+            signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    public Result<Map<String, Object>> metric(@RequestParam("ip") String ip,
             @RequestParam(value = "dataId", required = false) String dataId,
             @RequestParam(value = "group", required = false) String group,
             @RequestParam(value = "tenant", required = false) String tenant) throws NacosException {
-    
+        
         ParamUtils.checkTenant(tenant);
         tenant = NamespaceUtil.processNamespaceParameter(tenant);
         ParamUtils.checkParam(dataId, group, "default", "default");
-    
+        
         Loggers.CORE.info("Get cluster config metrics received, ip={},dataId={},group={},tenant={}", ip, dataId, group,
                 tenant);
         Map<String, Object> responseMap = new HashMap<>(3);
@@ -120,7 +116,7 @@ public class ClientMetricsController {
             e.printStackTrace();
         }
         
-        return ResponseEntity.ok().body(responseMap);
+        return Result.success(responseMap);
     }
     
     static class ClusterMetricsCallBack implements Callback<Map> {
@@ -175,18 +171,19 @@ public class ClientMetricsController {
     /**
      * Get client config listener lists of subscriber in local machine.
      */
-    @GetMapping("/current")
-    @Secured(resource = Constants.METRICS_CONTROLLER_PATH, action = ActionTypes.READ, signType = SignType.CONFIG)
+    @GetMapping("/ip")
+    @Secured(resource = Constants.METRICS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
+            signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     @Compatibility(apiType = ApiType.ADMIN_API)
-    public Map<String, Object> getClientMetrics(@RequestParam("ip") String ip,
+    public Result<Map<String, Object>> getClientMetrics(@RequestParam("ip") String ip,
             @RequestParam(value = "dataId", required = false) String dataId,
             @RequestParam(value = "group", required = false) String group,
             @RequestParam(value = "tenant", required = false) String tenant) throws NacosException {
-    
+        
         ParamUtils.checkTenant(tenant);
         tenant = NamespaceUtil.processNamespaceParameter(tenant);
         ParamUtils.checkParam(dataId, group, "default", "default");
-    
+        
         Map<String, Object> metrics = new HashMap<>(16);
         List<Connection> connectionsByIp = connectionManager.getConnectionByIp(ip);
         for (Connection connectionByIp : connectionsByIp) {
@@ -207,8 +204,7 @@ public class ClientMetricsController {
                         ip, dataId, group, tenant, e);
             }
         }
-        return metrics;
         
+        return Result.success(metrics);
     }
-    
 }
