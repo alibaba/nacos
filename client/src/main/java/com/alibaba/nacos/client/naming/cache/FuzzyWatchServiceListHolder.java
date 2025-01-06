@@ -68,7 +68,7 @@ public class FuzzyWatchServiceListHolder extends Subscriber<FuzzyWatchNotifyEven
             return;
         }
         if (namingFuzzyWatchContext.isDiscard()&&namingFuzzyWatchContext.getNamingFuzzyWatchers().isEmpty()){
-            fuzzyMatchContextMap.remove(groupkeyPattern)
+            fuzzyMatchContextMap.remove(groupkeyPattern);
         }
     }
     
