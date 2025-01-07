@@ -71,14 +71,14 @@ public class ConfigHttpClientManager implements Closeable {
     
     @Override
     public void shutdown() throws NacosException {
-        NAMING_LOGGER.warn("[ConfigHttpClientManager] Start destroying NacosRestTemplate");
+        NAMING_LOGGER.info("[ConfigHttpClientManager] Start destroying NacosRestTemplate");
         try {
             HttpClientBeanHolder.shutdownNacosSyncRest(HTTP_CLIENT_FACTORY.getClass().getName());
         } catch (Exception ex) {
             NAMING_LOGGER.error("[ConfigHttpClientManager] An exception occurred when the HTTP client was closed : {}",
                     ExceptionUtil.getStackTrace(ex));
         }
-        NAMING_LOGGER.warn("[ConfigHttpClientManager] Destruction of the end");
+        NAMING_LOGGER.info("[ConfigHttpClientManager] Completed destruction of NacosRestTemplate");
     }
     
     /**
