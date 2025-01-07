@@ -108,7 +108,6 @@ public class ClientControllerV3 {
             result.put("version", connectionMetaInfo.getVersion());
             result.put("clientIp", connectionMetaInfo.getClientIp());
             result.put("clientPort", clientId.substring(clientId.lastIndexOf('_') + 1));
-            
         }
         
         return Result.success(result);

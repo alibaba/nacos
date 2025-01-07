@@ -180,8 +180,8 @@ public class InstanceControllerV3 {
         
         List<String> operatedInstances = instanceServiceV2.batchUpdateMetadata(form.getNamespaceId(),
                 instanceOperationInfo, targetMetadata);
-        
         ArrayList<String> ipList = new ArrayList<>(operatedInstances);
+        
         return Result.success(new InstanceMetadataBatchOperationVo(ipList));
     }
     
@@ -203,6 +203,7 @@ public class InstanceControllerV3 {
         List<String> operatedInstances = instanceServiceV2.batchDeleteMetadata(form.getNamespaceId(),
                 instanceOperationInfo, targetMetadata);
         ArrayList<String> ipList = new ArrayList<>(operatedInstances);
+        
         return Result.success(new InstanceMetadataBatchOperationVo(ipList));
     }
     

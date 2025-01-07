@@ -47,7 +47,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Collection;
 
 /**
- * Cluster controller.
+ * Operator controller.
  *
  * @author Nacos
  */
@@ -75,8 +75,6 @@ public class OperatorControllerV3 {
     
     /**
      * Get switch information.
-     *
-     * @return switchDomain
      */
     @GetMapping("/switches")
     @Secured(resource = UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
@@ -86,10 +84,6 @@ public class OperatorControllerV3 {
     
     /**
      * Update switch information.
-     *
-     * @param updateSwitchForm debug, entry, value
-     * @return 'ok' if success
-     * @throws Exception exception
      */
     @PutMapping("/switches")
     @Secured(resource = UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
