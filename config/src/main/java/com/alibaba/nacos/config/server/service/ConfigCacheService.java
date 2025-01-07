@@ -17,7 +17,6 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.CacheItem;
@@ -32,11 +31,9 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.Set;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.api.common.Constants.CLIENT_IP;
 import static com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG;
@@ -71,7 +68,6 @@ public class ConfigCacheService {
         return CACHE.size();
     }
     
-
     /**
      * Save config file and update md5 value in cache.
      *

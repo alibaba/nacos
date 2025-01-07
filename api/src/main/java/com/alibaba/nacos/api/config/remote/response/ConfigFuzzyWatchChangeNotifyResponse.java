@@ -14,28 +14,16 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.naming.listener;
+package com.alibaba.nacos.api.config.remote.response;
 
-import java.util.UUID;
-import java.util.concurrent.Executor;
+import com.alibaba.nacos.api.remote.response.Response;
 
 /**
- * Fuzzy Watch Listener.
+ * FuzzyListenNotifyChangeResponse.
  *
- * @author tanyongquan
+ * @author stone-98
+ * @date 2024/3/18
  */
-public abstract class FuzzyWatchListener {
-    
-    
-    String uuid= UUID.randomUUID().toString();
-    
-    public Executor getExecutor() {
-        return null;
-    }
-    
-    /**
-     * callback event.
-     *
-     * @param event event
-     */
+public class ConfigFuzzyWatchChangeNotifyResponse extends Response {
+
 }

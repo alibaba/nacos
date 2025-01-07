@@ -150,8 +150,10 @@ public class FuzzyGroupKeyPattern {
      * list of ConfigState objects.
      *
      * @param basedGroupKeys          The matched group keys set
-     * @param followedGroupKeys The client's existing group keys set
-     * @return The merged list of ConfigState objects representing the states to be added or removed
+     * @param followedGroupKeys The followed existing group keys set
+     * @return a different list of GroupKeyState objects representing the states which the followed sets should be added or removed
+     * GroupKeyState#exist true presents follow set should add,GroupKeyState#exist false presents follow set should removed.
+     *
      */
     public static List<GroupKeyState> diffGroupKeys(Set<String> basedGroupKeys,
             Set<String> followedGroupKeys) {

@@ -1,3 +1,19 @@
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.alibaba.nacos.config.server.service;
 
 
@@ -54,6 +70,7 @@ public class ConfigFuzzyWatchContextService {
             }
         }
     }
+    
     /**
      * get matched exist group keys with the groupKeyPattern.
      * return null if not matched
@@ -68,6 +85,47 @@ public class ConfigFuzzyWatchContextService {
         }
     }
     
+    public boolean newConfigAdded(String groupKey){
+        String[] groupKeyItems = GroupKey.parseKey(groupKey);
+        String dataId=groupKeyItems[0];
+        String group=groupKeyItems[1];
+        String namespace=groupKeyItems[2];
+        Iterator<Map.Entry<String, Set<String>>> iterator = groupKeyMatched.entrySet().iterator();
+        boolean added=false;
+        while (iterator.hasNext()){
+            Map.Entry<String, Set<String>> entry = iterator.next();
+            if(FuzzyGroupKeyPattern.matchPattern(entry.getKey(),dataId,group,namespace)){
+               if(entry.getValue().add(groupKey)){
+                   added=true;
+               }
+               
+            }
+        }
+        
+        return added;
+    
+    }
+    
+    public boolean configRemoved(String groupKey){
+        String[] groupKeyItems = GroupKey.parseKey(groupKey);
+        String dataId=groupKeyItems[0];
+        String group=groupKeyItems[1];
+        String namespace=groupKeyItems[2];
+        Iterator<Map.Entry<String, Set<String>>> iterator = groupKeyMatched.entrySet().iterator();
+        boolean removed=false;
+        while (iterator.hasNext()){
+            Map.Entry<String, Set<String>> entry = iterator.next();
+            if(FuzzyGroupKeyPattern.matchPattern(entry.getKey(),dataId,group,namespace)){
+                if(entry.getValue().remove(groupKey)){
+                    removed=true;
+                }
+                
+            }
+        }
+        
+        return removed;
+        
+    }
     
     /**
      * Matches the client effective group keys based on the specified group key pattern, client IP, and tag.

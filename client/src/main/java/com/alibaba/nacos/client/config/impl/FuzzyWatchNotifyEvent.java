@@ -33,32 +33,21 @@ public class FuzzyWatchNotifyEvent extends Event {
     /**
      * The uuid of this watcher for which that this notify event .
      */
-    private String uuid;
+    private String watcherUuid;
     
     /**
      * The groupKeyPattern of configuration.
      */
     private String groupKeyPattern;
     
-    /**
-     * The namespace of the configuration.
-     */
-    private String namespace;
-    
-    /**
-     * The group of the configuration.
-     */
-    private String group;
-    
-    /**
-     * The dataId of the configuration.
-     */
-    private String dataId;
+    private String groupKey;
     
     /**
      * The type of notification (e.g., ADD_CONFIG, DELETE_CONFIG).
      */
-    private String type;
+    private String changedType;
+    
+    private String syncType;
     
     /**
      * Constructs a new FuzzyListenNotifyEvent.
@@ -69,15 +58,13 @@ public class FuzzyWatchNotifyEvent extends Event {
     /**
      * Constructs a new FuzzyListenNotifyEvent with the specified group, dataId, and type.
      *
-     * @param group  The group of the configuration.
-     * @param dataId The dataId of the configuration.
-     * @param type   The type of notification.
+     * @param groupKey  The groupKey of the configuration.
+     * @param changedType   The type of notification.
      */
-    public FuzzyWatchNotifyEvent(String namespace,String group, String dataId, String type, String groupKeyPattern) {
-        this.group = group;
-        this.dataId = dataId;
-        this.namespace=namespace;
-        this.type = type;
+    private FuzzyWatchNotifyEvent(String groupKey, String changedType, String syncType, String groupKeyPattern) {
+        this.groupKey = groupKey;
+        this.syncType=syncType;
+        this.changedType = changedType;
         this.groupKeyPattern = groupKeyPattern;
     }
     
@@ -85,93 +72,57 @@ public class FuzzyWatchNotifyEvent extends Event {
     /**
      * Builds a new FuzzyListenNotifyEvent with the specified group, dataId, and type.
      *
-     * @param group  The group of the configuration.
-     * @param dataId The dataId of the configuration.
-     * @param type   The type of notification.
+     * @param groupKey  The groupKey of the configuration.
      * @return A new FuzzyListenNotifyEvent instance.
      */
-    public static FuzzyWatchNotifyEvent buildNotifyPatternAllListenersEvent(String namespace,String group, String dataId,
-            String groupKeyPattern, String type) {
-        return new FuzzyWatchNotifyEvent(namespace,group, dataId, type, groupKeyPattern);
+    public static FuzzyWatchNotifyEvent buildNotifyPatternAllListenersEvent(String groupKey,
+            String groupKeyPattern, String changedType,String syncType) {
+        return new FuzzyWatchNotifyEvent(groupKey, changedType, syncType,groupKeyPattern);
     }
     
+    /**
+     * Builds a new FuzzyListenNotifyEvent with the specified group, dataId, and type.
+     *
+     * @param groupKey  The groupKey of the configuration.
+     * @return A new FuzzyListenNotifyEvent instance.
+     */
+    public static FuzzyWatchNotifyEvent buildNotifyPatternAllListenersEvent(String groupKey,
+            String groupKeyPattern, String changedType,String syncType,String uuid) {
+        FuzzyWatchNotifyEvent fuzzyWatchNotifyEvent = new FuzzyWatchNotifyEvent(groupKey, changedType, syncType,
+                groupKeyPattern);
+        fuzzyWatchNotifyEvent.watcherUuid =uuid;
+        return fuzzyWatchNotifyEvent;
+    }
     /**
      * Gets the UUID (Unique Identifier) of the listener.
      *
      * @return The UUID of the listener.
      */
-    public String getUuid() {
-        return uuid;
+    public String getWatcherUuid() {
+        return watcherUuid;
     }
     
-    /**
-     * Sets the UUID (Unique Identifier) of the listener.
-     *
-     * @param uuid The UUID to set.
-     */
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-    
+
     public String getGroupKeyPattern() {
         return groupKeyPattern;
     }
     
-    public void setGroupKeyPattern(String groupKeyPattern) {
-        this.groupKeyPattern = groupKeyPattern;
+
+    public String getGroupKey() {
+        return groupKey;
     }
+
     
-    /**
-     * Gets the group of the configuration.
-     *
-     * @return The group of the configuration.
-     */
-    public String getGroup() {
-        return group;
+    public String getSyncType() {
+        return syncType;
     }
-    
-    /**
-     * Sets the group of the configuration.
-     *
-     * @param group The group to set.
-     */
-    public void setGroup(String group) {
-        this.group = group;
-    }
-    
-    /**
-     * Gets the dataId of the configuration.
-     *
-     * @return The dataId of the configuration.
-     */
-    public String getDataId() {
-        return dataId;
-    }
-    
-    /**
-     * Sets the dataId of the configuration.
-     *
-     * @param dataId The dataId to set.
-     */
-    public void setDataId(String dataId) {
-        this.dataId = dataId;
-    }
-    
+
     /**
      * Gets the type of notification.
      *
      * @return The type of notification.
      */
-    public String getType() {
-        return type;
-    }
-    
-    /**
-     * Sets the type of notification.
-     *
-     * @param type The type to set.
-     */
-    public void setType(String type) {
-        this.type = type;
+    public String getChangedType() {
+        return changedType;
     }
 }

@@ -93,7 +93,7 @@ public abstract class ConfigFuzzyWatcher {
         return Objects.equals(uuid, that.uuid);
     }
     
-    public Set<String> getSyncGroupKeys() {
+    public final Set<String> getSyncGroupKeys() {
         return syncGroupKeys;
     }
 

@@ -17,7 +17,6 @@
 package com.alibaba.nacos.naming.push.v2.executor;
 
 import com.alibaba.nacos.api.naming.remote.request.AbstractFuzzyWatchNotifyRequest;
-import com.alibaba.nacos.api.naming.remote.request.FuzzyWatchNotifyInitRequest;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;

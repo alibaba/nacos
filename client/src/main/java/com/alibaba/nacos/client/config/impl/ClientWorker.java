@@ -22,23 +22,17 @@ import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.ConfigFuzzyWatcher;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest;
-import com.alibaba.nacos.api.config.remote.request.ConfigBatchFuzzyWatchRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest;
-import com.alibaba.nacos.api.config.remote.request.FuzzyWatchChangeNotifyRequest;
-import com.alibaba.nacos.api.config.remote.request.FuzzyWatchDiffSyncRequest;
 import com.alibaba.nacos.api.config.remote.response.ClientConfigMetricResponse;
-import com.alibaba.nacos.api.config.remote.response.ConfigBatchFuzzyWatchResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeNotifyResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
-import com.alibaba.nacos.api.config.remote.response.FuzzyWatchChangeNotifyResponse;
-import com.alibaba.nacos.api.config.remote.response.FuzzyWatchNotifyDiffResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.Request;
@@ -72,7 +66,6 @@ import com.alibaba.nacos.common.remote.client.RpcClientTlsConfigFactory;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.utils.ConnLabelsUtils;
 import com.alibaba.nacos.common.utils.ConvertUtils;
-import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -97,8 +90,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -112,7 +103,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.alibaba.nacos.api.common.Constants.APP_CONN_PREFIX;
 import static com.alibaba.nacos.api.common.Constants.ENCODE;
-import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_INIT_NOTIFY;
 
 /**
  * Long polling.
@@ -140,12 +130,9 @@ public class ClientWorker implements Closeable {
      */
     private final AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<>(new HashMap<>());
     
-    /**
-     * fuzzyListenGroupKey -> fuzzyListenContext.
-     */
-    private final AtomicReference<Map<String, ConfigFuzzyWatchContext>> fuzzyListenContextMap = new AtomicReference<>(
-            new HashMap<>());
     private final DefaultLabelsCollectorManager defaultLabelsCollectorManager = new DefaultLabelsCollectorManager();
+    
+    private ConfigFuzzyWatchGroupKeyHolder configFuzzyWatchGroupKeyHolder;
     
     private Map<String, String> appLables = new HashMap<>();
     
@@ -171,48 +158,6 @@ public class ClientWorker implements Closeable {
      * index(taskId)-> total cache count for this taskId.
      */
     private final List<AtomicInteger> taskIdCacheCountList = new ArrayList<>();
-    
-    /**
-     * index(taskId)-> total context count for this taskId.
-     */
-    private final List<AtomicInteger> taskIdContextCountList = new ArrayList<>();
-    
-    @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    public ClientWorker(final ConfigFilterChainManager configFilterChainManager, ConfigServerListManager serverListManager,
-            final NacosClientProperties properties) throws NacosException {
-        this.configFilterChainManager = configFilterChainManager;
-        
-        init(properties);
-        
-        agent = new ConfigRpcTransportClient(properties, serverListManager);
-        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(initWorkerThreadCount(properties),
-                new NameThreadFactory("com.alibaba.nacos.client.Worker"));
-        agent.setExecutor(executorService);
-        agent.start();
-        
-    }
-    
-    /**
-     * Adds a list of fuzzy listen listeners for the specified data ID pattern and group.
-     *
-     * @param dataIdPattern The pattern of the data ID to listen for.
-     * @param groupPattern         The group of the configuration.
-     * @param listeners     The list of listeners to add.
-     * @throws NacosException If an error occurs while adding the listeners.
-     */
-    public void addTenantFuzzyWatcher(String dataIdPattern, String groupPattern,
-            List<? extends ConfigFuzzyWatcher> listeners) throws NacosException {
-        ConfigFuzzyWatchContext context = initFuzzyWatchContextIfAbsent(dataIdPattern, groupPattern);
-        synchronized (context) {
-            for (ConfigFuzzyWatcher listener : listeners) {
-                context.addWatcher(listener);
-            }
-            context.setInitializing(true);
-            context.setDiscard(false);
-            context.setConsistentWithServer(false);
-            agent.notifyFuzzyListenConfig();
-        }
-    }
     
     /**
      * Add listeners for data.
@@ -345,44 +290,43 @@ public class ClientWorker implements Closeable {
     }
     
     /**
+     * Adds a list of fuzzy listen listeners for the specified data ID pattern and group.
+     *
+     * @param dataIdPattern The pattern of the data ID to listen for.
+     * @param groupPattern         The group of the configuration.
+     * @param configFuzzyWatcher     The configFuzzyWatcher to add.
+     * @throws NacosException If an error occurs while adding the listeners.
+     */
+    public ConfigFuzzyWatchContext addTenantFuzzyWatcher(String dataIdPattern, String groupPattern,
+            ConfigFuzzyWatcher configFuzzyWatcher){
+       return configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher(dataIdPattern,groupPattern,configFuzzyWatcher);
+    }
+    
+    /**
      * Removes a fuzzy listen listener for the specified data ID pattern, group, and listener.
      *
      * @param dataIdPattern The pattern of the data ID.
      * @param group         The group of the configuration.
-     * @param listener      The listener to remove.
+     * @param watcher      The listener to remove.
      * @throws NacosException If an error occurs while removing the listener.
      */
-    public void removeFuzzyListenListener(String dataIdPattern, String group, ConfigFuzzyWatcher listener)
-            throws NacosException {
-        group = blank2defaultGroup(group);
-        ConfigFuzzyWatchContext configFuzzyWatchContext = getFuzzyListenContext(dataIdPattern, group);
-        if (configFuzzyWatchContext != null) {
-            synchronized (configFuzzyWatchContext) {
-                configFuzzyWatchContext.removeWatcher(listener);
-                if (configFuzzyWatchContext.getConfigFuzzyWatchers().isEmpty()) {
-                    configFuzzyWatchContext.setDiscard(true);
-                    configFuzzyWatchContext.setConsistentWithServer(false);
-                    agent.removeFuzzyListenContext(dataIdPattern, group);
-                }
-            }
-        }
+    public void removeFuzzyListenListener(String dataIdPattern, String group, ConfigFuzzyWatcher watcher) {
+        configFuzzyWatchGroupKeyHolder.removeFuzzyWatcher(dataIdPattern,group,watcher);
     }
     
-    /**
-     * Removes the fuzzy listen context for the specified data ID pattern and group.
-     *
-     * @param groupKeyPattern The pattern of the data ID.
-     */
-    public void removeFuzzyListenContext(String groupKeyPattern) {
-        synchronized (fuzzyListenContextMap) {
-            Map<String, ConfigFuzzyWatchContext> copy = new HashMap<>(fuzzyListenContextMap.get());
-            ConfigFuzzyWatchContext removedContext = copy.remove(groupKeyPattern);
-            if (removedContext != null) {
-                decreaseContextTaskIdCount(removedContext.getTaskId());
+    void removeCache(String dataId, String group, String tenant) {
+        String groupKey = GroupKey.getKeyTenant(dataId, group, tenant);
+        synchronized (cacheMap) {
+            Map<String, CacheData> copy = new HashMap<>(cacheMap.get());
+            CacheData remove = copy.remove(groupKey);
+            if (remove != null) {
+                decreaseTaskIdCount(remove.getTaskId());
             }
-            fuzzyListenContextMap.set(copy);
+            cacheMap.set(copy);
         }
-        LOGGER.info("[{}] [fuzzy-listen-unsubscribe] {}", agent.getName(), groupKeyPattern);
+        LOGGER.info("[{}] [unsubscribe] {}", agent.getName(), groupKey);
+        
+        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
     }
     
     /**
@@ -510,28 +454,6 @@ public class ClientWorker implements Closeable {
     }
     
     /**
-     * Removes the cache entry associated with the given data ID, group, and tenant.
-     *
-     * @param dataId The data ID.
-     * @param group  The group name.
-     * @param tenant The tenant.
-     */
-    public void removeCache(String dataId, String group, String tenant) {
-        String groupKey = GroupKey.getKeyTenant(dataId, group, tenant);
-        synchronized (cacheMap) {
-            Map<String, CacheData> copy = new HashMap<>(cacheMap.get());
-            CacheData remove = copy.remove(groupKey);
-            if (remove != null) {
-                decreaseTaskIdCount(remove.getTaskId());
-            }
-            cacheMap.set(copy);
-        }
-        LOGGER.info("[{}] [unsubscribe] {}", agent.getName(), groupKey);
-        
-        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
-    }
-    
-    /**
      * Put cache.
      *
      * @param key   groupKey
@@ -545,147 +467,23 @@ public class ClientWorker implements Closeable {
         }
     }
     
-    public ConfigFuzzyWatchContext registerFuzzyWatcher(String dataIdPattern, String groupPattern,ConfigFuzzyWatcher configFuzzyWatcher){
-        ConfigFuzzyWatchContext configFuzzyWatchContext = initFuzzyWatchContextIfAbsent(dataIdPattern, groupPattern);
-        configFuzzyWatchContext.addWatcher(configFuzzyWatcher);
-        agent.notifyFuzzyListenConfig();
-        if(configFuzzyWatchContext.getReceivedGroupKeys()!=null){
-            for(String groupKey:configFuzzyWatchContext.getReceivedGroupKeys()){
-                String[] groupKeyItems = GroupKey.parseKey(groupKey);
-                FuzzyWatchNotifyEvent fuzzyWatchNotifyEvent = FuzzyWatchNotifyEvent.buildNotifyPatternAllListenersEvent(
-                        groupKeyItems[2], groupKeyItems[1], groupKeyItems[0],
-                        configFuzzyWatchContext.getGroupKeyPattern(), FUZZY_WATCH_INIT_NOTIFY);
-                fuzzyWatchNotifyEvent.setUuid(configFuzzyWatcher.getUuid());
-                NotifyCenter.publishEvent(fuzzyWatchNotifyEvent);
-            }
-            
-        }
-        
-        return configFuzzyWatchContext;
-    }
-    
-    public CompletableFuture<Set<String>> createNewFuture(ConfigFuzzyWatchContext configFuzzyWatchContext){
-        CompletableFuture<Set<String>> completableFuture=new CompletableFuture<Set<String>>(){
-            @Override
-            public boolean isDone() {
-                return configFuzzyWatchContext.initializationCompleted.get();
-            }
-    
-            @Override
-            public Set<String> get() throws InterruptedException, ExecutionException {
-                return new HashSet<>(configFuzzyWatchContext.getReceivedGroupKeys());
-            }
-        };
-        return completableFuture;
-    }
-    
-    /**
-     * Adds a fuzzy listen context if it doesn't already exist for the specified data ID pattern and group. If the
-     * context already exists, returns the existing context.
-     *
-     * @param dataIdPattern The pattern of the data ID.
-     * @param groupPattern         The group of the configuration.
-     * @return The fuzzy listen context for the specified data ID pattern and group.
-     */
-    private ConfigFuzzyWatchContext initFuzzyWatchContextIfAbsent(String dataIdPattern, String groupPattern) {
-        ConfigFuzzyWatchContext context = getFuzzyListenContext(dataIdPattern, groupPattern);
-        if (context != null) {
-            return context;
-        }
-        synchronized (fuzzyListenContextMap) {
-            ConfigFuzzyWatchContext contextFromMap = getFuzzyListenContext(dataIdPattern, groupPattern);
-            if (contextFromMap != null) {
-                context = contextFromMap;
-            } else {
-                context = new ConfigFuzzyWatchContext(agent.getName(),FuzzyGroupKeyPattern.generatePattern(dataIdPattern, groupPattern,agent.getTenant()));
-                int taskId = calculateContextTaskId();
-                increaseContextTaskIdCount(taskId);
-                context.setTaskId(taskId);
-                context.setConsistentWithServer(false);
-    
-            }
-        }
-        
-        Map<String, ConfigFuzzyWatchContext> copy = new HashMap<>(fuzzyListenContextMap.get());
-        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern(dataIdPattern, groupPattern,agent.getTenant());
-        copy.put(groupKeyPattern, context);
-        fuzzyListenContextMap.set(copy);
-        
-        return context;
-    }
-    
-    /**
-     * Increases the count for the specified task ID in the given count list.
-     *
-     * @param taskId The ID of the task for which the count needs to be increased.
-     */
     private void increaseTaskIdCount(int taskId) {
-        increaseCount(taskId, taskIdCacheCountList);
+        taskIdCacheCountList.get(taskId).incrementAndGet();
     }
     
-    /**
-     * Decreases the count for the specified task ID in the given count list.
-     *
-     * @param taskId The ID of the task for which the count needs to be decreased.
-     */
     private void decreaseTaskIdCount(int taskId) {
-        decreaseCount(taskId, taskIdCacheCountList);
+        taskIdCacheCountList.get(taskId).decrementAndGet();
     }
     
-    /**
-     * Increases the context task ID count in the corresponding list.
-     *
-     * @param taskId The ID of the context task for which the count needs to be increased.
-     */
-    private void increaseContextTaskIdCount(int taskId) {
-        increaseCount(taskId, taskIdContextCountList);
-    }
-    
-    /**
-     * Decreases the context task ID count in the corresponding list.
-     *
-     * @param taskId The ID of the context task for which the count needs to be decreased.
-     */
-    private void decreaseContextTaskIdCount(int taskId) {
-        decreaseCount(taskId, taskIdContextCountList);
-    }
-    
-    /**
-     * Calculates the task ID based on the configuration size.
-     *
-     * @return The calculated task ID.
-     */
     private int calculateTaskId() {
-        return calculateId(taskIdCacheCountList, (long) ParamUtil.getPerTaskConfigSize());
-    }
-    
-    /**
-     * Calculates the context task ID based on the configuration size.
-     *
-     * @return The calculated context task ID.
-     */
-    private int calculateContextTaskId() {
-        return calculateId(taskIdContextCountList, (long) ParamUtil.getPerTaskContextSize());
-    }
-    
-    /**
-     * Increases the count for the specified task ID in the given count list.
-     *
-     * @param taskId    The ID of the task for which the count needs to be increased.
-     * @param countList The list containing the counts for different task IDs.
-     */
-    private void increaseCount(int taskId, List<AtomicInteger> countList) {
-        countList.get(taskId).incrementAndGet();
-    }
-    
-    /**
-     * Decreases the count for the specified task ID in the given count list.
-     *
-     * @param taskId    The ID of the task for which the count needs to be decreased.
-     * @param countList The list containing the counts for different task IDs.
-     */
-    private void decreaseCount(int taskId, List<AtomicInteger> countList) {
-        countList.get(taskId).decrementAndGet();
+        int perTaskSize = (int) ParamUtil.getPerTaskConfigSize();
+        for (int index = 0; index < taskIdCacheCountList.size(); index++) {
+            if (taskIdCacheCountList.get(index).get() < perTaskSize) {
+                return index;
+            }
+        }
+        taskIdCacheCountList.add(new AtomicInteger(0));
+        return taskIdCacheCountList.size() - 1;
     }
     
     public CacheData getCache(String dataId, String group) {
@@ -697,35 +495,6 @@ public class ClientWorker implements Closeable {
             throw new IllegalArgumentException();
         }
         return cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
-    }
-    
-    /**
-     * Calculates the task ID based on the provided count list and per-task size.
-     *
-     * @param countList   The list containing the counts for different task IDs.
-     * @param perTaskSize The size of each task.
-     * @return The calculated task ID.
-     */
-    private int calculateId(List<AtomicInteger> countList, long perTaskSize) {
-        for (int index = 0; index < countList.size(); index++) {
-            if (countList.get(index).get() < perTaskSize) {
-                return index;
-            }
-        }
-        countList.add(new AtomicInteger(0));
-        return countList.size() - 1;
-    }
-    
-    /**
-     * Retrieves the FuzzyListenContext for the given data ID pattern and group.
-     *
-     * @param dataIdPattern The data ID pattern.
-     * @param group         The group name.
-     * @return The corresponding FuzzyListenContext, or null if not found.
-     */
-    public ConfigFuzzyWatchContext getFuzzyListenContext(String dataIdPattern, String group) {
-        return fuzzyListenContextMap.get()
-                .get(FuzzyGroupKeyPattern.generatePattern(dataIdPattern, group,agent.getTenant()));
     }
     
     public ConfigResponse getServerConfig(String dataId, String group, String tenant, long readTimeout, boolean notify)
@@ -740,19 +509,22 @@ public class ClientWorker implements Closeable {
         return StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group.trim();
     }
     
-    /**
-     * Checks if the pattern match cache contains an entry for the specified data ID pattern and group.
-     *
-     * @param dataIdPattern The data ID pattern.
-     * @param groupPattern         The group name.
-     * @return True if the cache contains an entry, false otherwise.
-     */
-    public boolean containsPatternMatchCache(String dataIdPattern, String groupPattern) {
-        Map<String, ConfigFuzzyWatchContext> contextMap = fuzzyListenContextMap.get();
-        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern(dataIdPattern, groupPattern,agent.getTenant());
-        return contextMap.containsKey(groupKeyPattern);
+    @SuppressWarnings("PMD.ThreadPoolCreationRule")
+    public ClientWorker(final ConfigFilterChainManager configFilterChainManager, ConfigServerListManager serverListManager,
+            final NacosClientProperties properties) throws NacosException {
+        this.configFilterChainManager = configFilterChainManager;
+        
+        init(properties);
+        
+        agent = new ConfigRpcTransportClient(properties, serverListManager);
+    
+        configFuzzyWatchGroupKeyHolder =new ConfigFuzzyWatchGroupKeyHolder(agent);
+        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(initWorkerThreadCount(properties),
+                new NameThreadFactory("com.alibaba.nacos.client.Worker"));
+        agent.setExecutor(executorService);
+        agent.start();
+        
     }
-  
     
     void initAppLabels(Properties properties) {
         this.appLables = ConnLabelsUtils.addPrefixForEachKey(defaultLabelsCollectorManager.getLabels(properties),
@@ -845,27 +617,13 @@ public class ClientWorker implements Closeable {
     
     public class ConfigRpcTransportClient extends ConfigTransportClient {
         
-        /**
-         * 5 minutes to check all fuzzy listen context.
-         */
-        private static final long FUZZY_LISTEN_ALL_SYNC_INTERNAL = 5 * 60 * 1000L;
-        
-        private final String configListenerTaskPrefix = "nacos.client.config.listener.task";
-        
-        private final String fuzzyListenerTaskPrefix = "nacos.client.config.fuzzyListener.task";
+        Map<String, ExecutorService> multiTaskExecutor = new HashMap<>();
         
         private final BlockingQueue<Object> listenExecutebell = new ArrayBlockingQueue<>(1);
-        
-        private final Map<String, ExecutorService> multiTaskExecutor = new HashMap<>();
         
         private final Object bellItem = new Object();
         
         private long lastAllSyncTime = System.currentTimeMillis();
-        
-        /**
-         * fuzzyListenExecuteBell.
-         */
-        private final BlockingQueue<Object> fuzzyListenExecuteBell = new ArrayBlockingQueue<>(1);
         
         Subscriber subscriber = null;
         
@@ -873,11 +631,6 @@ public class ClientWorker implements Closeable {
          * 3 minutes to check all listen cache keys.
          */
         private static final long ALL_SYNC_INTERNAL = 3 * 60 * 1000L;
-        
-        /**
-         * fuzzyListenLastAllSyncTime.
-         */
-        private long fuzzyListenLastAllSyncTime = System.currentTimeMillis();
         
         public ConfigRpcTransportClient(NacosClientProperties properties, ConfigServerListManager serverListManager) {
             super(properties, serverListManager);
@@ -942,89 +695,6 @@ public class ClientWorker implements Closeable {
             return labels;
         }
         
-        /**
-         * Handles a fuzzy listen init notify request.
-         *
-         * <p>This method processes the incoming fuzzy listen init notify request from a client. It updates the fuzzy
-         * listen context based on the request's information, and publishes events if necessary.
-         *
-         * @param request    The fuzzy listen init notify request to handle.
-         * @param clientName The name of the client sending the request.
-         * @return A {@link FuzzyWatchNotifyDiffResponse} indicating the result of handling the request.
-         */
-        private FuzzyWatchNotifyDiffResponse handleFuzzyWatchNotifyDiffRequest(FuzzyWatchDiffSyncRequest request,
-                String clientName) {
-            LOGGER.info("[{}] [config-fuzzy-watch-diff-sync-push] sync group key pattern ->{}.", clientName,request.getGroupKeyPattern());
-            String groupKeyPattern = request.getGroupKeyPattern();
-            ConfigFuzzyWatchContext context = fuzzyListenContextMap.get().get(groupKeyPattern);
-            if (Constants.FINISH_FUZZY_WATCH_INIT_NOTIFY.equals(request.getSyncType())) {
-                context.markInitializationComplete();
-                return new FuzzyWatchNotifyDiffResponse();
-            }
-            for (FuzzyWatchDiffSyncRequest.Context requestContext : request.getContexts()) {
-                Set<String> matchedGroupKeys = context.getReceivedGroupKeys();
-                switch (requestContext.getChangedType()) {
-                    case FUZZY_WATCH_INIT_NOTIFY:
-                    case Constants.ConfigChangedType.ADD_CONFIG:
-                        if (matchedGroupKeys.add(GroupKey.getKeyTenant(requestContext.getDataId(),requestContext.getGroup(),requestContext.getTenant()))) {
-                            LOGGER.info("[{}] [config-fuzzy-watch-diff-sync-push] sync group key  ->{},changed type->{}", clientName,request.getGroupKeyPattern(),requestContext.getChangedType());
-    
-                            NotifyCenter.publishEvent(FuzzyWatchNotifyEvent.buildNotifyPatternAllListenersEvent(requestContext.getTenant(),
-                                    requestContext.getGroup(), requestContext.getDataId(), request.getGroupKeyPattern(),
-                                    requestContext.getChangedType()));
-                        }
-                        break;
-                    case Constants.ConfigChangedType.DELETE_CONFIG:
-                        if (matchedGroupKeys.remove(GroupKey.getKeyTenant(requestContext.getDataId(),requestContext.getGroup(),requestContext.getTenant()))) {
-                            LOGGER.info("[{}] [config-fuzzy-watch-diff-sync-push] sync group key  ->{},changed type->{}", clientName,request.getGroupKeyPattern(),requestContext.getChangedType());
-    
-                            NotifyCenter.publishEvent(FuzzyWatchNotifyEvent.buildNotifyPatternAllListenersEvent(requestContext.getTenant(),
-                                    requestContext.getGroup(), requestContext.getDataId(), request.getGroupKeyPattern(),
-                                    requestContext.getChangedType()));
-                        }
-                        break;
-                    default:
-                        LOGGER.error("Invalid config change type: {}", requestContext.getChangedType());
-                        break;
-                }
-            }
-            return new FuzzyWatchNotifyDiffResponse();
-        }
-        
-        /**
-         * Handles a fuzzy listen notify change request.
-         *
-         * <p>This method processes the incoming fuzzy listen notify change request from a client. It updates the fuzzy
-         * listen context based on the request's information, and publishes events if necessary.
-         *
-         * @param request    The fuzzy listen notify change request to handle.
-         * @param clientName The name of the client sending the request.
-         */
-        private FuzzyWatchChangeNotifyResponse handlerFuzzyListenNotifyChangeRequest(
-                FuzzyWatchChangeNotifyRequest request, String clientName) {
-            LOGGER.info("[{}] [fuzzy-watch-config-push] fuzzy watched config changed,groupKey->{},isDeleted->{} ", clientName,GroupKey.getKeyTenant(request.getDataId(),request.getGroup(),request.getNamespace()),!request.isExist());
-            Map<String, ConfigFuzzyWatchContext> listenContextMap = fuzzyListenContextMap.get();
-            Set<String> matchedPatterns = FuzzyGroupKeyPattern.filterMatchedPatterns(listenContextMap.keySet(),request.getDataId(),
-                    request.getGroup(), request.getNamespace());
-            for (String matchedPattern : matchedPatterns) {
-                ConfigFuzzyWatchContext context = listenContextMap.get(matchedPattern);
-                if (request.isExist()) {
-                    if (context.getReceivedGroupKeys().add(GroupKey.getKeyTenant(request.getDataId(),request.getGroup(),request.getNamespace()))) {
-                        NotifyCenter.publishEvent(
-                                FuzzyWatchNotifyEvent.buildNotifyPatternAllListenersEvent(request.getNamespace(),request.getGroup(),
-                                        request.getDataId(), matchedPattern, Constants.ConfigChangedType.ADD_CONFIG));
-                    }
-                } else {
-                    if (context.getReceivedGroupKeys().remove(GroupKey.getKeyTenant(request.getDataId(),request.getGroup(),request.getNamespace()))) {
-                        NotifyCenter.publishEvent(
-                                FuzzyWatchNotifyEvent.buildNotifyPatternAllListenersEvent(request.getNamespace(),request.getGroup(),
-                                        request.getDataId(), matchedPattern, Constants.ConfigChangedType.DELETE_CONFIG));
-                    }
-                }
-            }
-            return new FuzzyWatchChangeNotifyResponse();
-        }
-        
         ConfigChangeNotifyResponse handleConfigChangeNotifyRequest(ConfigChangeNotifyRequest configChangeNotifyRequest,
                 String clientName) {
             LOGGER.info("[{}] [server-push] config changed. dataId={}, group={},tenant={}", clientName,
@@ -1061,16 +731,6 @@ public class ClientWorker implements Closeable {
                     return handleConfigChangeNotifyRequest((ConfigChangeNotifyRequest) request,
                             rpcClientInner.getName());
                 }
-                //fuzzy watch diff reconciliation sync
-                if (request instanceof FuzzyWatchDiffSyncRequest) {
-                    return handleFuzzyWatchNotifyDiffRequest((FuzzyWatchDiffSyncRequest) request,
-                            rpcClientInner.getName());
-                }
-                //fuzzy watch changed notify for a single config. include config changed or config delete.
-                if (request instanceof FuzzyWatchChangeNotifyRequest) {
-                    return handlerFuzzyListenNotifyChangeRequest((FuzzyWatchChangeNotifyRequest) request,
-                            rpcClientInner.getName());
-                }
                 return null;
             });
             
@@ -1081,6 +741,9 @@ public class ClientWorker implements Closeable {
                 return null;
             });
             
+            rpcClientInner.registerServerRequestHandler(new ClientFuzzyWatchNotifyRequestHandler(
+                    configFuzzyWatchGroupKeyHolder));
+            
             rpcClientInner.registerConnectionListener(new ConnectionEventListener() {
                 
                 @Override
@@ -1089,13 +752,13 @@ public class ClientWorker implements Closeable {
                     notifyListenConfig();
                     
                     LOGGER.info("[{}] Connected,notify fuzzy listen context...", rpcClientInner.getName());
-                    notifyFuzzyListenConfig();
+                    configFuzzyWatchGroupKeyHolder.notifyFuzzyWatchSync();
                 }
                 
                 @Override
                 public void onDisConnect(Connection connection) {
                     String taskId = rpcClientInner.getLabels().get("taskId");
-                    LOGGER.info("[{}] DisConnected,clear listen context...", rpcClientInner.getName());
+                    LOGGER.info("[{}] DisConnected,reset listen context", rpcClientInner.getName());
                     Collection<CacheData> values = cacheMap.get().values();
                     
                     for (CacheData cacheData : values) {
@@ -1107,18 +770,9 @@ public class ClientWorker implements Closeable {
                             cacheData.setConsistentWithServer(false);
                         }
                     }
-                    
-                    Collection<ConfigFuzzyWatchContext> configFuzzyWatchContexts = fuzzyListenContextMap.get().values();
-                    
-                    for (ConfigFuzzyWatchContext context : configFuzzyWatchContexts) {
-                        if (StringUtils.isNotBlank(taskId)) {
-                            if (Integer.valueOf(taskId).equals(context.getTaskId())) {
-                                context.setConsistentWithServer(false);
-                            }
-                        } else {
-                            context.setConsistentWithServer(false);
-                        }
-                    }
+    
+                    LOGGER.info("[{}] DisConnected,reset  fuzzy watch consistence status", rpcClientInner.getName());
+                    configFuzzyWatchGroupKeyHolder.resetConsistenceStatus();
                 }
                 
             });
@@ -1155,25 +809,6 @@ public class ClientWorker implements Closeable {
                 }
             };
             NotifyCenter.registerSubscriber(subscriber);
-            
-            NotifyCenter.registerSubscriber(new Subscriber() {
-                @Override
-                public void onEvent(Event event) {
-                    FuzzyWatchNotifyEvent fuzzyWatchNotifyEvent = (FuzzyWatchNotifyEvent) event;
-                    ConfigFuzzyWatchContext context = fuzzyListenContextMap.get()
-                            .get(fuzzyWatchNotifyEvent.getGroupKeyPattern());
-                    if (context == null) {
-                        return;
-                    }
-                    context.notifyListener(fuzzyWatchNotifyEvent.getDataId(), fuzzyWatchNotifyEvent.getGroup(),agent.getTenant(), fuzzyWatchNotifyEvent.getType(),
-                            fuzzyWatchNotifyEvent.getUuid());
-                }
-                
-                @Override
-                public Class<? extends Event> subscribeType() {
-                    return FuzzyWatchNotifyEvent.class;
-                }
-            });
         }
         
         @Override
@@ -1198,26 +833,6 @@ public class ClientWorker implements Closeable {
                 }
             }, 0L, TimeUnit.MILLISECONDS);
             
-            executor.schedule(() -> {
-                while (!executor.isShutdown() && !executor.isTerminated()) {
-                    try {
-                        fuzzyListenExecuteBell.poll(5L, TimeUnit.SECONDS);
-                        if (executor.isShutdown() || executor.isTerminated()) {
-                            continue;
-                        }
-                        executeConfigFuzzyListen();
-                    } catch (Throwable e) {
-                        LOGGER.error("[rpc-fuzzy-listen-execute] rpc fuzzy listen exception", e);
-                        try {
-                            Thread.sleep(50L);
-                        } catch (InterruptedException interruptedException) {
-                            //ignore
-                        }
-                        notifyFuzzyListenConfig();
-                    }
-                }
-            }, 0L, TimeUnit.MILLISECONDS);
-            
         }
         
         @Override
@@ -1228,11 +843,6 @@ public class ClientWorker implements Closeable {
         @Override
         public void notifyListenConfig() {
             listenExecutebell.offer(bellItem);
-        }
-        
-        @Override
-        public void notifyFuzzyListenConfig() {
-            fuzzyListenExecuteBell.offer(bellItem);
         }
         
         @Override
@@ -1291,119 +901,6 @@ public class ClientWorker implements Closeable {
         }
         
         /**
-         * Execute fuzzy listen configuration changes.
-         *
-         * <p>This method iterates through all fuzzy listen contexts and determines whether they need to be added or
-         * removed based on their consistency with the server and discard status. It then calls the appropriate method
-         * to execute the fuzzy listen operation.
-         *
-         * @throws NacosException If an error occurs during the execution of fuzzy listen configuration changes.
-         */
-        @Override
-        public void executeConfigFuzzyListen() throws NacosException {
-            Map<String, List<ConfigFuzzyWatchContext>> needSyncContextMap = new HashMap<>(16);
-            
-            // Obtain the current timestamp
-            long now = System.currentTimeMillis();
-            
-            // Determine whether a full synchronization is needed
-            boolean needAllSync = now - fuzzyListenLastAllSyncTime >= FUZZY_LISTEN_ALL_SYNC_INTERNAL;
-            
-            // Iterate through all fuzzy listen contexts
-            for (ConfigFuzzyWatchContext context : fuzzyListenContextMap.get().values()) {
-                // Check if the context is consistent with the server
-                if (context.isConsistentWithServer()) {
-                    // Skip if a full synchronization is not needed
-                    if (!needAllSync) {
-                        continue;
-                    }else{
-                        context.syncFuzzyWatchers();
-                    }
-                }
-                
-                List<ConfigFuzzyWatchContext> needSyncContexts = needSyncContextMap.computeIfAbsent(
-                        String.valueOf(context.getTaskId()), k -> new LinkedList<>());
-                needSyncContexts.add(context);
-            }
-            
-            // Execute fuzzy listen operation for addition
-            doExecuteConfigFuzzyListen(needSyncContextMap);
-            
-            // Update last all sync time if a full synchronization was performed
-            if (needAllSync) {
-                fuzzyListenLastAllSyncTime = now;
-            }
-        }
-        
-        /**
-         * Execute fuzzy listen configuration changes for a specific map of contexts.
-         *
-         * <p>This method submits tasks to execute fuzzy listen operations asynchronously for the provided contexts. It
-         * waits for all tasks to complete and logs any errors that occur.
-         *
-         * @param contextMap The map of contexts to execute fuzzy listen operations for.
-         * @throws NacosException If an error occurs during the execution of fuzzy listen configuration changes.
-         */
-        private void doExecuteConfigFuzzyListen(Map<String, List<ConfigFuzzyWatchContext>> contextMap)
-                throws NacosException {
-            // Return if the context map is null or empty
-            if (contextMap == null || contextMap.isEmpty()) {
-                return;
-            }
-            
-            // List to hold futures for asynchronous tasks
-            List<Future<?>> listenFutures = new ArrayList<>();
-            
-            // Iterate through the context map and submit tasks for execution
-            for (Map.Entry<String, List<ConfigFuzzyWatchContext>> entry : contextMap.entrySet()) {
-                String taskId = entry.getKey();
-                List<ConfigFuzzyWatchContext> contexts = entry.getValue();
-                RpcClient rpcClient = ensureRpcClient(taskId);
-                ExecutorService executorService = ensureSyncExecutor(fuzzyListenerTaskPrefix, taskId);
-                // Submit task for execution
-                Future<?> future = executorService.submit(() -> {
-                    ConfigBatchFuzzyWatchRequest configBatchFuzzyWatchRequest = buildFuzzyListenConfigRequest(
-                            contexts);
-                    try {
-                        // Execute the fuzzy listen operation
-                        ConfigBatchFuzzyWatchResponse listenResponse = (ConfigBatchFuzzyWatchResponse) requestProxy(
-                                rpcClient, configBatchFuzzyWatchRequest);
-                        if (listenResponse != null && listenResponse.isSuccess()) {
-                            for (ConfigFuzzyWatchContext context : contexts) {
-                                if (context.isDiscard()) {
-                                    ClientWorker.this.removeFuzzyListenContext(context.getGroupKeyPattern());
-                                } else {
-                                    context.setConsistentWithServer(true);
-                                }
-                            }
-                        }
-                    } catch (NacosException e) {
-                        // Log error and retry after a short delay
-                        LOGGER.error("Execute batch fuzzy listen config change error.", e);
-                        try {
-                            Thread.sleep(50L);
-                        } catch (InterruptedException interruptedException) {
-                            // Ignore interruption
-                        }
-                        // Retry notification
-                        notifyFuzzyListenConfig();
-                    }
-                });
-                listenFutures.add(future);
-            }
-            
-            // Wait for all tasks to complete
-            for (Future<?> future : listenFutures) {
-                try {
-                    future.get();
-                } catch (Throwable throwable) {
-                    // Log async listen error
-                    LOGGER.error("Async fuzzy listen config change error.", throwable);
-                }
-            }
-        }
-        
-        /**
          * Checks and handles local configuration for a given CacheData object. This method evaluates the use of
          * failover files for local configuration storage and updates the CacheData accordingly.
          *
@@ -1451,41 +948,16 @@ public class ClientWorker implements Closeable {
             }
         }
         
-        /**
-         * Ensure to create a synchronous executor for the given task prefix and task ID. If an executor for the given
-         * task doesn't exist yet, a new executor will be created.
-         *
-         * @param taskPrefix The prefix of the task identifier
-         * @param taskId     The ID of the task
-         * @return The created or existing executor
-         */
-        private ExecutorService ensureSyncExecutor(String taskPrefix, String taskId) {
-            // Generate the unique task identifier
-            String taskIdentifier = generateTaskIdentifier(taskPrefix, taskId);
-            
-            // If the task identifier doesn't exist in the existing executors, create a new executor and add it to the multiTaskExecutor map
-            if (!multiTaskExecutor.containsKey(taskIdentifier)) {
-                multiTaskExecutor.put(taskIdentifier,
+        private ExecutorService ensureSyncExecutor(String taskId) {
+            if (!multiTaskExecutor.containsKey(taskId)) {
+                multiTaskExecutor.put(taskId,
                         new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), r -> {
-                            Thread thread = new Thread(r, taskIdentifier);
+                            Thread thread = new Thread(r, "nacos.client.config.listener.task-" + taskId);
                             thread.setDaemon(true);
                             return thread;
                         }));
             }
-            
-            // Return the created or existing executor
-            return multiTaskExecutor.get(taskIdentifier);
-        }
-        
-        /**
-         * Generate a task identifier based on the task prefix and task ID.
-         *
-         * @param taskPrefix The prefix of the task identifier
-         * @param taskId     The ID of the task
-         * @return The generated task identifier
-         */
-        private String generateTaskIdentifier(String taskPrefix, String taskId) {
-            return taskPrefix + "-" + taskId;
+            return multiTaskExecutor.get(taskId);
         }
         
         private void refreshContentAndCheck(RpcClient rpcClient, String groupKey, boolean notify) {
@@ -1525,7 +997,7 @@ public class ClientWorker implements Closeable {
                     String taskId = entry.getKey();
                     RpcClient rpcClient = ensureRpcClient(taskId);
                     
-                    ExecutorService executorService = ensureSyncExecutor(configListenerTaskPrefix, taskId);
+                    ExecutorService executorService = ensureSyncExecutor(taskId);
                     Future future = executorService.submit(() -> {
                         List<CacheData> removeListenCaches = entry.getValue();
                         ConfigBatchListenRequest configChangeListenRequest = buildConfigRequest(removeListenCaches);
@@ -1575,7 +1047,7 @@ public class ClientWorker implements Closeable {
                     String taskId = entry.getKey();
                     RpcClient rpcClient = ensureRpcClient(taskId);
                     
-                    ExecutorService executorService = ensureSyncExecutor(configListenerTaskPrefix, taskId);
+                    ExecutorService executorService = ensureSyncExecutor(taskId);
                     Future future = executorService.submit(() -> {
                         List<CacheData> listenCaches = entry.getValue();
                         //reset notify change flag.
@@ -1656,7 +1128,7 @@ public class ClientWorker implements Closeable {
             return hasChangedKeys.get();
         }
         
-        private RpcClient ensureRpcClient(String taskId) throws NacosException {
+        RpcClient ensureRpcClient(String taskId) throws NacosException {
             synchronized (ClientWorker.this) {
                 Map<String, String> labels = getLabels();
                 Map<String, String> newLabels = new HashMap<>(labels);
@@ -1692,31 +1164,10 @@ public class ClientWorker implements Closeable {
             return configChangeListenRequest;
         }
         
-        /**
-         * Builds a request for fuzzy listen configuration.
-         *
-         * @param contexts The list of fuzzy listen contexts.
-         * @return A {@code ConfigBatchFuzzyListenRequest} object representing the request.
-         */
-        private ConfigBatchFuzzyWatchRequest buildFuzzyListenConfigRequest(List<ConfigFuzzyWatchContext> contexts) {
-            ConfigBatchFuzzyWatchRequest request = new ConfigBatchFuzzyWatchRequest();
-            for (ConfigFuzzyWatchContext context : contexts) {
-                request.addContext(context.getGroupKeyPattern(), context.getReceivedGroupKeys(),
-                        !context.isDiscard(), context.isInitializing());
-            }
-            return request;
-        }
-        
         @Override
         public void removeCache(String dataId, String group) {
             // Notify to rpc un listen ,and remove cache if success.
             notifyListenConfig();
-        }
-        
-        @Override
-        public void removeFuzzyListenContext(String dataIdPattern, String group) throws NacosException {
-            // Notify to rpc un fuzzy listen, and remove cache if success.
-            notifyFuzzyListenConfig();
         }
         
         /**
@@ -1790,7 +1241,7 @@ public class ClientWorker implements Closeable {
             }
         }
         
-        private Response requestProxy(RpcClient rpcClientInner, Request request) throws NacosException {
+        Response requestProxy(RpcClient rpcClientInner, Request request) throws NacosException {
             return requestProxy(rpcClientInner, request, requestTimeout);
         }
         

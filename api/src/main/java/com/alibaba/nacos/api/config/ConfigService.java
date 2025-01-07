@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.config.listener.ConfigFuzzyWatcher;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 
-import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.Future;
 
@@ -173,11 +172,11 @@ public interface ConfigService {
      * specified for subscription.
      *
      * @param fixedGroupName The fixed group name representing the group and dataId patterns to subscribe to.
-     * @param listener       The fuzzy listener to be added.
+     * @param watcher       The fuzzy watcher to be added.
      * @throws NacosException NacosException
      * @since 3.0
      */
-    void fuzzyWatch(String fixedGroupName, ConfigFuzzyWatcher listener) throws NacosException;
+    void fuzzyWatch(String fixedGroupName, ConfigFuzzyWatcher watcher) throws NacosException;
     
     /**
      * Add a fuzzy listener to the configuration. After the server modifies the configuration matching the specified
@@ -235,13 +234,13 @@ public interface ConfigService {
     /**
      * Cancel fuzzy listen and remove the event listener for a specified service name pattern and fixed group name.
      *
-     * @param dataIdPatter   The pattern to match dataId for fuzzy watch.
+     * @param dataIdPattern   The pattern to match dataId for fuzzy watch.
      * @param fixedGroupName The fixed group name for fuzzy watch.
      * @param watcher       The event listener to be removed.
      * @throws NacosException If an error occurs during the cancellation process.
      * @since 3.0
      */
-    void cancelFuzzyWatch(String dataIdPatter, String fixedGroupName, ConfigFuzzyWatcher watcher)
+    void cancelFuzzyWatch(String dataIdPattern, String fixedGroupName, ConfigFuzzyWatcher watcher)
             throws NacosException;
     
 }

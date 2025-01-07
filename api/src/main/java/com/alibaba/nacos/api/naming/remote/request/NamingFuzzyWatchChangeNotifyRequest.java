@@ -16,23 +16,21 @@
 
 package com.alibaba.nacos.api.naming.remote.request;
 
-import com.alibaba.nacos.api.remote.request.ServerRequest;
-
-import static com.alibaba.nacos.api.common.Constants.Naming.NAMING_MODULE;
-
 /**
  * Nacos fuzzy watch notify service change request, use it when one of the services changes.
  *
  * @author tanyongquan
  */
-public class FuzzyWatchNotifyChangeRequest extends AbstractFuzzyWatchNotifyRequest {
+public class NamingFuzzyWatchChangeNotifyRequest extends AbstractFuzzyWatchNotifyRequest {
     
     private String serviceKey;
 
+    private String  changedType;
     
-    public FuzzyWatchNotifyChangeRequest(String serviceKey, String serviceChangedType) {
-        super(serviceChangedType);
+    public NamingFuzzyWatchChangeNotifyRequest(String serviceKey,String changedType, String syncType) {
+        super(syncType);
        this.serviceKey=serviceKey;
+       this.changedType=changedType;
     }
     
     public String getServiceKey() {
@@ -41,5 +39,13 @@ public class FuzzyWatchNotifyChangeRequest extends AbstractFuzzyWatchNotifyReque
     
     public void setServiceKey(String serviceKey) {
         this.serviceKey = serviceKey;
+    }
+    
+    public String getChangedType() {
+        return changedType;
+    }
+    
+    public void setChangedType(String changedType) {
+        this.changedType = changedType;
     }
 }

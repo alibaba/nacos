@@ -17,7 +17,6 @@
 package com.alibaba.nacos.naming.remote.rpc.handler;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.NamingFuzzyWatchRequest;
 import com.alibaba.nacos.api.naming.remote.response.NamingFuzzyWatchResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
@@ -28,7 +27,9 @@ import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import org.springframework.stereotype.Component;
 
-import java.util.Set;
+
+import static com.alibaba.nacos.api.common.Constants.WATCH_TYPE_WATCH;
+import static com.alibaba.nacos.api.common.Constants.WATCH_TYPE_CANCEL_WATCH;
 
 /**
  * Fuzzy watch service request handler.
@@ -46,14 +47,13 @@ public class NamingFuzzyWatchRequestHandler extends RequestHandler<NamingFuzzyWa
     public NamingFuzzyWatchResponse handle(NamingFuzzyWatchRequest request, RequestMeta meta) throws NacosException {
         
         String groupKeyPattern = request.getGroupKeyPattern();
-        
         switch (request.getWatchType()) {
-            case NamingRemoteConstants.FUZZY_WATCH_SERVICE:
+            case WATCH_TYPE_WATCH:
                 NotifyCenter.publishEvent(new ClientOperationEvent.ClientFuzzyWatchEvent(groupKeyPattern, meta.getConnectionId(),request.getReceivedGroupKeys(),request.isInitializing()));
-                return NamingFuzzyWatchResponse.buildSuccessResponse(NamingRemoteConstants.FUZZY_WATCH_SERVICE);
-            case NamingRemoteConstants.CANCEL_FUZZY_WATCH_SERVICE:
+                return NamingFuzzyWatchResponse.buildSuccessResponse();
+            case WATCH_TYPE_CANCEL_WATCH:
                 NotifyCenter.publishEvent(new ClientOperationEvent.ClientCancelFuzzyWatchEvent(groupKeyPattern, meta.getConnectionId()));
-                return NamingFuzzyWatchResponse.buildSuccessResponse(NamingRemoteConstants.CANCEL_FUZZY_WATCH_SERVICE);
+                return NamingFuzzyWatchResponse.buildSuccessResponse();
             default:
                 throw new NacosException(NacosException.INVALID_PARAM,
                         String.format("Unsupported request type %s", request.getWatchType()));

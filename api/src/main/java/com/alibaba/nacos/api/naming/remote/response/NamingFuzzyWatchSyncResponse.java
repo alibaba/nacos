@@ -24,14 +24,14 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
  *
  * @author tanyongquan
  */
-public class NamingFuzzyWatchResponse extends Response {
+public class NamingFuzzyWatchSyncResponse extends Response {
     
-    public NamingFuzzyWatchResponse(){
+    public NamingFuzzyWatchSyncResponse(){
     }
     
 
-    public static NamingFuzzyWatchResponse buildSuccessResponse() {
-        return new NamingFuzzyWatchResponse();
+    public static NamingFuzzyWatchSyncResponse buildSuccessResponse() {
+        return new NamingFuzzyWatchSyncResponse();
     }
     
     /**
@@ -40,8 +40,8 @@ public class NamingFuzzyWatchResponse extends Response {
      * @param message error message
      * @return fail response
      */
-    public static NamingFuzzyWatchResponse buildFailResponse(String message) {
-        NamingFuzzyWatchResponse result = new NamingFuzzyWatchResponse();
+    public static NamingFuzzyWatchSyncResponse buildFailResponse(String message) {
+        NamingFuzzyWatchSyncResponse result = new NamingFuzzyWatchSyncResponse();
         result.setErrorInfo(ResponseCode.FAIL.getCode(), message);
         return result;
     }

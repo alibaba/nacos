@@ -28,7 +28,7 @@ import java.util.Set;
  * @author stone-98
  * @date 2024/3/5
  */
-public class ConfigBatchFuzzyListenEvent extends Event {
+public class ConfigFuzzyWatchEvent extends Event {
     
     private static final long serialVersionUID = 1953965691384930209L;
     
@@ -60,7 +60,7 @@ public class ConfigBatchFuzzyListenEvent extends Event {
      * @param groupKeyPattern         Pattern for matching group keys
      * @param isInitializing          Flag indicating whether the client is initializing
      */
-    public ConfigBatchFuzzyListenEvent(String connectionId, Set<String> clientExistingGroupKeys, String groupKeyPattern,
+    public ConfigFuzzyWatchEvent(String connectionId, Set<String> clientExistingGroupKeys, String groupKeyPattern,
             boolean isInitializing) {
         this.connectionId = connectionId;
         this.clientExistingGroupKeys = clientExistingGroupKeys;

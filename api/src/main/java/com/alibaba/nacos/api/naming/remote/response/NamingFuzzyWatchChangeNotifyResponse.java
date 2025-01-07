@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.config.remote.response;
+package com.alibaba.nacos.api.naming.remote.response;
 
 import com.alibaba.nacos.api.remote.response.Response;
 
 /**
- * ConfigBatchFuzzyListenResponse.
+ * Response for notify fuzzy watcher.
  *
- * @author stone-98
- * @date 2024/3/4
+ * @author tanyongquan
  */
-public class ConfigBatchFuzzyWatchResponse extends Response {
+public class NamingFuzzyWatchChangeNotifyResponse extends Response {
 
 }

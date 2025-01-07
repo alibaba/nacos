@@ -71,7 +71,7 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
     public Collection<Service> getSubscribedService() {
         return subscriberIndexes.keySet();
     }
-
+    
     /**
      * Clear the service index without instances.
      *
@@ -138,7 +138,7 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
         String serviceChangedType = Constants.ServiceChangedType.INSTANCE_CHANGED;
         if (!publisherIndexes.containsKey(service)) {
             // The only time the index needs to be updated is when the service is first created
-            namingFuzzyWatchContextService.addNewSevice(service);
+            namingFuzzyWatchContextService.addNewService(service);
             serviceChangedType = Constants.ServiceChangedType.ADD_SERVICE;
         }
         NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, serviceChangedType, true));
@@ -173,5 +173,4 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
             subscriberIndexes.remove(service);
         }
     }
-    
 }

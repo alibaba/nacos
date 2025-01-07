@@ -27,21 +27,21 @@ import static com.alibaba.nacos.api.common.Constants.Naming.NAMING_MODULE;
  */
 public abstract class AbstractFuzzyWatchNotifyRequest extends ServerRequest {
     
-    private String changedType;
+    private String syncType;
     
     public AbstractFuzzyWatchNotifyRequest(){
     }
     
-    public AbstractFuzzyWatchNotifyRequest( String changedType) {
-        this.changedType = changedType;
+    public AbstractFuzzyWatchNotifyRequest( String syncType) {
+        this.syncType = syncType;
     }
     
-    public String getChangedType() {
-        return changedType;
+    public String getSyncType() {
+        return syncType;
     }
     
-    public void setChangedType(String changedType) {
-        this.changedType = changedType;
+    public void setSyncType(String syncType) {
+        this.syncType = syncType;
     }
     
     @Override

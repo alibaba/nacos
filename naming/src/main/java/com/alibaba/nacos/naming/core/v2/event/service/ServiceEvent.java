@@ -19,7 +19,6 @@ package com.alibaba.nacos.naming.core.v2.event.service;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 
-import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -31,10 +30,7 @@ public class ServiceEvent extends Event {
     
     private static final long serialVersionUID = -9173247502346692418L;
     
-    private Service service;
-    
-    public ServiceEvent() {
-    }
+    private final Service service;
     
     public ServiceEvent(Service service) {
         this.service = service;
@@ -91,36 +87,4 @@ public class ServiceEvent extends Event {
         }
     }
     
-    /**
-     * A client initiates a fuzzy watch request.
-     */
-    public static class ServiceFuzzyWatchInitEvent extends ServiceEvent {
-        
-        private static final long serialVersionUID = -2645441445867337345L;
-        
-        private final String clientId;
-        
-        private final String pattern;
-        
-        private final Set<String> matchedServiceKeys;
-        
-        public ServiceFuzzyWatchInitEvent(String clientId, String pattern, Set<String> matchedServiceKeys) {
-            super();
-            this.clientId = clientId;
-            this.pattern = pattern;
-            this.matchedServiceKeys = matchedServiceKeys;
-        }
-        
-        public String getClientId() {
-            return clientId;
-        }
-        
-        public String getPattern() {
-            return pattern;
-        }
-        
-        public Set<String> getMatchedServicKeys() {
-            return matchedServiceKeys;
-        }
-    }
 }

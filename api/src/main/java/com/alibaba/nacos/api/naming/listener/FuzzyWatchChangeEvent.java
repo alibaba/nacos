@@ -31,14 +31,17 @@ public class FuzzyWatchChangeEvent implements Event {
     
     private String changeType;
     
+    private String syncType;
+    
     public FuzzyWatchChangeEvent() {
     }
     
-    public FuzzyWatchChangeEvent(String serviceName,String groupName,String namespace, String changeType) {
+    public FuzzyWatchChangeEvent(String serviceName,String groupName,String namespace, String changeType,String syncType) {
         this.changeType = changeType;
         this.serviceName=serviceName;
         this.groupName=groupName;
         this.namespace=namespace;
+        this.syncType=syncType;
     }
     
     public String getServiceName() {

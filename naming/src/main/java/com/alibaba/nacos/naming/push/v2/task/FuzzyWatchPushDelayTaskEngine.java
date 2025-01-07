@@ -20,53 +20,35 @@ import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.task.NacosTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.common.task.engine.NacosDelayTaskExecuteEngine;
-import com.alibaba.nacos.naming.core.v2.index.NamingFuzzyWatchContextService;
-import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
-import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
-import com.alibaba.nacos.naming.core.v2.pojo.Service;
+
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.push.v2.executor.PushExecutor;
+import org.springframework.stereotype.Component;
 
 /**
  * Nacos naming fuzzy watch notify service change push delay task execute engine.
  *
  * @author tanyongquan
  */
+@Component
 public class FuzzyWatchPushDelayTaskEngine extends NacosDelayTaskExecuteEngine {
     
-    private final NamingFuzzyWatchContextService namingFuzzyWatchContextService;
-    
-    private final ServiceStorage serviceStorage;
-    
-    private final NamingMetadataManager metadataManager;
     
     private final PushExecutor pushExecutor;
     
     private final SwitchDomain switchDomain;
     
-    public FuzzyWatchPushDelayTaskEngine(NamingFuzzyWatchContextService namingFuzzyWatchContextService,
-            ServiceStorage serviceStorage, NamingMetadataManager metadataManager, PushExecutor pushExecutor,
+    public FuzzyWatchPushDelayTaskEngine(
+           PushExecutor pushExecutor,
             SwitchDomain switchDomain) {
         super(FuzzyWatchPushDelayTaskEngine.class.getSimpleName(), Loggers.PUSH);
-        this.namingFuzzyWatchContextService = namingFuzzyWatchContextService;
-        this.serviceStorage = serviceStorage;
-        this.metadataManager = metadataManager;
         this.pushExecutor = pushExecutor;
         this.switchDomain = switchDomain;
         setDefaultTaskProcessor(new WatchPushDelayTaskProcessor(this));
     }
-    
-    
-    public ServiceStorage getServiceStorage() {
-        return serviceStorage;
-    }
-    
-    public NamingMetadataManager getMetadataManager() {
-        return metadataManager;
-    }
-    
+
     public PushExecutor getPushExecutor() {
         return pushExecutor;
     }
@@ -82,10 +64,10 @@ public class FuzzyWatchPushDelayTaskEngine extends NacosDelayTaskExecuteEngine {
     
     private static class WatchPushDelayTaskProcessor implements NacosTaskProcessor {
         
-        private final FuzzyWatchPushDelayTaskEngine executeEngine;
+        private final FuzzyWatchPushDelayTaskEngine fuzztWatchPushExecuteEngine;
         
-        public WatchPushDelayTaskProcessor(FuzzyWatchPushDelayTaskEngine executeEngine) {
-            this.executeEngine = executeEngine;
+        public WatchPushDelayTaskProcessor(FuzzyWatchPushDelayTaskEngine fuzztWatchPushExecuteEngine) {
+            this.fuzztWatchPushExecuteEngine = fuzztWatchPushExecuteEngine;
         }
         
         @Override
@@ -96,32 +78,27 @@ public class FuzzyWatchPushDelayTaskEngine extends NacosDelayTaskExecuteEngine {
                 FuzzyWatchChangeNotifyTask fuzzyWatchChangeNotifyTask = (FuzzyWatchChangeNotifyTask) task;
                 NamingExecuteTaskDispatcher.getInstance().dispatchAndExecuteTask(
                         getTaskKey(task),
-                        new FuzzyWatchChangeNotifyExecuteTask(executeEngine, fuzzyWatchChangeNotifyTask.getServiceKey(),
+                        new FuzzyWatchChangeNotifyExecuteTask(fuzztWatchPushExecuteEngine, fuzzyWatchChangeNotifyTask.getServiceKey(),
                                 fuzzyWatchChangeNotifyTask.getChangedType(), fuzzyWatchChangeNotifyTask.getClientId()));
-            } else if (task instanceof FuzzyWatchInitNotifyTask) {
+            } else if (task instanceof FuzzyWatchSyncNotifyTask) {
                 //process fuzzy watch init notify when a new client fuzzy watch a pattern
-                FuzzyWatchInitNotifyTask fuzzyWatchInitNotifyTask = (FuzzyWatchInitNotifyTask) task;
-                String pattern = fuzzyWatchInitNotifyTask.getPattern();
-                String clientId = fuzzyWatchInitNotifyTask.getClientId();
+                FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTask = (FuzzyWatchSyncNotifyTask) task;
+                String pattern = fuzzyWatchSyncNotifyTask.getPattern();
+                String clientId = fuzzyWatchSyncNotifyTask.getClientId();
                 NamingExecuteTaskDispatcher.getInstance().dispatchAndExecuteTask(getTaskKey(task),
-                        new FuzzyWatchInitNotifyExecuteTask(clientId, pattern,
-                                fuzzyWatchInitNotifyTask.getOriginSize(), executeEngine, fuzzyWatchInitNotifyTask,
-                                fuzzyWatchInitNotifyTask.isFinishInit()));
+                        new FuzzyWatchSyncNotifyExecuteTask(clientId, pattern,
+                               fuzztWatchPushExecuteEngine, fuzzyWatchSyncNotifyTask));
             }
             return true;
         }
         
     }
     
-    public NamingFuzzyWatchContextService getNamingFuzzyWatchContextService() {
-        return namingFuzzyWatchContextService;
-    }
-    
     public static String getTaskKey(NacosTask task){
         if(task instanceof FuzzyWatchChangeNotifyTask){
             return "fwcnT-"+((FuzzyWatchChangeNotifyTask) task).getClientId()+((FuzzyWatchChangeNotifyTask) task).getServiceKey();
-        }else if (task instanceof FuzzyWatchInitNotifyTask){
-            return "fwinT-"+((FuzzyWatchInitNotifyTask) task).getClientId()+((FuzzyWatchInitNotifyTask) task).getPattern();
+        }else if (task instanceof FuzzyWatchSyncNotifyTask){
+            return "fwsnT-"+((FuzzyWatchSyncNotifyTask) task).getSyncType()+"-"+((FuzzyWatchSyncNotifyTask) task).getClientId()+((FuzzyWatchSyncNotifyTask) task).getPattern()+"-"+((FuzzyWatchSyncNotifyTask) task).getCurrentBatch();
         }else {
             throw new NacosRuntimeException(500,"unknown fuzzy task type");
         }

@@ -16,19 +16,21 @@
 
 package com.alibaba.nacos.naming.push.v2.task;
 
-import com.alibaba.nacos.api.naming.remote.request.FuzzyWatchNotifyChangeRequest;
+import com.alibaba.nacos.api.naming.remote.request.NamingFuzzyWatchChangeNotifyRequest;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.push.v2.NoRequiredRetryException;
 import com.alibaba.nacos.naming.push.v2.PushConfig;
 
+import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_RESOURCE_CHANGED;
+
 /**
  * Nacos naming fuzzy watch notify service change push delay task.
  *
  * @author tanyongquan
  */
-public class FuzzyWatchChangeNotifyExecuteTask extends AbstractExecuteTask{
+public class FuzzyWatchChangeNotifyExecuteTask extends AbstractExecuteTask {
     
     private final String serviceKey;
     
@@ -38,19 +40,20 @@ public class FuzzyWatchChangeNotifyExecuteTask extends AbstractExecuteTask{
     
     private final FuzzyWatchPushDelayTaskEngine delayTaskEngine;
     
-    public FuzzyWatchChangeNotifyExecuteTask(FuzzyWatchPushDelayTaskEngine delayTaskEngine,String serviceKey, String changedType, String targetClient) {
+    public FuzzyWatchChangeNotifyExecuteTask(FuzzyWatchPushDelayTaskEngine delayTaskEngine, String serviceKey,
+            String changedType, String targetClient) {
         this.serviceKey = serviceKey;
         this.changedType = changedType;
-        this.clientId=targetClient;
-        this.delayTaskEngine=delayTaskEngine;
+        this.clientId = targetClient;
+        this.delayTaskEngine = delayTaskEngine;
     }
     
     @Override
     public void run() {
         
         delayTaskEngine.getPushExecutor().doFuzzyWatchNotifyPushWithCallBack(clientId,
-                    new FuzzyWatchNotifyChangeRequest(serviceKey,changedType),
-                    new FuzzyWatchChangeNotifyCallback(clientId, serviceKey,changedType));
+                new NamingFuzzyWatchChangeNotifyRequest(serviceKey, changedType, FUZZY_WATCH_RESOURCE_CHANGED),
+                new FuzzyWatchChangeNotifyCallback(clientId, serviceKey, changedType));
         
     }
     
@@ -58,16 +61,16 @@ public class FuzzyWatchChangeNotifyExecuteTask extends AbstractExecuteTask{
         
         private final String clientId;
         
-       private String service;
+        private String service;
         
         private String serviceChangedType;
-    
         
-        private FuzzyWatchChangeNotifyCallback(String clientId,String service, String serviceChangedType) {
+        
+        private FuzzyWatchChangeNotifyCallback(String clientId, String service, String serviceChangedType) {
             this.clientId = clientId;
-            this.service=service;
-            this.serviceChangedType=serviceChangedType;
-         
+            this.service = service;
+            this.serviceChangedType = serviceChangedType;
+            
         }
         
         @Override
@@ -84,8 +87,9 @@ public class FuzzyWatchChangeNotifyExecuteTask extends AbstractExecuteTask{
         public void onFail(Throwable e) {
             if (!(e instanceof NoRequiredRetryException)) {
                 Loggers.PUSH.error("fuzzy watch fail , reason detail: ", e);
-                delayTaskEngine.addTask(System.currentTimeMillis(), new FuzzyWatchChangeNotifyTask( service,serviceChangedType,clientId,
-                             PushConfig.getInstance().getPushTaskRetryDelay()));
+                delayTaskEngine.addTask(System.currentTimeMillis(),
+                        new FuzzyWatchChangeNotifyTask(service, serviceChangedType, clientId,
+                                PushConfig.getInstance().getPushTaskRetryDelay()));
             }
         }
     }

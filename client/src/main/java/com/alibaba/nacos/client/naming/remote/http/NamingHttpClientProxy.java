@@ -31,7 +31,6 @@ import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.address.ServerListChangeEvent;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
-import com.alibaba.nacos.client.naming.cache.NamingFuzzyWatchContext;
 import com.alibaba.nacos.client.naming.core.NamingServerListManager;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
@@ -57,7 +56,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.Future;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTPS_PREFIX;
@@ -328,21 +326,6 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     @Override
     public boolean isSubscribed(String serviceName, String groupName, String clusters) throws NacosException {
         return true;
-    }
-    
-    @Override
-    public NamingFuzzyWatchContext initFuzzyWatchContext(String serviceNamePattern, String groupNamePattern) throws NacosException {
-        throw new UnsupportedOperationException("Do not support fuzzy watch services by UDP, please use gRPC replaced.");
-    }
-    
-    @Override
-    public void cancelFuzzyWatch(String serviceNamePattern, String groupNamePattern) throws NacosException {
-        throw new UnsupportedOperationException("Do not support fuzzy watch service by UDP, please use gRPC replaced.");
-    }
-    
-    @Override
-    public boolean isFuzzyWatched(String serviceNamePattern, String groupNamePattern) {
-        throw new UnsupportedOperationException("Do not support fuzzy watch service by UDP, please use gRPC replaced.");
     }
     
     public String reqApi(String api, Map<String, String> params, String method) throws NacosException {

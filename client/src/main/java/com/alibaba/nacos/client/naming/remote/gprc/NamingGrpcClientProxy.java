@@ -48,8 +48,7 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
-import com.alibaba.nacos.client.naming.cache.FuzzyWatchServiceListHolder;
-import com.alibaba.nacos.client.naming.cache.NamingFuzzyWatchContext;
+import com.alibaba.nacos.client.naming.cache.NamingFuzzyWatchServiceListHolder;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.address.ServerListChangeEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
@@ -66,7 +65,6 @@ import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfigFactory;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 
 import java.util.ArrayList;
@@ -101,7 +99,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     public NamingGrpcClientProxy(String namespaceId, SecurityProxy securityProxy, ServerListFactory serverListFactory,
             NacosClientProperties properties, ServiceInfoHolder serviceInfoHolder,
-            FuzzyWatchServiceListHolder fuzzyWatchServiceListHolder) throws NacosException {
+            NamingFuzzyWatchServiceListHolder namingFuzzyWatchServiceListHolder) throws NacosException {
         super(securityProxy);
         this.namespaceId = namespaceId;
         this.uuid = UUID.randomUUID().toString();
@@ -110,20 +108,23 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
         labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_NAMING);
         labels.put(Constants.APPNAME, AppNameUtils.getAppName());
+        namingFuzzyWatchServiceListHolder.registerNamingGrpcClientProxy(this);
         this.rpcClient = RpcClientFactory.createClient(uuid, ConnectionType.GRPC, labels,
                 RpcClientTlsConfigFactory.getInstance().createSdkConfig(properties.asProperties()));
-        this.redoService = new NamingGrpcRedoService(this,fuzzyWatchServiceListHolder, properties);
+        this.redoService = new NamingGrpcRedoService(this, namingFuzzyWatchServiceListHolder, properties);
         NAMING_LOGGER.info("Create naming rpc client for uuid->{}", uuid);
-        start(serverListFactory, serviceInfoHolder, fuzzyWatchServiceListHolder);
+        start(serverListFactory, serviceInfoHolder, namingFuzzyWatchServiceListHolder);
     }
     
     private void start(ServerListFactory serverListFactory, ServiceInfoHolder serviceInfoHolder,
-            FuzzyWatchServiceListHolder fuzzyWatchServiceListHolder) throws NacosException {
+            NamingFuzzyWatchServiceListHolder namingFuzzyWatchServiceListHolder) throws NacosException {
         rpcClient.serverListFactory(serverListFactory);
         rpcClient.registerConnectionListener(redoService);
         rpcClient.registerServerRequestHandler(new NamingPushRequestHandler(serviceInfoHolder));
-        rpcClient.registerServerRequestHandler(new NamingFuzzyWatchRequestHandler(fuzzyWatchServiceListHolder));
+        rpcClient.registerServerRequestHandler(new NamingFuzzyWatchNotifyRequestHandler(
+                namingFuzzyWatchServiceListHolder));
         rpcClient.start();
+        namingFuzzyWatchServiceListHolder.start();
         NotifyCenter.registerSubscriber(this);
     }
     
@@ -447,7 +448,6 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         return rpcClient.getConnectionAbility(abilityKey) == AbilityStatus.SUPPORTED;
     }
     
-    
     /**
      * Execute unsubscribe operation.
      *
@@ -455,17 +455,14 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
      * @throws NacosException nacos exception
      */
     public NamingFuzzyWatchResponse fuzzyWatchRequest(NamingFuzzyWatchRequest namingFuzzyWatchRequest) throws NacosException {
-       
        return requestToServer(namingFuzzyWatchRequest, NamingFuzzyWatchResponse.class);
     }
-    
     
     private <T extends Response> T requestToServer(Request request, Class<T> responseClass)
             throws NacosException {
         Response response = null;
         try {
             if (request instanceof AbstractNamingRequest){
-                
                 request.putAllHeader(
                         getSecurityHeaders(((AbstractNamingRequest)request).getNamespace(), ((AbstractNamingRequest)request).getGroupName(), ((AbstractNamingRequest)request).getServiceName()));
             }else if(request instanceof NamingFuzzyWatchRequest){

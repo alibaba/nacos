@@ -16,13 +16,13 @@
 
 package com.alibaba.nacos.config.server.remote;
 
-import com.alibaba.nacos.api.config.remote.request.ConfigBatchFuzzyWatchRequest;
-import com.alibaba.nacos.api.config.remote.response.ConfigBatchFuzzyWatchResponse;
+import com.alibaba.nacos.api.config.remote.request.ConfigFuzzyWatchRequest;
+import com.alibaba.nacos.api.config.remote.response.ConfigFuzzyWatchResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.config.server.model.event.ConfigBatchFuzzyListenEvent;
+import com.alibaba.nacos.config.server.model.event.ConfigFuzzyWatchEvent;
 import com.alibaba.nacos.config.server.service.ConfigFuzzyWatchContextService;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
@@ -33,6 +33,9 @@ import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import static com.alibaba.nacos.api.common.Constants.WATCH_TYPE_WATCH;
+import static com.alibaba.nacos.api.common.Constants.WATCH_TYPE_CANCEL_WATCH;
 
 import java.util.Set;
 
@@ -49,7 +52,7 @@ import java.util.Set;
  */
 @Component
 public class ConfigBatchFuzzyWatchRequestHandler
-        extends RequestHandler<ConfigBatchFuzzyWatchRequest, ConfigBatchFuzzyWatchResponse> {
+        extends RequestHandler<ConfigFuzzyWatchRequest, ConfigFuzzyWatchResponse> {
     
     /**
      * Context for managing fuzzy listen changes.
@@ -73,25 +76,24 @@ public class ConfigBatchFuzzyWatchRequestHandler
     @TpsControl(pointName = "ConfigFuzzyWatch")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     @ExtractorManager.Extractor(rpcExtractor = ConfigBatchFuzzyListenRequestParamsExtractor.class)
-    public ConfigBatchFuzzyWatchResponse handle(ConfigBatchFuzzyWatchRequest request, RequestMeta meta)
+    public ConfigFuzzyWatchResponse handle(ConfigFuzzyWatchRequest request, RequestMeta meta)
             throws NacosException {
         String connectionId = StringPool.get(meta.getConnectionId());
-        for (ConfigBatchFuzzyWatchRequest.Context context : request.getContexts()) {
-            String groupKeyPattern = context.getGroupKeyPattern();
-            if (context.isListen()) {
+            String groupKeyPattern = request.getGroupKeyPattern();
+            if (WATCH_TYPE_WATCH.equals(request.getWatchType())) {
                 // Add client to the fuzzy listening context
                 configFuzzyWatchContextService.addFuzzyListen(groupKeyPattern, connectionId);
                 // Get existing group keys for the client and publish initialization event
-                Set<String> clientExistingGroupKeys = context.getReceivedGroupKeys();
+                Set<String> clientExistingGroupKeys = request.getReceivedGroupKeys();
                 NotifyCenter.publishEvent(
-                        new ConfigBatchFuzzyListenEvent(connectionId, clientExistingGroupKeys, groupKeyPattern,
-                                context.isInitializing()));
-            } else {
+                        new ConfigFuzzyWatchEvent(connectionId, clientExistingGroupKeys, groupKeyPattern,
+                                request.isInitializing()));
+            } else if(WATCH_TYPE_CANCEL_WATCH.equals(request.getWatchType())) {
                 // Remove client from the fuzzy listening context
                 configFuzzyWatchContextService.removeFuzzyListen(groupKeyPattern, connectionId);
             }
-        }
+        
         // Return response
-        return new ConfigBatchFuzzyWatchResponse();
+        return new ConfigFuzzyWatchResponse();
     }
 }

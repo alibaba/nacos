@@ -16,11 +16,12 @@
 
 package com.alibaba.nacos.core.paramcheck.impl;
 
-import com.alibaba.nacos.api.config.remote.request.ConfigBatchFuzzyWatchRequest;
+import com.alibaba.nacos.api.config.remote.request.ConfigFuzzyWatchRequest;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
 import com.alibaba.nacos.core.paramcheck.AbstractRpcParamExtractor;
 
 import java.util.ArrayList;
@@ -28,7 +29,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Extractor for parameters of {@link ConfigBatchFuzzyWatchRequest}. This extractor retrieves parameter information
+ * Extractor for parameters of {@link ConfigFuzzyWatchRequest}. This extractor retrieves parameter information
  * from the request object and constructs {@link ParamInfo} instances representing the namespace ID, group, and data IDs
  * contained in the request's contexts.
  *
@@ -46,28 +47,12 @@ public class ConfigBatchFuzzyListenRequestParamsExtractor extends AbstractRpcPar
      */
     @Override
     public List<ParamInfo> extractParam(Request request) throws NacosException {
-        ConfigBatchFuzzyWatchRequest req = (ConfigBatchFuzzyWatchRequest) request;
-        Set<ConfigBatchFuzzyWatchRequest.Context> contexts = req.getContexts();
+        ConfigFuzzyWatchRequest req = (ConfigFuzzyWatchRequest) request;
         List<ParamInfo> paramInfos = new ArrayList<>();
-        if (contexts == null) {
-            return paramInfos;
-        }
-        for (ConfigBatchFuzzyWatchRequest.Context context : contexts) {
             // Extract namespace ID and group from the context
             ParamInfo paramInfo1 = new ParamInfo();
-            paramInfo1.setNamespaceId(context.getTenant());
-            paramInfo1.setGroup(context.getGroup());
+            paramInfo1.setNamespaceId(FuzzyGroupKeyPattern.getNamespaceFromPattern(req.getGroupKeyPattern()));
             paramInfos.add(paramInfo1);
-            
-            // Extract data IDs from the context if present
-            if (CollectionUtils.isNotEmpty(context.getDataIds())) {
-                for (String dataId : context.getDataIds()) {
-                    ParamInfo paramInfo2 = new ParamInfo();
-                    paramInfo2.setDataId(dataId);
-                    paramInfos.add(paramInfo2);
-                }
-            }
-        }
         return paramInfos;
     }
 }

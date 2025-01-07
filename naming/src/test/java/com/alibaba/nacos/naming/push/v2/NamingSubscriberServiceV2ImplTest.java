@@ -79,8 +79,7 @@ class NamingSubscriberServiceV2ImplTest {
     
     @BeforeEach
     void setUp() throws Exception {
-        subscriberService = new NamingSubscriberServiceV2Impl(clientManager, indexesManager,
-                namingFuzzyWatchContextService, null, null,null, switchDomain);
+        subscriberService = new NamingSubscriberServiceV2Impl(clientManager, indexesManager, null, null,null, switchDomain);
         ReflectionTestUtils.setField(subscriberService, "delayTaskEngine", delayTaskEngine);
         when(indexesManager.getAllClientsSubscribeService(service)).thenReturn(Collections.singletonList(testClientId));
         when(indexesManager.getAllClientsSubscribeService(service1)).thenReturn(Collections.singletonList(testClientId));

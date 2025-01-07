@@ -33,11 +33,11 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.cache.NamingFuzzyWatchContext;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
-import com.alibaba.nacos.client.naming.cache.FuzzyWatchServiceListHolder;
+import com.alibaba.nacos.client.naming.cache.NamingFuzzyWatchServiceListHolder;
 import com.alibaba.nacos.client.naming.core.Balancer;
 import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
 import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
-import com.alibaba.nacos.client.naming.event.FuzzyWatchNotifyEvent;
+import com.alibaba.nacos.client.naming.event.NamingFuzzyWatchNotifyEvent;
 import com.alibaba.nacos.client.naming.event.InstancesDiff;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxyDelegate;
@@ -90,7 +90,7 @@ public class NacosNamingService implements NamingService {
     
     private ServiceInfoHolder serviceInfoHolder;
     
-    private FuzzyWatchServiceListHolder fuzzyWatchServiceListHolder;
+    private NamingFuzzyWatchServiceListHolder namingFuzzyWatchServiceListHolder;
     
     private InstancesChangeNotifier changeNotifier;
     
@@ -124,11 +124,13 @@ public class NacosNamingService implements NamingService {
         NotifyCenter.registerSubscriber(changeNotifier);
         this.serviceInfoHolder = new ServiceInfoHolder(namespace, this.notifierEventScope, nacosClientProperties);
 
-        NotifyCenter.registerToPublisher(FuzzyWatchNotifyEvent.class, 16384);
-        this.fuzzyWatchServiceListHolder = new FuzzyWatchServiceListHolder(this.notifierEventScope, nacosClientProperties);
+        NotifyCenter.registerToPublisher(NamingFuzzyWatchNotifyEvent.class, 16384);
+        this.namingFuzzyWatchServiceListHolder = new NamingFuzzyWatchServiceListHolder(this.notifierEventScope);
     
-        this.clientProxy = new NamingClientProxyDelegate(this.namespace, serviceInfoHolder, fuzzyWatchServiceListHolder,
-                nacosClientProperties, changeNotifier);
+        this.clientProxy = new NamingClientProxyDelegate(this.namespace, serviceInfoHolder,
+                nacosClientProperties, changeNotifier,namingFuzzyWatchServiceListHolder);
+    
+    
     
     }
     
@@ -572,15 +574,13 @@ public class NacosNamingService implements NamingService {
     
     
     private Future<ListView<String>>  doFuzzyWatch(String serviceNamePattern, String groupNamePattern,
-            FuzzyWatchEventWatcher watcher) throws NacosException {
+            FuzzyWatchEventWatcher watcher)  {
         if (null == watcher) {
             return null;
         }
     
         String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern(serviceNamePattern, groupNamePattern, namespace);
-        NamingFuzzyWatchContext namingFuzzyWatchContext = fuzzyWatchServiceListHolder.initFuzzyWatchContextIfNeed(
-                groupKeyPattern);
-        namingFuzzyWatchContext.registerWatcher(watcher);
+        NamingFuzzyWatchContext namingFuzzyWatchContext = namingFuzzyWatchServiceListHolder.registerFuzzyWatcher(groupKeyPattern,watcher);
         return namingFuzzyWatchContext.createNewFuture();
     }
     
@@ -601,7 +601,7 @@ public class NacosNamingService implements NamingService {
         }
         String groupKeyPattern=FuzzyGroupKeyPattern.generatePattern(serviceNamePattern,groupNamePattern,namespace);
     
-        NamingFuzzyWatchContext namingFuzzyWatchContext = fuzzyWatchServiceListHolder.patternWatched(groupKeyPattern);
+        NamingFuzzyWatchContext namingFuzzyWatchContext = namingFuzzyWatchServiceListHolder.getFuzzyWatchContext(groupKeyPattern);
         if (namingFuzzyWatchContext!=null){
             namingFuzzyWatchContext.removeWatcher(watcher);
         }
@@ -644,6 +644,7 @@ public class NacosNamingService implements NamingService {
     public void shutDown() throws NacosException {
         serviceInfoHolder.shutdown();
         clientProxy.shutdown();
+        namingFuzzyWatchServiceListHolder.shutdown();
         NotifyCenter.deregisterSubscriber(changeNotifier);
     }
     

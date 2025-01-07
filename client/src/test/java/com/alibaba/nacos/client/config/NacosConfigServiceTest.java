@@ -206,29 +206,15 @@ class NacosConfigServiceTest {
             public void notifyListenConfig() {
                 // NOOP
             }
-    
-            @Override
-            public void notifyFuzzyListenConfig() {
-                // NOOP
-            }
-    
+            
             @Override
             public void executeConfigListen() {
                 // NOOP
             }
-    
-            @Override
-            public void executeConfigFuzzyListen() throws NacosException {
-                // NOOP
-            }
+            
     
             @Override
             public void removeCache(String dataId, String group) {
-                // NOOP
-            }
-    
-            @Override
-            public void removeFuzzyListenContext(String dataIdPattern, String group) {
                 // NOOP
             }
     

@@ -23,9 +23,11 @@ import com.alibaba.nacos.common.notify.Event;
  *
  * @author tanyongquan
  */
-public class FuzzyWatchNotifyEvent extends Event {
+public class NamingFuzzyWatchNotifyEvent extends Event {
     
     private final String scope;
+    
+    private String watcherUuid;
     
     private String serviceKey;
     
@@ -33,26 +35,31 @@ public class FuzzyWatchNotifyEvent extends Event {
     
     private final String changedType;
     
+    private final String syncType;
     
-    public FuzzyWatchNotifyEvent(String scope,
-            String pattern, String serviceKey,String changedType){
+    private NamingFuzzyWatchNotifyEvent(String scope, String pattern, String serviceKey, String changedType, String syncType,String watcherUuid) {
         this.scope = scope;
-        this.pattern=pattern;
-      this.serviceKey=serviceKey;
-        this.changedType=changedType;
+        this.pattern = pattern;
+        this.serviceKey = serviceKey;
+        this.changedType = changedType;
+        this.syncType = syncType;
+        this.watcherUuid=watcherUuid;
     }
-    public static FuzzyWatchNotifyEvent build(String eventScope,
-            String pattern, String serviceKey,String changedType) {
-        return new FuzzyWatchNotifyEvent(eventScope,pattern, serviceKey, changedType);
+    
+    public static NamingFuzzyWatchNotifyEvent build(String eventScope, String pattern, String serviceKey, String changedType,
+            String syncType) {
+        return new NamingFuzzyWatchNotifyEvent(eventScope, pattern, serviceKey, changedType, syncType,null);
+    }
+    
+    public static NamingFuzzyWatchNotifyEvent build(String eventScope, String pattern, String serviceKey, String changedType,
+            String syncType,String watcherUuid) {
+        return new NamingFuzzyWatchNotifyEvent(eventScope, pattern, serviceKey, changedType, syncType,watcherUuid);
     }
     
     public String getPattern() {
         return pattern;
     }
     
-    public void setPattern(String pattern) {
-        this.pattern = pattern;
-    }
     
     public String getChangedType() {
         return changedType;
@@ -63,11 +70,19 @@ public class FuzzyWatchNotifyEvent extends Event {
         return this.scope;
     }
     
+    public String getWatcherUuid() {
+        return watcherUuid;
+    }
+    
     public String getServiceKey() {
         return serviceKey;
     }
     
-    public void setServiceKey(String serviceKey) {
-        this.serviceKey = serviceKey;
+    public String getScope() {
+        return scope;
+    }
+    
+    public String getSyncType() {
+        return syncType;
     }
 }

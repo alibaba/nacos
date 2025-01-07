@@ -19,14 +19,14 @@ package com.alibaba.nacos.client.config.impl;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
+import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.security.SecurityProxy;
-import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.plugin.auth.api.RequestResource;
+import com.alibaba.nacos.client.utils.ParamUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -178,23 +178,11 @@ public abstract class ConfigTransportClient {
     public abstract void notifyListenConfig();
     
     /**
-     * notify fuzzy listen config.
-     */
-    public abstract void notifyFuzzyListenConfig();
-    
-    /**
      * listen change .
      *
      * @throws NacosException nacos exception throws, should retry.
      */
     public abstract void executeConfigListen() throws NacosException;
-    
-    /**
-     * Fuzzy listen change.
-     *
-     * @throws NacosException nacos exception throws, should retry.
-     */
-    public abstract void executeConfigFuzzyListen() throws NacosException;
     
     /**
      * remove cache implements.
@@ -203,15 +191,6 @@ public abstract class ConfigTransportClient {
      * @param group  group
      */
     public abstract void removeCache(String dataId, String group);
-    
-    /**
-     * Remove fuzzy listen context.
-     *
-     * @param dataIdPattern dataIdPattern
-     * @param group         group
-     * @throws NacosException if an error occurs while removing the fuzzy listen context.
-     */
-    public abstract void removeFuzzyListenContext(String dataIdPattern, String group) throws NacosException;
     
     /**
      * query config.

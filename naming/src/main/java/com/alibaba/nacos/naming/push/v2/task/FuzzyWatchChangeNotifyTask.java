@@ -17,8 +17,7 @@
 package com.alibaba.nacos.naming.push.v2.task;
 
 import com.alibaba.nacos.common.task.AbstractDelayTask;
-import com.alibaba.nacos.common.task.AbstractExecuteTask;
-import com.alibaba.nacos.naming.core.v2.pojo.Service;
+
 
 /**
  * Nacos naming fuzzy watch notify service change push delay task.

@@ -42,7 +42,6 @@ import com.alibaba.nacos.client.utils.ValidatorUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Properties;
 import java.util.Set;
@@ -66,12 +65,6 @@ public class NacosConfigService implements ConfigService {
     private static final String DOWN = "DOWN";
     
     /**
-     * will be deleted in 2.0 later versions
-     */
-    @Deprecated
-    ServerHttpAgent agent = null;
-    
-    /**
      * long polling.
      */
     private final ClientWorker worker;
@@ -92,8 +85,6 @@ public class NacosConfigService implements ConfigService {
         serverListManager.start();
         
         this.worker = new ClientWorker(this.configFilterChainManager, serverListManager, clientProperties);
-        // will be deleted in 2.0 later versions
-        agent = new ServerHttpAgent(serverListManager);
         
     }
     
@@ -159,7 +150,7 @@ public class NacosConfigService implements ConfigService {
     
     private CompletableFuture<Set<String>> doAddFuzzyWatch(String dataIdPattern,
             String fixedGroupName, ConfigFuzzyWatcher watcher) throws NacosException {
-        ConfigFuzzyWatchContext configFuzzyWatchContext = worker.registerFuzzyWatcher(dataIdPattern, fixedGroupName,watcher);
+        ConfigFuzzyWatchContext configFuzzyWatchContext = worker.addTenantFuzzyWatcher(dataIdPattern, fixedGroupName,watcher);
         return configFuzzyWatchContext.createNewFuture();
     }
     
@@ -175,11 +166,11 @@ public class NacosConfigService implements ConfigService {
     }
     
     private void doCancelFuzzyListen(String dataIdPattern, String groupNamePattern,
-            ConfigFuzzyWatcher listener) throws NacosException {
-        if (null == listener) {
+            ConfigFuzzyWatcher watcher) throws NacosException {
+        if (null == watcher) {
             return;
         }
-        worker.removeFuzzyListenListener(dataIdPattern, groupNamePattern, listener);
+        worker.removeFuzzyListenListener(dataIdPattern, groupNamePattern, watcher);
     }
     
     @Override
@@ -234,7 +225,7 @@ public class NacosConfigService implements ConfigService {
                     worker.getAgentName(), dataId, group, tenant);
             cr.setContent(content);
             String encryptedDataKey = LocalEncryptedDataKeyProcessor
-                    .getEncryptDataKeyFailover(agent.getName(), dataId, group, tenant);
+                    .getEncryptDataKeyFailover(worker.getAgentName(), dataId, group, tenant);
             cr.setEncryptedDataKey(encryptedDataKey);
             configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();
@@ -264,7 +255,7 @@ public class NacosConfigService implements ConfigService {
         }
         cr.setContent(content);
         String encryptedDataKey = LocalEncryptedDataKeyProcessor
-                .getEncryptDataKeySnapshot(agent.getName(), dataId, group, tenant);
+                .getEncryptDataKeySnapshot(worker.getAgentName(), dataId, group, tenant);
         cr.setEncryptedDataKey(encryptedDataKey);
         configFilterChainManager.doFilter(null, cr);
         content = cr.getContent();

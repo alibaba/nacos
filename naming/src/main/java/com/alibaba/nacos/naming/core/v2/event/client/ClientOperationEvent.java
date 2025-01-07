@@ -102,30 +102,39 @@ public class ClientOperationEvent extends Event {
     public static class ClientFuzzyWatchEvent extends ClientOperationEvent {
         
         private static final long serialVersionUID = -4518919987813223119L;
-        
-        private final String pattern;
     
-        private Set<String> clientReceivedGroupKeys;
+        /**
+         * client watched pattern
+         */
+        private final String groupKeyPattern;
     
+        /**
+         * client side received group keys.
+         */
+        private Set<String> clientReceivedServiceKeys;
+    
+        /**
+         * is fuzzy watch initializing
+         */
         private boolean isInitializing;
     
-        public ClientFuzzyWatchEvent(String pattern, String clientId,Set<String> clientReceivedGroupKeys,boolean isInitializing) {
+        public ClientFuzzyWatchEvent(String groupKeyPattern, String clientId,Set<String> clientReceivedServiceKeys,boolean isInitializing) {
             super(clientId, null);
-            this.pattern = pattern;
-            this.clientReceivedGroupKeys = clientReceivedGroupKeys;
+            this.groupKeyPattern = groupKeyPattern;
+            this.clientReceivedServiceKeys = clientReceivedServiceKeys;
             this.isInitializing=isInitializing;
         }
         
-        public String getPattern() {
-            return pattern;
+        public String getGroupKeyPattern() {
+            return groupKeyPattern;
         }
     
-        public Set<String> getClientReceivedGroupKeys() {
-            return clientReceivedGroupKeys;
+        public Set<String> getClientReceivedServiceKeys() {
+            return clientReceivedServiceKeys;
         }
     
-        public void setClientReceivedGroupKeys(Set<String> clientReceivedGroupKeys) {
-            this.clientReceivedGroupKeys = clientReceivedGroupKeys;
+        public void setClientReceivedServiceKeys(Set<String> clientReceivedServiceKeys) {
+            this.clientReceivedServiceKeys = clientReceivedServiceKeys;
         }
     
         public boolean isInitializing() {

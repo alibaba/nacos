@@ -31,7 +31,7 @@ public abstract class FuzzyWatchEventWatcher {
     
     String uuid= UUID.randomUUID().toString();
     
-    private Set<String> syncGroupKeys = new HashSet<>();
+    private Set<String> syncServiceKeys = new HashSet<>();
     
     
     public Executor getExecutor() {
@@ -42,8 +42,8 @@ public abstract class FuzzyWatchEventWatcher {
         return uuid;
     }
     
-    public Set<String> getSyncGroupKeys() {
-        return Collections.unmodifiableSet(syncGroupKeys);
+    public Set<String> getSyncServiceKeys() {
+        return Collections.unmodifiableSet(syncServiceKeys);
     }
     
     public abstract void onEvent(FuzzyWatchChangeEvent event);
