@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-$toady.year Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.controllers;
+package com.alibaba.nacos.naming.controllers.v3;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckerFactory;
@@ -24,10 +25,8 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.NumberUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.core.ClusterOperator;
 import com.alibaba.nacos.naming.core.ClusterOperatorV2Impl;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -38,36 +37,30 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Cluster controller.
  *
- * @author nkorange
+ * @author Nacos
  */
-@Deprecated
 @RestController
-@RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_CLUSTER_CONTEXT)
+@RequestMapping(UtilsAndCommons.CLUSTER_CONTROLLER_V3_ADMIN_PATH)
 @ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)
-public class ClusterController {
+public class ClusterControllerV3 {
     
     private final ClusterOperatorV2Impl clusterOperatorV2;
     
-    public ClusterController(ClusterOperatorV2Impl clusterOperatorV2) {
+    public ClusterControllerV3(ClusterOperatorV2Impl clusterOperatorV2) {
         this.clusterOperatorV2 = clusterOperatorV2;
     }
     
     /**
      * Update cluster.
-     *
-     * @param request http request
-     * @return 'ok' if success
-     * @throws Exception if failed
      */
     @PutMapping
-    @Secured(action = ActionTypes.WRITE)
-    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "PUT ${contextPath:nacos}/v3/console/ns/service/cluster")
-    public String update(HttpServletRequest request) throws Exception {
+    @Secured(resource = UtilsAndCommons.CLUSTER_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
+    public Result<String> update(HttpServletRequest request) throws Exception {
         final String namespaceId = WebUtils
                 .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         final String clusterName = WebUtils.required(request, CommonParams.CLUSTER_NAME);
@@ -82,11 +75,8 @@ public class ClusterController {
         clusterMetadata.setHealthyCheckType(healthChecker.getType());
         clusterMetadata.setExtendData(
                 UtilsAndCommons.parseMetadata(WebUtils.optional(request, "metadata", StringUtils.EMPTY)));
-        judgeClusterOperator().updateClusterMetadata(namespaceId, serviceName, clusterName, clusterMetadata);
-        return "ok";
-    }
-    
-    private ClusterOperator judgeClusterOperator() {
-        return clusterOperatorV2;
+        clusterOperatorV2.updateClusterMetadata(namespaceId, serviceName, clusterName, clusterMetadata);
+        
+        return Result.success("ok");
     }
 }

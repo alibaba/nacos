@@ -63,6 +63,7 @@ import static com.alibaba.nacos.naming.constants.RequestConstant.VALID_KEY;
  * @author nanamikon
  * @since 0.8.0
  */
+@Deprecated
 @RestController("namingHealthController")
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_HEALTH_CONTEXT)
 @ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)

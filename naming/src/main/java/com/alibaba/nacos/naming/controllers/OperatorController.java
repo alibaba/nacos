@@ -53,6 +53,7 @@ import java.util.Collection;
  *
  * @author nkorange
  */
+@Deprecated
 @RestController
 @RequestMapping({UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT,
         UtilsAndCommons.NACOS_NAMING_CONTEXT + "/ops"})
