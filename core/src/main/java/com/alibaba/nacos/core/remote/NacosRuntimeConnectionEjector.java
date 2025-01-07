@@ -58,16 +58,12 @@ public class NacosRuntimeConnectionEjector extends RuntimeConnectionEjector {
      */
     private void ejectOutdatedConnection() {
         try {
-            
             Loggers.CONNECTION.info("Connection check task start");
-            
             Map<String, Connection> connections = connectionManager.connections;
             int totalCount = connections.size();
             int currentSdkClientCount = connectionManager.currentSdkClientCount();
-            
             Loggers.CONNECTION.info("Long connection metrics detail ,Total count ={}, sdkCount={},clusterCount={}",
                     totalCount, currentSdkClientCount, (totalCount - currentSdkClientCount));
-            
             Set<String> outDatedConnections = new HashSet<>();
             long now = System.currentTimeMillis();
             //outdated connections collect.
@@ -79,7 +75,6 @@ public class NacosRuntimeConnectionEjector extends RuntimeConnectionEjector {
                     outDatedConnections.add(client.getMetaInfo().getConnectionId());
                 }
             }
-            
             // check out date connection
             Loggers.CONNECTION.info("Out dated connection ,size={}", outDatedConnections.size());
             if (CollectionUtils.isNotEmpty(outDatedConnections)) {
@@ -115,12 +110,10 @@ public class NacosRuntimeConnectionEjector extends RuntimeConnectionEjector {
                                     latch.countDown();
                                 }
                             });
-                            
                             Loggers.CONNECTION.info("[{}]send connection active request ", outDateConnectionId);
                         } else {
                             latch.countDown();
                         }
-                        
                     } catch (ConnectionAlreadyClosedException e) {
                         latch.countDown();
                     } catch (Exception e) {
@@ -129,10 +122,8 @@ public class NacosRuntimeConnectionEjector extends RuntimeConnectionEjector {
                         latch.countDown();
                     }
                 }
-                
                 latch.await(5000L, TimeUnit.MILLISECONDS);
                 Loggers.CONNECTION.info("Out dated connection check successCount={}", successConnections.size());
-                
                 for (String outDateConnectionId : outDatedConnections) {
                     if (!successConnections.contains(outDateConnectionId)) {
                         Loggers.CONNECTION.info("[{}]Unregister Out dated connection....", outDateConnectionId);
@@ -140,9 +131,7 @@ public class NacosRuntimeConnectionEjector extends RuntimeConnectionEjector {
                     }
                 }
             }
-            
             Loggers.CONNECTION.info("Connection check task end");
-            
         } catch (Throwable e) {
             Loggers.CONNECTION.error("Error occurs during connection check... ", e);
         }

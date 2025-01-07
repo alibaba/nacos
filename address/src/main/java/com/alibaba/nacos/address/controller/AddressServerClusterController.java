@@ -101,7 +101,7 @@ public class AddressServerClusterController {
             String serviceName = addressServerGeneratorManager.generateNacosServiceName(productName);
             
             Result result = registerCluster(serviceName, rawProductName, clusterName, ips);
-            if (InternetAddressUtil.checkOK(result.getCheckResult())) {
+            if (InternetAddressUtil.checkOk(result.getCheckResult())) {
                 responseEntity = ResponseEntity
                         .ok("product=" + rawProductName + ",cluster=" + rawClusterName + "; put success with size="
                                 + result.getSize());
@@ -133,8 +133,8 @@ public class AddressServerClusterController {
             clusterOperator.updateClusterMetadata(Constants.DEFAULT_NAMESPACE_ID, serviceName, clusterName, metadata);
         }
         String[] ipArray = addressServerManager.splitIps(ips);
-        String checkResult = InternetAddressUtil.checkIPs(ipArray);
-        if (InternetAddressUtil.checkOK(checkResult)) {
+        String checkResult = InternetAddressUtil.checkIps(ipArray);
+        if (InternetAddressUtil.checkOk(checkResult)) {
             List<Instance> instanceList = addressServerGeneratorManager
                     .generateInstancesByIps(serviceName, productName, clusterName, ipArray);
             for (Instance instance : instanceList) {
@@ -181,8 +181,8 @@ public class AddressServerClusterController {
             }
             // delete specified ip list
             String[] ipArray = addressServerManager.splitIps(ips);
-            String checkResult = InternetAddressUtil.checkIPs(ipArray);
-            if (InternetAddressUtil.checkOK(checkResult)) {
+            String checkResult = InternetAddressUtil.checkIps(ipArray);
+            if (InternetAddressUtil.checkOk(checkResult)) {
                 List<Instance> instanceList = addressServerGeneratorManager
                         .generateInstancesByIps(serviceName, rawProductName, clusterName, ipArray);
                 for (Instance each : instanceList) {

@@ -46,7 +46,7 @@ public class NamingDynamicMeterRefreshService {
     public void refreshTopnServiceChangeCount() {
         NacosMeterRegistryCenter.clear(TOPN_SERVICE_CHANGE_REGISTRY);
         List<Pair<String, AtomicInteger>> topnServiceChangeCount = MetricsMonitor.getServiceChangeCount()
-                .getTopNCounter(SERVICE_CHANGE_N);
+                .getCounterOfTopN(SERVICE_CHANGE_N);
         for (Pair<String, AtomicInteger> serviceChangeCount : topnServiceChangeCount) {
             List<Tag> tags = new ArrayList<>();
             tags.add(new ImmutableTag("service", serviceChangeCount.getFirst()));

@@ -91,14 +91,16 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
         
+        <!-- issue#12028 upgrade org.apache.httpcomponents:httpasyncclient to org.apache.httpcomponents.client5:httpclient5 -->
         <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpasyncclient</artifactId>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
         </dependency>
         
+        <!-- issue#12028 upgrade org.apache.httpcomponents:httpcore to org.apache.httpcomponents.core5:httpcore5 -->
         <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpcore</artifactId>
+            <groupId>org.apache.httpcomponents.core5</groupId>
+            <artifactId>httpcore5</artifactId>
         </dependency>
         
         <dependency>
@@ -121,7 +123,7 @@
             <plugins>
                 <plugin>
                     <artifactId>maven-shade-plugin</artifactId>
-                    <version>3.2.4</version>
+                    <version>3.6.0</version>
                     <configuration>
                         <createDependencyReducedPom>false</createDependencyReducedPom>
                     </configuration>
@@ -149,14 +151,14 @@
                                             <exclude>**/module-info.class</exclude>
                                         </excludes>
                                     </filter>
-                                    <filter>
-                                        <artifact>io.grpc:grpc-netty-shaded</artifact>
-                                        <excludes>
-                                            <exclude>
-                                                META-INF/native/*.*
-                                            </exclude>
-                                        </excludes>
-                                    </filter>
+                                    <!-- <filter> -->
+                                    <!--     <artifact>io.grpc:grpc-netty-shaded</artifact> -->
+                                    <!--     <excludes> -->
+                                    <!--         <exclude> -->
+                                    <!--             META-INF/native/*.* -->
+                                    <!--         </exclude> -->
+                                    <!--     </excludes> -->
+                                    <!-- </filter> -->
                                     <filter>
                                         <artifact>com.google.*:*</artifact>
                                         <excludes>

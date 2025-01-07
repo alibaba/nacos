@@ -1,0 +1,135 @@
+[
+{
+  "name":"[Lcom.sun.management.internal.DiagnosticCommandArgumentInfo;"
+},
+{
+  "name":"[Lcom.sun.management.internal.DiagnosticCommandInfo;"
+},
+{
+  "name":"com.alibaba.nacos.Nacos",
+  "methods":[{"name":"main","parameterTypes":["java.lang.String[]"] }]
+},
+{
+  "name":"com.sun.management.internal.DiagnosticCommandArgumentInfo",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","java.lang.String","boolean","boolean","boolean","int"] }]
+},
+{
+  "name":"com.sun.management.internal.DiagnosticCommandInfo",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","boolean","java.util.List"] }]
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.channel.ChannelException"
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.channel.DefaultFileRegion",
+  "fields":[{"name":"file"}, {"name":"transferred"}]
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.channel.epoll.LinuxSocket"
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.channel.epoll.Native"
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.channel.epoll.NativeDatagramPacketArray$NativeDatagramPacket",
+  "fields":[{"name":"count"}, {"name":"memoryAddress"}, {"name":"recipientAddr"}, {"name":"recipientAddrLen"}, {"name":"recipientPort"}, {"name":"recipientScopeId"}, {"name":"segmentSize"}, {"name":"senderAddr"}, {"name":"senderAddrLen"}, {"name":"senderPort"}, {"name":"senderScopeId"}]
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.channel.epoll.NativeStaticallyReferencedJniMethods"
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.channel.unix.Buffer"
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.channel.unix.DatagramSocketAddress",
+  "methods":[{"name":"<init>","parameterTypes":["byte[]","int","int","int","io.grpc.netty.shaded.io.netty.channel.unix.DatagramSocketAddress"] }]
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.channel.unix.DomainDatagramSocketAddress",
+  "methods":[{"name":"<init>","parameterTypes":["byte[]","int","io.grpc.netty.shaded.io.netty.channel.unix.DomainDatagramSocketAddress"] }]
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.channel.unix.ErrorsStaticallyReferencedJniMethods"
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.channel.unix.FileDescriptor"
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.channel.unix.LimitsStaticallyReferencedJniMethods"
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.channel.unix.PeerCredentials",
+  "methods":[{"name":"<init>","parameterTypes":["int","int","int[]"] }]
+},
+{
+  "name":"io.grpc.netty.shaded.io.netty.channel.unix.Socket"
+},
+{
+  "name":"java.io.FileDescriptor",
+  "fields":[{"name":"fd"}]
+},
+{
+  "name":"java.io.IOException"
+},
+{
+  "name":"java.lang.Boolean",
+  "methods":[{"name":"getBoolean","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"java.lang.InternalError",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"java.lang.OutOfMemoryError"
+},
+{
+  "name":"java.lang.RuntimeException"
+},
+{
+  "name":"java.lang.String",
+  "methods":[{"name":"lastIndexOf","parameterTypes":["int"] }, {"name":"substring","parameterTypes":["int"] }]
+},
+{
+  "name":"java.lang.System",
+  "methods":[{"name":"getProperty","parameterTypes":["java.lang.String"] }, {"name":"setProperty","parameterTypes":["java.lang.String","java.lang.String"] }]
+},
+{
+  "name":"java.net.InetSocketAddress",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","int"] }]
+},
+{
+  "name":"java.net.PortUnreachableException"
+},
+{
+  "name":"java.nio.Buffer",
+  "fields":[{"name":"limit"}, {"name":"position"}],
+  "methods":[{"name":"limit","parameterTypes":[] }, {"name":"position","parameterTypes":[] }]
+},
+{
+  "name":"java.nio.DirectByteBuffer"
+},
+{
+  "name":"java.nio.channels.ClosedChannelException",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"java.util.Arrays",
+  "methods":[{"name":"asList","parameterTypes":["java.lang.Object[]"] }]
+},
+{
+  "name":"org.springframework.boot.SpringApplicationAotProcessor",
+  "methods":[{"name":"main","parameterTypes":["java.lang.String[]"] }]
+},
+{
+  "name":"sun.instrument.InstrumentationImpl",
+  "methods":[{"name":"<init>","parameterTypes":["long","boolean","boolean"] }, {"name":"loadClassAndCallAgentmain","parameterTypes":["java.lang.String","java.lang.String"] }, {"name":"loadClassAndCallPremain","parameterTypes":["java.lang.String","java.lang.String"] }, {"name":"transform","parameterTypes":["java.lang.Module","java.lang.ClassLoader","java.lang.String","java.lang.Class","java.security.ProtectionDomain","byte[]","boolean"] }]
+},
+{
+  "name":"sun.management.VMManagementImpl",
+  "fields":[{"name":"compTimeMonitoringSupport"}, {"name":"currentThreadCpuTimeSupport"}, {"name":"objectMonitorUsageSupport"}, {"name":"otherThreadCpuTimeSupport"}, {"name":"remoteDiagnosticCommandsSupport"}, {"name":"synchronizerUsageSupport"}, {"name":"threadAllocatedMemorySupport"}, {"name":"threadContentionMonitoringSupport"}]
+},
+{
+  "name":"sun.nio.ch.FileChannelImpl",
+  "fields":[{"name":"fd"}]
+}
+]
