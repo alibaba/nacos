@@ -83,7 +83,7 @@ public class ServiceInfo {
     }
     
     /**
-     * There is only one form of the key:groupName@@name@clusters. This constructor used by DiskCache.read(String) and
+     * There is only one form of the key:groupName@@name@@clusters. This constructor used by DiskCache.read(String) and
      * FailoverReactor.FailoverFileReader,you should know that 'groupName' must not be null,and 'clusters' can be null.
      */
     public ServiceInfo(final String key) {
