@@ -51,6 +51,7 @@ public class DumpAllProcessor implements NacosTaskProcessor {
     }
     
     @Override
+    @SuppressWarnings("PMD.MethodTooLongRule")
     public boolean process(NacosTask task) {
         if (!(task instanceof DumpAllTask)) {
             DEFAULT_LOG.error(

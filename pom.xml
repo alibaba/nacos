@@ -128,7 +128,7 @@
         
         <!-- dependency version -->
         <nacos.logback.adapter.version>1.1.3</nacos.logback.adapter.version>
-        <spring-boot-dependencies.version>3.3.1</spring-boot-dependencies.version>
+        <spring-boot-dependencies.version>3.4.1</spring-boot-dependencies.version>
         <servlet-api.version>6.1.0</servlet-api.version>
         <commons-io.version>2.14.0</commons-io.version>
         <commons-collections.version>3.2.2</commons-collections.version>
@@ -674,20 +674,6 @@
                 <version>${mockito.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-framework-bom</artifactId>
-                <version>${spring.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.security</groupId>
-                <artifactId>spring-security-bom</artifactId>
-                <version>${spring-security.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
             </dependency>
             <dependency>
                 <!-- Import dependency management from Spring Boot -->

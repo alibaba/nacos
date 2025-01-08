@@ -36,76 +36,41 @@ import java.util.stream.Stream;
 public class NacosRuntimeHints implements RuntimeHintsRegistrar {
     
     // region Java
-    private final Class<?>[] javaClasses = {
-            byte.class,
-            byte.class,
-            byte[].class,
-            boolean.class,
-            Object.class,
-            Integer.class,
-            com.sun.management.GarbageCollectorMXBean.class,
-            com.sun.management.GcInfo.class,
-            sun.misc.Unsafe.class,
-            java.io.PrintWriter.class,
-            java.lang.Double.class,
-            java.lang.management.MemoryUsage.class,
-            java.lang.management.BufferPoolMXBean.class,
-            java.lang.management.ClassLoadingMXBean.class,
-            java.lang.management.CompilationMXBean.class,
-            java.lang.management.MemoryMXBean.class,
-            java.lang.management.MemoryManagerMXBean.class,
-            java.lang.management.MemoryPoolMXBean.class,
-            java.lang.management.MonitorInfo.class,
-            java.lang.management.ManagementPermission.class,
-            java.lang.management.ThreadMXBean.class,
-            java.lang.management.ThreadInfo.class,
-            java.lang.management.LockInfo.class,
-            java.lang.System.class,
-            java.lang.Thread.class,
-            java.net.InetSocketAddress.class,
-            java.nio.ByteBuffer.class,
-            java.nio.channels.SelectableChannel.class,
-            java.nio.channels.SocketChannel.class,
-            java.nio.channels.FileChannel.class,
-            java.security.AccessController.class,
-            java.sql.Date.class,
-            java.sql.Driver.class,
-            java.sql.DriverManager.class,
-            java.sql.Time.class,
-            java.sql.Timestamp.class,
-            java.util.concurrent.locks.LockSupport.class,
-            java.util.Optional.class,
-            java.util.Properties.class
-    };
+    private final Class<?>[] javaClasses = {byte.class, byte.class, byte[].class, boolean.class, Object.class,
+            Integer.class, com.sun.management.GarbageCollectorMXBean.class, com.sun.management.GcInfo.class,
+            sun.misc.Unsafe.class, java.io.PrintWriter.class, java.lang.Double.class,
+            java.lang.management.MemoryUsage.class, java.lang.management.BufferPoolMXBean.class,
+            java.lang.management.ClassLoadingMXBean.class, java.lang.management.CompilationMXBean.class,
+            java.lang.management.MemoryMXBean.class, java.lang.management.MemoryManagerMXBean.class,
+            java.lang.management.MemoryPoolMXBean.class, java.lang.management.MonitorInfo.class,
+            java.lang.management.ManagementPermission.class, java.lang.management.ThreadMXBean.class,
+            java.lang.management.ThreadInfo.class, java.lang.management.LockInfo.class, java.lang.System.class,
+            java.lang.Thread.class, java.net.InetSocketAddress.class, java.nio.ByteBuffer.class,
+            java.nio.channels.SelectableChannel.class, java.nio.channels.SocketChannel.class,
+            java.nio.channels.FileChannel.class, java.security.AccessController.class, java.sql.Date.class,
+            java.sql.Driver.class, java.sql.DriverManager.class, java.sql.Time.class, java.sql.Timestamp.class,
+            java.util.concurrent.locks.LockSupport.class, java.util.Optional.class, java.util.Properties.class};
     // endregion
     
     // region Hessian
-    private final Class<?>[] hessianClasses = {
-            com.caucho.hessian.io.Hessian2Input.class,
-            com.caucho.hessian.io.ContextSerializerFactory.class
-    };
+    private final Class<?>[] hessianClasses = {com.caucho.hessian.io.Hessian2Input.class,
+            com.caucho.hessian.io.ContextSerializerFactory.class};
     // endregion
     
     // region SQL
-    private final Class<?>[] sqlClasses = {
-            org.apache.derby.impl.store.raw.data.CachedPage.class,
+    private final Class<?>[] sqlClasses = {org.apache.derby.impl.store.raw.data.CachedPage.class,
             org.apache.derby.catalog.types.TypesImplInstanceGetter.class,
-            org.apache.derby.impl.services.uuid.BasicUUIDGetter.class,
-            org.apache.derby.iapi.types.DTSClassInfo.class,
-            org.apache.derby.iapi.services.loader.ClassInfo.class,
-            org.apache.derby.impl.io.DirStorageFactory.class,
-            org.apache.derby.impl.store.raw.log.LogRecord.class,
-            org.apache.derby.impl.store.raw.xact.XactId.class,
+            org.apache.derby.impl.services.uuid.BasicUUIDGetter.class, org.apache.derby.iapi.types.DTSClassInfo.class,
+            org.apache.derby.iapi.services.loader.ClassInfo.class, org.apache.derby.impl.io.DirStorageFactory.class,
+            org.apache.derby.impl.store.raw.log.LogRecord.class, org.apache.derby.impl.store.raw.xact.XactId.class,
             org.apache.derby.impl.store.raw.log.CheckpointOperation.class,
             org.apache.derby.impl.store.raw.xact.TransactionTable.class,
             org.apache.derby.impl.store.raw.xact.TransactionTableEntry.class,
             org.apache.derby.impl.store.raw.log.LogCounter.class,
             org.apache.derby.impl.store.raw.log.ChecksumOperation.class,
             org.apache.derby.impl.store.raw.data.BaseDataFileFactoryJ4.class,
-            org.apache.derby.impl.store.raw.xact.XactFactory.class,
-            org.apache.derby.impl.store.raw.log.ReadOnly.class,
-            org.apache.derby.impl.store.raw.xact.BeginXact.class,
-            org.apache.derby.impl.store.raw.xact.EndXact.class,
+            org.apache.derby.impl.store.raw.xact.XactFactory.class, org.apache.derby.impl.store.raw.log.ReadOnly.class,
+            org.apache.derby.impl.store.raw.xact.BeginXact.class, org.apache.derby.impl.store.raw.xact.EndXact.class,
             org.apache.derby.impl.store.raw.data.ContainerOperation.class,
             org.apache.derby.impl.store.raw.data.InitPageOperation.class,
             org.apache.derby.impl.store.raw.data.AllocPageOperation.class,
@@ -119,14 +84,10 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             org.apache.derby.impl.store.raw.data.CompressSpacePageOperation.class,
             org.apache.derby.impl.store.raw.data.CompressSpacePageOperation10_2.class,
             org.apache.derby.impl.store.raw.data.ChainAllocPageOperation.class,
-            org.apache.derby.jdbc.AutoloadedDriver.class,
-            org.apache.derby.jdbc.InternalDriver.class,
-            org.apache.derby.jdbc.Driver42.class,
-            org.apache.derby.jdbc.EmbeddedDriver.class,
-            org.apache.derby.jdbc.ResourceAdapterImpl.class,
-            org.apache.derby.iapi.jdbc.DRDAServerStarter.class,
-            org.apache.derby.iapi.jdbc.JDBCBoot.class,
-            org.apache.derby.iapi.security.SecurityUtil.class,
+            org.apache.derby.jdbc.AutoloadedDriver.class, org.apache.derby.jdbc.InternalDriver.class,
+            org.apache.derby.jdbc.Driver42.class, org.apache.derby.jdbc.EmbeddedDriver.class,
+            org.apache.derby.jdbc.ResourceAdapterImpl.class, org.apache.derby.iapi.jdbc.DRDAServerStarter.class,
+            org.apache.derby.iapi.jdbc.JDBCBoot.class, org.apache.derby.iapi.security.SecurityUtil.class,
             org.apache.derby.iapi.services.monitor.Monitor.class,
             org.apache.derby.iapi.services.stream.InfoStreams.class,
             org.apache.derby.impl.services.monitor.FileMonitor.class,
@@ -150,8 +111,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             org.apache.derby.impl.services.daemon.SingleThreadDaemonFactory.class,
             org.apache.derby.impl.services.timer.SingletonTimerFactory.class,
             org.apache.derby.impl.jdbc.authentication.BasicAuthenticationServiceImpl.class,
-            org.apache.derby.impl.db.BasicDatabase.class,
-            org.apache.derby.impl.services.stream.SingleStream.class,
+            org.apache.derby.impl.db.BasicDatabase.class, org.apache.derby.impl.services.stream.SingleStream.class,
             org.apache.derby.impl.jdbc.authentication.NativeAuthenticationServiceImpl.class,
             org.apache.derby.impl.store.access.sort.ExternalSortFactory.class,
             org.apache.derby.impl.jdbc.authentication.SpecificAuthenticationServiceImpl.class,
@@ -165,24 +125,20 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             org.apache.derby.impl.store.access.RllRAMAccessManager.class,
             org.apache.derby.impl.store.replication.slave.SlaveController.class,
             org.apache.derby.impl.sql.GenericLanguageFactory.class,
-            org.apache.derby.impl.services.uuid.BasicUUIDFactory.class,
-            org.apache.derby.impl.store.raw.RawStore.class,
-            org.apache.derby.impl.store.access.btree.index.B2IFactory.class,
-            com.zaxxer.hikari.HikariConfig.class,
+            org.apache.derby.impl.services.uuid.BasicUUIDFactory.class, org.apache.derby.impl.store.raw.RawStore.class,
+            org.apache.derby.impl.store.access.btree.index.B2IFactory.class, com.zaxxer.hikari.HikariConfig.class,
             
             // hard code
             Class.forName("org.apache.derby.impl.services.monitor.ModuleInstance"),
             Class.forName("org.apache.derby.impl.services.monitor.ProtocolKey"),
             Class.forName("org.apache.derby.impl.services.monitor.TopService"),
             Class.forName("org.apache.derby.iapi.services.cache.ClassSizeCatalogImpl"),
-
-            com.alibaba.nacos.persistence.datasource.ExternalDataSourceProperties.class
-    };
+            
+            com.alibaba.nacos.persistence.datasource.ExternalDataSourceProperties.class};
     // endregion
     
     // region JRaft Entity
-    private final Class<?>[] jraftDataClasses = {
-            com.alipay.sofa.jraft.entity.LocalFileMetaOutter.LocalFileMeta.class,
+    private final Class<?>[] jraftDataClasses = {com.alipay.sofa.jraft.entity.LocalFileMetaOutter.LocalFileMeta.class,
             com.alipay.sofa.jraft.entity.LocalFileMetaOutter.LocalFileMeta.Builder.class,
             com.alipay.sofa.jraft.entity.LocalStorageOutter.LogPBMeta.class,
             com.alipay.sofa.jraft.entity.LocalStorageOutter.LogPBMeta.Builder.class,
@@ -199,13 +155,11 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alipay.sofa.jraft.entity.RaftOutter.SnapshotMeta.class,
             com.alipay.sofa.jraft.entity.RaftOutter.SnapshotMeta.Builder.class,
             com.alipay.sofa.jraft.entity.codec.v2.LogOutter.PBLogEntry.class,
-            com.alipay.sofa.jraft.entity.codec.v2.LogOutter.PBLogEntry.Builder.class,
-    };
+            com.alipay.sofa.jraft.entity.codec.v2.LogOutter.PBLogEntry.Builder.class,};
     // endregion
     
     // region JRaft RPC
-    private final Class<?>[] jraftRpcClasses = {
-            com.alipay.sofa.jraft.rpc.RpcRequests.AppendEntriesRequest.class,
+    private final Class<?>[] jraftRpcClasses = {com.alipay.sofa.jraft.rpc.RpcRequests.AppendEntriesRequest.class,
             com.alipay.sofa.jraft.rpc.RpcRequests.AppendEntriesRequest.Builder.class,
             com.alipay.sofa.jraft.rpc.RpcRequests.AppendEntriesResponse.class,
             com.alipay.sofa.jraft.rpc.RpcRequests.AppendEntriesResponse.Builder.class,
@@ -234,13 +188,11 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alipay.sofa.jraft.rpc.RpcRequests.ReadIndexRequest.class,
             com.alipay.sofa.jraft.rpc.RpcRequests.ReadIndexRequest.Builder.class,
             com.alipay.sofa.jraft.rpc.RpcRequests.ReadIndexResponse.class,
-            com.alipay.sofa.jraft.rpc.RpcRequests.ReadIndexResponse.Builder.class
-    };
+            com.alipay.sofa.jraft.rpc.RpcRequests.ReadIndexResponse.Builder.class};
     // endregion
     
     // region JRaft CLI
-    private final Class<?>[] jraftCliClasses = {
-            com.alipay.sofa.jraft.rpc.CliRequests.LearnersOpResponse.class,
+    private final Class<?>[] jraftCliClasses = {com.alipay.sofa.jraft.rpc.CliRequests.LearnersOpResponse.class,
             com.alipay.sofa.jraft.rpc.CliRequests.LearnersOpResponse.Builder.class,
             com.alipay.sofa.jraft.rpc.CliRequests.ResetLearnersRequest.class,
             com.alipay.sofa.jraft.rpc.CliRequests.ResetLearnersRequest.Builder.class,
@@ -273,13 +225,11 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alipay.sofa.jraft.rpc.CliRequests.AddPeerResponse.class,
             com.alipay.sofa.jraft.rpc.CliRequests.AddPeerResponse.Builder.class,
             com.alipay.sofa.jraft.rpc.CliRequests.AddPeerRequest.class,
-            com.alipay.sofa.jraft.rpc.CliRequests.AddPeerRequest.Builder.class
-    };
+            com.alipay.sofa.jraft.rpc.CliRequests.AddPeerRequest.Builder.class};
     // endregion
     
     // region JRaft Service
-    private final Class<?>[] jraftUtilClasses = {
-            com.alipay.sofa.jraft.rpc.ProtobufMsgFactory.class,
+    private final Class<?>[] jraftUtilClasses = {com.alipay.sofa.jraft.rpc.ProtobufMsgFactory.class,
             com.alipay.sofa.jraft.rpc.RpcRequestClosure.class,
             com.alipay.sofa.jraft.rpc.impl.AbstractClientService.class,
             com.alipay.sofa.jraft.rpc.impl.BoltRaftRpcFactory.class,
@@ -288,36 +238,23 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alipay.sofa.jraft.util.concurrent.MpscSingleThreadExecutor.class,
             com.alipay.sofa.jraft.util.timer.DefaultRaftTimerFactory.class,
             com.alipay.sofa.jraft.util.internal.ThrowUtil.class,
-            com.alipay.sofa.jraft.core.DefaultJRaftServiceFactory.class,
-            com.alipay.sofa.jraft.core.NodeImpl.class,
+            com.alipay.sofa.jraft.core.DefaultJRaftServiceFactory.class, com.alipay.sofa.jraft.core.NodeImpl.class,
             com.alipay.sofa.jraft.core.Replicator.class,
-            com.alipay.sofa.jraft.storage.snapshot.local.LocalSnapshotReader.class
-    };
+            com.alipay.sofa.jraft.storage.snapshot.local.LocalSnapshotReader.class};
     // endregion
     
     // region gRpc
-    private final Class<?>[] grpcClasses = {
-            com.google.protobuf.Any.class,
-            com.google.protobuf.Any.Builder.class,
-            com.google.protobuf.ByteString.class,
-            com.google.protobuf.Message.class,
-            com.google.protobuf.ByteString.class,
-            com.google.protobuf.CodedInputStream.class,
+    private final Class<?>[] grpcClasses = {com.google.protobuf.Any.class, com.google.protobuf.Any.Builder.class,
+            com.google.protobuf.ByteString.class, com.google.protobuf.Message.class,
+            com.google.protobuf.ByteString.class, com.google.protobuf.CodedInputStream.class,
             com.google.common.util.concurrent.AbstractFuture.class,
             com.google.common.util.concurrent.ListenableFuture.class,
             
-            io.grpc.KnownLength.class,
-            io.grpc.ServerCall.class,
-            io.grpc.ServerBuilder.class,
-            io.grpc.stub.ClientCalls.class,
-            io.grpc.stub.ServerCalls.class,
-            io.grpc.stub.ServerCallStreamObserver.class,
-            io.grpc.stub.CallStreamObserver.class,
-            io.grpc.stub.StreamObserver.class,
-            io.grpc.internal.ReadableBuffers.class,
-            io.grpc.internal.ServerImplBuilder.class,
-            io.grpc.internal.ClientStreamListener.class,
-            io.grpc.netty.shaded.io.netty.bootstrap.ServerBootstrap.class,
+            io.grpc.KnownLength.class, io.grpc.ServerCall.class, io.grpc.ServerBuilder.class,
+            io.grpc.stub.ClientCalls.class, io.grpc.stub.ServerCalls.class, io.grpc.stub.ServerCallStreamObserver.class,
+            io.grpc.stub.CallStreamObserver.class, io.grpc.stub.StreamObserver.class,
+            io.grpc.internal.ReadableBuffers.class, io.grpc.internal.ServerImplBuilder.class,
+            io.grpc.internal.ClientStreamListener.class, io.grpc.netty.shaded.io.netty.bootstrap.ServerBootstrap.class,
             io.grpc.netty.shaded.io.netty.buffer.AbstractByteBufAllocator.class,
             io.grpc.netty.shaded.io.netty.buffer.AbstractReferenceCountedByteBuf.class,
             io.grpc.netty.shaded.io.netty.buffer.ByteBufAllocator.class,
@@ -330,24 +267,19 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             io.grpc.netty.shaded.io.grpc.netty.NettyChannelProvider.class,
             io.grpc.netty.shaded.io.grpc.netty.NettyConnectionHelper.class,
             io.grpc.netty.shaded.io.netty.channel.socket.nio.NioSocketChannel.class,
-            io.grpc.netty.shaded.io.netty.util.AttributeKey.class,
-            io.grpc.ForwardingServerCall.class,
+            io.grpc.netty.shaded.io.netty.util.AttributeKey.class, io.grpc.ForwardingServerCall.class,
             io.grpc.ForwardingServerCall.SimpleForwardingServerCall.class,
             
             Class.forName("io.grpc.internal.ServerCallImpl"),
             Class.forName("io.grpc.netty.shaded.io.grpc.netty.WriteQueue"),
-            Class.forName("io.grpc.netty.shaded.io.grpc.netty.NettyServerStream")
-    };
+            Class.forName("io.grpc.netty.shaded.io.grpc.netty.NettyServerStream")};
     // endregion
     
     // region Nacos Hints
     private final Class<?>[] nacosClasses = {
             // reflect
-            com.alibaba.nacos.common.notify.SlowEvent.class,
-            com.alibaba.nacos.common.packagescan.PackageScan.class,
+            com.alibaba.nacos.common.notify.SlowEvent.class, com.alibaba.nacos.common.packagescan.PackageScan.class,
             com.alibaba.nacos.common.packagescan.DefaultPackageScan.class,
-            com.alibaba.nacos.plugin.auth.impl.NacosAuthConfig.class,
-            com.alibaba.nacos.console.config.ConsoleConfig.class,
             com.alibaba.nacos.naming.controllers.CatalogController.class,
             com.alibaba.nacos.naming.core.v2.event.metadata.MetadataEvent.ServiceMetadataEvent.class,
             com.alibaba.nacos.naming.core.v2.service.impl.PersistentClientOperationServiceImpl.class,
@@ -372,15 +304,13 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alibaba.nacos.api.remote.response.ServerReloadResponse.class,
             com.alibaba.nacos.api.remote.response.SetupAckResponse.class,
             // cluster
-            com.alibaba.nacos.consistency.ap.APProtocol.class,
-            com.alibaba.nacos.consistency.cp.CPProtocol.class,
+            com.alibaba.nacos.consistency.ap.APProtocol.class, com.alibaba.nacos.consistency.cp.CPProtocol.class,
             com.alibaba.nacos.core.distributed.raft.RaftConfig.class,
             com.alibaba.nacos.core.distributed.raft.RaftEvent.class,
             com.alibaba.nacos.api.ability.ServerAbilities.class,
             com.alibaba.nacos.api.config.ability.ServerConfigAbility.class,
             com.alibaba.nacos.api.naming.ability.ServerNamingAbility.class,
-            com.alibaba.nacos.consistency.DataOperation.class,
-            com.alibaba.nacos.core.cluster.Member.class,
+            com.alibaba.nacos.consistency.DataOperation.class, com.alibaba.nacos.core.cluster.Member.class,
             com.alibaba.nacos.core.cluster.remote.request.AbstractClusterRequest.class,
             com.alibaba.nacos.core.cluster.remote.request.MemberReportRequest.class,
             com.alibaba.nacos.core.cluster.remote.response.MemberReportResponse.class,
@@ -400,20 +330,16 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alibaba.nacos.consistency.entity.Response.Builder.class,
             com.alibaba.nacos.consistency.entity.GetRequest.class,
             com.alibaba.nacos.consistency.entity.GetRequest.Builder.class,
-            com.alibaba.nacos.consistency.entity.Log.class,
-            com.alibaba.nacos.consistency.entity.Log.Builder.class,
+            com.alibaba.nacos.consistency.entity.Log.class, com.alibaba.nacos.consistency.entity.Log.Builder.class,
             // grpc
             com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc.class,
             com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc.BiRequestStreamBlockingStub.class,
             com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc.BiRequestStreamFutureStub.class,
             com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc.BiRequestStreamImplBase.class,
             com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc.BiRequestStreamStub.class,
-            com.alibaba.nacos.api.grpc.auto.Metadata.class,
-            com.alibaba.nacos.api.grpc.auto.Metadata.Builder.class,
-            com.alibaba.nacos.api.grpc.auto.NacosGrpcService.class,
-            com.alibaba.nacos.api.grpc.auto.Payload.class,
-            com.alibaba.nacos.api.grpc.auto.Payload.Builder.class,
-            com.alibaba.nacos.api.grpc.auto.RequestGrpc.class,
+            com.alibaba.nacos.api.grpc.auto.Metadata.class, com.alibaba.nacos.api.grpc.auto.Metadata.Builder.class,
+            com.alibaba.nacos.api.grpc.auto.NacosGrpcService.class, com.alibaba.nacos.api.grpc.auto.Payload.class,
+            com.alibaba.nacos.api.grpc.auto.Payload.Builder.class, com.alibaba.nacos.api.grpc.auto.RequestGrpc.class,
             com.alibaba.nacos.api.grpc.auto.RequestGrpc.RequestStub.class,
             com.alibaba.nacos.api.grpc.auto.RequestGrpc.RequestBlockingStub.class,
             com.alibaba.nacos.api.grpc.auto.RequestGrpc.RequestFutureStub.class,
@@ -451,8 +377,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alibaba.nacos.api.remote.request.HealthCheckRequest.class,
             com.alibaba.nacos.api.remote.request.InternalRequest.class,
             com.alibaba.nacos.api.remote.request.PushAckRequest.class,
-            com.alibaba.nacos.api.remote.request.Request.class,
-            com.alibaba.nacos.api.remote.request.RequestMeta.class,
+            com.alibaba.nacos.api.remote.request.Request.class, com.alibaba.nacos.api.remote.request.RequestMeta.class,
             com.alibaba.nacos.api.remote.request.ServerCheckRequest.class,
             com.alibaba.nacos.api.remote.request.ServerLoaderInfoRequest.class,
             com.alibaba.nacos.api.remote.request.ServerReloadRequest.class,
@@ -467,8 +392,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alibaba.nacos.api.remote.response.SetupAckResponse.class,
             com.alibaba.nacos.core.distributed.raft.NacosClosure.class,
             com.alibaba.nacos.core.monitor.GrpcServerThreadPoolMonitor.class,
-            com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.class,
-            com.alibaba.nacos.core.remote.BaseRpcServer.class,
+            com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.class, com.alibaba.nacos.core.remote.BaseRpcServer.class,
             com.alibaba.nacos.core.remote.grpc.GrpcBiStreamRequestAcceptor.class,
             com.alibaba.nacos.core.remote.grpc.GrpcClusterServer.class,
             com.alibaba.nacos.core.remote.grpc.GrpcSdkServer.class,
@@ -486,38 +410,27 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo.class,
             com.alibaba.nacos.naming.core.v2.pojo.BatchInstanceData.class,
             com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo.class,
-            com.alibaba.nacos.naming.core.v2.pojo.Service.class,
-            com.alibaba.nacos.api.naming.pojo.Cluster.class,
-            com.alibaba.nacos.api.naming.pojo.Instance.class,
-            com.alibaba.nacos.api.naming.pojo.ListView.class,
-            com.alibaba.nacos.api.naming.pojo.Service.class,
-            com.alibaba.nacos.api.naming.pojo.ServiceInfo.class,
+            com.alibaba.nacos.naming.core.v2.pojo.Service.class, com.alibaba.nacos.api.naming.pojo.Cluster.class,
+            com.alibaba.nacos.api.naming.pojo.Instance.class, com.alibaba.nacos.api.naming.pojo.ListView.class,
+            com.alibaba.nacos.api.naming.pojo.Service.class, com.alibaba.nacos.api.naming.pojo.ServiceInfo.class,
             com.alibaba.nacos.api.naming.pojo.builder.InstanceBuilder.class,
             com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker.class,
             com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckerFactory.class,
             com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Http.class,
             com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql.class,
             com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Tcp.class,
-            com.alibaba.nacos.api.remote.request.Request.class,
-            com.alibaba.nacos.naming.pojo.ServiceView.class,
-            com.alibaba.nacos.naming.pojo.Subscriber.class,
-            com.alibaba.nacos.naming.pojo.Subscribers.class,
-            com.alibaba.nacos.naming.pojo.ClusterInfo.class,
-            com.alibaba.nacos.naming.pojo.InstanceOperationInfo.class,
-            com.alibaba.nacos.naming.pojo.IpAddressInfo.class,
-            com.alibaba.nacos.naming.pojo.Record.class,
-            com.alibaba.nacos.naming.pojo.ServiceDetailInfo.class,
-            com.alibaba.nacos.naming.pojo.ServiceNameView.class,
+            com.alibaba.nacos.api.remote.request.Request.class, com.alibaba.nacos.naming.pojo.ServiceView.class,
+            com.alibaba.nacos.naming.pojo.Subscriber.class, com.alibaba.nacos.naming.pojo.Subscribers.class,
+            com.alibaba.nacos.naming.pojo.ClusterInfo.class, com.alibaba.nacos.naming.pojo.InstanceOperationInfo.class,
+            com.alibaba.nacos.naming.pojo.IpAddressInfo.class, com.alibaba.nacos.naming.pojo.Record.class,
+            com.alibaba.nacos.naming.pojo.ServiceDetailInfo.class, com.alibaba.nacos.naming.pojo.ServiceNameView.class,
             com.alibaba.nacos.plugin.auth.impl.jwt.NacosJwtPayload.class,
             // sys and plugin
             com.alibaba.nacos.config.server.filter.ConfigEnabledFilter.class,
             com.alibaba.nacos.naming.config.NamingEnabledFilter.class,
-            com.alibaba.nacos.istio.config.IstioEnabledFilter.class,
-            com.alibaba.nacos.config.server.Config.class,
-            com.alibaba.nacos.naming.NamingApp.class,
-            com.alibaba.nacos.cmdb.CmdbApp.class,
-            com.alibaba.nacos.istio.IstioApp.class,
-            com.alibaba.nacos.prometheus.PrometheusApp.class,
+            com.alibaba.nacos.istio.config.IstioEnabledFilter.class, com.alibaba.nacos.config.server.Config.class,
+            com.alibaba.nacos.naming.NamingApp.class, com.alibaba.nacos.cmdb.CmdbApp.class,
+            com.alibaba.nacos.istio.IstioApp.class, com.alibaba.nacos.prometheus.PrometheusApp.class,
             com.alibaba.nacos.sys.filter.NacosTypeExcludeFilter.class,
             com.alibaba.nacos.sys.filter.NacosPackageExcludeFilter.class,
             com.alibaba.nacos.plugin.control.ControlManagerCenter.class,
@@ -525,19 +438,13 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alibaba.nacos.config.server.service.LongPollingConnectionMetricsCollector.class,
             com.alibaba.nacos.core.remote.RuntimeConnectionEjector.class,
             com.alibaba.nacos.core.remote.ConnectionManager.class,
-            com.alibaba.nacos.config.server.remote.RpcConfigChangeNotifier.class,
-    };
+            com.alibaba.nacos.config.server.remote.RpcConfigChangeNotifier.class,};
     // endregion
     
     // region Nacos Serializer
-    private final List<Class<? extends Serializable>> serializer = List.of(
-            byte.class,
-            byte[].class,
-            String.class,
-            ConcurrentHashMap.class,
-            com.alibaba.nacos.api.grpc.auto.Metadata.class,
-            com.alibaba.nacos.api.grpc.auto.Payload.class,
-            com.alibaba.nacos.naming.core.v2.client.ClientSyncData.class,
+    private final List<Class<? extends Serializable>> serializer = List.of(byte.class, byte[].class, String.class,
+            ConcurrentHashMap.class, com.alibaba.nacos.api.grpc.auto.Metadata.class,
+            com.alibaba.nacos.api.grpc.auto.Payload.class, com.alibaba.nacos.naming.core.v2.client.ClientSyncData.class,
             com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata.class,
             com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo.class,
             com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo.class,
@@ -545,66 +452,39 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo.class,
             com.alibaba.nacos.naming.core.v2.pojo.Service.class,
             com.alibaba.nacos.naming.core.v2.service.impl.PersistentClientOperationServiceImpl.InstanceStoreRequest.class,
-            com.alibaba.nacos.api.naming.pojo.Cluster.class,
-            com.alibaba.nacos.api.naming.pojo.Instance.class,
+            com.alibaba.nacos.api.naming.pojo.Cluster.class, com.alibaba.nacos.api.naming.pojo.Instance.class,
             com.alibaba.nacos.api.naming.pojo.Service.class,
             com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Http.class,
             com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql.class,
             com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Tcp.class,
-            com.alibaba.nacos.naming.pojo.Subscriber.class,
-            com.alibaba.nacos.naming.pojo.Subscribers.class,
-            com.alibaba.nacos.naming.pojo.ClusterInfo.class,
-            com.alibaba.nacos.naming.pojo.IpAddressInfo.class,
-            com.alibaba.nacos.naming.pojo.Record.class,
-            com.alibaba.nacos.naming.pojo.ServiceDetailInfo.class,
+            com.alibaba.nacos.naming.pojo.Subscriber.class, com.alibaba.nacos.naming.pojo.Subscribers.class,
+            com.alibaba.nacos.naming.pojo.ClusterInfo.class, com.alibaba.nacos.naming.pojo.IpAddressInfo.class,
+            com.alibaba.nacos.naming.pojo.Record.class, com.alibaba.nacos.naming.pojo.ServiceDetailInfo.class,
             com.alibaba.nacos.consistency.entity.WriteRequest.class,
-            com.alibaba.nacos.consistency.entity.ReadRequest.class,
-            com.alibaba.nacos.consistency.entity.Response.class,
-            com.alibaba.nacos.consistency.entity.GetRequest.class,
-            com.alibaba.nacos.consistency.entity.Log.class
-    );
+            com.alibaba.nacos.consistency.entity.ReadRequest.class, com.alibaba.nacos.consistency.entity.Response.class,
+            com.alibaba.nacos.consistency.entity.GetRequest.class, com.alibaba.nacos.consistency.entity.Log.class);
     // endregion
     
-    private final String[] resourcePattern = {
-            AotConfiguration.reflectToNativeLibraryLoader(),
-            ".*libnetty_transport_native_epoll_.*\\.so",
-            ".*\\.desc$",
-            ".*\\.html$",
-            ".*\\.css$",
-            ".*\\.js$",
-            ".*\\.js.map$",
-            ".*\\.png$",
-            ".*\\.svg$",
-            ".*\\.eot$",
-            ".*\\.woff$",
-            ".*\\.woff2$",
-            ".*\\.ttf$",
-            "org/apache/derby/modules.properties",
-            "application.properties",
-    };
+    private final String[] resourcePattern = {AotConfiguration.reflectToNativeLibraryLoader(),
+            ".*libnetty_transport_native_epoll_.*\\.so", ".*\\.desc$", ".*\\.html$", ".*\\.css$", ".*\\.js$",
+            ".*\\.js.map$", ".*\\.png$", ".*\\.svg$", ".*\\.eot$", ".*\\.woff$", ".*\\.woff2$", ".*\\.ttf$",
+            "org/apache/derby/modules.properties", "application.properties",};
     
     public NacosRuntimeHints() throws ClassNotFoundException {
     }
     
     @Override
     public void registerHints(RuntimeHints hints, ClassLoader classLoader) {
-        Stream.of(javaClasses, hessianClasses, sqlClasses, grpcClasses,
-                        jraftDataClasses, jraftRpcClasses, jraftCliClasses, jraftUtilClasses,
-                        nacosClasses)
-                .flatMap(Stream::of)
-                .forEach(type -> hints.reflection()
-                        .registerType(type,
-                                MemberCategory.INVOKE_DECLARED_CONSTRUCTORS,
-                                MemberCategory.INVOKE_DECLARED_METHODS,
-                                MemberCategory.DECLARED_FIELDS,
-                                MemberCategory.DECLARED_CLASSES));
+        Stream.of(javaClasses, hessianClasses, sqlClasses, grpcClasses, jraftDataClasses, jraftRpcClasses,
+                jraftCliClasses, jraftUtilClasses, nacosClasses).flatMap(Stream::of).forEach(type -> hints.reflection()
+                .registerType(type, MemberCategory.INVOKE_DECLARED_CONSTRUCTORS, MemberCategory.INVOKE_DECLARED_METHODS,
+                        MemberCategory.DECLARED_FIELDS, MemberCategory.DECLARED_CLASSES));
         
         for (String pattern : resourcePattern) {
             hints.resources().registerPattern(pattern);
         }
         
-        serializer.forEach(type -> hints.serialization()
-                .registerType(type));
+        serializer.forEach(type -> hints.serialization().registerType(type));
     }
     
 }

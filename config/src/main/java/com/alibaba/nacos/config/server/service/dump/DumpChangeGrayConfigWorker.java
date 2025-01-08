@@ -56,6 +56,7 @@ public class DumpChangeGrayConfigWorker implements Runnable {
     }
     
     @Override
+    @SuppressWarnings("PMD.MethodTooLongRule")
     public void run() {
         try {
             if (!PropertyUtil.isDumpChangeOn()) {

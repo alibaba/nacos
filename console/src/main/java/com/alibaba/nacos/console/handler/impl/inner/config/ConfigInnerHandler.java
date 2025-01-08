@@ -54,6 +54,7 @@ import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import com.alibaba.nacos.sys.utils.InetUtils;
+import jakarta.servlet.ServletException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -63,7 +64,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.ServletException;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -580,8 +580,8 @@ public class ConfigInnerHandler implements ConfigHandler {
                 srcIp, null, policy);
         for (ConfigInfo configInfo : configInfoList4Clone) {
             ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(configInfo.getDataId(), configInfo.getGroup(),
-                            configInfo.getTenant(), time.getTime()));
+                    new ConfigDataChangeEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
+                            time.getTime()));
             ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant(), requestIpApp, time.getTime(), InetUtils.getSelfIP(),
                     ConfigTraceService.PERSISTENCE_EVENT, ConfigTraceService.PERSISTENCE_TYPE_PUB,
@@ -602,7 +602,8 @@ public class ConfigInnerHandler implements ConfigHandler {
         ConfigTraceService.logPersistenceEvent(dataId, group, namespaceId, requestIpApp, System.currentTimeMillis(),
                 remoteIp, ConfigTraceService.PERSISTENCE_EVENT_BETA, ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
         ConfigChangePublisher.notifyConfigChange(
-                new ConfigDataChangeEvent(dataId, group, namespaceId, BetaGrayRule.TYPE_BETA, System.currentTimeMillis()));
+                new ConfigDataChangeEvent(dataId, group, namespaceId, BetaGrayRule.TYPE_BETA,
+                        System.currentTimeMillis()));
         return true;
         
     }

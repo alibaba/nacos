@@ -42,6 +42,8 @@ import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordGeneratorUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.HttpSessionRequiredException;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -52,8 +54,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 
