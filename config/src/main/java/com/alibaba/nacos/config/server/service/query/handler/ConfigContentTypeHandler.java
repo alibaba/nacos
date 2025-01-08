@@ -22,6 +22,10 @@ import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRespo
 
 import java.io.IOException;
 
+/**
+ * The type Config content type handler.
+ * @author Sunrisea
+ */
 public class ConfigContentTypeHandler extends AbstractConfigQueryHandler {
     
     private static final String CONFIG_CONTENT_TYPE_HANDLER_NAME = "ConfigContentTypeHandler";
