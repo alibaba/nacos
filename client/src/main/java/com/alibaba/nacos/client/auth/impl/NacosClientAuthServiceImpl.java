@@ -59,6 +59,10 @@ public class NacosClientAuthServiceImpl extends AbstractClientAuthService {
      */
     private volatile LoginIdentityContext loginIdentityContext = new LoginIdentityContext();
     
+    /**
+     * Re-login window in milliseconds.
+     */
+    private final long reLoginWindow = 60000;
     
     /**
      * Login to servers.
@@ -69,9 +73,16 @@ public class NacosClientAuthServiceImpl extends AbstractClientAuthService {
     @Override
     public Boolean login(Properties properties) {
         try {
-            if ((System.currentTimeMillis() - lastRefreshTime) < TimeUnit.SECONDS
-                    .toMillis(tokenTtl - tokenRefreshWindow)) {
-                return true;
+            boolean reLoginFlag = Boolean.parseBoolean(loginIdentityContext.getParameter(NacosAuthLoginConstant.RELOGINFLAG, "false"));
+            if (reLoginFlag) {
+                if ((System.currentTimeMillis() - lastRefreshTime) < reLoginWindow) {
+                    return true;
+                }
+            } else {
+                if ((System.currentTimeMillis() - lastRefreshTime) < TimeUnit.SECONDS
+                        .toMillis(tokenTtl - tokenRefreshWindow)) {
+                    return true;
+                }
             }
             
             if (StringUtils.isBlank(properties.getProperty(PropertyKeyConst.USERNAME))) {

@@ -18,7 +18,7 @@ package com.alibaba.nacos.plugin.datasource;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.impl.mysql.AbstractMapperByMysql;
-import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoAggrMapper;
+import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoGrayMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.Mapper;
 import com.alibaba.nacos.plugin.datasource.mapper.TestMapper;
 import org.junit.jupiter.api.Test;
@@ -55,7 +55,7 @@ class MapperManagerTest {
             public String getTableName() {
                 return "test";
             }
-
+            
             @Override
             public String getDataSource() {
                 return DataSourceConstant.MYSQL;
@@ -78,7 +78,7 @@ class MapperManagerTest {
     void testEnableDataSourceLogJoin() {
         MapperManager.join(new TestMapper());
         MapperManager instance = MapperManager.instance(true);
-        ConfigInfoAggrMapper mapper = instance.findMapper(DataSourceConstant.MYSQL, "enable_data_source_log_test");
+        ConfigInfoGrayMapper mapper = instance.findMapper(DataSourceConstant.MYSQL, "enable_data_source_log_test");
         assertNotNull(mapper);
     }
     

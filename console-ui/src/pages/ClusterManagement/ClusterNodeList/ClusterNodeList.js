@@ -84,7 +84,7 @@ class ClusterNodeList extends React.Component {
       `keyword=${keyword}`,
     ];
     request({
-      url: `v1/core/cluster/nodes?${parameter.join('&')}`,
+      url: `v3/console/core/cluster/nodes?${parameter.join('&')}`,
       beforeSend: () => this.openLoading(),
       success: ({ count = 0, data = [] } = {}) => {
         this.setState({
@@ -107,12 +107,13 @@ class ClusterNodeList extends React.Component {
     const accessToken = JSON.parse(localStorage.token || '{}').accessToken;
     this.openLoading();
     axios
-      .post(`v1/core/cluster/server/leave?accessToken=${accessToken}`, nodes)
+      .post(`v3/console/core/cluster/server/leave?accessToken=${accessToken}`, nodes)
       .then(response => {
-        if (response.data.code === 200) {
+        if (response.data.code === 0) {
           Message.success(locale.leaveSucc);
         } else {
-          const errorMessage = response.data.message || locale.leaveFail;
+          // const errorMessage = response.data.message || locale.leaveFail;
+          const errorMessage = '此操作暂不可用';
           this.showErrorDialog(locale.leavePrompt, errorMessage);
         }
 
@@ -120,7 +121,8 @@ class ClusterNodeList extends React.Component {
         this.closeLoading();
       })
       .catch(error => {
-        const errorMessage = error.response?.data?.message || locale.leaveFail;
+        // const errorMessage = error.response?.data?.message || locale.leaveFail;
+        const errorMessage = '此操作暂不可用';
         this.showErrorDialog(locale.leavePrompt, errorMessage);
 
         this.queryClusterStateList();

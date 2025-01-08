@@ -24,6 +24,8 @@ import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.api.naming.selector.NamingContext;
+import com.alibaba.nacos.api.naming.selector.NamingResult;
 import com.alibaba.nacos.api.naming.selector.NamingSelector;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
@@ -37,6 +39,7 @@ import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxyDelegate;
 import com.alibaba.nacos.client.naming.selector.NamingSelectorFactory;
 import com.alibaba.nacos.client.naming.selector.NamingSelectorWrapper;
+import com.alibaba.nacos.client.naming.selector.ServiceInfoContext;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
@@ -324,38 +327,67 @@ public class NacosNamingService implements NamingService {
         return list;
     }
     
-    private ServiceInfo getServiceInfoByFailover(String serviceName, String groupName, String clusterString) {
-        return serviceInfoHolder.getFailoverServiceInfo(serviceName, groupName, clusterString);
-    }
-    
-    private ServiceInfo getServiceInfoBySubscribe(String serviceName, String groupName, String clusterString,
-            boolean subscribe) throws NacosException {
-        ServiceInfo serviceInfo;
-        if (subscribe) {
-            serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, clusterString);
-            if (null == serviceInfo || !clientProxy.isSubscribed(serviceName, groupName, clusterString)) {
-                serviceInfo = clientProxy.subscribe(serviceName, groupName, clusterString);
-            }
-        } else {
-            serviceInfo = clientProxy.queryInstancesOfService(serviceName, groupName, clusterString, false);
-        }
-        return serviceInfo;
-    }
-    
     private ServiceInfo getServiceInfo(String serviceName, String groupName, List<String> clusters, boolean subscribe)
             throws NacosException {
         ServiceInfo serviceInfo;
-        String clusterString = StringUtils.join(clusters, ",");
+        NamingSelector clusterSelector = NamingSelectorFactory.newClusterSelector(clusters);
         if (serviceInfoHolder.isFailoverSwitch()) {
-            serviceInfo = getServiceInfoByFailover(serviceName, groupName, clusterString);
-            if (serviceInfo != null && serviceInfo.getHosts().size() > 0) {
+            serviceInfo = getServiceInfoByFailover(serviceName, groupName, clusterSelector);
+            if (serviceInfo != null && !serviceInfo.getHosts().isEmpty()) {
                 NAMING_LOGGER.debug("getServiceInfo from failover,serviceName: {}  data:{}", serviceName,
                         JacksonUtils.toJson(serviceInfo.getHosts()));
                 return serviceInfo;
             }
         }
-        
-        serviceInfo = getServiceInfoBySubscribe(serviceName, groupName, clusterString, subscribe);
+        serviceInfo = getServiceInfoBySubscribe(serviceName, groupName, clusters, clusterSelector, subscribe);
+        return serviceInfo;
+    }
+    
+    private ServiceInfo getServiceInfoByFailover(String serviceName, String groupName, NamingSelector clusterSelector) {
+        ServiceInfo result = serviceInfoHolder.getFailoverServiceInfo(serviceName, groupName, StringUtils.EMPTY);
+        return doSelectInstance(result, clusterSelector);
+    }
+    
+    private ServiceInfo getServiceInfoBySubscribe(String serviceName, String groupName, List<String> clusters,
+            NamingSelector selector, boolean subscribe) throws NacosException {
+        ServiceInfo serviceInfo;
+        if (subscribe) {
+            serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, StringUtils.EMPTY);
+            serviceInfo = tryToSubscribe(serviceName, groupName, serviceInfo);
+            serviceInfo = doSelectInstance(serviceInfo, selector);
+        } else {
+            String clusterString = NamingSelectorFactory.getUniqueClusterString(clusters);
+            serviceInfo = clientProxy.queryInstancesOfService(serviceName, groupName, clusterString, false);
+        }
+        return serviceInfo;
+    }
+    
+    private ServiceInfo tryToSubscribe(String serviceName, String groupName, ServiceInfo cachedServiceInfo) throws NacosException {
+        // not found in cache, service never subscribed.
+        if (null == cachedServiceInfo) {
+            return clientProxy.subscribe(serviceName, groupName, StringUtils.EMPTY);
+        }
+        // found in cache, and subscribed.
+        if (clientProxy.isSubscribed(serviceName, groupName, StringUtils.EMPTY)) {
+            return cachedServiceInfo;
+        }
+        // found in cached, but not subscribed, such as cached from local file when starting.
+        ServiceInfo result = cachedServiceInfo;
+        try {
+            result = clientProxy.subscribe(serviceName, groupName, StringUtils.EMPTY);
+        } catch (NacosException e) {
+            NAMING_LOGGER.warn("Subscribe from Server failed, will use local cache. fail message: ", e);
+        }
+        return result;
+    }
+    
+    private ServiceInfo doSelectInstance(ServiceInfo serviceInfo, NamingSelector clusterSelector) {
+        if (null == serviceInfo) {
+            return null;
+        }
+        NamingContext context = new ServiceInfoContext(serviceInfo);
+        NamingResult result = clusterSelector.select(context);
+        serviceInfo.setHosts(result.getResult());
         return serviceInfo;
     }
     

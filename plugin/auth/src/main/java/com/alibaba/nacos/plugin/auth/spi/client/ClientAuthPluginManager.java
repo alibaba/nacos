@@ -62,6 +62,17 @@ public class ClientAuthPluginManager implements Closeable {
     }
     
     /**
+     * refresh ClientAuthService server list.
+     *
+     * @param serverList the new server list.
+     */
+    public void refreshServerList(List<String> serverList) {
+        for (ClientAuthService clientAuthService : clientAuthServiceHashSet) {
+            clientAuthService.setServerList(serverList);
+        }
+    }
+    
+    /**
      * get all ClientAuthService instance.
      *
      * @return ClientAuthService Set.

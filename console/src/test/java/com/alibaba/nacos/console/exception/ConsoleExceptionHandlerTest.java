@@ -19,6 +19,9 @@ package com.alibaba.nacos.console.exception;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.console.controller.v2.HealthControllerV2;
+import com.alibaba.nacos.core.listener.startup.NacosStartUp;
+import com.alibaba.nacos.core.listener.startup.NacosStartUpManager;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,6 +49,11 @@ class ConsoleExceptionHandlerTest {
     
     @MockBean
     private HealthControllerV2 healthControllerV2;
+    
+    @BeforeAll
+    static void beforeAll() {
+        NacosStartUpManager.start(NacosStartUp.CONSOLE_START_UP_PHASE);
+    }
     
     @BeforeEach
     void before() {

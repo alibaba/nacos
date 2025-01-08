@@ -61,7 +61,7 @@ class ListeningToQuery extends React.Component {
     this.group = getParams('listeningGroup') || '';
     this.dataId = getParams('listeningDataId') || '';
     this.serverId = getParams('listeningServerId') || '';
-    this.tenant = getParams('namespace') || '';
+    this.tenant = getParams('namespace') || 'public';
   }
 
   componentDidMount() {
@@ -92,16 +92,16 @@ class ListeningToQuery extends React.Component {
     const type = this.getValue('type');
     if (type === 1) {
       const ip = this.getValue('ip');
-      queryUrl = `v1/cs/listener?ip=${ip}`;
-      const tenant = window.nownamespace || getParams('namespace') || '';
+      queryUrl = `v3/console/cs/config/listener/ip?ip=${ip}`;
+      const tenant = window.nownamespace || getParams('namespace') || 'public';
       if (tenant) {
-        queryUrl += `&tenant=${tenant}`;
+        queryUrl += `&namespaceId=${tenant}`;
       }
     } else {
       const dataId = this.getValue('dataId');
       const group = this.getValue('group');
       if (!dataId || !group) return false;
-      queryUrl = `v1/cs/configs/listener?dataId=${dataId}&group=${group}`;
+      queryUrl = `v3/console/cs/config/listener?dataId=${dataId}&groupName=${group}`;
     }
     request({
       url: queryUrl,
@@ -109,9 +109,10 @@ class ListeningToQuery extends React.Component {
         self.openLoading();
       },
       success(data) {
-        if (data.collectStatus === 200) {
+        const res = data.data;
+        if (res.collectStatus === 200) {
           const dataSoureTmp = [];
-          const status = data.lisentersGroupkeyStatus;
+          const status = res.lisentersGroupkeyStatus;
           for (const key in status) {
             if (type === 1) {
               const obj = {};

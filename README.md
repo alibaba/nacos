@@ -13,7 +13,7 @@
 
 Nacos (official site: [nacos.io](https://nacos.io)) is an easy-to-use platform designed for dynamic service discovery and configuration and service management. It helps you to build cloud native applications and microservices platform easily.
 
-Service is a first-class citizen in Nacos. Nacos supports almost all type of services，for example，[Dubbo/gRPC service](https://nacos.io/en-us/docs/use-nacos-with-dubbo.html), [Spring Cloud RESTFul service](https://nacos.io/en-us/docs/use-nacos-with-springcloud.html) or [Kubernetes service](https://nacos.io/en-us/docs/use-nacos-with-kubernetes.html).
+Service is a first-class citizen in Nacos. Nacos supports almost all type of services，for example，[Dubbo/gRPC service](https://nacos.io/docs/latest/ecology/use-nacos-with-dubbo/), [Spring Cloud RESTFul service](https://nacos.io/docs/latest/ecology/use-nacos-with-spring-cloud/) or [Kubernetes service](https://nacos.io/docs/latest/quickstart/quick-start-kubernetes/).
 
 Nacos provides four major functions.
 
@@ -68,23 +68,23 @@ On the **Windows** platform, run the following command to start server with stan
 startup.cmd -m standalone
 ```
 
-For more details, see [quick-start.](https://nacos.io/en-us/docs/quick-start.html)
+For more details, see [quick-start.](https://nacos.io/docs/latest/quickstart/quick-start/)
 
 ## Quick start for other open-source projects:
-* [Quick start with Nacos command and console](https://nacos.io/en-us/docs/quick-start.html)
+* [Quick start with Nacos command and console](https://nacos.io/docs/latest/quickstart/quick-start/)
 
-* [Quick start with dubbo](https://nacos.io/en-us/docs/use-nacos-with-dubbo.html)
+* [Quick start with dubbo](https://nacos.io/docs/latest/ecology/use-nacos-with-dubbo/)
 
-* [Quick start with spring cloud](https://nacos.io/en-us/docs/quick-start-spring-cloud.html)
+* [Quick start with spring cloud](https://nacos.io/docs/latest/ecology/use-nacos-with-spring-cloud/)
 
-* [Quick start with kubernetes](https://nacos.io/en-us/docs/use-nacos-with-kubernetes.html)
+* [Quick start with kubernetes](https://nacos.io/docs/latest/quickstart/quick-start-kubernetes/)
 
 
 ## Documentation
 
-You can view the full documentation from the [Nacos website](https://nacos.io/en-us/docs/v2/what-is-nacos.html).
+You can view the full documentation from the [Nacos website](https://nacos.io/docs/latest/overview/).
 
-You can also read this online eBook from the [NACOS ARCHITECTURE & PRINCIPLES](https://www.yuque.com/nacos/ebook/kbyo6n).
+You can also read this online eBook from the [NACOS ARCHITECTURE & PRINCIPLES](https://nacos.io/docs/ebook/kbyo6n/).
 
 All the latest and long-term notice can also be found here from [GitHub notice issue](https://github.com/alibaba/nacos/labels/notice).
 

@@ -24,7 +24,6 @@ import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import com.alibaba.nacos.plugin.auth.impl.authenticate.DefaultAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
@@ -42,9 +41,6 @@ import java.util.List;
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosAuthPluginService implements AuthPluginService {
-    
-    @Deprecated
-    private static final String USER_IDENTITY_PARAM_KEY = "user";
     
     private static final List<String> IDENTITY_NAMES = new LinkedList<String>() {
         {
@@ -109,7 +105,7 @@ public class NacosAuthPluginService implements AuthPluginService {
     
     @Override
     public boolean isLoginEnabled() {
-        return ApplicationUtils.getBean(AuthConfigs.class).isAuthEnabled();
+        return ApplicationUtils.getBean(AuthConfigs.class).isConsoleAuthEnabled();
     }
     
     /**
@@ -119,14 +115,15 @@ public class NacosAuthPluginService implements AuthPluginService {
      */
     @Override
     public boolean isAdminRequest() {
-        boolean authEnabled = ApplicationUtils.getBean(AuthConfigs.class).isAuthEnabled();
+        AuthConfigs authConfigs = ApplicationUtils.getBean(AuthConfigs.class);
+        boolean authEnabled = authConfigs.isConsoleAuthEnabled() || authConfigs.isAuthEnabled();
         boolean hasGlobalAdminRole = ApplicationUtils.getBean(IAuthenticationManager.class).hasGlobalAdminRole();
         return authEnabled && !hasGlobalAdminRole;
     }
     
     protected void checkNacosAuthManager() {
         if (null == authenticationManager) {
-            authenticationManager = ApplicationUtils.getBean(DefaultAuthenticationManager.class);
+            authenticationManager = ApplicationUtils.getBean(IAuthenticationManager.class);
         }
     }
 }

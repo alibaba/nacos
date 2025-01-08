@@ -91,6 +91,26 @@ public enum ErrorCode {
     PARAMETER_MISMATCH(20009, "parameter mismatch"),
     
     /**
+     * config gray request error.
+     */
+    CONFIG_GRAY_OVER_MAX_VERSION_COUNT(20010, "config gray version version over max count"),
+    
+    /**
+     * config gray tag v2 rule format invalid.
+     */
+    CONFIG_GRAY_RULE_FORMAT_INVALID(20011, "config gray rule format invalid"),
+    
+    /**
+     * config gray tag v2 rule version invalid.
+     */
+    CONFIG_GRAY_VERSION_INVALID(20012, "config gray rule version invalid"),
+    
+    /**
+     * config gray request error.
+     */
+    CONFIG_GRAY_NAME_UNRECOGNIZED_ERROR(20013, "config gray name not recognized"),
+    
+    /**
      *  service name error.
      */
     SERVICE_NAME_ERROR(21000, "service name error"),
@@ -183,7 +203,25 @@ public enum ErrorCode {
     /**
      *  server error.
      */
-    SERVER_ERROR(30000, "server error");
+    SERVER_ERROR(30000, "server error"),
+    
+    /**
+     * API will be deprecated.
+     */
+    API_DEPRECATED(40000, "API deprecated."),
+    
+    /**
+     * Config use 100001 ~ 100999.
+     **/
+    METADATA_ILLEGAL(100002, "导入的元数据非法"),
+    
+    DATA_VALIDATION_FAILED(100003, "未读取到合法数据"),
+    
+    PARSING_DATA_FAILED(100004, "解析数据失败"),
+    
+    DATA_EMPTY(100005, "导入的文件数据为空"),
+    
+    NO_SELECTED_CONFIG(100006, "没有选择任何配置");
     
     private final Integer code;
     

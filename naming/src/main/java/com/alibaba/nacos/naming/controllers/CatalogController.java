@@ -23,12 +23,14 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.naming.core.CatalogService;
 import com.alibaba.nacos.naming.core.CatalogServiceV2Impl;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -61,6 +63,7 @@ public class CatalogController {
      */
     @Secured(action = ActionTypes.READ)
     @GetMapping("/service")
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/ns/service")
     public Object serviceDetail(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             String serviceName) throws NacosException {
         String serviceNameWithoutGroup = NamingUtils.getServiceName(serviceName);
@@ -81,6 +84,7 @@ public class CatalogController {
      */
     @Secured(action = ActionTypes.READ)
     @RequestMapping(value = "/instances")
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/ns/instance/list")
     public ObjectNode instanceList(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName, @RequestParam String clusterName, @RequestParam(name = "pageNo") int page,
             @RequestParam int pageSize) throws NacosException {
@@ -125,6 +129,7 @@ public class CatalogController {
      */
     @Secured(action = ActionTypes.READ)
     @GetMapping("/services")
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/ns/service/list")
     public Object listDetail(@RequestParam(required = false) boolean withInstances,
             @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam(required = false) int pageNo, @RequestParam(required = false) int pageSize,

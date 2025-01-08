@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.SampleResult;
@@ -24,9 +25,11 @@ import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtracto
 import com.alibaba.nacos.config.server.remote.ConfigChangeListenContext;
 import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -68,9 +71,11 @@ public class CommunicationController {
      * Get client config information of subscriber in local machine.
      */
     @GetMapping("/configWatchers")
+    @Compatibility(apiType = ApiType.INNER_API)
     public SampleResult getSubClientConfig(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false) String tenant, ModelMap modelMap) {
         group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group;
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         // long polling listeners.
         SampleResult result = longPollingService.getCollectSubscribleInfo(dataId, group, tenant);
         // rpc listeners.
@@ -97,6 +102,7 @@ public class CommunicationController {
      * Get client config listener lists of subscriber in local machine.
      */
     @GetMapping("/watcherConfigs")
+    @Compatibility(apiType = ApiType.INNER_API)
     public SampleResult getSubClientConfigByIp(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("ip") String ip, ModelMap modelMap) {
         

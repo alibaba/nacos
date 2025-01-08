@@ -27,10 +27,12 @@ import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.ConfigServletInner;
+import com.alibaba.nacos.config.server.enums.ApiVersionEnum;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.paramcheck.ConfigBlurSearchHttpParamExtractor;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
@@ -39,6 +41,7 @@ import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import org.slf4j.Logger;
@@ -92,6 +95,7 @@ public class ConfigControllerV2 {
      */
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public void getConfig(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
@@ -105,7 +109,7 @@ public class ConfigControllerV2 {
         ParamUtils.checkParamV2(tag);
         final String clientIp = RequestUtil.getRemoteIp(request);
         String isNotify = request.getHeader("notify");
-        inner.doGetConfig(request, response, dataId, group, namespaceId, tag, isNotify, clientIp, true);
+        inner.doGetConfig(request, response, dataId, group, namespaceId, tag, isNotify, clientIp, ApiVersionEnum.V2);
     }
     
     /**
@@ -115,9 +119,10 @@ public class ConfigControllerV2 {
      */
     @PostMapping()
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<Boolean> publishConfig(ConfigForm configForm, HttpServletRequest request) throws NacosException {
         // check required field
-        configForm.validate();
+        configForm.validateWithContent();
         String encryptedDataKeyFinal = configForm.getEncryptedDataKey();
         if (StringUtils.isBlank(encryptedDataKeyFinal)) {
             // encrypted
@@ -155,6 +160,7 @@ public class ConfigControllerV2 {
      */
     @DeleteMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public Result<Boolean> deleteConfig(HttpServletRequest request, @RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
@@ -178,6 +184,7 @@ public class ConfigControllerV2 {
     @GetMapping("/searchDetail")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     @ExtractorManager.Extractor(httpExtractor = ConfigBlurSearchHttpParamExtractor.class)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/cs/config/searchDetail")
     public Page<ConfigInfo> searchConfigByDetails(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
@@ -195,6 +202,7 @@ public class ConfigControllerV2 {
         if (StringUtils.isNotBlank(configDetail)) {
             configAdvanceInfo.put("content", configDetail);
         }
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         try {
             return configDetailService.findConfigInfoPage(search, pageNo, pageSize, dataId, group, tenant, configAdvanceInfo);
         } catch (Exception e) {

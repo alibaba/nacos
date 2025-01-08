@@ -22,13 +22,14 @@ import com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenRespo
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
+import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.ConfigBatchListenRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
-import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.utils.StringPool;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
@@ -58,17 +59,17 @@ public class ConfigChangeBatchListenRequestHandler
         String tag = configChangeListenRequest.getHeader(Constants.VIPSERVER_TAG);
         ParamUtils.checkParam(tag);
         ConfigChangeBatchListenResponse configChangeBatchListenResponse = new ConfigChangeBatchListenResponse();
-        for (ConfigBatchListenRequest.ConfigListenContext listenContext : configChangeListenRequest
-                .getConfigListenContexts()) {
-            String groupKey = GroupKey2
-                    .getKey(listenContext.getDataId(), listenContext.getGroup(), listenContext.getTenant());
+        for (ConfigBatchListenRequest.ConfigListenContext listenContext : configChangeListenRequest.getConfigListenContexts()) {
+            String namespaceId = NamespaceUtil.processNamespaceParameter(listenContext.getTenant());
+            String groupKey = GroupKey2.getKey(listenContext.getDataId(), listenContext.getGroup(), namespaceId);
             groupKey = StringPool.get(groupKey);
             
             String md5 = StringPool.get(listenContext.getMd5());
             
             if (configChangeListenRequest.isListen()) {
                 configChangeListenContext.addListen(groupKey, md5, connectionId);
-                boolean isUptoDate = ConfigCacheService.isUptodate(groupKey, md5, meta.getClientIp(), tag);
+                boolean isUptoDate = ConfigCacheService.isUptodate(groupKey, md5, meta.getClientIp(), tag,
+                        meta.getAppLabels());
                 if (!isUptoDate) {
                     configChangeBatchListenResponse.addChangeConfig(listenContext.getDataId(), listenContext.getGroup(),
                             listenContext.getTenant());

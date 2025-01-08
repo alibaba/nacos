@@ -79,7 +79,7 @@ public abstract class ConfigTransportClient {
         this.tenant = properties.getProperty(PropertyKeyConst.NAMESPACE);
         this.serverListManager = serverListManager;
         this.properties = properties.asProperties();
-        this.securityProxy = new SecurityProxy(serverListManager.getServerList(),
+        this.securityProxy = new SecurityProxy(serverListManager,
                 ConfigHttpClientManager.getInstance().getNacosRestTemplate());
     }
     
@@ -134,6 +134,10 @@ public abstract class ConfigTransportClient {
         this.executor.scheduleWithFixedDelay(() -> securityProxy.login(properties), 0,
                 this.securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
         startInternal();
+    }
+    
+    public void reLogin() {
+        securityProxy.reLogin();
     }
     
     /**

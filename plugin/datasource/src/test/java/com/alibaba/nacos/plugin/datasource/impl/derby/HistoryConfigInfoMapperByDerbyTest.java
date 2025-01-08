@@ -43,6 +43,8 @@ class HistoryConfigInfoMapperByDerbyTest {
     
     Timestamp endTime = new Timestamp(System.currentTimeMillis());
     
+    String publishType = "formal";
+    
     MapperContext context;
     
     private HistoryConfigInfoMapperByDerby historyConfigInfoMapperByDerby;
@@ -56,6 +58,7 @@ class HistoryConfigInfoMapperByDerbyTest {
         context.putWhereParameter(FieldConstant.LIMIT_SIZE, limitSize);
         context.putWhereParameter(FieldConstant.LAST_MAX_ID, lastMaxId);
         context.putWhereParameter(FieldConstant.PAGE_SIZE, pageSize);
+        context.putWhereParameter(FieldConstant.PUBLISH_TYPE, publishType);
         
     }
     
@@ -63,7 +66,7 @@ class HistoryConfigInfoMapperByDerbyTest {
     void testRemoveConfigHistory() {
         MapperResult mapperResult = historyConfigInfoMapperByDerby.removeConfigHistory(context);
         assertEquals(mapperResult.getSql(),
-                "DELETE FROM his_config_info WHERE id IN( SELECT id FROM his_config_info WHERE gmt_modified < ? "
+                "DELETE FROM his_config_info WHERE nid IN( SELECT nid FROM his_config_info WHERE gmt_modified < ? "
                         + "OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY)");
         assertArrayEquals(new Object[] {startTime, limitSize}, mapperResult.getParamList().toArray());
     }
@@ -78,10 +81,13 @@ class HistoryConfigInfoMapperByDerbyTest {
     @Test
     void testFindDeletedConfig() {
         MapperResult mapperResult = historyConfigInfoMapperByDerby.findDeletedConfig(context);
-        assertEquals(mapperResult.getSql(), "SELECT data_id, group_id, tenant_id,gmt_modified,nid FROM his_config_info WHERE op_type = 'D' "
-                + "AND gmt_modified >= ? and nid > ? order by nid OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
-        
-        assertArrayEquals(new Object[] {startTime, lastMaxId, pageSize}, mapperResult.getParamList().toArray());
+        assertEquals(
+                "SELECT id, nid, data_id, group_id, app_name, content, md5, gmt_create, gmt_modified, src_user, src_ip,"
+                        + " op_type, tenant_id, publish_type,gray_name, ext_info, encrypted_data_key FROM his_config_info WHERE op_type = 'D' AND "
+                        + "publish_type = ? and gmt_modified >= ? and nid > ? order by nid OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY",
+                mapperResult.getSql());
+        assertArrayEquals(new Object[] {publishType, startTime, lastMaxId, pageSize},
+                mapperResult.getParamList().toArray());
     }
     
     @Test
@@ -96,7 +102,8 @@ class HistoryConfigInfoMapperByDerbyTest {
         context.putWhereParameter(FieldConstant.DATA_ID, dataId);
         MapperResult mapperResult = historyConfigInfoMapperByDerby.findConfigHistoryFetchRows(context);
         assertEquals(mapperResult.getSql(),
-                "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified FROM his_config_info "
+                "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,publish_type,gray_name,"
+                        + "op_type,gmt_create,gmt_modified FROM his_config_info "
                         + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC");
         assertArrayEquals(new Object[] {dataId, groupId, tenantId}, mapperResult.getParamList().toArray());
     }
@@ -106,8 +113,10 @@ class HistoryConfigInfoMapperByDerbyTest {
         Object id = "1";
         context.putWhereParameter(FieldConstant.ID, id);
         MapperResult mapperResult = historyConfigInfoMapperByDerby.detailPreviousConfigHistory(context);
-        assertEquals(mapperResult.getSql(), "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,"
-                + "gmt_modified,encrypted_data_key FROM his_config_info WHERE nid = (SELECT max(nid) FROM his_config_info WHERE id = ?)");
+        assertEquals(mapperResult.getSql(),
+                "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,publish_type"
+                        + ",gray_name,ext_info,gmt_create,gmt_modified,encrypted_data_key "
+                        + "FROM his_config_info WHERE nid = (SELECT max(nid) FROM his_config_info WHERE id = ?)");
         assertArrayEquals(new Object[] {id}, mapperResult.getParamList().toArray());
     }
     

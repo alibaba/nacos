@@ -18,24 +18,37 @@
 package com.alibaba.nacos.core.auth;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.remote.request.HealthCheckRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.api.remote.response.HealthCheckResponse;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.remote.response.ResponseCode;
+import com.alibaba.nacos.auth.GrpcProtocolAuthService;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.core.context.RequestContextHolder;
+import com.alibaba.nacos.core.remote.HealthCheckRequestHandler;
 import com.alibaba.nacos.core.remote.RequestHandler;
+import com.alibaba.nacos.plugin.auth.api.IdentityContext;
+import com.alibaba.nacos.plugin.auth.api.Permission;
+import com.alibaba.nacos.plugin.auth.api.Resource;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 /**
  * {@link RemoteRequestAuthFilter} unit test.
@@ -46,11 +59,25 @@ import static org.junit.jupiter.api.Assertions.fail;
 @ExtendWith(MockitoExtension.class)
 class RemoteRequestAuthFilterTest {
     
-    @InjectMocks
-    private RemoteRequestAuthFilter remoteRequestAuthFilter;
+    private RemoteRequestAuthFilter authFilter;
     
     @Mock
-    private AuthConfigs authConfigs;
+    private NacosAuthConfig authConfig;
+    
+    @Mock
+    Request request;
+    
+    @Mock
+    RequestMeta requestMeta;
+    
+    @BeforeEach
+    void setUp() {
+        authFilter = new RemoteRequestAuthFilter();
+        GrpcProtocolAuthService protocolAuthService = new GrpcProtocolAuthService(authConfig);
+        protocolAuthService.initialize();
+        ReflectionTestUtils.setField(authFilter, "protocolAuthService", protocolAuthService);
+        ReflectionTestUtils.setField(authFilter, "authConfig", authConfig);
+    }
     
     @AfterEach
     void tearDown() {
@@ -58,26 +85,123 @@ class RemoteRequestAuthFilterTest {
     }
     
     @Test
-    void testFilter() {
-        Mockito.when(authConfigs.isAuthEnabled()).thenReturn(true);
-        
-        Request healthCheckRequest = new HealthCheckRequest();
-        
-        try {
-            Response healthCheckResponse = remoteRequestAuthFilter.filter(healthCheckRequest, new RequestMeta(), MockRequestHandler.class);
-            assertNull(healthCheckResponse);
-        } catch (NacosException e) {
-            e.printStackTrace();
-            fail(e.getMessage());
-        }
+    void testFilterWithoutSecured() throws NacosException {
+        Response actual = authFilter.filter(request, requestMeta, HealthCheckRequestHandler.class);
+        assertNull(actual);
     }
     
-    class MockRequestHandler extends RequestHandler {
+    @Test
+    void testFilterDisabledAuth() throws NacosException {
+        when(authConfig.isAuthEnabled()).thenReturn(false);
+        Response actual = authFilter.filter(request, requestMeta, MockRequestHandler.class);
+        assertNull(actual);
+    }
+    
+    @Test
+    void testFilterWithoutServerIdentity() throws NacosException {
+        Response actual = authFilter.filter(request, requestMeta, MockInnerRequestHandler.class);
+        assertNotNull(actual);
+        assertEquals(ResponseCode.FAIL.getCode(), actual.getResultCode());
+        assertEquals(403, actual.getErrorCode());
+        assertEquals("Invalid server identity key or value, Please make sure set `nacos.core.auth.server.identity.key`"
+                        + " and `nacos.core.auth.server.identity.value`, or open `nacos.core.auth.enable.userAgentAuthWhite`",
+                actual.getMessage());
+    }
+    
+    @Test
+    void testFilterDisabledAuthWithInnerApi() throws NacosException {
+        when(authConfig.getServerIdentityKey()).thenReturn("1");
+        when(authConfig.getServerIdentityValue()).thenReturn("2");
+        Response actual = authFilter.filter(request, requestMeta, MockInnerRequestHandler.class);
+        assertNull(actual);
+    }
+    
+    @Test
+    void testFilterWithServerIdentity() throws NacosException {
+        when(authConfig.getServerIdentityKey()).thenReturn("1");
+        when(authConfig.getServerIdentityValue()).thenReturn("2");
+        when(request.getHeader("1")).thenReturn("2");
+        Response actual = authFilter.filter(request, requestMeta, MockInnerRequestHandler.class);
+        assertNull(actual);
+    }
+    
+    @Test
+    void testFilterWithNoNeedAuthSecured() throws NacosException {
+        when(authConfig.isAuthEnabled()).thenReturn(true);
+        GrpcProtocolAuthService protocolAuthService = injectMockPlugins();
+        when(protocolAuthService.enableAuth(any(Secured.class))).thenReturn(false);
+        Response actual = authFilter.filter(request, requestMeta, MockRequestHandler.class);
+        assertNull(actual);
+    }
+    
+    @Test
+    void testFilterWithNeedAuthSecuredSuccess() throws NacosException {
+        when(authConfig.isAuthEnabled()).thenReturn(true);
+        GrpcProtocolAuthService protocolAuthService = injectMockPlugins();
+        when(protocolAuthService.enableAuth(any(Secured.class))).thenReturn(true);
+        doReturn(new IdentityContext()).when(protocolAuthService).parseIdentity(eq(request));
+        doReturn(Resource.EMPTY_RESOURCE).when(protocolAuthService).parseResource(eq(request), any(Secured.class));
+        when(protocolAuthService.validateIdentity(any(IdentityContext.class), any(Resource.class))).thenReturn(true);
+        when(protocolAuthService.validateAuthority(any(IdentityContext.class), any(Permission.class))).thenReturn(true);
+        Response actual = authFilter.filter(request, requestMeta, MockRequestHandler.class);
+        assertNull(actual);
+    }
+    
+    @Test
+    @Secured
+    void testFilterWithNeedAuthSecuredIdentityFailure() throws NacosException {
+        when(authConfig.isAuthEnabled()).thenReturn(true);
+        GrpcProtocolAuthService protocolAuthService = injectMockPlugins();
+        when(protocolAuthService.enableAuth(any(Secured.class))).thenReturn(true);
+        doReturn(new IdentityContext()).when(protocolAuthService).parseIdentity(eq(request));
+        doReturn(Resource.EMPTY_RESOURCE).when(protocolAuthService).parseResource(eq(request), any(Secured.class));
+        when(protocolAuthService.validateIdentity(any(IdentityContext.class), any(Resource.class))).thenReturn(false);
+        Response actual = authFilter.filter(request, requestMeta, MockRequestHandler.class);
+        assertNotNull(actual);
+        assertEquals(ResponseCode.FAIL.getCode(), actual.getResultCode());
+        assertEquals(403, actual.getErrorCode());
+    }
+    
+    @Test
+    @Secured
+    void testDoFilterWithNeedAuthSecuredAuthorityFailure() throws NacosException {
+        when(authConfig.isAuthEnabled()).thenReturn(true);
+        GrpcProtocolAuthService protocolAuthService = injectMockPlugins();
+        when(protocolAuthService.enableAuth(any(Secured.class))).thenReturn(true);
+        doReturn(new IdentityContext()).when(protocolAuthService).parseIdentity(eq(request));
+        doReturn(Resource.EMPTY_RESOURCE).when(protocolAuthService).parseResource(eq(request), any(Secured.class));
+        when(protocolAuthService.validateIdentity(any(IdentityContext.class), any(Resource.class))).thenReturn(true);
+        when(protocolAuthService.validateAuthority(any(IdentityContext.class), any(Permission.class))).thenReturn(
+                false);
+        Response actual = authFilter.filter(request, requestMeta, MockRequestHandler.class);
+        assertNotNull(actual);
+        assertEquals(ResponseCode.FAIL.getCode(), actual.getResultCode());
+        assertEquals(403, actual.getErrorCode());
+    }
+    
+    private GrpcProtocolAuthService injectMockPlugins() {
+        GrpcProtocolAuthService protocolAuthService = new GrpcProtocolAuthService(authConfig);
+        protocolAuthService.initialize();
+        GrpcProtocolAuthService spyProtocolAuthService = spy(protocolAuthService);
+        ReflectionTestUtils.setField(authFilter, "protocolAuthService", spyProtocolAuthService);
+        return spyProtocolAuthService;
+    }
+    
+    static class MockRequestHandler extends RequestHandler<Request, HealthCheckResponse> {
         
         @Secured(resource = "xxx")
         @Override
-        public Response handle(Request request, RequestMeta meta) throws NacosException {
-            return null;
+        public HealthCheckResponse handle(Request request, RequestMeta meta) throws NacosException {
+            return new HealthCheckResponse();
+        }
+    }
+    
+    static class MockInnerRequestHandler extends RequestHandler<Request, HealthCheckResponse> {
+        
+        @Secured(resource = "xxx", apiType = ApiType.INNER_API)
+        @Override
+        public HealthCheckResponse handle(Request request, RequestMeta meta) throws NacosException {
+            return new HealthCheckResponse();
         }
     }
 }

@@ -28,45 +28,54 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.constant.ParametersField;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
+import com.alibaba.nacos.config.server.enums.ApiVersionEnum;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
+import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigMetadata;
+import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
-import com.alibaba.nacos.config.server.paramcheck.ConfigBlurSearchHttpParamExtractor;
-import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
-import com.alibaba.nacos.config.server.paramcheck.ConfigListenerHttpParamExtractor;
-import com.alibaba.nacos.core.paramcheck.ExtractorManager;
-import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
-import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
+import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
+import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
+import com.alibaba.nacos.config.server.paramcheck.ConfigBlurSearchHttpParamExtractor;
+import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
+import com.alibaba.nacos.config.server.paramcheck.ConfigListenerHttpParamExtractor;
 import com.alibaba.nacos.config.server.result.code.ResultCodeEnum;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
-import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
+import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -122,6 +131,8 @@ public class ConfigController {
     
     private ConfigInfoBetaPersistService configInfoBetaPersistService;
     
+    private ConfigInfoGrayPersistService configInfoGrayPersistService;
+    
     private NamespacePersistService namespacePersistService;
     
     private final ConfigOperationService configOperationService;
@@ -130,14 +141,15 @@ public class ConfigController {
     
     public ConfigController(ConfigServletInner inner, ConfigOperationService configOperationService,
             ConfigSubService configSubService, ConfigInfoPersistService configInfoPersistService,
-            NamespacePersistService namespacePersistService,
-            ConfigInfoBetaPersistService configInfoBetaPersistService) {
+            NamespacePersistService namespacePersistService, ConfigInfoBetaPersistService configInfoBetaPersistService,
+            ConfigInfoGrayPersistService configInfoGrayPersistService) {
         this.inner = inner;
         this.configOperationService = configOperationService;
         this.configSubService = configSubService;
         this.configInfoPersistService = configInfoPersistService;
         this.namespacePersistService = namespacePersistService;
         this.configInfoBetaPersistService = configInfoBetaPersistService;
+        this.configInfoGrayPersistService = configInfoGrayPersistService;
     }
     
     /**
@@ -153,6 +165,7 @@ public class ConfigController {
     @PostMapping
     @TpsControl(pointName = "ConfigPublish")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
+    @Compatibility(apiType = ApiType.OPEN_API)
     public Boolean publishConfig(HttpServletRequest request, HttpServletResponse response,
             @RequestParam(value = "dataId") String dataId, @RequestParam(value = "group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
@@ -177,6 +190,7 @@ public class ConfigController {
         }
         
         // check tenant
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         ParamUtils.checkTenant(tenant);
         ParamUtils.checkParam(dataId, group, "datumId", content);
         ParamUtils.checkParam(tag);
@@ -195,7 +209,6 @@ public class ConfigController {
         configForm.setEffect(effect);
         configForm.setType(type);
         configForm.setSchema(schema);
-        
         if (StringUtils.isBlank(srcUser)) {
             configForm.setSrcUser(RequestUtil.getSrcUserName(request));
         }
@@ -222,6 +235,7 @@ public class ConfigController {
     @GetMapping
     @TpsControl(pointName = "ConfigQuery")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    @Compatibility(apiType = ApiType.OPEN_API)
     public void getConfig(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
@@ -236,7 +250,7 @@ public class ConfigController {
         
         final String clientIp = RequestUtil.getRemoteIp(request);
         String isNotify = request.getHeader("notify");
-        inner.doGetConfig(request, response, dataId, group, tenant, tag, isNotify, clientIp);
+        inner.doGetConfig(request, response, dataId, group, tenant, tag, isNotify, clientIp, ApiVersionEnum.V1);
     }
     
     /**
@@ -246,10 +260,12 @@ public class ConfigController {
      */
     @GetMapping(params = "show=all")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/cs/config")
     public ConfigAllInfo detailConfigInfo(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant)
             throws NacosException {
         // check tenant
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         ParamUtils.checkTenant(tenant);
         // check params
         ParamUtils.checkParam(dataId, group, "datumId", "content");
@@ -278,11 +294,13 @@ public class ConfigController {
      */
     @DeleteMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
+    @Compatibility(apiType = ApiType.OPEN_API)
     public Boolean deleteConfig(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "tag", required = false) String tag) throws NacosException {
         // check tenant
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         ParamUtils.checkTenant(tenant);
         ParamUtils.checkParam(dataId, group, "datumId", "rm");
         ParamUtils.checkParam(tag);
@@ -304,18 +322,19 @@ public class ConfigController {
      */
     @DeleteMapping(params = "delType=ids")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/cs/config/batchDelete")
     public RestResult<Boolean> deleteConfigs(HttpServletRequest request, @RequestParam(value = "ids") List<Long> ids) {
         String clientIp = RequestUtil.getRemoteIp(request);
         String srcUser = RequestUtil.getSrcUserName(request);
         final Timestamp time = TimeUtils.getCurrentTime();
-        List<ConfigInfo> configInfoList = configInfoPersistService.removeConfigInfoByIds(ids, clientIp, srcUser);
+        List<ConfigAllInfo> configInfoList = configInfoPersistService.removeConfigInfoByIds(ids, clientIp, srcUser);
         if (CollectionUtils.isEmpty(configInfoList)) {
             return RestResultUtils.success(true);
         }
-        for (ConfigInfo configInfo : configInfoList) {
+        for (ConfigAllInfo configInfo : configInfoList) {
             ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
-                            configInfo.getTenant(), time.getTime()));
+                    new ConfigDataChangeEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
+                            time.getTime()));
             
             ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant(), null, time.getTime(), clientIp, ConfigTraceService.PERSISTENCE_EVENT,
@@ -326,9 +345,11 @@ public class ConfigController {
     
     @GetMapping("/catalog")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public RestResult<ConfigAdvanceInfo> getConfigAdvanceInfo(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         ConfigAdvanceInfo configInfo = configInfoPersistService.findConfigAdvanceInfo(dataId, group, tenant);
         return RestResultUtils.success(configInfo);
     }
@@ -339,6 +360,7 @@ public class ConfigController {
     @PostMapping("/listener")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     @ExtractorManager.Extractor(httpExtractor = ConfigListenerHttpParamExtractor.class)
+    @Compatibility(apiType = ApiType.OPEN_API)
     public void listener(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         
@@ -367,10 +389,12 @@ public class ConfigController {
      */
     @GetMapping("/listener")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/cs/config/listener")
     public GroupkeyListenserStatus getListeners(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group, @RequestParam(value = "tenant", required = false) String tenant,
             @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime) throws Exception {
         group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group;
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         SampleResult collectSampleResult = configSubService.getCollectSampleResult(dataId, group, tenant, sampleTime);
         GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
         gls.setCollectStatus(200);
@@ -386,6 +410,7 @@ public class ConfigController {
     @GetMapping(params = "search=accurate")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     @ExtractorManager.Extractor(httpExtractor = ConfigBlurSearchHttpParamExtractor.class)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/cs/config/list")
     public Page<ConfigInfo> searchConfig(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
@@ -398,6 +423,7 @@ public class ConfigController {
         if (StringUtils.isNotBlank(configTags)) {
             configAdvanceInfo.put("config_tags", configTags);
         }
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         try {
             return configInfoPersistService.findConfigInfo4Page(pageNo, pageSize, dataId, group, tenant,
                     configAdvanceInfo);
@@ -415,12 +441,13 @@ public class ConfigController {
     @GetMapping(params = "search=blur")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     @ExtractorManager.Extractor(httpExtractor = ConfigBlurSearchHttpParamExtractor.class)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/cs/config/list")
     public Page<ConfigInfo> fuzzySearchConfig(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group, @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "config_tags", required = false) String configTags,
-            @RequestParam(value = "types", required = false) String types,
-            @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) {
+            @RequestParam(value = "types", required = false) String types, @RequestParam("pageNo") int pageNo,
+            @RequestParam("pageSize") int pageSize) {
         MetricsMonitor.getFuzzySearchMonitor().incrementAndGet();
         Map<String, Object> configAdvanceInfo = new HashMap<>(50);
         if (StringUtils.isNotBlank(appName)) {
@@ -432,6 +459,7 @@ public class ConfigController {
         if (StringUtils.isNotBlank(types)) {
             configAdvanceInfo.put(ParametersField.TYPES, types);
         }
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         try {
             return configInfoPersistService.findConfigInfoLike4Page(pageNo, pageSize, dataId, group, tenant,
                     configAdvanceInfo);
@@ -452,21 +480,28 @@ public class ConfigController {
      */
     @DeleteMapping(params = "beta=true")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "DELETE ${contextPath:nacos}/v3/console/cs/config/beta")
     public RestResult<Boolean> stopBeta(HttpServletRequest httpServletRequest,
             @RequestParam(value = "dataId") String dataId, @RequestParam(value = "group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
         String remoteIp = getRemoteIp(httpServletRequest);
         String requestIpApp = RequestUtil.getAppName(httpServletRequest);
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         try {
-            configInfoBetaPersistService.removeConfigInfo4Beta(dataId, group, tenant);
+            configInfoGrayPersistService.removeConfigInfoGray(dataId, group, tenant, BetaGrayRule.TYPE_BETA, remoteIp,
+                    RequestUtil.getSrcUserName(httpServletRequest));
         } catch (Throwable e) {
             LOGGER.error("remove beta data error", e);
             return RestResultUtils.failed(500, false, "remove beta data error");
         }
         ConfigTraceService.logPersistenceEvent(dataId, group, tenant, requestIpApp, System.currentTimeMillis(),
                 remoteIp, ConfigTraceService.PERSISTENCE_EVENT_BETA, ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
+        
+        if (PropertyUtil.isGrayCompatibleModel()) {
+            configInfoBetaPersistService.removeConfigInfo4Beta(dataId, group, tenant);
+        }
         ConfigChangePublisher.notifyConfigChange(
-                new ConfigDataChangeEvent(true, dataId, group, tenant, System.currentTimeMillis()));
+                new ConfigDataChangeEvent(dataId, group, tenant, BetaGrayRule.TYPE_BETA, System.currentTimeMillis()));
         
         return RestResultUtils.success("stop beta ok", true);
     }
@@ -481,18 +516,26 @@ public class ConfigController {
      */
     @GetMapping(params = "beta=true")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/cs/config/beta")
     public RestResult<ConfigInfo4Beta> queryBeta(@RequestParam(value = "dataId") String dataId,
             @RequestParam(value = "group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
         try {
-            ConfigInfo4Beta ci = configInfoBetaPersistService.findConfigInfo4Beta(dataId, group, tenant);
-            
-            if (Objects.nonNull(ci)) {
-                String encryptedDataKey = ci.getEncryptedDataKey();
-                Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey, ci.getContent());
-                ci.setContent(pair.getSecond());
+            tenant = NamespaceUtil.processNamespaceParameter(tenant);
+            ConfigInfo4Beta configInfo4Beta = null;
+            ConfigInfoGrayWrapper beta4Gray = configInfoGrayPersistService.findConfigInfo4Gray(dataId, group, tenant,
+                    "beta");
+            if (Objects.nonNull(beta4Gray)) {
+                String encryptedDataKey = beta4Gray.getEncryptedDataKey();
+                Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey,
+                        beta4Gray.getContent());
+                beta4Gray.setContent(pair.getSecond());
+                configInfo4Beta = new ConfigInfo4Beta();
+                BeanUtils.copyProperties(beta4Gray, configInfo4Beta);
+                configInfo4Beta.setBetaIps(
+                        GrayRuleManager.deserializeConfigGrayPersistInfo(beta4Gray.getGrayRule()).getExpr());
             }
-            return RestResultUtils.success("query beta ok", ci);
+            return RestResultUtils.success("query beta ok", configInfo4Beta);
         } catch (Throwable e) {
             LOGGER.error("query beta data error", e);
             return RestResultUtils.failed("query beta data error");
@@ -511,6 +554,7 @@ public class ConfigController {
      */
     @GetMapping(params = "export=true")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/cs/config/export")
     public ResponseEntity<byte[]> exportConfig(@RequestParam(value = "dataId", required = false) String dataId,
             @RequestParam(value = "group", required = false) String group,
             @RequestParam(value = "appName", required = false) String appName,
@@ -566,6 +610,7 @@ public class ConfigController {
      */
     @GetMapping(params = "exportV2=true")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/cs/config/export2")
     public ResponseEntity<byte[]> exportConfigV2(@RequestParam(value = "dataId", required = false) String dataId,
             @RequestParam(value = "group", required = false) String group,
             @RequestParam(value = "appName", required = false) String appName,
@@ -615,6 +660,7 @@ public class ConfigController {
      */
     @PostMapping(params = "import=true")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/cs/config/import")
     public RestResult<Map<String, Object>> importAndPublishConfig(HttpServletRequest request,
             @RequestParam(value = "src_user", required = false) String srcUser,
             @RequestParam(value = "namespace", required = false) String namespace,
@@ -666,8 +712,8 @@ public class ConfigController {
                 null, policy);
         for (ConfigInfo configInfo : configInfoList) {
             ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
-                            configInfo.getTenant(), time.getTime()));
+                    new ConfigDataChangeEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
+                            time.getTime()));
             ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant(), requestIpApp, time.getTime(), InetUtils.getSelfIP(),
                     ConfigTraceService.PERSISTENCE_EVENT, ConfigTraceService.PERSISTENCE_TYPE_PUB,
@@ -854,6 +900,7 @@ public class ConfigController {
      */
     @PostMapping(params = "clone=true")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/cs/config/clone")
     public RestResult<Map<String, Object>> cloneConfig(HttpServletRequest request,
             @RequestParam(value = "src_user", required = false) String srcUser,
             @RequestParam(value = "tenant") String namespace,
@@ -918,8 +965,8 @@ public class ConfigController {
                 srcIp, null, policy);
         for (ConfigInfo configInfo : configInfoList4Clone) {
             ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
-                            configInfo.getTenant(), time.getTime()));
+                    new ConfigDataChangeEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
+                            time.getTime()));
             ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant(), requestIpApp, time.getTime(), InetUtils.getSelfIP(),
                     ConfigTraceService.PERSISTENCE_EVENT, ConfigTraceService.PERSISTENCE_TYPE_PUB,

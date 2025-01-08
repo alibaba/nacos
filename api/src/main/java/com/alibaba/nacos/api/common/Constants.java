@@ -35,6 +35,8 @@ public class Constants {
     
     public static final String CLIENT_VERSION_KEY = "ClientVersion";
     
+    public static final String CLIENT_IP = "ClientIp";
+    
     public static final String UNKNOWN_APP = "UnknownApp";
     
     public static final String DEFAULT_DOMAINNAME = "commonconfig.config-host.taobao.com";
@@ -272,6 +274,15 @@ public class Constants {
         public static final String NAMING_MODULE = "naming";
         
         public static final String CMDB_CONTEXT_TYPE = "CMDB";
+    }
+    
+    /**
+     * The constants in lock directory.
+     */
+    public static class Lock {
+        
+        public static final String LOCK_MODULE = "lock";
+        
     }
     
     /**

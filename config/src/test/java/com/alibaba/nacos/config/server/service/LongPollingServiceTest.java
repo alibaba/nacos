@@ -84,7 +84,6 @@ class LongPollingServiceTest {
         connectionControlManagerMockedStatic = Mockito.mockStatic(ControlManagerCenter.class);
         connectionControlManagerMockedStatic.when(() -> ControlManagerCenter.getInstance()).thenReturn(controlManagerCenter);
         Mockito.when(controlManagerCenter.getConnectionControlManager()).thenReturn(connectionControlManager);
-        
     }
     
     @AfterEach
@@ -111,6 +110,9 @@ class LongPollingServiceTest {
         clientMd5Map.put(groupKeyEquals, md5Equals0);
         String md5NotEquals1 = MD5Utils.md5Hex("countNotEquals", "UTF-8");
         clientMd5Map.put(groupKeyNotEquals, md5NotEquals1);
+        MockedStatic<MD5Util> md5UtilMockedStatic = Mockito.mockStatic(MD5Util.class);
+        md5UtilMockedStatic.when(() -> MD5Util.compareMd5(any(), any(), any()))
+                .thenReturn(Arrays.asList(groupKeyNotEquals));
         
         HttpServletRequest httpServletRequest = Mockito.mock(HttpServletRequest.class);
         Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER))).thenReturn(null);
@@ -131,7 +133,7 @@ class LongPollingServiceTest {
         //expect print not equals group
         Mockito.verify(printWriter, times(1)).println(eq(responseString));
         Mockito.verify(httpServletResponse, times(1)).setStatus(eq(HttpServletResponse.SC_OK));
-        
+        md5UtilMockedStatic.close();
     }
     
     @Test

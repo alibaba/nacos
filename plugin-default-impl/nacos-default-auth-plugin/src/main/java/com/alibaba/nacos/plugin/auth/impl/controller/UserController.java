@@ -19,14 +19,15 @@ package com.alibaba.nacos.plugin.auth.impl.controller;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.AuthConfigs;
-import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.context.RequestContextHolder;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
@@ -47,7 +48,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.HttpSessionRequiredException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -102,6 +102,7 @@ public class UserController {
      */
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
     @PostMapping
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "POST ${contextPath:nacos}/v3/auth/user")
     public Object createUser(@RequestParam String username, @RequestParam String password) {
         if (AuthConstants.DEFAULT_USER.equals(username)) {
             return RestResultUtils.failed(HttpStatus.CONFLICT.value(),
@@ -120,6 +121,7 @@ public class UserController {
      * Create a admin user only not exist admin user can use.
      */
     @PostMapping("/admin")
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "POST ${contextPath:nacos}/v3/auth/user/admin")
     public Object createAdminUser(@RequestParam(required = false) String password) {
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
             if (iAuthenticationManager.hasGlobalAdminRole()) {
@@ -150,6 +152,7 @@ public class UserController {
      */
     @DeleteMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "DELETE ${contextPath:nacos}/v3/auth/user")
     public Object deleteUser(@RequestParam String username) {
         List<RoleInfo> roleInfoList = roleService.getRoles(username);
         if (roleInfoList != null) {
@@ -177,6 +180,7 @@ public class UserController {
     @PutMapping
     @Secured(resource = AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, action = ActionTypes.WRITE, tags = {
             AuthConstants.UPDATE_PASSWORD_ENTRY_POINT})
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "PUT ${contextPath:nacos}/v3/auth/user")
     public Object updateUser(@RequestParam String username, @RequestParam String newPassword,
             HttpServletResponse response, HttpServletRequest request) throws IOException {
         // admin or same user
@@ -239,6 +243,7 @@ public class UserController {
      */
     @GetMapping(params = "search=accurate")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.READ)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/auth/user/list")
     public Page<User> getUsers(@RequestParam int pageNo, @RequestParam int pageSize,
             @RequestParam(name = "username", required = false, defaultValue = "") String username) {
         return userDetailsService.getUsersFromDatabase(pageNo, pageSize, username);
@@ -246,6 +251,7 @@ public class UserController {
     
     @GetMapping(params = "search=blur")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.READ)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/auth/user/list")
     public Page<User> fuzzySearchUser(@RequestParam int pageNo, @RequestParam int pageSize,
             @RequestParam(name = "username", required = false, defaultValue = "") String username) {
         return userDetailsService.findUsersLike4Page(username, pageNo, pageSize);
@@ -264,6 +270,7 @@ public class UserController {
      * @throws AccessException if user info is incorrect
      */
     @PostMapping("/login")
+    @Compatibility(apiType = ApiType.OPEN_API, alternatives = "POST ${contextPath:nacos}/v3/auth/user/login")
     public Object login(@RequestParam String username, @RequestParam String password, HttpServletResponse response,
             HttpServletRequest request) throws AccessException, IOException {
         
@@ -302,34 +309,6 @@ public class UserController {
     }
     
     /**
-     * Update password.
-     *
-     * @param oldPassword old password
-     * @param newPassword new password
-     * @return Code 200 if update successfully, Code 401 if old password invalid, otherwise 500
-     */
-    @PutMapping("/password")
-    @Deprecated
-    public RestResult<String> updatePassword(@RequestParam(value = "oldPassword") String oldPassword,
-            @RequestParam(value = "newPassword") String newPassword) {
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String username = ((UserDetails) principal).getUsername();
-        User user = userDetailsService.getUserFromDatabase(username);
-        String password = user.getPassword();
-        
-        // TODO: throw out more fine grained exceptions
-        try {
-            if (PasswordEncoderUtil.matches(oldPassword, password)) {
-                userDetailsService.updateUserPassword(username, PasswordEncoderUtil.encode(newPassword));
-                return RestResultUtils.success("Update password success");
-            }
-            return RestResultUtils.failed(HttpStatus.UNAUTHORIZED.value(), "Old password is invalid");
-        } catch (Exception e) {
-            return RestResultUtils.failed(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Update userpassword failed");
-        }
-    }
-    
-    /**
      * Fuzzy matching username.
      *
      * @param username username
@@ -337,6 +316,7 @@ public class UserController {
      */
     @GetMapping("/search")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/auth/user/search")
     public List<String> searchUsersLikeUsername(@RequestParam String username) {
         return userDetailsService.findUserLikeUsername(username);
     }

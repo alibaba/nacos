@@ -374,7 +374,7 @@ public abstract class GrpcClient extends RpcClient {
             grpcConn.setChannel(managedChannel);
             //send a  setup request.
             ConnectionSetupRequest conSetupRequest = new ConnectionSetupRequest();
-            conSetupRequest.setClientVersion(VersionUtils.getFullClientVersion());
+            conSetupRequest.setClientVersion(getClientVersion());
             conSetupRequest.setLabels(super.getLabels());
             // set ability table
             conSetupRequest.setAbilityTable(
@@ -402,6 +402,10 @@ public abstract class GrpcClient extends RpcClient {
             recAbilityContext.release(null);
         }
         return null;
+    }
+    
+    protected String getClientVersion() {
+        return VersionUtils.getFullClientVersion();
     }
     
     /**

@@ -22,7 +22,8 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.auth.GrpcProtocolAuthService;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
+import com.alibaba.nacos.auth.serveridentity.ServerIdentityResult;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.context.RequestContext;
 import com.alibaba.nacos.core.context.RequestContextHolder;
@@ -31,6 +32,7 @@ import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import org.springframework.stereotype.Component;
@@ -46,13 +48,13 @@ import java.lang.reflect.Method;
 @Component
 public class RemoteRequestAuthFilter extends AbstractRequestFilter {
     
-    private final AuthConfigs authConfigs;
+    private final NacosAuthConfig authConfig;
     
     private final GrpcProtocolAuthService protocolAuthService;
     
-    public RemoteRequestAuthFilter(AuthConfigs authConfigs) {
-        this.authConfigs = authConfigs;
-        this.protocolAuthService = new GrpcProtocolAuthService(authConfigs);
+    public RemoteRequestAuthFilter() {
+        this.authConfig = NacosServerAuthConfig.getInstance();
+        this.protocolAuthService = new GrpcProtocolAuthService(authConfig);
         this.protocolAuthService.initialize();
     }
     
@@ -62,13 +64,26 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
         try {
             
             Method method = getHandleMethod(handlerClazz);
-            if (method.isAnnotationPresent(Secured.class) && authConfigs.isAuthEnabled()) {
-                
+            if (method.isAnnotationPresent(Secured.class)) {
+                Secured secured = method.getAnnotation(Secured.class);
+                // Inner API must do check server identity. So judge api type not inner api and whether auth is enabled.
+                if (ApiType.INNER_API != secured.apiType() && !authConfig.isAuthEnabled()) {
+                    return null;
+                }
                 if (Loggers.AUTH.isDebugEnabled()) {
                     Loggers.AUTH.debug("auth start, request: {}", request.getClass().getSimpleName());
                 }
-                
-                Secured secured = method.getAnnotation(Secured.class);
+                ServerIdentityResult identityResult = protocolAuthService.checkServerIdentity(request, secured);
+                switch (identityResult.getStatus()) {
+                    case FAIL:
+                        Response defaultResponseInstance = getDefaultResponseInstance(handlerClazz);
+                        defaultResponseInstance.setErrorInfo(NacosException.NO_RIGHT, identityResult.getMessage());
+                        return defaultResponseInstance;
+                    case MATCHED:
+                        return null;
+                    default:
+                        break;
+                }
                 if (!protocolAuthService.enableAuth(secured)) {
                     return null;
                 }
@@ -104,7 +119,6 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
             return defaultResponseInstance;
         } catch (Exception e) {
             Response defaultResponseInstance = getDefaultResponseInstance(handlerClazz);
-            
             defaultResponseInstance.setErrorInfo(NacosException.SERVER_ERROR, ExceptionUtil.getAllExceptionMsg(e));
             return defaultResponseInstance;
         }

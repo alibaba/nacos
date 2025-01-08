@@ -272,7 +272,6 @@
         <appender-ref ref="plugin-control-connection"/>
     </logger>
     
-    
     <logger name="com.alibaba.nacos.core.remote.digest" additivity="false" level="DEBUG">
         <appender-ref ref="remote-digest"/>
     </logger>

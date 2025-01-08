@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.config.remote.response.cluster.ConfigChangeClusterS
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
+import com.alibaba.nacos.config.server.service.ConfigGrayModelMigrateService;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class ConfigChangeClusterSyncRequestHandlerTest {
@@ -40,9 +43,13 @@ class ConfigChangeClusterSyncRequestHandlerTest {
     @Mock
     private DumpService dumpService;
     
+    @Mock
+    private ConfigGrayModelMigrateService configGrayModelMigrateService;
+    
     @BeforeEach
     void setUp() throws IOException {
-        configChangeClusterSyncRequestHandler = new ConfigChangeClusterSyncRequestHandler(dumpService);
+        configChangeClusterSyncRequestHandler = new ConfigChangeClusterSyncRequestHandler(dumpService,
+                configGrayModelMigrateService);
     }
     
     @Test
@@ -57,6 +64,43 @@ class ConfigChangeClusterSyncRequestHandlerTest {
         meta.setClientIp("1.1.1.1");
         ConfigChangeClusterSyncResponse configChangeClusterSyncResponse = configChangeClusterSyncRequestHandler.handle(
                 configChangeSyncRequest, meta);
+        assertEquals(configChangeClusterSyncResponse.getResultCode(), ResponseCode.SUCCESS.getCode());
+    }
+    
+    @Test
+    void testHandleBetaCompatibleFromOldServer() throws NacosException {
+        ConfigChangeClusterSyncRequest configChangeSyncRequest = new ConfigChangeClusterSyncRequest();
+        configChangeSyncRequest.setRequestId("");
+        configChangeSyncRequest.setDataId("dataId");
+        configChangeSyncRequest.setGroup("group123");
+        configChangeSyncRequest.setTenant("tenant...");
+        configChangeSyncRequest.setLastModified(1L);
+        configChangeSyncRequest.setBeta(true);
+        RequestMeta meta = new RequestMeta();
+        meta.setClientIp("1.1.1.1");
+        ConfigChangeClusterSyncResponse configChangeClusterSyncResponse = configChangeClusterSyncRequestHandler.handle(
+                configChangeSyncRequest, meta);
+        verify(configGrayModelMigrateService, times(1)).checkMigrateBeta(configChangeSyncRequest.getDataId(),
+                configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant());
+        assertEquals(configChangeClusterSyncResponse.getResultCode(), ResponseCode.SUCCESS.getCode());
+    }
+    
+    @Test
+    void testHandleOldCompatibleFromOldServer() throws NacosException {
+        ConfigChangeClusterSyncRequest configChangeSyncRequest = new ConfigChangeClusterSyncRequest();
+        configChangeSyncRequest.setRequestId("");
+        configChangeSyncRequest.setDataId("dataId");
+        configChangeSyncRequest.setGroup("group123");
+        configChangeSyncRequest.setTenant("tenant...");
+        configChangeSyncRequest.setTag("tag1234");
+        configChangeSyncRequest.setLastModified(1L);
+        RequestMeta meta = new RequestMeta();
+        meta.setClientIp("1.1.1.1");
+        ConfigChangeClusterSyncResponse configChangeClusterSyncResponse = configChangeClusterSyncRequestHandler.handle(
+                configChangeSyncRequest, meta);
+        verify(configGrayModelMigrateService, times(1)).checkMigrateTag(configChangeSyncRequest.getDataId(),
+                configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant(),
+                configChangeSyncRequest.getTag());
         assertEquals(configChangeClusterSyncResponse.getResultCode(), ResponseCode.SUCCESS.getCode());
     }
 }

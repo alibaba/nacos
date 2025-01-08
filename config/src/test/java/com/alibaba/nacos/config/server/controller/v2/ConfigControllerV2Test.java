@@ -18,10 +18,11 @@ package com.alibaba.nacos.config.server.controller.v2;
 
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.ConfigServletInner;
+import com.alibaba.nacos.config.server.enums.ApiVersionEnum;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
@@ -29,6 +30,7 @@ import com.alibaba.nacos.config.server.service.ConfigDetailService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.core.auth.AuthFilter;
+import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -52,7 +54,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,7 +93,10 @@ class ConfigControllerV2Test {
     private AuthFilter authFilter;
     
     @Mock
-    private AuthConfigs authConfigs;
+    private NacosAuthConfig authConfig;
+    
+    @Mock
+    private ControllerMethodsCache controllerMethodsCache;
     
     private ConfigControllerV2 configControllerV2;
     
@@ -115,7 +122,7 @@ class ConfigControllerV2Test {
         configDetailService = new ConfigDetailService(configInfoPersistService);
         configControllerV2 = new ConfigControllerV2(inner, configOperationService, configDetailService);
         mockmvc = MockMvcBuilders.standaloneSetup(configControllerV2).addFilter(authFilter).build();
-        when(authConfigs.isAuthEnabled()).thenReturn(false);
+        when(authConfig.isAuthEnabled()).thenReturn(false);
     }
     
     @Test
@@ -126,16 +133,18 @@ class ConfigControllerV2Test {
         
         doAnswer(x -> {
             x.getArgument(1, HttpServletResponse.class).setStatus(200);
-            x.getArgument(1, HttpServletResponse.class).setContentType(com.alibaba.nacos.common.http.param.MediaType.APPLICATION_JSON);
+            x.getArgument(1, HttpServletResponse.class)
+                    .setContentType(com.alibaba.nacos.common.http.param.MediaType.APPLICATION_JSON);
             x.getArgument(1, HttpServletResponse.class).getWriter().print(JacksonUtils.toJson(stringResult));
             return null;
-        }).when(inner).doGetConfig(any(HttpServletRequest.class), any(HttpServletResponse.class), eq(TEST_DATA_ID), eq(TEST_GROUP),
-                eq(TEST_NAMESPACE_ID), eq(TEST_TAG), eq(null), anyString(), eq(true));
+        }).when(inner).doGetConfig(any(HttpServletRequest.class), any(HttpServletResponse.class), eq(TEST_DATA_ID),
+                eq(TEST_GROUP), eq(TEST_NAMESPACE_ID_PUBLIC), eq(TEST_TAG), eq(null), anyString(),
+                eq(ApiVersionEnum.V2));
         
         configControllerV2.getConfig(request, response, TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, TEST_TAG);
         
-        verify(inner).doGetConfig(eq(request), eq(response), eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG),
-                eq(null), anyString(), eq(true));
+        verify(inner).doGetConfig(eq(request), eq(response), eq(TEST_DATA_ID), eq(TEST_GROUP),
+                eq(TEST_NAMESPACE_ID_PUBLIC), eq(TEST_TAG), eq(null), anyString(), eq(ApiVersionEnum.V2));
         JsonNode resNode = JacksonUtils.toObj(response.getContentAsString());
         Integer errCode = JacksonUtils.toObj(resNode.get("code").toString(), Integer.class);
         String actContent = JacksonUtils.toObj(resNode.get("data").toString(), String.class);
@@ -154,7 +163,8 @@ class ConfigControllerV2Test {
         configForm.setContent(TEST_CONTENT);
         MockHttpServletRequest request = new MockHttpServletRequest();
         
-        when(configOperationService.publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class), anyString())).thenReturn(true);
+        when(configOperationService.publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class),
+                anyString())).thenReturn(true);
         
         Result<Boolean> booleanResult = configControllerV2.publishConfig(configForm, request);
         
@@ -195,14 +205,14 @@ class ConfigControllerV2Test {
         configForm.setNamespaceId(TEST_NAMESPACE_ID_PUBLIC);
         configForm.setContent(TEST_CONTENT);
         MockHttpServletRequest request = new MockHttpServletRequest();
-        
-        when(configOperationService.publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class), anyString())).thenAnswer(
-                (Answer<Boolean>) invocation -> {
-                    if (invocation.getArgument(0, ConfigForm.class).getNamespaceId().equals(TEST_NAMESPACE_ID)) {
-                        return true;
-                    }
-                    return false;
-                });
+        Answer<Boolean> answer = invocationOnMock -> {
+            if (invocationOnMock.getArgument(0, ConfigForm.class).getNamespaceId().equals(TEST_NAMESPACE_ID_PUBLIC)) {
+                return true;
+            }
+            return false;
+        };
+        when(configOperationService.publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class),
+                anyString())).thenAnswer(answer);
         
         Result<Boolean> booleanResult = configControllerV2.publishConfig(configForm, request);
         
@@ -217,12 +227,13 @@ class ConfigControllerV2Test {
         
         MockHttpServletRequest request = new MockHttpServletRequest();
         
-        when(configOperationService.deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG), any(),
-                any())).thenReturn(true);
-        Result<Boolean> booleanResult = configControllerV2.deleteConfig(request, TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC,
-                TEST_TAG);
+        when(configOperationService.deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID_PUBLIC),
+                eq(TEST_TAG), any(), any())).thenReturn(true);
+        Result<Boolean> booleanResult = configControllerV2.deleteConfig(request, TEST_DATA_ID, TEST_GROUP,
+                TEST_NAMESPACE_ID, TEST_TAG);
         
-        verify(configOperationService).deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG), any(), any());
+        verify(configOperationService).deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID_PUBLIC),
+                eq(TEST_TAG), any(), any());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
         assertTrue(booleanResult.getData());
@@ -233,12 +244,14 @@ class ConfigControllerV2Test {
         
         MockHttpServletRequest request = new MockHttpServletRequest();
         
-        when(configOperationService.deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG), any(),
-                any())).thenReturn(true);
+        when(configOperationService.deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID_PUBLIC),
+                eq(TEST_TAG), any(), any())).thenReturn(true);
         
-        Result<Boolean> booleanResult = configControllerV2.deleteConfig(request, TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, TEST_TAG);
+        Result<Boolean> booleanResult = configControllerV2.deleteConfig(request, TEST_DATA_ID, TEST_GROUP,
+                TEST_NAMESPACE_ID, TEST_TAG);
         
-        verify(configOperationService).deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG), any(), any());
+        verify(configOperationService).deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID_PUBLIC),
+                eq(TEST_TAG), any(), any());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
         assertTrue(booleanResult.getData());
@@ -258,11 +271,14 @@ class ConfigControllerV2Test {
         Map<String, Object> configAdvanceInfo = new HashMap<>(8);
         configAdvanceInfo.put("content", "server.port");
         
-        when(configInfoPersistService.findConfigInfo4Page(1, 10, "test", "test", "", configAdvanceInfo)).thenReturn(page);
+        when(configInfoPersistService.findConfigInfo4Page(1, 10, "test", "test", "public",
+                configAdvanceInfo)).thenReturn(page);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CONFIG_CONTROLLER_V2_PATH + "/searchDetail")
-                .param("search", "accurate").param("dataId", "test").param("group", "test").param("appName", "").param("tenant", "")
-                .param("config_tags", "").param("pageNo", "1").param("pageSize", "10").param("config_detail", "server.port");
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(
+                        Constants.CONFIG_CONTROLLER_V2_PATH + "/searchDetail").param("search", "accurate")
+                .param("dataId", "test").param("group", "test").param("appName", "").param("tenant", "")
+                .param("config_tags", "").param("pageNo", "1").param("pageSize", "10")
+                .param("config_detail", "server.port");
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         
@@ -290,11 +306,13 @@ class ConfigControllerV2Test {
         Map<String, Object> configAdvanceInfo = new HashMap<>(8);
         configAdvanceInfo.put("content", "server.port");
         
-        when(configInfoPersistService.findConfigInfoLike4Page(1, 10, "test", "test", "", configAdvanceInfo)).thenReturn(page);
+        when(configInfoPersistService.findConfigInfoLike4Page(1, 10, "test", "test", "public",
+                configAdvanceInfo)).thenReturn(page);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CONFIG_CONTROLLER_V2_PATH + "/searchDetail")
-                .param("search", "blur").param("dataId", "test").param("group", "test").param("appName", "").param("tenant", "")
-                .param("config_tags", "").param("pageNo", "1").param("pageSize", "10").param("config_detail", "server.port");
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(
+                        Constants.CONFIG_CONTROLLER_V2_PATH + "/searchDetail").param("search", "blur").param("dataId", "test")
+                .param("group", "test").param("appName", "").param("tenant", "").param("config_tags", "")
+                .param("pageNo", "1").param("pageSize", "10").param("config_detail", "server.port");
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         
@@ -310,11 +328,15 @@ class ConfigControllerV2Test {
     
     @Test
     void testGetConfigAuthFilter() throws Exception {
-        when(authConfigs.isAuthEnabled()).thenReturn(true);
-        
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CONFIG_CONTROLLER_V2_PATH + "/searchDetail")
-                .param("search", "accurate").param("dataId", "test").param("group", "test").param("appName", "").param("tenant", "")
-                .param("config_tags", "").param("pageNo", "1").param("pageSize", "10").param("config_detail", "server.port");
+        when(authConfig.isAuthEnabled()).thenReturn(true);
+        Method method = Arrays.stream(ConfigControllerV2.class.getMethods())
+                .filter(m -> m.getName().equals("searchConfigByDetails")).findFirst().get();
+        when(controllerMethodsCache.getMethod(any(HttpServletRequest.class))).thenReturn(method);
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(
+                        Constants.CONFIG_CONTROLLER_V2_PATH + "/searchDetail").param("search", "accurate")
+                .param("dataId", "test").param("group", "test").param("appName", "").param("tenant", "")
+                .param("config_tags", "").param("pageNo", "1").param("pageSize", "10")
+                .param("config_detail", "server.port");
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         
         assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());

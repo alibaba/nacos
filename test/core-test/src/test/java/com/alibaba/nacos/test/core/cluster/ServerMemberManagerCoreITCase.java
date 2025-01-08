@@ -34,7 +34,6 @@ import org.junit.jupiter.api.MethodOrderer.MethodName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.core.env.StandardEnvironment;
-import org.springframework.mock.web.MockServletContext;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -80,7 +79,7 @@ class ServerMemberManagerCoreITCase {
     
     @BeforeEach
     void before() throws Exception {
-        memberManager = new ServerMemberManager(new MockServletContext());
+        memberManager = new ServerMemberManager();
     }
     
     @AfterEach

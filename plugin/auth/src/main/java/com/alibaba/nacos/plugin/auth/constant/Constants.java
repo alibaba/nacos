@@ -26,6 +26,8 @@ public class Constants {
     public static class Auth {
         
         public static final String NACOS_CORE_AUTH_ENABLED = "nacos.core.auth.enabled";
+    
+        public static final String NACOS_CORE_AUTH_CONSOLE_ENABLED = "nacos.core.auth.console.enabled";
         
         public static final String NACOS_CORE_AUTH_SYSTEM_TYPE = "nacos.core.auth.system.type";
         
@@ -34,8 +36,6 @@ public class Constants {
         public static final String NACOS_CORE_AUTH_SERVER_IDENTITY_KEY = "nacos.core.auth.server.identity.key";
         
         public static final String NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE = "nacos.core.auth.server.identity.value";
-        
-        public static final String NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE = "nacos.core.auth.enable.userAgentAuthWhite";
         
     }
     

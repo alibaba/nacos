@@ -63,7 +63,7 @@ class NameSpaceList extends React.Component {
           linkKey,
         },
         success: res => {
-          if (res.code === 200) {
+          if (res.code === 0) {
             window[keyName] = res.data;
             this.setState({
               [keyName]: res.data,
@@ -118,9 +118,9 @@ class NameSpaceList extends React.Component {
     } else {
       request({
         type: 'get',
-        url: 'v1/console/namespaces',
+        url: 'v3/console/core/namespace/list',
         success: res => {
-          if (res.code === 200) {
+          if (res.code === 0) {
             this.handleNameSpaces(res.data);
           } else {
             Dialog.alert({
@@ -138,7 +138,7 @@ class NameSpaceList extends React.Component {
   }
 
   handleNameSpaces(data) {
-    const nownamespace = getParams('namespace') || '';
+    const nownamespace = getParams('namespace') || 'public';
 
     // let namespaceShowName = this._namespaceShowName || data[0].namespaceShowName || '';
     window.namespaceList = data;
@@ -154,7 +154,7 @@ class NameSpaceList extends React.Component {
     }
     window.namespaceShowName = namespaceShowName;
     window.namespaceDesc = namespaceDesc;
-    setParams('namespace', nownamespace || '');
+    setParams('namespace', nownamespace || 'public');
     localStorage.setItem('namespace', nownamespace);
     // setParams('namespaceShowName', namespaceShowName);
     this.props.setNowNameSpace &&

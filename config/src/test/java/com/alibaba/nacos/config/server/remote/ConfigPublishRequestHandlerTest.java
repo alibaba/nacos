@@ -29,8 +29,10 @@ import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
-import com.alibaba.nacos.config.server.service.AggrWhitelist;
+import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
+import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
@@ -49,9 +51,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -67,7 +69,8 @@ class ConfigPublishRequestHandlerTest {
     @Mock
     ConfigInfoTagPersistService configInfoTagPersistService;
     
-    MockedStatic<AggrWhitelist> aggrWhitelistMockedStatic;
+    @Mock
+    ConfigInfoGrayPersistService configInfoGrayPersistService;
     
     MockedStatic<EnvUtil> envUtilMockedStatic;
     
@@ -75,18 +78,16 @@ class ConfigPublishRequestHandlerTest {
     
     @BeforeEach
     void setUp() {
-        aggrWhitelistMockedStatic = Mockito.mockStatic(AggrWhitelist.class);
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
-        
-        configPublishRequestHandler = new ConfigPublishRequestHandler(configInfoPersistService, configInfoTagPersistService,
-                configInfoBetaPersistService);
+        ConfigOperationService configOperationService = new ConfigOperationService(configInfoPersistService,
+                configInfoTagPersistService, configInfoBetaPersistService, configInfoGrayPersistService);
+        configPublishRequestHandler = new ConfigPublishRequestHandler(configOperationService);
         DatasourceConfiguration.setEmbeddedStorage(false);
         
     }
     
     @AfterEach
     void after() {
-        aggrWhitelistMockedStatic.close();
         envUtilMockedStatic.close();
     }
     
@@ -149,8 +150,6 @@ class ConfigPublishRequestHandlerTest {
         assertEquals(group, reference.get().group);
         assertEquals(tenant, reference.get().tenant);
         assertEquals(timestamp, reference.get().lastModifiedTs);
-        assertFalse(reference.get().isBatch);
-        assertFalse(reference.get().isBeta);
         
     }
     
@@ -203,8 +202,8 @@ class ConfigPublishRequestHandlerTest {
         long id = timestamp / 1000;
         configOperateResult.setId(id);
         configOperateResult.setLastModified(timestamp);
-        when(configInfoPersistService.insertOrUpdateCas(eq(requestMeta.getClientIp()), eq(srcUser), any(ConfigInfo.class),
-                any(Map.class))).thenReturn(configOperateResult);
+        when(configInfoPersistService.insertOrUpdateCas(eq(requestMeta.getClientIp()), eq(srcUser),
+                any(ConfigInfo.class), any(Map.class))).thenReturn(configOperateResult);
         ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
@@ -214,8 +213,6 @@ class ConfigPublishRequestHandlerTest {
         assertEquals(group, reference.get().group);
         assertEquals(tenant, reference.get().tenant);
         assertEquals(timestamp, reference.get().lastModifiedTs);
-        assertFalse(reference.get().isBatch);
-        assertFalse(reference.get().isBeta);
     }
     
     /**
@@ -272,8 +269,8 @@ class ConfigPublishRequestHandlerTest {
         long id = timestamp / 1000;
         configOperateResult.setId(id);
         configOperateResult.setLastModified(timestamp);
-        when(configInfoPersistService.insertOrUpdateCas(eq(requestMeta.getClientIp()), eq(srcUser), any(ConfigInfo.class),
-                any(Map.class))).thenThrow(new NacosRuntimeException(502, "mock error"));
+        when(configInfoPersistService.insertOrUpdateCas(eq(requestMeta.getClientIp()), eq(srcUser),
+                any(ConfigInfo.class), any(Map.class))).thenThrow(new NacosRuntimeException(502, "mock error"));
         ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
@@ -281,48 +278,6 @@ class ConfigPublishRequestHandlerTest {
         Thread.sleep(500L);
         assertTrue(reference.get() == null);
         
-    }
-    
-    @Test
-    void testPublishAggrCheckFail() throws NacosException, InterruptedException {
-        
-        RequestMeta requestMeta = new RequestMeta();
-        String clientIp = "127.0.0.1";
-        requestMeta.setClientIp(clientIp);
-        
-        String dataId = "testPublishAggrCheckFail";
-        String group = "group";
-        String tenant = "tenant";
-        String content = "content";
-        ConfigPublishRequest configPublishRequest = new ConfigPublishRequest();
-        configPublishRequest.setDataId(dataId);
-        configPublishRequest.setGroup(group);
-        configPublishRequest.setTenant(tenant);
-        configPublishRequest.setContent(content);
-        when(AggrWhitelist.isAggrDataId(eq(dataId))).thenReturn(Boolean.TRUE);
-        
-        AtomicReference<ConfigDataChangeEvent> reference = new AtomicReference<>();
-        NotifyCenter.registerSubscriber(new Subscriber() {
-            
-            @Override
-            public void onEvent(Event event) {
-                ConfigDataChangeEvent event1 = (ConfigDataChangeEvent) event;
-                if (event1.dataId.equals(dataId)) {
-                    reference.set((ConfigDataChangeEvent) event);
-                }
-            }
-            
-            @Override
-            public Class<? extends Event> subscribeType() {
-                return ConfigDataChangeEvent.class;
-            }
-        });
-        ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
-        
-        assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
-        assertTrue(response.getMessage().contains("is aggr"));
-        Thread.sleep(500L);
-        assertTrue(reference.get() == null);
     }
     
     @Test
@@ -370,8 +325,10 @@ class ConfigPublishRequestHandlerTest {
         long id = timestamp / 1000;
         configOperateResult.setId(id);
         configOperateResult.setLastModified(timestamp);
-        when(configInfoBetaPersistService.insertOrUpdateBeta(any(ConfigInfo.class), eq(betaIps), eq(requestMeta.getClientIp()),
-                eq(srcUser))).thenReturn(configOperateResult);
+        when(configInfoBetaPersistService.insertOrUpdateBeta(any(ConfigInfo.class), eq(betaIps),
+                eq(requestMeta.getClientIp()), eq(srcUser))).thenReturn(new ConfigOperateResult());
+        when(configInfoGrayPersistService.insertOrUpdateGray(any(ConfigInfo.class), eq(BetaGrayRule.TYPE_BETA),
+                anyString(), eq(requestMeta.getClientIp()), eq(srcUser))).thenReturn(configOperateResult);
         ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
@@ -381,8 +338,7 @@ class ConfigPublishRequestHandlerTest {
         assertEquals(group, reference.get().group);
         assertEquals(tenant, reference.get().tenant);
         assertEquals(timestamp, reference.get().lastModifiedTs);
-        assertFalse(reference.get().isBatch);
-        assertTrue(reference.get().isBeta);
+        assertEquals("beta", reference.get().grayName);
         
     }
     
@@ -432,8 +388,10 @@ class ConfigPublishRequestHandlerTest {
         long id = timestamp / 1000;
         configOperateResult.setId(id);
         configOperateResult.setLastModified(timestamp);
-        when(configInfoBetaPersistService.insertOrUpdateBetaCas(any(ConfigInfo.class), eq(betaIps), eq(requestMeta.getClientIp()),
-                eq(srcUser))).thenReturn(configOperateResult);
+        when(configInfoBetaPersistService.insertOrUpdateBetaCas(any(ConfigInfo.class), eq(betaIps),
+                eq(requestMeta.getClientIp()), eq(srcUser))).thenReturn(new ConfigOperateResult());
+        when(configInfoGrayPersistService.insertOrUpdateGrayCas(any(ConfigInfo.class), eq(BetaGrayRule.TYPE_BETA),
+                anyString(), eq(requestMeta.getClientIp()), eq(srcUser))).thenReturn(configOperateResult);
         ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
@@ -443,8 +401,8 @@ class ConfigPublishRequestHandlerTest {
         assertEquals(group, reference.get().group);
         assertEquals(tenant, reference.get().tenant);
         assertEquals(timestamp, reference.get().lastModifiedTs);
-        assertFalse(reference.get().isBatch);
-        assertTrue(reference.get().isBeta);
+        assertEquals(tenant, reference.get().tenant);
+        assertEquals("beta", reference.get().grayName);
         
     }
     
@@ -495,9 +453,10 @@ class ConfigPublishRequestHandlerTest {
         long id = timestamp / 1000;
         configOperateResult.setId(id);
         configOperateResult.setLastModified(timestamp);
-        when(configInfoTagPersistService.insertOrUpdateTag(any(ConfigInfo.class), eq(tag), eq(requestMeta.getClientIp()),
-                eq(srcUser))).thenReturn(configOperateResult);
-        
+        when(configInfoTagPersistService.insertOrUpdateTag(any(ConfigInfo.class), eq(tag),
+                eq(requestMeta.getClientIp()), eq(srcUser))).thenReturn(new ConfigOperateResult());
+        when(configInfoGrayPersistService.insertOrUpdateGray(any(ConfigInfo.class), eq("tag_" + tag), anyString(),
+                eq(requestMeta.getClientIp()), eq(srcUser))).thenReturn(configOperateResult);
         ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
@@ -507,9 +466,8 @@ class ConfigPublishRequestHandlerTest {
         assertEquals(group, reference.get().group);
         assertEquals(tenant, reference.get().tenant);
         assertEquals(timestamp, reference.get().lastModifiedTs);
-        assertFalse(reference.get().isBatch);
-        assertFalse(reference.get().isBeta);
-        assertEquals(tag, reference.get().tag);
+        
+        assertEquals("tag_" + tag, reference.get().grayName);
         
     }
     
@@ -554,9 +512,10 @@ class ConfigPublishRequestHandlerTest {
         long id = timestamp / 1000;
         configOperateResult.setId(id);
         configOperateResult.setLastModified(timestamp);
-        when(configInfoTagPersistService.insertOrUpdateTagCas(any(ConfigInfo.class), eq(tag), eq(requestMeta.getClientIp()),
-                eq(srcUser))).thenReturn(configOperateResult);
-        
+        when(configInfoTagPersistService.insertOrUpdateTagCas(any(ConfigInfo.class), eq(tag),
+                eq(requestMeta.getClientIp()), eq(srcUser))).thenReturn(new ConfigOperateResult());
+        when(configInfoGrayPersistService.insertOrUpdateGrayCas(any(ConfigInfo.class), eq("tag_" + tag), anyString(),
+                eq(requestMeta.getClientIp()), eq(srcUser))).thenReturn(configOperateResult);
         ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
@@ -566,10 +525,7 @@ class ConfigPublishRequestHandlerTest {
         assertEquals(group, reference.get().group);
         assertEquals(tenant, reference.get().tenant);
         assertEquals(timestamp, reference.get().lastModifiedTs);
-        assertFalse(reference.get().isBatch);
-        assertFalse(reference.get().isBeta);
-        assertEquals(tag, reference.get().tag);
-        
+        assertEquals("tag_" + tag, reference.get().grayName);
     }
     
 }

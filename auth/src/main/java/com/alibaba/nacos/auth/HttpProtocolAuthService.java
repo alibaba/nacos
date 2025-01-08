@@ -17,16 +17,17 @@
 package com.alibaba.nacos.auth;
 
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.plugin.auth.api.IdentityContext;
-import com.alibaba.nacos.plugin.auth.api.Resource;
-import com.alibaba.nacos.auth.config.AuthConfigs;
-import com.alibaba.nacos.plugin.auth.constant.SignType;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.auth.context.HttpIdentityContextBuilder;
 import com.alibaba.nacos.auth.parser.http.AbstractHttpResourceParser;
 import com.alibaba.nacos.auth.parser.http.ConfigHttpResourceParser;
 import com.alibaba.nacos.auth.parser.http.NamingHttpResourceParser;
+import com.alibaba.nacos.auth.serveridentity.ServerIdentity;
 import com.alibaba.nacos.auth.util.Loggers;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.auth.api.IdentityContext;
+import com.alibaba.nacos.plugin.auth.api.Resource;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.HashMap;
@@ -43,14 +44,15 @@ public class HttpProtocolAuthService extends AbstractProtocolAuthService<HttpSer
     
     private final HttpIdentityContextBuilder identityContextBuilder;
     
-    public HttpProtocolAuthService(AuthConfigs authConfigs) {
-        super(authConfigs);
+    public HttpProtocolAuthService(NacosAuthConfig authConfig) {
+        super(authConfig);
         resourceParserMap = new HashMap<>(2);
-        identityContextBuilder = new HttpIdentityContextBuilder(authConfigs);
+        identityContextBuilder = new HttpIdentityContextBuilder(authConfig);
     }
     
     @Override
     public void initialize() {
+        super.initialize();
         resourceParserMap.put(SignType.NAMING, new NamingHttpResourceParser());
         resourceParserMap.put(SignType.CONFIG, new ConfigHttpResourceParser());
     }
@@ -71,5 +73,12 @@ public class HttpProtocolAuthService extends AbstractProtocolAuthService<HttpSer
     @Override
     public IdentityContext parseIdentity(HttpServletRequest request) {
         return identityContextBuilder.build(request);
+    }
+    
+    @Override
+    protected ServerIdentity parseServerIdentity(HttpServletRequest request) {
+        String serverIdentityKey = authConfig.getServerIdentityKey();
+        String serverIdentity = request.getHeader(serverIdentityKey);
+        return new ServerIdentity(serverIdentityKey, serverIdentity);
     }
 }

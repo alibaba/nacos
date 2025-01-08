@@ -51,9 +51,9 @@ public final class ThreadPoolManager {
     static {
         INSTANCE.init();
         ThreadUtils.addShutdownHook(new Thread(() -> {
-            LOGGER.warn("[ThreadPoolManager] Start destroying ThreadPool");
+            LOGGER.info("[ThreadPoolManager] Start destroying ThreadPool");
             shutdown();
-            LOGGER.warn("[ThreadPoolManager] Destruction of the end");
+            LOGGER.info("[ThreadPoolManager] Completed destruction of ThreadPool");
         }));
     }
     

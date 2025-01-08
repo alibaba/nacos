@@ -21,21 +21,22 @@ import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
-import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfigFactory;
+import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -60,8 +61,14 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
     
     private static final long DEFAULT_REQUEST_TIME_OUT = 3000L;
     
-    @Autowired
-    ServerMemberManager serverMemberManager;
+    final ServerMemberManager serverMemberManager;
+    
+    final AuthConfigs authConfigs;
+    
+    public ClusterRpcClientProxy(ServerMemberManager serverMemberManager, AuthConfigs authConfigs) {
+        this.serverMemberManager = serverMemberManager;
+        this.authConfigs = authConfigs;
+    }
     
     /**
      * init after constructor.
@@ -184,6 +191,7 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
     public Response sendRequest(Member member, Request request, long timeoutMills) throws NacosException {
         RpcClient client = RpcClientFactory.getClient(memberClientKey(member));
         if (client != null) {
+            injectorServerIdentity(request);
             return client.request(request, timeoutMills);
         } else {
             throw new NacosException(CLIENT_INVALID_PARAM, "No rpc client related to member: " + member);
@@ -201,6 +209,7 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
     public void asyncRequest(Member member, Request request, RequestCallBack callBack) throws NacosException {
         RpcClient client = RpcClientFactory.getClient(memberClientKey(member));
         if (client != null) {
+            injectorServerIdentity(request);
             client.asyncRequest(request, callBack);
         } else {
             throw new NacosException(CLIENT_INVALID_PARAM, "No rpc client related to member: " + member);
@@ -242,5 +251,11 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
             return false;
         }
         return client.isRunning();
+    }
+    
+    private void injectorServerIdentity(Request request) {
+        if (StringUtils.isNotBlank(authConfigs.getServerIdentityKey())) {
+            request.putHeader(authConfigs.getServerIdentityKey(), authConfigs.getServerIdentityValue());
+        }
     }
 }

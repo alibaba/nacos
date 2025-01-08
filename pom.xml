@@ -88,7 +88,7 @@
     </issueManagement>
     
     <properties>
-        <revision>2.5.0-SNAPSHOT</revision>
+        <revision>3.0.0-ALPHA.2</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Compiler settings properties -->
@@ -149,11 +149,10 @@
         <jraft-core.version>1.3.14</jraft-core.version>
         <rpc-grpc-impl.version>${jraft-core.version}</rpc-grpc-impl.version>
         <SnakeYaml.version>2.0</SnakeYaml.version>
+        <kubernetes.client.version>14.0.0</kubernetes.client.version>
         <junit5.version>5.10.2</junit5.version>
         
         <!-- override dependency version -->
-        <spring.version>6.1.10</spring.version>
-        <spring-security.version>6.3.1</spring-security.version>
         <micrometer.version>1.12.8</micrometer.version>
         
         <!-- native -->
@@ -627,10 +626,15 @@
         <module>prometheus</module>
         <module>persistence</module>
         <module>logger-adapter-impl</module>
+        <module>k8s-sync</module>
+        <module>bootstrap</module>
+        <module>server</module>
+        <module>lock</module>
     </modules>
     
     <!-- Default dependencies in all subprojects -->
     <dependencies>
+        
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -706,6 +710,11 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-lock</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.alibaba.nacos</groupId>
                 <artifactId>nacos-persistence</artifactId>
                 <version>${project.version}</version>
@@ -762,6 +771,16 @@
             </dependency>
             <dependency>
                 <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-server</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-bootstrap</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-distribution</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -779,6 +798,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-istio</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-k8s-sync</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -1078,6 +1102,18 @@
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
                 <version>${SnakeYaml.version}</version>
+            </dependency>
+            
+            <dependency>
+                <groupId>io.kubernetes</groupId>
+                <artifactId>client-java-api</artifactId>
+                <version>${kubernetes.client.version}</version>
+            </dependency>
+            
+            <dependency>
+                <groupId>io.kubernetes</groupId>
+                <artifactId>client-java</artifactId>
+                <version>${kubernetes.client.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

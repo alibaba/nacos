@@ -22,8 +22,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
 
-import java.util.Optional;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class AuthConfigsTest {
@@ -35,8 +33,6 @@ class AuthConfigsTest {
     private static final String TEST_SERVER_IDENTITY_KEY = "testKey";
     
     private static final String TEST_SERVER_IDENTITY_VALUE = "testValue";
-    
-    private static final boolean TEST_ENABLE_UA_WHITE = true;
     
     private AuthConfigs authConfigs;
     
@@ -56,16 +52,11 @@ class AuthConfigsTest {
         environment.setProperty("nacos.core.auth.caching.enabled", String.valueOf(TEST_CACHING_ENABLED));
         environment.setProperty("nacos.core.auth.server.identity.key", TEST_SERVER_IDENTITY_KEY);
         environment.setProperty("nacos.core.auth.server.identity.value", TEST_SERVER_IDENTITY_VALUE);
-        environment.setProperty("nacos.core.auth.enable.userAgentAuthWhite", String.valueOf(TEST_ENABLE_UA_WHITE));
         
         authConfigs.onEvent(ServerConfigChangeEvent.newEvent());
-        assertEquals(Optional.of(TEST_AUTH_ENABLED).orElse(Boolean.FALSE),
-                Optional.of(authConfigs.isAuthEnabled()).orElse(Boolean.FALSE));
-        assertEquals(Optional.of(TEST_CACHING_ENABLED).orElse(Boolean.FALSE),
-                Optional.of(authConfigs.isCachingEnabled()).orElse(Boolean.FALSE));
+        assertEquals(TEST_AUTH_ENABLED, authConfigs.isAuthEnabled());
+        assertEquals(TEST_CACHING_ENABLED, authConfigs.isCachingEnabled());
         assertEquals(TEST_SERVER_IDENTITY_KEY, authConfigs.getServerIdentityKey());
         assertEquals(TEST_SERVER_IDENTITY_VALUE, authConfigs.getServerIdentityValue());
-        assertEquals(Optional.of(TEST_ENABLE_UA_WHITE).orElse(Boolean.FALSE),
-                Optional.of(authConfigs.isEnableUserAgentAuthWhite()).orElse(Boolean.FALSE));
     }
 }

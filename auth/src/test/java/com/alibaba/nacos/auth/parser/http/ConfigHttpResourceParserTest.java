@@ -100,7 +100,7 @@ class ConfigHttpResourceParserTest {
         Mockito.when(request.getParameter(eq(Constants.GROUP))).thenReturn("testG");
         Mockito.when(request.getParameter(eq(Constants.DATA_ID))).thenReturn("testD");
         Resource actual = resourceParser.parse(request, secured);
-        assertEquals(StringUtils.EMPTY, actual.getNamespaceId());
+        assertEquals(Constants.DEFAULT_NAMESPACE_ID, actual.getNamespaceId());
         assertEquals("testG", actual.getGroup());
         assertEquals("testD", actual.getName());
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());

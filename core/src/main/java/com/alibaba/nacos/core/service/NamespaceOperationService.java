@@ -43,12 +43,10 @@ import java.util.List;
 public class NamespaceOperationService {
     
     private final NamespacePersistService namespacePersistService;
+
+    private static final String DEFAULT_NAMESPACE_SHOW_NAME = "public";
     
-    private static final String DEFAULT_NAMESPACE = "public";
-    
-    private static final String DEFAULT_NAMESPACE_SHOW_NAME = "Public";
-    
-    private static final String DEFAULT_NAMESPACE_DESCRIPTION = "Public Namespace";
+    private static final String DEFAULT_NAMESPACE_DESCRIPTION = "Default Namespace";
     
     private static final int DEFAULT_QUOTA = 200;
     
@@ -64,8 +62,8 @@ public class NamespaceOperationService {
         // TODO 获取用kp
         List<TenantInfo> tenantInfos = namespacePersistService.findTenantByKp(DEFAULT_KP);
         
-        Namespace namespace0 = new Namespace(NamespaceUtil.getNamespaceDefaultId(), DEFAULT_NAMESPACE, DEFAULT_QUOTA, 0,
-                NamespaceTypeEnum.GLOBAL.getType());
+        Namespace namespace0 = new Namespace(NamespaceUtil.getNamespaceDefaultId(), DEFAULT_NAMESPACE_SHOW_NAME,
+                DEFAULT_NAMESPACE_DESCRIPTION, DEFAULT_QUOTA, 0, NamespaceTypeEnum.GLOBAL.getType());
         NamespaceDetailInjectorHolder.getInstance().injectDetail(namespace0);
         List<Namespace> namespaceList = new ArrayList<>();
         namespaceList.add(namespace0);
@@ -116,9 +114,13 @@ public class NamespaceOperationService {
     public Boolean createNamespace(String namespaceId, String namespaceName, String namespaceDesc)
             throws NacosException {
         // TODO 获取用kp
+        if (NamespaceUtil.isDefaultNamespaceId(namespaceId)) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.NAMESPACE_ALREADY_EXIST,
+                    "namespaceId [" + namespaceId + "] is default namespace id and already exist.");
+        }
         if (namespacePersistService.tenantInfoCountByTenantId(namespaceId) > 0) {
-            throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.NAMESPACE_ALREADY_EXIST,
-                    "namespaceId [" + namespaceId + "] already exist");
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.NAMESPACE_ALREADY_EXIST,
+                    "namespaceId [" + namespaceId + "] already exist.");
         }
         
         namespacePersistService

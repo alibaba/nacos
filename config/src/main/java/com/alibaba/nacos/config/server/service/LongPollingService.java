@@ -21,7 +21,6 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
@@ -243,7 +242,7 @@ public class LongPollingService {
             public void onEvent(Event event) {
                 if (event instanceof LocalDataChangeEvent) {
                     LocalDataChangeEvent evt = (LocalDataChangeEvent) event;
-                    ConfigExecutor.executeLongPolling(new DataChangeTask(evt.groupKey, evt.isBeta, evt.betaIps));
+                    ConfigExecutor.executeLongPolling(new DataChangeTask(evt.groupKey));
                 }
                 
             }
@@ -274,11 +273,6 @@ public class LongPollingService {
                     ClientLongPolling clientSub = iter.next();
                     if (clientSub.clientMd5Map.containsKey(groupKey)) {
                         
-                        // If published tag is not in the tag list, then it skipped.
-                        if (StringUtils.isNotBlank(tag) && !tag.equals(clientSub.tag)) {
-                            continue;
-                        }
-                        
                         getRetainIps().put(clientSub.ip, System.currentTimeMillis());
                         iter.remove(); // Delete subscribers' relationships.
                         LogUtil.CLIENT_LOG.info("{}|{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - changeTime),
@@ -294,26 +288,14 @@ public class LongPollingService {
             }
         }
         
-        DataChangeTask(String groupKey, boolean isBeta, List<String> betaIps) {
-            this(groupKey, isBeta, betaIps, null);
-        }
-        
-        DataChangeTask(String groupKey, boolean isBeta, List<String> betaIps, String tag) {
+        DataChangeTask(String groupKey) {
             this.groupKey = groupKey;
-            this.isBeta = isBeta;
-            this.betaIps = betaIps;
-            this.tag = tag;
         }
         
         final String groupKey;
         
         final long changeTime = System.currentTimeMillis();
         
-        final boolean isBeta;
-        
-        final List<String> betaIps;
-        
-        final String tag;
     }
     
     class StatTask implements Runnable {
