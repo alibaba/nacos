@@ -149,7 +149,7 @@ class ConfigChainEntryHandlerTest {
     
     @Test
     public void testGetName() {
-        assertEquals("configChainEntryHandler", configChainEntryHandler.getName());
+        assertEquals("chainEntryHandler", configChainEntryHandler.getName());
     }
     
 }

@@ -58,7 +58,7 @@ class SpecialTagNotFoundHandlerTest {
     
     @Test
     public void getName() {
-        assertEquals("SpecialTagNotFoundHandler", specialTagNotFoundHandler.getName());
+        assertEquals("specialTagNotFoundHandler", specialTagNotFoundHandler.getName());
     }
     
 }
