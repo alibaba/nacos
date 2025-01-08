@@ -549,15 +549,6 @@ public class NacosNamingService implements NamingService {
     @Override
     public void fuzzyWatch(String serviceNamePattern, String groupNamePattern,
             FuzzyWatchEventWatcher listener) throws NacosException {
-        // only support prefix match right now
-        if (!serviceNamePattern.endsWith(ANY_PATTERN)) {
-            if (serviceNamePattern.startsWith(ANY_PATTERN)) {
-                throw new UnsupportedOperationException("Suffix matching for service names is not supported yet."
-                        + " It will be supported in future updates if needed.");
-            } else {
-                throw new UnsupportedOperationException("Illegal service name pattern, please read the documentation and pass a valid pattern.");
-            }
-        }
         doFuzzyWatch(serviceNamePattern, groupNamePattern, listener);
     }
     

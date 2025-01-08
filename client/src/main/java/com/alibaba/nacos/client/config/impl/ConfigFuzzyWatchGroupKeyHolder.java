@@ -94,10 +94,8 @@ public class ConfigFuzzyWatchGroupKeyHolder {
                 if (context == null) {
                     return;
                 }
-            
-                String[] parseKey = GroupKey.parseKey(
-                        fuzzyWatchNotifyEvent.getGroupKey());
-                context.notifyWatcher(parseKey[0], parseKey[1],parseKey[2], fuzzyWatchNotifyEvent.getChangedType(),fuzzyWatchNotifyEvent.getSyncType(),
+                
+                context.notifyWatcher(fuzzyWatchNotifyEvent.getGroupKey(), fuzzyWatchNotifyEvent.getChangedType(),fuzzyWatchNotifyEvent.getSyncType(),
                         fuzzyWatchNotifyEvent.getWatcherUuid());
             }
         
@@ -107,6 +105,10 @@ public class ConfigFuzzyWatchGroupKeyHolder {
             }
         });
     
+        
+    }
+    
+    public void start(){
         agent.executor.schedule(() -> {
             while (!agent.executor.isShutdown() && !agent.executor.isTerminated()) {
                 try {
@@ -128,7 +130,6 @@ public class ConfigFuzzyWatchGroupKeyHolder {
         }, 0L, TimeUnit.MILLISECONDS);
     }
     
-    
     /**
      * Removes the fuzzy listen context for the specified data ID pattern and group.
      *
@@ -137,21 +138,21 @@ public class ConfigFuzzyWatchGroupKeyHolder {
     public void removeFuzzyListenContext(String groupKeyPattern) {
         synchronized (fuzzyListenContextMap) {
             Map<String, ConfigFuzzyWatchContext> copy = new HashMap<>(fuzzyListenContextMap.get());
-            ConfigFuzzyWatchContext removedContext = copy.remove(groupKeyPattern);
-            
+            copy.remove(groupKeyPattern);
             fuzzyListenContextMap.set(copy);
         }
-        LOGGER.info("[{}] [fuzzy-listen-unsubscribe] {}", agent.getName(), groupKeyPattern);
+        LOGGER.info("[{}] [fuzzy-watch-unsubscribe] {}", agent.getName(), groupKeyPattern);
     }
     
     public ConfigFuzzyWatchContext registerFuzzyWatcher(String dataIdPattern, String groupPattern,
             ConfigFuzzyWatcher configFuzzyWatcher){
         ConfigFuzzyWatchContext configFuzzyWatchContext = initFuzzyWatchContextIfAbsent(dataIdPattern, groupPattern);
-        if(configFuzzyWatchContext.addWatcher(configFuzzyWatcher)){
+        ConfigFuzzyWatcherWrapper configFuzzyWatcherWrapper=new ConfigFuzzyWatcherWrapper(configFuzzyWatcher);
+        if(configFuzzyWatchContext.addWatcher(configFuzzyWatcherWrapper)){
             if(configFuzzyWatchContext.getReceivedGroupKeys()!=null){
                 for(String groupKey:configFuzzyWatchContext.getReceivedGroupKeys()){
                     FuzzyWatchNotifyEvent fuzzyWatchNotifyEvent = FuzzyWatchNotifyEvent.buildNotifyPatternAllListenersEvent(groupKey,
-                            configFuzzyWatchContext.getGroupKeyPattern(), ADD_CONFIG,FUZZY_WATCH_INIT_NOTIFY,configFuzzyWatcher.getUuid());
+                            configFuzzyWatchContext.getGroupKeyPattern(), ADD_CONFIG,FUZZY_WATCH_INIT_NOTIFY,configFuzzyWatcherWrapper.getUuid());
                     NotifyCenter.publishEvent(fuzzyWatchNotifyEvent);
                 }
         
@@ -246,7 +247,7 @@ public class ConfigFuzzyWatchGroupKeyHolder {
         if (configFuzzyWatchContext != null) {
             synchronized (configFuzzyWatchContext) {
                 configFuzzyWatchContext.removeWatcher(watcher);
-                if (configFuzzyWatchContext.getConfigFuzzyWatchers().isEmpty()) {
+                if (configFuzzyWatchContext.getConfigFuzzyWatcherWrappers().isEmpty()) {
                     configFuzzyWatchContext.setDiscard(true);
                     configFuzzyWatchContext.setConsistentWithServer(false);
                 }
@@ -419,7 +420,7 @@ public class ConfigFuzzyWatchGroupKeyHolder {
         ConfigFuzzyWatchRequest request = new ConfigFuzzyWatchRequest();
         request.setGroupKeyPattern(context.getGroupKeyPattern());
         request.setInitializing(context.isInitializing());
-        request.setWatchType(context.isDiscard()?WATCH_TYPE_WATCH:WATCH_TYPE_CANCEL_WATCH);
+        request.setWatchType((context.isDiscard()&&CollectionUtils.isEmpty(context.getConfigFuzzyWatcherWrappers()))?WATCH_TYPE_CANCEL_WATCH:WATCH_TYPE_WATCH);
         request.setReceivedGroupKeys(context.getReceivedGroupKeys());
         return request;
     }

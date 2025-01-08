@@ -16,10 +16,6 @@
 
 package com.alibaba.nacos.api.config.listener;
 
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.Executor;
 
 /**
@@ -32,28 +28,11 @@ import java.util.concurrent.Executor;
 public abstract class ConfigFuzzyWatcher {
     
     /**
-     * Unique identifier for the listener.
-     */
-    String uuid= UUID.randomUUID().toString();
-    
-    private Set<String> syncGroupKeys = new HashSet<>();
-    
-    /**
-     * Get the UUID (Unique Identifier) of the listener.
-     *
-     * @return The UUID of the listener
-     */
-    public String getUuid() {
-        return uuid;
-    }
-    
-    /**
      * Callback method invoked when a fuzzy configuration change event occurs.
      *
      * @param event The fuzzy configuration change event
      */
     public abstract void onEvent(ConfigFuzzyWatchChangeEvent event);
-    
     
     /**
      * Get executor for execute this receive.
@@ -64,37 +43,4 @@ public abstract class ConfigFuzzyWatcher {
         return null;
     }
     
-    /**
-     * Compute the hash code for this listener based on its UUID.
-     *
-     * @return The hash code value for this listener
-     */
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(uuid);
-    }
-    
-    /**
-     * Compare this listener to the specified object for equality. Two listeners are considered equal if they have the
-     * same UUID.
-     *
-     * @param o The object to compare to
-     * @return true if the specified object is equal to this listener, false otherwise
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        ConfigFuzzyWatcher that = (ConfigFuzzyWatcher) o;
-        return Objects.equals(uuid, that.uuid);
-    }
-    
-    public final Set<String> getSyncGroupKeys() {
-        return syncGroupKeys;
-    }
-
 }

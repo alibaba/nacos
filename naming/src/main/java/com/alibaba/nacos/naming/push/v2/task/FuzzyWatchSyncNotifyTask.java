@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.naming.misc.Loggers;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -50,7 +51,11 @@ public class FuzzyWatchSyncNotifyTask extends AbstractDelayTask {
         this.clientId = clientId;
         this.pattern = pattern;
         this.syncType=syncType;
-        this.syncServiceKeys = syncServiceKeys;
+        if (syncServiceKeys!=null) {
+            this.syncServiceKeys = syncServiceKeys;
+        }else{
+            this.syncServiceKeys=new HashSet<>();
+        }
         setTaskInterval(delay);
         setLastProcessTime(System.currentTimeMillis());
     }
@@ -77,7 +82,10 @@ public class FuzzyWatchSyncNotifyTask extends AbstractDelayTask {
             return;
         }
         FuzzyWatchSyncNotifyTask oldTask = (FuzzyWatchSyncNotifyTask) task;
-        syncServiceKeys.addAll(oldTask.getSyncServiceKeys());
+        
+        if (oldTask.getSyncServiceKeys()!=null){
+            syncServiceKeys.addAll(oldTask.getSyncServiceKeys());
+        }
         setLastProcessTime(Math.min(getLastProcessTime(), task.getLastProcessTime()));
         Loggers.PUSH.info("[FUZZY-WATCH-INIT-PUSH] Task merge for pattern {}", pattern);
     }

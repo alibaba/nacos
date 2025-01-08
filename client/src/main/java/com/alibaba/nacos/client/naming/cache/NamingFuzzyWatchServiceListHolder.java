@@ -80,6 +80,7 @@ public class NamingFuzzyWatchServiceListHolder extends Subscriber<NamingFuzzyWat
     
     public NamingFuzzyWatchServiceListHolder(String notifierEventScope) {
         this.notifierEventScope = notifierEventScope;
+        NotifyCenter.registerSubscriber(this);
     }
     
     
@@ -88,6 +89,7 @@ public class NamingFuzzyWatchServiceListHolder extends Subscriber<NamingFuzzyWat
             executorService.shutdown();
         }
     }
+    
     public void start(){
          executorService = Executors.newSingleThreadScheduledExecutor(
                 new NameThreadFactory("com.alibaba.nacos.client.naming.fuzzy.watch.Worker"));
@@ -128,13 +130,15 @@ public class NamingFuzzyWatchServiceListHolder extends Subscriber<NamingFuzzyWat
      */
     public NamingFuzzyWatchContext registerFuzzyWatcher(String groupKeyPattern,FuzzyWatchEventWatcher watcher) {
         NamingFuzzyWatchContext namingFuzzyWatchContext = initFuzzyWatchContextIfNeed(groupKeyPattern);
-        if(namingFuzzyWatchContext.getNamingFuzzyWatchers().add(watcher)){
-            LOGGER.info("[{}] [add-watcher-ok] groupKeyPattern={}, watcher={},uuid={} ", groupKeyPattern,
-                    watcher, watcher.getUuid());
+    
+        FuzzyWatchEventWatcherWrapper fuzzyWatchEventWatcherWrapper=new FuzzyWatchEventWatcherWrapper(watcher);
+        if(namingFuzzyWatchContext.getFuzzyWatchEventWatcherWrappers().add(fuzzyWatchEventWatcherWrapper)){
+            LOGGER.info(" [add-watcher-ok] groupKeyPattern={}, watcher={},uuid={} ", groupKeyPattern,
+                    watcher, fuzzyWatchEventWatcherWrapper.getUuid());
             if(CollectionUtils.isNotEmpty(namingFuzzyWatchContext.getReceivedServiceKeys())){
                 for(String serviceKey:namingFuzzyWatchContext.getReceivedServiceKeys()){
                     NamingFuzzyWatchNotifyEvent namingFuzzyWatchNotifyEvent = NamingFuzzyWatchNotifyEvent.build(notifierEventScope,
-                            groupKeyPattern, serviceKey,ADD_SERVICE,FUZZY_WATCH_INIT_NOTIFY,watcher.getUuid());
+                            groupKeyPattern, serviceKey,ADD_SERVICE,FUZZY_WATCH_INIT_NOTIFY,fuzzyWatchEventWatcherWrapper.getUuid());
                     NotifyCenter.publishEvent(namingFuzzyWatchNotifyEvent);
                 }
             }
@@ -143,20 +147,20 @@ public class NamingFuzzyWatchServiceListHolder extends Subscriber<NamingFuzzyWat
     }
     
     public NamingFuzzyWatchContext initFuzzyWatchContextIfNeed(String groupKeyPattern){
-        if (fuzzyMatchContextMap.containsKey(groupKeyPattern)){
-            return fuzzyMatchContextMap.get(groupKeyPattern);
-        }else {
+        if (!fuzzyMatchContextMap.containsKey(groupKeyPattern)){
             synchronized (fuzzyMatchContextMap){
                 if (fuzzyMatchContextMap.containsKey(groupKeyPattern)){
                     return fuzzyMatchContextMap.get(groupKeyPattern);
                 }
-                NamingFuzzyWatchContext namingFuzzyWatchContext = fuzzyMatchContextMap.putIfAbsent(groupKeyPattern,
+    
+                LOGGER.info("[fuzzy-watch] init fuzzy watch context for pattern {}", groupKeyPattern);
+    
+                fuzzyMatchContextMap.putIfAbsent(groupKeyPattern,
                         new NamingFuzzyWatchContext(notifierEventScope, groupKeyPattern));
                 notifyFuzzyWatchSync();
-                return namingFuzzyWatchContext;
-                
             }
         }
+        return fuzzyMatchContextMap.get(groupKeyPattern);
     }
 
     public synchronized void removePatternMatchCache(String groupKeyPattern) {
@@ -164,7 +168,7 @@ public class NamingFuzzyWatchServiceListHolder extends Subscriber<NamingFuzzyWat
         if (namingFuzzyWatchContext==null){
             return;
         }
-        if (namingFuzzyWatchContext.isDiscard()&&namingFuzzyWatchContext.getNamingFuzzyWatchers().isEmpty()){
+        if (namingFuzzyWatchContext.isDiscard()&&namingFuzzyWatchContext.getFuzzyWatchEventWatcherWrappers().isEmpty()){
             fuzzyMatchContextMap.remove(groupKeyPattern);
         }
     }
@@ -276,10 +280,10 @@ public class NamingFuzzyWatchServiceListHolder extends Subscriber<NamingFuzzyWat
         namingFuzzyWatchRequest.setNamespace(namingGrpcClientProxy.getNamespaceId());
         namingFuzzyWatchRequest.setReceivedGroupKeys(namingFuzzyWatchContext.getReceivedServiceKeys());
         namingFuzzyWatchRequest.setGroupKeyPattern(namingFuzzyWatchContext.getGroupKeyPattern());
-        if (namingFuzzyWatchContext.isDiscard()&&namingFuzzyWatchContext.getNamingFuzzyWatchers().isEmpty()){
-            namingFuzzyWatchRequest.setWatchType(WATCH_TYPE_WATCH);
-        }else{
+        if (namingFuzzyWatchContext.isDiscard()&&namingFuzzyWatchContext.getFuzzyWatchEventWatcherWrappers().isEmpty()){
             namingFuzzyWatchRequest.setWatchType(WATCH_TYPE_CANCEL_WATCH);
+        }else{
+            namingFuzzyWatchRequest.setWatchType(WATCH_TYPE_WATCH);
         }
         return namingFuzzyWatchRequest;
     }

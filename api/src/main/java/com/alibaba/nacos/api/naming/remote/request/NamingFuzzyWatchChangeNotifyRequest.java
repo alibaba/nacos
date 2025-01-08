@@ -27,6 +27,10 @@ public class NamingFuzzyWatchChangeNotifyRequest extends AbstractFuzzyWatchNotif
 
     private String  changedType;
     
+    public NamingFuzzyWatchChangeNotifyRequest(){
+    
+    }
+    
     public NamingFuzzyWatchChangeNotifyRequest(String serviceKey,String changedType, String syncType) {
         super(syncType);
        this.serviceKey=serviceKey;

@@ -29,21 +29,9 @@ import java.util.concurrent.Executor;
  */
 public abstract class FuzzyWatchEventWatcher {
     
-    String uuid= UUID.randomUUID().toString();
-    
-    private Set<String> syncServiceKeys = new HashSet<>();
-    
-    
+
     public Executor getExecutor() {
         return null;
-    }
-    
-    public final String getUuid() {
-        return uuid;
-    }
-    
-    public Set<String> getSyncServiceKeys() {
-        return Collections.unmodifiableSet(syncServiceKeys);
     }
     
     public abstract void onEvent(FuzzyWatchChangeEvent event);

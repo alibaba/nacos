@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -83,10 +84,6 @@ public class NamingFuzzyWatchContext {
      */
     final AtomicBoolean initializationCompleted = new AtomicBoolean(false);
     
-    /**
-     * Flag indicating whether the context is initializing.
-     */
-    private boolean isInitializing = false;
     
     /**
      * Flag indicating whether the context is discarded.
@@ -96,7 +93,7 @@ public class NamingFuzzyWatchContext {
     /**
      * Set of listeners associated with the context.
      */
-    private Set<FuzzyWatchEventWatcher> namingFuzzyWatchers = new HashSet<>();
+    private final Set<FuzzyWatchEventWatcherWrapper> fuzzyWatchEventWatcherWrappers = new HashSet<>();
     
     /**
      * Constructor with environment name, data ID pattern, and group.
@@ -109,81 +106,63 @@ public class NamingFuzzyWatchContext {
         this.groupKeyPattern = groupKeyPattern;
     }
     
-    /**
-     * Calculate the listeners to notify based on the given UUID.
-     *
-     * @param uuid UUID to filter listeners
-     * @return Set of listeners to notify
-     */
-    public Set<FuzzyWatchEventWatcher> calculateListenersToNotify(String uuid) {
-        Set<FuzzyWatchEventWatcher> listenersToNotify = new HashSet<>();
-        if (StringUtils.isEmpty(uuid)) {
-            listenersToNotify = namingFuzzyWatchers;
-        } else {
-            for (FuzzyWatchEventWatcher listener : namingFuzzyWatchers) {
-                if (uuid.equals(listener.getUuid())) {
-                    listenersToNotify.add(listener);
-                }
-            }
-        }
-        return listenersToNotify;
-    }
+    private void doNotifyWatcher(final String serviceKey, final String changedType,final String syncType,
+            FuzzyWatchEventWatcherWrapper fuzzyWatchEventWatcherWrapper){
     
-    private void doNotifyWatcher(final String serviceKey, final String changedType,String syncType,
-            FuzzyWatchEventWatcher namingFuzzyWatcher){
-    
-        if (ADD_SERVICE.equals(changedType)&&namingFuzzyWatcher.getSyncServiceKeys().contains(serviceKey)){
+        if (ADD_SERVICE.equals(changedType)&&fuzzyWatchEventWatcherWrapper.getSyncServiceKeys().contains(serviceKey)){
             return;
         }
     
-        if (DELETE_SERVICE.equals(changedType)&&!namingFuzzyWatcher.getSyncServiceKeys().contains(serviceKey)){
+        if (DELETE_SERVICE.equals(changedType)&&!fuzzyWatchEventWatcherWrapper.getSyncServiceKeys().contains(serviceKey)){
             return;
         }
         
         String[] serviceKeyItems = NamingUtils.parseServiceKey(serviceKey);
         String namespace=serviceKeyItems[0];
-        String groupName=serviceKeyItems[0];
-        String serviceName=serviceKeyItems[0];
-    
-    
+        String groupName=serviceKeyItems[1];
+        String serviceName=serviceKeyItems[2];
+        
+        final String resetSyncType=!initializationCompleted.get()?FUZZY_WATCH_INIT_NOTIFY:syncType;
+        
         Runnable job = () -> {
             long start = System.currentTimeMillis();
-            FuzzyWatchChangeEvent event = new FuzzyWatchChangeEvent(namespace,groupName, serviceName, changedType,syncType);
-            if (namingFuzzyWatcher != null) {
-                namingFuzzyWatcher.onEvent(event);
+            FuzzyWatchChangeEvent event = new FuzzyWatchChangeEvent(serviceName,groupName, namespace, changedType,resetSyncType);
+            if (fuzzyWatchEventWatcherWrapper != null) {
+                fuzzyWatchEventWatcherWrapper.fuzzyWatchEventWatcher.onEvent(event);
             }
             LOGGER.info(
-                    "[{}] [notify-watcher-ok] serviceName={}, groupName={}, namespace={}, watcher={}, job run cost={} millis.",
-                    envName, serviceName, groupName, namespace, namingFuzzyWatcher, (System.currentTimeMillis() - start));
-            if (changedType.equals(Constants.ConfigChangedType.DELETE_CONFIG)) {
-                namingFuzzyWatcher.getSyncServiceKeys().remove(NamingUtils.getServiceKey(namespace, groupName, serviceName));
-            } else if (changedType.equals(FUZZY_WATCH_INIT_NOTIFY) || changedType.equals(
-                    Constants.ConfigChangedType.ADD_CONFIG)) {
-                namingFuzzyWatcher.getSyncServiceKeys().add(NamingUtils.getServiceKey(namespace, groupName, serviceName));
+                    "[{}] [notify-watcher-ok] serviceName={}, groupName={}, namespace={}, watcher={},changedType={}, job run cost={} millis.",
+                    envName, serviceName, groupName, namespace, fuzzyWatchEventWatcherWrapper.fuzzyWatchEventWatcher,changedType, (System.currentTimeMillis() - start));
+            if (changedType.equals(DELETE_SERVICE)) {
+                fuzzyWatchEventWatcherWrapper.getSyncServiceKeys().remove(NamingUtils.getServiceKey(namespace, groupName, serviceName));
+            } else if (changedType.equals(ADD_SERVICE)) {
+                fuzzyWatchEventWatcherWrapper.getSyncServiceKeys().add(NamingUtils.getServiceKey(namespace, groupName, serviceName));
             }
         };
     
         try {
-            if (null != namingFuzzyWatcher.getExecutor()) {
+            if (null != fuzzyWatchEventWatcherWrapper.fuzzyWatchEventWatcher.getExecutor()) {
                 LOGGER.info(
                         "[{}] [notify-watcher] task submitted to user executor, serviceName={}, groupName={}, namespace={}, listener={}.",
-                        envName, serviceName, groupName, namespace, namingFuzzyWatcher);
-                namingFuzzyWatcher.getExecutor().execute(job);
+                        envName, serviceName, groupName, namespace, fuzzyWatchEventWatcherWrapper);
+                fuzzyWatchEventWatcherWrapper.fuzzyWatchEventWatcher.getExecutor().execute(job);
             } else {
                 LOGGER.info(
                         "[{}] [notify-watcher] task execute in nacos thread, serviceName={}, groupName={}, namespace={}, listener={}.",
-                        envName, serviceName, groupName, namespace, namingFuzzyWatcher);
+                        envName, serviceName, groupName, namespace, fuzzyWatchEventWatcherWrapper);
                 job.run();
             }
         } catch (Throwable t) {
             LOGGER.error("[{}] [notify-watcher-error] serviceName={}, groupName={}, namespace={}, listener={}, throwable={}.",
-                    envName, serviceName, groupName, namespace, namingFuzzyWatcher, t.getCause());
+                    envName, serviceName, groupName, namespace, fuzzyWatchEventWatcherWrapper, t.getCause());
         }
     }
     /**
      * Mark initialization as complete and notify waiting threads.
      */
     public void markInitializationComplete() {
+        LOGGER.info("[{}] [fuzzy-watch] pattern init notify finish pattern={},match service count {}",
+                envName,groupKeyPattern,receivedServiceKeys.size());
         initializationCompleted.set(true);
     }
     
@@ -193,11 +172,16 @@ public class NamingFuzzyWatchContext {
      * @param watcher watcher to be removed
      */
     public void removeWatcher(FuzzyWatchEventWatcher watcher) {
-        if(namingFuzzyWatchers.remove(watcher)){
-            LOGGER.info("[{}] [remove-watcher-ok] groupKeyPattern={}, watcher={},uuid={} ", getEnvName(),
-                    this.groupKeyPattern, watcher, watcher.getUuid());
-    
+        Iterator<FuzzyWatchEventWatcherWrapper> iterator = fuzzyWatchEventWatcherWrappers.iterator();
+        while (iterator.hasNext()){
+            FuzzyWatchEventWatcherWrapper next = iterator.next();
+            if (next.fuzzyWatchEventWatcher.equals(watcher)){
+                iterator.remove();
+                LOGGER.info("[{}] [remove-watcher-ok] groupKeyPattern={}, watcher={},uuid={} ", getEnvName(),
+                        this.groupKeyPattern, watcher, next.getUuid());
+            }
         }
+        
     }
     
     /**
@@ -259,16 +243,7 @@ public class NamingFuzzyWatchContext {
      * @return True if the context is initializing, otherwise false
      */
     public boolean isInitializing() {
-        return isInitializing;
-    }
-    
-    /**
-     * Set the flag indicating whether the context is initializing.
-     *
-     * @param initializing True to mark the context as initializing, otherwise false
-     */
-    public void setInitializing(boolean initializing) {
-        isInitializing = initializing;
+        return !initializationCompleted.get();
     }
     
     /**
@@ -295,12 +270,12 @@ public class NamingFuzzyWatchContext {
      *
      * @return Set of listeners
      */
-    public Set<FuzzyWatchEventWatcher> getNamingFuzzyWatchers() {
-        return namingFuzzyWatchers;
+    public Set<FuzzyWatchEventWatcherWrapper> getFuzzyWatchEventWatcherWrappers() {
+        return fuzzyWatchEventWatcherWrappers;
     }
     
     void syncFuzzyWatchers(){
-        for(FuzzyWatchEventWatcher namingFuzzyWatcher: namingFuzzyWatchers){
+        for(FuzzyWatchEventWatcherWrapper namingFuzzyWatcher: fuzzyWatchEventWatcherWrappers){
             Set<String> receivedServiceKeysContext = this.getReceivedServiceKeys();
             Set<String> syncGroupKeys = namingFuzzyWatcher.getSyncServiceKeys();
             List<FuzzyGroupKeyPattern.GroupKeyState> groupKeyStates = FuzzyGroupKeyPattern.diffGroupKeys(
@@ -312,18 +287,18 @@ public class NamingFuzzyWatchContext {
         }
     }
     
-    void notifyFuzzyWatchers(String serviceKey,String syncType,String changedType,String watcherUuid){
-        for(FuzzyWatchEventWatcher namingFuzzyWatcher: filterWatchers(watcherUuid)){
+    void notifyFuzzyWatchers(String serviceKey,String changedType,String syncType,String watcherUuid){
+        for(FuzzyWatchEventWatcherWrapper namingFuzzyWatcher: filterWatchers(watcherUuid)){
             doNotifyWatcher(serviceKey,changedType,syncType,namingFuzzyWatcher);
         }
     }
     
     
-    private Set<FuzzyWatchEventWatcher> filterWatchers(String uuid){
-        if (StringUtils.isBlank(uuid)|| CollectionUtils.isEmpty(getNamingFuzzyWatchers())){
-            return getNamingFuzzyWatchers();
+    private Set<FuzzyWatchEventWatcherWrapper> filterWatchers(String uuid){
+        if (StringUtils.isBlank(uuid)|| CollectionUtils.isEmpty(getFuzzyWatchEventWatcherWrappers())){
+            return getFuzzyWatchEventWatcherWrappers();
         }else{
-            return getNamingFuzzyWatchers().stream().filter(a->a.getUuid().equals(uuid)).collect(
+            return getFuzzyWatchEventWatcherWrappers().stream().filter(a->a.getUuid().equals(uuid)).collect(
                     Collectors.toSet());
         }
         

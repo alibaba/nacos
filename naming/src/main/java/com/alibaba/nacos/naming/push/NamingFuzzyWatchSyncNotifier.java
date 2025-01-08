@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.push;
 
 import com.alibaba.nacos.api.naming.remote.request.NamingFuzzyWatchSyncRequest;
 import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
@@ -57,7 +58,9 @@ public class NamingFuzzyWatchSyncNotifier extends SmartSubscriber {
     public NamingFuzzyWatchSyncNotifier(NamingFuzzyWatchContextService namingFuzzyWatchContextService,FuzzyWatchPushDelayTaskEngine  fuzzyWatchPushDelayTaskEngine){
         this.namingFuzzyWatchContextService=namingFuzzyWatchContextService;
         this.fuzzyWatchPushDelayTaskEngine=fuzzyWatchPushDelayTaskEngine;
+        NotifyCenter.registerSubscriber(this);
     }
+    
     @Override
     public List<Class<? extends Event>> subscribeTypes() {
         List<Class<? extends Event>> result = new LinkedList<>();

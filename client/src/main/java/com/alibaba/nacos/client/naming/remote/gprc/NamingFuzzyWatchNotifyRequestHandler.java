@@ -42,6 +42,7 @@ public class NamingFuzzyWatchNotifyRequestHandler implements ServerRequestHandle
     
     public NamingFuzzyWatchNotifyRequestHandler(NamingFuzzyWatchServiceListHolder namingFuzzyWatchServiceListHolder){
         this.namingFuzzyWatchServiceListHolder = namingFuzzyWatchServiceListHolder;
+        NotifyCenter.registerToPublisher(NamingFuzzyWatchNotifyEvent.class,1000);
     }
 
     @Override
@@ -75,7 +76,7 @@ public class NamingFuzzyWatchNotifyRequestHandler implements ServerRequestHandle
             String serviceName=serviceKeyItems[2];
         
             Collection<String> matchedPattern = FuzzyGroupKeyPattern.filterMatchedPatterns(
-                    namingFuzzyWatchServiceListHolder.getFuzzyMatchContextMap().keySet(),namespace,groupName,serviceName);
+                    namingFuzzyWatchServiceListHolder.getFuzzyMatchContextMap().keySet(),serviceName,groupName,namespace);
             String serviceChangeType = notifyChangeRequest.getChangedType();
         
             switch (serviceChangeType) {
@@ -83,7 +84,7 @@ public class NamingFuzzyWatchNotifyRequestHandler implements ServerRequestHandle
                 case Constants.ServiceChangedType.INSTANCE_CHANGED:
                     for (String pattern : matchedPattern) {
                         NamingFuzzyWatchContext namingFuzzyWatchContext = namingFuzzyWatchServiceListHolder.getFuzzyMatchContextMap().get(pattern);
-                        if (namingFuzzyWatchContext != null && namingFuzzyWatchContext.getReceivedServiceKeys().add(((NamingFuzzyWatchChangeNotifyRequest) request).getServiceKey())) {
+                        if (namingFuzzyWatchContext != null && namingFuzzyWatchContext.addReceivedServiceKey(((NamingFuzzyWatchChangeNotifyRequest) request).getServiceKey())) {
                             //publish local service add event
                             NotifyCenter.publishEvent(
                                     NamingFuzzyWatchNotifyEvent.build(namingFuzzyWatchServiceListHolder.getNotifierEventScope(),
@@ -95,7 +96,7 @@ public class NamingFuzzyWatchNotifyRequestHandler implements ServerRequestHandle
                 case Constants.ServiceChangedType.DELETE_SERVICE:
                     for (String pattern : matchedPattern) {
                         NamingFuzzyWatchContext namingFuzzyWatchContext = namingFuzzyWatchServiceListHolder.getFuzzyMatchContextMap().get(pattern);
-                        if (namingFuzzyWatchContext != null && namingFuzzyWatchContext.getReceivedServiceKeys().remove(notifyChangeRequest.getServiceKey())) {
+                        if (namingFuzzyWatchContext != null && namingFuzzyWatchContext.removeReceivedServiceKey(notifyChangeRequest.getServiceKey())) {
                             NotifyCenter.publishEvent(
                                     NamingFuzzyWatchNotifyEvent.build(namingFuzzyWatchServiceListHolder.getNotifierEventScope(),
                                             pattern, notifyChangeRequest.getServiceKey(),Constants.ServiceChangedType.DELETE_SERVICE,

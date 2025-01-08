@@ -23,7 +23,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.alibaba.nacos.api.common.Constants.ANY_PATTERN;
+import static com.alibaba.nacos.api.common.Constants.ALL_PATTERN;
 import static com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
 import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_PATTERN_SPLITTER;
 
@@ -114,30 +114,30 @@ public class FuzzyGroupKeyPattern {
     private static boolean itemMatched(String pattern,String resource){
         
         //accurate match without *
-        if (!pattern.contains(ANY_PATTERN)){
+        if (!pattern.contains(ALL_PATTERN)){
             return pattern.equals(resource);
         }
     
         //match for '*' pattern
-        if (pattern.equals(ANY_PATTERN)){
+        if (pattern.equals(ALL_PATTERN)){
             return true;
         }
         
         //match for *{string}*
-        if (pattern.startsWith(ANY_PATTERN)&&pattern.endsWith(ANY_PATTERN)){
-            String pureString=pattern.replaceAll(ANY_PATTERN,"");
+        if (pattern.startsWith(ALL_PATTERN)&&pattern.endsWith(ALL_PATTERN)){
+            String pureString=pattern.replace(ALL_PATTERN,"");
             return resource.contains(pureString);
         }
     
         //match for postfix match *{string}
-        if (pattern.startsWith(ANY_PATTERN)&&pattern.endsWith(ANY_PATTERN)){
-            String pureString=pattern.replaceAll(ANY_PATTERN,"");
+        if (pattern.startsWith(ALL_PATTERN)){
+            String pureString=pattern.replace(ALL_PATTERN,"");
             return resource.endsWith(pureString);
         }
     
         //match for prefix match {string}*
-        if (pattern.startsWith(ANY_PATTERN)&&pattern.endsWith(ANY_PATTERN)){
-            String pureString=pattern.replaceAll(ANY_PATTERN,"");
+        if (pattern.endsWith(ALL_PATTERN)){
+            String pureString=pattern.replace(ALL_PATTERN,"");
             return resource.startsWith(pureString);
         }
     

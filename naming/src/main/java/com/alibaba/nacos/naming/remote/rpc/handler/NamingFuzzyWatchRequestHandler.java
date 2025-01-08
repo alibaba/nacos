@@ -40,6 +40,9 @@ import static com.alibaba.nacos.api.common.Constants.WATCH_TYPE_CANCEL_WATCH;
 public class NamingFuzzyWatchRequestHandler extends RequestHandler<NamingFuzzyWatchRequest, NamingFuzzyWatchResponse> {
     
     public NamingFuzzyWatchRequestHandler() {
+        NotifyCenter.registerToPublisher(ClientOperationEvent.ClientFuzzyWatchEvent.class,1000);
+        NotifyCenter.registerToPublisher(ClientOperationEvent.ClientCancelFuzzyWatchEvent.class,1000);
+    
     }
     
     @Override

@@ -50,13 +50,7 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
     
     private final ConcurrentMap<Service, Set<String>> subscriberIndexes = new ConcurrentHashMap<>();
     
-    private NamingFuzzyWatchContextService namingFuzzyWatchContextService;
-    
-    public ClientServiceIndexesManager(NamingFuzzyWatchContextService namingFuzzyWatchContextService){
-        this.namingFuzzyWatchContextService = namingFuzzyWatchContextService;
-    }
-    
-    public ClientServiceIndexesManager() {
+    public ClientServiceIndexesManager(){
         NotifyCenter.registerSubscriber(this, NamingEventPublisherFactory.getInstance());
     }
     
@@ -138,7 +132,6 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
         String serviceChangedType = Constants.ServiceChangedType.INSTANCE_CHANGED;
         if (!publisherIndexes.containsKey(service)) {
             // The only time the index needs to be updated is when the service is first created
-            namingFuzzyWatchContextService.addNewService(service);
             serviceChangedType = Constants.ServiceChangedType.ADD_SERVICE;
         }
         NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, serviceChangedType, true));

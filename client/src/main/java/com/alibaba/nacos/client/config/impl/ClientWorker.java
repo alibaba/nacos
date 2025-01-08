@@ -523,6 +523,7 @@ public class ClientWorker implements Closeable {
                 new NameThreadFactory("com.alibaba.nacos.client.Worker"));
         agent.setExecutor(executorService);
         agent.start();
+        configFuzzyWatchGroupKeyHolder.start();
         
     }
     

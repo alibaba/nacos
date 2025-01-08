@@ -25,6 +25,7 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.push.v2.executor.PushExecutor;
+import com.alibaba.nacos.naming.push.v2.executor.PushExecutorDelegate;
 import org.springframework.stereotype.Component;
 
 /**
@@ -36,12 +37,12 @@ import org.springframework.stereotype.Component;
 public class FuzzyWatchPushDelayTaskEngine extends NacosDelayTaskExecuteEngine {
     
     
-    private final PushExecutor pushExecutor;
+    private final PushExecutorDelegate pushExecutor;
     
     private final SwitchDomain switchDomain;
     
     public FuzzyWatchPushDelayTaskEngine(
-           PushExecutor pushExecutor,
+            PushExecutorDelegate pushExecutor,
             SwitchDomain switchDomain) {
         super(FuzzyWatchPushDelayTaskEngine.class.getSimpleName(), Loggers.PUSH);
         this.pushExecutor = pushExecutor;

@@ -38,6 +38,9 @@ public class NamingFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
     
     private int currentBatch;
     
+    public NamingFuzzyWatchSyncRequest(){
+    
+    }
     public NamingFuzzyWatchSyncRequest(String pattern, String syncType,Set<Context> contexts){
       super(syncType);
         this.groupKeyPattern=pattern;
