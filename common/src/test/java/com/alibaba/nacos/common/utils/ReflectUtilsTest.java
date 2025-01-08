@@ -46,6 +46,11 @@ class ReflectUtilsTest {
         listStr = new ArrayList<>(2);
     }
     
+    /*
+     * Pay attention to JDK 17 changes. Need to add vm options below:
+     * --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED
+     * --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED
+     */
     @Test
     void testGetFieldValue() {
         Object elementData = ReflectUtils.getFieldValue(listStr, "elementData");
