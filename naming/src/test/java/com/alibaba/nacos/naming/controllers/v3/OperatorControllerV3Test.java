@@ -19,10 +19,8 @@ package com.alibaba.nacos.naming.controllers.v3;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
-import com.alibaba.nacos.naming.cluster.ServerStatusManager;
-import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
+import com.alibaba.nacos.naming.core.Operator;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
-import com.alibaba.nacos.naming.misc.SwitchManager;
 import com.alibaba.nacos.naming.model.form.UpdateSwitchForm;
 import com.alibaba.nacos.naming.model.vo.MetricsInfoVo;
 import com.alibaba.nacos.sys.env.Constants;
@@ -35,11 +33,9 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
 
-import java.util.Collection;
-import java.util.HashSet;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.doNothing;
 
 /**
  * OperatorControllerV3Test.
@@ -53,20 +49,11 @@ class OperatorControllerV3Test {
     private OperatorControllerV3 operatorControllerV3;
     
     @Mock
-    private SwitchDomain switchDomain;
-    
-    @Mock
-    private SwitchManager switchManager;
-    
-    @Mock
-    private ServerStatusManager serverStatusManager;
-    
-    @Mock
-    private ClientManager clientManager;
+    private Operator operatorV2Impl;
     
     @BeforeEach
     void setUp() {
-        this.operatorControllerV3 = new OperatorControllerV3(switchManager, serverStatusManager, switchDomain, clientManager);
+        this.operatorControllerV3 = new OperatorControllerV3(operatorV2Impl);
         MockEnvironment environment = new MockEnvironment();
         environment.setProperty(Constants.SUPPORT_UPGRADE_FROM_1X, "true");
         EnvUtil.setEnvironment(environment);
@@ -74,9 +61,14 @@ class OperatorControllerV3Test {
     
     @Test
     void testSwitches() {
+        SwitchDomain switchDomain = new SwitchDomain();
+        switchDomain.setDefaultInstanceEphemeral(true);
+        switchDomain.setDefaultPushCacheMillis(1000L);
+        Mockito.when(operatorV2Impl.switches()).thenReturn(switchDomain);
         Result<SwitchDomain> result = operatorControllerV3.switches();
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
-        assertEquals(this.switchDomain, result.getData());
+        assertEquals(1000L, result.getData().getDefaultPushCacheMillis());
+        assertEquals(true, result.getData().isDefaultInstanceEphemeral());
     }
     
     @Test
@@ -98,29 +90,17 @@ class OperatorControllerV3Test {
     
     @Test
     void testMetrics() {
-        Mockito.when(serverStatusManager.getServerStatus()).thenReturn(ServerStatus.UP);
-        Collection<String> clients = new HashSet<>();
-        clients.add("1628132208793_127.0.0.1_8080");
-        clients.add("127.0.0.1:8081#true");
-        clients.add("127.0.0.1:8082#false");
-        Mockito.when(clientManager.allClientId()).thenReturn(clients);
-        Mockito.when(clientManager.isResponsibleClient(null)).thenReturn(Boolean.TRUE);
-        
+        MetricsInfoVo metricsInfoVo = new MetricsInfoVo();
+        metricsInfoVo.setStatus(ServerStatus.UP.toString());
+        Mockito.when(operatorV2Impl.metrics(false)).thenReturn(metricsInfoVo);
         Result<MetricsInfoVo> result = operatorControllerV3.metrics(false);
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
-        
-        MetricsInfoVo metricsInfoVo = result.getData();
-        
-        assertEquals(ServerStatus.UP.toString(), metricsInfoVo.getStatus());
-        assertEquals(3, metricsInfoVo.getClientCount().intValue());
-        assertEquals(1, metricsInfoVo.getConnectionBasedClientCount().intValue());
-        assertEquals(1, metricsInfoVo.getEphemeralIpPortClientCount().intValue());
-        assertEquals(1, metricsInfoVo.getPersistentIpPortClientCount().intValue());
-        assertEquals(3, metricsInfoVo.getResponsibleClientCount().intValue());
+        assertEquals(ServerStatus.UP.toString(), result.getData().getStatus());
     }
     
     @Test
     void testLog() {
+        doNothing().when(operatorV2Impl).setLogLevel("test", "test");
         Result<String> result = operatorControllerV3.setLogLevel("test", "test");
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("ok", result.getData());

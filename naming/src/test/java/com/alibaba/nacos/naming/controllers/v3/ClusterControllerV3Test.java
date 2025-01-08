@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.naming.controllers.v3;
 
-import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.core.ClusterOperatorV2Impl;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
+import com.alibaba.nacos.naming.model.form.UpdateClusterForm;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -61,13 +61,15 @@ class ClusterControllerV3Test extends BaseTest {
     
     @Test
     void testUpdate() throws Exception {
-        mockRequestParameter(CommonParams.NAMESPACE_ID, "test-namespace");
-        mockRequestParameter(CommonParams.CLUSTER_NAME, TEST_CLUSTER_NAME);
-        mockRequestParameter(CommonParams.SERVICE_NAME, TEST_SERVICE_NAME);
-        mockRequestParameter("checkPort", "1");
-        mockRequestParameter("useInstancePort4Check", "true");
-        mockRequestParameter("healthChecker", "{\"type\":\"HTTP\"}");
-        assertEquals("ok", clusterControllerV3.update(request).getData());
+        UpdateClusterForm updateClusterForm = new UpdateClusterForm();
+        updateClusterForm.setNamespaceId("test-namespace");
+        updateClusterForm.setClusterName(TEST_CLUSTER_NAME);
+        updateClusterForm.setServiceName(TEST_SERVICE_NAME);
+        updateClusterForm.setCheckPort(1);
+        updateClusterForm.setUseInstancePort4Check(true);
+        updateClusterForm.setHealthChecker("{\"type\":\"HTTP\"}");
+        
+        assertEquals("ok", clusterControllerV3.update(updateClusterForm).getData());
         verify(clusterOperatorV2).updateClusterMetadata(eq("test-namespace"), eq(TEST_SERVICE_NAME), eq(TEST_CLUSTER_NAME),
                 any(ClusterMetadata.class));
     }

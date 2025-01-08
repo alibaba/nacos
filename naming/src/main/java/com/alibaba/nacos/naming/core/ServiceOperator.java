@@ -70,7 +70,7 @@ public interface ServiceOperator {
     ObjectNode queryService(String namespaceId, String serviceName) throws NacosException;
     
     /**
-     * Page list service name.
+     * List service detail information.
      *
      * @param namespaceId namespace id of services
      * @param groupName   group name of services
@@ -96,4 +96,19 @@ public interface ServiceOperator {
      * @throws NacosException nacos exception during query
      */
     Collection<String> searchServiceName(String namespaceId, String expr) throws NacosException;
+    
+    /**
+     * Get the list of subscribers for a service.
+     *
+     * @param pageNo      the page number
+     * @param pageSize    the size of the page
+     * @param namespaceId the namespace ID
+     * @param serviceName the service name
+     * @param groupName   the group name
+     * @param aggregation whether to aggregate the results
+     * @return a JSON node containing the list of subscribers
+     * @throws Exception if an error occurs during fetching subscribers
+     */
+    ObjectNode getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName, String groupName,
+            boolean aggregation) throws Exception;
 }

@@ -102,7 +102,7 @@ public class ServiceController {
     @PostMapping
     @TpsControl(pointName = "NamingServiceRegister", name = "HttpNamingServiceRegister")
     @Secured(action = ActionTypes.WRITE)
-    @Compatibility(apiType = ApiType.OPEN_API, alternatives = "POST ${contextPath:nacos}/v3/console/ns/service")
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "POST ${contextPath:nacos}/v3/admin/ns/service")
     public String create(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName,
             @RequestParam(required = false, defaultValue = "0.0F") float protectThreshold,
@@ -130,7 +130,7 @@ public class ServiceController {
     @DeleteMapping
     @TpsControl(pointName = "NamingServiceDeregister", name = "HttpNamingServiceDeregister")
     @Secured(action = ActionTypes.WRITE)
-    @Compatibility(apiType = ApiType.OPEN_API, alternatives = "DELETE ${contextPath:nacos}/v3/console/ns/service")
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "DELETE ${contextPath:nacos}/v3/admin/ns/service")
     public String remove(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName) throws Exception {
         
@@ -152,7 +152,7 @@ public class ServiceController {
     @GetMapping
     @TpsControl(pointName = "NamingServiceQuery", name = "HttpNamingServiceQuery")
     @Secured(action = ActionTypes.READ)
-    @Compatibility(apiType = ApiType.OPEN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/service")
     public ObjectNode detail(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName) throws NacosException {
         return getServiceOperator().queryService(namespaceId, serviceName);
@@ -168,7 +168,7 @@ public class ServiceController {
     @GetMapping("/list")
     @TpsControl(pointName = "NamingServiceListQuery", name = "HttpNamingServiceListQuery")
     @Secured(action = ActionTypes.READ)
-    @Compatibility(apiType = ApiType.OPEN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/service/list")
     public ObjectNode list(HttpServletRequest request) throws Exception {
         final int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
         final int pageSize = NumberUtils.toInt(WebUtils.required(request, "pageSize"));
@@ -194,7 +194,7 @@ public class ServiceController {
     @PutMapping
     @TpsControl(pointName = "NamingServiceUpdate", name = "HttpNamingServiceUpdate")
     @Secured(action = ActionTypes.WRITE)
-    @Compatibility(apiType = ApiType.OPEN_API, alternatives = "PUT ${contextPath:nacos}/v3/console/ns/service")
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "PUT ${contextPath:nacos}/v3/admin/ns/service")
     public String update(HttpServletRequest request) throws Exception {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
@@ -221,7 +221,7 @@ public class ServiceController {
      */
     @RequestMapping("/names")
     @Secured(action = ActionTypes.READ)
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/service/names")
     public ObjectNode searchService(@RequestParam(defaultValue = StringUtils.EMPTY) String namespaceId,
             @RequestParam(defaultValue = StringUtils.EMPTY) String expr) throws NacosException {
         Map<String, Collection<String>> serviceNameMap = new HashMap<>(16);
@@ -251,7 +251,7 @@ public class ServiceController {
      */
     @GetMapping("/subscribers")
     @Secured(action = ActionTypes.READ)
-    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/ns/service/subscribers")
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/service/subscribers")
     public ObjectNode subscribers(HttpServletRequest request) {
         
         int pageNo = NumberUtils.toInt(WebUtils.optional(request, "pageNo", "1"));
@@ -298,7 +298,7 @@ public class ServiceController {
      * @return {@link Selector} types.
      */
     @GetMapping("/selector/types")
-    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/ns/service/selector/types")
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/service/selector/types")
     public RestResult<List<String>> listSelectorTypes() {
         return RestResultUtils.success(selectorManager.getAllSelectorTypes());
     }

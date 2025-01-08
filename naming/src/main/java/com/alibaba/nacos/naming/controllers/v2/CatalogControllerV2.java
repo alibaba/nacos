@@ -67,7 +67,7 @@ public class CatalogControllerV2 {
      */
     @Secured(action = ActionTypes.READ)
     @RequestMapping(value = "/instances")
-    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/ns/instance/list")
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/instance/list")
     public Result<ObjectNode> instanceList(
             @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName, @RequestParam(required = false) Boolean healthyOnly,

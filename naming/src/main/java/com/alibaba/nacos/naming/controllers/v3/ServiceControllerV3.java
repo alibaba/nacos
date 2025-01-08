@@ -31,21 +31,20 @@ import com.alibaba.nacos.common.trace.event.naming.UpdateServiceTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.model.form.AggregationForm;
+import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.naming.core.CatalogServiceV2Impl;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
-import com.alibaba.nacos.naming.core.SubscribeManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.ServiceForm;
+import com.alibaba.nacos.naming.model.form.ServiceListForm;
 import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
-import com.alibaba.nacos.naming.pojo.ServiceNameView;
-import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.SelectorManager;
-import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -82,12 +81,13 @@ public class ServiceControllerV3 {
     
     private final SelectorManager selectorManager;
     
-    private final SubscribeManager subscribeManager;
+    private final CatalogServiceV2Impl catalogServiceV2;
     
-    public ServiceControllerV3(ServiceOperatorV2Impl serviceOperatorV2, SelectorManager selectorManager, SubscribeManager subscribeManager) {
+    public ServiceControllerV3(ServiceOperatorV2Impl serviceOperatorV2, SelectorManager selectorManager,
+            CatalogServiceV2Impl catalogServiceV2) {
         this.serviceOperatorV2 = serviceOperatorV2;
         this.selectorManager = selectorManager;
-        this.subscribeManager = subscribeManager;
+        this.catalogServiceV2 = catalogServiceV2;
     }
     
     /**
@@ -153,20 +153,21 @@ public class ServiceControllerV3 {
     @GetMapping("/list")
     @TpsControl(pointName = "NamingServiceListQuery", name = "HttpNamingServiceListQuery")
     @Secured(resource = UtilsAndCommons.SERVICE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
-    public Result<ServiceNameView> list(
-            @RequestParam(value = "namespaceId", required = false, defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam(value = "groupName", required = false, defaultValue = Constants.DEFAULT_GROUP) String groupName,
-            @RequestParam(value = "selector", required = false, defaultValue = StringUtils.EMPTY) String selector,
-            @RequestParam(value = "pageNo", required = false, defaultValue = "1") Integer pageNo,
-            @RequestParam(value = "pageSize", required = false, defaultValue = "20") Integer pageSize)
-            throws Exception {
-        pageSize = Math.min(500, pageSize);
-        ServiceNameView result = new ServiceNameView();
-        Collection<String> serviceNameList = serviceOperatorV2.listService(namespaceId, groupName, selector);
-        result.setCount(serviceNameList.size());
-        result.setServices(ServiceUtil.pageServiceName(pageNo, pageSize, serviceNameList));
+    public Result<Object> list(ServiceListForm serviceListForm, PageForm pageForm) throws Exception {
+        serviceListForm.validate();
+        pageForm.validate();
+        String namespaceId = serviceListForm.getNamespaceId();
+        String serviceName = serviceListForm.getServiceNameParam();
+        String groupName = serviceListForm.getGroupNameParam();
+        boolean hasIpCount = serviceListForm.isHasIpCount();
+        boolean withInstances = serviceListForm.isWithInstances();
+        int pageNo = pageForm.getPageNo();
+        int pageSize = pageForm.getPageSize();
         
-        return Result.success(result);
+        if (withInstances) {
+            return Result.success(catalogServiceV2.pageListServiceDetail(namespaceId, groupName, serviceName, pageNo, pageSize));
+        }
+        return Result.success(catalogServiceV2.pageListService(namespaceId, groupName, serviceName, pageNo, pageSize, StringUtils.EMPTY, hasIpCount));
     }
     
     /**
@@ -184,7 +185,9 @@ public class ServiceControllerV3 {
         serviceMetadata.setSelector(parseSelector(serviceForm.getSelector()));
         Service service = Service.newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(),
                 serviceForm.getServiceName());
+        
         serviceOperatorV2.update(service, serviceMetadata);
+        
         NotifyCenter.publishEvent(new UpdateServiceTraceEvent(System.currentTimeMillis(), serviceForm.getNamespaceId(),
                 serviceForm.getGroupName(), serviceForm.getServiceName(), metadata));
         
@@ -206,6 +209,7 @@ public class ServiceControllerV3 {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SELECTOR_ERROR,
                     "not match any type of selector!");
         }
+        
         return selector;
     }
     
@@ -230,6 +234,7 @@ public class ServiceControllerV3 {
                 totalCount += names.size();
             }
         }
+        
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         result.replace("META-INF/services", JacksonUtils.transferToJsonNode(serviceNameMap));
         result.put("count", totalCount);
@@ -242,40 +247,18 @@ public class ServiceControllerV3 {
      */
     @GetMapping("/subscribers")
     @Secured(resource = UtilsAndCommons.SERVICE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
-    public Result<ObjectNode> subscribers(
-            @RequestParam(value = "namespaceId", required = false, defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam("serviceName") String serviceName,
-            @RequestParam(value = "aggregation", required = false, defaultValue = "true") boolean aggregation,
-            @RequestParam(value = "pageNo", required = false, defaultValue = "1") Integer pageNo,
-            @RequestParam(value = "pageSize", required = false, defaultValue = "20") Integer pageSize) {
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+    public Result<ObjectNode> subscribers(ServiceForm serviceForm, PageForm pageForm, AggregationForm aggregationForm)
+            throws Exception {
+        serviceForm.validate();
+        pageForm.validate();
+        int pageNo = pageForm.getPageNo();
+        int pageSize = pageForm.getPageSize();
+        String namespaceId = serviceForm.getNamespaceId();
+        String serviceName = serviceForm.getServiceName();
+        String groupName = serviceForm.getGroupName();
+        boolean aggregation = aggregationForm.isAggregation();
         
-        int count = 0;
-        
-        try {
-            List<Subscriber> subscribers = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
-            
-            int start = (pageNo - 1) * pageSize;
-            if (start < 0) {
-                start = 0;
-            }
-            
-            int end = start + pageSize;
-            count = subscribers.size();
-            if (end > count) {
-                end = count;
-            }
-            
-            result.replace("subscribers", JacksonUtils.transferToJsonNode(subscribers.subList(start, end)));
-            result.put("count", count);
-            
-            return Result.success(result);
-        } catch (Exception e) {
-            Loggers.SRV_LOG.warn("query subscribers failed!", e);
-            result.replace("subscribers", JacksonUtils.createEmptyArrayNode());
-            result.put("count", count);
-            return Result.failure(ErrorCode.SERVER_ERROR, result);
-        }
+        return Result.success(serviceOperatorV2.getSubscribers(pageNo, pageSize, namespaceId, serviceName, groupName, aggregation));
     }
     
     /**

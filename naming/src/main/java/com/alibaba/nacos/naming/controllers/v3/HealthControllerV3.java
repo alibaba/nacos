@@ -20,12 +20,10 @@ import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
-import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.naming.core.HealthOperatorV2Impl;
-import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.UpdateHealthForm;
 import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
@@ -38,8 +36,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -81,17 +77,6 @@ public class HealthControllerV3 {
     @GetMapping("/checkers")
     @Secured(resource = UtilsAndCommons.HEALTH_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<Map<String, AbstractHealthChecker>> checkers() {
-        List<Class<? extends AbstractHealthChecker>> classes = HealthCheckType.getLoadedHealthCheckerClasses();
-        Map<String, AbstractHealthChecker> checkerMap = new HashMap<>(8);
-        for (Class<? extends AbstractHealthChecker> clazz : classes) {
-            try {
-                AbstractHealthChecker checker = clazz.newInstance();
-                checkerMap.put(checker.getType(), checker);
-            } catch (InstantiationException | IllegalAccessException e) {
-                Loggers.EVT_LOG.error("checkers error ", e);
-            }
-        }
-        
-        return Result.success(checkerMap);
+        return Result.success(healthOperatorV2.checkers());
     }
 }

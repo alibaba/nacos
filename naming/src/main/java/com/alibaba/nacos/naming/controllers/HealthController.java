@@ -95,7 +95,7 @@ public class HealthController {
     @CanDistro
     @PutMapping(value = {"", "/instance"})
     @Secured(action = ActionTypes.WRITE)
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "PUT ${contextPath:nacos}/v3/admin/health/instance")
     public ResponseEntity update(HttpServletRequest request) throws NacosException {
         String healthyString = WebUtils.optional(request, HEALTHY_KEY, StringUtils.EMPTY);
         if (StringUtils.isBlank(healthyString)) {
@@ -122,7 +122,7 @@ public class HealthController {
      * @return health checkers map
      */
     @GetMapping("/checkers")
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/health/checkers")
     public ResponseEntity checkers() {
         List<Class<? extends AbstractHealthChecker>> classes = HealthCheckType.getLoadedHealthCheckerClasses();
         Map<String, AbstractHealthChecker> checkerMap = new HashMap<>(8);

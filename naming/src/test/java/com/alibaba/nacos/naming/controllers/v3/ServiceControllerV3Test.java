@@ -24,14 +24,17 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.trace.event.naming.UpdateServiceTraceEvent;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.model.form.AggregationForm;
+import com.alibaba.nacos.core.model.form.PageForm;
+import com.alibaba.nacos.naming.constants.FieldsConstants;
+import com.alibaba.nacos.naming.core.CatalogServiceV2Impl;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
-import com.alibaba.nacos.naming.core.SubscribeManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.model.form.ServiceForm;
+import com.alibaba.nacos.naming.model.form.ServiceListForm;
 import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
-import com.alibaba.nacos.naming.pojo.ServiceNameView;
-import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.AfterEach;
@@ -68,10 +71,10 @@ class ServiceControllerV3Test {
     private SelectorManager selectorManager;
     
     @Mock
-    private SubscribeManager subscribeManager;
+    private ServiceOperatorV2Impl serviceOperatorV2;
     
     @Mock
-    private ServiceOperatorV2Impl serviceOperatorV2;
+    private CatalogServiceV2Impl catalogServiceV2;
     
     private ServiceControllerV3 serviceControllerV3;
     
@@ -81,7 +84,7 @@ class ServiceControllerV3Test {
     
     @BeforeEach
     void setUp() throws Exception {
-        serviceControllerV3 = new ServiceControllerV3(serviceOperatorV2, selectorManager, subscribeManager);
+        serviceControllerV3 = new ServiceControllerV3(serviceOperatorV2, selectorManager, catalogServiceV2);
         subscriber = new SmartSubscriber() {
             @Override
             public List<Class<? extends Event>> subscribeTypes() {
@@ -144,14 +147,20 @@ class ServiceControllerV3Test {
     
     @Test
     void testList() throws Exception {
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+        result.put(FieldsConstants.COUNT, 1);
+        when(catalogServiceV2.pageListService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "serviceName", 1,
+                        10, "", false)).thenReturn(result);
+        ServiceListForm serviceListForm = new ServiceListForm();
+        serviceListForm.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
+        serviceListForm.setGroupNameParam(Constants.DEFAULT_GROUP);
+        serviceListForm.setServiceNameParam("serviceName");
+        PageForm pageForm = new PageForm();
+        pageForm.setPageNo(1);
+        pageForm.setPageSize(10);
         
-        when(serviceOperatorV2.listService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "")).thenReturn(
-                Collections.singletonList("serviceName"));
-        Result<ServiceNameView> actual = serviceControllerV3.list(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "", 1, 10);
+        Result<Object> actual = serviceControllerV3.list(serviceListForm, pageForm);
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
-        assertEquals(1, actual.getData().getCount());
-        assertEquals(1, actual.getData().getServices().size());
-        assertEquals("serviceName", actual.getData().getServices().iterator().next());
     }
     
     @Test
@@ -199,11 +208,23 @@ class ServiceControllerV3Test {
     }
     
     @Test
-    void testSubscribers() {
-        Mockito.when(subscribeManager.getSubscribers(Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean()))
-                .thenReturn(Collections.singletonList(Mockito.mock(Subscriber.class)));
+    void testSubscribers() throws Exception {
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+        result.put(FieldsConstants.COUNT, 1);
         
-        ObjectNode objectNode = serviceControllerV3.subscribers("nameSpaceId", "serviceName", true, 1, 10).getData();
+        Mockito.when(serviceOperatorV2.getSubscribers(1, 10, "nameSpaceId", "serviceName", "groupName", true))
+                .thenReturn(result);
+        
+        ServiceForm serviceForm = new ServiceForm();
+        serviceForm.setNamespaceId("nameSpaceId");
+        serviceForm.setServiceName("serviceName");
+        serviceForm.setGroupName("groupName");
+        PageForm pageForm = new PageForm();
+        pageForm.setPageNo(1);
+        pageForm.setPageSize(10);
+        AggregationForm aggregationForm = new AggregationForm();
+        aggregationForm.setAggregation(true);
+        ObjectNode objectNode = serviceControllerV3.subscribers(serviceForm, pageForm, aggregationForm).getData();
         assertEquals(1, objectNode.get("count").asInt());
     }
     

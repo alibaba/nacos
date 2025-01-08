@@ -17,6 +17,9 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+
+import java.util.Map;
 
 /**
  * Persistent Health operator.
@@ -40,4 +43,15 @@ public interface HealthOperator {
      */
     void updateHealthStatusForPersistentInstance(String namespace, String fullServiceName, String clusterName,
             String ip, int port, boolean healthy) throws NacosException;
+    
+    /**
+     * Retrieves a map of available health checkers.
+     *
+     * <p>Each key in the map represents the type of health checker, and the corresponding value is an instance
+     * of {@link AbstractHealthChecker} that implements the specific health check logic.
+     *
+     * @return a map of health checkers, where the key is the health checker type and the value is the
+     *         corresponding {@link AbstractHealthChecker} instance
+     */
+    Map<String, AbstractHealthChecker> checkers();
 }
