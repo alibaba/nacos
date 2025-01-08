@@ -36,7 +36,7 @@ import java.util.List;
 public class ServiceInfo {
     
     /**
-     * file name pattern: groupName@@name@clusters.
+     * file name pattern: groupName@@name@@clusters.
      */
     private static final int GROUP_POSITION = 0;
     
