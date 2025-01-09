@@ -27,6 +27,7 @@ import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,6 +48,7 @@ import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -140,6 +142,32 @@ class ClientInfoControllerV2Test extends BaseTest {
         connectionBasedClient.addServiceInstance(service, instancePublishInfo);
         mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(URL + "/service/publisher/list").param("namespaceId", baseTestKey)
                 .param("groupName", baseTestKey).param("serviceName", baseTestKey).param("ip", "127.0.0.1").param("port", "8848");
+        mockmvc.perform(mockHttpServletRequestBuilder).andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(1));
+    }
+    
+    @Test
+    void testGetSubscribeClientList() throws Exception {
+        String baseTestKey = "nacos-getSubScribedClientList-test";
+        // ip port match
+        Service service = Service.newService(baseTestKey, baseTestKey, baseTestKey);
+        when(clientServiceIndexesManager.getAllClientsSubscribeService(service)).thenReturn(Arrays.asList("test"));
+        when(clientManager.getClient("test")).thenReturn(ipPortBasedClient);
+        Subscriber subscriber = mock(Subscriber.class);
+        when(subscriber.getIp()).thenReturn("127.0.0.1");
+        when(subscriber.getPort()).thenReturn(8848);
+        ipPortBasedClient.addServiceSubscriber(service, subscriber);
+        MockHttpServletRequestBuilder mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(URL + "/service/subscriber/list")
+                .param("namespaceId", baseTestKey).param("groupName", baseTestKey).param("serviceName", baseTestKey)
+                .param("ip", "127.0.0.1").param("port", "8848");
+        mockmvc.perform(mockHttpServletRequestBuilder).andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(1));
+        // ip port not match
+        mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(URL + "/service/subscriber/list")
+                .param("namespaceId", baseTestKey).param("groupName", baseTestKey).param("serviceName", baseTestKey)
+                .param("ip", "127.0.0.1").param("port", "8849");
+        mockmvc.perform(mockHttpServletRequestBuilder).andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(0));
+        // ip port is null
+        mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(URL + "/service/subscriber/list")
+                .param("namespaceId", baseTestKey).param("groupName", baseTestKey).param("serviceName", baseTestKey);
         mockmvc.perform(mockHttpServletRequestBuilder).andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(1));
     }
 }

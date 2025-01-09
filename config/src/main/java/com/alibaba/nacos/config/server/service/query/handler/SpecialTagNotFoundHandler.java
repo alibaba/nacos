@@ -17,8 +17,6 @@
 package com.alibaba.nacos.config.server.service.query.handler;
 
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.model.CacheItem;
-import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
 
@@ -43,25 +41,7 @@ public class SpecialTagNotFoundHandler extends AbstractConfigQueryHandler {
     public ConfigQueryChainResponse handle(ConfigQueryChainRequest request) throws IOException {
         if (StringUtils.isNotBlank(request.getTag())) {
             ConfigQueryChainResponse response = new ConfigQueryChainResponse();
-            
-            String dataId = request.getDataId();
-            String group = request.getGroup();
-            String tenant = request.getTenant();
-            
-            CacheItem cacheItem = ConfigChainEntryHandler.getThreadLocalCacheItem();
-            String md5 = cacheItem.getConfigCache().getMd5();
-            long lastModified = cacheItem.getConfigCache().getLastModifiedTs();
-            String encryptedDataKey = cacheItem.getConfigCache().getEncryptedDataKey();
-            String contentType = cacheItem.getType();
-            String content = ConfigDiskServiceFactory.getInstance().getContent(dataId, group, tenant);
-            
-            response.setContent(content);
-            response.setMd5(md5);
-            response.setLastModified(lastModified);
-            response.setEncryptedDataKey(encryptedDataKey);
-            response.setContentType(contentType);
             response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.SPECIAL_TAG_CONFIG_NOT_FOUND);
-            
             return response;
         } else {
             return nextHandler.handle(request);

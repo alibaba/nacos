@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service.query;
 
 import com.alibaba.nacos.config.server.service.query.handler.ConfigChainEntryHandler;
+import com.alibaba.nacos.config.server.service.query.handler.ConfigContentTypeHandler;
 import com.alibaba.nacos.config.server.service.query.handler.FormalHandler;
 import com.alibaba.nacos.config.server.service.query.handler.GrayRuleMatchHandler;
 import com.alibaba.nacos.config.server.service.query.handler.SpecialTagNotFoundHandler;
@@ -32,6 +33,7 @@ public class DefaultConfigQueryHandlerChainBuilder implements ConfigQueryHandler
     public ConfigQueryHandlerChain build() {
         ConfigQueryHandlerChain chain = new ConfigQueryHandlerChain();
         chain.addHandler(new ConfigChainEntryHandler())
+                .addHandler(new ConfigContentTypeHandler())
                 .addHandler(new GrayRuleMatchHandler())
                 .addHandler(new SpecialTagNotFoundHandler())
                 .addHandler(new FormalHandler());

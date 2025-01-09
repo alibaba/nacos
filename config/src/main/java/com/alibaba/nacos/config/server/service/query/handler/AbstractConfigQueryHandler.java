@@ -17,9 +17,8 @@
 package com.alibaba.nacos.config.server.service.query.handler;
 
 /**
- * AbstractConfigQueryHandler.
- * This abstract class provides a base implementation for configuration query handlers.
- * It implements the {@link ConfigQueryHandler} interface and handles the chaining of handlers.
+ * AbstractConfigQueryHandler. This abstract class provides a base implementation for configuration query handlers. It
+ * implements the {@link ConfigQueryHandler} interface and handles the chaining of handlers.
  *
  * @author Nacos
  */
@@ -27,12 +26,14 @@ public abstract class AbstractConfigQueryHandler implements ConfigQueryHandler {
     
     public ConfigQueryHandler nextHandler;
     
-    public void setNextHandler(ConfigQueryHandler nextHandler) {
-        this.nextHandler = nextHandler;
-    }
-    
+    @Override
     public ConfigQueryHandler getNextHandler() {
         return this.nextHandler;
+    }
+    
+    @Override
+    public void setNextHandler(ConfigQueryHandler nextHandler) {
+        this.nextHandler = nextHandler;
     }
     
 }
