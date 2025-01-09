@@ -71,3 +71,6 @@ com.alibaba.nacos.api.naming.remote.request.NamingFuzzyWatchChangeNotifyRequest
 com.alibaba.nacos.api.naming.remote.response.NamingFuzzyWatchChangeNotifyResponse
 com.alibaba.nacos.api.naming.remote.request.NamingFuzzyWatchSyncRequest
 com.alibaba.nacos.api.naming.remote.response.NamingFuzzyWatchSyncResponse
+
+com.alibaba.nacos.api.lock.remote.request.LockOperationRequest
+com.alibaba.nacos.api.lock.remote.response.LockOperationResponse

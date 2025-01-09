@@ -18,6 +18,7 @@ package com.alibaba.nacos.console;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.ldap.LdapAutoConfiguration;
 import org.springframework.context.annotation.PropertySource;
 
 /**
@@ -25,7 +26,7 @@ import org.springframework.context.annotation.PropertySource;
  *
  * @author xiweng.yy
  */
-@SpringBootApplication
+@SpringBootApplication(exclude = LdapAutoConfiguration.class)
 @PropertySource("classpath:nacos-console.properties")
 public class NacosConsole {
     

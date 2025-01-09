@@ -38,7 +38,11 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-naming</artifactId>
         </dependency>
-    
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>nacos-lock</artifactId>
+        </dependency>
+        
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-default-plugin-all</artifactId>
@@ -113,41 +117,4 @@
             </plugin>
         </plugins>
     </reporting>
-    
-    <profiles>
-        <profile>
-            <id>release-nacos</id>
-            <build>
-                <finalName>nacos-server</finalName>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-jar-plugin</artifactId>
-                        <configuration>
-                            <archive>
-                                <manifest>
-                                    <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-                                    <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-                                </manifest>
-                            </archive>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.springframework.boot</groupId>
-                        <artifactId>spring-boot-maven-plugin</artifactId>
-                        <configuration>
-                            <mainClass>com.alibaba.nacos.bootstrap.Nacos</mainClass>
-                            <layout>ZIP</layout>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>repackage</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>

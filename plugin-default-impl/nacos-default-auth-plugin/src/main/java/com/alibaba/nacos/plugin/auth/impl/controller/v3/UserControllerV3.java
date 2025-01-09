@@ -18,6 +18,7 @@
 package com.alibaba.nacos.plugin.auth.impl.controller.v3;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.AuthConfigs;
@@ -42,11 +43,6 @@ import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordGeneratorUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.HttpSessionRequiredException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -81,8 +77,6 @@ public class UserControllerV3 {
     
     private final TokenManagerDelegate jwtTokenManager;
     
-    private final AuthenticationManager authenticationManager;
-    
     private static final String SEARCH_TYPE_BLUR = "blur";
     
     /**
@@ -93,17 +87,15 @@ public class UserControllerV3 {
      * @param authConfigs            the authentication configuration
      * @param iAuthenticationManager the authentication manager interface
      * @param jwtTokenManager        the JWT token manager
-     * @param authenticationManager  the authentication manager
      */
     public UserControllerV3(NacosUserDetailsServiceImpl userDetailsService, NacosRoleServiceImpl roleService,
             AuthConfigs authConfigs, IAuthenticationManager iAuthenticationManager,
-            TokenManagerDelegate jwtTokenManager, @Deprecated AuthenticationManager authenticationManager) {
+            TokenManagerDelegate jwtTokenManager) {
         this.userDetailsService = userDetailsService;
         this.roleService = roleService;
         this.authConfigs = authConfigs;
         this.iAuthenticationManager = iAuthenticationManager;
         this.jwtTokenManager = jwtTokenManager;
-        this.authenticationManager = authenticationManager;
     }
     
     /**
@@ -282,16 +274,13 @@ public class UserControllerV3 {
      *
      * <p>This methods uses username and password to require a new token.
      *
-     * @param username username of user
-     * @param password password
      * @param response http response
      * @param request  http request
      * @return new token of the user
      * @throws AccessException if user info is incorrect
      */
     @PostMapping("/login")
-    public Object login(@RequestParam String username, @RequestParam String password, HttpServletResponse response,
-            HttpServletRequest request) throws AccessException, IOException {
+    public Object login(HttpServletResponse response, HttpServletRequest request) throws AccessException, IOException {
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())
                 || AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
             
@@ -306,25 +295,8 @@ public class UserControllerV3 {
             result.put(Constants.USERNAME, user.getUserName());
             return result;
         }
-        
-        // create Authentication class through username and password, the implement class is UsernamePasswordAuthenticationToken
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username,
-                password);
-        
-        try {
-            // use the method authenticate of AuthenticationManager(default implement is ProviderManager) to valid Authentication
-            Authentication authentication = authenticationManager.authenticate(authenticationToken);
-            // bind SecurityContext to Authentication
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            // generate Token
-            String token = jwtTokenManager.createToken(authentication);
-            // write Token to Http header
-            response.addHeader(AuthConstants.AUTHORIZATION_HEADER, "Bearer " + token);
-            return Result.success("Bearer " + token);
-        } catch (BadCredentialsException authentication) {
-            return Result.failure(HttpStatus.UNAUTHORIZED.value(), HttpStatus.UNAUTHORIZED.getReasonPhrase(),
-                    "Login failed");
-        }
+        return Result.failure(ErrorCode.ILLEGAL_STATE.getCode(),
+                "Current Nacos auth plugin type is not `nacos` or `nacos-ldap`, don't support login API.", null);
     }
 }
 

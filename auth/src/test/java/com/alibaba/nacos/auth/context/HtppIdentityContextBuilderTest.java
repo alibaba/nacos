@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.auth.context;
 
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,7 +46,7 @@ class HtppIdentityContextBuilderTest {
     private static final String IDENTITY_TEST_VALUE = "identity-test-value";
     
     @Mock
-    private AuthConfigs authConfigs;
+    private NacosAuthConfig authConfig;
     
     @Mock
     private HttpServletRequest request;
@@ -61,15 +61,15 @@ class HtppIdentityContextBuilderTest {
     
     @BeforeEach
     void setUp() throws Exception {
-        identityContextBuilder = new HttpIdentityContextBuilder(authConfigs);
-        when(authConfigs.getNacosAuthSystemType()).thenReturn(TEST_PLUGIN);
+        identityContextBuilder = new HttpIdentityContextBuilder(authConfig);
+        when(authConfig.getNacosAuthSystemType()).thenReturn(TEST_PLUGIN);
     }
     
     @Test
     void testBuildWithoutPlugin() {
         mockHeader(true);
         mockParameter(true);
-        when(authConfigs.getNacosAuthSystemType()).thenReturn("non-exist");
+        when(authConfig.getNacosAuthSystemType()).thenReturn("non-exist");
         IdentityContext actual = identityContextBuilder.build(request);
         assertNull(actual.getParameter(IDENTITY_TEST_KEY));
     }

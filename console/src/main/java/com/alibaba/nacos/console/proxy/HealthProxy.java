@@ -17,15 +17,9 @@
 
 package com.alibaba.nacos.console.proxy;
 
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
-import com.alibaba.nacos.console.config.ConsoleConfig;
 import com.alibaba.nacos.console.handler.HealthHandler;
-import com.alibaba.nacos.console.handler.inner.HealthInnerHandler;
 import org.springframework.stereotype.Service;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Proxy class for handling health check operations.
@@ -35,13 +29,10 @@ import java.util.Map;
 @Service
 public class HealthProxy {
     
-    private final Map<String, HealthHandler> healthHandlerMap = new HashMap<>();
+    private final HealthHandler healthHandler;
     
-    private final ConsoleConfig consoleConfig;
-    
-    public HealthProxy(HealthInnerHandler healthInnerHandler, ConsoleConfig consoleConfig) {
-        this.healthHandlerMap.put("merged", healthInnerHandler);
-        this.consoleConfig = consoleConfig;
+    public HealthProxy(HealthHandler healthHandler) {
+        this.healthHandler = healthHandler;
     }
     
     /**
@@ -49,11 +40,7 @@ public class HealthProxy {
      *
      * @return readiness result
      */
-    public Result<String> checkReadiness() throws NacosException {
-        HealthHandler healthHandler = healthHandlerMap.get(consoleConfig.getType());
-        if (healthHandler == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Invalid deployment type");
-        }
+    public Result<String> checkReadiness() {
         return healthHandler.checkReadiness();
     }
 }

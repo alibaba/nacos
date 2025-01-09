@@ -22,7 +22,7 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.auth.GrpcProtocolAuthService;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.auth.serveridentity.ServerIdentityResult;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.context.RequestContext;
@@ -48,13 +48,13 @@ import java.lang.reflect.Method;
 @Component
 public class RemoteRequestAuthFilter extends AbstractRequestFilter {
     
-    private final AuthConfigs authConfigs;
+    private final NacosAuthConfig authConfig;
     
     private final GrpcProtocolAuthService protocolAuthService;
     
-    public RemoteRequestAuthFilter(AuthConfigs authConfigs) {
-        this.authConfigs = authConfigs;
-        this.protocolAuthService = new GrpcProtocolAuthService(authConfigs);
+    public RemoteRequestAuthFilter() {
+        this.authConfig = NacosServerAuthConfig.getInstance();
+        this.protocolAuthService = new GrpcProtocolAuthService(authConfig);
         this.protocolAuthService.initialize();
     }
     
@@ -67,7 +67,7 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
             if (method.isAnnotationPresent(Secured.class)) {
                 Secured secured = method.getAnnotation(Secured.class);
                 // Inner API must do check server identity. So judge api type not inner api and whether auth is enabled.
-                if (ApiType.INNER_API != secured.apiType() && !authConfigs.isAuthEnabled()) {
+                if (ApiType.INNER_API != secured.apiType() && !authConfig.isAuthEnabled()) {
                     return null;
                 }
                 if (Loggers.AUTH.isDebugEnabled()) {

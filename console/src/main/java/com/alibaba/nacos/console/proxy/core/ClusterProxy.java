@@ -17,15 +17,11 @@
 
 package com.alibaba.nacos.console.proxy.core;
 
-import com.alibaba.nacos.console.config.ConsoleConfig;
 import com.alibaba.nacos.console.handler.core.ClusterHandler;
-import com.alibaba.nacos.console.handler.inner.core.ClusterInnerHandler;
 import com.alibaba.nacos.core.cluster.Member;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Proxy class for handling cluster-related operations.
@@ -35,19 +31,15 @@ import java.util.Map;
 @Service
 public class ClusterProxy {
     
-    private final Map<String, ClusterHandler> clusterHandlerMap = new HashMap<>();
-    
-    private final ConsoleConfig consoleConfig;
+    private final ClusterHandler clusterHandler;
     
     /**
      * Constructs a new ClusterProxy with the given ClusterInnerHandler and ConsoleConfig.
      *
-     * @param clusterInnerHandler the default implementation of ClusterHandler
-     * @param consoleConfig       the console configuration used to determine the deployment type
+     * @param clusterHandler the default implementation of ClusterHandler
      */
-    public ClusterProxy(ClusterInnerHandler clusterInnerHandler, ConsoleConfig consoleConfig) {
-        this.clusterHandlerMap.put("merged", clusterInnerHandler);
-        this.consoleConfig = consoleConfig;
+    public ClusterProxy(ClusterHandler clusterHandler) {
+        this.clusterHandler = clusterHandler;
     }
     
     /**
@@ -58,10 +50,6 @@ public class ClusterProxy {
      * @throws IllegalArgumentException if the deployment type is invalid
      */
     public Collection<Member> getNodeList(String ipKeyWord) {
-        ClusterHandler clusterHandler = clusterHandlerMap.get(consoleConfig.getType());
-        if (clusterHandler == null) {
-            throw new IllegalArgumentException("Invalid deployment type");
-        }
         return clusterHandler.getNodeList(ipKeyWord);
     }
 }

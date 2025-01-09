@@ -19,7 +19,6 @@ package com.alibaba.nacos.config.server.utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -168,21 +167,6 @@ public class ConfigExtInfoUtil {
             return OBJECT_MAPPER.writeValueAsString(node);
         } catch (Exception ex) {
             LOGGER.error("Failed to serialize extra info from gray info", ex);
-            return null;
-        }
-    }
-    
-    /**
-     * Extract grayName from extInfo.
-     */
-    public static String extractGrayName(String extraInfo) {
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            Map<String, String> dataMap = objectMapper.readValue(extraInfo, new TypeReference<Map<String, String>>() {
-            });
-            return dataMap.get("gray_name");
-        } catch (Exception e) {
-            LogUtil.DEFAULT_LOG.error("Error extracting gray_name from extraInfo", e);
             return null;
         }
     }

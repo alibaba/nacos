@@ -45,6 +45,8 @@ public class AuthConstants {
     
     public static final String UPDATE_PASSWORD_ENTRY_POINT = CONSOLE_RESOURCE_NAME_PREFIX + "user/password";
     
+    public static final String LOCK_OPERATOR_POINT = "grpc/lock";
+    
     public static final String NACOS_USER_KEY = "nacosuser";
     
     public static final String TOKEN_SECRET_KEY = "nacos.core.auth.plugin.nacos.token.secret.key";

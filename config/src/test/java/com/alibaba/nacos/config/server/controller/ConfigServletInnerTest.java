@@ -62,7 +62,6 @@ import java.util.Map;
 
 import static com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG;
 import static com.alibaba.nacos.config.server.constant.Constants.CONTENT_MD5;
-import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_GBK;
 import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
 import static com.alibaba.nacos.config.server.utils.RequestUtil.CLIENT_APPNAME_HEADER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -184,8 +183,7 @@ class ConfigServletInnerTest {
     private void mockGray4Beta(CacheItem cacheItem, String content, String betaIps, String dataKey) {
         cacheItem.initConfigGrayIfEmpty(BetaGrayRule.TYPE_BETA);
         ConfigCacheGray configCacheGray = cacheItem.getConfigCacheGray().get(BetaGrayRule.TYPE_BETA);
-        configCacheGray.setMd5Utf8(MD5Utils.md5Hex(content, ENCODE_UTF8));
-        configCacheGray.setMd5Gbk(MD5Utils.md5Hex(content, ENCODE_GBK));
+        configCacheGray.setMd5(MD5Utils.md5Hex(content, ENCODE_UTF8));
         configCacheGray.setEncryptedDataKey(dataKey);
         ConfigGrayPersistInfo configGrayPersistInfo = new ConfigGrayPersistInfo(BetaGrayRule.TYPE_BETA,
                 BetaGrayRule.VERSION, betaIps, -1000);
@@ -196,8 +194,7 @@ class ConfigServletInnerTest {
     private void mockGray4Tag(CacheItem cacheItem, String content, String tagValue, String dataKey, long ts) {
         cacheItem.initConfigGrayIfEmpty(TagGrayRule.TYPE_TAG + "_" + tagValue);
         ConfigCacheGray configCacheGray = cacheItem.getConfigCacheGray().get(TagGrayRule.TYPE_TAG + "_" + tagValue);
-        configCacheGray.setMd5Utf8(MD5Utils.md5Hex(content, ENCODE_UTF8));
-        configCacheGray.setMd5Gbk(MD5Utils.md5Hex(content, ENCODE_GBK));
+        configCacheGray.setMd5(MD5Utils.md5Hex(content, ENCODE_UTF8));
         configCacheGray.setLastModifiedTs(ts);
         configCacheGray.setEncryptedDataKey(dataKey);
         ConfigGrayPersistInfo configGrayPersistInfo = new ConfigGrayPersistInfo(TagGrayRule.TYPE_TAG,
@@ -295,7 +292,7 @@ class ConfigServletInnerTest {
         CacheItem cacheItem = new CacheItem("test");
         String md5 = "md5wertyui";
         final String content = "content345678";
-        cacheItem.getConfigCache().setMd5Utf8(md5);
+        cacheItem.getConfigCache().setMd5(md5);
         long ts = System.currentTimeMillis();
         cacheItem.getConfigCache().setLastModifiedTs(ts);
         cacheItem.getConfigCache().setEncryptedDataKey("key2345678");
@@ -330,7 +327,7 @@ class ConfigServletInnerTest {
         CacheItem cacheItem = new CacheItem("test");
         String md5 = "md5wertyui";
         final String content = "content345678";
-        cacheItem.getConfigCache().setMd5Utf8(md5);
+        cacheItem.getConfigCache().setMd5(md5);
         long ts = System.currentTimeMillis();
         cacheItem.getConfigCache().setLastModifiedTs(ts);
         cacheItem.getConfigCache().setEncryptedDataKey("key2345678");

@@ -60,6 +60,8 @@ public class ConfigHistoryInfo implements Serializable {
     
     private String publishType;
     
+    private String grayName;
+    
     private String extInfo;
     
     private Timestamp createdTime;
@@ -170,6 +172,14 @@ public class ConfigHistoryInfo implements Serializable {
     
     public void setLastModifiedTime(Timestamp lastModifiedTime) {
         this.lastModifiedTime = new Timestamp(lastModifiedTime.getTime());
+    }
+    
+    public String getGrayName() {
+        return grayName;
+    }
+    
+    public void setGrayName(String grayName) {
+        this.grayName = grayName;
     }
     
     public String getAppName() {

@@ -129,7 +129,7 @@ const getPermissions = params => dispatch =>
  */
 const checkPermission = ([role, resource, action]) => {
   const params = { role, resource, action };
-  return request.get('v1/auth/permissions', { params }).then(res => res.data);
+  return request.get('v3/auth/permission', { params }).then(res => res.data);
 };
 
 /**

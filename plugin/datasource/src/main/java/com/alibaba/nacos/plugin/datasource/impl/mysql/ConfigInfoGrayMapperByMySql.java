@@ -33,9 +33,8 @@ public class ConfigInfoGrayMapperByMySql extends AbstractMapperByMysql implement
     
     @Override
     public MapperResult findAllConfigInfoGrayForDumpAllFetchRows(MapperContext context) {
-        String sql = " SELECT t.id,data_id,group_id,tenant_id,gray_name,gray_rule,app_name,content,md5,gmt_modified "
-                + " FROM (  SELECT id FROM config_info_gray  ORDER BY id LIMIT " + context.getStartRow() + ","
-                + context.getPageSize() + " ) " + "g, config_info_gray t  WHERE g.id = t.id  ";
+        String sql = " SELECT id,data_id,group_id,tenant_id,gray_name,gray_rule,app_name,content,md5,gmt_modified "
+                + " FROM  config_info_gray  ORDER BY id LIMIT " + context.getStartRow() + "," + context.getPageSize();
         return new MapperResult(sql, Collections.emptyList());
     }
     

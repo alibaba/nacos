@@ -38,7 +38,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.omg.CORBA.ServiceDetail;
 
 import java.util.Collections;
 import java.util.List;
@@ -136,18 +135,18 @@ public class ConsoleServiceControllerTest {
     
     @Test
     void testGetServiceDetail() throws Exception {
-        ServiceDetail serviceDetail = new ServiceDetail();
-        
+        Object serviceDetail = new Object();
+
         when(serviceProxy.getServiceDetail(any(String.class), any(String.class), any(String.class))).thenReturn(
                 serviceDetail);
         ServiceForm serviceForm = new ServiceForm();
         serviceForm.setServiceName("testService");
         serviceForm.setNamespaceId("testNamespace");
         serviceForm.setGroupName("testGroup");
-        Result<ServiceDetail> actual = (Result<ServiceDetail>) consoleServiceController.getServiceDetail(serviceForm);
-        
+        Result<Object> actual = (Result<Object>) consoleServiceController.getServiceDetail(serviceForm);
+
         verify(serviceProxy).getServiceDetail(any(String.class), any(String.class), any(String.class));
-        
+
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals(serviceDetail, actual.getData());
     }
@@ -193,7 +192,7 @@ public class ConsoleServiceControllerTest {
     @Test
     void testGetServiceList() throws Exception {
         when(serviceProxy.getServiceList(anyBoolean(), anyString(), anyInt(), anyInt(), anyString(), anyString(),
-                anyBoolean())).thenReturn(Collections.singletonList(new ServiceDetail()));
+                anyBoolean())).thenReturn(Collections.singletonList(new Object()));
         PageForm pageForm = new PageForm();
         pageForm.setPageNo(1);
         pageForm.setPageSize(10);

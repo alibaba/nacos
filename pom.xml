@@ -88,7 +88,7 @@
     </issueManagement>
     
     <properties>
-        <revision>3.0.0-ALPHA-lzf-SNAPSHOT</revision>
+        <revision>3.0.0-ALPHA.2</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Compiler settings properties -->
@@ -625,10 +625,12 @@
         <module>k8s-sync</module>
         <module>bootstrap</module>
         <module>server</module>
+        <module>lock</module>
     </modules>
     
     <!-- Default dependencies in all subprojects -->
     <dependencies>
+        
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -740,6 +742,11 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-lock</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.alibaba.nacos</groupId>
                 <artifactId>nacos-persistence</artifactId>
                 <version>${project.version}</version>
@@ -797,6 +804,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-server</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-bootstrap</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

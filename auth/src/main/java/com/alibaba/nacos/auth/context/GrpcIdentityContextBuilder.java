@@ -17,7 +17,7 @@
 package com.alibaba.nacos.auth.context;
 
 import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
@@ -35,10 +35,10 @@ import java.util.Set;
  */
 public class GrpcIdentityContextBuilder implements IdentityContextBuilder<Request> {
     
-    private final AuthConfigs authConfigs;
+    private final NacosAuthConfig authConfig;
     
-    public GrpcIdentityContextBuilder(AuthConfigs authConfigs) {
-        this.authConfigs = authConfigs;
+    public GrpcIdentityContextBuilder(NacosAuthConfig authConfig) {
+        this.authConfig = authConfig;
     }
     
     /**
@@ -51,7 +51,7 @@ public class GrpcIdentityContextBuilder implements IdentityContextBuilder<Reques
     @Override
     public IdentityContext build(Request request) {
         Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
-                .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
+                .findAuthServiceSpiImpl(authConfig.getNacosAuthSystemType());
         IdentityContext result = new IdentityContext();
         getRemoteIp(request, result);
         if (!authPluginService.isPresent()) {

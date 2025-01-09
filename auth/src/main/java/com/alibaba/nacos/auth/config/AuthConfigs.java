@@ -81,9 +81,6 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     @Value("${" + Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE + ":}")
     private String serverIdentityValue;
     
-    @Value("${" + Constants.Auth.NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE + ":false}")
-    private boolean enableUserAgentAuthWhite;
-    
     private boolean hasGlobalAdminRole;
     
     private Map<String, Properties> authPluginProperties = new HashMap<>();
@@ -153,10 +150,6 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
         return serverIdentityValue;
     }
     
-    public boolean isEnableUserAgentAuthWhite() {
-        return enableUserAgentAuthWhite;
-    }
-    
     /**
      * console auth function is open.
      *
@@ -208,8 +201,6 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
             cachingEnabled = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_CACHING_ENABLED, Boolean.class, true);
             serverIdentityKey = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "");
             serverIdentityValue = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "");
-            enableUserAgentAuthWhite = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE,
-                    Boolean.class, false);
             nacosAuthSystemType = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "");
             refreshPluginProperties();
             ModuleStateHolder.getInstance().getModuleState(AuthModuleStateBuilder.AUTH_MODULE)

@@ -19,13 +19,12 @@ package com.alibaba.nacos.core.auth;
 
 import com.alibaba.nacos.auth.HttpProtocolAuthService;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,7 +62,7 @@ class AuthFilterTest {
     private AuthFilter authFilter;
     
     @Mock
-    private AuthConfigs authConfigs;
+    private NacosAuthConfig authConfig;
     
     @Mock
     private ControllerMethodsCache methodsCache;
@@ -79,7 +78,7 @@ class AuthFilterTest {
     
     @BeforeEach
     void setUp() {
-        authFilter = new AuthFilter(authConfigs, methodsCache);
+        authFilter = new AuthFilter(authConfig, methodsCache);
     }
     
     @AfterEach
@@ -89,7 +88,7 @@ class AuthFilterTest {
     
     @Test
     void testDoFilterDisabledAuth() throws ServletException, IOException {
-        when(authConfigs.isAuthEnabled()).thenReturn(false);
+        when(authConfig.isAuthEnabled()).thenReturn(false);
         authFilter.doFilter(request, response, filterChain);
         verify(filterChain).doFilter(request, response);
         verify(response, never()).sendError(anyInt(), anyString());
@@ -100,7 +99,7 @@ class AuthFilterTest {
     void testDoFilterWithoutServerIdentity() throws ServletException, IOException, NoSuchMethodException {
         when(methodsCache.getMethod(request)).thenReturn(
                 this.getClass().getDeclaredMethod("testDoFilterWithoutServerIdentity"));
-        when(authConfigs.isAuthEnabled()).thenReturn(true);
+        when(authConfig.isAuthEnabled()).thenReturn(true);
         authFilter.doFilter(request, response, filterChain);
         verify(filterChain, never()).doFilter(request, response);
         verify(response).sendError(403,
@@ -113,9 +112,9 @@ class AuthFilterTest {
     void testDoFilterWithServerIdentity() throws ServletException, IOException, NoSuchMethodException {
         when(methodsCache.getMethod(request)).thenReturn(
                 this.getClass().getDeclaredMethod("testDoFilterWithServerIdentity"));
-        when(authConfigs.isAuthEnabled()).thenReturn(true);
-        when(authConfigs.getServerIdentityKey()).thenReturn("1");
-        when(authConfigs.getServerIdentityValue()).thenReturn("2");
+        when(authConfig.isAuthEnabled()).thenReturn(true);
+        when(authConfig.getServerIdentityKey()).thenReturn("1");
+        when(authConfig.getServerIdentityValue()).thenReturn("2");
         when(request.getHeader("1")).thenReturn("2");
         authFilter.doFilter(request, response, filterChain);
         verify(filterChain).doFilter(request, response);
@@ -125,7 +124,7 @@ class AuthFilterTest {
     @Test
     @Secured
     void testDoFilterWithoutMethod() throws ServletException, IOException {
-        when(authConfigs.isAuthEnabled()).thenReturn(true);
+        when(authConfig.isAuthEnabled()).thenReturn(true);
         authFilter.doFilter(request, response, filterChain);
         verify(filterChain).doFilter(request, response);
         verify(response, never()).sendError(anyInt(), anyString());
@@ -133,7 +132,7 @@ class AuthFilterTest {
     
     @Test
     void testDoFilterWithoutSecured() throws ServletException, IOException, NoSuchMethodException {
-        when(authConfigs.isAuthEnabled()).thenReturn(true);
+        when(authConfig.isAuthEnabled()).thenReturn(true);
         when(methodsCache.getMethod(request)).thenReturn(
                 this.getClass().getDeclaredMethod("testDoFilterWithoutSecured"));
         authFilter.doFilter(request, response, filterChain);
@@ -144,9 +143,9 @@ class AuthFilterTest {
     @Test
     @Secured
     void testDoFilterWithNoNeedAuthSecured() throws NoSuchMethodException, ServletException, IOException {
-        when(authConfigs.isAuthEnabled()).thenReturn(true);
-        when(authConfigs.getServerIdentityKey()).thenReturn("1");
-        when(authConfigs.getServerIdentityValue()).thenReturn("2");
+        when(authConfig.isAuthEnabled()).thenReturn(true);
+        when(authConfig.getServerIdentityKey()).thenReturn("1");
+        when(authConfig.getServerIdentityValue()).thenReturn("2");
         when(methodsCache.getMethod(request)).thenReturn(
                 this.getClass().getDeclaredMethod("testDoFilterWithNoNeedAuthSecured"));
         HttpProtocolAuthService protocolAuthService = injectMockPlugins();
@@ -160,9 +159,9 @@ class AuthFilterTest {
     @Secured
     void testDoFilterWithNeedAuthSecuredSuccess()
             throws NoSuchMethodException, ServletException, IOException, AccessException {
-        when(authConfigs.isAuthEnabled()).thenReturn(true);
-        when(authConfigs.getServerIdentityKey()).thenReturn("1");
-        when(authConfigs.getServerIdentityValue()).thenReturn("2");
+        when(authConfig.isAuthEnabled()).thenReturn(true);
+        when(authConfig.getServerIdentityKey()).thenReturn("1");
+        when(authConfig.getServerIdentityValue()).thenReturn("2");
         when(methodsCache.getMethod(request)).thenReturn(
                 this.getClass().getDeclaredMethod("testDoFilterWithNeedAuthSecuredSuccess"));
         HttpProtocolAuthService protocolAuthService = injectMockPlugins();
@@ -180,9 +179,9 @@ class AuthFilterTest {
     @Secured
     void testDoFilterWithNeedAuthSecuredIdentityFailure()
             throws NoSuchMethodException, ServletException, IOException, AccessException {
-        when(authConfigs.isAuthEnabled()).thenReturn(true);
-        when(authConfigs.getServerIdentityKey()).thenReturn("1");
-        when(authConfigs.getServerIdentityValue()).thenReturn("2");
+        when(authConfig.isAuthEnabled()).thenReturn(true);
+        when(authConfig.getServerIdentityKey()).thenReturn("1");
+        when(authConfig.getServerIdentityValue()).thenReturn("2");
         when(methodsCache.getMethod(request)).thenReturn(
                 this.getClass().getDeclaredMethod("testDoFilterWithNeedAuthSecuredIdentityFailure"));
         HttpProtocolAuthService protocolAuthService = injectMockPlugins();
@@ -199,9 +198,9 @@ class AuthFilterTest {
     @Secured
     void testDoFilterWithNeedAuthSecuredAuthorityFailure()
             throws NoSuchMethodException, ServletException, IOException, AccessException {
-        when(authConfigs.isAuthEnabled()).thenReturn(true);
-        when(authConfigs.getServerIdentityKey()).thenReturn("1");
-        when(authConfigs.getServerIdentityValue()).thenReturn("2");
+        when(authConfig.isAuthEnabled()).thenReturn(true);
+        when(authConfig.getServerIdentityKey()).thenReturn("1");
+        when(authConfig.getServerIdentityValue()).thenReturn("2");
         when(methodsCache.getMethod(request)).thenReturn(
                 this.getClass().getDeclaredMethod("testDoFilterWithNeedAuthSecuredAuthorityFailure"));
         HttpProtocolAuthService protocolAuthService = injectMockPlugins();
@@ -216,22 +215,8 @@ class AuthFilterTest {
         verify(response).sendError(eq(403), anyString());
     }
     
-    @Test
-    @Secured(apiType = ApiType.CONSOLE_API)
-    void testDoFilterWithConsoleApiDisabled() throws NoSuchMethodException, ServletException, IOException {
-        when(authConfigs.isAuthEnabled()).thenReturn(true);
-        when(authConfigs.isConsoleAuthEnabled()).thenReturn(false);
-        when(authConfigs.getServerIdentityKey()).thenReturn("1");
-        when(authConfigs.getServerIdentityValue()).thenReturn("2");
-        when(methodsCache.getMethod(request)).thenReturn(
-                this.getClass().getDeclaredMethod("testDoFilterWithConsoleApiDisabled"));
-        authFilter.doFilter(request, response, filterChain);
-        verify(filterChain).doFilter(request, response);
-        verify(response, never()).sendError(anyInt(), anyString());
-    }
-    
     private HttpProtocolAuthService injectMockPlugins() {
-        HttpProtocolAuthService protocolAuthService = new HttpProtocolAuthService(authConfigs);
+        HttpProtocolAuthService protocolAuthService = new HttpProtocolAuthService(authConfig);
         protocolAuthService.initialize();
         HttpProtocolAuthService spyProtocolAuthService = spy(protocolAuthService);
         ReflectionTestUtils.setField(authFilter, "protocolAuthService", spyProtocolAuthService);
