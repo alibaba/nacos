@@ -65,10 +65,10 @@ public class FuzzyWatchPushDelayTaskEngine extends NacosDelayTaskExecuteEngine {
     
     private static class WatchPushDelayTaskProcessor implements NacosTaskProcessor {
         
-        private final FuzzyWatchPushDelayTaskEngine fuzztWatchPushExecuteEngine;
+        private final FuzzyWatchPushDelayTaskEngine fuzzyWatchPushExecuteEngine;
         
-        public WatchPushDelayTaskProcessor(FuzzyWatchPushDelayTaskEngine fuzztWatchPushExecuteEngine) {
-            this.fuzztWatchPushExecuteEngine = fuzztWatchPushExecuteEngine;
+        public WatchPushDelayTaskProcessor(FuzzyWatchPushDelayTaskEngine fuzzyWatchPushExecuteEngine) {
+            this.fuzzyWatchPushExecuteEngine = fuzzyWatchPushExecuteEngine;
         }
         
         @Override
@@ -79,7 +79,7 @@ public class FuzzyWatchPushDelayTaskEngine extends NacosDelayTaskExecuteEngine {
                 FuzzyWatchChangeNotifyTask fuzzyWatchChangeNotifyTask = (FuzzyWatchChangeNotifyTask) task;
                 NamingExecuteTaskDispatcher.getInstance().dispatchAndExecuteTask(
                         getTaskKey(task),
-                        new FuzzyWatchChangeNotifyExecuteTask(fuzztWatchPushExecuteEngine, fuzzyWatchChangeNotifyTask.getServiceKey(),
+                        new FuzzyWatchChangeNotifyExecuteTask(fuzzyWatchPushExecuteEngine, fuzzyWatchChangeNotifyTask.getServiceKey(),
                                 fuzzyWatchChangeNotifyTask.getChangedType(), fuzzyWatchChangeNotifyTask.getClientId()));
             } else if (task instanceof FuzzyWatchSyncNotifyTask) {
                 //process fuzzy watch init notify when a new client fuzzy watch a pattern
@@ -88,7 +88,7 @@ public class FuzzyWatchPushDelayTaskEngine extends NacosDelayTaskExecuteEngine {
                 String clientId = fuzzyWatchSyncNotifyTask.getClientId();
                 NamingExecuteTaskDispatcher.getInstance().dispatchAndExecuteTask(getTaskKey(task),
                         new FuzzyWatchSyncNotifyExecuteTask(clientId, pattern,
-                               fuzztWatchPushExecuteEngine, fuzzyWatchSyncNotifyTask));
+                                fuzzyWatchPushExecuteEngine, fuzzyWatchSyncNotifyTask));
             }
             return true;
         }

@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.config.server.model.event.ConfigCancelFuzzyWatchEvent;
 import com.alibaba.nacos.config.server.model.event.ConfigFuzzyWatchEvent;
 import com.alibaba.nacos.config.server.service.ConfigFuzzyWatchContextService;
 import com.alibaba.nacos.core.control.TpsControl;
@@ -51,14 +52,15 @@ import java.util.Set;
  * @date 2024/3/4
  */
 @Component
-public class ConfigBatchFuzzyWatchRequestHandler
+public class ConfigFuzzyWatchRequestHandler
         extends RequestHandler<ConfigFuzzyWatchRequest, ConfigFuzzyWatchResponse> {
     
-    /**
-     * Context for managing fuzzy listen changes.
-     */
-    @Autowired
+    
     private ConfigFuzzyWatchContextService configFuzzyWatchContextService;
+    
+    public ConfigFuzzyWatchRequestHandler(ConfigFuzzyWatchContextService configFuzzyWatchContextService){
+        this.configFuzzyWatchContextService=configFuzzyWatchContextService;
+    }
     
     /**
      * Handles the batch fuzzy listen request.
@@ -89,8 +91,8 @@ public class ConfigBatchFuzzyWatchRequestHandler
                         new ConfigFuzzyWatchEvent(connectionId, clientExistingGroupKeys, groupKeyPattern,
                                 request.isInitializing()));
             } else if(WATCH_TYPE_CANCEL_WATCH.equals(request.getWatchType())) {
-                // Remove client from the fuzzy listening context
-                configFuzzyWatchContextService.removeFuzzyListen(groupKeyPattern, connectionId);
+                NotifyCenter.publishEvent(
+                        new ConfigCancelFuzzyWatchEvent(connectionId, groupKeyPattern));
             }
         
         // Return response

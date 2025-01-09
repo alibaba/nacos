@@ -35,7 +35,7 @@ public class ConfigCommonConfig extends AbstractDynamicConfig {
     
     private long pushTimeout = 3000L;
     
-    private int batchSize = 10;
+    private int batchSize = 20;
     
     private boolean derbyOpsEnabled = false;
     
@@ -83,7 +83,7 @@ public class ConfigCommonConfig extends AbstractDynamicConfig {
     protected void getConfigFromEnv() {
         maxPushRetryTimes = EnvUtil.getProperty("nacos.config.push.maxRetryTime", Integer.class, 50);
         pushTimeout = EnvUtil.getProperty("nacos.config.push.timeout", Long.class, 3000L);
-        batchSize = EnvUtil.getProperty("nacos.config.push.batchSize", Integer.class, 10);
+        batchSize = EnvUtil.getProperty("nacos.config.push.batchSize", Integer.class, 20);
         derbyOpsEnabled = EnvUtil.getProperty("nacos.config.derby.ops.enabled", Boolean.class, false);
     }
     

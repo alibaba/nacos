@@ -518,7 +518,7 @@ public class ClientWorker implements Closeable {
         
         agent = new ConfigRpcTransportClient(properties, serverListManager);
     
-        configFuzzyWatchGroupKeyHolder =new ConfigFuzzyWatchGroupKeyHolder(agent);
+        configFuzzyWatchGroupKeyHolder =new ConfigFuzzyWatchGroupKeyHolder(agent,uuid);
         ScheduledExecutorService executorService = Executors.newScheduledThreadPool(initWorkerThreadCount(properties),
                 new NameThreadFactory("com.alibaba.nacos.client.Worker"));
         agent.setExecutor(executorService);

@@ -22,7 +22,7 @@ import com.alibaba.nacos.common.task.AbstractExecuteTask;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.push.v2.NoRequiredRetryException;
 import com.alibaba.nacos.naming.push.v2.PushConfig;
-
+import com.alibaba.nacos.common.task.BatchTaskCounter;
 import static com.alibaba.nacos.api.common.Constants.FINISH_FUZZY_WATCH_INIT_NOTIFY;
 import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_INIT_NOTIFY;
 
@@ -79,10 +79,10 @@ public class FuzzyWatchSyncNotifyExecuteTask extends AbstractExecuteTask {
          */
         private final long executeStartTime;
         
-        private FuzzyWatchSyncNotifyTask.BatchTaskCounter batchTaskCounter ;
+        private BatchTaskCounter batchTaskCounter ;
         
         private FuzzyWatchSyncNotifyCallback(NamingFuzzyWatchSyncRequest namingFuzzyWatchSyncRequest,
-                FuzzyWatchSyncNotifyTask.BatchTaskCounter batchTaskCounter) {
+                BatchTaskCounter batchTaskCounter) {
             this.namingFuzzyWatchSyncRequest=namingFuzzyWatchSyncRequest;
             this.executeStartTime = System.currentTimeMillis();
             this.batchTaskCounter=batchTaskCounter;

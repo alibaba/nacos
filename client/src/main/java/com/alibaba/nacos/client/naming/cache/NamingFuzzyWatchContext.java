@@ -35,6 +35,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -164,6 +167,9 @@ public class NamingFuzzyWatchContext {
         LOGGER.info("[{}] [fuzzy-watch] pattern init notify finish pattern={},match service count {}",
                 envName,groupKeyPattern,receivedServiceKeys.size());
         initializationCompleted.set(true);
+        synchronized (this){
+            notifyAll();
+        }
     }
     
     /**
@@ -304,15 +310,50 @@ public class NamingFuzzyWatchContext {
         
     }
     
-    public CompletableFuture<ListView<String>> createNewFuture(){
-        CompletableFuture<ListView<String>> completableFuture=new CompletableFuture<ListView<String>>(){
+    public Future<ListView<String>> createNewFuture(){
+        Future<ListView<String>> completableFuture=new Future<ListView<String>>(){
+            @Override
+            public boolean cancel(boolean mayInterruptIfRunning) {
+                throw new UnsupportedOperationException("not support to cancel fuzzy watch");
+            }
+    
+            @Override
+            public boolean isCancelled() {
+                return false;
+            }
+    
             @Override
             public boolean isDone() {
                 return NamingFuzzyWatchContext.this.initializationCompleted.get();
             }
             
             @Override
-            public ListView<String> get() {
+            public ListView<String> get() throws InterruptedException {
+                synchronized (NamingFuzzyWatchContext.this) {
+                    while(!NamingFuzzyWatchContext.this.initializationCompleted.get()){
+                        NamingFuzzyWatchContext.this.wait();
+                    }
+                }
+                
+                ListView<String> result = new ListView<>();
+                result.setData(Arrays.asList(NamingFuzzyWatchContext.this.receivedServiceKeys.toArray(new String[0])));
+                result.setCount(result.getData().size());
+                return result;
+            }
+    
+            @Override
+            public ListView<String> get(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
+                
+                if(!NamingFuzzyWatchContext.this.initializationCompleted.get()){
+                    synchronized (NamingFuzzyWatchContext.this) {
+                        NamingFuzzyWatchContext.this.wait(unit.toMillis(timeout));
+                    }
+                }
+                
+                if (!NamingFuzzyWatchContext.this.initializationCompleted.get()){
+                    throw new TimeoutException("fuzzy watch result future timeout for "+unit.toMillis(timeout)+" millis");
+                }
+                
                 ListView<String> result = new ListView<>();
                 result.setData(Arrays.asList(NamingFuzzyWatchContext.this.receivedServiceKeys.toArray(new String[0])));
                 result.setCount(result.getData().size());

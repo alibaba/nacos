@@ -70,7 +70,6 @@ public class FuzzyWatchChangeNotifyExecuteTask extends AbstractExecuteTask {
             this.clientId = clientId;
             this.serviceKey = serviceKey;
             this.changedType = changedType;
-            
         }
         
         @Override

@@ -40,7 +40,7 @@ public class ClientFuzzyWatchNotifyRequestHandler implements ServerRequestHandle
         }
         //fuzzy watch changed notify for a single config. include config changed or config delete.
         if (request instanceof ConfigFuzzyWatchChangeNotifyRequest) {
-            return configFuzzyWatchGroupKeyHolder.handlerFuzzyListenNotifyChangeRequest((ConfigFuzzyWatchChangeNotifyRequest) request);
+            return configFuzzyWatchGroupKeyHolder.handlerFuzzyWatchChangeNotifyRequest((ConfigFuzzyWatchChangeNotifyRequest) request);
         }
         return null;
     }

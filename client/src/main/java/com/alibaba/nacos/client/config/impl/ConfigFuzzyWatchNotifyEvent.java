@@ -28,7 +28,10 @@ import com.alibaba.nacos.common.notify.Event;
  * @author stone-98
  * @date 2024/3/4
  */
-public class FuzzyWatchNotifyEvent extends Event {
+public class ConfigFuzzyWatchNotifyEvent extends Event {
+    
+    
+    private String clientUuid;
     
     /**
      * The uuid of this watcher for which that this notify event .
@@ -52,7 +55,7 @@ public class FuzzyWatchNotifyEvent extends Event {
     /**
      * Constructs a new FuzzyListenNotifyEvent.
      */
-    public FuzzyWatchNotifyEvent() {
+    public ConfigFuzzyWatchNotifyEvent() {
     }
 
     /**
@@ -61,11 +64,13 @@ public class FuzzyWatchNotifyEvent extends Event {
      * @param groupKey  The groupKey of the configuration.
      * @param changedType   The type of notification.
      */
-    private FuzzyWatchNotifyEvent(String groupKey, String changedType, String syncType, String groupKeyPattern) {
+    private ConfigFuzzyWatchNotifyEvent(String groupKey, String changedType, String syncType, String groupKeyPattern,String clientUuid,String watcherUuid) {
         this.groupKey = groupKey;
         this.syncType=syncType;
         this.changedType = changedType;
         this.groupKeyPattern = groupKeyPattern;
+        this.clientUuid=clientUuid;
+        this.watcherUuid=watcherUuid;
     }
     
     
@@ -75,9 +80,9 @@ public class FuzzyWatchNotifyEvent extends Event {
      * @param groupKey  The groupKey of the configuration.
      * @return A new FuzzyListenNotifyEvent instance.
      */
-    public static FuzzyWatchNotifyEvent buildNotifyPatternAllListenersEvent(String groupKey,
-            String groupKeyPattern, String changedType,String syncType) {
-        return new FuzzyWatchNotifyEvent(groupKey, changedType, syncType,groupKeyPattern);
+    public static ConfigFuzzyWatchNotifyEvent buildNotifyPatternAllListenersEvent(String groupKey,
+            String groupKeyPattern, String changedType,String syncType,String clientUuid) {
+        return buildNotifyPatternAllListenersEvent(groupKey,groupKeyPattern,changedType,syncType,clientUuid,null);
     }
     
     /**
@@ -86,13 +91,13 @@ public class FuzzyWatchNotifyEvent extends Event {
      * @param groupKey  The groupKey of the configuration.
      * @return A new FuzzyListenNotifyEvent instance.
      */
-    public static FuzzyWatchNotifyEvent buildNotifyPatternAllListenersEvent(String groupKey,
-            String groupKeyPattern, String changedType,String syncType,String uuid) {
-        FuzzyWatchNotifyEvent fuzzyWatchNotifyEvent = new FuzzyWatchNotifyEvent(groupKey, changedType, syncType,
-                groupKeyPattern);
-        fuzzyWatchNotifyEvent.watcherUuid =uuid;
-        return fuzzyWatchNotifyEvent;
+    public static ConfigFuzzyWatchNotifyEvent buildNotifyPatternAllListenersEvent(String groupKey,
+            String groupKeyPattern, String changedType,String syncType,String clientUuid,String watcherUuid) {
+        ConfigFuzzyWatchNotifyEvent configFuzzyWatchNotifyEvent = new ConfigFuzzyWatchNotifyEvent(groupKey, changedType, syncType,
+                groupKeyPattern,clientUuid,watcherUuid);
+        return configFuzzyWatchNotifyEvent;
     }
+    
     /**
      * Gets the UUID (Unique Identifier) of the listener.
      *
@@ -102,7 +107,10 @@ public class FuzzyWatchNotifyEvent extends Event {
         return watcherUuid;
     }
     
-
+    public String getClientUuid() {
+        return clientUuid;
+    }
+    
     public String getGroupKeyPattern() {
         return groupKeyPattern;
     }

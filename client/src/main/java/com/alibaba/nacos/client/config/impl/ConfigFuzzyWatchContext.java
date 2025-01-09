@@ -18,7 +18,9 @@ package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.config.listener.ConfigFuzzyWatchChangeEvent;
 import com.alibaba.nacos.api.config.listener.ConfigFuzzyWatcher;
+import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.client.config.common.GroupKey;
+import com.alibaba.nacos.client.naming.cache.NamingFuzzyWatchContext;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
@@ -32,6 +34,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.alibaba.nacos.api.common.Constants.ConfigChangedType.ADD_CONFIG;
@@ -83,11 +88,6 @@ public class ConfigFuzzyWatchContext {
      * Condition object for waiting initialization completion.
      */
     final AtomicBoolean initializationCompleted = new AtomicBoolean(false);
-    
-    /**
-     * Flag indicating whether the context is initializing.
-     */
-    private boolean isInitializing = false;
     
     /**
      * Flag indicating whether the context is discarded.
@@ -182,7 +182,7 @@ public class ConfigFuzzyWatchContext {
                     configFuzzyWatcher.configFuzzyWatcher.onEvent(event);
                 }
                 LOGGER.info(
-                        "[{}] [notify-watcher-ok] dataId={}, group={}, tenant={}, watcher={}, job run cost={} millis.",
+                        "[{}] [notify-fuzzy-watcher-ok] dataId={}, group={}, tenant={}, watcher={}, job run cost={} millis.",
                         envName, dataId, group, tenant, configFuzzyWatcher, (System.currentTimeMillis() - start));
                 if (changedType.equals(DELETE_CONFIG)) {
                     configFuzzyWatcher.getSyncGroupKeys().remove(GroupKey.getKey(dataId, group, tenant));
@@ -197,18 +197,18 @@ public class ConfigFuzzyWatchContext {
         try {
             if (null != configFuzzyWatcher.configFuzzyWatcher.getExecutor()) {
                 LOGGER.info(
-                        "[{}] [notify-watcher] task submitted to user executor, dataId={}, group={}, tenant={}, listener={}.",
+                        "[{}] [notify-fuzzy-watcher] task submitted to user executor, dataId={}, group={}, tenant={}, listener={}.",
                         envName, dataId, group, tenant, configFuzzyWatcher);
                 job.async = true;
                 configFuzzyWatcher.configFuzzyWatcher.getExecutor().execute(job);
             } else {
                 LOGGER.info(
-                        "[{}] [notify-watcher] task execute in nacos thread, dataId={}, group={}, tenant={}, listener={}.",
+                        "[{}] [notify-fuzzy-watcher] task execute in nacos thread, dataId={}, group={}, tenant={}, listener={}.",
                         envName, dataId, group, tenant, configFuzzyWatcher);
                 job.run();
             }
         } catch (Throwable t) {
-            LOGGER.error("[{}] [notify-watcher-error] dataId={}, group={}, tenant={}, listener={}, throwable={}.",
+            LOGGER.error("[{}] [notify-fuzzy-watcher-error] dataId={}, group={}, tenant={}, listener={}, throwable={}.",
                     envName, dataId, group, tenant, configFuzzyWatcher, t.getCause());
         }
     }
@@ -217,6 +217,9 @@ public class ConfigFuzzyWatchContext {
      */
     public void markInitializationComplete() {
         initializationCompleted.set(true);
+        synchronized (this){
+            this.notifyAll();
+        }
     }
     
     /**
@@ -231,7 +234,7 @@ public class ConfigFuzzyWatchContext {
             ConfigFuzzyWatcherWrapper next = iterator.next();
             if (next.configFuzzyWatcher.equals(watcher)){
                 iterator.remove();
-                LOGGER.info("[{}] [remove-watcher-ok] groupKeyPattern={}, watcher={},uuid={} ", getEnvName(),
+                LOGGER.info("[{}] [remove-fuzzy-watcher-ok] groupKeyPattern={}, watcher={},uuid={} ", getEnvName(),
                         this.groupKeyPattern, watcher, next.getUuid());
             }
         }
@@ -246,7 +249,7 @@ public class ConfigFuzzyWatchContext {
     public boolean addWatcher(ConfigFuzzyWatcherWrapper configFuzzyWatcherWrapper) {
         boolean added= configFuzzyWatcherWrappers.add(configFuzzyWatcherWrapper);
         if(added){
-            LOGGER.info("[{}] [add-watcher-ok] groupKeyPattern={}, watcher={},uuid={} ", getEnvName(), this.groupKeyPattern,
+            LOGGER.info("[{}] [add-fuzzy-watcher-ok] groupKeyPattern={}, watcher={},uuid={} ", getEnvName(), this.groupKeyPattern,
                     configFuzzyWatcherWrapper.configFuzzyWatcher, configFuzzyWatcherWrapper.getUuid());
         }
         return added;
@@ -329,27 +332,27 @@ public class ConfigFuzzyWatchContext {
      * @return True if the context is initializing, otherwise false
      */
     public boolean isInitializing() {
-        return isInitializing;
-    }
-    
-    /**
-     * Set the flag indicating whether the context is initializing.
-     *
-     * @param initializing True to mark the context as initializing, otherwise false
-     */
-    public void setInitializing(boolean initializing) {
-        isInitializing = initializing;
+        return !initializationCompleted.get();
     }
     
     /**
      * Get the set of data IDs associated with the context.
-     *
+     *zw
      * @return Set of data IDs
      */
     public Set<String> getReceivedGroupKeys() {
         return Collections.unmodifiableSet(receivedGroupKeys);
     }
     
+    
+    public boolean addReceivedGroupKey(String groupKey){
+        return receivedGroupKeys.add(groupKey);
+    }
+    
+    
+    public boolean removeReceivedGroupKey(String groupKey){
+        return receivedGroupKeys.remove(groupKey);
+    }
     
     /**
      * Get the set of listeners associated with the context.
@@ -396,8 +399,18 @@ public class ConfigFuzzyWatchContext {
     }
     
     
-    public CompletableFuture<Set<String>> createNewFuture(){
-        CompletableFuture<Set<String>> completableFuture=new CompletableFuture<Set<String>>(){
+    public Future<Set<String>> createNewFuture(){
+        Future<Set<String>> completableFuture=new Future<Set<String>>(){
+            @Override
+            public boolean cancel(boolean mayInterruptIfRunning) {
+                throw new UnsupportedOperationException("not support to cancel fuzzy watch");
+            }
+    
+            @Override
+            public boolean isCancelled() {
+                return false;
+            }
+    
             @Override
             public boolean isDone() {
                 return ConfigFuzzyWatchContext.this.initializationCompleted.get();
@@ -405,9 +418,30 @@ public class ConfigFuzzyWatchContext {
             
             @Override
             public Set<String> get() throws InterruptedException, ExecutionException {
+    
+                if(!ConfigFuzzyWatchContext.this.initializationCompleted.get()){
+                    synchronized (ConfigFuzzyWatchContext.this) {
+                        ConfigFuzzyWatchContext.this.wait();
+                    }
+                }
+    
+                return new HashSet<>(ConfigFuzzyWatchContext.this.getReceivedGroupKeys());
+            }
+            
+            public Set<String>  get(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
+                if(!ConfigFuzzyWatchContext.this.initializationCompleted.get()){
+                    synchronized (ConfigFuzzyWatchContext.this) {
+                        ConfigFuzzyWatchContext.this.wait(unit.toMillis(timeout));
+                    }
+                }
+    
+                if (!ConfigFuzzyWatchContext.this.initializationCompleted.get()){
+                    throw new TimeoutException("fuzzy watch result future timeout for "+unit.toMillis(timeout)+" millis");
+                }
                 return new HashSet<>(ConfigFuzzyWatchContext.this.getReceivedGroupKeys());
             }
         };
+    
         return completableFuture;
     }
 }

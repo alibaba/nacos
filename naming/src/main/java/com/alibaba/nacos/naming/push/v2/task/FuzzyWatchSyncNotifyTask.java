@@ -18,13 +18,12 @@ package com.alibaba.nacos.naming.push.v2.task;
 
 import com.alibaba.nacos.api.naming.remote.request.NamingFuzzyWatchSyncRequest;
 import com.alibaba.nacos.common.task.AbstractDelayTask;
+import com.alibaba.nacos.common.task.BatchTaskCounter;
 import com.alibaba.nacos.naming.misc.Loggers;
 
-import java.util.ArrayList;
+
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Nacos naming fuzzy watch initial push delay task.
@@ -114,34 +113,4 @@ public class FuzzyWatchSyncNotifyTask extends AbstractDelayTask {
         this.batchTaskCounter = batchTaskCounter;
     }
     
-    public static class BatchTaskCounter{
-        
-        List<AtomicBoolean> batchCounter;
-        
-        public BatchTaskCounter(int totalBatch){
-            initBatchCounter(totalBatch);
-        }
-        
-        public void initBatchCounter(int totalBatch){
-            batchCounter=new ArrayList<>(totalBatch);
-            for(int i=0;i<totalBatch;i++){
-                batchCounter.add(i,new AtomicBoolean(false));
-            }
-        }
-        
-        public void batchSuccess(int batch){
-            if (batch<=batchCounter.size()){
-                batchCounter.get(batch-1).set(true);
-            }
-        }
-        
-        public boolean batchCompleted(){
-            for(AtomicBoolean atomicBoolean:batchCounter){
-                if (!atomicBoolean.get()){
-                    return false;
-                }
-            }
-            return true;
-        }
-    }
 }

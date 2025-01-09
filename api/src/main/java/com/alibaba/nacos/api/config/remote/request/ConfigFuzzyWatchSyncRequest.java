@@ -47,12 +47,34 @@ public class ConfigFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
      */
     private String syncType;
     
+    
+    private int totalBatch;
+    
+    private int currentBatch;
+    
+    
     public String getSyncType() {
         return syncType;
     }
     
     public void setSyncType(String syncType) {
         this.syncType = syncType;
+    }
+    
+    public int getTotalBatch() {
+        return totalBatch;
+    }
+    
+    public void setTotalBatch(int totalBatch) {
+        this.totalBatch = totalBatch;
+    }
+    
+    public int getCurrentBatch() {
+        return currentBatch;
+    }
+    
+    public void setCurrentBatch(int currentBatch) {
+        this.currentBatch = currentBatch;
     }
     
     /**
@@ -67,10 +89,12 @@ public class ConfigFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
      * @param groupKeyPattern The pattern used to match group keys for the configurations
      * @param contexts        The set of contexts containing information about the configurations
      */
-    public ConfigFuzzyWatchSyncRequest(String syncType, String groupKeyPattern, Set<Context> contexts) {
+    private ConfigFuzzyWatchSyncRequest(String syncType, String groupKeyPattern, Set<Context> contexts,int totalBatch,int currentBatch) {
         this.groupKeyPattern = groupKeyPattern;
         this.contexts = contexts;
         this.syncType = syncType;
+        this.currentBatch=currentBatch;
+        this.totalBatch=totalBatch;
         
     }
     
@@ -81,21 +105,12 @@ public class ConfigFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
      * @param groupKeyPattern The pattern used to match group keys for the configurations
      * @return An initial FuzzyListenNotifyDiffRequest
      */
-    public static ConfigFuzzyWatchSyncRequest buildInitRequest(Set<Context> contexts, String groupKeyPattern) {
-        return new ConfigFuzzyWatchSyncRequest(Constants.FUZZY_WATCH_INIT_NOTIFY, groupKeyPattern, contexts);
+    public static ConfigFuzzyWatchSyncRequest buildSyncRequest(String syncType,Set<Context> contexts, String groupKeyPattern,int totalBatch,int currentBatch) {
+        return new ConfigFuzzyWatchSyncRequest(syncType, groupKeyPattern, contexts,totalBatch,currentBatch);
     }
     
-    /**
-     * Builds an initial FuzzyListenNotifyDiffRequest with the specified set of contexts and group key pattern.
-     *
-     * @param contexts        The set of contexts containing information about the configurations
-     * @param groupKeyPattern The pattern used to match group keys for the configurations
-     * @return An initial FuzzyListenNotifyDiffRequest
-     */
-    public static ConfigFuzzyWatchSyncRequest buildDiffSyncRequest(Set<Context> contexts, String groupKeyPattern) {
-        return new ConfigFuzzyWatchSyncRequest(Constants.FUZZY_WATCH_DIFF_SYNC_NOTIFY, groupKeyPattern, contexts);
-    }
     
+
     /**
      * Builds a final FuzzyListenNotifyDiffRequest with the specified group key pattern.
      *
@@ -103,8 +118,7 @@ public class ConfigFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
      * @return A final FuzzyListenNotifyDiffRequest
      */
     public static ConfigFuzzyWatchSyncRequest buildInitFinishRequest(String groupKeyPattern) {
-        return new ConfigFuzzyWatchSyncRequest(Constants.FINISH_FUZZY_WATCH_INIT_NOTIFY, groupKeyPattern,
-                new HashSet<>());
+        return new ConfigFuzzyWatchSyncRequest(Constants.FINISH_FUZZY_WATCH_INIT_NOTIFY, groupKeyPattern,null,0,0);
     }
     
     public String getGroupKeyPattern() {
