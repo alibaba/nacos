@@ -120,7 +120,7 @@ class ClientServiceIndexesManagerTest {
         List<Class<? extends Event>> classes = clientServiceIndexesManager.subscribeTypes();
         
         assertNotNull(classes);
-        assertEquals(5, classes.size());
+        assertEquals(7, classes.size());
     }
     
     @Test
