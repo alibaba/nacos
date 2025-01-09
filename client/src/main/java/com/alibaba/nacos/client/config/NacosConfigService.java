@@ -123,47 +123,47 @@ public class NacosConfigService implements ConfigService {
     }
     
     @Override
-    public void fuzzyWatch(String fixedGroupName, FuzzyWatchEventWatcher watcher) throws NacosException {
-        doAddFuzzyWatch(ANY_PATTERN, fixedGroupName, watcher);
+    public void fuzzyWatch(String groupNamePattern, FuzzyWatchEventWatcher watcher) throws NacosException {
+        doAddFuzzyWatch(ANY_PATTERN, groupNamePattern, watcher);
     }
     
     @Override
-    public void fuzzyWatch(String dataIdPattern, String fixedGroupName, FuzzyWatchEventWatcher watcher)
+    public void fuzzyWatch(String dataIdPattern, String groupNamePattern, FuzzyWatchEventWatcher watcher)
             throws NacosException {
-        doAddFuzzyWatch(dataIdPattern, fixedGroupName, watcher);
+        doAddFuzzyWatch(dataIdPattern, groupNamePattern, watcher);
     }
     
     @Override
-    public Future<Set<String>> fuzzyWatchWithGroupKeys(String fixedGroupName, FuzzyWatchEventWatcher watcher)
+    public Future<Set<String>> fuzzyWatchWithGroupKeys(String groupNamePattern, FuzzyWatchEventWatcher watcher)
             throws NacosException {
-        return doAddFuzzyWatch(ANY_PATTERN, fixedGroupName, watcher);
+        return doAddFuzzyWatch(ANY_PATTERN, groupNamePattern, watcher);
     }
     
     @Override
-    public Future<Set<String>> fuzzyWatchWithGroupKeys(String dataIdPattern, String fixedGroupName,
+    public Future<Set<String>> fuzzyWatchWithGroupKeys(String dataIdPattern, String groupNamePattern,
             FuzzyWatchEventWatcher watcher) throws NacosException {
-        return doAddFuzzyWatch(dataIdPattern, fixedGroupName, watcher);
+        return doAddFuzzyWatch(dataIdPattern, groupNamePattern, watcher);
     }
     
-    private Future<Set<String>> doAddFuzzyWatch(String dataIdPattern, String fixedGroupName,
+    private Future<Set<String>> doAddFuzzyWatch(String dataIdPattern, String groupNamePattern,
             FuzzyWatchEventWatcher watcher) throws NacosException {
-        ConfigFuzzyWatchContext configFuzzyWatchContext = worker.addTenantFuzzyWatcher(dataIdPattern, fixedGroupName,
+        ConfigFuzzyWatchContext configFuzzyWatchContext = worker.addTenantFuzzyWatcher(dataIdPattern, groupNamePattern,
                 watcher);
         return configFuzzyWatchContext.createNewFuture();
     }
     
     @Override
-    public void cancelFuzzyWatch(String fixedGroupName, FuzzyWatchEventWatcher watcher) throws NacosException {
-        cancelFuzzyWatch(ANY_PATTERN, fixedGroupName, watcher);
+    public void cancelFuzzyWatch(String groupNamePattern, FuzzyWatchEventWatcher watcher) throws NacosException {
+        cancelFuzzyWatch(ANY_PATTERN, groupNamePattern, watcher);
     }
     
     @Override
-    public void cancelFuzzyWatch(String dataIdPattern, String fixedGroupName, FuzzyWatchEventWatcher watcher)
+    public void cancelFuzzyWatch(String dataIdPattern, String groupNamePattern, FuzzyWatchEventWatcher watcher)
             throws NacosException {
-        doCancelFuzzyListen(dataIdPattern, fixedGroupName, watcher);
+        doCancelFuzzyWatch(dataIdPattern, groupNamePattern, watcher);
     }
     
-    private void doCancelFuzzyListen(String dataIdPattern, String groupNamePattern, FuzzyWatchEventWatcher watcher)
+    private void doCancelFuzzyWatch(String dataIdPattern, String groupNamePattern, FuzzyWatchEventWatcher watcher)
             throws NacosException {
         if (null == watcher) {
             return;

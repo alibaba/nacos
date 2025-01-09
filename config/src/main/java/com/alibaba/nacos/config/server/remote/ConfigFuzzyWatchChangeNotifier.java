@@ -48,7 +48,7 @@ import static com.alibaba.nacos.api.common.Constants.ConfigChangedType.DELETE_CO
  * @author stone-98
  * @date 2024/3/18
  */
-@Component(value = "fuzzyWatchConfigChangeNotifier")
+@Component
 public class ConfigFuzzyWatchChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     
     private static final String POINT_FUZZY_WATCH_CONFIG_PUSH = "POINT_FUZZY_WATCH_CONFIG_PUSH";

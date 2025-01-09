@@ -70,21 +70,25 @@ public class ConfigFuzzyWatchContextService {
      * matchedServiceKeys init.
      */
     private void trimFuzzyWatchContext() {
-        Iterator<Map.Entry<String, Set<String>>> iterator = matchedGroupKeys.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, Set<String>> next = iterator.next();
-            Set<String> watchedClients = this.watchedClients.get(next.getKey());
-            
-            if (watchedClients == null) {
-                iterator.remove();
-                LogUtil.DEFAULT_LOG.info(
-                        "[fuzzy-watch] no watchedClients context for pattern {},remove matchedGroupKeys context",
-                        next.getKey());
-            } else if (watchedClients.isEmpty()) {
-                LogUtil.DEFAULT_LOG.info("[fuzzy-watch] no client watched pattern {},remove watchedClients context",
-                        next.getKey());
-                this.watchedClients.remove(next.getKey());
+        try {
+            Iterator<Map.Entry<String, Set<String>>> iterator = matchedGroupKeys.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<String, Set<String>> next = iterator.next();
+                Set<String> watchedClients = this.watchedClients.get(next.getKey());
+                
+                if (watchedClients == null) {
+                    iterator.remove();
+                    LogUtil.DEFAULT_LOG.info(
+                            "[fuzzy-watch] no watchedClients context for pattern {},remove matchedGroupKeys context",
+                            next.getKey());
+                } else if (watchedClients.isEmpty()) {
+                    LogUtil.DEFAULT_LOG.info("[fuzzy-watch] no client watched pattern {},remove watchedClients context",
+                            next.getKey());
+                    this.watchedClients.remove(next.getKey());
+                }
             }
+        } catch (Throwable throwable) {
+            LogUtil.DEFAULT_LOG.warn("[fuzzy-watch] trim fuzzy watch context fail", throwable);
         }
     }
     
