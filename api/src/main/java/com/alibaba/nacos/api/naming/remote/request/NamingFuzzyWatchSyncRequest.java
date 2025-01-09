@@ -17,11 +17,16 @@
 package com.alibaba.nacos.api.naming.remote.request;
 
 import com.alibaba.nacos.api.common.Constants;
+
 import java.util.HashSet;
 import java.util.Set;
 
 import static com.alibaba.nacos.api.common.Constants.Naming.NAMING_MODULE;
 
+/**
+ * fuzzy watch sync request from Nacos server.
+ * @author shiyiyue
+ */
 public class NamingFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest {
     
     /**
@@ -38,13 +43,14 @@ public class NamingFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
     
     private int currentBatch;
     
-    public NamingFuzzyWatchSyncRequest(){
+    public NamingFuzzyWatchSyncRequest() {
     
     }
-    public NamingFuzzyWatchSyncRequest(String pattern, String syncType,Set<Context> contexts){
-      super(syncType);
-        this.groupKeyPattern=pattern;
-        this.contexts=contexts;
+    
+    public NamingFuzzyWatchSyncRequest(String pattern, String syncType, Set<Context> contexts) {
+        super(syncType);
+        this.groupKeyPattern = pattern;
+        this.contexts = contexts;
     }
     
     public int getTotalBatch() {
@@ -67,13 +73,24 @@ public class NamingFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
         return new NamingFuzzyWatchSyncRequest(pattern, Constants.FINISH_FUZZY_WATCH_INIT_NOTIFY, new HashSet<>(1));
     }
     
-    public static NamingFuzzyWatchSyncRequest buildSyncNotifyRequest(String pattern,String syncType,Set<Context> contexts,int totalBatch,int currentBatch) {
-        NamingFuzzyWatchSyncRequest namingFuzzyWatchSyncRequest =new NamingFuzzyWatchSyncRequest(pattern, syncType, contexts);
-        namingFuzzyWatchSyncRequest.currentBatch=currentBatch;
-        namingFuzzyWatchSyncRequest.totalBatch=totalBatch;
+    /**
+     * byuld SyncNotifyRequest.
+     *
+     * @param pattern      pattern
+     * @param syncType     syncType
+     * @param contexts     contexts
+     * @param totalBatch   totalBatch
+     * @param currentBatch currentBatch
+     * @return
+     */
+    public static NamingFuzzyWatchSyncRequest buildSyncNotifyRequest(String pattern, String syncType,
+            Set<Context> contexts, int totalBatch, int currentBatch) {
+        NamingFuzzyWatchSyncRequest namingFuzzyWatchSyncRequest = new NamingFuzzyWatchSyncRequest(pattern, syncType,
+                contexts);
+        namingFuzzyWatchSyncRequest.currentBatch = currentBatch;
+        namingFuzzyWatchSyncRequest.totalBatch = totalBatch;
         return namingFuzzyWatchSyncRequest;
     }
-    
     
     public String getGroupKeyPattern() {
         return groupKeyPattern;
@@ -96,16 +113,18 @@ public class NamingFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
         return NAMING_MODULE;
     }
     
+    /**
+     * fuzzy watch sync context.
+     */
     public static class Context {
-    
+        
         /**
-         * @see com.alibaba.nacos.api.naming.utils.NamingUtils#getServiceKey(String, String, String)
+         * service key.
          */
         String serviceKey;
+        
         /**
-         * see {@link com.alibaba.nacos.api.common.Constants.ServiceChangedType&}
-         * 1.ADD_SERVICE: a new config
-         * 2.DELETE_SERVICE: a  service should be removed for  clientside .
+         * changed type.
          */
         private String changedType;
         
@@ -118,7 +137,7 @@ public class NamingFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
         /**
          * Builds a new context object with the provided parameters.
          *
-         * @param serviceKey      The groupKey associated of the configuration.
+         * @param serviceKey  The groupKey associated of the configuration.
          * @param changedType The type of the configuration change event.
          * @return A new context object initialized with the provided parameters.
          */
@@ -128,15 +147,15 @@ public class NamingFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
             context.setChangedType(changedType);
             return context;
         }
-    
+        
         public String getServiceKey() {
             return serviceKey;
         }
-    
+        
         public void setServiceKey(String serviceKey) {
             this.serviceKey = serviceKey;
         }
-    
+        
         public String getChangedType() {
             return changedType;
         }

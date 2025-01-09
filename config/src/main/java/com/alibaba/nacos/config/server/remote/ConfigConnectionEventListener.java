@@ -35,9 +35,10 @@ public class ConfigConnectionEventListener extends ClientConnectionEventListener
     
     final ConfigFuzzyWatchContextService configFuzzyWatchContextService;
     
-    public ConfigConnectionEventListener(ConfigChangeListenContext configChangeListenContext,ConfigFuzzyWatchContextService configFuzzyWatchContextService) {
+    public ConfigConnectionEventListener(ConfigChangeListenContext configChangeListenContext,
+            ConfigFuzzyWatchContextService configFuzzyWatchContextService) {
         this.configChangeListenContext = configChangeListenContext;
-        this.configFuzzyWatchContextService=configFuzzyWatchContextService;
+        this.configFuzzyWatchContextService = configFuzzyWatchContextService;
     }
     
     @Override

@@ -556,6 +556,29 @@ public interface NamingService {
      */
     void unsubscribe(String serviceName, String groupName, List<String> clusters, EventListener listener)
             throws NacosException;
+
+    /**
+     * Unsubscribe event listener of service.
+     *
+     * @param serviceName name of service
+     * @param selector    selector of instances
+     * @param listener    event listener
+     * @throws NacosException nacos exception
+     */
+    void unsubscribe(String serviceName, NamingSelector selector, EventListener listener) throws NacosException;
+    
+    /**
+     * Unsubscribe event listener of service.
+     *
+     * @param serviceName name of service
+     * @param groupName   group of service
+     * @param selector    selector of instances
+     * @param listener    event listener
+     * @throws NacosException nacos exception
+     */
+    void unsubscribe(String serviceName, String groupName, NamingSelector selector, EventListener listener)
+            throws NacosException;
+    
     
     /**
      * According to matching rules, watch services within a specific scope, and receive notifications when
@@ -589,6 +612,7 @@ public interface NamingService {
      *
      * @param groupNamePattern  group name pattern for fuzzy watch
      * @param listener event listener
+     * @return matched service keys.
      * @throws NacosException nacos exception
      */
     Future<ListView<String>> fuzzyWatchWithServiceKeys(String groupNamePattern, FuzzyWatchEventWatcher listener) throws NacosException;
@@ -602,6 +626,7 @@ public interface NamingService {
      * @param serviceNamePattern service name pattern for fuzzy watch
      * @param groupNamePattern  group name pattern for fuzzy watch
      * @param listener event listener
+     * @return matched service keys.
      * @throws NacosException nacos exception
      */
     Future<ListView<String>> fuzzyWatchWithServiceKeys(String serviceNamePattern, String groupNamePattern,
@@ -625,28 +650,6 @@ public interface NamingService {
      * @throws NacosException nacos exception
      */
     void cancelFuzzyWatch(String serviceNamePattern, String groupNamePattern, FuzzyWatchEventWatcher listener) throws NacosException;
-
-    /**
-     * Unsubscribe event listener of service.
-     *
-     * @param serviceName name of service
-     * @param selector    selector of instances
-     * @param listener    event listener
-     * @throws NacosException nacos exception
-     */
-    void unsubscribe(String serviceName, NamingSelector selector, EventListener listener) throws NacosException;
-    
-    /**
-     * Unsubscribe event listener of service.
-     *
-     * @param serviceName name of service
-     * @param groupName   group of service
-     * @param selector    selector of instances
-     * @param listener    event listener
-     * @throws NacosException nacos exception
-     */
-    void unsubscribe(String serviceName, String groupName, NamingSelector selector, EventListener listener)
-            throws NacosException;
     
     /**
      * Get all service names from server.

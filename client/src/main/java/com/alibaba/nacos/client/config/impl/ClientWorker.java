@@ -19,7 +19,7 @@ package com.alibaba.nacos.client.config.impl;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigType;
-import com.alibaba.nacos.api.config.listener.ConfigFuzzyWatcher;
+import com.alibaba.nacos.api.config.listener.FuzzyWatchEventWatcher;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
@@ -292,14 +292,14 @@ public class ClientWorker implements Closeable {
     /**
      * Adds a list of fuzzy listen listeners for the specified data ID pattern and group.
      *
-     * @param dataIdPattern The pattern of the data ID to listen for.
-     * @param groupPattern         The group of the configuration.
-     * @param configFuzzyWatcher     The configFuzzyWatcher to add.
+     * @param dataIdPattern          The pattern of the data ID to listen for.
+     * @param groupPattern           The group of the configuration.
+     * @param fuzzyWatchEventWatcher The configFuzzyWatcher to add.
      * @throws NacosException If an error occurs while adding the listeners.
      */
     public ConfigFuzzyWatchContext addTenantFuzzyWatcher(String dataIdPattern, String groupPattern,
-            ConfigFuzzyWatcher configFuzzyWatcher){
-       return configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher(dataIdPattern,groupPattern,configFuzzyWatcher);
+            FuzzyWatchEventWatcher fuzzyWatchEventWatcher) {
+        return configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher(dataIdPattern, groupPattern, fuzzyWatchEventWatcher);
     }
     
     /**
@@ -307,11 +307,11 @@ public class ClientWorker implements Closeable {
      *
      * @param dataIdPattern The pattern of the data ID.
      * @param group         The group of the configuration.
-     * @param watcher      The listener to remove.
+     * @param watcher       The listener to remove.
      * @throws NacosException If an error occurs while removing the listener.
      */
-    public void removeFuzzyListenListener(String dataIdPattern, String group, ConfigFuzzyWatcher watcher) {
-        configFuzzyWatchGroupKeyHolder.removeFuzzyWatcher(dataIdPattern,group,watcher);
+    public void removeFuzzyListenListener(String dataIdPattern, String group, FuzzyWatchEventWatcher watcher) {
+        configFuzzyWatchGroupKeyHolder.removeFuzzyWatcher(dataIdPattern, group, watcher);
     }
     
     void removeCache(String dataId, String group, String tenant) {
@@ -510,15 +510,15 @@ public class ClientWorker implements Closeable {
     }
     
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    public ClientWorker(final ConfigFilterChainManager configFilterChainManager, ConfigServerListManager serverListManager,
-            final NacosClientProperties properties) throws NacosException {
+    public ClientWorker(final ConfigFilterChainManager configFilterChainManager,
+            ConfigServerListManager serverListManager, final NacosClientProperties properties) throws NacosException {
         this.configFilterChainManager = configFilterChainManager;
         
         init(properties);
         
         agent = new ConfigRpcTransportClient(properties, serverListManager);
-    
-        configFuzzyWatchGroupKeyHolder =new ConfigFuzzyWatchGroupKeyHolder(agent,uuid);
+        
+        configFuzzyWatchGroupKeyHolder = new ConfigFuzzyWatchGroupKeyHolder(agent, uuid);
         ScheduledExecutorService executorService = Executors.newScheduledThreadPool(initWorkerThreadCount(properties),
                 new NameThreadFactory("com.alibaba.nacos.client.Worker"));
         agent.setExecutor(executorService);
@@ -742,8 +742,8 @@ public class ClientWorker implements Closeable {
                 return null;
             });
             
-            rpcClientInner.registerServerRequestHandler(new ClientFuzzyWatchNotifyRequestHandler(
-                    configFuzzyWatchGroupKeyHolder));
+            rpcClientInner.registerServerRequestHandler(
+                    new ClientFuzzyWatchNotifyRequestHandler(configFuzzyWatchGroupKeyHolder));
             
             rpcClientInner.registerConnectionListener(new ConnectionEventListener() {
                 
@@ -771,7 +771,7 @@ public class ClientWorker implements Closeable {
                             cacheData.setConsistentWithServer(false);
                         }
                     }
-    
+                    
                     LOGGER.info("[{}] DisConnected,reset  fuzzy watch consistence status", rpcClientInner.getName());
                     configFuzzyWatchGroupKeyHolder.resetConsistenceStatus();
                 }
@@ -1143,7 +1143,7 @@ public class ClientWorker implements Closeable {
                     rpcClient.setTenant(getTenant());
                     rpcClient.start();
                 }
-    
+                
                 return rpcClient;
             }
             
@@ -1320,8 +1320,8 @@ public class ClientWorker implements Closeable {
                             this.getName(), dataId, group, tenant, response.getErrorCode(), response.getMessage());
                     return false;
                 } else {
-                    LOGGER.info("[{}] [publish-single] ok, dataId={}, group={}, tenant={}", getName(),
-                            dataId, group, tenant);
+                    LOGGER.info("[{}] [publish-single] ok, dataId={}, group={}, tenant={}", getName(), dataId, group,
+                            tenant);
                     return true;
                 }
             } catch (Exception e) {

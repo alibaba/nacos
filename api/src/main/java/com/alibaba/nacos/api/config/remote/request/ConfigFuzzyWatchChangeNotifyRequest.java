@@ -31,7 +31,6 @@ public class ConfigFuzzyWatchChangeNotifyRequest extends AbstractFuzzyWatchNotif
      */
     private String groupKey;
     
-    
     /**
      * Indicates whether the configuration exists or not.
      */
@@ -49,7 +48,7 @@ public class ConfigFuzzyWatchChangeNotifyRequest extends AbstractFuzzyWatchNotif
      * @param groupKey   The group of the configuration that has changed
      * @param changeType Indicates whether the configuration exists or not
      */
-    public ConfigFuzzyWatchChangeNotifyRequest(String groupKey,String changeType) {
+    public ConfigFuzzyWatchChangeNotifyRequest(String groupKey, String changeType) {
         this.groupKey = groupKey;
         this.changeType = changeType;
     }
@@ -77,7 +76,8 @@ public class ConfigFuzzyWatchChangeNotifyRequest extends AbstractFuzzyWatchNotif
      */
     @Override
     public String toString() {
-        return "FuzzyListenNotifyChangeRequest{"  + '\'' + ", groupKey='" + groupKey + '\'' + ", changeType=" + changeType + '}';
+        return "FuzzyListenNotifyChangeRequest{" + '\'' + ", groupKey='" + groupKey + '\'' + ", changeType="
+                + changeType + '}';
     }
     
 }

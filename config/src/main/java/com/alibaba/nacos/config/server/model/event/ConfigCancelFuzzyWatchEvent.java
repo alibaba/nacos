@@ -18,8 +18,6 @@ package com.alibaba.nacos.config.server.model.event;
 
 import com.alibaba.nacos.common.notify.Event;
 
-import java.util.Set;
-
 /**
  * This event represents a batch fuzzy listening event for configurations. It is used to notify the server about a batch
  * of fuzzy listening requests from clients. Each request contains a client ID, a set of existing group keys associated
@@ -45,10 +43,10 @@ public class ConfigCancelFuzzyWatchEvent extends Event {
     /**
      * Constructs a new ConfigBatchFuzzyListenEvent with the specified parameters.
      *
-     * @param connectionId                ID of the client making the request
-     * @param groupKeyPattern         Pattern for matching group keys
+     * @param connectionId    ID of the client making the request
+     * @param groupKeyPattern Pattern for matching group keys
      */
-    public ConfigCancelFuzzyWatchEvent(String connectionId,  String groupKeyPattern) {
+    public ConfigCancelFuzzyWatchEvent(String connectionId, String groupKeyPattern) {
         this.connectionId = connectionId;
         this.groupKeyPattern = groupKeyPattern;
     }

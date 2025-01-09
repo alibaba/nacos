@@ -28,8 +28,8 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest;
 import com.alibaba.nacos.api.naming.remote.request.BatchInstanceRequest;
-import com.alibaba.nacos.api.naming.remote.request.NamingFuzzyWatchRequest;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
+import com.alibaba.nacos.api.naming.remote.request.NamingFuzzyWatchRequest;
 import com.alibaba.nacos.api.naming.remote.request.PersistentInstanceRequest;
 import com.alibaba.nacos.api.naming.remote.request.ServiceListRequest;
 import com.alibaba.nacos.api.naming.remote.request.ServiceQueryRequest;
@@ -46,11 +46,11 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
+import com.alibaba.nacos.client.address.ServerListChangeEvent;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.cache.NamingFuzzyWatchServiceListHolder;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
-import com.alibaba.nacos.client.address.ServerListChangeEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.NamingGrpcRedoService;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.BatchInstanceRedoData;
@@ -121,8 +121,8 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         rpcClient.serverListFactory(serverListFactory);
         rpcClient.registerConnectionListener(redoService);
         rpcClient.registerServerRequestHandler(new NamingPushRequestHandler(serviceInfoHolder));
-        rpcClient.registerServerRequestHandler(new NamingFuzzyWatchNotifyRequestHandler(
-                namingFuzzyWatchServiceListHolder));
+        rpcClient.registerServerRequestHandler(
+                new NamingFuzzyWatchNotifyRequestHandler(namingFuzzyWatchServiceListHolder));
         rpcClient.start();
         namingFuzzyWatchServiceListHolder.start();
         NotifyCenter.registerSubscriber(this);
@@ -278,9 +278,8 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
-        NAMING_LOGGER
-                .info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId, serviceName,
-                        instance);
+        NAMING_LOGGER.info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId,
+                serviceName, instance);
         if (instance.isEphemeral()) {
             deregisterServiceForEphemeral(serviceName, groupName, instance);
         } else {
@@ -454,22 +453,23 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
      * @param namingFuzzyWatchRequest namingFuzzyWatchRequest
      * @throws NacosException nacos exception
      */
-    public NamingFuzzyWatchResponse fuzzyWatchRequest(NamingFuzzyWatchRequest namingFuzzyWatchRequest) throws NacosException {
-       return requestToServer(namingFuzzyWatchRequest, NamingFuzzyWatchResponse.class);
+    public NamingFuzzyWatchResponse fuzzyWatchRequest(NamingFuzzyWatchRequest namingFuzzyWatchRequest)
+            throws NacosException {
+        return requestToServer(namingFuzzyWatchRequest, NamingFuzzyWatchResponse.class);
     }
     
-    private <T extends Response> T requestToServer(Request request, Class<T> responseClass)
-            throws NacosException {
+    private <T extends Response> T requestToServer(Request request, Class<T> responseClass) throws NacosException {
         Response response = null;
         try {
-            if (request instanceof AbstractNamingRequest){
+            if (request instanceof AbstractNamingRequest) {
+                request.putAllHeader(getSecurityHeaders(((AbstractNamingRequest) request).getNamespace(),
+                        ((AbstractNamingRequest) request).getGroupName(),
+                        ((AbstractNamingRequest) request).getServiceName()));
+            } else if (request instanceof NamingFuzzyWatchRequest) {
                 request.putAllHeader(
-                        getSecurityHeaders(((AbstractNamingRequest)request).getNamespace(), ((AbstractNamingRequest)request).getGroupName(), ((AbstractNamingRequest)request).getServiceName()));
-            }else if(request instanceof NamingFuzzyWatchRequest){
-                request.putAllHeader(
-                        getSecurityHeaders(((NamingFuzzyWatchRequest)request).getNamespace(),null, null));
-            }else{
-                throw  new NacosException(400,"unknown naming request type");
+                        getSecurityHeaders(((NamingFuzzyWatchRequest) request).getNamespace(), null, null));
+            } else {
+                throw new NacosException(400, "unknown naming request type");
             }
             
             response = requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);

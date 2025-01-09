@@ -21,7 +21,6 @@ import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.common.task.BatchTaskCounter;
 import com.alibaba.nacos.naming.misc.Loggers;
 
-
 import java.util.HashSet;
 import java.util.Set;
 
@@ -46,14 +45,15 @@ public class FuzzyWatchSyncNotifyTask extends AbstractDelayTask {
     
     private BatchTaskCounter batchTaskCounter;
     
-    public FuzzyWatchSyncNotifyTask(String clientId, String pattern, String syncType, Set<NamingFuzzyWatchSyncRequest.Context> syncServiceKeys, long delay) {
+    public FuzzyWatchSyncNotifyTask(String clientId, String pattern, String syncType,
+            Set<NamingFuzzyWatchSyncRequest.Context> syncServiceKeys, long delay) {
         this.clientId = clientId;
         this.pattern = pattern;
-        this.syncType=syncType;
-        if (syncServiceKeys!=null) {
+        this.syncType = syncType;
+        if (syncServiceKeys != null) {
             this.syncServiceKeys = syncServiceKeys;
-        }else{
-            this.syncServiceKeys=new HashSet<>();
+        } else {
+            this.syncServiceKeys = new HashSet<>();
         }
         setTaskInterval(delay);
         setLastProcessTime(System.currentTimeMillis());
@@ -82,7 +82,7 @@ public class FuzzyWatchSyncNotifyTask extends AbstractDelayTask {
         }
         FuzzyWatchSyncNotifyTask oldTask = (FuzzyWatchSyncNotifyTask) task;
         
-        if (oldTask.getSyncServiceKeys()!=null){
+        if (oldTask.getSyncServiceKeys() != null) {
             syncServiceKeys.addAll(oldTask.getSyncServiceKeys());
         }
         setLastProcessTime(Math.min(getLastProcessTime(), task.getLastProcessTime()));

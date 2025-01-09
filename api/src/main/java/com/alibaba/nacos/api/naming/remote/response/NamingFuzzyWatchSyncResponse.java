@@ -26,10 +26,9 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
  */
 public class NamingFuzzyWatchSyncResponse extends Response {
     
-    public NamingFuzzyWatchSyncResponse(){
+    public NamingFuzzyWatchSyncResponse() {
     }
     
-
     public static NamingFuzzyWatchSyncResponse buildSuccessResponse() {
         return new NamingFuzzyWatchSyncResponse();
     }
@@ -45,5 +44,5 @@ public class NamingFuzzyWatchSyncResponse extends Response {
         result.setErrorInfo(ResponseCode.FAIL.getCode(), message);
         return result;
     }
-
+    
 }

@@ -24,17 +24,17 @@ package com.alibaba.nacos.api.naming.remote.request;
 public class NamingFuzzyWatchChangeNotifyRequest extends AbstractFuzzyWatchNotifyRequest {
     
     private String serviceKey;
-
-    private String  changedType;
     
-    public NamingFuzzyWatchChangeNotifyRequest(){
+    private String changedType;
+    
+    public NamingFuzzyWatchChangeNotifyRequest() {
     
     }
     
-    public NamingFuzzyWatchChangeNotifyRequest(String serviceKey,String changedType, String syncType) {
+    public NamingFuzzyWatchChangeNotifyRequest(String serviceKey, String changedType, String syncType) {
         super(syncType);
-       this.serviceKey=serviceKey;
-       this.changedType=changedType;
+        this.serviceKey = serviceKey;
+        this.changedType = changedType;
     }
     
     public String getServiceKey() {

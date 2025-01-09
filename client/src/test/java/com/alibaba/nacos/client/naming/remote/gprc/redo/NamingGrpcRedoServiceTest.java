@@ -59,6 +59,7 @@ class NamingGrpcRedoServiceTest {
     
     @Mock
     private NamingFuzzyWatchServiceListHolder namingFuzzyWatchServiceListHolder;
+    
     private NamingGrpcRedoService redoService;
     
     @BeforeEach

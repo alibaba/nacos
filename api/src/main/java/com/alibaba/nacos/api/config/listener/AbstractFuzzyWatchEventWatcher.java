@@ -14,30 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.utils;
+package com.alibaba.nacos.api.config.listener;
 
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import java.util.concurrent.Executor;
 
 /**
- * GroupKeyPatternUtilsTest.
+ * AbstractFuzzyListenListener is an abstract class that provides basic functionality for listening to fuzzy
+ * configuration changes in Nacos.
  *
  * @author stone-98
- * @date 2024/3/19
+ * @date 2024/3/4
  */
-public class FuzzyGroupKeyPatternTest {
+public abstract class AbstractFuzzyWatchEventWatcher implements FuzzyWatchEventWatcher {
     
-    @Test
-    public void testGetGroupKeyPattern() {
-        String dataIdPattern = "examplePattern*";
-        String group = "exampleGroup";
-        String namespace = "exampleNamespace";
-        
-        String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern(dataIdPattern, group, namespace);
-        
-        assertEquals("exampleNamespace>>exampleGroup@@examplePattern*", groupKeyPattern);
+    /**
+     * Get executor for execute this receive.
+     *
+     * @return Executor
+     */
+    public Executor getExecutor() {
+        return null;
     }
-    
 }
-

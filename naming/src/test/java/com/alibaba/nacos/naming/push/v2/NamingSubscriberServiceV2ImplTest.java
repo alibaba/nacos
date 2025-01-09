@@ -20,8 +20,8 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
-import com.alibaba.nacos.naming.core.v2.index.NamingFuzzyWatchContextService;
 import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
+import com.alibaba.nacos.naming.core.v2.index.NamingFuzzyWatchContextService;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Subscriber;
@@ -79,10 +79,12 @@ class NamingSubscriberServiceV2ImplTest {
     
     @BeforeEach
     void setUp() throws Exception {
-        subscriberService = new NamingSubscriberServiceV2Impl(clientManager, indexesManager, null, null,null, switchDomain);
+        subscriberService = new NamingSubscriberServiceV2Impl(clientManager, indexesManager, null, null, null,
+                switchDomain);
         ReflectionTestUtils.setField(subscriberService, "delayTaskEngine", delayTaskEngine);
         when(indexesManager.getAllClientsSubscribeService(service)).thenReturn(Collections.singletonList(testClientId));
-        when(indexesManager.getAllClientsSubscribeService(service1)).thenReturn(Collections.singletonList(testClientId));
+        when(indexesManager.getAllClientsSubscribeService(service1)).thenReturn(
+                Collections.singletonList(testClientId));
         Collection<Service> services = new LinkedList<>();
         services.add(service);
         services.add(service1);
@@ -96,7 +98,8 @@ class NamingSubscriberServiceV2ImplTest {
     
     @Test
     void testGetSubscribersByString() {
-        Collection<Subscriber> actual = subscriberService.getSubscribers(service.getNamespace(), service.getGroupedServiceName());
+        Collection<Subscriber> actual = subscriberService.getSubscribers(service.getNamespace(),
+                service.getGroupedServiceName());
         assertEquals(1, actual.size());
         assertEquals(service.getGroupedServiceName(), actual.iterator().next().getServiceName());
     }
@@ -110,7 +113,8 @@ class NamingSubscriberServiceV2ImplTest {
     
     @Test
     void testGetFuzzySubscribersByString() {
-        Collection<Subscriber> actual = subscriberService.getFuzzySubscribers(service.getNamespace(), service.getGroupedServiceName());
+        Collection<Subscriber> actual = subscriberService.getFuzzySubscribers(service.getNamespace(),
+                service.getGroupedServiceName());
         assertEquals(2, actual.size());
     }
     
@@ -122,7 +126,8 @@ class NamingSubscriberServiceV2ImplTest {
     
     @Test
     public void onEvent() {
-        subscriberService.onEvent(new ServiceEvent.ServiceChangedEvent(service, Constants.ServiceChangedType.ADD_SERVICE));
+        subscriberService.onEvent(
+                new ServiceEvent.ServiceChangedEvent(service, Constants.ServiceChangedType.ADD_SERVICE));
         verify(delayTaskEngine).addTask(eq(service), any(PushDelayTask.class));
     }
 }

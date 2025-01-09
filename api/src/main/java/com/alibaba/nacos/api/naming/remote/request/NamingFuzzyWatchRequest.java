@@ -46,7 +46,7 @@ public class NamingFuzzyWatchRequest extends Request {
     }
     
     public NamingFuzzyWatchRequest(String groupKeyPattern, String watchType) {
-        this.watchType=watchType;
+        this.watchType = watchType;
         this.groupKeyPattern = groupKeyPattern;
     }
     

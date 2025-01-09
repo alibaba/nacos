@@ -26,8 +26,8 @@ import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.index.NamingFuzzyWatchContextService;
 import com.alibaba.nacos.naming.push.v2.PushConfig;
-import com.alibaba.nacos.naming.push.v2.task.FuzzyWatchSyncNotifyTask;
 import com.alibaba.nacos.naming.push.v2.task.FuzzyWatchPushDelayTaskEngine;
+import com.alibaba.nacos.naming.push.v2.task.FuzzyWatchSyncNotifyTask;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
@@ -43,78 +43,87 @@ import static com.alibaba.nacos.api.common.Constants.ServiceChangedType.ADD_SERV
 import static com.alibaba.nacos.api.common.Constants.ServiceChangedType.DELETE_SERVICE;
 
 /**
- * fuzzy watch event  for fuzzy watch
+ * fuzzy watch event  for fuzzy watch.
+ * @author shiyiyue
  */
 @Service
 public class NamingFuzzyWatchSyncNotifier extends SmartSubscriber {
     
-    
     private NamingFuzzyWatchContextService namingFuzzyWatchContextService;
     
-    private FuzzyWatchPushDelayTaskEngine  fuzzyWatchPushDelayTaskEngine;
+    private FuzzyWatchPushDelayTaskEngine fuzzyWatchPushDelayTaskEngine;
     
-    private static final int batchSize=10;
+    private static final int BATCH_SIZE = 10;
     
-    
-    public NamingFuzzyWatchSyncNotifier(NamingFuzzyWatchContextService namingFuzzyWatchContextService,FuzzyWatchPushDelayTaskEngine  fuzzyWatchPushDelayTaskEngine){
-        this.namingFuzzyWatchContextService=namingFuzzyWatchContextService;
-        this.fuzzyWatchPushDelayTaskEngine=fuzzyWatchPushDelayTaskEngine;
+    public NamingFuzzyWatchSyncNotifier(NamingFuzzyWatchContextService namingFuzzyWatchContextService,
+            FuzzyWatchPushDelayTaskEngine fuzzyWatchPushDelayTaskEngine) {
+        this.namingFuzzyWatchContextService = namingFuzzyWatchContextService;
+        this.fuzzyWatchPushDelayTaskEngine = fuzzyWatchPushDelayTaskEngine;
         NotifyCenter.registerSubscriber(this);
     }
     
     @Override
     public List<Class<? extends Event>> subscribeTypes() {
         List<Class<? extends Event>> result = new LinkedList<>();
-            result.add(ClientOperationEvent.ClientFuzzyWatchEvent.class);
-            result.add(ClientOperationEvent.ClientCancelFuzzyWatchEvent.class);
-            return result;
+        result.add(ClientOperationEvent.ClientFuzzyWatchEvent.class);
+        result.add(ClientOperationEvent.ClientCancelFuzzyWatchEvent.class);
+        return result;
     }
     
     @Override
     public void onEvent(Event event) {
         
-            if (event instanceof ClientOperationEvent.ClientFuzzyWatchEvent) {
-                //fuzzy watch event
-                ClientOperationEvent.ClientFuzzyWatchEvent clientFuzzyWatchEvent = (ClientOperationEvent.ClientFuzzyWatchEvent) event;
-                handleClientFuzzyWatchEvent(clientFuzzyWatchEvent);
-            }else if (event instanceof ClientOperationEvent.ClientCancelFuzzyWatchEvent) {
-                //handle cancel fuzzy watch event for a client cancel a fuzzy pattern
-                String completedPattern = ((ClientOperationEvent.ClientCancelFuzzyWatchEvent) event).getPattern();
-                namingFuzzyWatchContextService.removeFuzzyWatchContext(completedPattern, ((ClientOperationEvent.ClientCancelFuzzyWatchEvent) event).getClientId());
-            }
-            
+        if (event instanceof ClientOperationEvent.ClientFuzzyWatchEvent) {
+            //fuzzy watch event
+            ClientOperationEvent.ClientFuzzyWatchEvent clientFuzzyWatchEvent = (ClientOperationEvent.ClientFuzzyWatchEvent) event;
+            handleClientFuzzyWatchEvent(clientFuzzyWatchEvent);
+        } else if (event instanceof ClientOperationEvent.ClientCancelFuzzyWatchEvent) {
+            //handle cancel fuzzy watch event for a client cancel a fuzzy pattern
+            String completedPattern = ((ClientOperationEvent.ClientCancelFuzzyWatchEvent) event).getPattern();
+            namingFuzzyWatchContextService.removeFuzzyWatchContext(completedPattern,
+                    ((ClientOperationEvent.ClientCancelFuzzyWatchEvent) event).getClientId());
+        }
+        
     }
     
-    
-    private void handleClientFuzzyWatchEvent(ClientOperationEvent.ClientFuzzyWatchEvent clientFuzzyWatchEvent ){
+    private void handleClientFuzzyWatchEvent(ClientOperationEvent.ClientFuzzyWatchEvent clientFuzzyWatchEvent) {
         String completedPattern = clientFuzzyWatchEvent.getGroupKeyPattern();
-    
+        
         //sync fuzzy watch context
-        Set<String> patternMatchedServiceKeys = namingFuzzyWatchContextService.syncFuzzyWatcherContext(completedPattern, clientFuzzyWatchEvent.getClientId());
+        Set<String> patternMatchedServiceKeys = namingFuzzyWatchContextService.syncFuzzyWatcherContext(completedPattern,
+                clientFuzzyWatchEvent.getClientId());
         Set<String> clientReceivedGroupKeys = clientFuzzyWatchEvent.getClientReceivedServiceKeys();
         List<FuzzyGroupKeyPattern.GroupKeyState> groupKeyStates = FuzzyGroupKeyPattern.diffGroupKeys(
                 patternMatchedServiceKeys, clientReceivedGroupKeys);
         Set<NamingFuzzyWatchSyncRequest.Context> syncContext = convert(groupKeyStates);
-        String syncType =clientFuzzyWatchEvent.isInitializing()?FUZZY_WATCH_INIT_NOTIFY:FUZZY_WATCH_DIFF_SYNC_NOTIFY;
-    
-        if(CollectionUtils.isNotEmpty(groupKeyStates)){
+        String syncType =
+                clientFuzzyWatchEvent.isInitializing() ? FUZZY_WATCH_INIT_NOTIFY : FUZZY_WATCH_DIFF_SYNC_NOTIFY;
+        
+        if (CollectionUtils.isNotEmpty(groupKeyStates)) {
             Set<Set<NamingFuzzyWatchSyncRequest.Context>> dividedServices = divideServiceByBatch(syncContext);
-            BatchTaskCounter batchTaskCounter=new BatchTaskCounter(dividedServices.size());
-            int currentBatch=1;
+            BatchTaskCounter batchTaskCounter = new BatchTaskCounter(dividedServices.size());
+            int currentBatch = 1;
             for (Set<NamingFuzzyWatchSyncRequest.Context> batchData : dividedServices) {
-                FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTask=new FuzzyWatchSyncNotifyTask(clientFuzzyWatchEvent.getClientId(),completedPattern,syncType,batchData,PushConfig.getInstance().getPushTaskRetryDelay());
+                FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTask = new FuzzyWatchSyncNotifyTask(
+                        clientFuzzyWatchEvent.getClientId(), completedPattern, syncType, batchData,
+                        PushConfig.getInstance().getPushTaskRetryDelay());
                 fuzzyWatchSyncNotifyTask.setBatchTaskCounter(batchTaskCounter);
                 fuzzyWatchSyncNotifyTask.setTotalBatch(dividedServices.size());
                 fuzzyWatchSyncNotifyTask.setCurrentBatch(currentBatch);
-                fuzzyWatchPushDelayTaskEngine.addTask(FuzzyWatchPushDelayTaskEngine.getTaskKey(fuzzyWatchSyncNotifyTask),fuzzyWatchSyncNotifyTask);
+                fuzzyWatchPushDelayTaskEngine.addTask(
+                        FuzzyWatchPushDelayTaskEngine.getTaskKey(fuzzyWatchSyncNotifyTask), fuzzyWatchSyncNotifyTask);
                 currentBatch++;
             }
-        }else if (FUZZY_WATCH_INIT_NOTIFY.equals(syncType)){
-            FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTask=new FuzzyWatchSyncNotifyTask(clientFuzzyWatchEvent.getClientId(),completedPattern,FINISH_FUZZY_WATCH_INIT_NOTIFY,null,PushConfig.getInstance().getPushTaskRetryDelay());
-            fuzzyWatchPushDelayTaskEngine.addTask(FuzzyWatchPushDelayTaskEngine.getTaskKey(fuzzyWatchSyncNotifyTask),fuzzyWatchSyncNotifyTask);
-        
+        } else if (FUZZY_WATCH_INIT_NOTIFY.equals(syncType)) {
+            FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTask = new FuzzyWatchSyncNotifyTask(
+                    clientFuzzyWatchEvent.getClientId(), completedPattern, FINISH_FUZZY_WATCH_INIT_NOTIFY, null,
+                    PushConfig.getInstance().getPushTaskRetryDelay());
+            fuzzyWatchPushDelayTaskEngine.addTask(FuzzyWatchPushDelayTaskEngine.getTaskKey(fuzzyWatchSyncNotifyTask),
+                    fuzzyWatchSyncNotifyTask);
+            
         }
     }
+    
     private Set<Set<NamingFuzzyWatchSyncRequest.Context>> divideServiceByBatch(
             Collection<NamingFuzzyWatchSyncRequest.Context> matchedService) {
         Set<Set<NamingFuzzyWatchSyncRequest.Context>> result = new HashSet<>();
@@ -124,7 +133,7 @@ public class NamingFuzzyWatchSyncNotifier extends SmartSubscriber {
         Set<NamingFuzzyWatchSyncRequest.Context> currentBatch = new HashSet<>();
         for (NamingFuzzyWatchSyncRequest.Context groupedServiceName : matchedService) {
             currentBatch.add(groupedServiceName);
-            if (currentBatch.size() >= this.batchSize) {
+            if (currentBatch.size() >= this.BATCH_SIZE) {
                 result.add(currentBatch);
                 currentBatch = new HashSet<>();
             }
@@ -135,13 +144,13 @@ public class NamingFuzzyWatchSyncNotifier extends SmartSubscriber {
         return result;
     }
     
-    private Set<NamingFuzzyWatchSyncRequest.Context> convert(List<FuzzyGroupKeyPattern.GroupKeyState> diffGroupKeys){
-        Set<NamingFuzzyWatchSyncRequest.Context> syncContext=new HashSet<>();
-        for(FuzzyGroupKeyPattern.GroupKeyState groupKeyState:diffGroupKeys){
-            NamingFuzzyWatchSyncRequest.Context context=new NamingFuzzyWatchSyncRequest.Context();
+    private Set<NamingFuzzyWatchSyncRequest.Context> convert(List<FuzzyGroupKeyPattern.GroupKeyState> diffGroupKeys) {
+        Set<NamingFuzzyWatchSyncRequest.Context> syncContext = new HashSet<>();
+        for (FuzzyGroupKeyPattern.GroupKeyState groupKeyState : diffGroupKeys) {
+            NamingFuzzyWatchSyncRequest.Context context = new NamingFuzzyWatchSyncRequest.Context();
             context.setServiceKey(groupKeyState.getGroupKey());
-            context.setChangedType(groupKeyState.isExist()?ADD_SERVICE:DELETE_SERVICE);
-            syncContext.add(context) ;
+            context.setChangedType(groupKeyState.isExist() ? ADD_SERVICE : DELETE_SERVICE);
+            syncContext.add(context);
         }
         return syncContext;
     }

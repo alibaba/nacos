@@ -45,40 +45,43 @@ public class ConfigFuzzyWatchChangeEvent {
     
     /**
      * The change type of local watcher , contains {"ADD_CONFIG", "DELETE_CONFIG"}.
-     * see {@link Constants.ConfigChangedType}
+     * {@link Constants.ConfigChangedType}.
      */
     private String changedType;
     
     /**
-     * the sync type that trigger this changed,contains {"FUZZY_WATCH_INIT_NOTIFY","FUZZY_WATCH_RESOURCE_CHANGED", "FUZZY_WATCH_DIFF_SYNC_NOTIFY"}
+     * the sync type that trigger this changed,contains {"FUZZY_WATCH_INIT_NOTIFY","FUZZY_WATCH_RESOURCE_CHANGED",
+     * "FUZZY_WATCH_DIFF_SYNC_NOTIFY"}.
      */
     private String syncType;
     
     /**
      * Constructs a FuzzyListenConfigChangeEvent with the specified parameters.
      *
-     * @param group  The group of the configuration that has changed
-     * @param dataId The data ID of the configuration that has changed
-     * @param changedType   The type of change that has occurred
+     * @param group       The group of the configuration that has changed
+     * @param dataId      The data ID of the configuration that has changed
+     * @param changedType The type of change that has occurred
      */
-    private ConfigFuzzyWatchChangeEvent(String namespace,String group, String dataId, String changedType,String syncType) {
+    private ConfigFuzzyWatchChangeEvent(String namespace, String group, String dataId, String changedType,
+            String syncType) {
         this.group = group;
         this.dataId = dataId;
-        this.namespace=namespace;
+        this.namespace = namespace;
         this.changedType = changedType;
-        this.syncType=syncType;
+        this.syncType = syncType;
     }
     
     /**
      * Constructs and returns a new FuzzyListenConfigChangeEvent with the specified parameters.
      *
-     * @param group  The group of the configuration that has changed
-     * @param dataId The data ID of the configuration that has changed
-     * @param changedType   The type of change that has occurred
+     * @param group       The group of the configuration that has changed
+     * @param dataId      The data ID of the configuration that has changed
+     * @param changedType The type of change that has occurred
      * @return A new FuzzyListenConfigChangeEvent instance
      */
-    public static ConfigFuzzyWatchChangeEvent build(String namespace,String group, String dataId, String changedType,String syncType) {
-        return new ConfigFuzzyWatchChangeEvent(namespace,group, dataId, changedType,syncType);
+    public static ConfigFuzzyWatchChangeEvent build(String namespace, String group, String dataId, String changedType,
+            String syncType) {
+        return new ConfigFuzzyWatchChangeEvent(namespace, group, dataId, changedType, syncType);
     }
     
     public String getNamespace() {

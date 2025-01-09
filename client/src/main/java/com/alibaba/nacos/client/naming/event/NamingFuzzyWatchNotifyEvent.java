@@ -37,29 +37,29 @@ public class NamingFuzzyWatchNotifyEvent extends Event {
     
     private final String syncType;
     
-    private NamingFuzzyWatchNotifyEvent(String scope, String pattern, String serviceKey, String changedType, String syncType,String watcherUuid) {
+    private NamingFuzzyWatchNotifyEvent(String scope, String pattern, String serviceKey, String changedType,
+            String syncType, String watcherUuid) {
         this.scope = scope;
         this.pattern = pattern;
         this.serviceKey = serviceKey;
         this.changedType = changedType;
         this.syncType = syncType;
-        this.watcherUuid=watcherUuid;
+        this.watcherUuid = watcherUuid;
     }
     
-    public static NamingFuzzyWatchNotifyEvent build(String eventScope, String pattern, String serviceKey, String changedType,
-            String syncType) {
-        return new NamingFuzzyWatchNotifyEvent(eventScope, pattern, serviceKey, changedType, syncType,null);
+    public static NamingFuzzyWatchNotifyEvent build(String eventScope, String pattern, String serviceKey,
+            String changedType, String syncType) {
+        return new NamingFuzzyWatchNotifyEvent(eventScope, pattern, serviceKey, changedType, syncType, null);
     }
     
-    public static NamingFuzzyWatchNotifyEvent build(String eventScope, String pattern, String serviceKey, String changedType,
-            String syncType,String watcherUuid) {
-        return new NamingFuzzyWatchNotifyEvent(eventScope, pattern, serviceKey, changedType, syncType,watcherUuid);
+    public static NamingFuzzyWatchNotifyEvent build(String eventScope, String pattern, String serviceKey,
+            String changedType, String syncType, String watcherUuid) {
+        return new NamingFuzzyWatchNotifyEvent(eventScope, pattern, serviceKey, changedType, syncType, watcherUuid);
     }
     
     public String getPattern() {
         return pattern;
     }
-    
     
     public String getChangedType() {
         return changedType;

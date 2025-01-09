@@ -20,6 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * batch task counter.
+ *
+ * @author shiyiyue
+ */
 public class BatchTaskCounter {
     
     List<AtomicBoolean> batchCounter;
@@ -28,19 +33,31 @@ public class BatchTaskCounter {
         initBatchCounter(totalBatch);
     }
     
-    public void initBatchCounter(int totalBatch) {
+    /**
+     * init counter.
+     * @param totalBatch totalBatch.
+     */
+    private void initBatchCounter(int totalBatch) {
         batchCounter = new ArrayList<>(totalBatch);
         for (int i = 0; i < totalBatch; i++) {
             batchCounter.add(i, new AtomicBoolean(false));
         }
     }
     
+    /**
+     * set bath succeed.
+     * @param batch succeed batch.
+     */
     public void batchSuccess(int batch) {
         if (batch <= batchCounter.size()) {
             batchCounter.get(batch - 1).set(true);
         }
     }
     
+    /**
+     * check all completed.
+     * @return
+     */
     public boolean batchCompleted() {
         for (AtomicBoolean atomicBoolean : batchCounter) {
             if (!atomicBoolean.get()) {
@@ -50,7 +67,7 @@ public class BatchTaskCounter {
         return true;
     }
     
-    public int getTotalBatch(){
+    public int getTotalBatch() {
         return batchCounter.size();
     }
 }

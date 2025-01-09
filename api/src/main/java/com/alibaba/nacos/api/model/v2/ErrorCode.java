@@ -26,67 +26,67 @@ package com.alibaba.nacos.api.model.v2;
 public enum ErrorCode {
     
     /**
-     *  success.
+     * success.
      */
     SUCCESS(0, "success"),
     
     /**
-     *  parameter missing.
+     * parameter missing.
      */
     PARAMETER_MISSING(10000, "parameter missing"),
     
     /**
-     *  access denied.
+     * access denied.
      */
     ACCESS_DENIED(10001, "access denied"),
     
     /**
-     *  data access error.
+     * data access error.
      */
     DATA_ACCESS_ERROR(10002, "data access error"),
     
     /**
-     *  'tenant' parameter error.
+     * 'tenant' parameter error.
      */
     TENANT_PARAM_ERROR(20001, "'tenant' parameter error"),
     
     /**
-     *  parameter validate error.
+     * parameter validate error.
      */
     PARAMETER_VALIDATE_ERROR(20002, "parameter validate error"),
     
     /**
-     *  MediaType Error.
+     * MediaType Error.
      */
     MEDIA_TYPE_ERROR(20003, "MediaType Error"),
     
     /**
-     *  resource not found.
+     * resource not found.
      */
     RESOURCE_NOT_FOUND(20004, "resource not found"),
     
     /**
-     *  resource conflict.
+     * resource conflict.
      */
     RESOURCE_CONFLICT(20005, "resource conflict"),
     
     /**
-     *  config listener is null.
+     * config listener is null.
      */
     CONFIG_LISTENER_IS_NULL(20006, "config listener is null"),
     
     /**
-     *  config listener error.
+     * config listener error.
      */
     CONFIG_LISTENER_ERROR(20007, "config listener error"),
     
     /**
-     *  invalid dataId.
+     * invalid dataId.
      */
     INVALID_DATA_ID(20008, "invalid dataId"),
     
     /**
-     *  parameter mismatch.
+     * parameter mismatch.
      */
     PARAMETER_MISMATCH(20009, "parameter mismatch"),
     
@@ -111,97 +111,97 @@ public enum ErrorCode {
     CONFIG_GRAY_NAME_UNRECOGNIZED_ERROR(20013, "config gray name not recognized"),
     
     /**
-     *  service name error.
+     * service name error.
      */
     SERVICE_NAME_ERROR(21000, "service name error"),
     
     /**
-     *  weight error.
+     * weight error.
      */
     WEIGHT_ERROR(21001, "weight error"),
     
     /**
-     *  instance metadata error.
+     * instance metadata error.
      */
     INSTANCE_METADATA_ERROR(21002, "instance metadata error"),
     
     /**
-     *  instance not found.
+     * instance not found.
      */
     INSTANCE_NOT_FOUND(21003, "instance not found"),
     
     /**
-     *  instance error.
+     * instance error.
      */
     INSTANCE_ERROR(21004, "instance error"),
     
     /**
-     *  service metadata error.
+     * service metadata error.
      */
     SERVICE_METADATA_ERROR(21005, "service metadata error"),
     
     /**
-     *  selector error.
+     * selector error.
      */
     SELECTOR_ERROR(21006, "selector error"),
     
     /**
-     *  service already exist.
+     * service already exist.
      */
     SERVICE_ALREADY_EXIST(21007, "service already exist"),
     
     /**
-     *  service not exist.
+     * service not exist.
      */
     SERVICE_NOT_EXIST(21008, "service not exist"),
     
     /**
-     *  service delete failure.
+     * service delete failure.
      */
     SERVICE_DELETE_FAILURE(21009, "service delete failure"),
     
     /**
-     *  healthy param miss.
+     * healthy param miss.
      */
     HEALTHY_PARAM_MISS(21010, "healthy param miss"),
     
     /**
-     *  health check still running.
+     * health check still running.
      */
     HEALTH_CHECK_STILL_RUNNING(21011, "health check still running"),
     
     /**
-     *  illegal namespace.
+     * illegal namespace.
      */
     ILLEGAL_NAMESPACE(22000, "illegal namespace"),
     
     /**
-     *  namespace not exist.
+     * namespace not exist.
      */
     NAMESPACE_NOT_EXIST(22001, "namespace not exist"),
     
     /**
-     *  namespace already exist.
+     * namespace already exist.
      */
     NAMESPACE_ALREADY_EXIST(22002, "namespace already exist"),
     
     /**
-     *  illegal state.
+     * illegal state.
      */
     ILLEGAL_STATE(23000, "illegal state"),
     
     /**
-     *  node info error.
+     * node info error.
      */
     NODE_INFO_ERROR(23001, "node info error"),
     
     /**
-     *  node down failure.
+     * node down failure.
      */
     NODE_DOWN_FAILURE(23002, "node down failure"),
     
     /**
-     *  server error.
+     * server error.
      */
     SERVER_ERROR(30000, "server error"),
     
@@ -223,12 +223,9 @@ public enum ErrorCode {
     
     NO_SELECTED_CONFIG(100006, "没有选择任何配置"),
     
-    
     FUZZY_WATCH_PATTERN_OVER_LIMIT(50310, "fuzzy watch pattern over limit"),
     
-    FUZZY_WATCH_PATTERN_MATCH_GROUP_KEY_OVER_LIMIT(50311,"fuzzy watch pattern matched group key over limit");
-    
-    
+    FUZZY_WATCH_PATTERN_MATCH_GROUP_KEY_OVER_LIMIT(50311, "fuzzy watch pattern matched group key over limit");
     
     private final Integer code;
     

@@ -27,18 +27,17 @@ import com.alibaba.nacos.config.server.model.event.ConfigFuzzyWatchEvent;
 import com.alibaba.nacos.config.server.service.ConfigFuzzyWatchContextService;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
-import com.alibaba.nacos.core.paramcheck.impl.ConfigBatchFuzzyListenRequestParamsExtractor;
+import com.alibaba.nacos.core.paramcheck.impl.ConfigFuzzyWatchRequestParamsExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.utils.StringPool;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import static com.alibaba.nacos.api.common.Constants.WATCH_TYPE_WATCH;
-import static com.alibaba.nacos.api.common.Constants.WATCH_TYPE_CANCEL_WATCH;
-
 import java.util.Set;
+
+import static com.alibaba.nacos.api.common.Constants.WATCH_TYPE_CANCEL_WATCH;
+import static com.alibaba.nacos.api.common.Constants.WATCH_TYPE_WATCH;
 
 /**
  * Handler for processing batch fuzzy listen requests.
@@ -52,14 +51,12 @@ import java.util.Set;
  * @date 2024/3/4
  */
 @Component
-public class ConfigFuzzyWatchRequestHandler
-        extends RequestHandler<ConfigFuzzyWatchRequest, ConfigFuzzyWatchResponse> {
-    
+public class ConfigFuzzyWatchRequestHandler extends RequestHandler<ConfigFuzzyWatchRequest, ConfigFuzzyWatchResponse> {
     
     private ConfigFuzzyWatchContextService configFuzzyWatchContextService;
     
-    public ConfigFuzzyWatchRequestHandler(ConfigFuzzyWatchContextService configFuzzyWatchContextService){
-        this.configFuzzyWatchContextService=configFuzzyWatchContextService;
+    public ConfigFuzzyWatchRequestHandler(ConfigFuzzyWatchContextService configFuzzyWatchContextService) {
+        this.configFuzzyWatchContextService = configFuzzyWatchContextService;
     }
     
     /**
@@ -77,23 +74,20 @@ public class ConfigFuzzyWatchRequestHandler
     @Override
     @TpsControl(pointName = "ConfigFuzzyWatch")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    @ExtractorManager.Extractor(rpcExtractor = ConfigBatchFuzzyListenRequestParamsExtractor.class)
-    public ConfigFuzzyWatchResponse handle(ConfigFuzzyWatchRequest request, RequestMeta meta)
-            throws NacosException {
+    @ExtractorManager.Extractor(rpcExtractor = ConfigFuzzyWatchRequestParamsExtractor.class)
+    public ConfigFuzzyWatchResponse handle(ConfigFuzzyWatchRequest request, RequestMeta meta) throws NacosException {
         String connectionId = StringPool.get(meta.getConnectionId());
-            String groupKeyPattern = request.getGroupKeyPattern();
-            if (WATCH_TYPE_WATCH.equals(request.getWatchType())) {
-                // Add client to the fuzzy listening context
-                configFuzzyWatchContextService.addFuzzyListen(groupKeyPattern, connectionId);
-                // Get existing group keys for the client and publish initialization event
-                Set<String> clientExistingGroupKeys = request.getReceivedGroupKeys();
-                NotifyCenter.publishEvent(
-                        new ConfigFuzzyWatchEvent(connectionId, clientExistingGroupKeys, groupKeyPattern,
-                                request.isInitializing()));
-            } else if(WATCH_TYPE_CANCEL_WATCH.equals(request.getWatchType())) {
-                NotifyCenter.publishEvent(
-                        new ConfigCancelFuzzyWatchEvent(connectionId, groupKeyPattern));
-            }
+        String groupKeyPattern = request.getGroupKeyPattern();
+        if (WATCH_TYPE_WATCH.equals(request.getWatchType())) {
+            // Add client to the fuzzy listening context
+            configFuzzyWatchContextService.addFuzzyListen(groupKeyPattern, connectionId);
+            // Get existing group keys for the client and publish initialization event
+            Set<String> clientExistingGroupKeys = request.getReceivedGroupKeys();
+            NotifyCenter.publishEvent(new ConfigFuzzyWatchEvent(connectionId, clientExistingGroupKeys, groupKeyPattern,
+                    request.isInitializing()));
+        } else if (WATCH_TYPE_CANCEL_WATCH.equals(request.getWatchType())) {
+            NotifyCenter.publishEvent(new ConfigCancelFuzzyWatchEvent(connectionId, groupKeyPattern));
+        }
         
         // Return response
         return new ConfigFuzzyWatchResponse();

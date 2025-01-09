@@ -17,7 +17,7 @@
 package com.alibaba.nacos.api.config;
 
 import com.alibaba.nacos.api.config.filter.IConfigFilter;
-import com.alibaba.nacos.api.config.listener.ConfigFuzzyWatcher;
+import com.alibaba.nacos.api.config.listener.FuzzyWatchEventWatcher;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 
@@ -176,7 +176,7 @@ public interface ConfigService {
      * @throws NacosException NacosException
      * @since 3.0
      */
-    void fuzzyWatch(String fixedGroupName, ConfigFuzzyWatcher watcher) throws NacosException;
+    void fuzzyWatch(String fixedGroupName, FuzzyWatchEventWatcher watcher) throws NacosException;
     
     /**
      * Add a fuzzy listener to the configuration. After the server modifies the configuration matching the specified
@@ -189,7 +189,7 @@ public interface ConfigService {
      * @throws NacosException NacosException
      * @since 3.0
      */
-    void fuzzyWatch(String dataIdPattern, String fixedGroupName, ConfigFuzzyWatcher watcher)
+    void fuzzyWatch(String dataIdPattern, String fixedGroupName, FuzzyWatchEventWatcher watcher)
             throws NacosException;
     
     /**
@@ -204,7 +204,7 @@ public interface ConfigService {
      * @since 3.0
      */
     Future<Set<String>> fuzzyWatchWithGroupKeys(String fixedGroupName,
-            ConfigFuzzyWatcher watcher) throws NacosException;
+            FuzzyWatchEventWatcher watcher) throws NacosException;
     
     /**
      * Add a fuzzy listener to the configuration and retrieve all configs that match the specified dataId pattern and
@@ -219,7 +219,7 @@ public interface ConfigService {
      * @since 3.0
      */
     Future<Set<String>> fuzzyWatchWithGroupKeys(String dataIdPattern, String fixedGroupName,
-            ConfigFuzzyWatcher watcher) throws NacosException;
+            FuzzyWatchEventWatcher watcher) throws NacosException;
     
     /**
      * Cancel fuzzy listen and remove the event listener for a specified fixed group name.
@@ -229,7 +229,7 @@ public interface ConfigService {
      * @throws NacosException If an error occurs during the cancellation process.
      * @since 3.0
      */
-    void cancelFuzzyWatch(String fixedGroupName, ConfigFuzzyWatcher watcher) throws NacosException;
+    void cancelFuzzyWatch(String fixedGroupName, FuzzyWatchEventWatcher watcher) throws NacosException;
     
     /**
      * Cancel fuzzy listen and remove the event listener for a specified service name pattern and fixed group name.
@@ -240,7 +240,7 @@ public interface ConfigService {
      * @throws NacosException If an error occurs during the cancellation process.
      * @since 3.0
      */
-    void cancelFuzzyWatch(String dataIdPattern, String fixedGroupName, ConfigFuzzyWatcher watcher)
+    void cancelFuzzyWatch(String dataIdPattern, String fixedGroupName, FuzzyWatchEventWatcher watcher)
             throws NacosException;
     
 }

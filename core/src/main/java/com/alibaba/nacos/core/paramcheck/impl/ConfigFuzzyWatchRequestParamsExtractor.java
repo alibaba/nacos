@@ -20,23 +20,21 @@ import com.alibaba.nacos.api.config.remote.request.ConfigFuzzyWatchRequest;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
-import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
 import com.alibaba.nacos.core.paramcheck.AbstractRpcParamExtractor;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
- * Extractor for parameters of {@link ConfigFuzzyWatchRequest}. This extractor retrieves parameter information
- * from the request object and constructs {@link ParamInfo} instances representing the namespace ID, group, and data IDs
+ * Extractor for parameters of {@link ConfigFuzzyWatchRequest}. This extractor retrieves parameter information from the
+ * request object and constructs {@link ParamInfo} instances representing the namespace ID, group, and data IDs
  * contained in the request's contexts.
  *
  * @author stone-98
  * @date 2024/3/5
  */
-public class ConfigBatchFuzzyListenRequestParamsExtractor extends AbstractRpcParamExtractor {
+public class ConfigFuzzyWatchRequestParamsExtractor extends AbstractRpcParamExtractor {
     
     /**
      * Extracts parameter information from the given request.
@@ -49,10 +47,10 @@ public class ConfigBatchFuzzyListenRequestParamsExtractor extends AbstractRpcPar
     public List<ParamInfo> extractParam(Request request) throws NacosException {
         ConfigFuzzyWatchRequest req = (ConfigFuzzyWatchRequest) request;
         List<ParamInfo> paramInfos = new ArrayList<>();
-            // Extract namespace ID and group from the context
-            ParamInfo paramInfo1 = new ParamInfo();
-            paramInfo1.setNamespaceId(FuzzyGroupKeyPattern.getNamespaceFromPattern(req.getGroupKeyPattern()));
-            paramInfos.add(paramInfo1);
+        // Extract namespace ID and group from the context
+        ParamInfo paramInfo1 = new ParamInfo();
+        paramInfo1.setNamespaceId(FuzzyGroupKeyPattern.getNamespaceFromPattern(req.getGroupKeyPattern()));
+        paramInfos.add(paramInfo1);
         return paramInfos;
     }
 }

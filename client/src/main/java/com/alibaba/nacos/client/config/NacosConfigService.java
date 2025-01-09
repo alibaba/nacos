@@ -21,13 +21,12 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.filter.IConfigFilter;
-import com.alibaba.nacos.api.config.listener.ConfigFuzzyWatcher;
+import com.alibaba.nacos.api.config.listener.FuzzyWatchEventWatcher;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigRequest;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
-import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
 import com.alibaba.nacos.client.config.impl.ConfigFuzzyWatchContext;
 import com.alibaba.nacos.client.config.impl.ConfigServerListManager;
@@ -45,7 +44,6 @@ import org.slf4j.Logger;
 import java.util.Collections;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 import static com.alibaba.nacos.api.common.Constants.ANY_PATTERN;
@@ -125,48 +123,48 @@ public class NacosConfigService implements ConfigService {
     }
     
     @Override
-    public void fuzzyWatch(String fixedGroupName, ConfigFuzzyWatcher watcher) throws NacosException {
+    public void fuzzyWatch(String fixedGroupName, FuzzyWatchEventWatcher watcher) throws NacosException {
         doAddFuzzyWatch(ANY_PATTERN, fixedGroupName, watcher);
     }
     
     @Override
-    public void fuzzyWatch(String dataIdPattern, String fixedGroupName, ConfigFuzzyWatcher watcher)
+    public void fuzzyWatch(String dataIdPattern, String fixedGroupName, FuzzyWatchEventWatcher watcher)
             throws NacosException {
         doAddFuzzyWatch(dataIdPattern, fixedGroupName, watcher);
     }
     
     @Override
-    public Future<Set<String>> fuzzyWatchWithGroupKeys(String fixedGroupName,
-            ConfigFuzzyWatcher watcher) throws NacosException {
+    public Future<Set<String>> fuzzyWatchWithGroupKeys(String fixedGroupName, FuzzyWatchEventWatcher watcher)
+            throws NacosException {
         return doAddFuzzyWatch(ANY_PATTERN, fixedGroupName, watcher);
     }
     
     @Override
-    public Future<Set<String>> fuzzyWatchWithGroupKeys(String dataIdPattern,
-            String fixedGroupName, ConfigFuzzyWatcher watcher) throws NacosException {
+    public Future<Set<String>> fuzzyWatchWithGroupKeys(String dataIdPattern, String fixedGroupName,
+            FuzzyWatchEventWatcher watcher) throws NacosException {
         return doAddFuzzyWatch(dataIdPattern, fixedGroupName, watcher);
     }
     
-    
-    private Future<Set<String>> doAddFuzzyWatch(String dataIdPattern,
-            String fixedGroupName, ConfigFuzzyWatcher watcher) throws NacosException {
-        ConfigFuzzyWatchContext configFuzzyWatchContext = worker.addTenantFuzzyWatcher(dataIdPattern, fixedGroupName,watcher);
+    private Future<Set<String>> doAddFuzzyWatch(String dataIdPattern, String fixedGroupName,
+            FuzzyWatchEventWatcher watcher) throws NacosException {
+        ConfigFuzzyWatchContext configFuzzyWatchContext = worker.addTenantFuzzyWatcher(dataIdPattern, fixedGroupName,
+                watcher);
         return configFuzzyWatchContext.createNewFuture();
     }
     
     @Override
-    public void cancelFuzzyWatch(String fixedGroupName, ConfigFuzzyWatcher watcher) throws NacosException {
+    public void cancelFuzzyWatch(String fixedGroupName, FuzzyWatchEventWatcher watcher) throws NacosException {
         cancelFuzzyWatch(ANY_PATTERN, fixedGroupName, watcher);
     }
     
     @Override
-    public void cancelFuzzyWatch(String dataIdPattern, String fixedGroupName, ConfigFuzzyWatcher watcher)
+    public void cancelFuzzyWatch(String dataIdPattern, String fixedGroupName, FuzzyWatchEventWatcher watcher)
             throws NacosException {
         doCancelFuzzyListen(dataIdPattern, fixedGroupName, watcher);
     }
     
-    private void doCancelFuzzyListen(String dataIdPattern, String groupNamePattern,
-            ConfigFuzzyWatcher watcher) throws NacosException {
+    private void doCancelFuzzyListen(String dataIdPattern, String groupNamePattern, FuzzyWatchEventWatcher watcher)
+            throws NacosException {
         if (null == watcher) {
             return;
         }
@@ -221,11 +219,11 @@ public class NacosConfigService implements ConfigService {
         // changing config needed in the same time, while nacos server is down.
         String content = LocalConfigInfoProcessor.getFailover(worker.getAgentName(), dataId, group, tenant);
         if (content != null) {
-            LOGGER.warn("[{}] [get-config] get failover ok, dataId={}, group={}, tenant={}",
-                    worker.getAgentName(), dataId, group, tenant);
+            LOGGER.warn("[{}] [get-config] get failover ok, dataId={}, group={}, tenant={}", worker.getAgentName(),
+                    dataId, group, tenant);
             cr.setContent(content);
-            String encryptedDataKey = LocalEncryptedDataKeyProcessor
-                    .getEncryptDataKeyFailover(worker.getAgentName(), dataId, group, tenant);
+            String encryptedDataKey = LocalEncryptedDataKeyProcessor.getEncryptDataKeyFailover(worker.getAgentName(),
+                    dataId, group, tenant);
             cr.setEncryptedDataKey(encryptedDataKey);
             configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();
@@ -247,15 +245,15 @@ public class NacosConfigService implements ConfigService {
             LOGGER.warn("[{}] [get-config] get from server error, dataId={}, group={}, tenant={}, msg={}",
                     worker.getAgentName(), dataId, group, tenant, ioe.toString());
         }
-
+        
         content = LocalConfigInfoProcessor.getSnapshot(worker.getAgentName(), dataId, group, tenant);
         if (content != null) {
-            LOGGER.warn("[{}] [get-config] get snapshot ok, dataId={}, group={}, tenant={}",
-                    worker.getAgentName(), dataId, group, tenant);
+            LOGGER.warn("[{}] [get-config] get snapshot ok, dataId={}, group={}, tenant={}", worker.getAgentName(),
+                    dataId, group, tenant);
         }
         cr.setContent(content);
-        String encryptedDataKey = LocalEncryptedDataKeyProcessor
-                .getEncryptDataKeySnapshot(worker.getAgentName(), dataId, group, tenant);
+        String encryptedDataKey = LocalEncryptedDataKeyProcessor.getEncryptDataKeySnapshot(worker.getAgentName(),
+                dataId, group, tenant);
         cr.setEncryptedDataKey(encryptedDataKey);
         configFilterChainManager.doFilter(null, cr);
         content = cr.getContent();
@@ -287,8 +285,8 @@ public class NacosConfigService implements ConfigService {
         content = cr.getContent();
         String encryptedDataKey = cr.getEncryptedDataKey();
         
-        return worker
-                .publishConfig(dataId, group, tenant, appName, tag, betaIps, content, encryptedDataKey, casMd5, type);
+        return worker.publishConfig(dataId, group, tenant, appName, tag, betaIps, content, encryptedDataKey, casMd5,
+                type);
     }
     
     @Override
@@ -299,12 +297,12 @@ public class NacosConfigService implements ConfigService {
             return DOWN;
         }
     }
-
+    
     @Override
     public void addConfigFilter(IConfigFilter configFilter) {
         configFilterChainManager.addFilter(configFilter);
     }
-
+    
     @Override
     public void shutDown() throws NacosException {
         worker.shutdown();

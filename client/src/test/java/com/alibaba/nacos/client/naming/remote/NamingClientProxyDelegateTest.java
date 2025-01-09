@@ -27,8 +27,8 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.cache.NamingFuzzyWatchServiceListHolder;
+import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
 import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
@@ -68,7 +68,7 @@ class NamingClientProxyDelegateTest {
     
     @Mock
     NamingFuzzyWatchServiceListHolder namingFuzzyWatchServiceListHolder;
-  
+    
     NamingClientProxyDelegate delegate;
     
     InstancesChangeNotifier notifier;
@@ -81,7 +81,8 @@ class NamingClientProxyDelegateTest {
         props.setProperty("serverAddr", "localhost");
         nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
         notifier = new InstancesChangeNotifier();
-        delegate = new NamingClientProxyDelegate(TEST_NAMESPACE, holder, nacosClientProperties, notifier,namingFuzzyWatchServiceListHolder);
+        delegate = new NamingClientProxyDelegate(TEST_NAMESPACE, holder, nacosClientProperties, notifier,
+                namingFuzzyWatchServiceListHolder);
         Field grpcClientProxyField = NamingClientProxyDelegate.class.getDeclaredField("grpcClientProxy");
         grpcClientProxyField.setAccessible(true);
         grpcClientProxyField.set(delegate, mockGrpcClient);

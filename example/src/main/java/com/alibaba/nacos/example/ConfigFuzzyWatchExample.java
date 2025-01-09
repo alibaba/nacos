@@ -18,7 +18,8 @@ package com.alibaba.nacos.example;
 
 import com.alibaba.nacos.api.config.ConfigFactory;
 import com.alibaba.nacos.api.config.ConfigService;
-import com.alibaba.nacos.api.config.listener.ConfigFuzzyWatcher;
+import com.alibaba.nacos.api.config.listener.AbstractFuzzyWatchEventWatcher;
+import com.alibaba.nacos.api.config.listener.FuzzyWatchEventWatcher;
 import com.alibaba.nacos.api.config.listener.ConfigFuzzyWatchChangeEvent;
 import com.alibaba.nacos.api.exception.NacosException;
 
@@ -47,7 +48,7 @@ import java.util.Properties;
  * @author stone-98
  * @date 2024/3/14
  */
-public class FuzzyListenExample {
+public class ConfigFuzzyWatchExample {
     
     public static void main(String[] args) throws NacosException, InterruptedException {
         // Set up properties for Nacos Config Service
@@ -66,7 +67,7 @@ public class FuzzyListenExample {
         }
         
         // Define a fuzzy listener to handle configuration changes
-        ConfigFuzzyWatcher listener = new ConfigFuzzyWatcher() {
+        FuzzyWatchEventWatcher listener = new AbstractFuzzyWatchEventWatcher() {
             @Override
             public void onEvent(ConfigFuzzyWatchChangeEvent event) {
                 System.out.println("[fuzzy listen config change]" + event.toString());

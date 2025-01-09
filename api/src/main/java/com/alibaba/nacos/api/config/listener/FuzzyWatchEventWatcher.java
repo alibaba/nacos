@@ -19,28 +19,25 @@ package com.alibaba.nacos.api.config.listener;
 import java.util.concurrent.Executor;
 
 /**
- * AbstractFuzzyListenListener is an abstract class that provides basic functionality for listening to fuzzy
- * configuration changes in Nacos.
+ * fuzzy watch config changes.
  *
  * @author stone-98
  * @date 2024/3/4
  */
-public abstract class ConfigFuzzyWatcher {
+public interface FuzzyWatchEventWatcher {
     
     /**
      * Callback method invoked when a fuzzy configuration change event occurs.
      *
      * @param event The fuzzy configuration change event
      */
-    public abstract void onEvent(ConfigFuzzyWatchChangeEvent event);
+    void onEvent(ConfigFuzzyWatchChangeEvent event);
     
     /**
      * Get executor for execute this receive.
      *
      * @return Executor
      */
-    public  Executor getExecutor(){
-        return null;
-    }
+    Executor getExecutor();
     
 }

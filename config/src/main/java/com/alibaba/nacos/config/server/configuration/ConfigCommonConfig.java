@@ -71,6 +71,7 @@ public class ConfigCommonConfig extends AbstractDynamicConfig {
     public void setBatchSize(int batchSize) {
         this.batchSize = batchSize;
     }
+    
     public boolean isDerbyOpsEnabled() {
         return derbyOpsEnabled;
     }

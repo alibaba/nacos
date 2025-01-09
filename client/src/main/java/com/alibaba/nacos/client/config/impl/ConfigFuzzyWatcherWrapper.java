@@ -16,25 +16,31 @@
 
 package com.alibaba.nacos.client.config.impl;
 
-import com.alibaba.nacos.api.config.listener.ConfigFuzzyWatcher;
+import com.alibaba.nacos.api.config.listener.FuzzyWatchEventWatcher;
 
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ *  ConfigFuzzyWatcherWrapper.
+ * @author shiyiyue
+ */
 public class ConfigFuzzyWatcherWrapper {
     
+    FuzzyWatchEventWatcher fuzzyWatchEventWatcher;
     
-    ConfigFuzzyWatcher configFuzzyWatcher;
-    
-    public ConfigFuzzyWatcherWrapper(ConfigFuzzyWatcher configFuzzyWatcher){
-        this.configFuzzyWatcher=configFuzzyWatcher;
+    public ConfigFuzzyWatcherWrapper(FuzzyWatchEventWatcher fuzzyWatchEventWatcher) {
+        this.fuzzyWatchEventWatcher = fuzzyWatchEventWatcher;
     }
+    
     /**
      * Unique identifier for the listener.
      */
-    String uuid= UUID.randomUUID().toString();
+    String uuid = UUID.randomUUID().toString();
+    
+    private Set<String> syncGroupKeys = new HashSet<>();
     
     @Override
     public boolean equals(Object o) {
@@ -45,16 +51,14 @@ public class ConfigFuzzyWatcherWrapper {
             return false;
         }
         ConfigFuzzyWatcherWrapper that = (ConfigFuzzyWatcherWrapper) o;
-        return Objects.equals(configFuzzyWatcher, that.configFuzzyWatcher) && Objects.equals(uuid, that.uuid);
+        return Objects.equals(fuzzyWatchEventWatcher, that.fuzzyWatchEventWatcher) && Objects.equals(uuid, that.uuid);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(configFuzzyWatcher, uuid);
+        return Objects.hash(fuzzyWatchEventWatcher, uuid);
     }
-    
-    private Set<String> syncGroupKeys = new HashSet<>();
-    
+
     Set<String> getSyncGroupKeys() {
         return syncGroupKeys;
     }

@@ -39,17 +39,16 @@ import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_PATTERN_SPLITTE
 public class FuzzyGroupKeyPattern {
     
     /**
-     * Generates a fuzzy listen group key pattern based on the given dataId pattern, group, and optional tenant.
-     * pattern result as: fixNamespace>>groupPattern>>dataIdPattern
+     * Generates a fuzzy listen group key pattern based on the given dataId pattern, group, and optional tenant. pattern
+     * result as: fixNamespace>>groupPattern>>dataIdPattern
      *
      * @param resourcePattern The pattern for matching dataIds or service names.
-     * @param groupPattern  The groupPattern associated with the groups.
-     * @param fixNamespace  (Optional) The tenant associated with the dataIds (can be null or empty).
+     * @param groupPattern    The groupPattern associated with the groups.
+     * @param fixNamespace    (Optional) The tenant associated with the dataIds (can be null or empty).
      * @return A unique group key pattern for fuzzy listen.
      * @throws IllegalArgumentException If the dataId pattern or group is blank.
      */
-    public static String generatePattern(final String resourcePattern, final String groupPattern,
-             String fixNamespace) {
+    public static String generatePattern(final String resourcePattern, final String groupPattern, String fixNamespace) {
         if (StringUtils.isBlank(resourcePattern)) {
             throw new IllegalArgumentException("Param 'resourcePattern' is illegal, resourcePattern is blank");
         }
@@ -57,7 +56,7 @@ public class FuzzyGroupKeyPattern {
             throw new IllegalArgumentException("Param 'groupPattern' is illegal, group is blank");
         }
         if (StringUtils.isBlank(fixNamespace)) {
-            fixNamespace=DEFAULT_NAMESPACE_ID;
+            fixNamespace = DEFAULT_NAMESPACE_ID;
         }
         StringBuilder sb = new StringBuilder();
         sb.append(fixNamespace);
@@ -68,95 +67,100 @@ public class FuzzyGroupKeyPattern {
         return sb.toString().intern();
     }
     
-    
     /**
      * Given a dataId, group, and a collection of completed group key patterns, returns the patterns that match.
      *
-     * @param resourceName     The dataId or sservice name to match.
+     * @param resourceName     The dataId or service name to match.
      * @param group            The group to match.
      * @param namespace        The group to match.
      * @param groupKeyPatterns The collection of completed group key patterns to match against.
      * @return A set of patterns that match the dataId and group.
      */
-    public static Set<String> filterMatchedPatterns(Collection<String> groupKeyPatterns,String resourceName, String group, String namespace
-            ) {
+    public static Set<String> filterMatchedPatterns(Collection<String> groupKeyPatterns, String resourceName,
+            String group, String namespace) {
         if (CollectionUtils.isEmpty(groupKeyPatterns)) {
             return new HashSet<>(1);
         }
         Set<String> matchedPatternList = new HashSet<>();
         for (String keyPattern : groupKeyPatterns) {
-            if (matchPattern(keyPattern,resourceName, group,namespace)) {
+            if (matchPattern(keyPattern, resourceName, group, namespace)) {
                 matchedPatternList.add(keyPattern);
             }
         }
         return matchedPatternList;
     }
     
-    
-    
-    public static boolean matchPattern(String groupKeyPattern,String resourceName,String group,String namespace){
-        if(StringUtils.isBlank(namespace)){
-            namespace=DEFAULT_NAMESPACE_ID;
+    /**
+     * check if the resource match the groupKeyPattern.
+     * @param resourceName     The dataId or service name to match.
+     * @param group            The group to match.
+     * @param namespace        The group to match.
+     * @param groupKeyPattern  The pattern to match.
+     * @return  matched or not.
+     */
+    public static boolean matchPattern(String groupKeyPattern, String resourceName, String group, String namespace) {
+        if (StringUtils.isBlank(namespace)) {
+            namespace = DEFAULT_NAMESPACE_ID;
         }
         String[] splitPatterns = groupKeyPattern.split(FUZZY_WATCH_PATTERN_SPLITTER);
-        return splitPatterns[0].equals(namespace)&&itemMatched(splitPatterns[1],group)&&itemMatched(splitPatterns[2],resourceName);
+        return splitPatterns[0].equals(namespace) && itemMatched(splitPatterns[1], group) && itemMatched(
+                splitPatterns[2], resourceName);
     }
     
-    public static String getNamespaceFromPattern(String groupKeyPattern){
+    public static String getNamespaceFromPattern(String groupKeyPattern) {
         return groupKeyPattern.split(FUZZY_WATCH_PATTERN_SPLITTER)[0];
     }
+    
     /**
-     *
-     * @param pattern
-     * @param resource
+     * check pattern matched the resource.
+     * @param pattern pattern contain *.
+     * @param resource resource to check.
      * @return
      */
-    private static boolean itemMatched(String pattern,String resource){
+    private static boolean itemMatched(String pattern, String resource) {
         
         //accurate match without *
-        if (!pattern.contains(ALL_PATTERN)){
+        if (!pattern.contains(ALL_PATTERN)) {
             return pattern.equals(resource);
         }
-    
+        
         //match for '*' pattern
-        if (pattern.equals(ALL_PATTERN)){
+        if (pattern.equals(ALL_PATTERN)) {
             return true;
         }
         
         //match for *{string}*
-        if (pattern.startsWith(ALL_PATTERN)&&pattern.endsWith(ALL_PATTERN)){
-            String pureString=pattern.replace(ALL_PATTERN,"");
+        if (pattern.startsWith(ALL_PATTERN) && pattern.endsWith(ALL_PATTERN)) {
+            String pureString = pattern.replace(ALL_PATTERN, "");
             return resource.contains(pureString);
         }
-    
+        
         //match for postfix match *{string}
-        if (pattern.startsWith(ALL_PATTERN)){
-            String pureString=pattern.replace(ALL_PATTERN,"");
+        if (pattern.startsWith(ALL_PATTERN)) {
+            String pureString = pattern.replace(ALL_PATTERN, "");
             return resource.endsWith(pureString);
         }
-    
+        
         //match for prefix match {string}*
-        if (pattern.endsWith(ALL_PATTERN)){
-            String pureString=pattern.replace(ALL_PATTERN,"");
+        if (pattern.endsWith(ALL_PATTERN)) {
+            String pureString = pattern.replace(ALL_PATTERN, "");
             return resource.startsWith(pureString);
         }
-    
+        
         return false;
     }
-    
     
     /**
      * Calculates and merges the differences between the matched group keys and the client's existing group keys into a
      * list of ConfigState objects.
      *
-     * @param basedGroupKeys          The matched group keys set
+     * @param basedGroupKeys    The matched group keys set
      * @param followedGroupKeys The followed existing group keys set
-     * @return a different list of GroupKeyState objects representing the states which the followed sets should be added or removed
-     * GroupKeyState#exist true presents follow set should add,GroupKeyState#exist false presents follow set should removed.
-     *
+     * @return a different list of GroupKeyState objects representing the states which the followed sets should be added
+     * or removed GroupKeyState#exist true presents follow set should add,GroupKeyState#exist false presents follow set
+     * should removed.
      */
-    public static List<GroupKeyState> diffGroupKeys(Set<String> basedGroupKeys,
-            Set<String> followedGroupKeys) {
+    public static List<GroupKeyState> diffGroupKeys(Set<String> basedGroupKeys, Set<String> followedGroupKeys) {
         // Calculate the set of group keys to be added and removed
         Set<String> addGroupKeys = new HashSet<>();
         if (CollectionUtils.isNotEmpty(basedGroupKeys)) {
@@ -180,13 +184,12 @@ public class FuzzyGroupKeyPattern {
                 .collect(Collectors.toList());
     }
     
-    
-    public static class GroupKeyState{
+    public static class GroupKeyState {
         
         String groupKey;
         
         boolean exist;
-    
+        
         /**
          * Constructs a new ConfigState instance with the given group key and existence flag.
          *
@@ -197,7 +200,7 @@ public class FuzzyGroupKeyPattern {
             this.groupKey = groupKey;
             this.exist = exist;
         }
-    
+        
         /**
          * Retrieves the group key associated with the configuration.
          *
@@ -206,7 +209,7 @@ public class FuzzyGroupKeyPattern {
         public String getGroupKey() {
             return groupKey;
         }
-    
+        
         /**
          * Sets the group key associated with the configuration.
          *
@@ -215,7 +218,7 @@ public class FuzzyGroupKeyPattern {
         public void setGroupKey(String groupKey) {
             this.groupKey = groupKey;
         }
-    
+        
         /**
          * Checks whether the configuration exists or not.
          *
@@ -224,7 +227,7 @@ public class FuzzyGroupKeyPattern {
         public boolean isExist() {
             return exist;
         }
-    
+        
         /**
          * Sets the existence flag of the configuration.
          *

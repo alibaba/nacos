@@ -37,9 +37,7 @@ public class ConfigFuzzyWatchRequest extends Request {
      */
     private String groupKeyPattern;
     
-    
     private Set<String> receivedGroupKeys;
-    
     
     /**
      * Flag indicating whether to listen for changes.
@@ -50,7 +48,6 @@ public class ConfigFuzzyWatchRequest extends Request {
      * Flag indicating whether the client is initializing.
      */
     private boolean isInitializing;
-    
     
     /**
      * Constructs an empty ConfigBatchFuzzyListenRequest.
@@ -99,6 +96,5 @@ public class ConfigFuzzyWatchRequest extends Request {
     public String getModule() {
         return Constants.Config.CONFIG_MODULE;
     }
-    
     
 }

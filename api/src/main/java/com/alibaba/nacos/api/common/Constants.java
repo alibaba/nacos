@@ -279,32 +279,32 @@ public class Constants {
     public static final String FUZZY_WATCH_PATTERN_SPLITTER = ">>";
     
     /**
-     * fuzzy watch sync type of watch init notify
+     * fuzzy watch sync type of watch init notify.
      */
     public static final String FUZZY_WATCH_INIT_NOTIFY = "FUZZY_WATCH_INIT_NOTIFY";
     
     /**
-     * fuzzy watch sync type of watch init notify finish
+     * fuzzy watch sync type of watch init notify finish.
      */
     public static final String FINISH_FUZZY_WATCH_INIT_NOTIFY = "FINISH_FUZZY_WATCH_INIT_NOTIFY";
     
     /**
-     * fuzzy watch sync type of watch diff sync notify
+     * fuzzy watch sync type of watch diff sync notify.
      */
     public static final String FUZZY_WATCH_DIFF_SYNC_NOTIFY = "FUZZY_WATCH_DIFF_SYNC_NOTIFY";
     
     /**
-     * fuzzy watch sync type of watch resource changed
+     * fuzzy watch sync type of watch resource changed.
      */
     public static final String FUZZY_WATCH_RESOURCE_CHANGED = "FUZZY_WATCH_RESOURCE_CHANGED";
     
     /**
-     * watch type of watch
+     * watch type of watch.
      */
     public static final String WATCH_TYPE_WATCH = "WATCH";
     
     /**
-     * watch type of cancel watch
+     * watch type of cancel watch.
      */
     public static final String WATCH_TYPE_CANCEL_WATCH = "CANCEL_WATCH";
     

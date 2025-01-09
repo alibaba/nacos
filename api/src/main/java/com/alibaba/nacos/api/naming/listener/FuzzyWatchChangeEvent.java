@@ -36,37 +36,38 @@ public class FuzzyWatchChangeEvent implements Event {
     public FuzzyWatchChangeEvent() {
     }
     
-    public FuzzyWatchChangeEvent(String serviceName,String groupName,String namespace, String changeType,String syncType) {
+    public FuzzyWatchChangeEvent(String serviceName, String groupName, String namespace, String changeType,
+            String syncType) {
         this.changeType = changeType;
-        this.serviceName=serviceName;
-        this.groupName=groupName;
-        this.namespace=namespace;
-        this.syncType=syncType;
+        this.serviceName = serviceName;
+        this.groupName = groupName;
+        this.namespace = namespace;
+        this.syncType = syncType;
     }
     
     public String getServiceName() {
         return serviceName;
     }
     
-    
     public String getGroupName() {
         return groupName;
     }
-    
     
     public String getNamespace() {
         return namespace;
     }
     
     /**
-     *  The change type of local watcher , contains {"ADD_SERVICE", "DELETE_SERVICE"}. see Constants.ServiceChangedType
+     * The change type of local watcher , contains {"ADD_SERVICE", "DELETE_SERVICE"}. see Constants.ServiceChangedType
      */
     public String getChangeType() {
         return changeType;
     }
     
     /**
-     * the sync type that trigger this changed,contains {"FUZZY_WATCH_INIT_NOTIFY","FUZZY_WATCH_RESOURCE_CHANGED", "FUZZY_WATCH_DIFF_SYNC_NOTIFY"}
+     * the sync type that trigger this changed,contains {"FUZZY_WATCH_INIT_NOTIFY","FUZZY_WATCH_RESOURCE_CHANGED",
+     * "FUZZY_WATCH_DIFF_SYNC_NOTIFY"}.
+     *
      * @return
      */
     public String getSyncType() {

@@ -16,10 +16,6 @@
 
 package com.alibaba.nacos.api.naming.listener;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.Executor;
 
 /**
@@ -27,13 +23,18 @@ import java.util.concurrent.Executor;
  *
  * @author tanyongquan
  */
-public abstract class FuzzyWatchEventWatcher {
+public interface FuzzyWatchEventWatcher {
     
-
-    public Executor getExecutor() {
-        return null;
-    }
+    /**
+     * executor to notify event, using nacos internal notifier if null  .
+     * @return
+     */
+    Executor getExecutor();
     
-    public abstract void onEvent(FuzzyWatchChangeEvent event);
+    /**
+     * handle FuzzyWatchChangeEvent.
+     * @param event fuzzy watch change event.
+     */
+    void onEvent(FuzzyWatchChangeEvent event);
     
 }

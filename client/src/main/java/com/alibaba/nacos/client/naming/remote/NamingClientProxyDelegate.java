@@ -25,8 +25,8 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.cache.NamingFuzzyWatchServiceListHolder;
+import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.core.NamingServerListManager;
 import com.alibaba.nacos.client.naming.core.ServiceInfoUpdateService;
 import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
@@ -68,9 +68,9 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     
     private ScheduledExecutorService executorService;
     
-    
     public NamingClientProxyDelegate(String namespace, ServiceInfoHolder serviceInfoHolder,
-            NacosClientProperties properties, InstancesChangeNotifier changeNotifier,NamingFuzzyWatchServiceListHolder namingFuzzyWatchServiceListHolder) throws NacosException {
+            NacosClientProperties properties, InstancesChangeNotifier changeNotifier,
+            NamingFuzzyWatchServiceListHolder namingFuzzyWatchServiceListHolder) throws NacosException {
         this.serviceInfoUpdateService = new ServiceInfoUpdateService(properties, serviceInfoHolder, this,
                 changeNotifier);
         this.serverListManager = new NamingServerListManager(properties, namespace);
@@ -195,7 +195,8 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     }
     
     private NamingClientProxy getExecuteClientProxy(Instance instance) {
-        if (instance.isEphemeral() || grpcClientProxy.isAbilitySupportedByServer(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC)) {
+        if (instance.isEphemeral() || grpcClientProxy.isAbilitySupportedByServer(
+                AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC)) {
             return grpcClientProxy;
         }
         return httpClientProxy;

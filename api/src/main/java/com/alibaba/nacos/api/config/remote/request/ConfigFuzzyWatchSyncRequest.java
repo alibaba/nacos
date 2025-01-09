@@ -18,7 +18,6 @@ package com.alibaba.nacos.api.config.remote.request;
 
 import com.alibaba.nacos.api.common.Constants;
 
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -43,15 +42,13 @@ public class ConfigFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
     private Set<Context> contexts;
     
     /**
-     *see FUZZY_WATCH_INIT_NOTIFY,FINISH_FUZZY_WATCH_INIT_NOTIFY,FUZZY_WATCH_DIFF_SYNC_NOTIFY
+     * see FUZZY_WATCH_INIT_NOTIFY,FINISH_FUZZY_WATCH_INIT_NOTIFY,FUZZY_WATCH_DIFF_SYNC_NOTIFY.
      */
     private String syncType;
-    
     
     private int totalBatch;
     
     private int currentBatch;
-    
     
     public String getSyncType() {
         return syncType;
@@ -89,12 +86,13 @@ public class ConfigFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
      * @param groupKeyPattern The pattern used to match group keys for the configurations
      * @param contexts        The set of contexts containing information about the configurations
      */
-    private ConfigFuzzyWatchSyncRequest(String syncType, String groupKeyPattern, Set<Context> contexts,int totalBatch,int currentBatch) {
+    private ConfigFuzzyWatchSyncRequest(String syncType, String groupKeyPattern, Set<Context> contexts, int totalBatch,
+            int currentBatch) {
         this.groupKeyPattern = groupKeyPattern;
         this.contexts = contexts;
         this.syncType = syncType;
-        this.currentBatch=currentBatch;
-        this.totalBatch=totalBatch;
+        this.currentBatch = currentBatch;
+        this.totalBatch = totalBatch;
         
     }
     
@@ -105,12 +103,11 @@ public class ConfigFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
      * @param groupKeyPattern The pattern used to match group keys for the configurations
      * @return An initial FuzzyListenNotifyDiffRequest
      */
-    public static ConfigFuzzyWatchSyncRequest buildSyncRequest(String syncType,Set<Context> contexts, String groupKeyPattern,int totalBatch,int currentBatch) {
-        return new ConfigFuzzyWatchSyncRequest(syncType, groupKeyPattern, contexts,totalBatch,currentBatch);
+    public static ConfigFuzzyWatchSyncRequest buildSyncRequest(String syncType, Set<Context> contexts,
+            String groupKeyPattern, int totalBatch, int currentBatch) {
+        return new ConfigFuzzyWatchSyncRequest(syncType, groupKeyPattern, contexts, totalBatch, currentBatch);
     }
     
-    
-
     /**
      * Builds a final FuzzyListenNotifyDiffRequest with the specified group key pattern.
      *
@@ -118,7 +115,7 @@ public class ConfigFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
      * @return A final FuzzyListenNotifyDiffRequest
      */
     public static ConfigFuzzyWatchSyncRequest buildInitFinishRequest(String groupKeyPattern) {
-        return new ConfigFuzzyWatchSyncRequest(Constants.FINISH_FUZZY_WATCH_INIT_NOTIFY, groupKeyPattern,null,0,0);
+        return new ConfigFuzzyWatchSyncRequest(Constants.FINISH_FUZZY_WATCH_INIT_NOTIFY, groupKeyPattern, null, 0, 0);
     }
     
     public String getGroupKeyPattern() {
@@ -143,6 +140,7 @@ public class ConfigFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
     public static class Context {
         
         String groupKey;
+        
         /**
          * see {@link com.alibaba.nacos.api.common.Constants.ConfigChangedType ADD_CONFIG&} ADD_CONFIG: a new config
          * should be added for  clientside . DELETE_CONFIG: a  config should be removed for  clientside .
@@ -158,7 +156,7 @@ public class ConfigFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
         /**
          * Builds a new context object with the provided parameters.
          *
-         * @param groupKey      The groupKey associated of the configuration.
+         * @param groupKey    The groupKey associated of the configuration.
          * @param changedType The type of the configuration change event.
          * @return A new context object initialized with the provided parameters.
          */
@@ -168,15 +166,15 @@ public class ConfigFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
             context.setChangedType(changedType);
             return context;
         }
-    
+        
         public String getGroupKey() {
             return groupKey;
         }
-    
+        
         public void setGroupKey(String groupKey) {
             this.groupKey = groupKey;
         }
-    
+        
         public String getChangedType() {
             return changedType;
         }

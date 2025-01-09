@@ -50,7 +50,7 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
     
     private final ConcurrentMap<Service, Set<String>> subscriberIndexes = new ConcurrentHashMap<>();
     
-    public ClientServiceIndexesManager(){
+    public ClientServiceIndexesManager() {
         NotifyCenter.registerSubscriber(this, NamingEventPublisherFactory.getInstance());
     }
     
@@ -102,15 +102,15 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
         for (Service each : client.getAllSubscribeService()) {
             removeSubscriberIndexes(each, client.getClientId());
         }
-        DeregisterInstanceReason reason = event.isNative()
-                ? DeregisterInstanceReason.NATIVE_DISCONNECTED : DeregisterInstanceReason.SYNCED_DISCONNECTED;
+        DeregisterInstanceReason reason = event.isNative() ? DeregisterInstanceReason.NATIVE_DISCONNECTED
+                : DeregisterInstanceReason.SYNCED_DISCONNECTED;
         long currentTimeMillis = System.currentTimeMillis();
         for (Service each : client.getAllPublishedService()) {
             removePublisherIndexes(each, client.getClientId());
             InstancePublishInfo instance = client.getInstancePublishInfo(each);
-            NotifyCenter.publishEvent(new DeregisterInstanceTraceEvent(currentTimeMillis,
-                    "", false, reason, each.getNamespace(), each.getGroup(), each.getName(),
-                    instance.getIp(), instance.getPort()));
+            NotifyCenter.publishEvent(
+                    new DeregisterInstanceTraceEvent(currentTimeMillis, "", false, reason, each.getNamespace(),
+                            each.getGroup(), each.getName(), instance.getIp(), instance.getPort()));
         }
     }
     
@@ -141,8 +141,8 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
     private void removePublisherIndexes(Service service, String clientId) {
         publisherIndexes.computeIfPresent(service, (s, ids) -> {
             ids.remove(clientId);
-            String serviceChangedType = ids.isEmpty() ? Constants.ServiceChangedType.DELETE_SERVICE :
-                    Constants.ServiceChangedType.INSTANCE_CHANGED;
+            String serviceChangedType = ids.isEmpty() ? Constants.ServiceChangedType.DELETE_SERVICE
+                    : Constants.ServiceChangedType.INSTANCE_CHANGED;
             NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, serviceChangedType, true));
             return ids.isEmpty() ? null : ids;
         });

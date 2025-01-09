@@ -30,7 +30,6 @@ import com.alibaba.nacos.common.notify.Event;
  */
 public class ConfigFuzzyWatchNotifyEvent extends Event {
     
-    
     private String clientUuid;
     
     /**
@@ -57,44 +56,44 @@ public class ConfigFuzzyWatchNotifyEvent extends Event {
      */
     public ConfigFuzzyWatchNotifyEvent() {
     }
-
+    
     /**
      * Constructs a new FuzzyListenNotifyEvent with the specified group, dataId, and type.
      *
-     * @param groupKey  The groupKey of the configuration.
-     * @param changedType   The type of notification.
+     * @param groupKey    The groupKey of the configuration.
+     * @param changedType The type of notification.
      */
-    private ConfigFuzzyWatchNotifyEvent(String groupKey, String changedType, String syncType, String groupKeyPattern,String clientUuid,String watcherUuid) {
+    private ConfigFuzzyWatchNotifyEvent(String groupKey, String changedType, String syncType, String groupKeyPattern,
+            String clientUuid, String watcherUuid) {
         this.groupKey = groupKey;
-        this.syncType=syncType;
+        this.syncType = syncType;
         this.changedType = changedType;
         this.groupKeyPattern = groupKeyPattern;
-        this.clientUuid=clientUuid;
-        this.watcherUuid=watcherUuid;
-    }
-    
-    
-    /**
-     * Builds a new FuzzyListenNotifyEvent with the specified group, dataId, and type.
-     *
-     * @param groupKey  The groupKey of the configuration.
-     * @return A new FuzzyListenNotifyEvent instance.
-     */
-    public static ConfigFuzzyWatchNotifyEvent buildNotifyPatternAllListenersEvent(String groupKey,
-            String groupKeyPattern, String changedType,String syncType,String clientUuid) {
-        return buildNotifyPatternAllListenersEvent(groupKey,groupKeyPattern,changedType,syncType,clientUuid,null);
+        this.clientUuid = clientUuid;
+        this.watcherUuid = watcherUuid;
     }
     
     /**
      * Builds a new FuzzyListenNotifyEvent with the specified group, dataId, and type.
      *
-     * @param groupKey  The groupKey of the configuration.
+     * @param groupKey The groupKey of the configuration.
      * @return A new FuzzyListenNotifyEvent instance.
      */
     public static ConfigFuzzyWatchNotifyEvent buildNotifyPatternAllListenersEvent(String groupKey,
-            String groupKeyPattern, String changedType,String syncType,String clientUuid,String watcherUuid) {
-        ConfigFuzzyWatchNotifyEvent configFuzzyWatchNotifyEvent = new ConfigFuzzyWatchNotifyEvent(groupKey, changedType, syncType,
-                groupKeyPattern,clientUuid,watcherUuid);
+            String groupKeyPattern, String changedType, String syncType, String clientUuid) {
+        return buildNotifyPatternAllListenersEvent(groupKey, groupKeyPattern, changedType, syncType, clientUuid, null);
+    }
+    
+    /**
+     * Builds a new FuzzyListenNotifyEvent with the specified group, dataId, and type.
+     *
+     * @param groupKey The groupKey of the configuration.
+     * @return A new FuzzyListenNotifyEvent instance.
+     */
+    public static ConfigFuzzyWatchNotifyEvent buildNotifyPatternAllListenersEvent(String groupKey,
+            String groupKeyPattern, String changedType, String syncType, String clientUuid, String watcherUuid) {
+        ConfigFuzzyWatchNotifyEvent configFuzzyWatchNotifyEvent = new ConfigFuzzyWatchNotifyEvent(groupKey, changedType,
+                syncType, groupKeyPattern, clientUuid, watcherUuid);
         return configFuzzyWatchNotifyEvent;
     }
     
@@ -115,16 +114,14 @@ public class ConfigFuzzyWatchNotifyEvent extends Event {
         return groupKeyPattern;
     }
     
-
     public String getGroupKey() {
         return groupKey;
     }
-
     
     public String getSyncType() {
         return syncType;
     }
-
+    
     /**
      * Gets the type of notification.
      *

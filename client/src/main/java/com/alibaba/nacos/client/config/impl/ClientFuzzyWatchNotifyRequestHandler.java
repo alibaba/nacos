@@ -23,24 +23,30 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
 
+/**
+ * fuzzy watch request from server .
+ * @author shiyiyue
+ */
 public class ClientFuzzyWatchNotifyRequestHandler implements ServerRequestHandler {
     
     ConfigFuzzyWatchGroupKeyHolder configFuzzyWatchGroupKeyHolder;
     
-    public ClientFuzzyWatchNotifyRequestHandler(ConfigFuzzyWatchGroupKeyHolder configFuzzyWatchGroupKeyHolder){
+    public ClientFuzzyWatchNotifyRequestHandler(ConfigFuzzyWatchGroupKeyHolder configFuzzyWatchGroupKeyHolder) {
         
         this.configFuzzyWatchGroupKeyHolder = configFuzzyWatchGroupKeyHolder;
     }
+    
     @Override
     public Response requestReply(Request request, Connection connection) {
         //fuzzy watch diff reconciliation sync
         if (request instanceof ConfigFuzzyWatchSyncRequest) {
-            return configFuzzyWatchGroupKeyHolder.handleFuzzyWatchNotifyDiffRequest((ConfigFuzzyWatchSyncRequest) request
-                    );
+            return configFuzzyWatchGroupKeyHolder.handleFuzzyWatchNotifyDiffRequest(
+                    (ConfigFuzzyWatchSyncRequest) request);
         }
         //fuzzy watch changed notify for a single config. include config changed or config delete.
         if (request instanceof ConfigFuzzyWatchChangeNotifyRequest) {
-            return configFuzzyWatchGroupKeyHolder.handlerFuzzyWatchChangeNotifyRequest((ConfigFuzzyWatchChangeNotifyRequest) request);
+            return configFuzzyWatchGroupKeyHolder.handlerFuzzyWatchChangeNotifyRequest(
+                    (ConfigFuzzyWatchChangeNotifyRequest) request);
         }
         return null;
     }

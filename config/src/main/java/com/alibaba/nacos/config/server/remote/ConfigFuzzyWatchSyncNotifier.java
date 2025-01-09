@@ -22,13 +22,12 @@ import com.alibaba.nacos.api.remote.AbstractPushCallBack;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
-
 import com.alibaba.nacos.common.task.BatchTaskCounter;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
 import com.alibaba.nacos.config.server.configuration.ConfigCommonConfig;
-import com.alibaba.nacos.config.server.model.event.ConfigFuzzyWatchEvent;
 import com.alibaba.nacos.config.server.model.event.ConfigCancelFuzzyWatchEvent;
+import com.alibaba.nacos.config.server.model.event.ConfigFuzzyWatchEvent;
 import com.alibaba.nacos.config.server.service.ConfigFuzzyWatchContextService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.core.remote.ConnectionManager;
@@ -124,49 +123,53 @@ public class ConfigFuzzyWatchSyncNotifier extends SmartSubscriber {
         Set<String> clientExistingGroupKeys = event.getClientExistingGroupKeys();
         
         // Calculate and merge configuration states based on matched and existing group keys
-        List<FuzzyGroupKeyPattern.GroupKeyState> configStates = FuzzyGroupKeyPattern.diffGroupKeys(matchGroupKeys, clientExistingGroupKeys);
-    
-        if (CollectionUtils.isEmpty(configStates)){
-            if (event.isInitializing()){
-                ConfigFuzzyWatchSyncRequest request =ConfigFuzzyWatchSyncRequest.buildInitFinishRequest(event.getGroupKeyPattern());
+        List<FuzzyGroupKeyPattern.GroupKeyState> configStates = FuzzyGroupKeyPattern.diffGroupKeys(matchGroupKeys,
+                clientExistingGroupKeys);
+        
+        if (CollectionUtils.isEmpty(configStates)) {
+            if (event.isInitializing()) {
+                ConfigFuzzyWatchSyncRequest request = ConfigFuzzyWatchSyncRequest.buildInitFinishRequest(
+                        event.getGroupKeyPattern());
                 int maxPushRetryTimes = ConfigCommonConfig.getInstance().getMaxPushRetryTimes();
                 // Create RPC push task and push the request to the client
-                FuzzyWatchRpcPushTask fuzzyWatchRpcPushTask = new FuzzyWatchRpcPushTask(request,null, maxPushRetryTimes, event.getConnectionId());
+                FuzzyWatchRpcPushTask fuzzyWatchRpcPushTask = new FuzzyWatchRpcPushTask(request, null,
+                        maxPushRetryTimes, event.getConnectionId());
                 push(fuzzyWatchRpcPushTask, connectionManager);
             }
-           
-        }else{
-            String syncType =event.isInitializing()?FUZZY_WATCH_INIT_NOTIFY:FUZZY_WATCH_DIFF_SYNC_NOTIFY;
-    
+            
+        } else {
+            String syncType = event.isInitializing() ? FUZZY_WATCH_INIT_NOTIFY : FUZZY_WATCH_DIFF_SYNC_NOTIFY;
+            
             int batchSize = ConfigCommonConfig.getInstance().getBatchSize();
             // Divide config states into batches
-            List<List<FuzzyGroupKeyPattern.GroupKeyState>> divideConfigStatesIntoBatches = divideConfigStatesIntoBatches(configStates, batchSize);
-    
+            List<List<FuzzyGroupKeyPattern.GroupKeyState>> divideConfigStatesIntoBatches = divideConfigStatesIntoBatches(
+                    configStates, batchSize);
+            
             // Calculate the number of batches and initialize push batch finish count
             int totalBatch = divideConfigStatesIntoBatches.size();
-            BatchTaskCounter batchTaskCounter=new BatchTaskCounter(divideConfigStatesIntoBatches.size());
-            int currentBatch=1;
+            BatchTaskCounter batchTaskCounter = new BatchTaskCounter(divideConfigStatesIntoBatches.size());
+            int currentBatch = 1;
             for (List<FuzzyGroupKeyPattern.GroupKeyState> configStateList : divideConfigStatesIntoBatches) {
                 // Map config states to FuzzyListenNotifyDiffRequest.Context objects
                 Set<ConfigFuzzyWatchSyncRequest.Context> contexts = configStateList.stream().map(state -> {
-            
+                    
                     String changeType = state.isExist() ? Constants.ConfigChangedType.ADD_CONFIG
                             : Constants.ConfigChangedType.DELETE_CONFIG;
                     return ConfigFuzzyWatchSyncRequest.Context.build(state.getGroupKey(), changeType);
                 }).collect(Collectors.toSet());
-        
-                ConfigFuzzyWatchSyncRequest request =ConfigFuzzyWatchSyncRequest.buildSyncRequest(syncType,contexts,event.getGroupKeyPattern(),totalBatch,currentBatch);
+                
+                ConfigFuzzyWatchSyncRequest request = ConfigFuzzyWatchSyncRequest.buildSyncRequest(syncType, contexts,
+                        event.getGroupKeyPattern(), totalBatch, currentBatch);
                 int maxPushRetryTimes = ConfigCommonConfig.getInstance().getMaxPushRetryTimes();
                 // Create RPC push task and push the request to the client
-                FuzzyWatchRpcPushTask fuzzyWatchRpcPushTask = new FuzzyWatchRpcPushTask(request, batchTaskCounter,maxPushRetryTimes, event.getConnectionId());
+                FuzzyWatchRpcPushTask fuzzyWatchRpcPushTask = new FuzzyWatchRpcPushTask(request, batchTaskCounter,
+                        maxPushRetryTimes, event.getConnectionId());
                 push(fuzzyWatchRpcPushTask, connectionManager);
                 currentBatch++;
             }
         }
         
-        
     }
-    
     
     @Override
     public List<Class<? extends Event>> subscribeTypes() {
@@ -178,18 +181,17 @@ public class ConfigFuzzyWatchSyncNotifier extends SmartSubscriber {
     
     @Override
     public void onEvent(Event event) {
-        if (event instanceof ConfigFuzzyWatchEvent){
+        if (event instanceof ConfigFuzzyWatchEvent) {
             handleFuzzyWatchEvent((ConfigFuzzyWatchEvent) event);
         }
-    
-        if (event instanceof ConfigCancelFuzzyWatchEvent){
+        
+        if (event instanceof ConfigCancelFuzzyWatchEvent) {
             // Remove client from the fuzzy listening context
             configFuzzyWatchContextService.removeFuzzyListen(((ConfigCancelFuzzyWatchEvent) event).getGroupKeyPattern(),
                     ((ConfigCancelFuzzyWatchEvent) event).getConnectionId());
         }
-    
+        
     }
-    
     
     /**
      * Divides a collection of items into batches.
@@ -234,26 +236,18 @@ public class ConfigFuzzyWatchSyncNotifier extends SmartSubscriber {
          */
         String connectionId;
         
-        /**
-         * The IP address of the client.
-         */
-        String clientIp;
-        
-        /**
-         * The name of the client's application.
-         */
-        String appName;
-        
         BatchTaskCounter batchTaskCounter;
+        
         /**
          * Constructs a new RpcPushTask with the specified parameters.
          *
-         * @param notifyRequest        The FuzzyListenNotifyDiffRequest to be pushed
-         * @param batchTaskCounter     The batchTaskCounter counter for tracking the number of finished push batches
-         * @param maxRetryTimes        The maximum number of times to retry pushing the request
-         * @param connectionId         The ID of the connection associated with the client
+         * @param notifyRequest    The FuzzyListenNotifyDiffRequest to be pushed
+         * @param batchTaskCounter The batchTaskCounter counter for tracking the number of finished push batches
+         * @param maxRetryTimes    The maximum number of times to retry pushing the request
+         * @param connectionId     The ID of the connection associated with the client
          */
-        public FuzzyWatchRpcPushTask(ConfigFuzzyWatchSyncRequest notifyRequest,BatchTaskCounter batchTaskCounter,int maxRetryTimes, String connectionId) {
+        public FuzzyWatchRpcPushTask(ConfigFuzzyWatchSyncRequest notifyRequest, BatchTaskCounter batchTaskCounter,
+                int maxRetryTimes, String connectionId) {
             this.notifyRequest = notifyRequest;
             this.batchTaskCounter = batchTaskCounter;
             this.maxRetryTimes = maxRetryTimes;
@@ -282,7 +276,8 @@ public class ConfigFuzzyWatchSyncNotifier extends SmartSubscriber {
                 push(this, connectionManager);
             } else {
                 rpcPushService.pushWithCallback(connectionId, notifyRequest,
-                        new FuzzyWatchRpcPushCallback(this, tpsControlManager, connectionManager, batchTaskCounter), ConfigExecutor.getClientConfigNotifierServiceExecutor());
+                        new FuzzyWatchRpcPushCallback(this, tpsControlManager, connectionManager, batchTaskCounter),
+                        ConfigExecutor.getClientConfigNotifierServiceExecutor());
             }
         }
     }
@@ -307,8 +302,8 @@ public class ConfigFuzzyWatchSyncNotifier extends SmartSubscriber {
          */
         ConnectionManager connectionManager;
         
-
         BatchTaskCounter batchTaskCounter;
+        
         /**
          * Constructs a new RpcPushCallback with the specified parameters.
          *
@@ -318,12 +313,13 @@ public class ConfigFuzzyWatchSyncNotifier extends SmartSubscriber {
          * @param batchTaskCounter      The batchTaskCounter counter
          */
         public FuzzyWatchRpcPushCallback(FuzzyWatchRpcPushTask fuzzyWatchRpcPushTask,
-                TpsControlManager tpsControlManager, ConnectionManager connectionManager, BatchTaskCounter batchTaskCounter) {
+                TpsControlManager tpsControlManager, ConnectionManager connectionManager,
+                BatchTaskCounter batchTaskCounter) {
             super(3000L);
             this.fuzzyWatchRpcPushTask = fuzzyWatchRpcPushTask;
             this.tpsControlManager = tpsControlManager;
             this.connectionManager = connectionManager;
-            this.batchTaskCounter=batchTaskCounter;
+            this.batchTaskCounter = batchTaskCounter;
             
         }
         
@@ -337,13 +333,14 @@ public class ConfigFuzzyWatchSyncNotifier extends SmartSubscriber {
             tpsCheckRequest.setPointName(FUZZY_LISTEN_CONFIG_DIFF_PUSH_SUCCESS);
             tpsControlManager.check(tpsCheckRequest);
             
-            if (batchTaskCounter!=null){
+            if (batchTaskCounter != null) {
                 batchTaskCounter.batchSuccess(fuzzyWatchRpcPushTask.notifyRequest.getCurrentBatch());
-                if (batchTaskCounter.batchCompleted()&&fuzzyWatchRpcPushTask.notifyRequest.getSyncType().equals(FUZZY_WATCH_INIT_NOTIFY)) {
+                if (batchTaskCounter.batchCompleted() && fuzzyWatchRpcPushTask.notifyRequest.getSyncType()
+                        .equals(FUZZY_WATCH_INIT_NOTIFY)) {
                     ConfigFuzzyWatchSyncRequest request = ConfigFuzzyWatchSyncRequest.buildInitFinishRequest(
                             fuzzyWatchRpcPushTask.notifyRequest.getGroupKeyPattern());
-                    push(new FuzzyWatchRpcPushTask(request,null,  50,
-                            fuzzyWatchRpcPushTask.connectionId), connectionManager);
+                    push(new FuzzyWatchRpcPushTask(request, null, 50, fuzzyWatchRpcPushTask.connectionId),
+                            connectionManager);
                 }
             }
             

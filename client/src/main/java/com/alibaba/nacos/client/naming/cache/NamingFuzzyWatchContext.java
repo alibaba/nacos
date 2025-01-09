@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.client.naming.cache;
 
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.listener.FuzzyWatchChangeEvent;
 import com.alibaba.nacos.api.naming.listener.FuzzyWatchEventWatcher;
 import com.alibaba.nacos.api.naming.pojo.ListView;
@@ -34,18 +33,15 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-
 import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_DIFF_SYNC_NOTIFY;
 import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_INIT_NOTIFY;
 import static com.alibaba.nacos.api.common.Constants.ServiceChangedType.ADD_SERVICE;
 import static com.alibaba.nacos.api.common.Constants.ServiceChangedType.DELETE_SERVICE;
-
 
 /**
  * fuzzy wather context for a single group key pattern.
@@ -69,7 +65,6 @@ public class NamingFuzzyWatchContext {
      */
     private String envName;
     
-    
     private String groupKeyPattern;
     
     /**
@@ -86,7 +81,6 @@ public class NamingFuzzyWatchContext {
      * Condition object for waiting initialization completion.
      */
     final AtomicBoolean initializationCompleted = new AtomicBoolean(false);
-    
     
     /**
      * Flag indicating whether the context is discarded.
@@ -109,40 +103,46 @@ public class NamingFuzzyWatchContext {
         this.groupKeyPattern = groupKeyPattern;
     }
     
-    private void doNotifyWatcher(final String serviceKey, final String changedType,final String syncType,
-            FuzzyWatchEventWatcherWrapper fuzzyWatchEventWatcherWrapper){
-    
-        if (ADD_SERVICE.equals(changedType)&&fuzzyWatchEventWatcherWrapper.getSyncServiceKeys().contains(serviceKey)){
+    private void doNotifyWatcher(final String serviceKey, final String changedType, final String syncType,
+            FuzzyWatchEventWatcherWrapper fuzzyWatchEventWatcherWrapper) {
+        
+        if (ADD_SERVICE.equals(changedType) && fuzzyWatchEventWatcherWrapper.getSyncServiceKeys()
+                .contains(serviceKey)) {
             return;
         }
-    
-        if (DELETE_SERVICE.equals(changedType)&&!fuzzyWatchEventWatcherWrapper.getSyncServiceKeys().contains(serviceKey)){
+        
+        if (DELETE_SERVICE.equals(changedType) && !fuzzyWatchEventWatcherWrapper.getSyncServiceKeys()
+                .contains(serviceKey)) {
             return;
         }
         
         String[] serviceKeyItems = NamingUtils.parseServiceKey(serviceKey);
-        String namespace=serviceKeyItems[0];
-        String groupName=serviceKeyItems[1];
-        String serviceName=serviceKeyItems[2];
+        String namespace = serviceKeyItems[0];
+        String groupName = serviceKeyItems[1];
+        String serviceName = serviceKeyItems[2];
         
-        final String resetSyncType=!initializationCompleted.get()?FUZZY_WATCH_INIT_NOTIFY:syncType;
+        final String resetSyncType = !initializationCompleted.get() ? FUZZY_WATCH_INIT_NOTIFY : syncType;
         
         Runnable job = () -> {
             long start = System.currentTimeMillis();
-            FuzzyWatchChangeEvent event = new FuzzyWatchChangeEvent(serviceName,groupName, namespace, changedType,resetSyncType);
+            FuzzyWatchChangeEvent event = new FuzzyWatchChangeEvent(serviceName, groupName, namespace, changedType,
+                    resetSyncType);
             if (fuzzyWatchEventWatcherWrapper != null) {
                 fuzzyWatchEventWatcherWrapper.fuzzyWatchEventWatcher.onEvent(event);
             }
             LOGGER.info(
                     "[{}] [notify-watcher-ok] serviceName={}, groupName={}, namespace={}, watcher={},changedType={}, job run cost={} millis.",
-                    envName, serviceName, groupName, namespace, fuzzyWatchEventWatcherWrapper.fuzzyWatchEventWatcher,changedType, (System.currentTimeMillis() - start));
+                    envName, serviceName, groupName, namespace, fuzzyWatchEventWatcherWrapper.fuzzyWatchEventWatcher,
+                    changedType, (System.currentTimeMillis() - start));
             if (changedType.equals(DELETE_SERVICE)) {
-                fuzzyWatchEventWatcherWrapper.getSyncServiceKeys().remove(NamingUtils.getServiceKey(namespace, groupName, serviceName));
+                fuzzyWatchEventWatcherWrapper.getSyncServiceKeys()
+                        .remove(NamingUtils.getServiceKey(namespace, groupName, serviceName));
             } else if (changedType.equals(ADD_SERVICE)) {
-                fuzzyWatchEventWatcherWrapper.getSyncServiceKeys().add(NamingUtils.getServiceKey(namespace, groupName, serviceName));
+                fuzzyWatchEventWatcherWrapper.getSyncServiceKeys()
+                        .add(NamingUtils.getServiceKey(namespace, groupName, serviceName));
             }
         };
-    
+        
         try {
             if (null != fuzzyWatchEventWatcherWrapper.fuzzyWatchEventWatcher.getExecutor()) {
                 LOGGER.info(
@@ -156,18 +156,20 @@ public class NamingFuzzyWatchContext {
                 job.run();
             }
         } catch (Throwable t) {
-            LOGGER.error("[{}] [notify-watcher-error] serviceName={}, groupName={}, namespace={}, listener={}, throwable={}.",
+            LOGGER.error(
+                    "[{}] [notify-watcher-error] serviceName={}, groupName={}, namespace={}, listener={}, throwable={}.",
                     envName, serviceName, groupName, namespace, fuzzyWatchEventWatcherWrapper, t.getCause());
         }
     }
+    
     /**
      * Mark initialization as complete and notify waiting threads.
      */
     public void markInitializationComplete() {
-        LOGGER.info("[{}] [fuzzy-watch] pattern init notify finish pattern={},match service count {}",
-                envName,groupKeyPattern,receivedServiceKeys.size());
+        LOGGER.info("[{}] [fuzzy-watch] pattern init notify finish pattern={},match service count {}", envName,
+                groupKeyPattern, receivedServiceKeys.size());
         initializationCompleted.set(true);
-        synchronized (this){
+        synchronized (this) {
             notifyAll();
         }
     }
@@ -179,9 +181,9 @@ public class NamingFuzzyWatchContext {
      */
     public void removeWatcher(FuzzyWatchEventWatcher watcher) {
         Iterator<FuzzyWatchEventWatcherWrapper> iterator = fuzzyWatchEventWatcherWrappers.iterator();
-        while (iterator.hasNext()){
+        while (iterator.hasNext()) {
             FuzzyWatchEventWatcherWrapper next = iterator.next();
-            if (next.fuzzyWatchEventWatcher.equals(watcher)){
+            if (next.fuzzyWatchEventWatcher.equals(watcher)) {
                 iterator.remove();
                 LOGGER.info("[{}] [remove-watcher-ok] groupKeyPattern={}, watcher={},uuid={} ", getEnvName(),
                         this.groupKeyPattern, watcher, next.getUuid());
@@ -261,13 +263,11 @@ public class NamingFuzzyWatchContext {
         return Collections.unmodifiableSet(receivedServiceKeys);
     }
     
-    
-    public boolean addReceivedServiceKey(String serviceKey){
+    public boolean addReceivedServiceKey(String serviceKey) {
         return receivedServiceKeys.add(serviceKey);
     }
     
-    
-    public boolean removeReceivedServiceKey(String serviceKey){
+    public boolean removeReceivedServiceKey(String serviceKey) {
         return receivedServiceKeys.remove(serviceKey);
     }
     
@@ -280,48 +280,51 @@ public class NamingFuzzyWatchContext {
         return fuzzyWatchEventWatcherWrappers;
     }
     
-    void syncFuzzyWatchers(){
-        for(FuzzyWatchEventWatcherWrapper namingFuzzyWatcher: fuzzyWatchEventWatcherWrappers){
+    void syncFuzzyWatchers() {
+        for (FuzzyWatchEventWatcherWrapper namingFuzzyWatcher : fuzzyWatchEventWatcherWrappers) {
             Set<String> receivedServiceKeysContext = this.getReceivedServiceKeys();
             Set<String> syncGroupKeys = namingFuzzyWatcher.getSyncServiceKeys();
             List<FuzzyGroupKeyPattern.GroupKeyState> groupKeyStates = FuzzyGroupKeyPattern.diffGroupKeys(
                     receivedServiceKeysContext, syncGroupKeys);
-            for(FuzzyGroupKeyPattern.GroupKeyState groupKeyState:groupKeyStates){
-                String changedType=groupKeyState.isExist()? ADD_SERVICE:DELETE_SERVICE;
-                doNotifyWatcher(groupKeyState.getGroupKey(),changedType,FUZZY_WATCH_DIFF_SYNC_NOTIFY,namingFuzzyWatcher);
+            for (FuzzyGroupKeyPattern.GroupKeyState groupKeyState : groupKeyStates) {
+                String changedType = groupKeyState.isExist() ? ADD_SERVICE : DELETE_SERVICE;
+                doNotifyWatcher(groupKeyState.getGroupKey(), changedType, FUZZY_WATCH_DIFF_SYNC_NOTIFY,
+                        namingFuzzyWatcher);
             }
         }
     }
     
-    void notifyFuzzyWatchers(String serviceKey,String changedType,String syncType,String watcherUuid){
-        for(FuzzyWatchEventWatcherWrapper namingFuzzyWatcher: filterWatchers(watcherUuid)){
-            doNotifyWatcher(serviceKey,changedType,syncType,namingFuzzyWatcher);
+    void notifyFuzzyWatchers(String serviceKey, String changedType, String syncType, String watcherUuid) {
+        for (FuzzyWatchEventWatcherWrapper namingFuzzyWatcher : filterWatchers(watcherUuid)) {
+            doNotifyWatcher(serviceKey, changedType, syncType, namingFuzzyWatcher);
         }
     }
     
-    
-    private Set<FuzzyWatchEventWatcherWrapper> filterWatchers(String uuid){
-        if (StringUtils.isBlank(uuid)|| CollectionUtils.isEmpty(getFuzzyWatchEventWatcherWrappers())){
+    private Set<FuzzyWatchEventWatcherWrapper> filterWatchers(String uuid) {
+        if (StringUtils.isBlank(uuid) || CollectionUtils.isEmpty(getFuzzyWatchEventWatcherWrappers())) {
             return getFuzzyWatchEventWatcherWrappers();
-        }else{
-            return getFuzzyWatchEventWatcherWrappers().stream().filter(a->a.getUuid().equals(uuid)).collect(
-                    Collectors.toSet());
+        } else {
+            return getFuzzyWatchEventWatcherWrappers().stream().filter(a -> a.getUuid().equals(uuid))
+                    .collect(Collectors.toSet());
         }
-        
     }
     
-    public Future<ListView<String>> createNewFuture(){
-        Future<ListView<String>> completableFuture=new Future<ListView<String>>(){
+    /**
+     * create a new future of this context.
+     * @return
+     */
+    public Future<ListView<String>> createNewFuture() {
+        Future<ListView<String>> completableFuture = new Future<ListView<String>>() {
             @Override
             public boolean cancel(boolean mayInterruptIfRunning) {
                 throw new UnsupportedOperationException("not support to cancel fuzzy watch");
             }
-    
+            
             @Override
             public boolean isCancelled() {
                 return false;
             }
-    
+            
             @Override
             public boolean isDone() {
                 return NamingFuzzyWatchContext.this.initializationCompleted.get();
@@ -330,7 +333,7 @@ public class NamingFuzzyWatchContext {
             @Override
             public ListView<String> get() throws InterruptedException {
                 synchronized (NamingFuzzyWatchContext.this) {
-                    while(!NamingFuzzyWatchContext.this.initializationCompleted.get()){
+                    while (!NamingFuzzyWatchContext.this.initializationCompleted.get()) {
                         NamingFuzzyWatchContext.this.wait();
                     }
                 }
@@ -340,18 +343,19 @@ public class NamingFuzzyWatchContext {
                 result.setCount(result.getData().size());
                 return result;
             }
-    
+            
             @Override
             public ListView<String> get(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
                 
-                if(!NamingFuzzyWatchContext.this.initializationCompleted.get()){
+                if (!NamingFuzzyWatchContext.this.initializationCompleted.get()) {
                     synchronized (NamingFuzzyWatchContext.this) {
                         NamingFuzzyWatchContext.this.wait(unit.toMillis(timeout));
                     }
                 }
                 
-                if (!NamingFuzzyWatchContext.this.initializationCompleted.get()){
-                    throw new TimeoutException("fuzzy watch result future timeout for "+unit.toMillis(timeout)+" millis");
+                if (!NamingFuzzyWatchContext.this.initializationCompleted.get()) {
+                    throw new TimeoutException(
+                            "fuzzy watch result future timeout for " + unit.toMillis(timeout) + " millis");
                 }
                 
                 ListView<String> result = new ListView<>();
@@ -363,4 +367,3 @@ public class NamingFuzzyWatchContext {
         return completableFuture;
     }
 }
-

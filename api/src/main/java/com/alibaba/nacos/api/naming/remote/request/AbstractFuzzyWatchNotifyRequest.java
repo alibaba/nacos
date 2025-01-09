@@ -29,10 +29,10 @@ public abstract class AbstractFuzzyWatchNotifyRequest extends ServerRequest {
     
     private String syncType;
     
-    public AbstractFuzzyWatchNotifyRequest(){
+    public AbstractFuzzyWatchNotifyRequest() {
     }
     
-    public AbstractFuzzyWatchNotifyRequest( String syncType) {
+    public AbstractFuzzyWatchNotifyRequest(String syncType) {
         this.syncType = syncType;
     }
     

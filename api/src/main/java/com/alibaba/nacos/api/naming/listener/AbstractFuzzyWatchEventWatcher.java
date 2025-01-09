@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.config.listener;
+package com.alibaba.nacos.api.naming.listener;
 
 import java.util.concurrent.Executor;
 
 /**
- * Listener Adapter,use default notify thread.
+ * Abstract fuzzy watch event listener, to support handle event by user custom executor.
  *
- * @author water.lyl
+ * @author tanyongquan
  */
-public abstract class AbstractListener implements Listener {
+public abstract class AbstractFuzzyWatchEventWatcher implements FuzzyWatchEventWatcher {
     
-    /**
-     * Use default executor.
-     */
     @Override
     public Executor getExecutor() {
         return null;
     }
-    
 }

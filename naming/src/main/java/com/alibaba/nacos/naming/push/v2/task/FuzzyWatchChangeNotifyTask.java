@@ -18,13 +18,12 @@ package com.alibaba.nacos.naming.push.v2.task;
 
 import com.alibaba.nacos.common.task.AbstractDelayTask;
 
-
 /**
  * Nacos naming fuzzy watch notify service change push delay task.
  *
  * @author tanyongquan
  */
-public class FuzzyWatchChangeNotifyTask extends AbstractDelayTask{
+public class FuzzyWatchChangeNotifyTask extends AbstractDelayTask {
     
     private final String serviceKey;
     
@@ -34,14 +33,14 @@ public class FuzzyWatchChangeNotifyTask extends AbstractDelayTask{
     
     private final long delay;
     
-    public FuzzyWatchChangeNotifyTask(String serviceKey, String changedType,String clientId,long delay) {
+    public FuzzyWatchChangeNotifyTask(String serviceKey, String changedType, String clientId, long delay) {
         this.serviceKey = serviceKey;
         this.changedType = changedType;
-        this.delay=delay;
-        this.clientId=clientId;
-      
+        this.delay = delay;
+        this.clientId = clientId;
+        
     }
-
+    
     public String getChangedType() {
         return changedType;
     }

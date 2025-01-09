@@ -19,8 +19,8 @@ package com.alibaba.nacos.example;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
-import com.alibaba.nacos.api.naming.listener.FuzzyWatchEventWatcher;
 import com.alibaba.nacos.api.naming.listener.FuzzyWatchChangeEvent;
+import com.alibaba.nacos.api.naming.listener.FuzzyWatchEventWatcher;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 
 import java.util.Properties;
@@ -38,7 +38,7 @@ import static com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP;
  *
  * @author tanyongquan
  */
-public class FuzzyWatchExample {
+public class NamingFuzzyWatchExample {
     
     public static void main(String[] args) throws NacosException, InterruptedException {
         
@@ -74,7 +74,9 @@ public class FuzzyWatchExample {
             
             @Override
             public void onEvent(FuzzyWatchChangeEvent event) {
-                System.out.println("[Fuzzy-Watch-GROUP]changed service name: " + NamingUtils.getServiceKey(event.getNamespace(),event.getGroupName(),event.getServiceName()));
+                System.out.println(
+                        "[Fuzzy-Watch-GROUP]changed service name: " + NamingUtils.getServiceKey(event.getNamespace(),
+                                event.getGroupName(), event.getServiceName()));
                 System.out.println("[Fuzzy-Watch-GROUP]change type: " + event.getChangeType());
             }
         });
@@ -88,7 +90,9 @@ public class FuzzyWatchExample {
             
             @Override
             public void onEvent(FuzzyWatchChangeEvent event) {
-                System.out.println("[Prefix-Fuzzy-Watch]changed service name: " + NamingUtils.getServiceKey(event.getNamespace(),event.getGroupName(),event.getServiceName()));
+                System.out.println(
+                        "[Prefix-Fuzzy-Watch]changed service name: " + NamingUtils.getServiceKey(event.getNamespace(),
+                                event.getGroupName(), event.getServiceName()));
                 System.out.println("[Prefix-Fuzzy-Watch]change type: " + event.getChangeType());
             }
         });

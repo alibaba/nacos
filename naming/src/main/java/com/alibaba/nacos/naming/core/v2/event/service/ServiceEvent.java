@@ -19,8 +19,6 @@ package com.alibaba.nacos.naming.core.v2.event.service;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 
-import java.util.Set;
-
 /**
  * Service event.
  *
@@ -74,14 +72,14 @@ public class ServiceEvent extends Event {
     public static class ServiceSubscribedEvent extends ServiceEvent {
         
         private static final long serialVersionUID = -2645441445867337345L;
-    
+        
         private final String clientId;
         
         public ServiceSubscribedEvent(Service service, String clientId) {
             super(service);
             this.clientId = clientId;
         }
-    
+        
         public String getClientId() {
             return clientId;
         }

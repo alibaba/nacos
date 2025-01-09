@@ -41,13 +41,14 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.alibaba.nacos.api.common.Constants.ServiceChangedType.ADD_SERVICE;
 import static com.alibaba.nacos.api.common.Constants.ServiceChangedType.DELETE_SERVICE;
+import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_MATCH_GROUP_KEY_OVER_LIMIT;
 import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_OVER_LIMIT;
 import static com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern.getNamespaceFromPattern;
 
 /**
- * naming fuzzy watch context service
- * <p>
- * 1. handler client fuzzy watch event and cancel watch event 2. service changed notify fuzzy watched clients.
+ * naming fuzzy watch context service.
+ *
+ * @author shiyiyue
  */
 @Component
 public class NamingFuzzyWatchContextService extends SmartSubscriber {
@@ -64,10 +65,9 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
      */
     private final ConcurrentMap<String, Set<String>> matchedServiceKeys = new ConcurrentHashMap<>();
     
-    private final int FUZZY_WATCH_MAX_PATTERN_COUNT = 50;
+    private static final int FUZZY_WATCH_MAX_PATTERN_COUNT = 50;
     
-    private final int FUZZY_WATCH_MAX_PATTERN_MATCHED_GROUP_KEY_COUNT = 200;
-    
+    private static final int FUZZY_WATCH_MAX_PATTERN_MATCHED_GROUP_KEY_COUNT = 200;
     
     public NamingFuzzyWatchContextService() {
         GlobalExecutor.scheduleWithFixDelayByCommon(() -> trimFuzzyWatchContext(), 30000);
@@ -112,7 +112,12 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
         }
     }
     
-    
+    /**
+     * get client that fuzzy watch this service.
+     *
+     * @param service service to check fuzzy watcher.
+     * @return client ids.
+     */
     public Set<String> getFuzzyWatchedClients(Service service) {
         Set<String> matchedClients = new HashSet<>();
         Iterator<Map.Entry<String, Set<String>>> iterator = watchedClients.entrySet().iterator();
@@ -126,15 +131,22 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
         return matchedClients;
     }
     
-    public boolean syncServiceContext(Service changedEventService, String changedType) {
+    /**
+     * sync changed service to fuzzy watch context.
+     *
+     * @param changedService changed service.
+     * @param changedType    change type.
+     * @return
+     */
+    public boolean syncServiceContext(Service changedService, String changedType) {
         
         boolean needNotify = false;
         if (!changedType.equals(ADD_SERVICE) && !changedType.equals(DELETE_SERVICE)) {
             return false;
         }
         
-        String serviceKey = NamingUtils.getServiceKey(changedEventService.getNamespace(),
-                changedEventService.getGroup(), changedEventService.getName());
+        String serviceKey = NamingUtils.getServiceKey(changedService.getNamespace(), changedService.getGroup(),
+                changedService.getName());
         Loggers.SRV_LOG.warn("FUZZY_WATCH:  service change matched,service key {},changed type {} ", serviceKey,
                 changedType);
         
@@ -142,15 +154,15 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
         
         while (iterator.hasNext()) {
             Map.Entry<String, Set<String>> next = iterator.next();
-            if (FuzzyGroupKeyPattern.matchPattern(next.getKey(), changedEventService.getName(),
-                    changedEventService.getGroup(), changedEventService.getNamespace())) {
+            if (FuzzyGroupKeyPattern.matchPattern(next.getKey(), changedService.getName(), changedService.getGroup(),
+                    changedService.getNamespace())) {
                 
                 Set<String> matchedServiceKeys = next.getValue();
                 if (changedType.equals(ADD_SERVICE) && !matchedServiceKeys.contains(serviceKey)) {
                     if (matchedServiceKeys.size() >= FUZZY_WATCH_MAX_PATTERN_MATCHED_GROUP_KEY_COUNT) {
-                        Loggers.SRV_LOG.warn(
-                                "FUZZY_WATCH:  pattern matched service count is over limit , current service will be ignore for pattern {} ,current count is {}",
-                                next.getKey(), matchedServiceKeys.size());
+                        Loggers.SRV_LOG.warn("FUZZY_WATCH:  pattern matched service count is over limit , "
+                                        + "current service will be ignore for pattern {} ,current count is {}", next.getKey(),
+                                matchedServiceKeys.size());
                         continue;
                     }
                     if (matchedServiceKeys.add(serviceKey)) {
@@ -171,8 +183,14 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
         return needNotify;
     }
     
+    /**
+     * sync fuzzy watch context.
+     *
+     * @param groupKeyPattern group key pattern.
+     * @param clientId        client id.
+     * @return
+     */
     public Set<String> syncFuzzyWatcherContext(String groupKeyPattern, String clientId) {
-        
         watchedClients.computeIfAbsent(groupKeyPattern, key -> new ConcurrentHashSet<>()).add(clientId);
         Set<String> matchedServiceKeys = initWatchMatchService(groupKeyPattern);
         return matchedServiceKeys;
@@ -186,8 +204,13 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
         }
     }
     
+    /**
+     * remove fuzzy watch context for a pattern and client id.
+     *
+     * @param groupKeyPattern group key pattern.
+     * @param clientId        client id.
+     */
     public void removeFuzzyWatchContext(String groupKeyPattern, String clientId) {
-        
         if (watchedClients.containsKey(groupKeyPattern)) {
             watchedClients.get(groupKeyPattern).remove(clientId);
         }
@@ -220,12 +243,11 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
                         service.getNamespace())) {
                     if (matchedServices.size() >= FUZZY_WATCH_MAX_PATTERN_MATCHED_GROUP_KEY_COUNT) {
                         
-                        Loggers.SRV_LOG.warn(
-                                "FUZZY_WATCH:  pattern matched service count is over limit , other services will stop notify for pattern {} ,current count is {}",
+                        Loggers.SRV_LOG.warn("FUZZY_WATCH:  pattern matched service count is over limit , "
+                                        + "other services will stop notify for pattern {} ,current count is {}",
                                 completedPattern, matchedServices.size());
-                        break;
-                        //                        throw new NacosRuntimeException(FUZZY_WATCH_PATTERN_MATCH_GROUP_KEY_OVER_LIMIT.getCode(),
-                        //                                FUZZY_WATCH_PATTERN_MATCH_GROUP_KEY_OVER_LIMIT.getMsg());
+                        throw new NacosRuntimeException(FUZZY_WATCH_PATTERN_MATCH_GROUP_KEY_OVER_LIMIT.getCode(),
+                                FUZZY_WATCH_PATTERN_MATCH_GROUP_KEY_OVER_LIMIT.getMsg());
                     }
                     matchedServices.add(
                             NamingUtils.getServiceKey(service.getNamespace(), service.getGroup(), service.getName()));
@@ -239,6 +261,5 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
         
         return new HashSet(matchedServiceKeys.get(completedPattern));
     }
-    
     
 }

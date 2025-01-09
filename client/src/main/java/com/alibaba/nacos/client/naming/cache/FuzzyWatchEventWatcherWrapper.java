@@ -23,22 +23,27 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * fuzzy watcher wrapper.
+ * @author shiyiyue
+ */
 public class FuzzyWatchEventWatcherWrapper {
     
     FuzzyWatchEventWatcher fuzzyWatchEventWatcher;
-    public FuzzyWatchEventWatcherWrapper(FuzzyWatchEventWatcher fuzzyWatchEventWatcher){
-        this.fuzzyWatchEventWatcher=fuzzyWatchEventWatcher;
+    
+    public FuzzyWatchEventWatcherWrapper(FuzzyWatchEventWatcher fuzzyWatchEventWatcher) {
+        this.fuzzyWatchEventWatcher = fuzzyWatchEventWatcher;
     }
     
-    String uuid= UUID.randomUUID().toString();
+    String uuid = UUID.randomUUID().toString();
     
     private Set<String> syncServiceKeys = new HashSet<>();
     
-     final String getUuid() {
+    final String getUuid() {
         return uuid;
     }
     
-     Set<String> getSyncServiceKeys() {
+    Set<String> getSyncServiceKeys() {
         return syncServiceKeys;
     }
     
