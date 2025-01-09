@@ -114,6 +114,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
             response.setMd5(chainResponse.getMd5());
             response.setEncryptedDataKey(chainResponse.getEncryptedDataKey());
             response.setContent(chainResponse.getContent());
+            response.setContentType(chainResponse.getConfigType());
             response.setLastModified(chainResponse.getLastModified());
             
             String pullType = ConfigTraceService.PULL_TYPE_OK;
