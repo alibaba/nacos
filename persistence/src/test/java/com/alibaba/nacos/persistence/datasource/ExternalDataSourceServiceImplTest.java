@@ -81,8 +81,8 @@ class ExternalDataSourceServiceImplTest {
         ReflectionTestUtils.setField(service, "jt", jt);
         ReflectionTestUtils.setField(service, "tm", tm);
         ReflectionTestUtils.setField(service, "tjt", tjt);
-        ReflectionTestUtils.setField(service, "testMasterJT", testMasterJT);
-        ReflectionTestUtils.setField(service, "testMasterWritableJT", testMasterWritableJT);
+        ReflectionTestUtils.setField(service, "testMasterJt", testMasterJT);
+        ReflectionTestUtils.setField(service, "testMasterWritableJt", testMasterWritableJT);
         List<HikariDataSource> dataSourceList = new ArrayList<>();
         dataSourceList.add(new HikariDataSource());
         ReflectionTestUtils.setField(service, "dataSourceList", dataSourceList);

@@ -142,6 +142,7 @@ public class ConfigGrayModelMigrateService {
         }
     }
     
+    @SuppressWarnings("PMD.MethodTooLongRule")
     private void doCheckMigrate() throws Exception {
         
         int migrateMulti = EnvUtil.getProperty("nacos.gray.migrate.executor.multi", Integer.class, Integer.valueOf(4));

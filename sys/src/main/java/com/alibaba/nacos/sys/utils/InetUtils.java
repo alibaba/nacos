@@ -52,6 +52,7 @@ import static com.alibaba.nacos.sys.env.Constants.USE_ONLY_SITE_INTERFACES;
  *
  * @author Nacos
  */
+@SuppressWarnings("PMD.LowerCamelCaseVariableNamingRule")
 public class InetUtils {
     
     private static final Logger LOG = LoggerFactory.getLogger(InetUtils.class);

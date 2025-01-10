@@ -118,18 +118,11 @@ public class K8sSyncServer {
         SharedIndexInformer<V1Service> serviceInformer =
                 factory.sharedIndexInformerFor(
                         (CallGeneratorParams params) -> {
-                            return coreV1Api.listServiceForAllNamespacesCall(
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    params.resourceVersion,
-                                    null,
-                                    params.timeoutSeconds,
-                                    params.watch,
-                                    null);
+                            CoreV1Api.APIlistServiceForAllNamespacesRequest request = coreV1Api.listServiceForAllNamespaces();
+                            request.resourceVersion(params.resourceVersion);
+                            request.timeoutSeconds(params.timeoutSeconds);
+                            request.watch(params.watch);
+                            return request.buildCall(null);
                         },
                         V1Service.class,
                         V1ServiceList.class);
@@ -137,18 +130,11 @@ public class K8sSyncServer {
         SharedIndexInformer<V1Endpoints> endpointInformer =
                 factory.sharedIndexInformerFor(
                         (CallGeneratorParams params) -> {
-                            return coreV1Api.listEndpointsForAllNamespacesCall(
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    params.resourceVersion,
-                                    null,
-                                    params.timeoutSeconds,
-                                    params.watch,
-                                    null);
+                            CoreV1Api.APIlistEndpointsForAllNamespacesRequest request = coreV1Api.listEndpointsForAllNamespaces();
+                            request.resourceVersion(params.resourceVersion);
+                            request.timeoutSeconds(params.timeoutSeconds);
+                            request.watch(params.watch);
+                            return request.buildCall(null);
                         },
                         V1Endpoints.class,
                         V1EndpointsList.class);

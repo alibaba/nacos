@@ -18,7 +18,6 @@ package com.alibaba.nacos.plugin.auth.impl.token;
 
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.token.impl.CachedJwtTokenManager;
-import com.alibaba.nacos.plugin.auth.impl.token.impl.JwtTokenManager;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,8 +27,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.security.core.Authentication;
-
-import java.lang.reflect.Field;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -53,9 +50,6 @@ class TokenManagerDelegateTest {
     private CachedJwtTokenManager cachedJwtTokenManager;
     
     @Mock
-    private JwtTokenManager jwtTokenManager;
-    
-    @Mock
     private Authentication authentication;
     
     @Mock
@@ -63,8 +57,7 @@ class TokenManagerDelegateTest {
     
     @BeforeEach
     void setUp() throws Exception {
-        tokenManagerDelegate = new TokenManagerDelegate(jwtTokenManager);
-        injectObject("tokenCacheEnabled", Boolean.TRUE);
+        tokenManagerDelegate = new TokenManagerDelegate(cachedJwtTokenManager);
         when(cachedJwtTokenManager.getTokenValidityInSeconds()).thenReturn(100L);
         when(cachedJwtTokenManager.getTokenTtlInSeconds(anyString())).thenReturn(100L);
         when(cachedJwtTokenManager.getAuthentication(anyString())).thenReturn(authentication);
@@ -106,11 +99,5 @@ class TokenManagerDelegateTest {
     @Test
     void testGetTokenValidityInSeconds() throws AccessException {
         assertTrue(tokenManagerDelegate.getTokenValidityInSeconds() > 0);
-    }
-    
-    private void injectObject(String fieldName, Object value) throws NoSuchFieldException, IllegalAccessException {
-        Field field = TokenManagerDelegate.class.getDeclaredField(fieldName);
-        field.setAccessible(true);
-        field.set(tokenManagerDelegate, value);
     }
 }

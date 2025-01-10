@@ -67,6 +67,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @RestController
 @RequestMapping(Commons.NACOS_CORE_CONTEXT_V2 + "/loader")
 @Deprecated
+@SuppressWarnings("PMD.MethodTooLongRule")
 public class ServerLoaderController {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ServerLoaderController.class);

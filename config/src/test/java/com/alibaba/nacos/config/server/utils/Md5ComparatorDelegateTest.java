@@ -31,6 +31,8 @@ import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.HashMap;
@@ -89,17 +91,30 @@ class Md5ComparatorDelegateTest {
                 .thenReturn(Collections.singletonList(nacosMd5Comparator));
         Constructor constructor = Md5ComparatorDelegate.class.getDeclaredConstructor();
         constructor.setAccessible(true);
-        Field field = Md5ComparatorDelegate.class.getDeclaredField("INSTANCE");
-        Field modifiersField = Field.class.getDeclaredField("modifiers");
-        modifiersField.setAccessible(true);
-        field.setAccessible(true);
-        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
         Md5ComparatorDelegate delegate = (Md5ComparatorDelegate) constructor.newInstance();
-        field.set(null, delegate);
+        Field field = Md5ComparatorDelegate.class.getDeclaredField("INSTANCE");
+        setStaticFinalField(field, delegate);
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
         HashMap<String, String> clientMd5Map = new HashMap<>();
         Md5ComparatorDelegate.getInstance().compareMd5(request, response, clientMd5Map);
         verify(nacosMd5Comparator, times(1)).compareMd5(request, response, clientMd5Map);
+    }
+    
+    private void setStaticFinalField(Field finalField, Object value)
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
+        getDeclaredFields0.setAccessible(true);
+        Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
+        Field modifiers = null;
+        for (Field each : fields) {
+            if ("modifiers".equals(each.getName())) {
+                modifiers = each;
+            }
+        }
+        modifiers.setAccessible(true);
+        modifiers.setInt(finalField, finalField.getModifiers() & ~Modifier.FINAL);
+        finalField.setAccessible(true);
+        finalField.set(null, value);
     }
 }

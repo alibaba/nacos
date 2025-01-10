@@ -22,7 +22,6 @@ import com.alibaba.nacos.api.lock.remote.LockOperationEnum;
 import com.alibaba.nacos.api.lock.remote.request.LockOperationRequest;
 import com.alibaba.nacos.api.lock.remote.response.LockOperationResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
-import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.lock.exception.NacosLockException;
 import com.alibaba.nacos.lock.service.LockOperationService;
@@ -48,8 +47,10 @@ public class LockRequestHandler extends RequestHandler<LockOperationRequest, Loc
         this.lockOperationService = lockOperationService;
     }
     
+    /**
+     * TODO Support auth.
+     */
     @Override
-    @Secured(resource = "grpc/lock")
     public LockOperationResponse handle(LockOperationRequest request, RequestMeta meta) throws NacosException {
         Boolean lock = null;
         LOGGER.info("request: {}, instance: {}", request.getLockOperationEnum(), request.getLockInstance());

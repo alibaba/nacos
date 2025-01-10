@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -47,7 +47,7 @@ class ConsoleExceptionHandlerTest {
     @Autowired
     private WebApplicationContext context;
     
-    @MockBean
+    @MockitoBean
     private HealthControllerV2 healthControllerV2;
     
     @BeforeAll
@@ -64,7 +64,8 @@ class ConsoleExceptionHandlerTest {
     void testNacosRunTimeExceptionHandler() throws Exception {
         // 设置HealthControllerV2的行为，使其抛出NacosRuntimeException并被ConsoleExceptionHandler捕获处理
         when(healthControllerV2.liveness()).thenThrow(new NacosRuntimeException(NacosException.INVALID_PARAM))
-                .thenThrow(new NacosRuntimeException(NacosException.SERVER_ERROR)).thenThrow(new NacosRuntimeException(503));
+                .thenThrow(new NacosRuntimeException(NacosException.SERVER_ERROR))
+                .thenThrow(new NacosRuntimeException(503));
         
         // 执行请求并验证响应码
         ResultActions resultActions = mockMvc.perform(get("/v2/console/health/liveness"));

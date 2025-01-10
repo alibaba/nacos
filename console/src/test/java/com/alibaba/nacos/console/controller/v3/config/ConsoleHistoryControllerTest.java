@@ -39,6 +39,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.sql.Timestamp;
 import java.util.Collections;
 import java.util.List;
 
@@ -72,6 +73,8 @@ public class ConsoleHistoryControllerTest {
         ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
         configHistoryInfo.setDataId("testDataId");
         configHistoryInfo.setGroup("testGroup");
+        configHistoryInfo.setCreatedTime(new Timestamp(System.currentTimeMillis()));
+        configHistoryInfo.setLastModifiedTime(new Timestamp(System.currentTimeMillis()));
         
         when(historyProxy.getConfigHistoryInfo("testDataId", "testGroup", Constants.DEFAULT_NAMESPACE_ID, 1L)).thenReturn(configHistoryInfo);
         
@@ -99,6 +102,8 @@ public class ConsoleHistoryControllerTest {
         ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
         configHistoryInfo.setDataId("testDataId");
         configHistoryInfo.setGroup("testGroup");
+        configHistoryInfo.setCreatedTime(new Timestamp(System.currentTimeMillis()));
+        configHistoryInfo.setLastModifiedTime(new Timestamp(System.currentTimeMillis()));
         page.setPageItems(Collections.singletonList(configHistoryInfo));
         
         when(historyProxy.listConfigHistory("testDataId", "testGroup", Constants.DEFAULT_NAMESPACE_ID, 1, 100)).thenReturn(page);
@@ -125,6 +130,8 @@ public class ConsoleHistoryControllerTest {
         ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
         configHistoryInfo.setDataId("testDataId");
         configHistoryInfo.setGroup("testGroup");
+        configHistoryInfo.setCreatedTime(new Timestamp(System.currentTimeMillis()));
+        configHistoryInfo.setLastModifiedTime(new Timestamp(System.currentTimeMillis()));
         
         when(historyProxy.getPreviousConfigHistoryInfo("testDataId", "testGroup", Constants.DEFAULT_NAMESPACE_ID, 1L)).thenReturn(
                 configHistoryInfo);
