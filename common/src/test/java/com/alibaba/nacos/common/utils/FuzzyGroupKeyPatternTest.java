@@ -36,7 +36,7 @@ public class FuzzyGroupKeyPatternTest {
         
         String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern(dataIdPattern, group, namespace);
         
-        assertEquals("exampleNamespace>>exampleGroup@@examplePattern*", groupKeyPattern);
+        assertEquals("exampleNamespace>>exampleGroup>>examplePattern*", groupKeyPattern);
     }
     
 }

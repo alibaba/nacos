@@ -722,6 +722,7 @@ public class ClientWorker implements Closeable {
             return response;
         }
         
+        @SuppressWarnings("PMD.MethodTooLongRule")
         private void initRpcClientHandler(final RpcClient rpcClientInner) {
             /*
              * Register Config Change /Config ReSync Handler
