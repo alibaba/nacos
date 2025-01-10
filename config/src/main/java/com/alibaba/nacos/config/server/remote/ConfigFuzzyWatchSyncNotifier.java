@@ -26,7 +26,6 @@ import com.alibaba.nacos.common.task.BatchTaskCounter;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
 import com.alibaba.nacos.config.server.configuration.ConfigCommonConfig;
-import com.alibaba.nacos.config.server.model.event.ConfigCancelFuzzyWatchEvent;
 import com.alibaba.nacos.config.server.model.event.ConfigFuzzyWatchEvent;
 import com.alibaba.nacos.config.server.service.ConfigFuzzyWatchContextService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
@@ -128,7 +127,17 @@ public class ConfigFuzzyWatchSyncNotifier extends SmartSubscriber {
         
         if (CollectionUtils.isEmpty(configStates)) {
             if (event.isInitializing()) {
+                
                 ConfigFuzzyWatchSyncRequest request = ConfigFuzzyWatchSyncRequest.buildInitFinishRequest(
+                        event.getGroupKeyPattern());
+                int maxPushRetryTimes = ConfigCommonConfig.getInstance().getMaxPushRetryTimes();
+                // Create RPC push task and push the request to the client
+                FuzzyWatchRpcPushTask fuzzyWatchRpcPushTask = new FuzzyWatchRpcPushTask(request, null,
+                        maxPushRetryTimes, event.getConnectionId());
+                push(fuzzyWatchRpcPushTask, connectionManager);
+            }else if(matchGroupKeys.size()>=ConfigCommonConfig.getInstance().getMaxMatchedConfigCount()){
+                // no diff but
+                ConfigFuzzyWatchSyncRequest request = ConfigFuzzyWatchSyncRequest.buildOverLimitRequest(
                         event.getGroupKeyPattern());
                 int maxPushRetryTimes = ConfigCommonConfig.getInstance().getMaxPushRetryTimes();
                 // Create RPC push task and push the request to the client
@@ -175,7 +184,6 @@ public class ConfigFuzzyWatchSyncNotifier extends SmartSubscriber {
     public List<Class<? extends Event>> subscribeTypes() {
         List<Class<? extends Event>> result = new LinkedList<>();
         result.add(ConfigFuzzyWatchEvent.class);
-        result.add(ConfigCancelFuzzyWatchEvent.class);
         return result;
     }
     
@@ -184,13 +192,6 @@ public class ConfigFuzzyWatchSyncNotifier extends SmartSubscriber {
         if (event instanceof ConfigFuzzyWatchEvent) {
             handleFuzzyWatchEvent((ConfigFuzzyWatchEvent) event);
         }
-        
-        if (event instanceof ConfigCancelFuzzyWatchEvent) {
-            // Remove client from the fuzzy listening context
-            configFuzzyWatchContextService.removeFuzzyListen(((ConfigCancelFuzzyWatchEvent) event).getGroupKeyPattern(),
-                    ((ConfigCancelFuzzyWatchEvent) event).getConnectionId());
-        }
-        
     }
     
     /**

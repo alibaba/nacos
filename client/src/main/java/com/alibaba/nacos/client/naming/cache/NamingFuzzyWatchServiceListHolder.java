@@ -45,6 +45,7 @@ import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_INIT_NOTIFY;
 import static com.alibaba.nacos.api.common.Constants.ServiceChangedType.ADD_SERVICE;
 import static com.alibaba.nacos.api.common.Constants.WATCH_TYPE_CANCEL_WATCH;
 import static com.alibaba.nacos.api.common.Constants.WATCH_TYPE_WATCH;
+import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_OVER_LIMIT;
 
 /**
  * Naming client fuzzy watch service list holder.
@@ -273,18 +274,24 @@ public class NamingFuzzyWatchServiceListHolder extends Subscriber<NamingFuzzyWat
                     } else {
                         entry.setConsistentWithServer(true);
                     }
-                    
                 }
+                
             } catch (NacosException e) {
                 // Log error and retry after a short delay
                 LOGGER.error(" fuzzy watch request fail.", e);
-                try {
-                    Thread.sleep(500L);
-                } catch (InterruptedException interruptedException) {
-                    // Ignore interruption
+                
+                if (FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode()==e.getErrCode()){
+                    LOGGER.error(" fuzzy watch pattern over limit,pattern ->{} ,fuzzy watch will be suppressed",entry.getGroupKeyPattern());
+                } else {
+                    try {
+                        Thread.sleep(100L);
+                    } catch (InterruptedException interruptedException) {
+                        // Ignore interruption
+                    }
+                    // Retry notification
+                    notifyFuzzyWatchSync();
                 }
-                // Retry notification
-                notifyFuzzyWatchSync();
+                
             }
         }
         

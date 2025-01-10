@@ -16,15 +16,17 @@
 
 package com.alibaba.nacos.config.server.service;
 
-import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
+import com.alibaba.nacos.config.server.configuration.ConfigCommonConfig;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -34,7 +36,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.alibaba.nacos.api.common.Constants.ConfigChangedType.ADD_CONFIG;
 import static com.alibaba.nacos.api.common.Constants.ConfigChangedType.CONFIG_CHANGED;
 import static com.alibaba.nacos.api.common.Constants.ConfigChangedType.DELETE_CONFIG;
-import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_MATCH_GROUP_KEY_OVER_LIMIT;
 import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_OVER_LIMIT;
 
 /**
@@ -55,13 +56,13 @@ public class ConfigFuzzyWatchContextService {
      */
     private final Map<String, Set<String>> matchedGroupKeys = new ConcurrentHashMap<>();
     
-    private static final int FUZZY_WATCH_MAX_PATTERN_COUNT = 50;
-    
-    private static final int FUZZY_WATCH_MAX_PATTERN_MATCHED_GROUP_KEY_COUNT = 1000;
     
     public ConfigFuzzyWatchContextService() {
-        
-        GlobalExecutor.scheduleWithFixDelayByCommon(() -> trimFuzzyWatchContext(), 30000);
+    }
+    
+    @PostConstruct
+    public void init() {
+        GlobalExecutor.scheduleWithFixDelayByCommon(() -> trimFuzzyWatchContext(), 60000);
     }
     
     /**
@@ -69,22 +70,26 @@ public class ConfigFuzzyWatchContextService {
      * if watchedClients is null. pattern matchedServiceKeys will be removed in second period to avoid frequently
      * matchedServiceKeys init.
      */
-    private void trimFuzzyWatchContext() {
+    void trimFuzzyWatchContext() {
         try {
             Iterator<Map.Entry<String, Set<String>>> iterator = matchedGroupKeys.entrySet().iterator();
             while (iterator.hasNext()) {
-                Map.Entry<String, Set<String>> next = iterator.next();
-                Set<String> watchedClients = this.watchedClients.get(next.getKey());
+                Map.Entry<String, Set<String>> matchedGroupKeys = iterator.next();
+                Set<String> watchedClients = this.watchedClients.get(matchedGroupKeys.getKey());
                 
                 if (watchedClients == null) {
                     iterator.remove();
                     LogUtil.DEFAULT_LOG.info(
                             "[fuzzy-watch] no watchedClients context for pattern {},remove matchedGroupKeys context",
-                            next.getKey());
+                            matchedGroupKeys.getKey());
                 } else if (watchedClients.isEmpty()) {
                     LogUtil.DEFAULT_LOG.info("[fuzzy-watch] no client watched pattern {},remove watchedClients context",
-                            next.getKey());
-                    this.watchedClients.remove(next.getKey());
+                            matchedGroupKeys.getKey());
+                    this.watchedClients.remove(matchedGroupKeys.getKey());
+                } else if(matchedGroupKeys.getValue().size()>=ConfigCommonConfig.getInstance().getMaxMatchedConfigCount()){
+                    LogUtil.DEFAULT_LOG.warn(
+                            "[fuzzy-watch] pattern {} matched groupKey count is reach to upper limit {}, fuzzy watch notify may be suppressed ",
+                            matchedGroupKeys.getKey(),matchedGroupKeys.getValue().size());
                 }
             }
         } catch (Throwable throwable) {
@@ -140,40 +145,39 @@ public class ConfigFuzzyWatchContextService {
      * @param groupKeyPattern The pattern to match group keys.
      * @return A set of group keys that match the pattern and are effective for the client.
      */
-    private void initMatchGroupKeys(String groupKeyPattern) {
+    private void initMatchGroupKeys(String groupKeyPattern) throws NacosException {
         if (matchedGroupKeys.containsKey(groupKeyPattern)) {
             return;
         }
         
-        if (matchedGroupKeys.size() >= FUZZY_WATCH_MAX_PATTERN_COUNT) {
+        if (matchedGroupKeys.size() >= ConfigCommonConfig.getInstance().getMaxPatternCount()) {
             LogUtil.DEFAULT_LOG.warn(
                     "[fuzzy-watch] pattern count is over limit ,pattern {} init fail,current count is {}",
                     groupKeyPattern, matchedGroupKeys.size());
-            throw new NacosRuntimeException(FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode(),
-                    FUZZY_WATCH_PATTERN_OVER_LIMIT.getMsg());
+            throw new NacosException(FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode(), FUZZY_WATCH_PATTERN_OVER_LIMIT.getMsg());
         }
         
         matchedGroupKeys.computeIfAbsent(groupKeyPattern, k -> new HashSet<>());
         Set<String> matchedGroupKeys = this.matchedGroupKeys.get(groupKeyPattern);
         long matchBeginTime = System.currentTimeMillis();
+        boolean overMatchCount = false;
         for (String groupKey : ConfigCacheService.CACHE.keySet()) {
             String[] groupKeyItems = GroupKey.parseKey(groupKey);
             if (FuzzyGroupKeyPattern.matchPattern(groupKeyPattern, groupKeyItems[0], groupKeyItems[1],
                     groupKeyItems[2])) {
                 
-                if (matchedGroupKeys.size() >= FUZZY_WATCH_MAX_PATTERN_MATCHED_GROUP_KEY_COUNT) {
+                if (matchedGroupKeys.size() >= ConfigCommonConfig.getInstance().getMaxMatchedConfigCount()) {
                     LogUtil.DEFAULT_LOG.warn("[fuzzy-watch]   pattern matched service count is over limit , "
                                     + "other services will stop notify for pattern {} ,current count is {}", groupKeyPattern,
                             matchedGroupKeys.size());
-                    
-                    throw new NacosRuntimeException(FUZZY_WATCH_PATTERN_MATCH_GROUP_KEY_OVER_LIMIT.getCode(),
-                            FUZZY_WATCH_PATTERN_MATCH_GROUP_KEY_OVER_LIMIT.getMsg());
+                    overMatchCount = true;
+                    break;
                 }
                 matchedGroupKeys.add(groupKey);
             }
         }
-        LogUtil.DEFAULT_LOG.info("[fuzzy-watch]  pattern {} match {} group keys, cost {}ms", groupKeyPattern,
-                matchedGroupKeys.size(), System.currentTimeMillis() - matchBeginTime);
+        LogUtil.DEFAULT_LOG.info("[fuzzy-watch]  pattern {} match {} group keys,overMatchCount={}, cost {}ms",
+                groupKeyPattern, matchedGroupKeys.size(), overMatchCount, System.currentTimeMillis() - matchBeginTime);
         
     }
     
@@ -184,12 +188,12 @@ public class ConfigFuzzyWatchContextService {
      *
      * @param groupKeyPattern The group key pattern to associate with the listen connection.
      * @param connectId       The connection ID to be added.
+     * @throws NacosException   over max pattern count.
      */
-    public synchronized void addFuzzyListen(String groupKeyPattern, String connectId) {
-        
+    public synchronized void addFuzzyWatch(String groupKeyPattern, String connectId) throws NacosException {
+        watchedClients.computeIfAbsent(groupKeyPattern, k -> new HashSet<>());
         initMatchGroupKeys(groupKeyPattern);
         // Add the connection ID to the set associated with the key pattern in keyPatternContext
-        watchedClients.computeIfAbsent(groupKeyPattern, k -> new HashSet<>());
         watchedClients.get(groupKeyPattern).add(connectId);
     }
     

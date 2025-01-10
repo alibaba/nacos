@@ -24,6 +24,7 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
+import com.alibaba.nacos.naming.core.v2.index.NamingFuzzyWatchContextService;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import org.springframework.stereotype.Component;
 
@@ -38,9 +39,11 @@ import static com.alibaba.nacos.api.common.Constants.WATCH_TYPE_WATCH;
 @Component("namingFuzzyWatchRequestHandler")
 public class NamingFuzzyWatchRequestHandler extends RequestHandler<NamingFuzzyWatchRequest, NamingFuzzyWatchResponse> {
     
-    public NamingFuzzyWatchRequestHandler() {
+    private NamingFuzzyWatchContextService namingFuzzyWatchContextService;
+    
+    public NamingFuzzyWatchRequestHandler(NamingFuzzyWatchContextService namingFuzzyWatchContextService) {
+        this.namingFuzzyWatchContextService = namingFuzzyWatchContextService;
         NotifyCenter.registerToPublisher(ClientOperationEvent.ClientFuzzyWatchEvent.class, 1000);
-        NotifyCenter.registerToPublisher(ClientOperationEvent.ClientCancelFuzzyWatchEvent.class, 1000);
         
     }
     
@@ -51,13 +54,20 @@ public class NamingFuzzyWatchRequestHandler extends RequestHandler<NamingFuzzyWa
         String groupKeyPattern = request.getGroupKeyPattern();
         switch (request.getWatchType()) {
             case WATCH_TYPE_WATCH:
+                try {
+                    namingFuzzyWatchContextService.syncFuzzyWatcherContext(groupKeyPattern, meta.getConnectionId());
+                } catch (NacosException nacosException) {
+                    NamingFuzzyWatchResponse namingFuzzyWatchResponse = new NamingFuzzyWatchResponse();
+                    namingFuzzyWatchResponse.setErrorCode(nacosException.getErrCode());
+                    namingFuzzyWatchResponse.setMessage(nacosException.getErrMsg());
+                    return namingFuzzyWatchResponse;
+                }
                 NotifyCenter.publishEvent(
                         new ClientOperationEvent.ClientFuzzyWatchEvent(groupKeyPattern, meta.getConnectionId(),
                                 request.getReceivedGroupKeys(), request.isInitializing()));
                 return NamingFuzzyWatchResponse.buildSuccessResponse();
             case WATCH_TYPE_CANCEL_WATCH:
-                NotifyCenter.publishEvent(
-                        new ClientOperationEvent.ClientCancelFuzzyWatchEvent(groupKeyPattern, meta.getConnectionId()));
+                namingFuzzyWatchContextService.removeFuzzyWatchContext(groupKeyPattern, meta.getConnectionId());
                 return NamingFuzzyWatchResponse.buildSuccessResponse();
             default:
                 throw new NacosException(NacosException.INVALID_PARAM,

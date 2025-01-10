@@ -39,6 +39,11 @@ public class ConfigCommonConfig extends AbstractDynamicConfig {
     
     private boolean derbyOpsEnabled = false;
     
+    private int maxPatternCount=20;
+    
+    private int maxMatchedConfigCount=500;
+    
+    
     private ConfigCommonConfig() {
         super(CONFIG_COMMON);
         resetConfig();
@@ -60,16 +65,8 @@ public class ConfigCommonConfig extends AbstractDynamicConfig {
         return pushTimeout;
     }
     
-    public void setPushTimeout(long pushTimeout) {
-        this.pushTimeout = pushTimeout;
-    }
-    
     public int getBatchSize() {
         return batchSize;
-    }
-    
-    public void setBatchSize(int batchSize) {
-        this.batchSize = batchSize;
     }
     
     public boolean isDerbyOpsEnabled() {
@@ -80,12 +77,23 @@ public class ConfigCommonConfig extends AbstractDynamicConfig {
         this.derbyOpsEnabled = derbyOpsEnabled;
     }
     
+    public int getMaxPatternCount() {
+        return maxPatternCount;
+    }
+    
+    public int getMaxMatchedConfigCount() {
+        return maxMatchedConfigCount;
+    }
+    
     @Override
     protected void getConfigFromEnv() {
         maxPushRetryTimes = EnvUtil.getProperty("nacos.config.push.maxRetryTime", Integer.class, 50);
         pushTimeout = EnvUtil.getProperty("nacos.config.push.timeout", Long.class, 3000L);
         batchSize = EnvUtil.getProperty("nacos.config.push.batchSize", Integer.class, 20);
         derbyOpsEnabled = EnvUtil.getProperty("nacos.config.derby.ops.enabled", Boolean.class, false);
+    
+        maxPatternCount = EnvUtil.getProperty("nacos.config.fuzzy.watch.max.pattern.count", Integer.class, 20);
+        maxMatchedConfigCount = EnvUtil.getProperty("nacos.config.fuzzy.watch.max.pattern.match.config.count", Integer.class, 500);
     }
     
     @Override

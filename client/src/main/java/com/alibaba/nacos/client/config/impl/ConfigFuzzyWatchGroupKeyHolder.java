@@ -56,6 +56,7 @@ import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_INIT_NOTIFY;
 import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_RESOURCE_CHANGED;
 import static com.alibaba.nacos.api.common.Constants.WATCH_TYPE_CANCEL_WATCH;
 import static com.alibaba.nacos.api.common.Constants.WATCH_TYPE_WATCH;
+import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_OVER_LIMIT;
 
 /**
  * config fuzzy watch context holder.
@@ -211,6 +212,12 @@ public class ConfigFuzzyWatchGroupKeyHolder {
             LOGGER.info("[{}] [fuzzy-watch] init-notify-finished, pattern ->{}, match group keys count {}",
                     agent.getName(), request.getGroupKeyPattern(), context.getReceivedGroupKeys().size());
             context.markInitializationComplete();
+            return new ConfigFuzzyWatchSyncResponse();
+        }
+    
+        if (Constants.FUZZY_WATCH_MATCH_RESOURCE_OVER_LIMIT.equals(request.getSyncType())) {
+            LOGGER.info("[{}] [fuzzy-watch] pattern match config config count reach to up limit,pattern ->{}, received keys count {}",
+                    agent.getName(), request.getGroupKeyPattern(), context.getReceivedGroupKeys().size());
             return new ConfigFuzzyWatchSyncResponse();
         }
         
@@ -406,15 +413,20 @@ public class ConfigFuzzyWatchGroupKeyHolder {
                         
                     }
                 } catch (NacosException e) {
-                    // Log error and retry after a short delay
-                    LOGGER.error("Execute batch fuzzy listen config change error.", e);
-                    try {
-                        Thread.sleep(50L);
-                    } catch (InterruptedException interruptedException) {
-                        // Ignore interruption
+    
+                    if (FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode()==e.getErrCode()){
+                        LOGGER.error(" fuzzy watch pattern over limit,pattern ->{} ,fuzzy watch will be suppressed",entry.getGroupKeyPattern());
+                    } else {
+                        // Log error and retry after a short delay
+                        LOGGER.error("Execute batch fuzzy listen config change error.", e);
+                        try {
+                            Thread.sleep(50L);
+                        } catch (InterruptedException interruptedException) {
+                            // Ignore interruption
+                        }
+                        // Retry notification
+                        notifyFuzzyWatchSync();
                     }
-                    // Retry notification
-                    notifyFuzzyWatchSync();
                 }
             });
             listenFutures.add(future);
