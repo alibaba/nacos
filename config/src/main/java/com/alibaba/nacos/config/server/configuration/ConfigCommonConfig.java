@@ -39,10 +39,9 @@ public class ConfigCommonConfig extends AbstractDynamicConfig {
     
     private boolean derbyOpsEnabled = false;
     
-    private int maxPatternCount=20;
+    private int maxPatternCount = 20;
     
-    private int maxMatchedConfigCount=500;
-    
+    private int maxMatchedConfigCount = 500;
     
     private ConfigCommonConfig() {
         super(CONFIG_COMMON);
@@ -91,9 +90,10 @@ public class ConfigCommonConfig extends AbstractDynamicConfig {
         pushTimeout = EnvUtil.getProperty("nacos.config.push.timeout", Long.class, 3000L);
         batchSize = EnvUtil.getProperty("nacos.config.push.batchSize", Integer.class, 20);
         derbyOpsEnabled = EnvUtil.getProperty("nacos.config.derby.ops.enabled", Boolean.class, false);
-    
+        
         maxPatternCount = EnvUtil.getProperty("nacos.config.fuzzy.watch.max.pattern.count", Integer.class, 20);
-        maxMatchedConfigCount = EnvUtil.getProperty("nacos.config.fuzzy.watch.max.pattern.match.config.count", Integer.class, 500);
+        maxMatchedConfigCount = EnvUtil.getProperty("nacos.config.fuzzy.watch.max.pattern.match.config.count",
+                Integer.class, 500);
     }
     
     @Override

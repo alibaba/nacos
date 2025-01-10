@@ -26,12 +26,10 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.naming.cache.NamingFuzzyWatchContext;
 import com.alibaba.nacos.client.naming.cache.NamingFuzzyWatchServiceListHolder;
 import com.alibaba.nacos.client.naming.event.NamingFuzzyWatchNotifyEvent;
-import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
 import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
-import org.slf4j.Logger;
 
 import java.util.Collection;
 
@@ -40,10 +38,10 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
  * handle fuzzy watch request from server.
+ *
  * @author shiyiyue
  */
 public class NamingFuzzyWatchNotifyRequestHandler implements ServerRequestHandler {
-    
     
     NamingFuzzyWatchServiceListHolder namingFuzzyWatchServiceListHolder;
     
@@ -74,9 +72,13 @@ public class NamingFuzzyWatchNotifyRequestHandler implements ServerRequestHandle
                     }
                 } else if (watchNotifySyncRequest.getSyncType().equals(Constants.FINISH_FUZZY_WATCH_INIT_NOTIFY)) {
                     namingFuzzyWatchContext.markInitializationComplete();
-                } else if(watchNotifySyncRequest.getSyncType().equals(Constants.FUZZY_WATCH_MATCH_RESOURCE_OVER_LIMIT)) {
-                    NAMING_LOGGER.warn("[{}] [fuzzy-watch] pattern matched  service count reach to up limit,pattern ->{}, received keys count {}",
-                            namingFuzzyWatchServiceListHolder.getNotifierEventScope(), watchNotifySyncRequest.getGroupKeyPattern(), namingFuzzyWatchContext.getReceivedServiceKeys().size());
+                } else if (watchNotifySyncRequest.getSyncType()
+                        .equals(Constants.FUZZY_WATCH_MATCH_RESOURCE_OVER_LIMIT)) {
+                    NAMING_LOGGER.warn(
+                            "[{}] [fuzzy-watch] pattern matched  service count reach to up limit,pattern ->{}, received keys count {}",
+                            namingFuzzyWatchServiceListHolder.getNotifierEventScope(),
+                            watchNotifySyncRequest.getGroupKeyPattern(),
+                            namingFuzzyWatchContext.getReceivedServiceKeys().size());
                 }
             }
             

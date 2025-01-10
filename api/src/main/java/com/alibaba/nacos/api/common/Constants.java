@@ -297,7 +297,6 @@ public class Constants {
      * fuzzy watch sync type of watch resource changed.
      */
     public static final String FUZZY_WATCH_RESOURCE_CHANGED = "FUZZY_WATCH_RESOURCE_CHANGED";
-    
 
     /**
      * fuzzy watch sync type of watch init notify finish.

@@ -60,6 +60,7 @@ import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_OVER_
 
 /**
  * config fuzzy watch context holder.
+ *
  * @author shiyiyue
  */
 public class ConfigFuzzyWatchGroupKeyHolder {
@@ -162,8 +163,8 @@ public class ConfigFuzzyWatchGroupKeyHolder {
     /**
      * register fuzzy watcher.
      *
-     * @param dataIdPattern dataIdPattern.
-     * @param groupPattern groupPattern.
+     * @param dataIdPattern          dataIdPattern.
+     * @param groupPattern           groupPattern.
      * @param fuzzyWatchEventWatcher fuzzyWatchEventWatcher.
      * @return
      */
@@ -183,7 +184,7 @@ public class ConfigFuzzyWatchGroupKeyHolder {
         }
         return configFuzzyWatchContext;
     }
- 
+    
     /**
      * Retrieves the FuzzyListenContext for the given data ID pattern and group.
      *
@@ -214,9 +215,10 @@ public class ConfigFuzzyWatchGroupKeyHolder {
             context.markInitializationComplete();
             return new ConfigFuzzyWatchSyncResponse();
         }
-    
+        
         if (Constants.FUZZY_WATCH_MATCH_RESOURCE_OVER_LIMIT.equals(request.getSyncType())) {
-            LOGGER.info("[{}] [fuzzy-watch] pattern match config config count reach to up limit,pattern ->{}, received keys count {}",
+            LOGGER.info(
+                    "[{}] [fuzzy-watch] pattern match config config count reach to up limit,pattern ->{}, received keys count {}",
                     agent.getName(), request.getGroupKeyPattern(), context.getReceivedGroupKeys().size());
             return new ConfigFuzzyWatchSyncResponse();
         }
@@ -413,9 +415,10 @@ public class ConfigFuzzyWatchGroupKeyHolder {
                         
                     }
                 } catch (NacosException e) {
-    
-                    if (FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode()==e.getErrCode()){
-                        LOGGER.error(" fuzzy watch pattern over limit,pattern ->{} ,fuzzy watch will be suppressed",entry.getGroupKeyPattern());
+                    
+                    if (FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode() == e.getErrCode()) {
+                        LOGGER.error(" fuzzy watch pattern over limit,pattern ->{} ,fuzzy watch will be suppressed",
+                                entry.getGroupKeyPattern());
                     } else {
                         // Log error and retry after a short delay
                         LOGGER.error("Execute batch fuzzy listen config change error.", e);

@@ -155,6 +155,7 @@ public class NamingFuzzyWatchServiceListHolder extends Subscriber<NamingFuzzyWat
     
     /**
      * init fuzzy watch context.
+     *
      * @param groupKeyPattern groupKeyPattern.
      * @return fuzzy context.
      */
@@ -174,7 +175,8 @@ public class NamingFuzzyWatchServiceListHolder extends Subscriber<NamingFuzzyWat
     }
     
     /**
-     *  remove fuzzy watch context for pattern.
+     * remove fuzzy watch context for pattern.
+     *
      * @param groupKeyPattern group key pattern.
      */
     public synchronized void removePatternMatchCache(String groupKeyPattern) {
@@ -280,8 +282,9 @@ public class NamingFuzzyWatchServiceListHolder extends Subscriber<NamingFuzzyWat
                 // Log error and retry after a short delay
                 LOGGER.error(" fuzzy watch request fail.", e);
                 
-                if (FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode()==e.getErrCode()){
-                    LOGGER.error(" fuzzy watch pattern over limit,pattern ->{} ,fuzzy watch will be suppressed",entry.getGroupKeyPattern());
+                if (FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode() == e.getErrCode()) {
+                    LOGGER.error(" fuzzy watch pattern over limit,pattern ->{} ,fuzzy watch will be suppressed",
+                            entry.getGroupKeyPattern());
                 } else {
                     try {
                         Thread.sleep(100L);

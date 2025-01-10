@@ -135,7 +135,7 @@ public class ConfigFuzzyWatchSyncNotifier extends SmartSubscriber {
                 FuzzyWatchRpcPushTask fuzzyWatchRpcPushTask = new FuzzyWatchRpcPushTask(request, null,
                         maxPushRetryTimes, event.getConnectionId());
                 push(fuzzyWatchRpcPushTask, connectionManager);
-            }else if(matchGroupKeys.size()>=ConfigCommonConfig.getInstance().getMaxMatchedConfigCount()){
+            } else if (matchGroupKeys.size() >= ConfigCommonConfig.getInstance().getMaxMatchedConfigCount()) {
                 // no diff but
                 ConfigFuzzyWatchSyncRequest request = ConfigFuzzyWatchSyncRequest.buildOverLimitRequest(
                         event.getGroupKeyPattern());

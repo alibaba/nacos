@@ -45,6 +45,7 @@ import static com.alibaba.nacos.api.common.Constants.ServiceChangedType.DELETE_S
 
 /**
  * fuzzy watch event  for fuzzy watch.
+ *
  * @author shiyiyue
  */
 @Service
@@ -115,7 +116,7 @@ public class NamingFuzzyWatchSyncNotifier extends SmartSubscriber {
             fuzzyWatchPushDelayTaskEngine.addTask(FuzzyWatchPushDelayTaskEngine.getTaskKey(fuzzyWatchSyncNotifyTask),
                     fuzzyWatchSyncNotifyTask);
             
-        }else if(FUZZY_WATCH_DIFF_SYNC_NOTIFY.equals(syncType)){
+        } else if (FUZZY_WATCH_DIFF_SYNC_NOTIFY.equals(syncType)) {
             FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTask = new FuzzyWatchSyncNotifyTask(
                     clientFuzzyWatchEvent.getClientId(), completedPattern, FUZZY_WATCH_MATCH_RESOURCE_OVER_LIMIT, null,
                     PushConfig.getInstance().getPushTaskRetryDelay());

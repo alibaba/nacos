@@ -83,9 +83,10 @@ public class ConfigFuzzyWatchRequestHandler extends RequestHandler<ConfigFuzzyWa
                 configFuzzyWatchContextService.addFuzzyWatch(groupKeyPattern, connectionId);
                 // Get existing group keys for the client and publish initialization event
                 Set<String> clientExistingGroupKeys = request.getReceivedGroupKeys();
-                NotifyCenter.publishEvent(new ConfigFuzzyWatchEvent(connectionId, clientExistingGroupKeys, groupKeyPattern,
-                        request.isInitializing()));
-            }catch(NacosException nacosException){
+                NotifyCenter.publishEvent(
+                        new ConfigFuzzyWatchEvent(connectionId, clientExistingGroupKeys, groupKeyPattern,
+                                request.isInitializing()));
+            } catch (NacosException nacosException) {
                 ConfigFuzzyWatchResponse configFuzzyWatchResponse = new ConfigFuzzyWatchResponse();
                 configFuzzyWatchResponse.setErrorCode(nacosException.getErrCode());
                 configFuzzyWatchResponse.setMessage(nacosException.getErrMsg());
@@ -93,7 +94,7 @@ public class ConfigFuzzyWatchRequestHandler extends RequestHandler<ConfigFuzzyWa
             }
             
         } else if (WATCH_TYPE_CANCEL_WATCH.equals(request.getWatchType())) {
-            configFuzzyWatchContextService.removeFuzzyListen(groupKeyPattern,connectionId);
+            configFuzzyWatchContextService.removeFuzzyListen(groupKeyPattern, connectionId);
         }
         
         // Return response

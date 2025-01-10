@@ -56,7 +56,6 @@ public class ConfigFuzzyWatchContextService {
      */
     private final Map<String, Set<String>> matchedGroupKeys = new ConcurrentHashMap<>();
     
-    
     public ConfigFuzzyWatchContextService() {
     }
     
@@ -86,10 +85,11 @@ public class ConfigFuzzyWatchContextService {
                     LogUtil.DEFAULT_LOG.info("[fuzzy-watch] no client watched pattern {},remove watchedClients context",
                             matchedGroupKeys.getKey());
                     this.watchedClients.remove(matchedGroupKeys.getKey());
-                } else if(matchedGroupKeys.getValue().size()>=ConfigCommonConfig.getInstance().getMaxMatchedConfigCount()){
+                } else if (matchedGroupKeys.getValue().size() >= ConfigCommonConfig.getInstance()
+                        .getMaxMatchedConfigCount()) {
                     LogUtil.DEFAULT_LOG.warn(
                             "[fuzzy-watch] pattern {} matched groupKey count is reach to upper limit {}, fuzzy watch notify may be suppressed ",
-                            matchedGroupKeys.getKey(),matchedGroupKeys.getValue().size());
+                            matchedGroupKeys.getKey(), matchedGroupKeys.getValue().size());
                 }
             }
         } catch (Throwable throwable) {
@@ -188,7 +188,7 @@ public class ConfigFuzzyWatchContextService {
      *
      * @param groupKeyPattern The group key pattern to associate with the listen connection.
      * @param connectId       The connection ID to be added.
-     * @throws NacosException   over max pattern count.
+     * @throws NacosException over max pattern count.
      */
     public synchronized void addFuzzyWatch(String groupKeyPattern, String connectId) throws NacosException {
         watchedClients.computeIfAbsent(groupKeyPattern, k -> new HashSet<>());
