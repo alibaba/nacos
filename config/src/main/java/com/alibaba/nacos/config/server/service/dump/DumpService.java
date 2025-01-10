@@ -142,7 +142,7 @@ public abstract class DumpService {
         if (event instanceof ConfigDataChangeEvent) {
             ConfigDataChangeEvent evt = (ConfigDataChangeEvent) event;
             DumpRequest dumpRequest = DumpRequest.create(evt.dataId, evt.group, evt.tenant, evt.lastModifiedTs,
-                    NetUtils.localIP());
+                    NetUtils.localIp());
             dumpRequest.setGrayName(evt.grayName);
             DumpService.this.dump(dumpRequest);
         }

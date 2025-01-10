@@ -46,7 +46,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -67,6 +67,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @RestController
 @RequestMapping(Commons.NACOS_CORE_CONTEXT_V2 + "/loader")
 @Deprecated
+@SuppressWarnings("PMD.MethodTooLongRule")
 public class ServerLoaderController {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ServerLoaderController.class);

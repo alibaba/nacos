@@ -28,10 +28,10 @@ import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.persistence.model.Page;
+import jakarta.servlet.ServletException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.ServletException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;

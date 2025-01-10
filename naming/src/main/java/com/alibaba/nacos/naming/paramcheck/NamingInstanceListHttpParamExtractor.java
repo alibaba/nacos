@@ -21,7 +21,7 @@ import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.utils.StringUtils;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 

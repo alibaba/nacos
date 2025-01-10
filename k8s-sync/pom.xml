@@ -34,10 +34,6 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>nacos-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
             <artifactId>nacos-naming</artifactId>
         </dependency>
         
@@ -48,12 +44,6 @@
         <dependency>
             <groupId>io.kubernetes</groupId>
             <artifactId>client-java</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-beans</artifactId>
-            <version>5.3.20</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>

@@ -201,7 +201,7 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
             List<String> lines = IoUtils.readLines(new StringReader(httpResult.getData()));
             List<String> result = new ArrayList<>(lines.size());
             for (String serverAddr : lines) {
-                String[] ipPort = InternetAddressUtil.splitIPPortStr(serverAddr);
+                String[] ipPort = InternetAddressUtil.splitIpPortStr(serverAddr);
                 String ip = ipPort[0].trim();
                 if (ipPort.length == 1) {
                     result.add(ip + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort());

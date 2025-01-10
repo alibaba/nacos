@@ -43,6 +43,7 @@ import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.servlet.ServletContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -62,7 +63,6 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import javax.servlet.ServletContext;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -71,7 +71,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -124,6 +124,7 @@ class ConfigControllerTest {
         ReflectionTestUtils.setField(configController, "configOperationService", configOperationService);
         ReflectionTestUtils.setField(configController, "inner", inner);
         mockmvc = MockMvcBuilders.standaloneSetup(configController).build();
+        NotifyCenter.deregisterPublisher(ConfigDataChangeEvent.class);
     }
     
     @Test
@@ -220,9 +221,9 @@ class ConfigControllerTest {
         String data = JacksonUtils.toObj(actualValue).get("data").toString();
         assertEquals("200", code);
         assertEquals("true", data);
-        Thread.sleep(200L);
+        Thread.sleep(1200L);
         //expect
-        assertTrue(reference.get() != null);
+        assertNotNull(reference.get());
     }
     
     @Test

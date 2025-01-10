@@ -18,11 +18,10 @@ package com.alibaba.nacos.core.web;
 
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import jakarta.servlet.ServletContext;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
-
-import javax.servlet.ServletContext;
 
 /**
  * Nacos web server listener which listen web container ready and listen the context path changed.
