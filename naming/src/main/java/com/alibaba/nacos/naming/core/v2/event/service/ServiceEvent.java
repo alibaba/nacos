@@ -45,17 +45,25 @@ public class ServiceEvent extends Event {
         
         private static final long serialVersionUID = 2123694271992630822L;
         
-        public ServiceChangedEvent(Service service) {
-            this(service, false);
+        private final String changedType;
+        
+        public ServiceChangedEvent(Service service, String changedType) {
+            this(service, changedType, false);
         }
         
-        public ServiceChangedEvent(Service service, boolean incrementRevision) {
+        public ServiceChangedEvent(Service service, String changedType, boolean incrementRevision) {
             super(service);
+            this.changedType = changedType;
             service.renewUpdateTime();
             if (incrementRevision) {
                 service.incrementRevision();
             }
         }
+        
+        public String getChangedType() {
+            return changedType;
+        }
+        
     }
     
     /**
@@ -64,14 +72,14 @@ public class ServiceEvent extends Event {
     public static class ServiceSubscribedEvent extends ServiceEvent {
         
         private static final long serialVersionUID = -2645441445867337345L;
-    
+        
         private final String clientId;
         
         public ServiceSubscribedEvent(Service service, String clientId) {
             super(service);
             this.clientId = clientId;
         }
-    
+        
         public String getClientId() {
             return clientId;
         }
