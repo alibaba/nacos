@@ -30,17 +30,19 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 
 import static com.alibaba.nacos.config.server.constant.Constants.LIMIT_ERROR_CODE;
 
 /**
- * Capacity Management Aspect for config service.
+ * Capacity management aspect for config service.
  *
  * @author Nacos
  */
 @Aspect
+@Component
 public class CapacityManagementAspect {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(CapacityManagementAspect.class);
@@ -61,14 +63,14 @@ public class CapacityManagementAspect {
     }
     
     /**
-     * Intercept publishConfig operations to perform capacity management checks.
+     * Intercept publish config operations to perform capacity management checks.
      */
     @Around(PUBLISH_CONFIG)
     public Object aroundSyncUpdateConfigAll(ProceedingJoinPoint pjp) throws Throwable {
         if (!PropertyUtil.isManageCapacity()) {
             return pjp.proceed();
         }
-        
+
         Object[] args = pjp.getArgs();
         ConfigForm configForm = (ConfigForm) args[0];
         ConfigRequestInfo configRequestInfo = (ConfigRequestInfo) args[1];
@@ -78,10 +80,10 @@ public class CapacityManagementAspect {
         String content = configForm.getContent();
         String betaIps = configRequestInfo.getBetaIps();
         String tag = configForm.getTag();
-        
+
         LOGGER.info("[CapacityManagement] Intercepting publishConfig operation for dataId: {}, group: {}, namespaceId: {}",
                 dataId, group, namespaceId);
-        
+
         if (StringUtils.isBlank(betaIps) && StringUtils.isBlank(tag)) {
             // do capacity management limitation check for writing or updating config_info table.
             if (configInfoPersistService.findConfigInfo(dataId, group, namespaceId) == null) {
@@ -142,7 +144,7 @@ public class CapacityManagementAspect {
     }
     
     /**
-     * Intercept deleteConfig operations to perform capacity management checks.
+     * Intercept delete config operations to perform capacity management checks.
      */
     @Around(DELETE_CONFIG)
     public Object aroundDeleteConfig(ProceedingJoinPoint pjp) throws Throwable {
