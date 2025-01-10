@@ -65,6 +65,10 @@ public class ConfigChangeAspect {
     
     private static final String ENABLED = "enabled";
     
+    private static final String SCR_TYPE_HTTP = "http";
+    
+    private static final String SCR_TYPE_RPC = "rpc";
+    
     /**
      * Publish config.
      */
@@ -119,10 +123,10 @@ public class ConfigChangeAspect {
         final String scrType = configRequestInfo.getSrcType();
         
         ConfigChangePointCutTypes configChangePointCutType = null;
-        if (scrType.equals("http")) {
+        if (SCR_TYPE_HTTP.equals(scrType)) {
             // via console or api calls
             configChangePointCutType = ConfigChangePointCutTypes.PUBLISH_BY_HTTP;  
-        } else if (scrType.equals("rpc")) {
+        } else if (SCR_TYPE_RPC.equals(scrType)) {
             // via sdk rpc calls
             configChangePointCutType = ConfigChangePointCutTypes.PUBLISH_BY_RPC;
         }
@@ -163,10 +167,10 @@ public class ConfigChangeAspect {
         String scrType = (String) args[5];
         
         ConfigChangePointCutTypes configChangePointCutType = null;
-        if (scrType.equals("http")) {
+        if (SCR_TYPE_HTTP.equals(scrType)) {
             // via console or api calls
             configChangePointCutType = ConfigChangePointCutTypes.PUBLISH_BY_HTTP;
-        } else if (scrType.equals("rpc")) {
+        } else if (SCR_TYPE_RPC.equals(scrType)) {
             // via sdk rpc calls
             configChangePointCutType = ConfigChangePointCutTypes.PUBLISH_BY_RPC;
         }
