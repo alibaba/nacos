@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
@@ -47,22 +48,21 @@ import static org.mockito.Mockito.when;
 
 class MD5UtilTest {
     
-    MockedStatic<EnvUtil> envUtilMockedStatic;
-    
     MockedStatic<ConfigCacheService> configCacheServiceMockedStatic;
     
     MockedStatic<Md5ComparatorDelegate> md5ComparatorDelegateMockedStatic;
     
     @BeforeEach
     void setUp() {
-        envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty("nacos.config.cache.type", "nacos");
+        EnvUtil.setEnvironment(environment);
         configCacheServiceMockedStatic = Mockito.mockStatic(ConfigCacheService.class);
         md5ComparatorDelegateMockedStatic = Mockito.mockStatic(Md5ComparatorDelegate.class);
     }
     
     @AfterEach
     void tearDown() {
-        envUtilMockedStatic.close();
         configCacheServiceMockedStatic.close();
         md5ComparatorDelegateMockedStatic.close();
     }
@@ -81,7 +81,6 @@ class MD5UtilTest {
         request.addHeader("Vipserver-Tag", "test");
         MockHttpServletResponse response = new MockHttpServletResponse();
         
-        envUtilMockedStatic.when(() -> EnvUtil.getProperty("nacos.config.cache.type", "nacos")).thenReturn("nacos");
         when(md5ComparatorDelegate.compareMd5(request, response, clientMd5Map)).thenReturn(new ArrayList<>());
         MD5Util.compareMd5(request, response, clientMd5Map);
         
@@ -138,7 +137,8 @@ class MD5UtilTest {
     void testGetClientMd5Map() {
         
         String configKeysString =
-                "test0" + MD5Util.WORD_SEPARATOR_CHAR + "test1" + MD5Util.WORD_SEPARATOR_CHAR + "test2" + MD5Util.LINE_SEPARATOR_CHAR;
+                "test0" + MD5Util.WORD_SEPARATOR_CHAR + "test1" + MD5Util.WORD_SEPARATOR_CHAR + "test2"
+                        + MD5Util.LINE_SEPARATOR_CHAR;
         
         Map<String, String> actualValueMap = MD5Util.getClientMd5Map(configKeysString);
         
@@ -149,8 +149,8 @@ class MD5UtilTest {
     @Test
     void testGetClientMd5MapForNewProtocol() {
         String configKeysString =
-                "test0" + MD5Util.WORD_SEPARATOR_CHAR + "test1" + MD5Util.WORD_SEPARATOR_CHAR + "test2" + MD5Util.WORD_SEPARATOR_CHAR
-                        + "test3" + MD5Util.LINE_SEPARATOR_CHAR;
+                "test0" + MD5Util.WORD_SEPARATOR_CHAR + "test1" + MD5Util.WORD_SEPARATOR_CHAR + "test2"
+                        + MD5Util.WORD_SEPARATOR_CHAR + "test3" + MD5Util.LINE_SEPARATOR_CHAR;
         
         Map<String, String> actualValueMap = MD5Util.getClientMd5Map(configKeysString);
         
