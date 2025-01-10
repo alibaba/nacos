@@ -30,14 +30,17 @@ public class ConfigRequestInfo implements Serializable {
     
     private String srcIp;
     
+    private String srcType;
+    
     private String requestIpApp;
     
     private String betaIps;
     
     private String casMd5;
     
-    public ConfigRequestInfo(String srcIp, String requestIpApp, String betaIps, String casMd5) {
+    public ConfigRequestInfo(String srcIp, String srcType, String requestIpApp, String betaIps, String casMd5) {
         this.srcIp = srcIp;
+        this.srcType = srcType;
         this.requestIpApp = requestIpApp;
         this.betaIps = betaIps;
         this.casMd5 = casMd5;
@@ -52,6 +55,14 @@ public class ConfigRequestInfo implements Serializable {
     
     public void setSrcIp(String srcIp) {
         this.srcIp = srcIp;
+    }
+    
+    public String getSrcType() {
+        return srcType;
+    }
+    
+    public void setSrcType(String srcType) {
+        this.srcType = srcType;
     }
     
     public String getRequestIpApp() {

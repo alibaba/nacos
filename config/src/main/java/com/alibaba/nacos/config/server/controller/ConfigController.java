@@ -214,6 +214,7 @@ public class ConfigController {
         
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
         configRequestInfo.setSrcIp(RequestUtil.getRemoteIp(request));
+        configRequestInfo.setSrcType("http");
         configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
         configRequestInfo.setBetaIps(request.getHeader("betaIps"));
         configRequestInfo.setCasMd5(request.getHeader("casMd5"));
@@ -299,7 +300,7 @@ public class ConfigController {
         String clientIp = RequestUtil.getRemoteIp(request);
         String srcUser = RequestUtil.getSrcUserName(request);
         
-        return configOperationService.deleteConfig(dataId, group, tenant, tag, clientIp, srcUser);
+        return configOperationService.deleteConfig(dataId, group, tenant, tag, clientIp, srcUser, "http");
     }
     
     /**
@@ -664,7 +665,7 @@ public class ConfigController {
         final String srcIp = RequestUtil.getRemoteIp(request);
         String requestIpApp = RequestUtil.getAppName(request);
         final Timestamp time = TimeUtils.getCurrentTime();
-        Map<String, Object> saveResult = configInfoPersistService.batchInsertOrUpdate(configInfoList, srcUser, srcIp,
+        Map<String, Object> saveResult = configOperationService.batchInsertOrUpdate(configInfoList, srcUser, srcIp,
                 null, policy);
         for (ConfigInfo configInfo : configInfoList) {
             ConfigChangePublisher.notifyConfigChange(
@@ -916,7 +917,7 @@ public class ConfigController {
         final String srcIp = RequestUtil.getRemoteIp(request);
         String requestIpApp = RequestUtil.getAppName(request);
         final Timestamp time = TimeUtils.getCurrentTime();
-        Map<String, Object> saveResult = configInfoPersistService.batchInsertOrUpdate(configInfoList4Clone, srcUser,
+        Map<String, Object> saveResult = configOperationService.batchInsertOrUpdate(configInfoList4Clone, srcUser,
                 srcIp, null, policy);
         for (ConfigInfo configInfo : configInfoList4Clone) {
             ConfigChangePublisher.notifyConfigChange(

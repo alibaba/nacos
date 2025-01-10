@@ -26,6 +26,7 @@ import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
+import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
@@ -294,7 +295,7 @@ public class ConfigOperationService {
      * Synchronously delete all pre-aggregation data under a dataId.
      */
     public Boolean deleteConfig(String dataId, String group, String namespaceId, String tag, String clientIp,
-            String srcUser) {
+            String srcUser, String srcType) {
         String persistEvent = ConfigTraceService.PERSISTENCE_EVENT;
         String grayName = "";
         if (StringUtils.isBlank(tag)) {
@@ -341,6 +342,14 @@ public class ConfigOperationService {
         }
         
         return true;
+    }
+    
+    /**
+     * Batch insert or update configuration information.
+     */
+    public Map<String, Object> batchInsertOrUpdate(List<ConfigAllInfo> configInfoList, String srcUser, String srcIp,
+            Map<String, Object> configAdvanceInfo, SameConfigPolicy policy) throws NacosException {
+        return configInfoPersistService.batchInsertOrUpdate(configInfoList, srcUser, srcIp, configAdvanceInfo, policy);
     }
     
     public Map<String, Object> getConfigAdvanceInfo(ConfigForm configForm) {

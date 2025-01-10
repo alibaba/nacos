@@ -166,7 +166,7 @@ class ConfigControllerTest {
     @Test
     void testDeleteConfig() throws Exception {
         when(configOperationService.deleteConfig(anyString(), anyString(), anyString(), anyString(), any(),
-                any())).thenReturn(true);
+                any(), any())).thenReturn(true);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.delete(Constants.CONFIG_CONTROLLER_PATH)
                 .param("dataId", "test").param("group", "test").param("tenant", "").param("tag", "");
@@ -421,7 +421,7 @@ class ConfigControllerTest {
         when(namespacePersistService.tenantInfoCountByTenantId("public")).thenReturn(1);
         Map<String, Object> map = new HashMap<>();
         map.put("test", "test");
-        when(configInfoPersistService.batchInsertOrUpdate(anyList(), anyString(), anyString(), any(),
+        when(configOperationService.batchInsertOrUpdate(anyList(), anyString(), anyString(), any(),
                 any())).thenReturn(map);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(Constants.CONFIG_CONTROLLER_PATH)
@@ -463,7 +463,7 @@ class ConfigControllerTest {
         when(namespacePersistService.tenantInfoCountByTenantId("public")).thenReturn(1);
         Map<String, Object> map = new HashMap<>();
         map.put("test", "test");
-        when(configInfoPersistService.batchInsertOrUpdate(anyList(), anyString(), anyString(), any(),
+        when(configOperationService.batchInsertOrUpdate(anyList(), anyString(), anyString(), any(),
                 any())).thenReturn(map);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(Constants.CONFIG_CONTROLLER_PATH)
@@ -506,7 +506,7 @@ class ConfigControllerTest {
         
         Map<String, Object> map = new HashMap<>();
         map.put("test", "test");
-        when(configInfoPersistService.batchInsertOrUpdate(anyList(), anyString(), anyString(), any(),
+        when(configOperationService.batchInsertOrUpdate(anyList(), anyString(), anyString(), any(),
                 any())).thenReturn(map);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(Constants.CONFIG_CONTROLLER_PATH)

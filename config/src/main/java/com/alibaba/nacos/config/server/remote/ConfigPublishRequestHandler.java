@@ -100,6 +100,7 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
             
             ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
             configRequestInfo.setSrcIp(srcIp);
+            configRequestInfo.setSrcType("rpc");
             configRequestInfo.setRequestIpApp(meta.getLabels().get(Constants.APPNAME));
             configRequestInfo.setBetaIps(request.getAdditionParam("betaIps"));
             configRequestInfo.setCasMd5(request.getCasMd5());

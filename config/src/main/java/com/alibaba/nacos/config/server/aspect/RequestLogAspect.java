@@ -47,27 +47,15 @@ import java.util.concurrent.atomic.AtomicLong;
 @Component
 public class RequestLogAspect {
     
-    /**
-     * Publish config.
-     */
     private static final String PUBLISH_CONFIG =
             "execution(* com.alibaba.nacos.config.server.service.ConfigOperationService.publishConfig(..))";
     
-    /**
-     * Get config.
-     */
     private static final String GET_CONFIG =
             "execution(* com.alibaba.nacos.config.server.service.query.ConfigQueryChainService.handle(..))";
     
-    /**
-     * Delete config.
-     */
     private static final String DELETE_CONFIG =
             "execution(* com.alibaba.nacos.config.server.service.ConfigOperationService.deleteConfig(..))";
     
-    /**
-     * Listen for config changes.
-     */
     private static final String CONFIG_CHANGE_LISTEN_RPC =
             "execution(* com.alibaba.nacos.core.remote.RequestHandler.handleRequest(..)) "
                     + " && target(com.alibaba.nacos.config.server.remote.ConfigChangeBatchListenRequestHandler) && args(request,meta)";
@@ -80,7 +68,6 @@ public class RequestLogAspect {
         Object[] args = pjp.getArgs();
         ConfigForm configForm = (ConfigForm) args[0];
         ConfigRequestInfo configRequestInfo = (ConfigRequestInfo) args[1];
-        
         String dataId = configForm.getDataId();
         String group = configForm.getGroup();
         String namespaceId = configForm.getNamespaceId();
@@ -103,7 +90,6 @@ public class RequestLogAspect {
     public Object interfaceGetConfig(ProceedingJoinPoint pjp) throws Throwable {
         Object[] args = pjp.getArgs();
         ConfigQueryChainRequest chainRequest = (ConfigQueryChainRequest) args[0];
-        
         String dataId = chainRequest.getDataId();
         String group = chainRequest.getGroup();
         String tenant = chainRequest.getTenant();

@@ -63,7 +63,7 @@ public class ConfigRemoveRequestHandler extends RequestHandler<ConfigRemoveReque
         ParamUtils.checkParam(tag);
         
         try {
-            configOperationService.deleteConfig(dataId, group, tenant, tag, clientIp, null);
+            configOperationService.deleteConfig(dataId, group, tenant, tag, clientIp, null, "rpc");
             return ConfigRemoveResponse.buildSuccessResponse();
         } catch (Exception e) {
             Loggers.REMOTE_DIGEST.error("remove config error,error msg is {}", e.getMessage(), e);

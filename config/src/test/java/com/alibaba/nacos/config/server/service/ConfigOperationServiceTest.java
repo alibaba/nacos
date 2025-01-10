@@ -195,12 +195,12 @@ class ConfigOperationServiceTest {
     void testDeleteConfig() {
         
         // if tag is blank
-        Boolean aResult = configOperationService.deleteConfig("test", "test", "", "", "1.1.1.1", "test");
+        Boolean aResult = configOperationService.deleteConfig("test", "test", "", "", "1.1.1.1", "test", "http");
         verify(configInfoPersistService).removeConfigInfo(eq("test"), eq("test"), eq(""), any(), any());
         assertTrue(aResult);
         
         // if tag is not blank
-        Boolean bResult = configOperationService.deleteConfig("test", "test", "", "test", "1.1.1.1", "test");
+        Boolean bResult = configOperationService.deleteConfig("test", "test", "", "test", "1.1.1.1", "test", "http");
         verify(configInfoTagPersistService).removeConfigInfoTag(eq("test"), eq("test"), eq(""), eq("test"), any(),
                 any());
         assertTrue(bResult);
