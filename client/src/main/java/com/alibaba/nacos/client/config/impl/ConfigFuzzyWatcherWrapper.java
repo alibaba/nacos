@@ -24,11 +24,12 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- *  ConfigFuzzyWatcherWrapper.
+ * ConfigFuzzyWatcherWrapper.
+ *
  * @author shiyiyue
  */
 public class ConfigFuzzyWatcherWrapper {
-    
+
     FuzzyWatchEventWatcher fuzzyWatchEventWatcher;
     
     public ConfigFuzzyWatcherWrapper(FuzzyWatchEventWatcher fuzzyWatchEventWatcher) {
@@ -58,7 +59,7 @@ public class ConfigFuzzyWatcherWrapper {
     public int hashCode() {
         return Objects.hash(fuzzyWatchEventWatcher, uuid);
     }
-
+    
     Set<String> getSyncGroupKeys() {
         return syncGroupKeys;
     }

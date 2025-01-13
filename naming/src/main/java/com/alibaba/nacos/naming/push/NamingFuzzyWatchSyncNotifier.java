@@ -39,7 +39,6 @@ import java.util.Set;
 import static com.alibaba.nacos.api.common.Constants.FINISH_FUZZY_WATCH_INIT_NOTIFY;
 import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_DIFF_SYNC_NOTIFY;
 import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_INIT_NOTIFY;
-import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_MATCH_RESOURCE_OVER_LIMIT;
 import static com.alibaba.nacos.api.common.Constants.ServiceChangedType.ADD_SERVICE;
 import static com.alibaba.nacos.api.common.Constants.ServiceChangedType.DELETE_SERVICE;
 
@@ -90,9 +89,16 @@ public class NamingFuzzyWatchSyncNotifier extends SmartSubscriber {
         Set<String> clientReceivedGroupKeys = clientFuzzyWatchEvent.getClientReceivedServiceKeys();
         List<FuzzyGroupKeyPattern.GroupKeyState> groupKeyStates = FuzzyGroupKeyPattern.diffGroupKeys(
                 patternMatchedServiceKeys, clientReceivedGroupKeys);
-        Set<NamingFuzzyWatchSyncRequest.Context> syncContext = convert(groupKeyStates);
+        
+        // delete notify protection when pattern match count over limit because patternMatchedServiceKeys may not full set.
+        if (namingFuzzyWatchContextService.reachToUpLimit(completedPattern)) {
+            groupKeyStates.removeIf(item -> !item.isExist());
+        }
+        
         String syncType =
                 clientFuzzyWatchEvent.isInitializing() ? FUZZY_WATCH_INIT_NOTIFY : FUZZY_WATCH_DIFF_SYNC_NOTIFY;
+        
+        Set<NamingFuzzyWatchSyncRequest.Context> syncContext = convert(groupKeyStates);
         
         if (CollectionUtils.isNotEmpty(groupKeyStates)) {
             Set<Set<NamingFuzzyWatchSyncRequest.Context>> dividedServices = divideServiceByBatch(syncContext);
@@ -116,12 +122,6 @@ public class NamingFuzzyWatchSyncNotifier extends SmartSubscriber {
             fuzzyWatchPushDelayTaskEngine.addTask(FuzzyWatchPushDelayTaskEngine.getTaskKey(fuzzyWatchSyncNotifyTask),
                     fuzzyWatchSyncNotifyTask);
             
-        } else if (FUZZY_WATCH_DIFF_SYNC_NOTIFY.equals(syncType)) {
-            FuzzyWatchSyncNotifyTask fuzzyWatchSyncNotifyTask = new FuzzyWatchSyncNotifyTask(
-                    clientFuzzyWatchEvent.getClientId(), completedPattern, FUZZY_WATCH_MATCH_RESOURCE_OVER_LIMIT, null,
-                    PushConfig.getInstance().getPushTaskRetryDelay());
-            fuzzyWatchPushDelayTaskEngine.addTask(FuzzyWatchPushDelayTaskEngine.getTaskKey(fuzzyWatchSyncNotifyTask),
-                    fuzzyWatchSyncNotifyTask);
         }
     }
     

@@ -87,7 +87,7 @@ public class ConfigFuzzyWatchSyncNotifier extends SmartSubscriber {
      * @param retryTask         The retry task containing the RPC push request
      * @param connectionManager The connection manager for managing client connections
      */
-    private static void push(FuzzyWatchRpcPushTask retryTask, ConnectionManager connectionManager) {
+    static void push(FuzzyWatchRpcPushTask retryTask, ConnectionManager connectionManager) {
         ConfigFuzzyWatchSyncRequest notifyRequest = retryTask.notifyRequest;
         // Check if the maximum retry times have been reached
         if (retryTask.isOverTimes()) {
@@ -126,20 +126,10 @@ public class ConfigFuzzyWatchSyncNotifier extends SmartSubscriber {
                 clientExistingGroupKeys);
         
         if (CollectionUtils.isEmpty(configStates)) {
+            int maxPushRetryTimes = ConfigCommonConfig.getInstance().getMaxPushRetryTimes();
             if (event.isInitializing()) {
-                
                 ConfigFuzzyWatchSyncRequest request = ConfigFuzzyWatchSyncRequest.buildInitFinishRequest(
                         event.getGroupKeyPattern());
-                int maxPushRetryTimes = ConfigCommonConfig.getInstance().getMaxPushRetryTimes();
-                // Create RPC push task and push the request to the client
-                FuzzyWatchRpcPushTask fuzzyWatchRpcPushTask = new FuzzyWatchRpcPushTask(request, null,
-                        maxPushRetryTimes, event.getConnectionId());
-                push(fuzzyWatchRpcPushTask, connectionManager);
-            } else if (matchGroupKeys.size() >= ConfigCommonConfig.getInstance().getMaxMatchedConfigCount()) {
-                // no diff but
-                ConfigFuzzyWatchSyncRequest request = ConfigFuzzyWatchSyncRequest.buildOverLimitRequest(
-                        event.getGroupKeyPattern());
-                int maxPushRetryTimes = ConfigCommonConfig.getInstance().getMaxPushRetryTimes();
                 // Create RPC push task and push the request to the client
                 FuzzyWatchRpcPushTask fuzzyWatchRpcPushTask = new FuzzyWatchRpcPushTask(request, null,
                         maxPushRetryTimes, event.getConnectionId());
@@ -147,6 +137,12 @@ public class ConfigFuzzyWatchSyncNotifier extends SmartSubscriber {
             }
             
         } else {
+            
+            // delete notify protection when pattern match count over limit because matchGroupKeys may not a full set.
+            if (configFuzzyWatchContextService.reachToUpLimit(event.getGroupKeyPattern())) {
+                configStates.removeIf(item -> !item.isExist());
+            }
+            
             String syncType = event.isInitializing() ? FUZZY_WATCH_INIT_NOTIFY : FUZZY_WATCH_DIFF_SYNC_NOTIFY;
             
             int batchSize = ConfigCommonConfig.getInstance().getBatchSize();
@@ -344,8 +340,8 @@ public class ConfigFuzzyWatchSyncNotifier extends SmartSubscriber {
                             connectionManager);
                 }
             }
-            
         }
+        
         
         /**
          * Handles the failure of the RPC push operation.

@@ -40,7 +40,7 @@ public class ClientFuzzyWatchNotifyRequestHandler implements ServerRequestHandle
     public Response requestReply(Request request, Connection connection) {
         //fuzzy watch diff reconciliation sync
         if (request instanceof ConfigFuzzyWatchSyncRequest) {
-            return configFuzzyWatchGroupKeyHolder.handleFuzzyWatchNotifyDiffRequest(
+            return configFuzzyWatchGroupKeyHolder.handleFuzzyWatchSyncNotifyRequest(
                     (ConfigFuzzyWatchSyncRequest) request);
         }
         //fuzzy watch changed notify for a single config. include config changed or config delete.

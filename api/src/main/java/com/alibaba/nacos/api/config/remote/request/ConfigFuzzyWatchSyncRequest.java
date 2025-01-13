@@ -118,16 +118,6 @@ public class ConfigFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
         return new ConfigFuzzyWatchSyncRequest(Constants.FINISH_FUZZY_WATCH_INIT_NOTIFY, groupKeyPattern, null, 0, 0);
     }
     
-    /**
-     * Builds a final FUZZY_WATCH_MATCH_RESOURCE_OVER_LIMIT with the specified group key pattern.
-     *
-     * @param groupKeyPattern The pattern used to match group keys for the configurations
-     * @return A final FuzzyListenNotifyDiffRequest
-     */
-    public static ConfigFuzzyWatchSyncRequest buildOverLimitRequest(String groupKeyPattern) {
-        return new ConfigFuzzyWatchSyncRequest(Constants.FUZZY_WATCH_MATCH_RESOURCE_OVER_LIMIT, groupKeyPattern, null, 0, 0);
-    }
-    
     public String getGroupKeyPattern() {
         return groupKeyPattern;
     }

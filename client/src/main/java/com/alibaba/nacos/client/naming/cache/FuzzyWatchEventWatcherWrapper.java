@@ -25,9 +25,37 @@ import java.util.UUID;
 
 /**
  * fuzzy watcher wrapper.
+ *
  * @author shiyiyue
  */
 public class FuzzyWatchEventWatcherWrapper {
+    
+    long patternLimitTs = 0;
+    
+    long matchCountLimitTs = 0;
+    
+    static final long SUPPRESSED_PERIOD = 60 * 1000L;
+    
+    boolean patternLimitNotifySuppressed() {
+        boolean suppressed = patternLimitTs > 0 && System.currentTimeMillis() - patternLimitTs < SUPPRESSED_PERIOD;
+        if (!suppressed) {
+            patternLimitTs = System.currentTimeMillis();
+        }
+        return suppressed;
+    }
+    
+    boolean matchCountLimitNotifySuppressed() {
+        boolean suppressed = System.currentTimeMillis() - matchCountLimitTs < SUPPRESSED_PERIOD;
+        if (!suppressed) {
+            matchCountLimitTs = System.currentTimeMillis();
+        }
+        return suppressed;
+    }
+    
+    public void clearSuppressedTs() {
+        patternLimitTs = 0;
+        matchCountLimitTs = 0;
+    }
     
     FuzzyWatchEventWatcher fuzzyWatchEventWatcher;
     

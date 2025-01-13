@@ -37,6 +37,7 @@ import java.util.Set;
 
 import static com.alibaba.nacos.api.common.Constants.WATCH_TYPE_CANCEL_WATCH;
 import static com.alibaba.nacos.api.common.Constants.WATCH_TYPE_WATCH;
+import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT;
 
 /**
  * Handler for processing batch fuzzy listen requests.
@@ -88,8 +89,15 @@ public class ConfigFuzzyWatchRequestHandler extends RequestHandler<ConfigFuzzyWa
                                 request.isInitializing()));
             } catch (NacosException nacosException) {
                 ConfigFuzzyWatchResponse configFuzzyWatchResponse = new ConfigFuzzyWatchResponse();
-                configFuzzyWatchResponse.setErrorCode(nacosException.getErrCode());
-                configFuzzyWatchResponse.setMessage(nacosException.getErrMsg());
+                configFuzzyWatchResponse.setErrorInfo(nacosException.getErrCode(), nacosException.getErrMsg());
+                return configFuzzyWatchResponse;
+            }
+            
+            boolean reachToUpLimit = configFuzzyWatchContextService.reachToUpLimit(groupKeyPattern);
+            if (reachToUpLimit) {
+                ConfigFuzzyWatchResponse configFuzzyWatchResponse = new ConfigFuzzyWatchResponse();
+                configFuzzyWatchResponse.setErrorInfo(FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getCode(),
+                        FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getMsg());
                 return configFuzzyWatchResponse;
             }
             

@@ -21,16 +21,18 @@ import com.alibaba.nacos.api.naming.listener.FuzzyWatchEventWatcher;
 import com.alibaba.nacos.api.naming.remote.request.NamingFuzzyWatchRequest;
 import com.alibaba.nacos.api.naming.remote.response.NamingFuzzyWatchResponse;
 import com.alibaba.nacos.client.naming.event.NamingFuzzyWatchNotifyEvent;
+import com.alibaba.nacos.client.naming.event.NamingFuzzyWatchLoadEvent;
 import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.notify.listener.Subscriber;
+import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -45,6 +47,7 @@ import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_INIT_NOTIFY;
 import static com.alibaba.nacos.api.common.Constants.ServiceChangedType.ADD_SERVICE;
 import static com.alibaba.nacos.api.common.Constants.WATCH_TYPE_CANCEL_WATCH;
 import static com.alibaba.nacos.api.common.Constants.WATCH_TYPE_WATCH;
+import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT;
 import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_OVER_LIMIT;
 
 /**
@@ -52,7 +55,7 @@ import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_OVER_
  *
  * @author tanyongquan
  */
-public class NamingFuzzyWatchServiceListHolder extends Subscriber<NamingFuzzyWatchNotifyEvent> {
+public class NamingFuzzyWatchServiceListHolder extends SmartSubscriber {
     
     private static final Logger LOGGER = LogUtils.logger(NamingFuzzyWatchServiceListHolder.class);
     
@@ -276,18 +279,25 @@ public class NamingFuzzyWatchServiceListHolder extends Subscriber<NamingFuzzyWat
                     } else {
                         entry.setConsistentWithServer(true);
                     }
+                    entry.clearOverLimitTs();
                 }
                 
             } catch (NacosException e) {
                 // Log error and retry after a short delay
-                LOGGER.error(" fuzzy watch request fail.", e);
                 
-                if (FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode() == e.getErrCode()) {
-                    LOGGER.error(" fuzzy watch pattern over limit,pattern ->{} ,fuzzy watch will be suppressed",
-                            entry.getGroupKeyPattern());
+                if (FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode() == e.getErrCode()
+                        || FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getCode() == e.getErrCode()) {
+                    LOGGER.error(" fuzzy watch pattern over limit,pattern ->{} ,fuzzy watch will be suppressed,msg={}",
+                            entry.getGroupKeyPattern(), e.getErrMsg());
+                    NamingFuzzyWatchLoadEvent namingFuzzyWatchLoadEvent = NamingFuzzyWatchLoadEvent.buildEvent(
+                            e.getErrCode(), entry.getGroupKeyPattern(), notifierEventScope);
+                    NotifyCenter.publishEvent(namingFuzzyWatchLoadEvent);
+                    
                 } else {
+                    LOGGER.error(" fuzzy watch request fail.", e);
+    
                     try {
-                        Thread.sleep(100L);
+                        Thread.sleep(1000L);
                     } catch (InterruptedException interruptedException) {
                         // Ignore interruption
                     }
@@ -320,28 +330,48 @@ public class NamingFuzzyWatchServiceListHolder extends Subscriber<NamingFuzzyWat
     }
     
     @Override
-    public void onEvent(NamingFuzzyWatchNotifyEvent event) {
-        if (!event.scope().equals(notifierEventScope)) {
-            return;
-        }
+    public void onEvent(Event event) {
         
-        String changedType = event.getChangedType();
-        String syncType = event.getSyncType();
-        
-        String serviceKey = event.getServiceKey();
-        String pattern = event.getPattern();
-        String watchUuid = event.getWatcherUuid();
-        NamingFuzzyWatchContext namingFuzzyWatchContext = fuzzyMatchContextMap.get(pattern);
-        if (namingFuzzyWatchContext == null) {
-            return;
+        if (event instanceof NamingFuzzyWatchNotifyEvent) {
+            if (!event.scope().equals(notifierEventScope)) {
+                return;
+            }
+            NamingFuzzyWatchNotifyEvent watchNotifyEvent = (NamingFuzzyWatchNotifyEvent) event;
+            String changedType = watchNotifyEvent.getChangedType();
+            String syncType = watchNotifyEvent.getSyncType();
+            
+            String serviceKey = watchNotifyEvent.getServiceKey();
+            String pattern = watchNotifyEvent.getPattern();
+            String watchUuid = watchNotifyEvent.getWatcherUuid();
+            NamingFuzzyWatchContext namingFuzzyWatchContext = fuzzyMatchContextMap.get(pattern);
+            if (namingFuzzyWatchContext == null) {
+                return;
+            }
+            namingFuzzyWatchContext.notifyFuzzyWatchers(serviceKey, changedType, syncType, watchUuid);
         }
-        namingFuzzyWatchContext.notifyFuzzyWatchers(serviceKey, changedType, syncType, watchUuid);
+        if (event instanceof NamingFuzzyWatchLoadEvent) {
+            if (!event.scope().equals(notifierEventScope)) {
+                return;
+            }
+            
+            NamingFuzzyWatchLoadEvent overLimitEvent = (NamingFuzzyWatchLoadEvent) event;
+            NamingFuzzyWatchContext namingFuzzyWatchContext = fuzzyMatchContextMap.get(
+                    overLimitEvent.getGroupKeyPattern());
+            if (namingFuzzyWatchContext == null) {
+                return;
+            }
+            
+            namingFuzzyWatchContext.notifyOverLimitWatchers(overLimitEvent.getCode());
+        }
         
     }
     
     @Override
-    public Class<? extends Event> subscribeType() {
-        return NamingFuzzyWatchNotifyEvent.class;
+    public List<Class<? extends Event>> subscribeTypes() {
+        List<Class<? extends Event>> result = new LinkedList<>();
+        result.add(NamingFuzzyWatchNotifyEvent.class);
+        result.add(NamingFuzzyWatchLoadEvent.class);
+        return result;
     }
     
     public String getNotifierEventScope() {

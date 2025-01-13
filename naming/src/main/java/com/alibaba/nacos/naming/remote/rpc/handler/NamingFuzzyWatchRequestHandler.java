@@ -30,6 +30,7 @@ import org.springframework.stereotype.Component;
 
 import static com.alibaba.nacos.api.common.Constants.WATCH_TYPE_CANCEL_WATCH;
 import static com.alibaba.nacos.api.common.Constants.WATCH_TYPE_WATCH;
+import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT;
 
 /**
  * Fuzzy watch service request handler.
@@ -56,15 +57,23 @@ public class NamingFuzzyWatchRequestHandler extends RequestHandler<NamingFuzzyWa
             case WATCH_TYPE_WATCH:
                 try {
                     namingFuzzyWatchContextService.syncFuzzyWatcherContext(groupKeyPattern, meta.getConnectionId());
+                    NotifyCenter.publishEvent(
+                            new ClientOperationEvent.ClientFuzzyWatchEvent(groupKeyPattern, meta.getConnectionId(),
+                                    request.getReceivedGroupKeys(), request.isInitializing()));
                 } catch (NacosException nacosException) {
                     NamingFuzzyWatchResponse namingFuzzyWatchResponse = new NamingFuzzyWatchResponse();
-                    namingFuzzyWatchResponse.setErrorCode(nacosException.getErrCode());
-                    namingFuzzyWatchResponse.setMessage(nacosException.getErrMsg());
+                    namingFuzzyWatchResponse.setErrorInfo(nacosException.getErrCode(), nacosException.getErrMsg());
                     return namingFuzzyWatchResponse;
                 }
-                NotifyCenter.publishEvent(
-                        new ClientOperationEvent.ClientFuzzyWatchEvent(groupKeyPattern, meta.getConnectionId(),
-                                request.getReceivedGroupKeys(), request.isInitializing()));
+                
+                boolean reachToUpLimit = namingFuzzyWatchContextService.reachToUpLimit(groupKeyPattern);
+                if (reachToUpLimit) {
+                    NamingFuzzyWatchResponse namingFuzzyWatchResponse = new NamingFuzzyWatchResponse();
+                    namingFuzzyWatchResponse.setErrorInfo(FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getCode(),
+                            FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getMsg());
+                    return namingFuzzyWatchResponse;
+                }
+                
                 return NamingFuzzyWatchResponse.buildSuccessResponse();
             case WATCH_TYPE_CANCEL_WATCH:
                 namingFuzzyWatchContextService.removeFuzzyWatchContext(groupKeyPattern, meta.getConnectionId());

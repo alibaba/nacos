@@ -34,7 +34,6 @@ import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
 import java.util.Collection;
 
 import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_RESOURCE_CHANGED;
-import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
  * handle fuzzy watch request from server.
@@ -72,13 +71,6 @@ public class NamingFuzzyWatchNotifyRequestHandler implements ServerRequestHandle
                     }
                 } else if (watchNotifySyncRequest.getSyncType().equals(Constants.FINISH_FUZZY_WATCH_INIT_NOTIFY)) {
                     namingFuzzyWatchContext.markInitializationComplete();
-                } else if (watchNotifySyncRequest.getSyncType()
-                        .equals(Constants.FUZZY_WATCH_MATCH_RESOURCE_OVER_LIMIT)) {
-                    NAMING_LOGGER.warn(
-                            "[{}] [fuzzy-watch] pattern matched  service count reach to up limit,pattern ->{}, received keys count {}",
-                            namingFuzzyWatchServiceListHolder.getNotifierEventScope(),
-                            watchNotifySyncRequest.getGroupKeyPattern(),
-                            namingFuzzyWatchContext.getReceivedServiceKeys().size());
                 }
             }
             

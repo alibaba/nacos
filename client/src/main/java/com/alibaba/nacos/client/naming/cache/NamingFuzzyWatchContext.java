@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.naming.cache;
 
 import com.alibaba.nacos.api.naming.listener.FuzzyWatchChangeEvent;
 import com.alibaba.nacos.api.naming.listener.FuzzyWatchEventWatcher;
+import com.alibaba.nacos.api.naming.listener.FuzzyWatchLoadWatcher;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -38,10 +39,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+
 import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_DIFF_SYNC_NOTIFY;
 import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_INIT_NOTIFY;
 import static com.alibaba.nacos.api.common.Constants.ServiceChangedType.ADD_SERVICE;
 import static com.alibaba.nacos.api.common.Constants.ServiceChangedType.DELETE_SERVICE;
+import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT;
+import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_OVER_LIMIT;
 
 /**
  * fuzzy wather context for a single group key pattern.
@@ -91,6 +95,22 @@ public class NamingFuzzyWatchContext {
      * Set of listeners associated with the context.
      */
     private final Set<FuzzyWatchEventWatcherWrapper> fuzzyWatchEventWatcherWrappers = new HashSet<>();
+    
+    long patternLimitTs = 0;
+    
+    private static final long SUPPRESSED_PERIOD = 60 * 1000L;
+    
+    boolean patternLimitSuppressed() {
+        return patternLimitTs > 0 && System.currentTimeMillis() - patternLimitTs < SUPPRESSED_PERIOD;
+    }
+    
+    public void clearOverLimitTs() {
+        this.patternLimitTs = 0;
+    }
+    
+    public void refreshOverLimitTs() {
+        this.patternLimitTs = System.currentTimeMillis();
+    }
     
     /**
      * Constructor with environment name, data ID pattern, and group.
@@ -300,6 +320,31 @@ public class NamingFuzzyWatchContext {
         }
     }
     
+    void notifyOverLimitWatchers(int code) {
+        
+        if (this.patternLimitSuppressed()) {
+            return;
+        }
+        boolean notify = false;
+        
+        for (FuzzyWatchEventWatcherWrapper namingFuzzyWatcherWrapper : filterWatchers(null)) {
+            if (namingFuzzyWatcherWrapper.fuzzyWatchEventWatcher instanceof FuzzyWatchLoadWatcher) {
+                
+                if (FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getCode().equals(code)) {
+                    ((FuzzyWatchLoadWatcher) namingFuzzyWatcherWrapper.fuzzyWatchEventWatcher).onServiceReachUpLimit();
+                    notify = true;
+                }
+                if (FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode().equals(code)) {
+                    ((FuzzyWatchLoadWatcher) namingFuzzyWatcherWrapper.fuzzyWatchEventWatcher).onPatternOverLimit();
+                    notify = true;
+                }
+            }
+        }
+        if (notify) {
+            this.refreshOverLimitTs();
+        }
+    }
+    
     private Set<FuzzyWatchEventWatcherWrapper> filterWatchers(String uuid) {
         if (StringUtils.isBlank(uuid) || CollectionUtils.isEmpty(getFuzzyWatchEventWatcherWrappers())) {
             return getFuzzyWatchEventWatcherWrappers();
@@ -311,6 +356,7 @@ public class NamingFuzzyWatchContext {
     
     /**
      * create a new future of this context.
+     *
      * @return
      */
     public Future<ListView<String>> createNewFuture() {

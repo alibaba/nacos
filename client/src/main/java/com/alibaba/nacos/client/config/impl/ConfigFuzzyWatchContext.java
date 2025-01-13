@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.config.listener.ConfigFuzzyWatchChangeEvent;
 import com.alibaba.nacos.api.config.listener.FuzzyWatchEventWatcher;
+import com.alibaba.nacos.api.config.listener.FuzzyWatchLoadWatcher;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
@@ -40,9 +41,11 @@ import static com.alibaba.nacos.api.common.Constants.ConfigChangedType.ADD_CONFI
 import static com.alibaba.nacos.api.common.Constants.ConfigChangedType.DELETE_CONFIG;
 import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_DIFF_SYNC_NOTIFY;
 import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_INIT_NOTIFY;
+import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT;
+import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_OVER_LIMIT;
 
 /**
- * fuzzy wather context for a single group key pattern.
+ * fuzzy watcher context for a single group key pattern.
  *
  * <p>This class manages the context information for fuzzy listening, including environment name, task ID, data ID
  * pattern, group, tenant, listener set, and other related information.
@@ -89,6 +92,22 @@ public class ConfigFuzzyWatchContext {
      * Flag indicating whether the context is discarded.
      */
     private volatile boolean isDiscard = false;
+    
+    long patternLimitTs = 0;
+    
+    private static final long SUPPRESSED_PERIOD = 60 * 1000L;
+    
+    boolean patternLimitSuppressed() {
+        return patternLimitTs > 0 && System.currentTimeMillis() - patternLimitTs < SUPPRESSED_PERIOD;
+    }
+    
+    public void clearOverLimitTs() {
+        this.patternLimitTs = 0;
+    }
+    
+    public void refreshOverLimitTs() {
+        this.patternLimitTs = System.currentTimeMillis();
+    }
     
     /**
      * Set of listeners associated with the context.
@@ -148,6 +167,35 @@ public class ConfigFuzzyWatchContext {
             Set<ConfigFuzzyWatcherWrapper> listenersToNotify) {
         for (ConfigFuzzyWatcherWrapper watcher : listenersToNotify) {
             doNotifyWatcher(groupKey, changedType, syncType, watcher);
+        }
+    }
+    
+    /**
+     * notify loader watcher.
+     * @param code over limit code,FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT or FUZZY_WATCH_PATTERN_OVER_LIMIT.
+     */
+    public void notifyLoaderWatcher(int code) {
+        
+        if (this.patternLimitSuppressed()) {
+            return;
+        }
+        boolean notify = false;
+        
+        for (ConfigFuzzyWatcherWrapper configFuzzyWatcherWrapper : calculateListenersToNotify(null)) {
+            if (configFuzzyWatcherWrapper.fuzzyWatchEventWatcher instanceof FuzzyWatchLoadWatcher) {
+                
+                if (FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getCode().equals(code)) {
+                    ((FuzzyWatchLoadWatcher) configFuzzyWatcherWrapper.fuzzyWatchEventWatcher).onConfigReachUpLimit();
+                    notify = true;
+                }
+                if (FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode().equals(code)) {
+                    ((FuzzyWatchLoadWatcher) configFuzzyWatcherWrapper.fuzzyWatchEventWatcher).onPatternOverLimit();
+                    notify = true;
+                }
+            }
+        }
+        if (notify) {
+            this.refreshOverLimitTs();
         }
     }
     
@@ -396,10 +444,11 @@ public class ConfigFuzzyWatchContext {
     
     /**
      * creat a new future of this context.
+     *
      * @return
      */
     public Future<Set<String>> createNewFuture() {
-        Future<Set<String>> completableFuture = new Future<Set<String>>() {
+        Future<Set<String>> future = new Future<Set<String>>() {
             @Override
             public boolean cancel(boolean mayInterruptIfRunning) {
                 throw new UnsupportedOperationException("not support to cancel fuzzy watch");
@@ -441,7 +490,7 @@ public class ConfigFuzzyWatchContext {
             }
         };
         
-        return completableFuture;
+        return future;
     }
 }
 

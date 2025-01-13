@@ -56,6 +56,7 @@ import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_INIT_NOTIFY;
 import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_RESOURCE_CHANGED;
 import static com.alibaba.nacos.api.common.Constants.WATCH_TYPE_CANCEL_WATCH;
 import static com.alibaba.nacos.api.common.Constants.WATCH_TYPE_WATCH;
+import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT;
 import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_OVER_LIMIT;
 
 /**
@@ -93,10 +94,9 @@ public class ConfigFuzzyWatchGroupKeyHolder {
     public ConfigFuzzyWatchGroupKeyHolder(ClientWorker.ConfigRpcTransportClient agent, String clientUuid) {
         this.clientUuid = clientUuid;
         this.agent = agent;
-        NotifyCenter.registerSubscriber(new Subscriber() {
+        NotifyCenter.registerSubscriber(new Subscriber<ConfigFuzzyWatchNotifyEvent>() {
             @Override
-            public void onEvent(Event event) {
-                ConfigFuzzyWatchNotifyEvent configFuzzyWatchNotifyEvent = (ConfigFuzzyWatchNotifyEvent) event;
+            public void onEvent(ConfigFuzzyWatchNotifyEvent configFuzzyWatchNotifyEvent) {
                 
                 //instance check
                 if (!configFuzzyWatchNotifyEvent.getClientUuid().equals(clientUuid)) {
@@ -119,6 +119,30 @@ public class ConfigFuzzyWatchGroupKeyHolder {
                 return ConfigFuzzyWatchNotifyEvent.class;
             }
         });
+        
+        NotifyCenter.registerSubscriber(new Subscriber<ConfigFuzzyWatchLoadEvent>() {
+            @Override
+            public void onEvent(ConfigFuzzyWatchLoadEvent event) {
+                
+                //instance check
+                if (!event.getClientUuid().equals(clientUuid)) {
+                    return;
+                }
+                
+                ConfigFuzzyWatchContext context = fuzzyListenContextMap.get().get(event.getGroupKeyPattern());
+                if (context == null) {
+                    return;
+                }
+                
+                context.notifyLoaderWatcher(event.getCode());
+            }
+            
+            @Override
+            public Class<? extends Event> subscribeType() {
+                return ConfigFuzzyWatchLoadEvent.class;
+            }
+        });
+        
     }
     
     /**
@@ -175,7 +199,7 @@ public class ConfigFuzzyWatchGroupKeyHolder {
         if (configFuzzyWatchContext.addWatcher(configFuzzyWatcherWrapper)) {
             if (configFuzzyWatchContext.getReceivedGroupKeys() != null) {
                 for (String groupKey : configFuzzyWatchContext.getReceivedGroupKeys()) {
-                    ConfigFuzzyWatchNotifyEvent configFuzzyWatchNotifyEvent = ConfigFuzzyWatchNotifyEvent.buildNotifyPatternAllListenersEvent(
+                    ConfigFuzzyWatchNotifyEvent configFuzzyWatchNotifyEvent = ConfigFuzzyWatchNotifyEvent.buildEvent(
                             groupKey, configFuzzyWatchContext.getGroupKeyPattern(), ADD_CONFIG, FUZZY_WATCH_INIT_NOTIFY,
                             configFuzzyWatcherWrapper.getUuid());
                     NotifyCenter.publishEvent(configFuzzyWatchNotifyEvent);
@@ -206,7 +230,7 @@ public class ConfigFuzzyWatchGroupKeyHolder {
      * @param request The fuzzy listen init notify request to handle.
      * @return A {@link ConfigFuzzyWatchSyncResponse} indicating the result of handling the request.
      */
-    ConfigFuzzyWatchSyncResponse handleFuzzyWatchNotifyDiffRequest(ConfigFuzzyWatchSyncRequest request) {
+    ConfigFuzzyWatchSyncResponse handleFuzzyWatchSyncNotifyRequest(ConfigFuzzyWatchSyncRequest request) {
         String groupKeyPattern = request.getGroupKeyPattern();
         ConfigFuzzyWatchContext context = fuzzyListenContextMap.get().get(groupKeyPattern);
         if (Constants.FINISH_FUZZY_WATCH_INIT_NOTIFY.equals(request.getSyncType())) {
@@ -216,15 +240,8 @@ public class ConfigFuzzyWatchGroupKeyHolder {
             return new ConfigFuzzyWatchSyncResponse();
         }
         
-        if (Constants.FUZZY_WATCH_MATCH_RESOURCE_OVER_LIMIT.equals(request.getSyncType())) {
-            LOGGER.info(
-                    "[{}] [fuzzy-watch] pattern match config config count reach to up limit,pattern ->{}, received keys count {}",
-                    agent.getName(), request.getGroupKeyPattern(), context.getReceivedGroupKeys().size());
-            return new ConfigFuzzyWatchSyncResponse();
-        }
-        
         LOGGER.info(
-                "[{}] [fuzzy-watch-diff-sync-push] pattern ->{},syncType={},,syncCount={},totalBatch={},currentBatch={}",
+                "[{}] [fuzzy-watch] sync notify , pattern ->{},syncType={},,syncCount={},totalBatch={},currentBatch={}",
                 agent.getName(), request.getGroupKeyPattern(), request.getSyncType(), request.getContexts().size(),
                 request.getTotalBatch(), request.getCurrentBatch());
         
@@ -235,9 +252,9 @@ public class ConfigFuzzyWatchGroupKeyHolder {
                         LOGGER.info("[{}] [fuzzy-watch-diff-sync-push] local match group key added ,pattern ->{}, "
                                         + "group key  ->{},publish fuzzy watch notify event", agent.getName(),
                                 request.getGroupKeyPattern(), requestContext.getGroupKey());
-                        NotifyCenter.publishEvent(ConfigFuzzyWatchNotifyEvent.buildNotifyPatternAllListenersEvent(
-                                requestContext.getGroupKey(), request.getGroupKeyPattern(),
-                                requestContext.getChangedType(), request.getSyncType(), this.clientUuid));
+                        NotifyCenter.publishEvent(ConfigFuzzyWatchNotifyEvent.buildEvent(requestContext.getGroupKey(),
+                                request.getGroupKeyPattern(), requestContext.getChangedType(), request.getSyncType(),
+                                this.clientUuid));
                     }
                     break;
                 case DELETE_CONFIG:
@@ -245,9 +262,9 @@ public class ConfigFuzzyWatchGroupKeyHolder {
                         LOGGER.info("[{}] [fuzzy-watch-diff-sync-push] local match group key remove ,pattern ->{}, "
                                         + "group key  ->{},publish fuzzy watch notify event", agent.getName(),
                                 request.getGroupKeyPattern(), requestContext.getGroupKey());
-                        NotifyCenter.publishEvent(ConfigFuzzyWatchNotifyEvent.buildNotifyPatternAllListenersEvent(
-                                requestContext.getGroupKey(), request.getGroupKeyPattern(),
-                                requestContext.getChangedType(), request.getSyncType(), this.clientUuid));
+                        NotifyCenter.publishEvent(ConfigFuzzyWatchNotifyEvent.buildEvent(requestContext.getGroupKey(),
+                                request.getGroupKeyPattern(), requestContext.getChangedType(), request.getSyncType(),
+                                this.clientUuid));
                     }
                     break;
                 default:
@@ -305,15 +322,13 @@ public class ConfigFuzzyWatchGroupKeyHolder {
                             agent.getName(), request.getChangeType(), request.getGroupKey());
                     
                     NotifyCenter.publishEvent(
-                            ConfigFuzzyWatchNotifyEvent.buildNotifyPatternAllListenersEvent(request.getGroupKey(),
-                                    matchedPattern, ADD_CONFIG, FUZZY_WATCH_RESOURCE_CHANGED, this.clientUuid));
+                            ConfigFuzzyWatchNotifyEvent.buildEvent(request.getGroupKey(), matchedPattern, ADD_CONFIG,
+                                    FUZZY_WATCH_RESOURCE_CHANGED, this.clientUuid));
                 }
             } else if (DELETE_CONFIG.equals(request.getChangeType()) && context.removeReceivedGroupKey(
                     request.getGroupKey())) {
-                NotifyCenter.publishEvent(
-                        ConfigFuzzyWatchNotifyEvent.buildNotifyPatternAllListenersEvent(request.getGroupKey(),
-                                matchedPattern, Constants.ConfigChangedType.DELETE_CONFIG, FUZZY_WATCH_RESOURCE_CHANGED,
-                                this.clientUuid));
+                NotifyCenter.publishEvent(ConfigFuzzyWatchNotifyEvent.buildEvent(request.getGroupKey(), matchedPattern,
+                        Constants.ConfigChangedType.DELETE_CONFIG, FUZZY_WATCH_RESOURCE_CHANGED, this.clientUuid));
                 
             }
         }
@@ -413,23 +428,29 @@ public class ConfigFuzzyWatchGroupKeyHolder {
                             entry.setConsistentWithServer(true);
                         }
                         
-                    }
-                } catch (NacosException e) {
-                    
-                    if (FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode() == e.getErrCode()) {
-                        LOGGER.error(" fuzzy watch pattern over limit,pattern ->{} ,fuzzy watch will be suppressed",
-                                entry.getGroupKeyPattern());
-                    } else {
-                        // Log error and retry after a short delay
-                        LOGGER.error("Execute batch fuzzy listen config change error.", e);
-                        try {
-                            Thread.sleep(50L);
-                        } catch (InterruptedException interruptedException) {
-                            // Ignore interruption
+                        entry.clearOverLimitTs();
+                    } else if (listenResponse != null) {
+                        if (handleOverLoadEvent(entry.getGroupKeyPattern(), listenResponse.getErrorCode())) {
+                            return;
                         }
-                        // Retry notification
-                        notifyFuzzyWatchSync();
+                        LOGGER.error("Execute  fuzzy watch config change error,code={},msg={}",
+                                listenResponse.getErrorCode(), listenResponse.getMessage());
                     }
+                    
+                } catch (NacosException e) {
+                    if (handleOverLoadEvent(entry.getGroupKeyPattern(), e.getErrCode())) {
+                        return;
+                    }
+                    // Log error and retry after a short delay
+                    LOGGER.error("Execute  fuzzy watch config change error.", e);
+                    try {
+                        Thread.sleep(50L);
+                    } catch (InterruptedException interruptedException) {
+                        // Ignore interruption
+                    }
+                    // Retry notification
+                    notifyFuzzyWatchSync();
+                    
                 }
             });
             listenFutures.add(future);
@@ -444,6 +465,16 @@ public class ConfigFuzzyWatchGroupKeyHolder {
                 LOGGER.error("Async fuzzy listen config change error.", throwable);
             }
         }
+    }
+    
+    private boolean handleOverLoadEvent(String pattern, int errorCode) {
+        if (FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode() == errorCode
+                || FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getCode() == errorCode) {
+            LOGGER.warn(" fuzzy watch pattern over limit,pattern ->{} ,fuzzy watch will be suppressed", pattern);
+            NotifyCenter.publishEvent(ConfigFuzzyWatchLoadEvent.buildEvent(errorCode, pattern, this.clientUuid));
+            return true;
+        }
+        return false;
     }
     
     /**
@@ -482,7 +513,6 @@ public class ConfigFuzzyWatchGroupKeyHolder {
             } else {
                 String groupKeyPattern = FuzzyGroupKeyPattern.generatePattern(dataIdPattern, groupPattern,
                         agent.getTenant());
-                
                 context = new ConfigFuzzyWatchContext(agent.getName(), groupKeyPattern);
                 context.setConsistentWithServer(false);
                 Map<String, ConfigFuzzyWatchContext> copy = new HashMap<>(fuzzyListenContextMap.get());

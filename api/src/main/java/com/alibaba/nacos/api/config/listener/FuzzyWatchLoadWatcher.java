@@ -16,33 +16,20 @@
 
 package com.alibaba.nacos.api.config.listener;
 
-import java.util.concurrent.Executor;
-
 /**
- * AbstractFuzzyListenListener is an abstract class that provides basic functionality for listening to fuzzy
- * configuration changes in Nacos.
- *
- * @author stone-98
- * @date 2024/3/4
+ * config fuzzy watch watcher that triggered when loader over limit.
+ * @author shiyiyue
  */
-public abstract class AbstractFuzzyWatchEventWatcher implements FuzzyWatchEventWatcher, FuzzyWatchLoadWatcher {
+public interface FuzzyWatchLoadWatcher {
     
     /**
-     * Get executor for execute this receive.
-     *
-     * @return Executor
+     * triggered when server pattern count over limit.
      */
-    public Executor getExecutor() {
-        return null;
-    }
+    void onPatternOverLimit();
     
-    @Override
-    public void onPatternOverLimit() {
-        // do nothing default
-    }
+    /**
+     *  triggered when pattern match config count over limit.
+     */
+    void onConfigReachUpLimit();
     
-    @Override
-    public void onConfigReachUpLimit() {
-        // do nothing default
-    }
 }
