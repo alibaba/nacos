@@ -113,7 +113,7 @@ public class InstanceController {
     @PostMapping
     @TpsControl(pointName = "NamingInstanceRegister", name = "HttpNamingInstanceRegister")
     @Secured(action = ActionTypes.WRITE)
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "POST ${contextPath:nacos}/v3/admin/ns/instance")
+    @Compatibility(apiType = ApiType.OPEN_API, alternatives = "POST ${contextPath:nacos}/v3/admin/ns/instance")
     public String register(HttpServletRequest request) throws Exception {
         
         final String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
