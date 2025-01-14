@@ -45,6 +45,7 @@ import java.util.List;
  *
  * @author nkorange
  */
+@Deprecated
 @RestController
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_CATALOG_CONTEXT)
 @ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)

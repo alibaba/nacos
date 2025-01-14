@@ -14,16 +14,13 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.controllers.v2;
+package com.alibaba.nacos.naming.controllers.v3;
 
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
-import com.alibaba.nacos.naming.cluster.ServerStatusManager;
 import com.alibaba.nacos.naming.core.Operator;
-import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
-import com.alibaba.nacos.naming.misc.SwitchManager;
 import com.alibaba.nacos.naming.model.form.UpdateSwitchForm;
 import com.alibaba.nacos.naming.model.vo.MetricsInfoVo;
 import com.alibaba.nacos.sys.env.Constants;
@@ -38,37 +35,25 @@ import org.springframework.mock.env.MockEnvironment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.doNothing;
 
 /**
- * OperatorControllerV2Test.
+ * OperatorControllerV3Test.
  *
- * @author dongyafei
- * @date 2022/9/15
+ * @author Nacos
  */
 
 @ExtendWith(MockitoExtension.class)
-class OperatorControllerV2Test {
+class OperatorControllerV3Test {
     
-    private OperatorControllerV2 operatorControllerV2;
-    
-    @Mock
-    private SwitchDomain switchDomain;
-    
-    @Mock
-    private SwitchManager switchManager;
-    
-    @Mock
-    private ServerStatusManager serverStatusManager;
-    
-    @Mock
-    private ClientManager clientManager;
+    private OperatorControllerV3 operatorControllerV3;
     
     @Mock
     private Operator operatorV2Impl;
     
     @BeforeEach
     void setUp() {
-        this.operatorControllerV2 = new OperatorControllerV2(operatorV2Impl);
+        this.operatorControllerV3 = new OperatorControllerV3(operatorV2Impl);
         MockEnvironment environment = new MockEnvironment();
         environment.setProperty(Constants.SUPPORT_UPGRADE_FROM_1X, "true");
         EnvUtil.setEnvironment(environment);
@@ -80,7 +65,7 @@ class OperatorControllerV2Test {
         switchDomain.setDefaultInstanceEphemeral(true);
         switchDomain.setDefaultPushCacheMillis(1000L);
         Mockito.when(operatorV2Impl.switches()).thenReturn(switchDomain);
-        Result<SwitchDomain> result = operatorControllerV2.switches();
+        Result<SwitchDomain> result = operatorControllerV3.switches();
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(1000L, result.getData().getDefaultPushCacheMillis());
         assertEquals(true, result.getData().isDefaultInstanceEphemeral());
@@ -94,7 +79,7 @@ class OperatorControllerV2Test {
         updateSwitchForm.setValue("test");
         
         try {
-            Result<String> result = operatorControllerV2.updateSwitch(updateSwitchForm);
+            Result<String> result = operatorControllerV3.updateSwitch(updateSwitchForm);
             assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
             assertEquals("ok", result.getData());
         } catch (Exception e) {
@@ -108,8 +93,16 @@ class OperatorControllerV2Test {
         MetricsInfoVo metricsInfoVo = new MetricsInfoVo();
         metricsInfoVo.setStatus(ServerStatus.UP.toString());
         Mockito.when(operatorV2Impl.metrics(false)).thenReturn(metricsInfoVo);
-        Result<MetricsInfoVo> result = operatorControllerV2.metrics(false);
+        Result<MetricsInfoVo> result = operatorControllerV3.metrics(false);
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(ServerStatus.UP.toString(), result.getData().getStatus());
+    }
+    
+    @Test
+    void testLog() {
+        doNothing().when(operatorV2Impl).setLogLevel("test", "test");
+        Result<String> result = operatorControllerV3.setLogLevel("test", "test");
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals("ok", result.getData());
     }
 }

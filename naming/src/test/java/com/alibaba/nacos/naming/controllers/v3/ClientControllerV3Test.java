@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.controllers.v2;
+package com.alibaba.nacos.naming.controllers.v3;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.core.ClientService;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
-import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -52,27 +50,25 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
+/**
+ * ClientControllerV3Test.
+ *
+ * @author Nacos
+ */
 @ExtendWith(MockitoExtension.class)
-// todo remove this
 @MockitoSettings(strictness = Strictness.LENIENT)
-class ClientInfoControllerV2Test extends BaseTest {
+class ClientControllerV3Test extends BaseTest {
     
-    private static final String URL = UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_CLIENT_CONTEXT;
+    private static final String URL = UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH;
     
     @InjectMocks
-    ClientInfoControllerV2 clientInfoControllerV2;
+    ClientControllerV3 clientControllerV3;
     
     @Mock
     private ClientManager clientManager;
     
     @Mock
-    private ConnectionManager connectionManager;
-    
-    @Mock
     private ClientService clientServiceV2Impl;
-    
-    @Mock
-    private ClientServiceIndexesManager clientServiceIndexesManager;
     
     private MockMvc mockmvc;
     
@@ -84,7 +80,7 @@ class ClientInfoControllerV2Test extends BaseTest {
     public void before() {
         when(clientManager.allClientId()).thenReturn(Arrays.asList("127.0.0.1:8080#test1", "test2#test2"));
         when(clientManager.contains(anyString())).thenReturn(true);
-        mockmvc = MockMvcBuilders.standaloneSetup(clientInfoControllerV2).build();
+        mockmvc = MockMvcBuilders.standaloneSetup(clientControllerV3).build();
         ipPortBasedClient = new IpPortBasedClient("127.0.0.1:8080#test1", false);
         connectionBasedClient = new ConnectionBasedClient("test2", true, 1L);
     }

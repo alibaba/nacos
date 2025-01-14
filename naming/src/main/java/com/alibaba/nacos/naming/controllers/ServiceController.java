@@ -73,6 +73,7 @@ import java.util.Optional;
  *
  * @author nkorange
  */
+@Deprecated
 @RestController
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_SERVICE_CONTEXT)
 @ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)
@@ -151,7 +152,7 @@ public class ServiceController {
     @GetMapping
     @TpsControl(pointName = "NamingServiceQuery", name = "HttpNamingServiceQuery")
     @Secured(action = ActionTypes.READ)
-    @Compatibility(apiType = ApiType.OPEN_API)
+    @Compatibility(apiType = ApiType.OPEN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/service")
     public ObjectNode detail(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName) throws NacosException {
         return getServiceOperator().queryService(namespaceId, serviceName);
@@ -167,7 +168,7 @@ public class ServiceController {
     @GetMapping("/list")
     @TpsControl(pointName = "NamingServiceListQuery", name = "HttpNamingServiceListQuery")
     @Secured(action = ActionTypes.READ)
-    @Compatibility(apiType = ApiType.OPEN_API)
+    @Compatibility(apiType = ApiType.OPEN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/service/list")
     public ObjectNode list(HttpServletRequest request) throws Exception {
         final int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
         final int pageSize = NumberUtils.toInt(WebUtils.required(request, "pageSize"));
@@ -220,7 +221,7 @@ public class ServiceController {
      */
     @RequestMapping("/names")
     @Secured(action = ActionTypes.READ)
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/service/names")
     public ObjectNode searchService(@RequestParam(defaultValue = StringUtils.EMPTY) String namespaceId,
             @RequestParam(defaultValue = StringUtils.EMPTY) String expr) throws NacosException {
         Map<String, Collection<String>> serviceNameMap = new HashMap<>(16);

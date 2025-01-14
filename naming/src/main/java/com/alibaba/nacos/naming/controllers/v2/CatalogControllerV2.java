@@ -45,6 +45,7 @@ import java.util.stream.Stream;
  * @author Weizhan▪Yun
  * @date 2023/1/14 19:54
  */
+@Deprecated
 @RestController
 @RequestMapping(UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_CATALOG_CONTEXT)
 @ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)

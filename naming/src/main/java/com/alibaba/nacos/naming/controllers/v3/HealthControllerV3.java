@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ * Copyright 1999-$toady.year Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.controllers.v2;
+package com.alibaba.nacos.naming.controllers.v3;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.naming.core.HealthOperatorV2Impl;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -31,44 +31,52 @@ import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+
 /**
- * HealthControllerV2.
- * @author dongyafei
- * @date 2022/9/15
+ * Health controller.
+ *
+ * @author Nacos
  */
-@Deprecated
 @NacosApi
 @RestController
-@RequestMapping(UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_HEALTH_CONTEXT)
+@RequestMapping(UtilsAndCommons.HEALTH_CONTROLLER_V3_ADMIN_PATH)
 @ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)
-public class HealthControllerV2 {
+public class HealthControllerV3 {
     
     @Autowired
     private HealthOperatorV2Impl healthOperatorV2;
     
     /**
      * Update health check for instance.
-     *
-     * @param updateHealthForm updateHealthForm
-     * @return 'ok' if success
      */
     @CanDistro
-    @PutMapping(value = {"", "/instance"})
-    @Secured(action = ActionTypes.WRITE)
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "PUT ${contextPath:nacos}/v3/admin/ns/health")
+    @PutMapping(value = "/instance")
+    @Secured(resource = UtilsAndCommons.HEALTH_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<String> update(UpdateHealthForm updateHealthForm) throws NacosException {
         updateHealthForm.validate();
         healthOperatorV2.updateHealthStatusForPersistentInstance(updateHealthForm.getNamespaceId(), buildCompositeServiceName(updateHealthForm),
                 updateHealthForm.getClusterName(), updateHealthForm.getIp(), updateHealthForm.getPort(),
                 updateHealthForm.getHealthy());
+        
         return Result.success("ok");
     }
     
     private String buildCompositeServiceName(UpdateHealthForm updateHealthForm) {
         return NamingUtils.getGroupedName(updateHealthForm.getServiceName(), updateHealthForm.getGroupName());
+    }
+    
+    /**
+     * Get all health checkers.
+     */
+    @GetMapping("/checkers")
+    @Secured(resource = UtilsAndCommons.HEALTH_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
+    public Result<Map<String, AbstractHealthChecker>> checkers() {
+        return Result.success(healthOperatorV2.checkers());
     }
 }

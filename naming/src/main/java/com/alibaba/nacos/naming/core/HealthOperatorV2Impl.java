@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
@@ -32,9 +33,13 @@ import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.ClientOperationService;
 import com.alibaba.nacos.naming.core.v2.service.ClientOperationServiceProxy;
+import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.utils.InstanceUtil;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -84,6 +89,22 @@ public class HealthOperatorV2Impl implements HealthOperator {
         Instance newInstance = InstanceUtil.parseToApiInstance(service, oldInstance);
         newInstance.setHealthy(healthy);
         clientOperationService.registerInstance(service, newInstance, clientId);
+    }
+    
+    @Override
+    public Map<String, AbstractHealthChecker> checkers() {
+        List<Class<? extends AbstractHealthChecker>> classes = HealthCheckType.getLoadedHealthCheckerClasses();
+        Map<String, AbstractHealthChecker> checkerMap = new HashMap<>(8);
+        for (Class<? extends AbstractHealthChecker> clazz : classes) {
+            try {
+                AbstractHealthChecker checker = clazz.newInstance();
+                checkerMap.put(checker.getType(), checker);
+            } catch (InstantiationException | IllegalAccessException e) {
+                Loggers.EVT_LOG.error("checkers error ", e);
+            }
+        }
+        
+        return checkerMap;
     }
     
     private void throwHealthCheckerException(String fullServiceName, String clusterName) throws NacosException {

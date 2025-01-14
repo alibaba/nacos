@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ * Copyright 1999-$toady.year Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.controllers.v2;
+package com.alibaba.nacos.naming.controllers.v3;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.naming.core.Operator;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -39,51 +38,40 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * OperatorControllerV2.
+ * Operator controller.
  *
- * @author dongyafei
- * @date 2022/9/8
+ * @author Nacos
  */
-@Deprecated
 @NacosApi
 @RestController
-@RequestMapping({UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT,
-        UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + "/ops"})
+@RequestMapping(UtilsAndCommons.OPERATOR_CONTROLLER_V3_ADMIN_PATH)
 @ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)
-public class OperatorControllerV2 {
+public class OperatorControllerV3 {
     
     private final Operator operatorV2Impl;
     
-    public OperatorControllerV2(Operator operatorV2Impl) {
+    public OperatorControllerV3(Operator operatorV2Impl) {
         this.operatorV2Impl = operatorV2Impl;
     }
     
     /**
      * Get switch information.
-     *
-     * @return switchDomain
      */
     @GetMapping("/switches")
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/ops/switches")
+    @Secured(resource = UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<SwitchDomain> switches() {
         return Result.success(operatorV2Impl.switches());
     }
     
     /**
      * Update switch information.
-     *
-     * @param updateSwitchForm debug, entry, value
-     * @return 'ok' if success
-     * @throws Exception exception
      */
-    @Secured(resource = "naming/switches", action = ActionTypes.WRITE)
     @PutMapping("/switches")
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "PUT ${contextPath:nacos}/v3/admin/ns/ops/switches")
+    @Secured(resource = UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<String> updateSwitch(UpdateSwitchForm updateSwitchForm) throws Exception {
         updateSwitchForm.validate();
         try {
             operatorV2Impl.updateSwitch(updateSwitchForm.getEntry(), updateSwitchForm.getValue(), updateSwitchForm.getDebug());
-            
             return Result.success("ok");
         } catch (IllegalArgumentException e) {
             throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.SERVER_ERROR,
@@ -93,14 +81,22 @@ public class OperatorControllerV2 {
     
     /**
      * Get metrics information.
-     *
-     * @param onlyStatus onlyStatus
-     * @return metrics information
      */
     @GetMapping("/metrics")
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/ops/metrics")
+    @Secured(resource = UtilsAndCommons.OPERATOR_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<MetricsInfoVo> metrics(
             @RequestParam(value = "onlyStatus", required = false, defaultValue = "true") Boolean onlyStatus) {
         return Result.success(operatorV2Impl.metrics(onlyStatus));
+    }
+    
+    /**
+     * Set log level.
+     */
+    @PutMapping("/log")
+    @Secured(resource = UtilsAndCommons.OPERATOR_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
+    public Result<String> setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
+        operatorV2Impl.setLogLevel(logName, logLevel);
+        
+        return Result.success("ok");
     }
 }

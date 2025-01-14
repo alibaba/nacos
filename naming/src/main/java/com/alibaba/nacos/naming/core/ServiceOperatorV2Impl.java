@@ -32,8 +32,10 @@ import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataOperateService;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.ClusterInfo;
 import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
+import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.stereotype.Component;
@@ -42,6 +44,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -59,11 +62,14 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     
     private final ServiceStorage serviceStorage;
     
+    private final SubscribeManager subscribeManager;
+    
     public ServiceOperatorV2Impl(NamingMetadataOperateService metadataOperateService,
-            NamingMetadataManager metadataManager, ServiceStorage serviceStorage) {
+            NamingMetadataManager metadataManager, ServiceStorage serviceStorage, SubscribeManager subscribeManager) {
         this.metadataOperateService = metadataOperateService;
         this.metadataManager = metadataManager;
         this.serviceStorage = serviceStorage;
+        this.subscribeManager = subscribeManager;
     }
     
     @Override
@@ -252,5 +258,41 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
             }
         }
         return result;
+    }
+    
+    @Override
+    public ObjectNode getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName, String groupName,
+            boolean aggregation) throws Exception {
+        
+        Service service = Service.newService(namespaceId, groupName, serviceName);
+        
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+        
+        int count = 0;
+        
+        try {
+            List<Subscriber> subscribers = subscribeManager.getSubscribers(service, aggregation);
+            
+            int start = (pageNo - 1) * pageSize;
+            if (start < 0) {
+                start = 0;
+            }
+            
+            int end = start + pageSize;
+            count = subscribers.size();
+            if (end > count) {
+                end = count;
+            }
+            
+            result.replace("subscribers", JacksonUtils.transferToJsonNode(subscribers.subList(start, end)));
+            result.put("count", count);
+            
+            return result;
+        } catch (Exception e) {
+            Loggers.SRV_LOG.warn("query subscribers failed!", e);
+            result.replace("subscribers", JacksonUtils.createEmptyArrayNode());
+            result.put("count", count);
+            return result;
+        }
     }
 }
