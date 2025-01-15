@@ -22,6 +22,7 @@ import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.model.form.UpdateCapacityForm;
 import com.alibaba.nacos.config.server.service.capacity.CapacityService;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import jakarta.servlet.ServletContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,7 +39,6 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import javax.servlet.ServletContext;
 import java.sql.Timestamp;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

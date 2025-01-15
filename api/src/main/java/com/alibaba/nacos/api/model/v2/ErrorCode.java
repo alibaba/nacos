@@ -221,7 +221,7 @@ public enum ErrorCode {
     
     DATA_EMPTY(100005, "Imported file data is empty"),
     
-    NO_SELECTED_CONFIG(100006, "No configuration selected");
+    NO_SELECTED_CONFIG(100006, "No configuration selected"),
     
     FUZZY_WATCH_PATTERN_OVER_LIMIT(50310, "fuzzy watch pattern over limit"),
     
