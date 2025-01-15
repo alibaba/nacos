@@ -220,7 +220,7 @@ public class ConfigFuzzyWatchContextService {
             if (FuzzyGroupKeyPattern.matchPattern(groupKeyPattern, groupKeyItems[0], groupKeyItems[1],
                     groupKeyItems[2])) {
                 
-                if (matchedGroupKeys.size() >= ConfigCommonConfig.getInstance().getMaxMatchedConfigCount()) {
+                if (reachToUpLimit(matchedGroupKeys.size())) {
                     LogUtil.DEFAULT_LOG.warn("[fuzzy-watch]   pattern matched service count is over limit , "
                                     + "other services will stop notify for pattern {} ,current count is {}", groupKeyPattern,
                             matchedGroupKeys.size());

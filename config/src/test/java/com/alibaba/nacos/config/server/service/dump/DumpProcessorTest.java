@@ -105,12 +105,19 @@ class DumpProcessorTest {
     }
     
     @AfterEach
-    void after() {
+    void after() throws Exception {
         dynamicDataSourceMockedStatic.close();
         envUtilMockedStatic.close();
         ConfigDiskServiceFactory.getInstance().clearAll();
         ConfigDiskServiceFactory.getInstance().clearAllGray();
-        
+    
+        Field[] declaredFields = ConfigDiskServiceFactory.class.getDeclaredFields();
+        for (Field filed : declaredFields) {
+            if (filed.getName().equals("configDiskService")) {
+                filed.setAccessible(true);
+                filed.set(null, null);
+            }
+        }
     }
     
     @Test

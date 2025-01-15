@@ -29,7 +29,7 @@ import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.notify.listener.Subscriber;
+import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
@@ -38,6 +38,7 @@ import org.slf4j.Logger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -45,6 +46,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -64,7 +66,7 @@ import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_OVER_
  *
  * @author shiyiyue
  */
-public class ConfigFuzzyWatchGroupKeyHolder {
+public class ConfigFuzzyWatchGroupKeyHolder extends SmartSubscriber {
     
     private static final Logger LOGGER = LogUtils.logger(ClientWorker.class);
     
@@ -94,80 +96,33 @@ public class ConfigFuzzyWatchGroupKeyHolder {
     public ConfigFuzzyWatchGroupKeyHolder(ClientWorker.ConfigRpcTransportClient agent, String clientUuid) {
         this.clientUuid = clientUuid;
         this.agent = agent;
-        NotifyCenter.registerSubscriber(new Subscriber<ConfigFuzzyWatchNotifyEvent>() {
-            @Override
-            public void onEvent(ConfigFuzzyWatchNotifyEvent configFuzzyWatchNotifyEvent) {
-                
-                //instance check
-                if (!configFuzzyWatchNotifyEvent.getClientUuid().equals(clientUuid)) {
-                    return;
-                }
-                
-                ConfigFuzzyWatchContext context = fuzzyListenContextMap.get()
-                        .get(configFuzzyWatchNotifyEvent.getGroupKeyPattern());
-                if (context == null) {
-                    return;
-                }
-                
-                context.notifyWatcher(configFuzzyWatchNotifyEvent.getGroupKey(),
-                        configFuzzyWatchNotifyEvent.getChangedType(), configFuzzyWatchNotifyEvent.getSyncType(),
-                        configFuzzyWatchNotifyEvent.getWatcherUuid());
-            }
-            
-            @Override
-            public Class<? extends Event> subscribeType() {
-                return ConfigFuzzyWatchNotifyEvent.class;
-            }
-        });
-        
-        NotifyCenter.registerSubscriber(new Subscriber<ConfigFuzzyWatchLoadEvent>() {
-            @Override
-            public void onEvent(ConfigFuzzyWatchLoadEvent event) {
-                
-                //instance check
-                if (!event.getClientUuid().equals(clientUuid)) {
-                    return;
-                }
-                
-                ConfigFuzzyWatchContext context = fuzzyListenContextMap.get().get(event.getGroupKeyPattern());
-                if (context == null) {
-                    return;
-                }
-                
-                context.notifyLoaderWatcher(event.getCode());
-            }
-            
-            @Override
-            public Class<? extends Event> subscribeType() {
-                return ConfigFuzzyWatchLoadEvent.class;
-            }
-        });
-        
+        NotifyCenter.registerSubscriber(this);
     }
     
     /**
      * start.
      */
     public void start() {
-        agent.executor.schedule(() -> {
-            while (!agent.executor.isShutdown() && !agent.executor.isTerminated()) {
+        ScheduledExecutorService agentExecutor = agent.getExecutor();
+        agentExecutor.submit(() -> {
+            while (!agentExecutor.isShutdown() && !agentExecutor.isTerminated()) {
                 try {
                     fuzzyListenExecuteBell.poll(5L, TimeUnit.SECONDS);
-                    if (agent.executor.isShutdown() || agent.executor.isTerminated()) {
+                    if (agentExecutor.isShutdown() || agentExecutor.isTerminated()) {
                         continue;
                     }
                     executeConfigFuzzyListen();
                 } catch (Throwable e) {
                     LOGGER.error("[rpc-fuzzy-listen-execute] rpc fuzzy listen exception", e);
                     try {
-                        Thread.sleep(50L);
+                        Thread.sleep(500L);
                     } catch (InterruptedException interruptedException) {
                         //ignore
                     }
                     notifyFuzzyWatchSync();
                 }
             }
-        }, 0L, TimeUnit.MILLISECONDS);
+        });
     }
     
     /**
@@ -235,7 +190,7 @@ public class ConfigFuzzyWatchGroupKeyHolder {
         ConfigFuzzyWatchContext context = fuzzyListenContextMap.get().get(groupKeyPattern);
         if (Constants.FINISH_FUZZY_WATCH_INIT_NOTIFY.equals(request.getSyncType())) {
             LOGGER.info("[{}] [fuzzy-watch] init-notify-finished, pattern ->{}, match group keys count {}",
-                    agent.getName(), request.getGroupKeyPattern(), context.getReceivedGroupKeys().size());
+                    agent.getName(), request.getGroupKeyPattern(), context.getReceivedGroupKeysCount());
             context.markInitializationComplete();
             return new ConfigFuzzyWatchSyncResponse();
         }
@@ -411,47 +366,11 @@ public class ConfigFuzzyWatchGroupKeyHolder {
         RpcClient rpcClient = agent.ensureRpcClient(taskId);
         
         // Iterate through the context map and submit tasks for execution
-        for (ConfigFuzzyWatchContext entry : contextLists) {
-            ExecutorService executorService = agent.executor;
+        for (ConfigFuzzyWatchContext context : contextLists) {
+            ExecutorService executorService = agent.getExecutor();
             // Submit task for execution
             Future<?> future = executorService.submit(() -> {
-                ConfigFuzzyWatchRequest configFuzzyWatchRequest = buildFuzzyListenConfigRequest(entry);
-                try {
-                    // Execute the fuzzy listen operation
-                    ConfigFuzzyWatchResponse listenResponse = (ConfigFuzzyWatchResponse) agent.requestProxy(rpcClient,
-                            configFuzzyWatchRequest);
-                    if (listenResponse != null && listenResponse.isSuccess()) {
-                        
-                        if (entry.isDiscard()) {
-                            removeFuzzyListenContext(entry.getGroupKeyPattern());
-                        } else {
-                            entry.setConsistentWithServer(true);
-                        }
-                        
-                        entry.clearOverLimitTs();
-                    } else if (listenResponse != null) {
-                        if (handleOverLoadEvent(entry.getGroupKeyPattern(), listenResponse.getErrorCode())) {
-                            return;
-                        }
-                        LOGGER.error("Execute  fuzzy watch config change error,code={},msg={}",
-                                listenResponse.getErrorCode(), listenResponse.getMessage());
-                    }
-                    
-                } catch (NacosException e) {
-                    if (handleOverLoadEvent(entry.getGroupKeyPattern(), e.getErrCode())) {
-                        return;
-                    }
-                    // Log error and retry after a short delay
-                    LOGGER.error("Execute  fuzzy watch config change error.", e);
-                    try {
-                        Thread.sleep(50L);
-                    } catch (InterruptedException interruptedException) {
-                        // Ignore interruption
-                    }
-                    // Retry notification
-                    notifyFuzzyWatchSync();
-                    
-                }
+                executeFuzzyWatchRequest(context, rpcClient);
             });
             listenFutures.add(future);
         }
@@ -464,6 +383,41 @@ public class ConfigFuzzyWatchGroupKeyHolder {
                 // Log async listen error
                 LOGGER.error("Async fuzzy listen config change error.", throwable);
             }
+        }
+    }
+    
+    void executeFuzzyWatchRequest(ConfigFuzzyWatchContext context, RpcClient rpcClient) {
+        ConfigFuzzyWatchRequest configFuzzyWatchRequest = buildFuzzyListenConfigRequest(context);
+        try {
+            // Execute the fuzzy listen operation
+            ConfigFuzzyWatchResponse listenResponse = (ConfigFuzzyWatchResponse) agent.requestProxy(rpcClient,
+                    configFuzzyWatchRequest);
+            if (listenResponse != null && listenResponse.isSuccess()) {
+                
+                if (context.isDiscard()) {
+                    removeFuzzyListenContext(context.getGroupKeyPattern());
+                } else {
+                    context.setConsistentWithServer(true);
+                }
+                
+                context.clearOverLimitTs();
+            } else if (listenResponse != null) {
+                if (handleOverLoadEvent(context.getGroupKeyPattern(), listenResponse.getErrorCode())) {
+                    return;
+                }
+                LOGGER.error("Execute  fuzzy watch config change error,code={},msg={}", listenResponse.getErrorCode(),
+                        listenResponse.getMessage());
+            }
+            
+        } catch (NacosException e) {
+            if (handleOverLoadEvent(context.getGroupKeyPattern(), e.getErrCode())) {
+                return;
+            }
+            // Log error and retry after a short delay
+            LOGGER.error("Execute  fuzzy watch config change error.", e);
+            // Retry notification
+            notifyFuzzyWatchSync();
+            
         }
     }
     
@@ -527,4 +481,50 @@ public class ConfigFuzzyWatchGroupKeyHolder {
         return context;
     }
     
+    @Override
+    public List<Class<? extends Event>> subscribeTypes() {
+        List<Class<? extends Event>> result = new LinkedList<>();
+        result.add(ConfigFuzzyWatchNotifyEvent.class);
+        result.add(ConfigFuzzyWatchLoadEvent.class);
+        return result;
+    }
+    
+    @Override
+    public void onEvent(Event event) {
+        
+        if (event instanceof ConfigFuzzyWatchNotifyEvent) {
+            
+            ConfigFuzzyWatchNotifyEvent configFuzzyWatchNotifyEvent = (ConfigFuzzyWatchNotifyEvent) event;
+            if (!configFuzzyWatchNotifyEvent.getClientUuid().equals(clientUuid)) {
+                return;
+            }
+            
+            ConfigFuzzyWatchContext context = fuzzyListenContextMap.get()
+                    .get(configFuzzyWatchNotifyEvent.getGroupKeyPattern());
+            if (context == null) {
+                return;
+            }
+            
+            context.notifyWatcher(configFuzzyWatchNotifyEvent.getGroupKey(),
+                    configFuzzyWatchNotifyEvent.getChangedType(), configFuzzyWatchNotifyEvent.getSyncType(),
+                    configFuzzyWatchNotifyEvent.getWatcherUuid());
+        }
+        
+        if (event instanceof ConfigFuzzyWatchLoadEvent) {
+            ConfigFuzzyWatchLoadEvent loadEvent = (ConfigFuzzyWatchLoadEvent) event;
+            
+            //instance check
+            if (!loadEvent.getClientUuid().equals(clientUuid)) {
+                return;
+            }
+            
+            ConfigFuzzyWatchContext context = fuzzyListenContextMap.get().get(loadEvent.getGroupKeyPattern());
+            if (context == null) {
+                return;
+            }
+            
+            context.notifyLoaderWatcher(loadEvent.getCode());
+        }
+        
+    }
 }

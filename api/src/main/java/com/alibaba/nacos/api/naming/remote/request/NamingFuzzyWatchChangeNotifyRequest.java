@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.naming.remote.request;
 
+import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_RESOURCE_CHANGED;
+
 /**
  * Nacos fuzzy watch notify service change request, use it when one of the services changes.
  *
@@ -31,8 +33,8 @@ public class NamingFuzzyWatchChangeNotifyRequest extends AbstractFuzzyWatchNotif
     
     }
     
-    public NamingFuzzyWatchChangeNotifyRequest(String serviceKey, String changedType, String syncType) {
-        super(syncType);
+    public NamingFuzzyWatchChangeNotifyRequest(String serviceKey, String changedType) {
+        super(FUZZY_WATCH_RESOURCE_CHANGED);
         this.serviceKey = serviceKey;
         this.changedType = changedType;
     }

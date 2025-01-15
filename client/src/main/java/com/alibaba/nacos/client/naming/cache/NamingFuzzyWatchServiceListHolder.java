@@ -20,8 +20,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.listener.FuzzyWatchEventWatcher;
 import com.alibaba.nacos.api.naming.remote.request.NamingFuzzyWatchRequest;
 import com.alibaba.nacos.api.naming.remote.response.NamingFuzzyWatchResponse;
-import com.alibaba.nacos.client.naming.event.NamingFuzzyWatchNotifyEvent;
 import com.alibaba.nacos.client.naming.event.NamingFuzzyWatchLoadEvent;
+import com.alibaba.nacos.client.naming.event.NamingFuzzyWatchNotifyEvent;
 import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -139,20 +140,24 @@ public class NamingFuzzyWatchServiceListHolder extends SmartSubscriber {
      */
     public NamingFuzzyWatchContext registerFuzzyWatcher(String groupKeyPattern, FuzzyWatchEventWatcher watcher) {
         NamingFuzzyWatchContext namingFuzzyWatchContext = initFuzzyWatchContextIfNeed(groupKeyPattern);
-        
-        FuzzyWatchEventWatcherWrapper fuzzyWatchEventWatcherWrapper = new FuzzyWatchEventWatcherWrapper(watcher);
-        if (namingFuzzyWatchContext.getFuzzyWatchEventWatcherWrappers().add(fuzzyWatchEventWatcherWrapper)) {
-            LOGGER.info(" [add-watcher-ok] groupKeyPattern={}, watcher={},uuid={} ", groupKeyPattern, watcher,
-                    fuzzyWatchEventWatcherWrapper.getUuid());
-            if (CollectionUtils.isNotEmpty(namingFuzzyWatchContext.getReceivedServiceKeys())) {
-                for (String serviceKey : namingFuzzyWatchContext.getReceivedServiceKeys()) {
-                    NamingFuzzyWatchNotifyEvent namingFuzzyWatchNotifyEvent = NamingFuzzyWatchNotifyEvent.build(
-                            notifierEventScope, groupKeyPattern, serviceKey, ADD_SERVICE, FUZZY_WATCH_INIT_NOTIFY,
-                            fuzzyWatchEventWatcherWrapper.getUuid());
-                    NotifyCenter.publishEvent(namingFuzzyWatchNotifyEvent);
+        namingFuzzyWatchContext.setDiscard(false);
+        synchronized (namingFuzzyWatchContext) {
+            FuzzyWatchEventWatcherWrapper fuzzyWatchEventWatcherWrapper = new FuzzyWatchEventWatcherWrapper(watcher);
+            if (namingFuzzyWatchContext.getFuzzyWatchEventWatcherWrappers().add(fuzzyWatchEventWatcherWrapper)) {
+                LOGGER.info(" [add-watcher-ok] groupKeyPattern={}, watcher={},uuid={} ", groupKeyPattern, watcher,
+                        fuzzyWatchEventWatcherWrapper.getUuid());
+                Set<String> receivedServiceKeys = namingFuzzyWatchContext.getReceivedServiceKeys();
+                if (CollectionUtils.isNotEmpty(receivedServiceKeys)) {
+                    for (String serviceKey :receivedServiceKeys) {
+                        NamingFuzzyWatchNotifyEvent namingFuzzyWatchNotifyEvent = NamingFuzzyWatchNotifyEvent.build(
+                                notifierEventScope, groupKeyPattern, serviceKey, ADD_SERVICE, FUZZY_WATCH_INIT_NOTIFY,
+                                fuzzyWatchEventWatcherWrapper.getUuid());
+                        NotifyCenter.publishEvent(namingFuzzyWatchNotifyEvent);
+                    }
                 }
             }
         }
+        
         return namingFuzzyWatchContext;
     }
     
@@ -225,9 +230,8 @@ public class NamingFuzzyWatchServiceListHolder extends SmartSubscriber {
             if (context.isConsistentWithServer()) {
                 // Skip if a full synchronization is not needed
                 if (!needAllSync) {
-                    continue;
-                } else {
                     context.syncFuzzyWatchers();
+                    continue;
                 }
             }
             
@@ -295,7 +299,7 @@ public class NamingFuzzyWatchServiceListHolder extends SmartSubscriber {
                     
                 } else {
                     LOGGER.error(" fuzzy watch request fail.", e);
-    
+                    
                     try {
                         Thread.sleep(1000L);
                     } catch (InterruptedException interruptedException) {

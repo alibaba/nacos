@@ -134,19 +134,15 @@ public class ClientWorker implements Closeable {
     
     private ConfigFuzzyWatchGroupKeyHolder configFuzzyWatchGroupKeyHolder;
     
-    private Map<String, String> appLables = new HashMap<>();
+    private Map<String, String> appLabels = new HashMap<>();
     
     private final ConfigFilterChainManager configFilterChainManager;
     
     private final String uuid = UUID.randomUUID().toString();
     
-    private long timeout;
-    
     private long requestTimeout;
     
     private final ConfigRpcTransportClient agent;
-    
-    private int taskPenaltyTime;
     
     private boolean enableRemoteSyncConfig = false;
     
@@ -528,7 +524,7 @@ public class ClientWorker implements Closeable {
     }
     
     void initAppLabels(Properties properties) {
-        this.appLables = ConnLabelsUtils.addPrefixForEachKey(defaultLabelsCollectorManager.getLabels(properties),
+        this.appLabels = ConnLabelsUtils.addPrefixForEachKey(defaultLabelsCollectorManager.getLabels(properties),
                 APP_CONN_PREFIX);
     }
     
@@ -545,12 +541,6 @@ public class ClientWorker implements Closeable {
     private void init(NacosClientProperties properties) {
         
         requestTimeout = ConvertUtils.toLong(properties.getProperty(PropertyKeyConst.CONFIG_REQUEST_TIMEOUT, "-1"));
-        
-        timeout = Math.max(ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT),
-                Constants.CONFIG_LONG_POLL_TIMEOUT), Constants.MIN_CONFIG_LONG_POLL_TIMEOUT);
-        
-        taskPenaltyTime = ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_RETRY_TIME),
-                Constants.CONFIG_RETRY_TIME);
         
         this.enableRemoteSyncConfig = Boolean.parseBoolean(
                 properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
@@ -663,8 +653,8 @@ public class ClientWorker implements Closeable {
                     }
                 }
                 
-                LOGGER.info("Shutdown executor {}", executor);
-                executor.shutdown();
+                LOGGER.info("Shutdown executor {}", agent.getExecutor());
+                agent.getExecutor().shutdown();
                 Map<String, CacheData> stringCacheDataMap = cacheMap.get();
                 for (Map.Entry<String, CacheData> entry : stringCacheDataMap.entrySet()) {
                     entry.getValue().setConsistentWithServer(false);
@@ -692,7 +682,7 @@ public class ClientWorker implements Closeable {
                 labels.put(Constants.LOCATION_TAG, EnvUtil.getSelfLocationTag());
             }
             
-            labels.putAll(appLables);
+            labels.putAll(appLabels);
             return labels;
         }
         
@@ -814,6 +804,7 @@ public class ClientWorker implements Closeable {
         
         @Override
         public void startInternal() {
+            ScheduledExecutorService executor = getExecutor();
             executor.schedule(() -> {
                 while (!executor.isShutdown() && !executor.isTerminated()) {
                     try {

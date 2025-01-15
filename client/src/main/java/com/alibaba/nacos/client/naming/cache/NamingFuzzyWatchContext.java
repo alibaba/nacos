@@ -76,6 +76,8 @@ public class NamingFuzzyWatchContext {
      */
     private Set<String> receivedServiceKeys = new ConcurrentHashSet<>();
     
+    private long syncVersion = 0;
+    
     /**
      * Flag indicating whether the context is consistent with the server.
      */
@@ -110,6 +112,10 @@ public class NamingFuzzyWatchContext {
     
     public void refreshOverLimitTs() {
         this.patternLimitTs = System.currentTimeMillis();
+    }
+    
+    public void refreshSyncVersion() {
+        this.syncVersion = System.currentTimeMillis();
     }
     
     /**
@@ -199,7 +205,7 @@ public class NamingFuzzyWatchContext {
      *
      * @param watcher watcher to be removed
      */
-    public void removeWatcher(FuzzyWatchEventWatcher watcher) {
+    public synchronized void removeWatcher(FuzzyWatchEventWatcher watcher) {
         Iterator<FuzzyWatchEventWatcherWrapper> iterator = fuzzyWatchEventWatcherWrappers.iterator();
         while (iterator.hasNext()) {
             FuzzyWatchEventWatcherWrapper next = iterator.next();
@@ -209,7 +215,10 @@ public class NamingFuzzyWatchContext {
                         this.groupKeyPattern, watcher, next.getUuid());
             }
         }
-        
+        if (fuzzyWatchEventWatcherWrappers.isEmpty()) {
+            this.setConsistentWithServer(false);
+            this.setDiscard(true);
+        }
     }
     
     /**
@@ -283,12 +292,33 @@ public class NamingFuzzyWatchContext {
         return Collections.unmodifiableSet(receivedServiceKeys);
     }
     
+    /**
+     * add received service key.
+     *
+     * @param serviceKey service key.
+     * @return
+     */
     public boolean addReceivedServiceKey(String serviceKey) {
-        return receivedServiceKeys.add(serviceKey);
+        boolean added = receivedServiceKeys.add(serviceKey);
+        if (added) {
+            refreshSyncVersion();
+        }
+        return added;
     }
     
+    /**
+     * remove received service key.
+     *
+     * @param serviceKey service key.
+     * @return
+     */
     public boolean removeReceivedServiceKey(String serviceKey) {
-        return receivedServiceKeys.remove(serviceKey);
+        
+        boolean removed = receivedServiceKeys.remove(serviceKey);
+        if (removed) {
+            refreshSyncVersion();
+        }
+        return removed;
     }
     
     /**
@@ -302,14 +332,23 @@ public class NamingFuzzyWatchContext {
     
     void syncFuzzyWatchers() {
         for (FuzzyWatchEventWatcherWrapper namingFuzzyWatcher : fuzzyWatchEventWatcherWrappers) {
-            Set<String> receivedServiceKeysContext = this.getReceivedServiceKeys();
+            
+            if (namingFuzzyWatcher.syncVersion == this.syncVersion) {
+                continue;
+            }
+            
+            Set<String> receivedServiceKeysContext = new HashSet<>(this.getReceivedServiceKeys());
             Set<String> syncGroupKeys = namingFuzzyWatcher.getSyncServiceKeys();
             List<FuzzyGroupKeyPattern.GroupKeyState> groupKeyStates = FuzzyGroupKeyPattern.diffGroupKeys(
                     receivedServiceKeysContext, syncGroupKeys);
-            for (FuzzyGroupKeyPattern.GroupKeyState groupKeyState : groupKeyStates) {
-                String changedType = groupKeyState.isExist() ? ADD_SERVICE : DELETE_SERVICE;
-                doNotifyWatcher(groupKeyState.getGroupKey(), changedType, FUZZY_WATCH_DIFF_SYNC_NOTIFY,
-                        namingFuzzyWatcher);
+            if (CollectionUtils.isEmpty(groupKeyStates)) {
+                namingFuzzyWatcher.syncVersion = this.syncVersion;
+            } else {
+                for (FuzzyGroupKeyPattern.GroupKeyState groupKeyState : groupKeyStates) {
+                    String changedType = groupKeyState.isExist() ? ADD_SERVICE : DELETE_SERVICE;
+                    doNotifyWatcher(groupKeyState.getGroupKey(), changedType, FUZZY_WATCH_DIFF_SYNC_NOTIFY,
+                            namingFuzzyWatcher);
+                }
             }
         }
     }

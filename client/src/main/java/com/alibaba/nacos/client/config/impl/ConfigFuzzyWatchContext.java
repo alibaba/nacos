@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.config.listener.FuzzyWatchEventWatcher;
 import com.alibaba.nacos.api.config.listener.FuzzyWatchLoadWatcher;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -77,6 +78,8 @@ public class ConfigFuzzyWatchContext {
      * Set of data IDs associated with the context.
      */
     private Set<String> receivedGroupKeys = new ConcurrentHashSet<>();
+    
+    long syncVersion = 0;
     
     /**
      * Flag indicating whether the context is consistent with the server.
@@ -172,6 +175,7 @@ public class ConfigFuzzyWatchContext {
     
     /**
      * notify loader watcher.
+     *
      * @param code over limit code,FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT or FUZZY_WATCH_PATTERN_OVER_LIMIT.
      */
     public void notifyLoaderWatcher(int code) {
@@ -381,6 +385,10 @@ public class ConfigFuzzyWatchContext {
         return !initializationCompleted.get();
     }
     
+    public int getReceivedGroupKeysCount() {
+        return receivedGroupKeys.size();
+    }
+    
     /**
      * Get the set of data IDs associated with the context. zw
      *
@@ -390,12 +398,34 @@ public class ConfigFuzzyWatchContext {
         return Collections.unmodifiableSet(receivedGroupKeys);
     }
     
-    public boolean addReceivedGroupKey(String groupKey) {
-        return receivedGroupKeys.add(groupKey);
+    public void refreshSyncVersion() {
+        this.syncVersion = System.currentTimeMillis();
     }
     
+    /**
+     * add receive group key.
+     * @param groupKey group key.
+     * @return
+     */
+    public boolean addReceivedGroupKey(String groupKey) {
+        boolean added = receivedGroupKeys.add(groupKey);
+        if (added) {
+            refreshSyncVersion();
+        }
+        return added;
+    }
+    
+    /**
+     * remove receive group key.
+     * @param groupKey group key.
+     * @return
+     */
     public boolean removeReceivedGroupKey(String groupKey) {
-        return receivedGroupKeys.remove(groupKey);
+        boolean removed = receivedGroupKeys.remove(groupKey);
+        if (removed) {
+            refreshSyncVersion();
+        }
+        return removed;
     }
     
     /**
@@ -429,14 +459,23 @@ public class ConfigFuzzyWatchContext {
     
     void syncFuzzyWatchers() {
         for (ConfigFuzzyWatcherWrapper configFuzzyWatcher : configFuzzyWatcherWrappers) {
-            Set<String> receivedGroupKeysContext = receivedGroupKeys;
+            
+            if (configFuzzyWatcher.syncVersion == this.syncVersion) {
+                continue;
+            }
+            
+            Set<String> receivedGroupKeysContext = new HashSet<>(getReceivedGroupKeys());
             Set<String> syncGroupKeys = configFuzzyWatcher.getSyncGroupKeys();
             List<FuzzyGroupKeyPattern.GroupKeyState> groupKeyStates = FuzzyGroupKeyPattern.diffGroupKeys(
                     receivedGroupKeysContext, syncGroupKeys);
-            for (FuzzyGroupKeyPattern.GroupKeyState groupKeyState : groupKeyStates) {
-                String changedType = groupKeyState.isExist() ? ADD_CONFIG : DELETE_CONFIG;
-                doNotifyWatcher(groupKeyState.getGroupKey(), changedType, FUZZY_WATCH_DIFF_SYNC_NOTIFY,
-                        configFuzzyWatcher);
+            if (CollectionUtils.isEmpty(groupKeyStates)) {
+                configFuzzyWatcher.syncVersion = this.syncVersion;
+            } else {
+                for (FuzzyGroupKeyPattern.GroupKeyState groupKeyState : groupKeyStates) {
+                    String changedType = groupKeyState.isExist() ? ADD_CONFIG : DELETE_CONFIG;
+                    doNotifyWatcher(groupKeyState.getGroupKey(), changedType, FUZZY_WATCH_DIFF_SYNC_NOTIFY,
+                            configFuzzyWatcher);
+                }
             }
             
         }

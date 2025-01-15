@@ -52,7 +52,7 @@ public class FuzzyWatchChangeNotifyExecuteTask extends AbstractExecuteTask {
     public void run() {
         
         delayTaskEngine.getPushExecutor().doFuzzyWatchNotifyPushWithCallBack(clientId,
-                new NamingFuzzyWatchChangeNotifyRequest(serviceKey, changedType, FUZZY_WATCH_RESOURCE_CHANGED),
+                new NamingFuzzyWatchChangeNotifyRequest(serviceKey, changedType),
                 new FuzzyWatchChangeNotifyCallback(clientId, serviceKey, changedType));
         
     }

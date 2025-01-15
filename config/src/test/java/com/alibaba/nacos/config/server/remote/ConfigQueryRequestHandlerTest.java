@@ -27,16 +27,15 @@ import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.model.gray.ConfigGrayPersistInfo;
 import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
 import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
-import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigRocksDbDiskService;
+import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.MockedStatic;
@@ -57,7 +56,6 @@ import static org.mockito.Mockito.when;
 
 // todo open the test case
 @ExtendWith(MockitoExtension.class)
-@Disabled
 class ConfigQueryRequestHandlerTest {
     
     static MockedStatic<ConfigCacheService> configCacheServiceMockedStatic;
@@ -94,7 +92,6 @@ class ConfigQueryRequestHandlerTest {
         final String groupKey = GroupKey2.getKey(dataId, group, Constants.DEFAULT_NAMESPACE_ID);
         when(ConfigCacheService.tryConfigReadLock(groupKey)).thenReturn(1);
         propertyUtilMockedStatic.when(PropertyUtil::getMaxContent).thenReturn(1024 * 1000);
-        
     }
     
     /**
@@ -121,7 +118,8 @@ class ConfigQueryRequestHandlerTest {
         RequestMeta requestMeta = new RequestMeta();
         requestMeta.setClientIp("127.0.0.1");
         
-        when(configRocksDbDiskService.getContent(eq(dataId), eq(group), eq(Constants.DEFAULT_NAMESPACE_ID))).thenReturn(content);
+        when(configRocksDbDiskService.getContent(eq(dataId), eq(group), eq(Constants.DEFAULT_NAMESPACE_ID))).thenReturn(
+                content);
         ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
         assertEquals(content, response.getContent());
         assertEquals(MD5Utils.md5Hex(content, "UTF-8"), response.getMd5());

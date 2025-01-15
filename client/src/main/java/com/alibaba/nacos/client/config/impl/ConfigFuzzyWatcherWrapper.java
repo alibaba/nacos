@@ -29,7 +29,9 @@ import java.util.UUID;
  * @author shiyiyue
  */
 public class ConfigFuzzyWatcherWrapper {
-
+    
+    long syncVersion = 0;
+    
     FuzzyWatchEventWatcher fuzzyWatchEventWatcher;
     
     public ConfigFuzzyWatcherWrapper(FuzzyWatchEventWatcher fuzzyWatchEventWatcher) {
