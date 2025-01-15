@@ -114,7 +114,8 @@ public class ConfigOpsControllerV3 {
      * @return {@link RestResult}
      */
     @GetMapping(value = "/derby")
-    @Secured(resource = Constants.OPS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(resource = Constants.OPS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
+            signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Object> derbyOps(@RequestParam(value = "sql") String sql) {
         String selectSign = "SELECT";
         String limitSign = "ROWS FETCH NEXT";
