@@ -60,8 +60,6 @@ public class NacosRoleServiceImpl {
     
     private static final int DEFAULT_PAGE_NO = 1;
     
-    private static final Set<String> WHITE_PERMISSION = new HashSet<>();
-    
     @Autowired
     private AuthConfigs authConfigs;
     
@@ -79,11 +77,6 @@ public class NacosRoleServiceImpl {
     private volatile Map<String, List<RoleInfo>> roleInfoMap = new ConcurrentHashMap<>();
     
     private volatile Map<String, List<PermissionInfo>> permissionInfoMap = new ConcurrentHashMap<>();
-    
-    static {
-        WHITE_PERMISSION.add(AuthConstants.UPDATE_PASSWORD_ENTRY_POINT);
-        WHITE_PERMISSION.add(AuthConstants.LOCK_OPERATOR_POINT);
-    }
     
     @Scheduled(initialDelay = 5000, fixedDelay = 15000)
     private void reload() {
@@ -129,11 +122,6 @@ public class NacosRoleServiceImpl {
      * @return true if granted, false otherwise
      */
     public boolean hasPermission(NacosUser nacosUser, Permission permission) {
-        //white permission
-        if (WHITE_PERMISSION.contains(permission.getResource().getName())) {
-            return true;
-        }
-        
         if (isUpdatePasswordPermission(permission)) {
             return true;
         }

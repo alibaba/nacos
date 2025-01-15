@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos;
 
+import com.alibaba.nacos.console.aot.NacosRuntimeHints;
 import com.alibaba.nacos.sys.filter.NacosTypeExcludeFilter;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.AutoConfigurationExcludeFilter;
@@ -23,6 +24,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.TypeExcludeFilter;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.ImportRuntimeHints;
 
 /**
  * Nacos Full merged starter.
@@ -33,6 +35,7 @@ import org.springframework.context.annotation.FilterType;
  * @author nacos
  */
 @SpringBootApplication
+@ImportRuntimeHints(NacosRuntimeHints.class)
 @ComponentScan(basePackages = "com.alibaba.nacos", excludeFilters = {
         @ComponentScan.Filter(type = FilterType.CUSTOM, classes = {NacosTypeExcludeFilter.class}),
         @ComponentScan.Filter(type = FilterType.CUSTOM, classes = {TypeExcludeFilter.class}),
@@ -42,5 +45,6 @@ public class Nacos {
     public static void main(String[] args) {
         SpringApplication.run(Nacos.class, args);
     }
+    
 }
 

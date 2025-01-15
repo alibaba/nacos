@@ -45,7 +45,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collection;
 
 /**
@@ -53,6 +53,7 @@ import java.util.Collection;
  *
  * @author nkorange
  */
+@Deprecated
 @RestController
 @RequestMapping({UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT,
         UtilsAndCommons.NACOS_NAMING_CONTEXT + "/ops"})
@@ -120,7 +121,7 @@ public class OperatorController {
      * @return switchDomain
      */
     @GetMapping("/switches")
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/ops/switches")
     public SwitchDomain switches(HttpServletRequest request) {
         return switchDomain;
     }
@@ -136,7 +137,7 @@ public class OperatorController {
      */
     @Secured(resource = "naming/switches", action = ActionTypes.WRITE)
     @PutMapping("/switches")
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "PUT ${contextPath:nacos}/v3/admin/ns/ops/switches")
     public String updateSwitch(@RequestParam(required = false) boolean debug, @RequestParam String entry,
             @RequestParam String value) throws Exception {
         
@@ -152,7 +153,7 @@ public class OperatorController {
      * @return metrics information
      */
     @GetMapping("/metrics")
-    @Compatibility(apiType = ApiType.OPEN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/ops/metrics")
     public ObjectNode metrics(HttpServletRequest request) {
         boolean onlyStatus = Boolean.parseBoolean(WebUtils.optional(request, "onlyStatus", "true"));
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
@@ -198,7 +199,7 @@ public class OperatorController {
     }
     
     @GetMapping("/distro/client")
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/client/distro")
     public ObjectNode getResponsibleServer4Client(@RequestParam String ip, @RequestParam String port) {
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         String tag = ip + InternetAddressUtil.IP_PORT_SPLITER + port;
@@ -207,7 +208,7 @@ public class OperatorController {
     }
     
     @PutMapping("/log")
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "PUT ${contextPath:nacos}/v3/admin/ns/ops/log")
     public String setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
         Loggers.setLogLevel(logName, logLevel);
         return "ok";

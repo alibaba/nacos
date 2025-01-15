@@ -38,6 +38,7 @@ import java.util.Map;
  *
  * @author Nacos
  */
+@Deprecated
 @RestController
 @RequestMapping(Constants.HEALTH_CONTROLLER_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)

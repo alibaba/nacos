@@ -30,9 +30,9 @@ import com.alibaba.nacos.config.server.exception.NacosConfigException;
 import com.alibaba.nacos.config.server.model.ConfigCacheGray;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
+import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.service.query.ConfigChainRequestExtractorService;
 import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
-import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.service.query.enums.ResponseCode;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
@@ -41,12 +41,12 @@ import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.Protocol;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URLEncoder;
@@ -162,9 +162,11 @@ public class ConfigServletInner {
     private String handlerConfigConflict(HttpServletResponse response, ApiVersionEnum apiVersion) throws IOException {
         response.setStatus(HttpServletResponse.SC_CONFLICT);
         if (apiVersion == ApiVersionEnum.V1) {
-            return writeResponseForV1(response, Result.failure(ErrorCode.RESOURCE_CONFLICT, "requested file is being modified, please try later."));
+            return writeResponseForV1(response,
+                    Result.failure(ErrorCode.RESOURCE_CONFLICT, "requested file is being modified, please try later."));
         } else {
-            return writeResponseForV2(response, Result.failure(ErrorCode.RESOURCE_CONFLICT, "requested file is being modified, please try later."));
+            return writeResponseForV2(response,
+                    Result.failure(ErrorCode.RESOURCE_CONFLICT, "requested file is being modified, please try later."));
         }
     }
     
@@ -204,7 +206,8 @@ public class ConfigServletInner {
     }
     
     private void setResponseHeadForV1(HttpServletResponse response, ConfigQueryChainResponse chainResponse) {
-        String contentType = chainResponse.getContentType() != null ? chainResponse.getContentType() : FileTypeEnum.TEXT.getFileType();
+        String contentType = chainResponse.getContentType() != null ? chainResponse.getContentType()
+                : FileTypeEnum.TEXT.getFileType();
         FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(contentType);
         String contentTypeHeader = fileTypeEnum.getContentType();
         response.setHeader(HttpHeaderConsts.CONTENT_TYPE, contentTypeHeader);
@@ -282,18 +285,21 @@ public class ConfigServletInner {
         if (status == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_QUERY_CONFLICT) {
             ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, pullEvent,
                     ConfigTraceService.PULL_TYPE_CONFLICT, -1, clientIp, notify, "http");
-        } else if (status == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND || chainResponse.getContent() == null) {
+        } else if (status == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND
+                || chainResponse.getContent() == null) {
             ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, pullEvent,
                     ConfigTraceService.PULL_TYPE_NOTFOUND, -1, clientIp, notify, "http");
         } else {
             long delayed = notify ? -1 : System.currentTimeMillis() - chainResponse.getLastModified();
-            ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, chainResponse.getLastModified(), pullEvent,
-                    ConfigTraceService.PULL_TYPE_OK, delayed, clientIp, notify, "http");
+            ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, chainResponse.getLastModified(),
+                    pullEvent, ConfigTraceService.PULL_TYPE_OK, delayed, clientIp, notify, "http");
         }
     }
     
-    private void setCommonResponseHead(HttpServletResponse response, ConfigQueryChainResponse chainResponse, String tag) {
-        String contentType = chainResponse.getContentType() != null ? chainResponse.getContentType() : FileTypeEnum.TEXT.getFileType();
+    private void setCommonResponseHead(HttpServletResponse response, ConfigQueryChainResponse chainResponse,
+            String tag) {
+        String contentType = chainResponse.getContentType() != null ? chainResponse.getContentType()
+                : FileTypeEnum.TEXT.getFileType();
         
         response.setHeader(CONFIG_TYPE, contentType);
         response.setHeader(CONTENT_MD5, chainResponse.getMd5());
@@ -312,8 +318,9 @@ public class ConfigServletInner {
                 response.setHeader("isBeta", "true");
             } else if (TagGrayRule.TYPE_TAG.equals(chainResponse.getMatchedGray().getGrayRule().getType())) {
                 try {
-                    response.setHeader(TagGrayRule.TYPE_TAG, URLEncoder.encode(chainResponse.getMatchedGray().getGrayRule().getRawGrayRuleExp(),
-                            StandardCharsets.UTF_8.displayName()));
+                    response.setHeader(TagGrayRule.TYPE_TAG,
+                            URLEncoder.encode(chainResponse.getMatchedGray().getGrayRule().getRawGrayRuleExp(),
+                                    StandardCharsets.UTF_8.displayName()));
                 } catch (Exception e) {
                     LOGGER.error("Error encoding tag", e);
                 }

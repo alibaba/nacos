@@ -22,23 +22,12 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
-import com.alibaba.nacos.core.remote.Connection;
-import com.alibaba.nacos.core.remote.ConnectionManager;
-import com.alibaba.nacos.core.remote.ConnectionMeta;
-import com.alibaba.nacos.naming.core.v2.client.Client;
-import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
-import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
+import com.alibaba.nacos.naming.core.ClientService;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
-import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
-import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
-import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
-import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
-import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -48,10 +37,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * ClientInfoControllerV2.
@@ -59,7 +45,7 @@ import java.util.Objects;
  * @author dongyafei
  * @date 2022/9/20
  */
-
+@Deprecated
 @NacosApi
 @RestController
 @RequestMapping(UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_CLIENT_CONTEXT)
@@ -68,15 +54,11 @@ public class ClientInfoControllerV2 {
     
     private final ClientManager clientManager;
     
-    private final ConnectionManager connectionManager;
+    private final ClientService clientServiceV2Impl;
     
-    private final ClientServiceIndexesManager clientServiceIndexesManager;
-    
-    public ClientInfoControllerV2(ClientManager clientManager, ConnectionManager connectionManager,
-            ClientServiceIndexesManager clientServiceIndexesManager) {
+    public ClientInfoControllerV2(ClientManager clientManager, ClientService clientServiceV2Impl) {
         this.clientManager = clientManager;
-        this.connectionManager = connectionManager;
-        this.clientServiceIndexesManager = clientServiceIndexesManager;
+        this.clientServiceV2Impl = clientServiceV2Impl;
     }
     
     /**
@@ -84,9 +66,9 @@ public class ClientInfoControllerV2 {
      */
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, resource = "nacos/admin")
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/client/list")
     public Result<List<String>> getClientList() {
-        return Result.success(new ArrayList<>(clientManager.allClientId()));
+        return Result.success(clientServiceV2Impl.getClientList());
     }
     
     /**
@@ -96,36 +78,10 @@ public class ClientInfoControllerV2 {
      */
     @GetMapping()
     @Secured(action = ActionTypes.READ, resource = "nacos/admin")
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/client")
     public Result<ObjectNode> getClientDetail(@RequestParam("clientId") String clientId) throws NacosApiException {
         checkClientId(clientId);
-        Client client = clientManager.getClient(clientId);
-        
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        result.put("clientId", client.getClientId());
-        result.put("ephemeral", client.isEphemeral());
-        result.put("lastUpdatedTime", client.getLastUpdatedTime());
-        
-        if (client instanceof ConnectionBasedClient) {
-            // 2.x client
-            result.put("clientType", "connection");
-            Connection connection = connectionManager.getConnection(clientId);
-            ConnectionMeta connectionMetaInfo = connection.getMetaInfo();
-            result.put("connectType", connectionMetaInfo.getConnectType());
-            result.put("appName", connectionMetaInfo.getAppName());
-            result.put("version", connectionMetaInfo.getVersion());
-            result.put("clientIp", connectionMetaInfo.getClientIp());
-            result.put("clientPort", clientId.substring(clientId.lastIndexOf('_') + 1));
-        } else if (client instanceof IpPortBasedClient) {
-            // 1.x client
-            result.put("clientType", "ipPort");
-            IpPortBasedClient ipPortBasedClient = (IpPortBasedClient) client;
-            String responsibleId = ipPortBasedClient.getResponsibleId();
-            int idx = responsibleId.lastIndexOf(':');
-            result.put("clientIp", responsibleId.substring(0, idx));
-            result.put("clientPort", responsibleId.substring(idx + 1));
-        }
-        return Result.success(result);
+        return Result.success(clientServiceV2Impl.getClientDetail(clientId));
     }
     
     /**
@@ -135,42 +91,12 @@ public class ClientInfoControllerV2 {
      */
     @GetMapping("/publish/list")
     @Secured(action = ActionTypes.READ, resource = "nacos/admin")
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/client/publish/list")
     public Result<List<ObjectNode>> getPublishedServiceList(@RequestParam("clientId") String clientId)
             throws NacosApiException {
         checkClientId(clientId);
-        Client client = clientManager.getClient(clientId);
-        Collection<Service> allPublishedService = client.getAllPublishedService();
-        ArrayList<ObjectNode> res = new ArrayList<>();
-        for (Service service : allPublishedService) {
-            InstancePublishInfo instancePublishInfo = client.getInstancePublishInfo(service);
-            if (instancePublishInfo instanceof BatchInstancePublishInfo) {
-                List<InstancePublishInfo> instancePublishInfos = ((BatchInstancePublishInfo) instancePublishInfo).getInstancePublishInfos();
-                for (InstancePublishInfo publishInfo : instancePublishInfos) {
-                    res.add(wrapSingleInstanceNode(publishInfo, service));
-                }
-            } else {
-                res.add(wrapSingleInstanceNode(instancePublishInfo, service));
-            }
-        }
-        return Result.success(res);
-    }
-
-    private ObjectNode wrapSingleInstanceNode(InstancePublishInfo instancePublishInfo, Service service) {
-        ObjectNode item = JacksonUtils.createEmptyJsonNode();
-        item.put("namespace", service.getNamespace());
-        item.put("group", service.getGroup());
-        item.put("serviceName", service.getName());
-        item.set("registeredInstance", wrapSingleInstance(instancePublishInfo));
-        return item;
-    }
-
-    private ObjectNode wrapSingleInstance(InstancePublishInfo instancePublishInfo) {
-        ObjectNode instanceInfo = JacksonUtils.createEmptyJsonNode();
-        instanceInfo.put("ip", instancePublishInfo.getIp());
-        instanceInfo.put("port", instancePublishInfo.getPort());
-        instanceInfo.put("cluster", instancePublishInfo.getCluster());
-        return instanceInfo;
+        
+        return Result.success(clientServiceV2Impl.getPublishedServiceList(clientId));
     }
     
     /**
@@ -180,27 +106,12 @@ public class ClientInfoControllerV2 {
      */
     @GetMapping("/subscribe/list")
     @Secured(action = ActionTypes.READ, resource = "nacos/admin")
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/client/subscribe/list")
     public Result<List<ObjectNode>> getSubscribeServiceList(@RequestParam("clientId") String clientId)
             throws NacosApiException {
         checkClientId(clientId);
-        Client client = clientManager.getClient(clientId);
-        Collection<Service> allSubscribeService = client.getAllSubscribeService();
-        ArrayList<ObjectNode> res = new ArrayList<>();
-        for (Service service : allSubscribeService) {
-            ObjectNode item = JacksonUtils.createEmptyJsonNode();
-            item.put("namespace", service.getNamespace());
-            item.put("group", service.getGroup());
-            item.put("serviceName", service.getName());
-            Subscriber subscriber = client.getSubscriber(service);
-            ObjectNode subscriberInfo = JacksonUtils.createEmptyJsonNode();
-            subscriberInfo.put("app", subscriber.getApp());
-            subscriberInfo.put("agent", subscriber.getAgent());
-            subscriberInfo.put("addr", subscriber.getAddrStr());
-            item.set("subscriberInfo", subscriberInfo);
-            res.add(item);
-        }
-        return Result.success(res);
+        
+        return Result.success(clientServiceV2Impl.getSubscribeServiceList(clientId));
     }
     
     /**
@@ -216,38 +127,14 @@ public class ClientInfoControllerV2 {
      */
     @GetMapping("/service/publisher/list")
     @Secured(action = ActionTypes.READ, resource = "nacos/admin")
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/client/service/publisher/list")
     public Result<List<ObjectNode>> getPublishedClientList(
             @RequestParam(value = "namespaceId", required = false, defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam(value = "groupName", required = false, defaultValue = Constants.DEFAULT_GROUP) String groupName,
             @RequestParam(value = "ephemeral", required = false, defaultValue = "true") Boolean ephemeral,
             @RequestParam("serviceName") String serviceName, @RequestParam(value = "ip", required = false) String ip,
             @RequestParam(value = "port", required = false) Integer port) {
-        Service service = Service.newService(namespaceId, groupName, serviceName, ephemeral);
-        Collection<String> allClientsRegisteredService = clientServiceIndexesManager
-                .getAllClientsRegisteredService(service);
-        ArrayList<ObjectNode> res = new ArrayList<>();
-        for (String clientId : allClientsRegisteredService) {
-            Client client = clientManager.getClient(clientId);
-            InstancePublishInfo instancePublishInfo = client.getInstancePublishInfo(service);
-            if (instancePublishInfo instanceof BatchInstancePublishInfo) {
-                List<InstancePublishInfo> list = ((BatchInstancePublishInfo) instancePublishInfo).getInstancePublishInfos();
-                for (InstancePublishInfo info : list) {
-                    if (!Objects.equals(info.getIp(), ip) || !Objects
-                            .equals(port, info.getPort())) {
-                        continue;
-                    }
-                    res.add(wrapSingleInstance(info).put("clientId", clientId));
-                }
-            } else {
-                if (!Objects.equals(instancePublishInfo.getIp(), ip) || !Objects
-                        .equals(port, instancePublishInfo.getPort())) {
-                    continue;
-                }
-                res.add(wrapSingleInstance(instancePublishInfo).put("clientId", clientId));
-            }
-        }
-        return Result.success(res);
+        return Result.success(clientServiceV2Impl.getPublishedClientList(namespaceId, groupName, serviceName, ephemeral, ip, port));
     }
     
     /**
@@ -263,30 +150,14 @@ public class ClientInfoControllerV2 {
      */
     @GetMapping("/service/subscriber/list")
     @Secured(action = ActionTypes.READ, resource = "nacos/admin")
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/client/service/subscriber/list")
     public Result<List<ObjectNode>> getSubscribeClientList(
             @RequestParam(value = "namespaceId", required = false, defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam(value = "groupName", required = false, defaultValue = Constants.DEFAULT_GROUP) String groupName,
             @RequestParam(value = "ephemeral", required = false, defaultValue = "true") Boolean ephemeral,
             @RequestParam("serviceName") String serviceName, @RequestParam(value = "ip", required = false) String ip,
             @RequestParam(value = "port", required = false) Integer port) {
-        Service service = Service.newService(namespaceId, groupName, serviceName, ephemeral);
-        Collection<String> allClientsSubscribeService = clientServiceIndexesManager
-                .getAllClientsSubscribeService(service);
-        ArrayList<ObjectNode> res = new ArrayList<>();
-        for (String clientId : allClientsSubscribeService) {
-            Client client = clientManager.getClient(clientId);
-            Subscriber subscriber = client.getSubscriber(service);
-            if (!Objects.equals(subscriber.getIp(), ip) || !Objects.equals(port, subscriber.getPort())) {
-                continue;
-            }
-            ObjectNode item = JacksonUtils.createEmptyJsonNode();
-            item.put("clientId", clientId);
-            item.put("ip", subscriber.getIp());
-            item.put("port", subscriber.getPort());
-            res.add(item);
-        }
-        return Result.success(res);
+        return Result.success(clientServiceV2Impl.getSubscribeClientList(namespaceId, groupName, serviceName, ephemeral, ip, port));
     }
     
     private void checkClientId(String clientId) throws NacosApiException {

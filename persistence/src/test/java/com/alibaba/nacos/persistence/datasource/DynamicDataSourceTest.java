@@ -52,7 +52,7 @@ class DynamicDataSourceTest {
     @AfterEach
     void tearDown() {
         DatasourceConfiguration.setEmbeddedStorage(true);
-        DatasourceConfiguration.setUseExternalDB(false);
+        DatasourceConfiguration.setUseExternalDb(false);
         ReflectionTestUtils.setField(dataSource, "localDataSourceService", null);
         ReflectionTestUtils.setField(dataSource, "basicDataSourceService", null);
         EnvUtil.setEnvironment(null);

@@ -45,6 +45,7 @@ import java.util.List;
  *
  * @author Nacos
  */
+@Deprecated
 @RestController
 @RequestMapping(Constants.HISTORY_CONTROLLER_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)

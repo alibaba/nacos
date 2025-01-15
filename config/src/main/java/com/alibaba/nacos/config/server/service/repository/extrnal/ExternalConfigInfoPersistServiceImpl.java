@@ -305,12 +305,10 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         int skipCount = 0;
         List<Map<String, String>> failData = null;
         List<Map<String, String>> skipData = null;
-        
         for (int i = 0; i < configInfoList.size(); i++) {
             ConfigAllInfo configInfo = configInfoList.get(i);
             try {
-                ParamUtils.checkParam(configInfo.getDataId(), configInfo.getGroup(), "datumId",
-                        configInfo.getContent());
+                ParamUtils.checkParam(configInfo.getDataId(), configInfo.getGroup(), "datumId", configInfo.getContent());
             } catch (NacosException e) {
                 LogUtil.DEFAULT_LOG.error("data verification failed", e);
                 throw e;
@@ -319,18 +317,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                     configInfo.getTenant(), configInfo.getAppName(), configInfo.getContent());
             configInfo2Save.setEncryptedDataKey(
                     configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY : configInfo.getEncryptedDataKey());
-            
-            String type = configInfo.getType();
-            if (StringUtils.isBlank(type)) {
-                // simple judgment of file type based on suffix
-                if (configInfo.getDataId().contains(SPOT)) {
-                    String extName = configInfo.getDataId().substring(configInfo.getDataId().lastIndexOf(SPOT) + 1);
-                    FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(extName);
-                    type = fileTypeEnum.getFileType();
-                } else {
-                    type = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(null).getFileType();
-                }
-            }
+            String type = determineConfigType(configInfo);
             if (configAdvanceInfo == null) {
                 configAdvanceInfo = new HashMap<>(16);
             }
@@ -338,8 +325,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             configAdvanceInfo.put("desc", configInfo.getDesc());
             boolean success;
             try {
-                ConfigOperateResult configOperateResult = addConfigInfo(srcIp, srcUser, configInfo2Save,
-                        configAdvanceInfo);
+                ConfigOperateResult configOperateResult = addConfigInfo(srcIp, srcUser, configInfo2Save, configAdvanceInfo);
                 success = configOperateResult.isSuccess();
             } catch (DataIntegrityViolationException ive) {
                 success = false;
@@ -347,20 +333,19 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             if (success) {
                 succCount++;
             } else {
-                // uniqueness constraint conflict or add config info fail.
                 if (SameConfigPolicy.ABORT.equals(policy)) {
                     failData = new ArrayList<>();
                     skipData = new ArrayList<>();
-                    Map<String, String> faileditem = new HashMap<>(2);
-                    faileditem.put("dataId", configInfo2Save.getDataId());
-                    faileditem.put("group", configInfo2Save.getGroup());
-                    failData.add(faileditem);
+                    Map<String, String> failedItem = new HashMap<>(2);
+                    failedItem.put("dataId", configInfo2Save.getDataId());
+                    failedItem.put("group", configInfo2Save.getGroup());
+                    failData.add(failedItem);
                     for (int j = (i + 1); j < configInfoList.size(); j++) {
                         ConfigInfo skipConfigInfo = configInfoList.get(j);
-                        Map<String, String> skipitem = new HashMap<>(2);
-                        skipitem.put("dataId", skipConfigInfo.getDataId());
-                        skipitem.put("group", skipConfigInfo.getGroup());
-                        skipData.add(skipitem);
+                        Map<String, String> skipItem = new HashMap<>(2);
+                        skipItem.put("dataId", skipConfigInfo.getDataId());
+                        skipItem.put("group", skipConfigInfo.getGroup());
+                        skipData.add(skipItem);
                         skipCount++;
                     }
                     break;
@@ -369,16 +354,15 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                     if (skipData == null) {
                         skipData = new ArrayList<>();
                     }
-                    Map<String, String> skipitem = new HashMap<>(2);
-                    skipitem.put("dataId", configInfo2Save.getDataId());
-                    skipitem.put("group", configInfo2Save.getGroup());
-                    skipData.add(skipitem);
+                    Map<String, String> skipItem = new HashMap<>(2);
+                    skipItem.put("dataId", configInfo2Save.getDataId());
+                    skipItem.put("group", configInfo2Save.getGroup());
+                    skipData.add(skipItem);
                 } else if (SameConfigPolicy.OVERWRITE.equals(policy)) {
                     succCount++;
                     updateConfigInfo(configInfo2Save, srcIp, srcUser, configAdvanceInfo);
                 }
             }
-            
         }
         Map<String, Object> result = new HashMap<>(4);
         result.put("succCount", succCount);
@@ -390,6 +374,20 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             result.put("skipData", skipData);
         }
         return result;
+    }
+    
+    private String determineConfigType(ConfigAllInfo configInfo) {
+        String type = configInfo.getType();
+        if (StringUtils.isBlank(type)) {
+            if (configInfo.getDataId().contains(SPOT)) {
+                String extName = configInfo.getDataId().substring(configInfo.getDataId().lastIndexOf(SPOT) + 1);
+                FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(extName);
+                type = fileTypeEnum.getFileType();
+            } else {
+                type = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(null).getFileType();
+            }
+        }
+        return type;
     }
     
     @Override

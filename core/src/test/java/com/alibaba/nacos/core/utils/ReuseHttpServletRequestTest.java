@@ -21,7 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 
-import javax.servlet.ServletInputStream;
+import jakarta.servlet.ServletInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Map;

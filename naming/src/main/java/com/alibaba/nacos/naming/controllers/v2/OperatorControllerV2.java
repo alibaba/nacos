@@ -23,20 +23,14 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
-import com.alibaba.nacos.naming.cluster.ServerStatusManager;
-import com.alibaba.nacos.naming.constants.ClientConstants;
-import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
-import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
+import com.alibaba.nacos.naming.core.Operator;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
-import com.alibaba.nacos.naming.misc.SwitchManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.UpdateSwitchForm;
 import com.alibaba.nacos.naming.model.vo.MetricsInfoVo;
-import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -44,14 +38,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Collection;
-
 /**
  * OperatorControllerV2.
  *
  * @author dongyafei
  * @date 2022/9/8
  */
+@Deprecated
 @NacosApi
 @RestController
 @RequestMapping({UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT,
@@ -59,20 +52,10 @@ import java.util.Collection;
 @ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)
 public class OperatorControllerV2 {
     
-    private final SwitchManager switchManager;
+    private final Operator operatorV2Impl;
     
-    private final ServerStatusManager serverStatusManager;
-    
-    private final SwitchDomain switchDomain;
-    
-    private final ClientManager clientManager;
-    
-    public OperatorControllerV2(SwitchManager switchManager, ServerStatusManager serverStatusManager,
-            SwitchDomain switchDomain, ClientManager clientManager) {
-        this.switchManager = switchManager;
-        this.serverStatusManager = serverStatusManager;
-        this.switchDomain = switchDomain;
-        this.clientManager = clientManager;
+    public OperatorControllerV2(Operator operatorV2Impl) {
+        this.operatorV2Impl = operatorV2Impl;
     }
     
     /**
@@ -81,9 +64,9 @@ public class OperatorControllerV2 {
      * @return switchDomain
      */
     @GetMapping("/switches")
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/ops/switches")
     public Result<SwitchDomain> switches() {
-        return Result.success(switchDomain);
+        return Result.success(operatorV2Impl.switches());
     }
     
     /**
@@ -95,17 +78,17 @@ public class OperatorControllerV2 {
      */
     @Secured(resource = "naming/switches", action = ActionTypes.WRITE)
     @PutMapping("/switches")
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "PUT ${contextPath:nacos}/v3/admin/ns/ops/switches")
     public Result<String> updateSwitch(UpdateSwitchForm updateSwitchForm) throws Exception {
         updateSwitchForm.validate();
         try {
-            switchManager.update(updateSwitchForm.getEntry(), updateSwitchForm.getValue(), updateSwitchForm.getDebug());
+            operatorV2Impl.updateSwitch(updateSwitchForm.getEntry(), updateSwitchForm.getValue(), updateSwitchForm.getDebug());
+            
+            return Result.success("ok");
         } catch (IllegalArgumentException e) {
             throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.SERVER_ERROR,
                     e.getMessage());
         }
-        
-        return Result.success("ok");
     }
     
     /**
@@ -115,46 +98,9 @@ public class OperatorControllerV2 {
      * @return metrics information
      */
     @GetMapping("/metrics")
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/ops/metrics")
     public Result<MetricsInfoVo> metrics(
             @RequestParam(value = "onlyStatus", required = false, defaultValue = "true") Boolean onlyStatus) {
-        MetricsInfoVo metricsInfoVo = new MetricsInfoVo();
-        metricsInfoVo.setStatus(serverStatusManager.getServerStatus().name());
-        if (onlyStatus) {
-            return Result.success(metricsInfoVo);
-        }
-        
-        int connectionBasedClient = 0;
-        int ephemeralIpPortClient = 0;
-        int persistentIpPortClient = 0;
-        int responsibleClientCount = 0;
-        Collection<String> allClientId = clientManager.allClientId();
-        for (String clientId : allClientId) {
-            if (clientId.contains(IpPortBasedClient.ID_DELIMITER)) {
-                if (clientId.endsWith(ClientConstants.PERSISTENT_SUFFIX)) {
-                    persistentIpPortClient += 1;
-                } else {
-                    ephemeralIpPortClient += 1;
-                }
-            } else {
-                connectionBasedClient += 1;
-            }
-            if (clientManager.isResponsibleClient(clientManager.getClient(clientId))) {
-                responsibleClientCount += 1;
-            }
-        }
-        
-        metricsInfoVo.setServiceCount(MetricsMonitor.getDomCountMonitor().get());
-        metricsInfoVo.setInstanceCount(MetricsMonitor.getIpCountMonitor().get());
-        metricsInfoVo.setSubscribeCount(MetricsMonitor.getSubscriberCount().get());
-        metricsInfoVo.setClientCount(allClientId.size());
-        metricsInfoVo.setConnectionBasedClientCount(connectionBasedClient);
-        metricsInfoVo.setEphemeralIpPortClientCount(ephemeralIpPortClient);
-        metricsInfoVo.setPersistentIpPortClientCount(persistentIpPortClient);
-        metricsInfoVo.setResponsibleClientCount(responsibleClientCount);
-        metricsInfoVo.setCpu(EnvUtil.getCpu());
-        metricsInfoVo.setLoad(EnvUtil.getLoad());
-        metricsInfoVo.setMem(EnvUtil.getMem());
-        return Result.success(metricsInfoVo);
+        return Result.success(operatorV2Impl.metrics(onlyStatus));
     }
 }

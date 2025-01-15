@@ -54,7 +54,7 @@ public class PropertiesListProvider extends AbstractServerListProvider {
             if (serverAddr.startsWith(HTTP_PREFIX) || serverAddr.startsWith(HTTPS_PREFIX)) {
                 this.serverList.add(serverAddr);
             } else {
-                String[] serverAddrArr = InternetAddressUtil.splitIPPortStr(serverAddr);
+                String[] serverAddrArr = InternetAddressUtil.splitIpPortStr(serverAddr);
                 if (serverAddrArr.length == 1) {
                     this.serverList
                             .add(serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort());

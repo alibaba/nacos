@@ -18,7 +18,7 @@ package com.alibaba.nacos.auth.parser.http;
 
 import com.alibaba.nacos.auth.parser.AbstractResourceParser;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Abstract Http Resource Parser.

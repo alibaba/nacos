@@ -213,15 +213,15 @@ public enum ErrorCode {
     /**
      * Config use 100001 ~ 100999.
      **/
-    METADATA_ILLEGAL(100002, "导入的元数据非法"),
+    METADATA_ILLEGAL(100002, "Imported metadata is invalid"),
     
-    DATA_VALIDATION_FAILED(100003, "未读取到合法数据"),
+    DATA_VALIDATION_FAILED(100003, "No valid data was read"),
     
-    PARSING_DATA_FAILED(100004, "解析数据失败"),
+    PARSING_DATA_FAILED(100004, "Failed to parse data"),
     
-    DATA_EMPTY(100005, "导入的文件数据为空"),
+    DATA_EMPTY(100005, "Imported file data is empty"),
     
-    NO_SELECTED_CONFIG(100006, "没有选择任何配置"),
+    NO_SELECTED_CONFIG(100006, "No configuration selected"),
     
     FUZZY_WATCH_PATTERN_OVER_LIMIT(50310, "fuzzy watch pattern over limit"),
     

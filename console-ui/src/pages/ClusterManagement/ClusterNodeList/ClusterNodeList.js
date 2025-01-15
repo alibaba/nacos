@@ -113,7 +113,7 @@ class ClusterNodeList extends React.Component {
           Message.success(locale.leaveSucc);
         } else {
           // const errorMessage = response.data.message || locale.leaveFail;
-          const errorMessage = "此操作暂不可用";
+          const errorMessage = '此操作暂不可用';
           this.showErrorDialog(locale.leavePrompt, errorMessage);
         }
 
@@ -122,7 +122,7 @@ class ClusterNodeList extends React.Component {
       })
       .catch(error => {
         // const errorMessage = error.response?.data?.message || locale.leaveFail;
-        const errorMessage = "此操作暂不可用";
+        const errorMessage = '此操作暂不可用';
         this.showErrorDialog(locale.leavePrompt, errorMessage);
 
         this.queryClusterStateList();

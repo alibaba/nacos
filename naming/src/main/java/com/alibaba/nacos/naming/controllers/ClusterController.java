@@ -38,13 +38,14 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Cluster controller.
  *
  * @author nkorange
  */
+@Deprecated
 @RestController
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_CLUSTER_CONTEXT)
 @ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)

@@ -383,17 +383,17 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     }
     
     static int initAllDumpPageSize() {
-        long memLimitMB = getMemLimitMB();
+        long memLimitMb = getMemLimitMb();
         
         //512MB->50 Page Size
-        int pageSize = (int) ((float) memLimitMB / PAGE_MEMORY_DIVIDE_MB) * MIN_DUMP_PAGE;
+        int pageSize = (int) ((float) memLimitMb / PAGE_MEMORY_DIVIDE_MB) * MIN_DUMP_PAGE;
         pageSize = Math.max(pageSize, MIN_DUMP_PAGE);
         pageSize = Math.min(pageSize, MAX_DUMP_PAGE);
-        LOGGER.info("All dump page size is set to {} according to mem limit {} MB", pageSize, memLimitMB);
+        LOGGER.info("All dump page size is set to {} according to mem limit {} MB", pageSize, memLimitMb);
         return pageSize;
     }
     
-    public static long getMemLimitMB() {
+    public static long getMemLimitMb() {
         Optional<Long> memoryLimit = findMemoryLimitFromFile();
         if (memoryLimit.isPresent()) {
             return memoryLimit.get();
