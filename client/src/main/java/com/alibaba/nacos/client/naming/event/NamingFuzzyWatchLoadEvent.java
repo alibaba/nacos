@@ -25,8 +25,8 @@ import com.alibaba.nacos.common.notify.Event;
  * that it may be processed asynchronously. The event contains information about the group, dataId, type, and UUID of
  * the notification.
  *
- * @author stone-98
- * @date 2024/3/4
+ * @author shiyiyue
+ * @date 2025/01/13
  */
 public class NamingFuzzyWatchLoadEvent extends Event {
     
