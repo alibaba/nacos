@@ -22,13 +22,14 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
+import com.alibaba.nacos.config.server.model.form.ConfigFormV3;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.config.server.service.HistoryService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
+import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
@@ -67,14 +68,15 @@ public class HistoryControllerV3 {
     @GetMapping("/list")
     @Secured(resource = Constants.HISTORY_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
-    public Result<Page<ConfigHistoryInfo>> listConfigHistory(@RequestParam("dataId") String dataId,
-            @RequestParam("groupName") String groupName,
-            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
-            @RequestParam(value = "pageNo", required = false, defaultValue = "1") Integer pageNo,
-            @RequestParam(value = "pageSize", required = false, defaultValue = "100") Integer pageSize) {
-        pageSize = Math.min(500, pageSize);
-        //fix issue #9783
-        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
+    public Result<Page<ConfigHistoryInfo>> listConfigHistory(ConfigFormV3 configForm, PageForm pageForm)
+            throws NacosApiException {
+        configForm.validate();
+        pageForm.validate();
+        int pageSize = Math.min(500, pageForm.getPageSize());
+        int pageNo = pageForm.getPageNo();
+        String dataId = configForm.getDataId();
+        String groupName = configForm.getGroupName();
+        String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
         return Result.success(historyService.listConfigHistory(dataId, groupName, namespaceId, pageNo, pageSize));
     }
     
@@ -84,11 +86,13 @@ public class HistoryControllerV3 {
     @GetMapping
     @Secured(resource = Constants.HISTORY_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
-    public Result<ConfigHistoryInfo> getConfigHistoryInfo(@RequestParam("dataId") String dataId,
-            @RequestParam("groupName") String groupName,
-            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
-            @RequestParam("nid") Long nid) throws AccessException, NacosApiException {
+    public Result<ConfigHistoryInfo> getConfigHistoryInfo(ConfigFormV3 configForm, @RequestParam("nid") Long nid)
+            throws AccessException, NacosApiException {
         ConfigHistoryInfo configHistoryInfo;
+        configForm.validate();
+        String dataId = configForm.getDataId();
+        String groupName = configForm.getGroupName();
+        String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
         try {
             //fix issue #9783
             namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
@@ -106,11 +110,13 @@ public class HistoryControllerV3 {
     @GetMapping(value = "/previous")
     @Secured(resource = Constants.HISTORY_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
-    public Result<ConfigHistoryInfo> getPreviousConfigHistoryInfo(@RequestParam("dataId") String dataId,
-            @RequestParam("groupName") String groupName,
-            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
-            @RequestParam("id") Long id) throws AccessException, NacosApiException {
+    public Result<ConfigHistoryInfo> getPreviousConfigHistoryInfo(ConfigFormV3 configForm, @RequestParam("id") Long id)
+            throws AccessException, NacosApiException {
         ConfigHistoryInfo configHistoryInfo;
+        configForm.validate();
+        String dataId = configForm.getDataId();
+        String groupName = configForm.getGroupName();
+        String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
         try {
             //fix issue #9783.
             namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
