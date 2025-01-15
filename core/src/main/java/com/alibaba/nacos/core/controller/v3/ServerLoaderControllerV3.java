@@ -27,7 +27,6 @@ import com.alibaba.nacos.api.remote.request.ServerReloadRequest;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ServerLoaderInfoResponse;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtil;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
@@ -38,6 +37,7 @@ import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.core.ServerLoaderInfoRequestHandler;
 import com.alibaba.nacos.core.remote.core.ServerReloaderRequestHandler;
+import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import jakarta.servlet.http.HttpServletRequest;
@@ -64,7 +64,7 @@ import static com.alibaba.nacos.core.utils.Commons.NACOS_ADMIN_CORE_CONTEXT_V3;
  * controller to control server loader v3.
  *
  * @author yunye
- * @since 3.0.0-beta
+ * @since 3.0.0
  */
 @NacosApi
 @RestController
@@ -73,12 +73,6 @@ import static com.alibaba.nacos.core.utils.Commons.NACOS_ADMIN_CORE_CONTEXT_V3;
 public class ServerLoaderControllerV3 {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ServerLoaderControllerV3.class);
-    
-    private static final String X_REAL_IP = "X-Real-IP";
-    
-    private static final String X_FORWARDED_FOR = "X-Forwarded-For";
-    
-    private static final String X_FORWARDED_FOR_SPLIT_SYMBOL = ",";
     
     private final ConnectionManager connectionManager;
     
@@ -138,7 +132,7 @@ public class ServerLoaderControllerV3 {
     public Result<String> smartReload(HttpServletRequest request,
             @RequestParam(value = "loaderFactor", defaultValue = "0.1f") String loaderFactorStr) {
         
-        LOGGER.info("Smart reload request receive,requestIp={}", getRemoteIp(request));
+        LOGGER.info("Smart reload request receive,requestIp={}", WebUtils.getRemoteIp(request));
         
         ServerLoaderMetrics serverLoadMetrics = getServerLoadMetrics();
         List<ServerLoaderMetric> details = serverLoadMetrics.getDetail();
@@ -351,14 +345,5 @@ public class ServerLoaderControllerV3 {
         serverLoaderMetrics.setTotal(total);
         
         return serverLoaderMetrics;
-    }
-    
-    private static String getRemoteIp(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader(X_FORWARDED_FOR);
-        if (!StringUtils.isBlank(xForwardedFor)) {
-            return xForwardedFor.split(X_FORWARDED_FOR_SPLIT_SYMBOL)[0].trim();
-        }
-        String nginxHeader = request.getHeader(X_REAL_IP);
-        return StringUtils.isBlank(nginxHeader) ? request.getRemoteAddr() : nginxHeader;
     }
 }
