@@ -79,7 +79,7 @@ class ListenerControllerV3Test {
         when(configSubService.getCollectSampleResultByIp("localhost", 1)).thenReturn(sampleResult);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH).param("ip", "localhost")
-                .param("all", "true").param("tenant", "test").param("sampleTime", "1");
+                .param("all", "true").param("namespaceId", "test").param("sampleTime", "1");
         
         String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         assertEquals("0", JacksonUtils.toObj(actualValue).get("code").toString());

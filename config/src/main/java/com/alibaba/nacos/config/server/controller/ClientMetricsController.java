@@ -89,7 +89,7 @@ public class ClientMetricsController {
      */
     @GetMapping("/cluster")
     @Secured(resource = Constants.METRICS_CONTROLLER_PATH, action = ActionTypes.READ, signType = SignType.CONFIG)
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/admin/cs/metrics/cluster")
     public ResponseEntity metric(@RequestParam("ip") String ip,
             @RequestParam(value = "dataId", required = false) String dataId,
             @RequestParam(value = "group", required = false) String group,
@@ -177,7 +177,7 @@ public class ClientMetricsController {
      */
     @GetMapping("/current")
     @Secured(resource = Constants.METRICS_CONTROLLER_PATH, action = ActionTypes.READ, signType = SignType.CONFIG)
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/admin/cs/metrics/current")
     public Map<String, Object> getClientMetrics(@RequestParam("ip") String ip,
             @RequestParam(value = "dataId", required = false) String dataId,
             @RequestParam(value = "group", required = false) String group,

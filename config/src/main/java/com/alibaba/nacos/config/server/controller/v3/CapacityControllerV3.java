@@ -16,11 +16,15 @@
 
 package com.alibaba.nacos.config.server.controller.v3;
 
+import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.capacity.Capacity;
+import com.alibaba.nacos.config.server.model.form.UpdateCapacityForm;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.config.server.service.capacity.CapacityService;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
@@ -29,6 +33,7 @@ import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -42,6 +47,7 @@ import static com.alibaba.nacos.config.server.constant.Constants.CAPACITY_CONTRO
  *
  * @author Nacos
  */
+@NacosApi
 @RestController
 @RequestMapping(CAPACITY_CONTROLLER_V3_ADMIN_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
@@ -50,10 +56,6 @@ public class CapacityControllerV3 {
     private static final Logger LOGGER = LoggerFactory.getLogger(CapacityControllerV3.class);
     
     private final CapacityService capacityService;
-    
-    private static final int STATUS400 = 400;
-    
-    private static final int STATUS500 = 500;
     
     public CapacityControllerV3(CapacityService capacityService) {
         this.capacityService = capacityService;
@@ -65,67 +67,56 @@ public class CapacityControllerV3 {
     @GetMapping
     @Secured(resource = Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
-    public Result<Capacity> getCapacity(@RequestParam(required = false) String group, @RequestParam(required = false) String tenant) {
-        if (StringUtils.isBlank(group) && StringUtils.isBlank(tenant)) {
-            return Result.failure(STATUS400, "At least one of the parameters (group or tenant) must be provided", null);
+    public Result<Capacity> getCapacity(@RequestParam(required = false) String groupName,
+            @RequestParam(required = false) String namespaceId) throws NacosApiException {
+        if (StringUtils.isBlank(groupName) && StringUtils.isBlank(namespaceId)) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
+                    "At least one of the parameters (groupName or namespaceId) must be provided");
         }
         
         try {
-            Capacity capacity = capacityService.getCapacityWithDefault(group, tenant);
+            Capacity capacity = capacityService.getCapacityWithDefault(groupName, namespaceId);
             if (capacity == null) {
-                LOGGER.warn("[getCapacity] capacity not exist，need init group: {}, tenant: {}", group, tenant);
-                capacityService.initCapacity(group, tenant);
-                capacity = capacityService.getCapacityWithDefault(group, tenant);
+                LOGGER.warn("[getCapacity] capacity not exist，need init groupName: {}, namespaceId: {}", groupName, namespaceId);
+                capacityService.initCapacity(groupName, namespaceId);
+                capacity = capacityService.getCapacityWithDefault(groupName, namespaceId);
             }
             return Result.success(capacity);
         } catch (Exception e) {
-            LOGGER.error("[getCapacity] ", e);
-            return Result.failure(STATUS500, e.getMessage(), null);
+            LOGGER.error("[getCapacity] Failed to fetch capacity for groupName: {}, namespaceId: {}", groupName, namespaceId, e);
+            return Result.failure(ErrorCode.SERVER_ERROR.getCode(), e.getMessage(), null);
         }
     }
     
     /**
-     * Modify group or capacity of tenant, and init record when capacity information are still initial.
+     * Modify group or capacity of namespaceId, and init record when capacity information are still initial.
      */
     @PostMapping
     @Secured(resource = Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
-    public Result<Boolean> updateCapacity(@RequestParam(required = false) String group, @RequestParam(required = false) String tenant,
-            @RequestParam(required = false) Integer quota, @RequestParam(required = false) Integer maxSize,
-            @RequestParam(required = false) Integer maxAggrCount, @RequestParam(required = false) Integer maxAggrSize) {
-        if (StringUtils.isBlank(group) && StringUtils.isBlank(tenant)) {
-            capacityService.initAllCapacity();
-            return Result.failure(STATUS400, "The parameter group and tenant cannot be empty at the same time", null);
-        }
+    public Result<Boolean> updateCapacity(UpdateCapacityForm updateCapacityForm) throws NacosApiException {
+        updateCapacityForm.checkNamespaceIdAndGroupName(capacityService);
+        updateCapacityForm.validate();
         
-        if (quota == null && maxSize == null && maxAggrCount == null && maxAggrSize == null) {
-            return Result.failure(STATUS400, "The parameters quota, maxSize, maxAggrCount, maxAggrSize cannot be empty at the same time", null);
-        }
-        
-        String targetFieldName;
-        String targetFieldValue;
-        if (tenant == null) {
-            targetFieldName = "group";
-            targetFieldValue = group;
-        } else {
-            targetFieldName = "tenant";
-            targetFieldValue = tenant;
-        }
-        if (StringUtils.isBlank(targetFieldValue)) {
-            return Result.failure(STATUS400, String.format("parameter %s is empty.", targetFieldName), null);
-        }
+        String groupName = updateCapacityForm.getGroupName();
+        String namespaceId = updateCapacityForm.getNamespaceId();
+        Integer quota = updateCapacityForm.getQuota();
+        Integer maxSize = updateCapacityForm.getMaxSize();
+        Integer maxAggrCount = updateCapacityForm.getMaxAggrCount();
+        Integer maxAggrSize = updateCapacityForm.getMaxAggrSize();
         
         try {
-            boolean insertOrUpdateResult = capacityService
-                    .insertOrUpdateCapacity(group, tenant, quota, maxSize, maxAggrCount, maxAggrSize);
-            if (insertOrUpdateResult) {
+            boolean isSuccess = capacityService.insertOrUpdateCapacity(groupName, namespaceId, quota, maxSize,
+                    maxAggrCount, maxAggrSize);
+            if (isSuccess) {
                 return Result.success(true);
+            } else {
+                return Result.failure(ErrorCode.SERVER_ERROR.getCode(),
+                        String.format("Failed to update the capacity for groupName: %s, namespaceId: %s", groupName, namespaceId), null);
             }
-            return Result.failure(STATUS500, String.format("failed updated the capacity information configuration of %s to %s", targetFieldName,
-                    targetFieldValue), null);
         } catch (Exception e) {
-            LOGGER.error("[updateCapacity] ", e);
-            return Result.failure(STATUS500, e.getMessage(), null);
+            LOGGER.error("[updateCapacity] Failed to update the capacity for groupName: {}, namespaceId: {}", groupName, namespaceId, e);
+            return Result.failure(ErrorCode.SERVER_ERROR.getCode(), e.getMessage(), null);
         }
     }
 }

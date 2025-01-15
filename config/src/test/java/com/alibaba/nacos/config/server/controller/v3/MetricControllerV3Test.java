@@ -102,7 +102,7 @@ class MetricControllerV3Test {
         when(memberManager.allMembers()).thenReturn(members);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.METRICS_CONTROLLER_V3_ADMIN_PATH + "/cluster")
-                .param("ip", "127.0.0.1").param("tenant", "test").param("dataId", "test").param("group", "test");
+                .param("ip", "127.0.0.1").param("namespaceId", "test").param("dataId", "test").param("groupName", "test");
         String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
         String code = JacksonUtils.toObj(actualValue).get("code").toString();
         assertEquals("0", code);
@@ -158,7 +158,7 @@ class MetricControllerV3Test {
         when(connectionManager.getConnectionByIp(eq("127.0.0.1"))).thenReturn(connections);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.METRICS_CONTROLLER_V3_ADMIN_PATH + "/ip")
-                .param("ip", "127.0.0.1").param("tenant", "test").param("dataId", "test").param("group", "test");
+                .param("ip", "127.0.0.1").param("namespaceId", "test").param("dataId", "test").param("groupName", "test");
         String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
         String data = JacksonUtils.toObj(actualValue).get("data").toString();
         assertEquals("{\"test\":\"test\"}", data);

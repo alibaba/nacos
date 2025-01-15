@@ -61,7 +61,7 @@ public class CapacityController {
     }
     
     @GetMapping
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/admin/cs/capacity")
     public RestResult<Capacity> getCapacity(HttpServletResponse response, @RequestParam(required = false) String group,
             @RequestParam(required = false) String tenant) {
         if (group == null && tenant == null) {
@@ -104,7 +104,7 @@ public class CapacityController {
      * Modify group or capacity of tenant, and init record when capacity information are still initial.
      */
     @PostMapping
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "POST {contextPath:nacos}/v3/admin/cs/capacity")
     public RestResult<Boolean> updateCapacity(HttpServletResponse response,
             @RequestParam(required = false) String group, @RequestParam(required = false) String tenant,
             @RequestParam(required = false) Integer quota, @RequestParam(required = false) Integer maxSize,

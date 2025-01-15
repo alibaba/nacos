@@ -62,20 +62,20 @@ public class HistoryControllerV3 {
     }
     
     /**
-     * Query the list history config. notes:
+     * Query the list history config.
      */
     @GetMapping("/list")
     @Secured(resource = Constants.HISTORY_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Page<ConfigHistoryInfo>> listConfigHistory(@RequestParam("dataId") String dataId,
-            @RequestParam("group") String group,
+            @RequestParam("groupName") String groupName,
             @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
             @RequestParam(value = "pageNo", required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(value = "pageSize", required = false, defaultValue = "100") Integer pageSize) {
         pageSize = Math.min(500, pageSize);
         //fix issue #9783
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
-        return Result.success(historyService.listConfigHistory(dataId, group, namespaceId, pageNo, pageSize));
+        return Result.success(historyService.listConfigHistory(dataId, groupName, namespaceId, pageNo, pageSize));
     }
     
     /**
@@ -85,14 +85,14 @@ public class HistoryControllerV3 {
     @Secured(resource = Constants.HISTORY_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<ConfigHistoryInfo> getConfigHistoryInfo(@RequestParam("dataId") String dataId,
-            @RequestParam("group") String group,
+            @RequestParam("groupName") String groupName,
             @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
             @RequestParam("nid") Long nid) throws AccessException, NacosApiException {
         ConfigHistoryInfo configHistoryInfo;
         try {
             //fix issue #9783
             namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
-            configHistoryInfo = historyService.getConfigHistoryInfo(dataId, group, namespaceId, nid);
+            configHistoryInfo = historyService.getConfigHistoryInfo(dataId, groupName, namespaceId, nid);
         } catch (DataAccessException e) {
             throw new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.RESOURCE_NOT_FOUND,
                     "certain config history for nid = " + nid + " not exist");
@@ -101,20 +101,20 @@ public class HistoryControllerV3 {
     }
     
     /**
-     * Query previous config history information. notes:
+     * Query previous config history information.
      */
     @GetMapping(value = "/previous")
     @Secured(resource = Constants.HISTORY_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<ConfigHistoryInfo> getPreviousConfigHistoryInfo(@RequestParam("dataId") String dataId,
-            @RequestParam("group") String group,
+            @RequestParam("groupName") String groupName,
             @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
             @RequestParam("id") Long id) throws AccessException, NacosApiException {
         ConfigHistoryInfo configHistoryInfo;
         try {
             //fix issue #9783.
             namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
-            configHistoryInfo = historyService.getPreviousConfigHistoryInfo(dataId, group, namespaceId, id);
+            configHistoryInfo = historyService.getPreviousConfigHistoryInfo(dataId, groupName, namespaceId, id);
         } catch (DataAccessException e) {
             throw new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.RESOURCE_NOT_FOUND,
                     "previous config history for id = " + id + " not exist");

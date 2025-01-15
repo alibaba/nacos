@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.controller.v3;
 
+import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
@@ -56,10 +57,11 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Configuration ops controllers.
+ * Configuration ops management.
  *
  * @author Nacos
  */
+@NacosApi
 @RestController
 @RequestMapping(Constants.OPS_CONTROLLER_V3_ADMIN_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
@@ -77,12 +79,12 @@ public class ConfigOpsControllerV3 {
      * Manually trigger dump of a local configuration file.
      */
     @PostMapping(value = "/localCache")
-    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(resource = Constants.OPS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
+            signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<String> updateLocalCacheFromStore() {
         LOGGER.info("start to dump all data from store.");
         try {
             dumpService.dumpAll();
-            LOGGER.info("finish to dump all data from store.");
             return Result.success("Local cache updated from store successfully!");
         } catch (Exception e) {
             LOGGER.error("[updateLocalCacheFromStore] ", e);
@@ -91,7 +93,8 @@ public class ConfigOpsControllerV3 {
     }
     
     @PutMapping(value = "/log")
-    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(resource = Constants.OPS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
+            signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<String> setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
         try {
             LogUtil.setLogLevel(logName, logLevel);
@@ -111,7 +114,7 @@ public class ConfigOpsControllerV3 {
      * @return {@link RestResult}
      */
     @GetMapping(value = "/derby")
-    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(resource = Constants.OPS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Object> derbyOps(@RequestParam(value = "sql") String sql) {
         String selectSign = "SELECT";
         String limitSign = "ROWS FETCH NEXT";
@@ -152,7 +155,8 @@ public class ConfigOpsControllerV3 {
      * @return {@link DeferredResult}
      */
     @PostMapping(value = "/derby/import")
-    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(resource = Constants.OPS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
+            signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public DeferredResult<Result<String>> importDerby(@RequestParam(value = "file") MultipartFile multipartFile) {
         DeferredResult<RestResult<String>> response = new DeferredResult<>();
         if (!DatasourceConfiguration.isEmbeddedStorage()) {

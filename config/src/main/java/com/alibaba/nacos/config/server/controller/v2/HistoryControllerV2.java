@@ -78,7 +78,7 @@ public class HistoryControllerV2 {
      */
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/cs/history/list")
     public Result<Page<ConfigHistoryInfo>> listConfigHistory(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
@@ -101,7 +101,7 @@ public class HistoryControllerV2 {
      */
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/cs/history")
     public Result<ConfigHistoryInfo> getConfigHistoryInfo(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
@@ -150,7 +150,7 @@ public class HistoryControllerV2 {
      */
     @GetMapping(value = "/previous")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/cs/history/previous")
     public Result<ConfigHistoryInfo> getPreviousConfigHistoryInfo(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
@@ -175,7 +175,7 @@ public class HistoryControllerV2 {
      */
     @GetMapping(value = "/configs")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/cs/history/configs")
     public Result<List<ConfigInfoWrapper>> getConfigsByTenant(@RequestParam("namespaceId") String namespaceId)
             throws NacosApiException {
         // check namespaceId

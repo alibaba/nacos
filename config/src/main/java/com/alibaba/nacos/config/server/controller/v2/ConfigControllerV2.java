@@ -95,7 +95,7 @@ public class ConfigControllerV2 {
      */
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/cs/config")
     public void getConfig(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
@@ -119,7 +119,7 @@ public class ConfigControllerV2 {
      */
     @PostMapping()
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "POST ${contextPath:nacos}/v3/admin/cs/config")
     public Result<Boolean> publishConfig(ConfigForm configForm, HttpServletRequest request) throws NacosException {
         // check required field
         configForm.validateWithContent();
@@ -160,7 +160,7 @@ public class ConfigControllerV2 {
      */
     @DeleteMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "DELETE ${contextPath:nacos}/v3/admin/cs/config")
     public Result<Boolean> deleteConfig(HttpServletRequest request, @RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,

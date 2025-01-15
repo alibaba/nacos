@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.controller.v3;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.capacity.Capacity;
+import com.alibaba.nacos.config.server.model.form.UpdateCapacityForm;
 import com.alibaba.nacos.config.server.service.capacity.CapacityService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,6 +43,7 @@ import java.sql.Timestamp;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -82,8 +84,8 @@ class CapacityControllerV3Test {
         capacity.setGmtModified(new Timestamp(2));
         when(capacityService.getCapacityWithDefault(eq("test"), eq("test"))).thenReturn(capacity);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH).param("group", "test")
-                .param("tenant", "test");
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH).param("groupName", "test")
+                .param("namespaceId", "test");
         String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
         Capacity result = JacksonUtils.toObj(JacksonUtils.toObj(actualValue).get("data").toString(), Capacity.class);
         
@@ -107,22 +109,24 @@ class CapacityControllerV3Test {
         capacity.setGmtCreate(new Timestamp(1));
         capacity.setGmtModified(new Timestamp(2));
         when(capacityService.getCapacityWithDefault(eq("test"), eq("test"))).thenReturn(capacity);
-        // tenant & group is null
+        // namespaceId & groupName is null
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH);
-        String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
-        System.out.println(actualValue);
+        assertThrows(Exception.class, () -> {
+            mockMvc.perform(builder);
+        });
         
-        // tenant is blank& group is null
-        MockHttpServletRequestBuilder builder2 = MockMvcRequestBuilders.get(Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH).param("tenant", "");
-        String actualValue2 = mockMvc.perform(builder2).andReturn().getResponse().getContentAsString();
-        System.out.println(actualValue2);
+        // namespaceId is blank& groupName is null
+        MockHttpServletRequestBuilder builder2 = MockMvcRequestBuilders.get(Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH).param("namespaceId", "");
+        assertThrows(Exception.class, () -> {
+            mockMvc.perform(builder2);
+        });
         
-        // tenant is blank& group is null
+        // namespaceId is not blank && groupName is not blank
         when(capacityService.getCapacityWithDefault(eq("g1"), eq("123"))).thenThrow(new NullPointerException());
-        MockHttpServletRequestBuilder builder3 = MockMvcRequestBuilders.get(Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH).param("tenant", "123")
-                .param("group", "g1");
+        MockHttpServletRequestBuilder builder3 = MockMvcRequestBuilders.get(Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH).param("namespaceId", "123")
+                .param("groupName", "g1");
         String actualValue3 = mockMvc.perform(builder3).andReturn().getResponse().getContentAsString();
-        System.out.println(actualValue3);
+        
     }
     
     @Test
@@ -130,8 +134,8 @@ class CapacityControllerV3Test {
 
         when(capacityService.insertOrUpdateCapacity("test", "test", 1, 1, 1, 1)).thenReturn(true);
 
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH).param("group", "test")
-                .param("tenant", "test").param("quota", "1").param("maxSize", "1").param("maxAggrCount", "1").param("maxAggrSize", "1");
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH).param("groupName", "test")
+                .param("namespaceId", "test").param("quota", "1").param("maxSize", "1").param("maxAggrCount", "1").param("maxAggrSize", "1");
 
         String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
         String code = JacksonUtils.toObj(actualValue).get("code").toString();
@@ -141,39 +145,23 @@ class CapacityControllerV3Test {
     }
     
     @Test
-    void testUpdateCapacity2x() throws Exception {
-        
-        MockHttpServletRequestBuilder builder = post(Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH);
-        String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
-        String code = JacksonUtils.toObj(actualValue).get("code").toString();
-        String data = JacksonUtils.toObj(actualValue).get("data").toString();
-        assertEquals("400", code);
-        assertEquals("null", data);
-    }
-    
-    @Test
-    void testUpdateCapacity3x() throws Exception {
-        
-        MockHttpServletRequestBuilder builder = post(Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH).param("group", "test")
-                .param("tenant", "test");
-        String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
-        String code = JacksonUtils.toObj(actualValue).get("code").toString();
-        String data = JacksonUtils.toObj(actualValue).get("data").toString();
-        assertEquals("400", code);
-        assertEquals("null", data);
-    }
-    
-    @Test
     void testUpdateCapacity4x() throws Exception {
         
+        UpdateCapacityForm updateCapacityForm = new UpdateCapacityForm();
+        updateCapacityForm.setGroupName("test");
+        updateCapacityForm.setNamespaceId("test");
+        updateCapacityForm.setQuota(1);
+        updateCapacityForm.setMaxSize(1);
+        updateCapacityForm.setMaxAggrCount(1);
+        updateCapacityForm.setMaxSize(1);
         when(capacityService.insertOrUpdateCapacity("test", "test", 1, 1, 1, 1)).thenReturn(false);
         
-        MockHttpServletRequestBuilder builder = post(Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH).param("group", "test")
-                .param("tenant", "test").param("quota", "1").param("maxSize", "1").param("maxAggrCount", "1").param("maxAggrSize", "1");
+        MockHttpServletRequestBuilder builder = post(Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH).param("groupName", "test")
+                .param("namespaceId", "test").param("quota", "1").param("maxSize", "1").param("maxAggrCount", "1").param("maxAggrSize", "1");
         String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
         String code = JacksonUtils.toObj(actualValue).get("code").toString();
         String data = JacksonUtils.toObj(actualValue).get("data").toString();
-        assertEquals("500", code);
+        assertEquals("30000", code);
         assertEquals("null", data);
     }
 }

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.controller.v3;
 
+import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -26,9 +27,7 @@ import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.controller.ConfigServletInner;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
-import com.alibaba.nacos.config.server.enums.ApiVersionEnum;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -40,7 +39,7 @@ import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
-import com.alibaba.nacos.config.server.model.form.ConfigForm;
+import com.alibaba.nacos.config.server.model.form.ConfigFormV3;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
@@ -84,9 +83,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -106,6 +103,7 @@ import static com.alibaba.nacos.config.server.utils.RequestUtil.getRemoteIp;
  *
  * @author Nacos
  */
+@NacosApi
 @RestController
 @RequestMapping(Constants.CONFIG_CONTROLLER_V3_ADMIN_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
@@ -118,8 +116,6 @@ public class ConfigControllerV3 {
     private static final String EXPORT_CONFIG_FILE_NAME_EXT = ".zip";
     
     private static final String EXPORT_CONFIG_FILE_NAME_DATE_FORMAT = "yyyyMMddHHmmss";
-    
-    private final ConfigServletInner inner;
     
     private final ConfigOperationService configOperationService;
     
@@ -135,11 +131,10 @@ public class ConfigControllerV3 {
     
     private final NamespacePersistService namespacePersistService;
     
-    public ConfigControllerV3(ConfigServletInner inner, ConfigOperationService configOperationService,
+    public ConfigControllerV3(ConfigOperationService configOperationService,
             ConfigSubService configSubService, ConfigInfoPersistService configInfoPersistService,
             ConfigDetailService configDetailService, ConfigInfoGrayPersistService configInfoGrayPersistService,
             ConfigInfoBetaPersistService configInfoBetaPersistService, NamespacePersistService namespacePersistService) {
-        this.inner = inner;
         this.configOperationService = configOperationService;
         this.configSubService = configSubService;
         this.configInfoPersistService = configInfoPersistService;
@@ -150,25 +145,31 @@ public class ConfigControllerV3 {
     }
     
     /**
-     * Query configuration, it's for openapi.
+     * Query configuration.
      */
     @GetMapping
     @TpsControl(pointName = "ConfigQuery")
     @Secured(resource = Constants.CONFIG_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
-            signType = SignType.CONFIG, apiType = ApiType.OPEN_API)
-    public void getConfig(HttpServletRequest request, HttpServletResponse response,
-            @RequestParam("dataId") String dataId, @RequestParam("group") String group,
-            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
-            @RequestParam(value = "tag", required = false) String tag) throws IOException, ServletException, NacosException {
-        // check tenant
-        ParamUtils.checkTenant(tenant);
-        tenant = NamespaceUtil.processNamespaceParameter(tenant);
+            signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    public Result<ConfigAllInfo> getConfig(@RequestParam("dataId") String dataId, @RequestParam("groupName") String groupName,
+            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId)
+            throws NacosException {
+        // check namespaceId
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
+        ParamUtils.checkTenant(namespaceId);
         // check params
-        ParamUtils.checkParam(dataId, group, "datumId", "content");
-        ParamUtils.checkParam(tag);
-        final String clientIp = getRemoteIp(request);
-        String isNotify = request.getHeader("notify");
-        inner.doGetConfig(request, response, dataId, group, tenant, tag, isNotify, clientIp, ApiVersionEnum.V2);
+        ParamUtils.checkParam(dataId, groupName, "datumId", "content");
+        ConfigAllInfo configAllInfo = configInfoPersistService.findConfigAllInfo(dataId, groupName, namespaceId);
+        
+        // decrypted
+        if (Objects.nonNull(configAllInfo)) {
+            String encryptedDataKey = configAllInfo.getEncryptedDataKey();
+            Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey,
+                    configAllInfo.getContent());
+            configAllInfo.setContent(pair.getSecond());
+        }
+        
+        return Result.success(configAllInfo);
     }
 
     /**
@@ -178,58 +179,34 @@ public class ConfigControllerV3 {
     @TpsControl(pointName = "ConfigPublish")
     @Secured(resource = Constants.CONFIG_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
-    public Result<Boolean> publishConfig(HttpServletRequest request,
-            @RequestParam(value = "dataId") String dataId, @RequestParam(value = "group") String group,
-            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
-            @RequestParam(value = "content") String content, @RequestParam(value = "tag", required = false) String tag,
-            @RequestParam(value = "appName", required = false) String appName,
-            @RequestParam(value = "src_user", required = false) String srcUser,
-            @RequestParam(value = "config_tags", required = false) String configTags,
-            @RequestParam(value = "desc", required = false) String desc,
-            @RequestParam(value = "use", required = false) String use,
-            @RequestParam(value = "effect", required = false) String effect,
-            @RequestParam(value = "type", required = false) String type,
-            @RequestParam(value = "schema", required = false) String schema,
-            @RequestParam(required = false) String encryptedDataKey) throws NacosException {
+    public Result<Boolean> publishConfig(HttpServletRequest request, ConfigFormV3 configForm) throws NacosException {
+        // check required field
+        configForm.validateWithContent();
+        configForm.setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
         
-        String encryptedDataKeyFinal = null;
-        if (StringUtils.isNotBlank(encryptedDataKey)) {
-            encryptedDataKeyFinal = encryptedDataKey;
-        } else {
-            Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
-            content = pair.getSecond();
-            encryptedDataKeyFinal = pair.getFirst();
-        }
+        // check param
+        ParamUtils.checkParam(configForm.getDataId(), configForm.getGroup(), "datumId", configForm.getContent());
+        ParamUtils.checkParamV2(configForm.getTag());
         
-        // check tenant
-        tenant = NamespaceUtil.processNamespaceParameter(tenant);
-        ParamUtils.checkTenant(tenant);
-        ParamUtils.checkParam(dataId, group, "datumId", content);
-        ParamUtils.checkParam(tag);
-        
-        ConfigForm configForm = new ConfigForm();
-        configForm.setDataId(dataId);
-        configForm.setGroup(group);
-        configForm.setNamespaceId(tenant);
-        configForm.setContent(content);
-        configForm.setTag(tag);
-        configForm.setAppName(appName);
-        configForm.setSrcUser(srcUser);
-        configForm.setConfigTags(configTags);
-        configForm.setDesc(desc);
-        configForm.setUse(use);
-        configForm.setEffect(effect);
-        configForm.setType(type);
-        configForm.setSchema(schema);
-        if (StringUtils.isBlank(srcUser)) {
+        if (StringUtils.isBlank(configForm.getSrcUser())) {
             configForm.setSrcUser(RequestUtil.getSrcUserName(request));
         }
-        if (!ConfigType.isValidType(type)) {
+        
+        if (!ConfigType.isValidType(configForm.getType())) {
             configForm.setType(ConfigType.getDefaultType().getType());
         }
         
+        String encryptedDataKeyFinal = configForm.getEncryptedDataKey();
+        if (StringUtils.isBlank(encryptedDataKeyFinal)) {
+            // encrypted
+            Pair<String, String> pair = EncryptionHandler.encryptHandler(configForm.getDataId(),
+                    configForm.getContent());
+            configForm.setContent(pair.getSecond());
+            encryptedDataKeyFinal = pair.getFirst();
+        }
+        
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
-        configRequestInfo.setSrcIp(getRemoteIp(request));
+        configRequestInfo.setSrcIp(RequestUtil.getRemoteIp(request));
         configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
         configRequestInfo.setBetaIps(request.getHeader("betaIps"));
         configRequestInfo.setCasMd5(request.getHeader("casMd5"));
@@ -244,23 +221,23 @@ public class ConfigControllerV3 {
     @Secured(resource = Constants.CONFIG_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Boolean> deleteConfig(HttpServletRequest request,
-            @RequestParam("dataId") String dataId, @RequestParam("group") String group,
-            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
+            @RequestParam("dataId") String dataId, @RequestParam("groupName") String groupName,
+            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
             @RequestParam(value = "tag", required = false) String tag) throws NacosException {
-        // check tenant
-        tenant = NamespaceUtil.processNamespaceParameter(tenant);
-        ParamUtils.checkTenant(tenant);
-        ParamUtils.checkParam(dataId, group, "datumId", "rm");
+        // check namespaceId
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
+        ParamUtils.checkTenant(namespaceId);
+        ParamUtils.checkParam(dataId, groupName, "datumId", "rm");
         ParamUtils.checkParam(tag);
         
         String clientIp = getRemoteIp(request);
         String srcUser = RequestUtil.getSrcUserName(request);
         
-        return Result.success(configOperationService.deleteConfig(dataId, group, tenant, tag, clientIp, srcUser));
+        return Result.success(configOperationService.deleteConfig(dataId, groupName, namespaceId, tag, clientIp, srcUser));
     }
     
     /**
-     * Delete configuration by ids.
+     * Batch delete configuration by ids.
      */
     @DeleteMapping("/batch")
     @Secured(resource = Constants.CONFIG_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
@@ -287,44 +264,15 @@ public class ConfigControllerV3 {
     }
     
     /**
-     * Get configuration detail.
-     */
-    @GetMapping("/detail")
-    @Secured(resource = Constants.CONFIG_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
-            signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
-    public Result<ConfigAllInfo> getConfigDetail(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
-            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant)
-            throws NacosException {
-        // check tenant
-        tenant = NamespaceUtil.processNamespaceParameter(tenant);
-        ParamUtils.checkTenant(tenant);
-        // check params
-        ParamUtils.checkParam(dataId, group, "datumId", "content");
-        ConfigAllInfo configAllInfo = configInfoPersistService.findConfigAllInfo(dataId, group, tenant);
-        
-        // decrypted
-        if (Objects.nonNull(configAllInfo)) {
-            String encryptedDataKey = configAllInfo.getEncryptedDataKey();
-            Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey,
-                    configAllInfo.getContent());
-            configAllInfo.setContent(pair.getSecond());
-        }
-        
-        return Result.success(configAllInfo);
-    }
-    
-    
-    /**
      * Get extra configuration information.
      */
     @GetMapping("/extInfo")
     @Secured(resource = Constants.CONFIG_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
-    public Result<ConfigAdvanceInfo> getConfigAdvanceInfo(@RequestParam("dataId") String dataId,
-            @RequestParam("group") String group,
-            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
-        tenant = NamespaceUtil.processNamespaceParameter(tenant);
-        ConfigAdvanceInfo configInfo = configInfoPersistService.findConfigAdvanceInfo(dataId, group, tenant);
+    public Result<ConfigAdvanceInfo> getConfigAdvanceInfo(@RequestParam("dataId") String dataId, @RequestParam("groupName") String groupName,
+            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId) {
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
+        ConfigAdvanceInfo configInfo = configInfoPersistService.findConfigAdvanceInfo(dataId, groupName, namespaceId);
         
         return Result.success(configInfo);
     }
@@ -336,11 +284,11 @@ public class ConfigControllerV3 {
     @Secured(resource = Constants.CONFIG_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<GroupkeyListenserStatus> getListeners(@RequestParam("dataId") String dataId,
-            @RequestParam("group") String group, @RequestParam(value = "tenant", required = false) String tenant,
+            @RequestParam("groupName") String groupName, @RequestParam(value = "namespaceId", required = false) String namespaceId,
             @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime) throws Exception {
-        group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group;
-        tenant = NamespaceUtil.processNamespaceParameter(tenant);
-        SampleResult collectSampleResult = configSubService.getCollectSampleResult(dataId, group, tenant, sampleTime);
+        groupName = StringUtils.isBlank(groupName) ? Constants.DEFAULT_GROUP : groupName;
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
+        SampleResult collectSampleResult = configSubService.getCollectSampleResult(dataId, groupName, namespaceId, sampleTime);
         
         GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
         gls.setCollectStatus(200);
@@ -357,14 +305,14 @@ public class ConfigControllerV3 {
     @GetMapping("/searchDetail")
     @Secured(resource = Constants.CONFIG_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
-    public Result<Page<ConfigInfo>> searchConfigByDetails(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
+    public Result<Page<ConfigInfo>> searchConfigByDetails(@RequestParam("dataId") String dataId, @RequestParam("groupName") String groupName,
             @RequestParam(value = "appName", required = false) String appName,
-            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
+            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
             @RequestParam(value = "config_tags", required = false) String configTags,
             @RequestParam(value = "config_detail") String configDetail,
             @RequestParam(value = "search", defaultValue = "blur", required = false) String search,
-            @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) throws NacosException {
-        Map<String, Object> configAdvanceInfo = new HashMap<>(100);
+            @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) {
+        Map<String, Object> configAdvanceInfo = new HashMap<>(8);
         if (StringUtils.isNotBlank(appName)) {
             configAdvanceInfo.put("appName", appName);
         }
@@ -374,14 +322,9 @@ public class ConfigControllerV3 {
         if (StringUtils.isNotBlank(configDetail)) {
             configAdvanceInfo.put("content", configDetail);
         }
-        tenant = NamespaceUtil.processNamespaceParameter(tenant);
-        try {
-            return Result.success(configDetailService.findConfigInfoPage(search, pageNo, pageSize, dataId, group, tenant, configAdvanceInfo));
-        } catch (Exception e) {
-            String errorMsg = "serialize page error, dataId=" + dataId + ", group=" + group;
-            LOGGER.error(errorMsg, e);
-            throw e;
-        }
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
+        
+        return Result.success(configDetailService.findConfigInfoPage(search, pageNo, pageSize, dataId, groupName, namespaceId, configAdvanceInfo));
     }
     
     /**
@@ -391,26 +334,26 @@ public class ConfigControllerV3 {
     @Secured(resource = Constants.CONFIG_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Boolean> stopBeta(HttpServletRequest httpServletRequest,
-            @RequestParam(value = "dataId") String dataId, @RequestParam(value = "group") String group,
-            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
+            @RequestParam(value = "dataId") String dataId, @RequestParam(value = "groupName") String groupName,
+            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId) {
         String remoteIp = getRemoteIp(httpServletRequest);
         String requestIpApp = RequestUtil.getAppName(httpServletRequest);
-        tenant = NamespaceUtil.processNamespaceParameter(tenant);
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         try {
-            configInfoGrayPersistService.removeConfigInfoGray(dataId, group, tenant, BetaGrayRule.TYPE_BETA, remoteIp,
+            configInfoGrayPersistService.removeConfigInfoGray(dataId, groupName, namespaceId, BetaGrayRule.TYPE_BETA, remoteIp,
                     RequestUtil.getSrcUserName(httpServletRequest));
         } catch (Throwable e) {
             LOGGER.error("remove beta data error", e);
-            return Result.failure(500, "remove beta data error", false);
+            return Result.failure(ErrorCode.SERVER_ERROR.getCode(), "remove beta data error", false);
         }
         
-        ConfigTraceService.logPersistenceEvent(dataId, group, tenant, requestIpApp, System.currentTimeMillis(),
+        ConfigTraceService.logPersistenceEvent(dataId, groupName, namespaceId, requestIpApp, System.currentTimeMillis(),
                 remoteIp, ConfigTraceService.PERSISTENCE_EVENT_BETA, ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
         if (PropertyUtil.isGrayCompatibleModel()) {
-            configInfoBetaPersistService.removeConfigInfo4Beta(dataId, group, tenant);
+            configInfoBetaPersistService.removeConfigInfo4Beta(dataId, groupName, namespaceId);
         }
         ConfigChangePublisher.notifyConfigChange(
-                new ConfigDataChangeEvent(dataId, group, tenant, BetaGrayRule.TYPE_BETA, System.currentTimeMillis()));
+                new ConfigDataChangeEvent(dataId, groupName, namespaceId, BetaGrayRule.TYPE_BETA, System.currentTimeMillis()));
         
         return Result.success(true);
     }
@@ -422,29 +365,24 @@ public class ConfigControllerV3 {
     @Secured(resource = Constants.CONFIG_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<ConfigInfo4Beta> queryBeta(@RequestParam(value = "dataId") String dataId,
-            @RequestParam(value = "group") String group,
-            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
-        try {
-            tenant = NamespaceUtil.processNamespaceParameter(tenant);
-            ConfigInfo4Beta configInfo4Beta = null;
-            ConfigInfoGrayWrapper beta4Gray = configInfoGrayPersistService.findConfigInfo4Gray(dataId, group, tenant,
-                    "beta");
-            if (Objects.nonNull(beta4Gray)) {
-                String encryptedDataKey = beta4Gray.getEncryptedDataKey();
-                Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey,
-                        beta4Gray.getContent());
-                beta4Gray.setContent(pair.getSecond());
-                configInfo4Beta = new ConfigInfo4Beta();
-                BeanUtils.copyProperties(beta4Gray, configInfo4Beta);
-                configInfo4Beta.setBetaIps(
-                        GrayRuleManager.deserializeConfigGrayPersistInfo(beta4Gray.getGrayRule()).getExpr());
-            }
-            
-            return Result.success(configInfo4Beta);
-        } catch (Throwable e) {
-            LOGGER.error("query beta data error", e);
-            return Result.failure(500, "query beta data error", null);
+            @RequestParam(value = "groupName") String groupName,
+            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId) {
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
+        ConfigInfo4Beta configInfo4Beta = null;
+        ConfigInfoGrayWrapper beta4Gray = configInfoGrayPersistService.findConfigInfo4Gray(dataId, groupName, namespaceId,
+                "beta");
+        if (Objects.nonNull(beta4Gray)) {
+            String encryptedDataKey = beta4Gray.getEncryptedDataKey();
+            Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey,
+                    beta4Gray.getContent());
+            beta4Gray.setContent(pair.getSecond());
+            configInfo4Beta = new ConfigInfo4Beta();
+            BeanUtils.copyProperties(beta4Gray, configInfo4Beta);
+            configInfo4Beta.setBetaIps(
+                    GrayRuleManager.deserializeConfigGrayPersistInfo(beta4Gray.getGrayRule()).getExpr());
         }
+        
+        return Result.success(configInfo4Beta);
     }
     
     /**
@@ -455,7 +393,7 @@ public class ConfigControllerV3 {
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Map<String, Object>> importAndPublishConfig(HttpServletRequest request,
             @RequestParam(value = "src_user", required = false) String srcUser,
-            @RequestParam(value = "namespace", required = false) String namespace,
+            @RequestParam(value = "namespaceId", required = false) String namespaceId,
             @RequestParam(value = "policy", defaultValue = "ABORT") SameConfigPolicy policy, MultipartFile file)
             throws NacosException {
         Map<String, Object> failedData = new HashMap<>(4);
@@ -463,8 +401,8 @@ public class ConfigControllerV3 {
             return Result.failure(ErrorCode.DATA_EMPTY, failedData);
         }
         
-        namespace = NamespaceUtil.processNamespaceParameter(namespace);
-        if (StringUtils.isNotBlank(namespace) && namespacePersistService.tenantInfoCountByTenantId(namespace) <= 0) {
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
+        if (StringUtils.isNotBlank(namespaceId) && namespacePersistService.tenantInfoCountByTenantId(namespaceId) <= 0) {
             failedData.put("succCount", 0);
             return Result.failure(ErrorCode.NAMESPACE_NOT_EXIST, failedData);
         }
@@ -479,9 +417,9 @@ public class ConfigControllerV3 {
             Result<Map<String, Object>> errorResult;
             if (metaDataZipItem != null && Constants.CONFIG_EXPORT_METADATA_NEW.equals(metaDataZipItem.getItemName())) {
                 // new export
-                errorResult = parseImportDataV2(srcUser, unziped, configInfoList, unrecognizedList, namespace);
+                errorResult = parseImportDataV2(srcUser, unziped, configInfoList, unrecognizedList, namespaceId);
             } else {
-                errorResult = parseImportData(srcUser, unziped, configInfoList, unrecognizedList, namespace);
+                errorResult = parseImportData(srcUser, unziped, configInfoList, unrecognizedList, namespaceId);
             }
             if (errorResult != null) {
                 return errorResult;
@@ -523,7 +461,7 @@ public class ConfigControllerV3 {
      * old import config.
      */
     private Result<Map<String, Object>> parseImportData(String srcUser, ZipUtils.UnZipResult unziped,
-            List<ConfigAllInfo> configInfoList, List<Map<String, String>> unrecognizedList, String namespace) {
+            List<ConfigAllInfo> configInfoList, List<Map<String, String>> unrecognizedList, String namespaceId) {
         ZipUtils.ZipItem metaDataZipItem = unziped.getMetaDataItem();
         
         Map<String, String> metaDataMap = new HashMap<>(16);
@@ -573,7 +511,7 @@ public class ConfigControllerV3 {
                 if (metaDataMap.get(metaDataId) != null) {
                     ci.setAppName(metaDataMap.get(metaDataId));
                 }
-                ci.setTenant(namespace);
+                ci.setTenant(namespaceId);
                 ci.setEncryptedDataKey(pair.getFirst());
                 ci.setCreateUser(srcUser);
                 configInfoList.add(ci);
@@ -587,7 +525,7 @@ public class ConfigControllerV3 {
      * Import config add .metadata.yml file.
      */
     private Result<Map<String, Object>> parseImportDataV2(String srcUser, ZipUtils.UnZipResult unziped,
-            List<ConfigAllInfo> configInfoList, List<Map<String, String>> unrecognizedList, String namespace) {
+            List<ConfigAllInfo> configInfoList, List<Map<String, String>> unrecognizedList, String namespaceId) {
         ZipUtils.ZipItem metaDataItem = unziped.getMetaDataItem();
         String metaData = metaDataItem.getItemData();
         Map<String, Object> failedData = new HashMap<>(4);
@@ -660,7 +598,7 @@ public class ConfigControllerV3 {
             ci.setType(configExportItem.getType());
             ci.setDesc(configExportItem.getDesc());
             ci.setAppName(configExportItem.getAppName());
-            ci.setTenant(namespace);
+            ci.setTenant(namespaceId);
             ci.setEncryptedDataKey(pair.getFirst());
             ci.setCreateUser(srcUser);
             configInfoList.add(ci);
@@ -676,13 +614,13 @@ public class ConfigControllerV3 {
     @Secured(resource = Constants.CONFIG_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<ResponseEntity<byte[]>> exportConfig(@RequestParam(value = "dataId", required = false) String dataId,
-            @RequestParam(value = "group", required = false) String group,
+            @RequestParam(value = "groupName", required = false) String groupName,
             @RequestParam(value = "appName", required = false) String appName,
-            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
+            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
             @RequestParam(value = "ids", required = false) List<Long> ids) {
         ids.removeAll(Collections.singleton(null));
-        tenant = NamespaceUtil.processNamespaceParameter(tenant);
-        List<ConfigAllInfo> dataList = configInfoPersistService.findAllConfigInfo4Export(dataId, group, tenant, appName,
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
+        List<ConfigAllInfo> dataList = configInfoPersistService.findAllConfigInfo4Export(dataId, groupName, namespaceId, appName,
                 ids);
         List<ZipUtils.ZipItem> zipItemList = new ArrayList<>();
         List<ConfigMetadata.ConfigExportItem> configMetadataItems = new ArrayList<>();
@@ -721,7 +659,7 @@ public class ConfigControllerV3 {
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Map<String, Object>> cloneConfig(HttpServletRequest request,
             @RequestParam(value = "src_user", required = false) String srcUser,
-            @RequestParam(value = "tenant") String namespace,
+            @RequestParam(value = "namespaceId") String namespaceId,
             @RequestBody List<SameNamespaceCloneConfigBean> configBeansList,
             @RequestParam(value = "policy", defaultValue = "ABORT") SameConfigPolicy policy) throws NacosException {
         Map<String, Object> failedData = new HashMap<>(4);
@@ -731,8 +669,8 @@ public class ConfigControllerV3 {
         }
         configBeansList.removeAll(Collections.singleton(null));
         
-        namespace = NamespaceUtil.processNamespaceParameter(namespace);
-        if (StringUtils.isNotBlank(namespace) && namespacePersistService.tenantInfoCountByTenantId(namespace) <= 0) {
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
+        if (StringUtils.isNotBlank(namespaceId) && namespacePersistService.tenantInfoCountByTenantId(namespaceId) <= 0) {
             failedData.put("succCount", 0);
             return Result.failure(ErrorCode.NAMESPACE_ALREADY_EXIST, failedData);
         }
@@ -757,7 +695,7 @@ public class ConfigControllerV3 {
         for (ConfigAllInfo ci : queryedDataList) {
             SameNamespaceCloneConfigBean paramBean = configBeansMap.get(ci.getId());
             ConfigAllInfo ci4save = new ConfigAllInfo();
-            ci4save.setTenant(namespace);
+            ci4save.setTenant(namespaceId);
             ci4save.setType(ci.getType());
             ci4save.setGroup((paramBean != null && StringUtils.isNotBlank(paramBean.getGroup())) ? paramBean.getGroup()
                     : ci.getGroup());

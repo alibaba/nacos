@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.controller.v3;
 
+import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
@@ -44,6 +45,7 @@ import java.util.Map;
  *
  * @author Nacos
  */
+@NacosApi
 @RestController
 @RequestMapping(Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
@@ -63,7 +65,7 @@ public class ListenerControllerV3 {
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<GroupkeyListenserStatus> getAllSubClientConfigByIp(@RequestParam("ip") String ip,
             @RequestParam(value = "all", required = false) boolean all,
-            @RequestParam(value = "tenant", required = false) String tenant,
+            @RequestParam(value = "namespaceId", required = false) String namespaceId,
             @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime, ModelMap modelMap) {
         SampleResult collectSampleResult = configSubService.getCollectSampleResultByIp(ip, sampleTime);
         GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
@@ -73,9 +75,9 @@ public class ListenerControllerV3 {
             return Result.success(gls);
         }
         Map<String, String> status = collectSampleResult.getLisentersGroupkeyStatus();
-        tenant = NamespaceUtil.processNamespaceParameter(tenant);
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         for (Map.Entry<String, String> config : status.entrySet()) {
-            if (!StringUtils.isBlank(tenant) && config.getKey().contains(tenant)) {
+            if (!StringUtils.isBlank(namespaceId) && config.getKey().contains(namespaceId)) {
                 configMd5Status.put(config.getKey(), config.getValue());
                 continue;
             }

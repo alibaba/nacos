@@ -79,7 +79,7 @@ public class ConfigOpsController {
      */
     @PostMapping(value = "/localCache")
     @Secured(resource = Constants.OPS_CONTROLLER_PATH, action = ActionTypes.WRITE, signType = SignType.CONSOLE)
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "POST {contextPath:nacos}/v3/admin/cs/ops/localCache")
     public String updateLocalCacheFromStore() {
         LOGGER.info("start to dump all data from store.");
         dumpService.dumpAll();
@@ -89,7 +89,7 @@ public class ConfigOpsController {
     
     @PutMapping(value = "/log")
     @Secured(resource = Constants.OPS_CONTROLLER_PATH, action = ActionTypes.WRITE, signType = SignType.CONSOLE)
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "PUT {contextPath:nacos}/v3/admin/cs/ops/log")
     public String setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
         LogUtil.setLogLevel(logName, logLevel);
         return HttpServletResponse.SC_OK + "";
@@ -104,7 +104,7 @@ public class ConfigOpsController {
      */
     @GetMapping(value = "/derby")
     @Secured(action = ActionTypes.READ, resource = "nacos/admin")
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/admin/cs/ops/derby")
     public RestResult<Object> derbyOps(@RequestParam(value = "sql") String sql) {
         String selectSign = "SELECT";
         String limitSign = "ROWS FETCH NEXT";
@@ -144,7 +144,7 @@ public class ConfigOpsController {
      */
     @PostMapping(value = "/data/removal")
     @Secured(action = ActionTypes.WRITE, resource = "nacos/admin")
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "POST {contextPath:nacos}/v3/admin/cs/ops/derby/import")
     public DeferredResult<RestResult<String>> importDerby(@RequestParam(value = "file") MultipartFile multipartFile) {
         DeferredResult<RestResult<String>> response = new DeferredResult<>();
         if (!DatasourceConfiguration.isEmbeddedStorage()) {
