@@ -228,9 +228,9 @@ public class NamingFuzzyWatchServiceListHolder extends SmartSubscriber {
         for (NamingFuzzyWatchContext context : fuzzyMatchContextMap.values()) {
             // Check if the context is consistent with the server
             if (context.isConsistentWithServer()) {
+                context.syncFuzzyWatchers();
                 // Skip if a full synchronization is not needed
                 if (!needAllSync) {
-                    context.syncFuzzyWatchers();
                     continue;
                 }
             }
