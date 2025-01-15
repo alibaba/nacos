@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-$toady.year Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.controller;
+package com.alibaba.nacos.config.server.controller.v3;
 
+import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -25,7 +27,6 @@ import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
-import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
@@ -40,19 +41,19 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Config longpolling.
+ * Listener management.
  *
  * @author Nacos
  */
-@Deprecated
+@NacosApi
 @RestController
-@RequestMapping(Constants.LISTENER_CONTROLLER_PATH)
+@RequestMapping(Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
-public class ListenerController {
+public class ListenerControllerV3 {
     
     private final ConfigSubService configSubService;
     
-    public ListenerController(ConfigSubService configSubService) {
+    public ListenerControllerV3(ConfigSubService configSubService) {
         this.configSubService = configSubService;
     }
     
@@ -60,23 +61,23 @@ public class ListenerController {
      * Get subscribe information from client side.
      */
     @GetMapping
-    @Secured(resource = Constants.LISTENER_CONTROLLER_PATH, action = ActionTypes.READ, signType = SignType.CONFIG)
-    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/cs/config/listener/ip")
-    public GroupkeyListenserStatus getAllSubClientConfigByIp(@RequestParam("ip") String ip,
+    @Secured(resource = Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
+            signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    public Result<GroupkeyListenserStatus> getAllSubClientConfigByIp(@RequestParam("ip") String ip,
             @RequestParam(value = "all", required = false) boolean all,
-            @RequestParam(value = "tenant", required = false) String tenant,
+            @RequestParam(value = "namespaceId", required = false) String namespaceId,
             @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime, ModelMap modelMap) {
         SampleResult collectSampleResult = configSubService.getCollectSampleResultByIp(ip, sampleTime);
         GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
         gls.setCollectStatus(200);
         Map<String, String> configMd5Status = new HashMap<>(100);
         if (collectSampleResult.getLisentersGroupkeyStatus() == null) {
-            return gls;
+            return Result.success(gls);
         }
         Map<String, String> status = collectSampleResult.getLisentersGroupkeyStatus();
-        tenant = NamespaceUtil.processNamespaceParameter(tenant);
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         for (Map.Entry<String, String> config : status.entrySet()) {
-            if (!StringUtils.isBlank(tenant) && config.getKey().contains(tenant)) {
+            if (!StringUtils.isBlank(namespaceId) && config.getKey().contains(namespaceId)) {
                 configMd5Status.put(config.getKey(), config.getValue());
                 continue;
             }
@@ -91,8 +92,7 @@ public class ListenerController {
             }
         }
         gls.setLisentersGroupkeyStatus(configMd5Status);
-        return gls;
+        return Result.success(gls);
     }
     
 }
-

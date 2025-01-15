@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-$toady.year Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.controller;
+package com.alibaba.nacos.config.server.controller.v3;
 
+import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
@@ -26,7 +29,6 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
@@ -50,27 +52,26 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.DeferredResult;
 import org.springframework.web.multipart.MultipartFile;
 
-import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 /**
- * Manage controllers.
+ * Configuration ops management.
  *
  * @author Nacos
  */
-@Deprecated
+@NacosApi
 @RestController
-@RequestMapping(Constants.OPS_CONTROLLER_PATH)
+@RequestMapping(Constants.OPS_CONTROLLER_V3_ADMIN_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
-public class ConfigOpsController {
+public class ConfigOpsControllerV3 {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigOpsController.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigOpsControllerV3.class);
     
     private final DumpService dumpService;
     
-    public ConfigOpsController(DumpService dumpService) {
+    public ConfigOpsControllerV3(DumpService dumpService) {
         this.dumpService = dumpService;
     }
     
@@ -78,21 +79,31 @@ public class ConfigOpsController {
      * Manually trigger dump of a local configuration file.
      */
     @PostMapping(value = "/localCache")
-    @Secured(resource = Constants.OPS_CONTROLLER_PATH, action = ActionTypes.WRITE, signType = SignType.CONSOLE)
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "POST {contextPath:nacos}/v3/admin/cs/ops/localCache")
-    public String updateLocalCacheFromStore() {
+    @Secured(resource = Constants.OPS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
+            signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    public Result<String> updateLocalCacheFromStore() {
         LOGGER.info("start to dump all data from store.");
-        dumpService.dumpAll();
-        LOGGER.info("finish to dump all data from store.");
-        return HttpServletResponse.SC_OK + "";
+        try {
+            dumpService.dumpAll();
+            return Result.success("Local cache updated from store successfully!");
+        } catch (Exception e) {
+            LOGGER.error("[updateLocalCacheFromStore] ", e);
+            return Result.failure(ErrorCode.SERVER_ERROR.getCode(), "Local cache updated from store failed!", e.getMessage());
+        }
     }
     
     @PutMapping(value = "/log")
-    @Secured(resource = Constants.OPS_CONTROLLER_PATH, action = ActionTypes.WRITE, signType = SignType.CONSOLE)
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "PUT {contextPath:nacos}/v3/admin/cs/ops/log")
-    public String setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
-        LogUtil.setLogLevel(logName, logLevel);
-        return HttpServletResponse.SC_OK + "";
+    @Secured(resource = Constants.OPS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
+            signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    public Result<String> setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
+        try {
+            LogUtil.setLogLevel(logName, logLevel);
+            return Result.success(String.format("Log level updated successfully! Module: %s, Log Level: %s", logName, logLevel));
+        } catch (Exception e) {
+            LOGGER.error("Failed to set log level for module {} to {}", logName, logLevel, e);
+            return Result.failure(ErrorCode.SERVER_ERROR.getCode(), String.format("Failed to set log level for module %s to %s: %s",
+                    logName, logLevel, e.getMessage()), null);
+        }
     }
     
     /**
@@ -103,20 +114,21 @@ public class ConfigOpsController {
      * @return {@link RestResult}
      */
     @GetMapping(value = "/derby")
-    @Secured(action = ActionTypes.READ, resource = "nacos/admin")
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/admin/cs/ops/derby")
-    public RestResult<Object> derbyOps(@RequestParam(value = "sql") String sql) {
+    @Secured(resource = Constants.OPS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
+            signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    public Result<Object> derbyOps(@RequestParam(value = "sql") String sql) {
         String selectSign = "SELECT";
         String limitSign = "ROWS FETCH NEXT";
         String limit = " OFFSET 0 ROWS FETCH NEXT 1000 ROWS ONLY";
         try {
             if (!DatasourceConfiguration.isEmbeddedStorage()) {
-                return RestResultUtils.failed("The current storage mode is not Derby");
+                return Result.failure(ErrorCode.SERVER_ERROR.getCode(), "The current storage mode is not Derby", null);
             }
             if (!ConfigCommonConfig.getInstance().isDerbyOpsEnabled()) {
-                return RestResultUtils.failed(
-                        "Derby ops is disabled, please set `nacos.config.derby.ops.enabled=true` to enabled this feature.");
+                return Result.failure(ErrorCode.SERVER_ERROR.getCode(),
+                        "Derby ops is disabled, please set `nacos.config.derby.ops.enabled=true` to enabled this feature.", null);
             }
+            
             LocalDataSourceServiceImpl dataSourceService = (LocalDataSourceServiceImpl) DynamicDataSource.getInstance()
                     .getDataSource();
             if (StringUtils.startsWithIgnoreCase(sql, selectSign)) {
@@ -125,11 +137,12 @@ public class ConfigOpsController {
                 }
                 JdbcTemplate template = dataSourceService.getJdbcTemplate();
                 List<Map<String, Object>> result = template.queryForList(sql);
-                return RestResultUtils.success(result);
+                return Result.success(result);
             }
-            return RestResultUtils.failed("Only query statements are allowed to be executed");
+            return Result.failure(ErrorCode.SERVER_ERROR.getCode(), "Only query statements are allowed to be executed", null);
         } catch (Exception e) {
-            return RestResultUtils.failed(e.getMessage());
+            LOGGER.error("Derby failed to execute sql: " + sql);
+            return Result.failure(ErrorCode.SERVER_ERROR.getCode(), "Failed to execute sql: " + sql, null);
         }
     }
     
@@ -142,19 +155,19 @@ public class ConfigOpsController {
      * @param multipartFile {@link MultipartFile}
      * @return {@link DeferredResult}
      */
-    @PostMapping(value = "/data/removal")
-    @Secured(action = ActionTypes.WRITE, resource = "nacos/admin")
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "POST {contextPath:nacos}/v3/admin/cs/ops/derby/import")
-    public DeferredResult<RestResult<String>> importDerby(@RequestParam(value = "file") MultipartFile multipartFile) {
+    @PostMapping(value = "/derby/import")
+    @Secured(resource = Constants.OPS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
+            signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    public DeferredResult<Result<String>> importDerby(@RequestParam(value = "file") MultipartFile multipartFile) {
         DeferredResult<RestResult<String>> response = new DeferredResult<>();
         if (!DatasourceConfiguration.isEmbeddedStorage()) {
             response.setResult(RestResultUtils.failed("Limited to embedded storage mode"));
-            return response;
+            return convertToResult(response);
         }
         if (!ConfigCommonConfig.getInstance().isDerbyOpsEnabled()) {
             response.setResult(RestResultUtils.failed(
                     "Derby ops is disabled, please set `nacos.config.derby.ops.enabled=true` to enabled this feature."));
-            return response;
+            return convertToResult(response);
         }
         DatabaseOperate databaseOperate = ApplicationUtils.getBean(DatabaseOperate.class);
         WebUtils.onFileUpload(multipartFile, file -> {
@@ -168,7 +181,25 @@ public class ConfigOpsController {
                 response.setResult(result);
             });
         }, response);
-        return response;
+
+        return convertToResult(response);
     }
     
+    /**
+     * Ensure backward compatibility.
+     */
+    private DeferredResult<Result<String>> convertToResult(DeferredResult<RestResult<String>> restResult) {
+        DeferredResult<Result<String>> wrappedResponse = new DeferredResult<>();
+        restResult.onCompletion(() -> {
+            if (restResult.getResult() != null) {
+                RestResult<String> originalResult = (RestResult<String>) restResult.getResult();
+                Result<String> newResult = new Result<>(originalResult.getCode(), originalResult.getMessage(),
+                        originalResult.getData());
+                
+                wrappedResponse.setResult(newResult);
+            }
+        });
+        
+        return wrappedResponse;
+    }
 }

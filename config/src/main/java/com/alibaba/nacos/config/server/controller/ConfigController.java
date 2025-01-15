@@ -112,6 +112,7 @@ import static com.alibaba.nacos.config.server.utils.RequestUtil.getRemoteIp;
  *
  * @author leiwen
  */
+@Deprecated
 @RestController
 @RequestMapping(Constants.CONFIG_CONTROLLER_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
@@ -165,7 +166,7 @@ public class ConfigController {
     @PostMapping
     @TpsControl(pointName = "ConfigPublish")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
-    @Compatibility(apiType = ApiType.OPEN_API)
+    @Compatibility(apiType = ApiType.OPEN_API, alternatives = "POST ${contextPath:nacos}/v3/admin/cs/config")
     public Boolean publishConfig(HttpServletRequest request, HttpServletResponse response,
             @RequestParam(value = "dataId") String dataId, @RequestParam(value = "group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
@@ -235,7 +236,7 @@ public class ConfigController {
     @GetMapping
     @TpsControl(pointName = "ConfigQuery")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    @Compatibility(apiType = ApiType.OPEN_API)
+    @Compatibility(apiType = ApiType.OPEN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/cs/config")
     public void getConfig(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
@@ -294,7 +295,7 @@ public class ConfigController {
      */
     @DeleteMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
-    @Compatibility(apiType = ApiType.OPEN_API)
+    @Compatibility(apiType = ApiType.OPEN_API, alternatives = "DELETE ${contextPath:nacos}/v3/admin/cs/config")
     public Boolean deleteConfig(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
@@ -345,7 +346,7 @@ public class ConfigController {
     
     @GetMapping("/catalog")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    @Compatibility(apiType = ApiType.ADMIN_API)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/cs/config/extInfo")
     public RestResult<ConfigAdvanceInfo> getConfigAdvanceInfo(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {

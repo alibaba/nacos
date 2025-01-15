@@ -116,9 +116,15 @@ public class Constants {
     
     public static final String BASE_V2_PATH = "/v2/cs";
     
+    public static final String BASE_ADMIN_V3_PATH = "/v3/admin/cs";
+    
     public static final String OPS_CONTROLLER_PATH = BASE_PATH + "/ops";
     
+    public static final String OPS_CONTROLLER_V3_ADMIN_PATH = BASE_ADMIN_V3_PATH + "/ops";
+    
     public static final String CAPACITY_CONTROLLER_PATH = BASE_PATH + "/capacity";
+    
+    public static final String CAPACITY_CONTROLLER_V3_ADMIN_PATH = BASE_ADMIN_V3_PATH + "/capacity";
     
     public static final String COMMUNICATION_CONTROLLER_PATH = BASE_PATH + "/communication";
     
@@ -126,17 +132,25 @@ public class Constants {
     
     public static final String CONFIG_CONTROLLER_V2_PATH = BASE_V2_PATH + "/config";
     
+    public static final String CONFIG_CONTROLLER_V3_ADMIN_PATH = BASE_ADMIN_V3_PATH + "/config";
+    
     public static final String HEALTH_CONTROLLER_PATH = BASE_PATH + "/health";
     
     public static final String HISTORY_CONTROLLER_PATH = BASE_PATH + "/history";
     
     public static final String HISTORY_CONTROLLER_V2_PATH = BASE_V2_PATH + "/history";
     
+    public static final String HISTORY_CONTROLLER_V3_ADMIN_PATH = BASE_ADMIN_V3_PATH + "/history";
+    
     public static final String LISTENER_CONTROLLER_PATH = BASE_PATH + "/listener";
+    
+    public static final String LISTENER_CONTROLLER_V3_ADMIN_PATH = BASE_ADMIN_V3_PATH + "/listener";
     
     public static final String NAMESPACE_CONTROLLER_PATH = BASE_PATH + "/namespaces";
     
     public static final String METRICS_CONTROLLER_PATH = BASE_PATH + "/metrics";
+    
+    public static final String METRICS_CONTROLLER_V3_ADMIN_PATH = BASE_ADMIN_V3_PATH + "/metrics";
     
     public static final String ENCODE = "UTF-8";
     

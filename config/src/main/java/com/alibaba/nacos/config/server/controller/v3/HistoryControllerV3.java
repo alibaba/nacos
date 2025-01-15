@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ * Copyright 1999-$toady.year Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.controller.v2;
+package com.alibaba.nacos.config.server.controller.v3;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -25,14 +25,12 @@ import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
-import com.alibaba.nacos.config.server.model.ConfigHistoryInfoDetail;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
-import com.alibaba.nacos.core.controller.compatibility.Compatibility;
-import com.alibaba.nacos.core.paramcheck.ExtractorManager;
-import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.service.HistoryService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
@@ -47,70 +45,54 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * config history management controller [v2].
+ * History configuration management.
  *
- * @author dongyafei
- * @date 2022/7/25
- * @since 2.2.0
+ * @author Nacos
  */
-@Deprecated
 @NacosApi
 @RestController
-@RequestMapping(Constants.HISTORY_CONTROLLER_V2_PATH)
+@RequestMapping(Constants.HISTORY_CONTROLLER_V3_ADMIN_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
-public class HistoryControllerV2 {
+public class HistoryControllerV3 {
     
     private final HistoryService historyService;
     
-    public HistoryControllerV2(HistoryService historyService) {
+    public HistoryControllerV3(HistoryService historyService) {
         this.historyService = historyService;
     }
     
     /**
-     * Query the list history config. notes:
-     *
-     * @param dataId      dataId string value [required].
-     * @param group       group string value [required].
-     * @param namespaceId namespaceId.
-     * @param pageNo      pageNo integer value.
-     * @param pageSize    pageSize integer value.
-     * @return the page of history config.
+     * Query the list history config.
      */
     @GetMapping("/list")
-    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/cs/history/list")
+    @Secured(resource = Constants.HISTORY_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
+            signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Page<ConfigHistoryInfo>> listConfigHistory(@RequestParam("dataId") String dataId,
-            @RequestParam("group") String group,
+            @RequestParam("groupName") String groupName,
             @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
             @RequestParam(value = "pageNo", required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(value = "pageSize", required = false, defaultValue = "100") Integer pageSize) {
         pageSize = Math.min(500, pageSize);
         //fix issue #9783
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
-        return Result.success(historyService.listConfigHistory(dataId, group, namespaceId, pageNo, pageSize));
+        return Result.success(historyService.listConfigHistory(dataId, groupName, namespaceId, pageNo, pageSize));
     }
     
     /**
-     * Query the detailed configuration history information. notes:
-     *
-     * @param nid         history_config_info nid
-     * @param dataId      dataId
-     * @param group       groupId
-     * @param namespaceId namespaceId
-     * @return history config info
+     * Query the detailed configuration history information.
      */
     @GetMapping
-    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/cs/history")
+    @Secured(resource = Constants.HISTORY_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
+            signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<ConfigHistoryInfo> getConfigHistoryInfo(@RequestParam("dataId") String dataId,
-            @RequestParam("group") String group,
+            @RequestParam("groupName") String groupName,
             @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
             @RequestParam("nid") Long nid) throws AccessException, NacosApiException {
         ConfigHistoryInfo configHistoryInfo;
         try {
             //fix issue #9783
             namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
-            configHistoryInfo = historyService.getConfigHistoryInfo(dataId, group, namespaceId, nid);
+            configHistoryInfo = historyService.getConfigHistoryInfo(dataId, groupName, namespaceId, nid);
         } catch (DataAccessException e) {
             throw new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.RESOURCE_NOT_FOUND,
                     "certain config history for nid = " + nid + " not exist");
@@ -118,69 +100,41 @@ public class HistoryControllerV2 {
         return Result.success(configHistoryInfo);
     }
     
-    
     /**
-     * Query the detailed configuration history information pair, including the original version and the updated version. notes:
-     *
-     * @param nid    history_config_info nid
-     * @param dataId dataId  @since 2.0.3
-     * @param group  groupId  @since 2.0.3
-     * @param namespaceId namespaceId  @since 2.0.3
-     * @return history config info
-     * @since 2.0.3 add {@link Secured}, dataId, groupId and tenant for history config permission check.
-     */
-    @GetMapping(value = "/detail")
-    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    public Result<ConfigHistoryInfoDetail> getConfigHistoryInfoDetail(@RequestParam("dataId") String dataId,
-            @RequestParam("group") String group,
-            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
-            @RequestParam(value = "nid") Long nid) throws AccessException {
-        return Result.success(historyService.getConfigHistoryInfoDetail(dataId, group, namespaceId, nid));
-    }
-    
-    
-    /**
-     * Query previous config history information. notes:
-     *
-     * @param id          config_info id
-     * @param dataId      dataId
-     * @param group       groupId
-     * @param namespaceId namespaceId
-     * @return history config info
+     * Query previous config history information.
      */
     @GetMapping(value = "/previous")
-    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/cs/history/previous")
+    @Secured(resource = Constants.HISTORY_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
+            signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<ConfigHistoryInfo> getPreviousConfigHistoryInfo(@RequestParam("dataId") String dataId,
-            @RequestParam("group") String group,
+            @RequestParam("groupName") String groupName,
             @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
             @RequestParam("id") Long id) throws AccessException, NacosApiException {
         ConfigHistoryInfo configHistoryInfo;
         try {
             //fix issue #9783.
             namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
-            configHistoryInfo = historyService.getPreviousConfigHistoryInfo(dataId, group, namespaceId, id);
+            configHistoryInfo = historyService.getPreviousConfigHistoryInfo(dataId, groupName, namespaceId, id);
         } catch (DataAccessException e) {
             throw new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.RESOURCE_NOT_FOUND,
                     "previous config history for id = " + id + " not exist");
         }
+        
         return Result.success(configHistoryInfo);
     }
     
     /**
      * Query configs list by namespace.
-     *
-     * @param namespaceId config_info namespace
-     * @return list
      */
     @GetMapping(value = "/configs")
-    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/cs/history/configs")
+    @Secured(resource = Constants.HISTORY_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
+            signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<List<ConfigInfoWrapper>> getConfigsByTenant(@RequestParam("namespaceId") String namespaceId)
             throws NacosApiException {
         // check namespaceId
         ParamUtils.checkTenantV2(namespaceId);
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
+        
         return Result.success(historyService.getConfigListByNamespace(namespaceId));
     }
 }
