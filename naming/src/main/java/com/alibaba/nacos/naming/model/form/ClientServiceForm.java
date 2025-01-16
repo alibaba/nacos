@@ -125,9 +125,10 @@ public class ClientServiceForm implements NacosForm {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ClientServiceForm that)) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
+        ClientServiceForm that = (ClientServiceForm) o;
         return Objects.equals(namespaceId, that.namespaceId) && Objects.equals(groupName, that.groupName)
                 && Objects.equals(serviceName, that.serviceName) && Objects.equals(ip, that.ip) && Objects.equals(port,
                 that.port) && Objects.equals(ephemeral, that.ephemeral);
