@@ -121,7 +121,8 @@ class ServiceControllerV3Test {
         serviceForm.setSelector("");
         
         Result<String> actual = serviceControllerV3.create(serviceForm);
-        verify(serviceOperatorV2).create(eq(Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service")),
+        verify(serviceOperatorV2).create(
+                eq(Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service")),
                 any(ServiceMetadata.class));
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals("ok", actual.getData());
@@ -129,18 +130,28 @@ class ServiceControllerV3Test {
     
     @Test
     void testRemove() throws Exception {
-        Result<String> actual = serviceControllerV3.remove(Constants.DEFAULT_NAMESPACE_ID, "service", Constants.DEFAULT_GROUP);
-        verify(serviceOperatorV2).delete(Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service"));
+        ServiceForm serviceForm = new ServiceForm();
+        serviceForm.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
+        serviceForm.setGroupName(Constants.DEFAULT_GROUP);
+        serviceForm.setServiceName("service");
+        Result<String> actual = serviceControllerV3.remove(serviceForm);
+        verify(serviceOperatorV2).delete(
+                Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service"));
         assertEquals("ok", actual.getData());
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
     }
     
     @Test
     void testDetail() throws Exception {
+        ServiceForm serviceForm = new ServiceForm();
+        serviceForm.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
+        serviceForm.setGroupName(Constants.DEFAULT_GROUP);
+        serviceForm.setServiceName("service");
         ServiceDetailInfo expected = new ServiceDetailInfo();
         when(serviceOperatorV2.queryService(
-                Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service"))).thenReturn(expected);
-        Result<ServiceDetailInfo> actual = serviceControllerV3.detail(Constants.DEFAULT_NAMESPACE_ID, "service", Constants.DEFAULT_GROUP);
+                Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service"))).thenReturn(
+                expected);
+        Result<ServiceDetailInfo> actual = serviceControllerV3.detail(serviceForm);
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals(expected, actual.getData());
     }
@@ -150,7 +161,7 @@ class ServiceControllerV3Test {
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         result.put(FieldsConstants.COUNT, 1);
         when(catalogServiceV2.pageListService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "serviceName", 1,
-                        10, "", false)).thenReturn(result);
+                10, "", false)).thenReturn(result);
         ServiceListForm serviceListForm = new ServiceListForm();
         serviceListForm.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
         serviceListForm.setGroupNameParam(Constants.DEFAULT_GROUP);
@@ -173,7 +184,8 @@ class ServiceControllerV3Test {
         serviceForm.setMetadata("");
         serviceForm.setSelector("");
         Result<String> actual = serviceControllerV3.update(serviceForm);
-        verify(serviceOperatorV2).update(eq(Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service")),
+        verify(serviceOperatorV2).update(
+                eq(Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service")),
                 any(ServiceMetadata.class));
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals("ok", actual.getData());

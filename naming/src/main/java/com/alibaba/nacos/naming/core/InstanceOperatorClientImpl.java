@@ -101,13 +101,13 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
      * This method creates {@code IpPortBasedClient} if it doesn't exist.
      */
     @Override
-    public void registerInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
+    public void registerInstance(String namespaceId, String groupName, String serviceName, Instance instance)
+            throws NacosException {
         NamingUtils.checkInstanceIsLegal(instance);
-        
         boolean ephemeral = instance.isEphemeral();
         String clientId = IpPortBasedClient.getClientId(instance.toInetAddr(), ephemeral);
         createIpPortClientIfAbsent(clientId);
-        Service service = getService(namespaceId, serviceName, ephemeral);
+        Service service = Service.newService(namespaceId, groupName, serviceName, ephemeral);
         clientOperationService.registerInstance(service, instance, clientId);
     }
     

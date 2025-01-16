@@ -17,7 +17,6 @@
 package com.alibaba.nacos.naming.controllers.v3;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -27,7 +26,6 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.pojo.builder.InstanceBuilder;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.trace.DeregisterInstanceReason;
 import com.alibaba.nacos.common.trace.event.naming.DeregisterInstanceTraceEvent;
@@ -63,7 +61,6 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -90,7 +87,7 @@ public class InstanceControllerV3 {
     private SwitchDomain switchDomain;
     
     @Autowired
-    private InstanceOperatorClientImpl instanceServiceV2;
+    private InstanceOperatorClientImpl instanceService;
     
     /**
      * Register new instance.
@@ -105,12 +102,13 @@ public class InstanceControllerV3 {
         checkWeight(instanceForm.getWeight());
         // build instance
         Instance instance = buildInstance(instanceForm);
-        instanceServiceV2.registerInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm),
-                instance);
+        String namespaceId = instanceForm.getNamespaceId();
+        String groupName = instanceForm.getGroupName();
+        String serviceName = instanceForm.getServiceName();
+        instanceService.registerInstance(namespaceId, groupName, serviceName, instance);
         NotifyCenter.publishEvent(
                 new RegisterInstanceTraceEvent(System.currentTimeMillis(), NamingRequestUtil.getSourceIp(), false,
-                        instanceForm.getNamespaceId(), instanceForm.getGroupName(), instanceForm.getServiceName(),
-                        instance.getIp(), instance.getPort()));
+                        namespaceId, groupName, serviceName, instance.getIp(), instance.getPort()));
         
         return Result.success("ok");
     }
@@ -128,7 +126,7 @@ public class InstanceControllerV3 {
         checkWeight(instanceForm.getWeight());
         // build instance
         Instance instance = buildInstance(instanceForm);
-        instanceServiceV2.removeInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm),
+        instanceService.removeInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm),
                 instance);
         NotifyCenter.publishEvent(
                 new DeregisterInstanceTraceEvent(System.currentTimeMillis(), NamingRequestUtil.getSourceIp(), false,
@@ -151,7 +149,7 @@ public class InstanceControllerV3 {
         checkWeight(instanceForm.getWeight());
         // build instance
         Instance instance = buildInstance(instanceForm);
-        instanceServiceV2.updateInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm),
+        instanceService.updateInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm),
                 instance);
         NotifyCenter.publishEvent(
                 new UpdateInstanceTraceEvent(System.currentTimeMillis(), NamingRequestUtil.getSourceIp(),
@@ -178,7 +176,7 @@ public class InstanceControllerV3 {
         InstanceOperationInfo instanceOperationInfo = buildOperationInfo(buildCompositeServiceName(form),
                 form.getConsistencyType(), targetInstances);
         
-        List<String> operatedInstances = instanceServiceV2.batchUpdateMetadata(form.getNamespaceId(),
+        List<String> operatedInstances = instanceService.batchUpdateMetadata(form.getNamespaceId(),
                 instanceOperationInfo, targetMetadata);
         ArrayList<String> ipList = new ArrayList<>(operatedInstances);
         
@@ -200,7 +198,7 @@ public class InstanceControllerV3 {
         Map<String, String> targetMetadata = UtilsAndCommons.parseMetadata(form.getMetadata());
         InstanceOperationInfo instanceOperationInfo = buildOperationInfo(buildCompositeServiceName(form),
                 form.getConsistencyType(), targetInstances);
-        List<String> operatedInstances = instanceServiceV2.batchDeleteMetadata(form.getNamespaceId(),
+        List<String> operatedInstances = instanceService.batchDeleteMetadata(form.getNamespaceId(),
                 instanceOperationInfo, targetMetadata);
         ArrayList<String> ipList = new ArrayList<>(operatedInstances);
         
@@ -235,26 +233,25 @@ public class InstanceControllerV3 {
     @CanDistro
     @PutMapping(value = "/partial")
     @Secured(resource = UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
-    public Result<String> partialUpdateInstance(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam String serviceName, @RequestParam String ip,
-            @RequestParam(defaultValue = UtilsAndCommons.DEFAULT_CLUSTER_NAME) String cluster,
-            @RequestParam Integer port, @RequestParam Double weight, @RequestParam Boolean enabled,
-            @RequestParam String metadata) throws Exception {
-        NamingUtils.checkServiceNameFormat(serviceName);
-        
-        InstancePatchObject patchObject = new InstancePatchObject(cluster, ip, port);
+    public Result<String> partialUpdateInstance(InstanceForm instanceForm) throws Exception {
+        instanceForm.validate();
+        InstancePatchObject patchObject = new InstancePatchObject(instanceForm.getClusterName(), instanceForm.getIp(),
+                instanceForm.getPort());
+        String metadata = instanceForm.getMetadata();
         if (StringUtils.isNotBlank(metadata)) {
             patchObject.setMetadata(UtilsAndCommons.parseMetadata(metadata));
         }
+        Double weight = instanceForm.getWeight();
         if (weight != null) {
             checkWeight(weight);
             patchObject.setWeight(weight);
         }
+        Boolean enabled = instanceForm.getEnabled();
         if (enabled != null) {
             patchObject.setEnabled(enabled);
         }
-        instanceServiceV2.patchInstance(namespaceId, serviceName, patchObject);
-        
+        String serviceName = NamingUtils.getGroupedName(instanceForm.getServiceName(), instanceForm.getGroupName());
+        instanceService.patchInstance(instanceForm.getNamespaceId(), serviceName, patchObject);
         return Result.success("ok");
     }
     
@@ -265,26 +262,19 @@ public class InstanceControllerV3 {
     @TpsControl(pointName = "NamingServiceSubscribe", name = "HttpNamingServiceSubscribe")
     @ExtractorManager.Extractor(httpExtractor = NamingInstanceListHttpParamExtractor.class)
     @Secured(resource = UtilsAndCommons.SERVICE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
-    public Result<ServiceInfo> list(
-            @RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam(value = "groupName", defaultValue = Constants.DEFAULT_GROUP) String groupName,
-            @RequestParam("serviceName") String serviceName,
-            @RequestParam(value = "clusterName", defaultValue = StringUtils.EMPTY) String clusterName,
-            @RequestParam(value = "ip", defaultValue = StringUtils.EMPTY) String ip,
-            @RequestParam(value = "port", defaultValue = "0") Integer port,
-            @RequestParam(value = "healthyOnly", defaultValue = "false") Boolean healthyOnly,
-            @RequestParam(value = "app", defaultValue = StringUtils.EMPTY) String app,
-            @RequestHeader(value = HttpHeaderConsts.USER_AGENT_HEADER, required = false) String userAgent,
-            @RequestHeader(value = HttpHeaderConsts.CLIENT_VERSION_HEADER, required = false) String clientVersion) {
-        if (StringUtils.isEmpty(userAgent)) {
-            userAgent = StringUtils.defaultIfEmpty(clientVersion, StringUtils.EMPTY);
-        }
-        String compositeServiceName = NamingUtils.getGroupedName(serviceName, groupName);
-        Subscriber subscriber = new Subscriber(ip + ":" + port, userAgent, app, ip, namespaceId, compositeServiceName,
-                port, clusterName);
-        
-        return Result.success(instanceServiceV2.listInstance(namespaceId, compositeServiceName, subscriber, clusterName,
-                healthyOnly));
+    public Result<ServiceInfo> list(InstanceForm instanceForm,
+            @RequestParam(defaultValue = "false") Boolean healthyOnly) throws NacosApiException {
+        instanceForm.validate();
+        String compositeServiceName = NamingUtils.getGroupedName(instanceForm.getServiceName(),
+                instanceForm.getGroupName());
+        String namespaceId = instanceForm.getNamespaceId();
+        String clusterName = instanceForm.getClusterName();
+        // TODO Deprecated, the subscriber is used by client 1.0 to subs service, admin api don't need it,
+        //  InstanceOperator should support no subscribe api.
+        Subscriber subscriber = new Subscriber("Deprecated", "Deprecated", "Deprecated", "Deprecated", namespaceId,
+                compositeServiceName, 0, clusterName);
+        return Result.success(
+                instanceService.listInstance(namespaceId, compositeServiceName, subscriber, clusterName, healthyOnly));
     }
     
     /**
@@ -293,17 +283,15 @@ public class InstanceControllerV3 {
     @GetMapping
     @TpsControl(pointName = "NamingInstanceQuery", name = "HttpNamingInstanceQuery")
     @Secured(resource = UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
-    public Result<InstanceDetailInfoVo> detail(
-            @RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam(value = "groupName", defaultValue = Constants.DEFAULT_GROUP) String groupName,
-            @RequestParam("serviceName") String serviceName,
-            @RequestParam(value = "clusterName", defaultValue = UtilsAndCommons.DEFAULT_CLUSTER_NAME) String clusterName,
-            @RequestParam("ip") String ip, @RequestParam("port") Integer port) throws NacosException {
-        
-        String compositeServiceName = NamingUtils.getGroupedName(serviceName, groupName);
-        
-        Instance instance = instanceServiceV2.getInstance(namespaceId, compositeServiceName, clusterName, ip, port);
-        
+    public Result<InstanceDetailInfoVo> detail(InstanceForm instanceForm) throws NacosException {
+        instanceForm.validate();
+        String compositeServiceName = NamingUtils.getGroupedName(instanceForm.getServiceName(),
+                instanceForm.getGroupName());
+        String namespaceId = instanceForm.getNamespaceId();
+        String clusterName = instanceForm.getClusterName();
+        String ip = instanceForm.getIp();
+        int port = instanceForm.getPort();
+        Instance instance = instanceService.getInstance(namespaceId, compositeServiceName, clusterName, ip, port);
         InstanceDetailInfoVo instanceDetailInfoVo = new InstanceDetailInfoVo();
         instanceDetailInfoVo.setServiceName(compositeServiceName);
         instanceDetailInfoVo.setIp(ip);
@@ -313,7 +301,6 @@ public class InstanceControllerV3 {
         instanceDetailInfoVo.setHealthy(instance.isHealthy());
         instanceDetailInfoVo.setInstanceId(instance.getInstanceId());
         instanceDetailInfoVo.setMetadata(instance.getMetadata());
-        
         return Result.success(instanceDetailInfoVo);
     }
     
