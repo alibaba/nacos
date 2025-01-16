@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.pojo.Subscriber;
@@ -41,8 +42,25 @@ public interface InstanceOperator {
      * @param serviceName grouped service name group@@service
      * @param instance    instance to register
      * @throws NacosException nacos exception when register failed
+     * @deprecated use {@link #registerInstance(String, String, String, Instance)} replaced
      */
-    void registerInstance(String namespaceId, String serviceName, Instance instance) throws NacosException;
+    @Deprecated
+    default void registerInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
+        String groupName = NamingUtils.getGroupName(serviceName);
+        String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
+        registerInstance(namespaceId, groupName, serviceNameNoGrouped, instance);
+    }
+    
+    /**
+     * Register an instance to a service in AP mode.
+     *
+     * @param namespaceId id of namespace
+     * @param groupName   group name of service
+     * @param serviceName service name without group
+     * @param instance    instance to register
+     * @throws NacosException nacos exception when register failed
+     */
+    void registerInstance(String namespaceId, String groupName, String serviceName, Instance instance) throws NacosException;
     
     /**
      * Remove instance from service.

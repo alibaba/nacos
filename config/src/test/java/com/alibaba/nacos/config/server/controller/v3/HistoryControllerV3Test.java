@@ -21,7 +21,9 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
+import com.alibaba.nacos.config.server.model.form.ConfigFormV3;
 import com.alibaba.nacos.config.server.service.HistoryService;
+import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.persistence.model.Page;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -80,10 +82,17 @@ class HistoryControllerV3Test {
         page.setPagesAvailable(2);
         page.setPageItems(configHistoryInfoList);
         
-        when(historyService.listConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC, 1, 10)).thenReturn(page);
+        when(historyService.listConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC, 1, 10)).thenReturn(
+                page);
         
-        Result<Page<ConfigHistoryInfo>> pageResult = historyControllerV3.listConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1,
-                10);
+        ConfigFormV3 configForm = new ConfigFormV3();
+        configForm.setDataId(TEST_DATA_ID);
+        configForm.setGroupName(TEST_GROUP);
+        configForm.setNamespaceId(TEST_NAMESPACE_ID);
+        PageForm pageForm = new PageForm();
+        pageForm.setPageNo(1);
+        pageForm.setPageSize(10);
+        Result<Page<ConfigHistoryInfo>> pageResult = historyControllerV3.listConfigHistory(configForm, pageForm);
         
         verify(historyService).listConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC, 1, 10);
         
@@ -116,10 +125,18 @@ class HistoryControllerV3Test {
         page.setPagesAvailable(2);
         page.setPageItems(configHistoryInfoList);
         
-        when(historyService.listConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC, 1, 10)).thenReturn(page);
+        when(historyService.listConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC, 1, 10)).thenReturn(
+                page);
         
-        Result<Page<ConfigHistoryInfo>> pageResult = historyControllerV3.listConfigHistory(TEST_DATA_ID, TEST_GROUP,
-                TEST_NAMESPACE_ID_PUBLIC, 1, 10);
+        ConfigFormV3 configForm = new ConfigFormV3();
+        configForm.setDataId(TEST_DATA_ID);
+        configForm.setGroupName(TEST_GROUP);
+        configForm.setNamespaceId(TEST_NAMESPACE_ID_PUBLIC);
+        PageForm pageForm = new PageForm();
+        pageForm.setPageNo(1);
+        pageForm.setPageSize(10);
+        
+        Result<Page<ConfigHistoryInfo>> pageResult = historyControllerV3.listConfigHistory(configForm, pageForm);
         
         verify(historyService).listConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC, 1, 10);
         
@@ -145,9 +162,14 @@ class HistoryControllerV3Test {
         configHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
         configHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
         
-        when(historyService.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC, 1L)).thenReturn(configHistoryInfo);
+        when(historyService.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC, 1L)).thenReturn(
+                configHistoryInfo);
         
-        Result<ConfigHistoryInfo> result = historyControllerV3.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC, 1L);
+        ConfigFormV3 configForm = new ConfigFormV3();
+        configForm.setDataId(TEST_DATA_ID);
+        configForm.setGroupName(TEST_GROUP);
+        configForm.setNamespaceId(TEST_NAMESPACE_ID_PUBLIC);
+        Result<ConfigHistoryInfo> result = historyControllerV3.getConfigHistoryInfo(configForm, 1L);
         
         verify(historyService).getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC, 1L);
         
@@ -171,9 +193,14 @@ class HistoryControllerV3Test {
         configHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
         configHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
         
-        when(historyService.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC, 1L)).thenReturn(configHistoryInfo);
+        when(historyService.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC, 1L)).thenReturn(
+                configHistoryInfo);
         
-        Result<ConfigHistoryInfo> result = historyControllerV3.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1L);
+        ConfigFormV3 configForm = new ConfigFormV3();
+        configForm.setDataId(TEST_DATA_ID);
+        configForm.setGroupName(TEST_GROUP);
+        configForm.setNamespaceId(TEST_NAMESPACE_ID);
+        Result<ConfigHistoryInfo> result = historyControllerV3.getConfigHistoryInfo(configForm, 1L);
         
         verify(historyService).getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC, 1L);
         
@@ -197,10 +224,14 @@ class HistoryControllerV3Test {
         configHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
         configHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
         
-        when(historyService.getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC, 1L)).thenReturn(configHistoryInfo);
+        when(historyService.getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC,
+                1L)).thenReturn(configHistoryInfo);
         
-        Result<ConfigHistoryInfo> result = historyControllerV3.getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID,
-                1L);
+        ConfigFormV3 configForm = new ConfigFormV3();
+        configForm.setDataId(TEST_DATA_ID);
+        configForm.setGroupName(TEST_GROUP);
+        configForm.setNamespaceId(TEST_NAMESPACE_ID);
+        Result<ConfigHistoryInfo> result = historyControllerV3.getPreviousConfigHistoryInfo(configForm, 1L);
         
         verify(historyService).getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC, 1L);
         
@@ -224,10 +255,14 @@ class HistoryControllerV3Test {
         configHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
         configHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
         
-        when(historyService.getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC, 1L)).thenReturn(configHistoryInfo);
+        when(historyService.getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC,
+                1L)).thenReturn(configHistoryInfo);
         
-        Result<ConfigHistoryInfo> result = historyControllerV3.getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP,
-                TEST_NAMESPACE_ID_PUBLIC, 1L);
+        ConfigFormV3 configForm = new ConfigFormV3();
+        configForm.setDataId(TEST_DATA_ID);
+        configForm.setGroupName(TEST_GROUP);
+        configForm.setNamespaceId(TEST_NAMESPACE_ID_PUBLIC);
+        Result<ConfigHistoryInfo> result = historyControllerV3.getPreviousConfigHistoryInfo(configForm, 1L);
         
         verify(historyService).getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC, 1L);
         

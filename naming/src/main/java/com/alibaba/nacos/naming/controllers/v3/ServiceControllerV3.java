@@ -17,13 +17,13 @@
 package com.alibaba.nacos.naming.controllers.v3;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.common.Beta;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.trace.event.naming.DeregisterServiceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.RegisterServiceTraceEvent;
@@ -118,11 +118,11 @@ public class ServiceControllerV3 {
     @DeleteMapping()
     @TpsControl(pointName = "NamingServiceDeregister", name = "HttpNamingServiceDeregister")
     @Secured(resource = UtilsAndCommons.SERVICE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
-    public Result<String> remove(
-            @RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam("serviceName") String serviceName,
-            @RequestParam(value = "groupName", defaultValue = Constants.DEFAULT_GROUP) String groupName)
-            throws Exception {
+    public Result<String> remove(ServiceForm serviceForm) throws Exception {
+        serviceForm.validate();
+        String namespaceId = serviceForm.getNamespaceId();
+        String groupName = serviceForm.getGroupName();
+        String serviceName = serviceForm.getServiceName();
         serviceOperatorV2.delete(Service.newService(namespaceId, groupName, serviceName));
         NotifyCenter.publishEvent(
                 new DeregisterServiceTraceEvent(System.currentTimeMillis(), namespaceId, groupName, serviceName));
@@ -136,13 +136,11 @@ public class ServiceControllerV3 {
     @GetMapping()
     @TpsControl(pointName = "NamingServiceQuery", name = "HttpNamingServiceQuery")
     @Secured(resource = UtilsAndCommons.SERVICE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
-    public Result<ServiceDetailInfo> detail(
-            @RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam("serviceName") String serviceName,
-            @RequestParam(value = "groupName", defaultValue = Constants.DEFAULT_GROUP) String groupName)
-            throws Exception {
+    public Result<ServiceDetailInfo> detail(ServiceForm serviceForm) throws Exception {
+        serviceForm.validate();
         ServiceDetailInfo result = serviceOperatorV2.queryService(
-                Service.newService(namespaceId, groupName, serviceName));
+                Service.newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(),
+                        serviceForm.getServiceName()));
         
         return Result.success(result);
     }
@@ -165,9 +163,11 @@ public class ServiceControllerV3 {
         int pageSize = pageForm.getPageSize();
         
         if (withInstances) {
-            return Result.success(catalogServiceV2.pageListServiceDetail(namespaceId, groupName, serviceName, pageNo, pageSize));
+            return Result.success(
+                    catalogServiceV2.pageListServiceDetail(namespaceId, groupName, serviceName, pageNo, pageSize));
         }
-        return Result.success(catalogServiceV2.pageListService(namespaceId, groupName, serviceName, pageNo, pageSize, StringUtils.EMPTY, hasIpCount));
+        return Result.success(catalogServiceV2.pageListService(namespaceId, groupName, serviceName, pageNo, pageSize,
+                StringUtils.EMPTY, hasIpCount));
     }
     
     /**
@@ -213,12 +213,12 @@ public class ServiceControllerV3 {
         return selector;
     }
     
-    
     /**
      * Search service names.
      */
     @GetMapping("/names")
     @Secured(resource = UtilsAndCommons.SERVICE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
+    @Beta
     public Result<ObjectNode> searchService(@RequestParam(defaultValue = StringUtils.EMPTY) String namespaceId,
             @RequestParam(defaultValue = StringUtils.EMPTY) String expr) throws NacosException {
         Map<String, Collection<String>> serviceNameMap = new HashMap<>(16);
@@ -258,7 +258,8 @@ public class ServiceControllerV3 {
         String groupName = serviceForm.getGroupName();
         boolean aggregation = aggregationForm.isAggregation();
         
-        return Result.success(serviceOperatorV2.getSubscribers(pageNo, pageSize, namespaceId, serviceName, groupName, aggregation));
+        return Result.success(
+                serviceOperatorV2.getSubscribers(pageNo, pageSize, namespaceId, serviceName, groupName, aggregation));
     }
     
     /**

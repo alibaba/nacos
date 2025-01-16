@@ -34,6 +34,10 @@ public class ConfigForm implements NacosForm {
     
     private String dataId;
     
+    /**
+     * Deprecated, please use {@link ConfigFormV3#groupName} replaced.
+     */
+    @Deprecated
     private String group;
     
     private String namespaceId = StringUtils.EMPTY;
