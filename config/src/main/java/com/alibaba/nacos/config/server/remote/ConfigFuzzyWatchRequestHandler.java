@@ -22,7 +22,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.config.server.model.event.ConfigCancelFuzzyWatchEvent;
 import com.alibaba.nacos.config.server.model.event.ConfigFuzzyWatchEvent;
 import com.alibaba.nacos.config.server.service.ConfigFuzzyWatchContextService;
 import com.alibaba.nacos.core.control.TpsControl;
@@ -38,6 +37,7 @@ import java.util.Set;
 
 import static com.alibaba.nacos.api.common.Constants.WATCH_TYPE_CANCEL_WATCH;
 import static com.alibaba.nacos.api.common.Constants.WATCH_TYPE_WATCH;
+import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT;
 
 /**
  * Handler for processing batch fuzzy listen requests.
@@ -80,13 +80,29 @@ public class ConfigFuzzyWatchRequestHandler extends RequestHandler<ConfigFuzzyWa
         String groupKeyPattern = request.getGroupKeyPattern();
         if (WATCH_TYPE_WATCH.equals(request.getWatchType())) {
             // Add client to the fuzzy listening context
-            configFuzzyWatchContextService.addFuzzyListen(groupKeyPattern, connectionId);
-            // Get existing group keys for the client and publish initialization event
-            Set<String> clientExistingGroupKeys = request.getReceivedGroupKeys();
-            NotifyCenter.publishEvent(new ConfigFuzzyWatchEvent(connectionId, clientExistingGroupKeys, groupKeyPattern,
-                    request.isInitializing()));
+            try {
+                configFuzzyWatchContextService.addFuzzyWatch(groupKeyPattern, connectionId);
+                // Get existing group keys for the client and publish initialization event
+                Set<String> clientExistingGroupKeys = request.getReceivedGroupKeys();
+                NotifyCenter.publishEvent(
+                        new ConfigFuzzyWatchEvent(connectionId, clientExistingGroupKeys, groupKeyPattern,
+                                request.isInitializing()));
+            } catch (NacosException nacosException) {
+                ConfigFuzzyWatchResponse configFuzzyWatchResponse = new ConfigFuzzyWatchResponse();
+                configFuzzyWatchResponse.setErrorInfo(nacosException.getErrCode(), nacosException.getErrMsg());
+                return configFuzzyWatchResponse;
+            }
+            
+            boolean reachToUpLimit = configFuzzyWatchContextService.reachToUpLimit(groupKeyPattern);
+            if (reachToUpLimit) {
+                ConfigFuzzyWatchResponse configFuzzyWatchResponse = new ConfigFuzzyWatchResponse();
+                configFuzzyWatchResponse.setErrorInfo(FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getCode(),
+                        FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getMsg());
+                return configFuzzyWatchResponse;
+            }
+            
         } else if (WATCH_TYPE_CANCEL_WATCH.equals(request.getWatchType())) {
-            NotifyCenter.publishEvent(new ConfigCancelFuzzyWatchEvent(connectionId, groupKeyPattern));
+            configFuzzyWatchContextService.removeFuzzyListen(groupKeyPattern, connectionId);
         }
         
         // Return response

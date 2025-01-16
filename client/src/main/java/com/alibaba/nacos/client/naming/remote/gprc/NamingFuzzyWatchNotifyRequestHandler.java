@@ -37,6 +37,7 @@ import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_RESOURCE_CHANGE
 
 /**
  * handle fuzzy watch request from server.
+ *
  * @author shiyiyue
  */
 public class NamingFuzzyWatchNotifyRequestHandler implements ServerRequestHandler {

@@ -109,7 +109,7 @@ public class ConfigFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
     }
     
     /**
-     * Builds a final FuzzyListenNotifyDiffRequest with the specified group key pattern.
+     * Builds fuzzy watch init finish request.
      *
      * @param groupKeyPattern The pattern used to match group keys for the configurations
      * @return A final FuzzyListenNotifyDiffRequest

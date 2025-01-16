@@ -25,17 +25,20 @@ import java.util.UUID;
 
 /**
  * fuzzy watcher wrapper.
+ *
  * @author shiyiyue
  */
 public class FuzzyWatchEventWatcherWrapper {
     
+    long syncVersion = 0;
+    
     FuzzyWatchEventWatcher fuzzyWatchEventWatcher;
+    
+    String uuid = UUID.randomUUID().toString();
     
     public FuzzyWatchEventWatcherWrapper(FuzzyWatchEventWatcher fuzzyWatchEventWatcher) {
         this.fuzzyWatchEventWatcher = fuzzyWatchEventWatcher;
     }
-    
-    String uuid = UUID.randomUUID().toString();
     
     private Set<String> syncServiceKeys = new HashSet<>();
     

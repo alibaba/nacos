@@ -486,7 +486,7 @@ class ClientWorkerTest {
         Field agent1 = ClientWorker.class.getDeclaredField("agent");
         agent1.setAccessible(true);
         ConfigTransportClient o = (ConfigTransportClient) agent1.get(clientWorker);
-        assertTrue(o.executor.isShutdown());
+        assertTrue(o.getExecutor().isShutdown());
         agent1.setAccessible(false);
         
         assertNull(clientWorker.getAgentName());

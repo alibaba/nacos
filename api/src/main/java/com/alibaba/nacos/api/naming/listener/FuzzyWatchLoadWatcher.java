@@ -16,27 +16,20 @@
 
 package com.alibaba.nacos.api.naming.listener;
 
-import java.util.concurrent.Executor;
-
 /**
- * Abstract fuzzy watch event listener, to support handle event by user custom executor.
- *
- * @author tanyongquan
+ * naming fuzzy watch watcher that triggered when  loader over limit.
+ * @author shiyiyue
  */
-public abstract class AbstractFuzzyWatchEventWatcher implements FuzzyWatchEventWatcher, FuzzyWatchLoadWatcher {
+public interface FuzzyWatchLoadWatcher {
     
-    @Override
-    public Executor getExecutor() {
-        return null;
-    }
+    /**
+     * triggered when server pattern count over limit.
+     */
+    void onPatternOverLimit();
     
-    @Override
-    public void onPatternOverLimit() {
-        //do nothing default
-    }
+    /**
+     *  triggered when pattern match service count over limit.
+     */
+    void onServiceReachUpLimit();
     
-    @Override
-    public void onServiceReachUpLimit() {
-        //do nothing default
-    }
 }

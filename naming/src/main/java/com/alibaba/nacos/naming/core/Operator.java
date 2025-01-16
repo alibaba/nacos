@@ -21,7 +21,6 @@ import com.alibaba.nacos.naming.model.vo.MetricsInfoVo;
 
 /**
  * Operator service.
- *
  * @author Matthew
  */
 public interface Operator {

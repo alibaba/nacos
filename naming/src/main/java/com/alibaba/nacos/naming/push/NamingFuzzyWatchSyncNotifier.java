@@ -44,6 +44,7 @@ import static com.alibaba.nacos.api.common.Constants.ServiceChangedType.DELETE_S
 
 /**
  * fuzzy watch event  for fuzzy watch.
+ *
  * @author shiyiyue
  */
 @Service
@@ -53,7 +54,7 @@ public class NamingFuzzyWatchSyncNotifier extends SmartSubscriber {
     
     private FuzzyWatchPushDelayTaskEngine fuzzyWatchPushDelayTaskEngine;
     
-    private static final int BATCH_SIZE = 10;
+    static final int BATCH_SIZE = 10;
     
     public NamingFuzzyWatchSyncNotifier(NamingFuzzyWatchContextService namingFuzzyWatchContextService,
             FuzzyWatchPushDelayTaskEngine fuzzyWatchPushDelayTaskEngine) {
@@ -66,7 +67,6 @@ public class NamingFuzzyWatchSyncNotifier extends SmartSubscriber {
     public List<Class<? extends Event>> subscribeTypes() {
         List<Class<? extends Event>> result = new LinkedList<>();
         result.add(ClientOperationEvent.ClientFuzzyWatchEvent.class);
-        result.add(ClientOperationEvent.ClientCancelFuzzyWatchEvent.class);
         return result;
     }
     
@@ -77,27 +77,28 @@ public class NamingFuzzyWatchSyncNotifier extends SmartSubscriber {
             //fuzzy watch event
             ClientOperationEvent.ClientFuzzyWatchEvent clientFuzzyWatchEvent = (ClientOperationEvent.ClientFuzzyWatchEvent) event;
             handleClientFuzzyWatchEvent(clientFuzzyWatchEvent);
-        } else if (event instanceof ClientOperationEvent.ClientCancelFuzzyWatchEvent) {
-            //handle cancel fuzzy watch event for a client cancel a fuzzy pattern
-            String completedPattern = ((ClientOperationEvent.ClientCancelFuzzyWatchEvent) event).getPattern();
-            namingFuzzyWatchContextService.removeFuzzyWatchContext(completedPattern,
-                    ((ClientOperationEvent.ClientCancelFuzzyWatchEvent) event).getClientId());
         }
-        
     }
     
     private void handleClientFuzzyWatchEvent(ClientOperationEvent.ClientFuzzyWatchEvent clientFuzzyWatchEvent) {
         String completedPattern = clientFuzzyWatchEvent.getGroupKeyPattern();
         
         //sync fuzzy watch context
-        Set<String> patternMatchedServiceKeys = namingFuzzyWatchContextService.syncFuzzyWatcherContext(completedPattern,
-                clientFuzzyWatchEvent.getClientId());
-        Set<String> clientReceivedGroupKeys = clientFuzzyWatchEvent.getClientReceivedServiceKeys();
+        Set<String> patternMatchedServiceKeys = namingFuzzyWatchContextService.matchServiceKeys(completedPattern);
+        
+        Set<String> clientReceivedGroupKeys = new HashSet<>(clientFuzzyWatchEvent.getClientReceivedServiceKeys());
         List<FuzzyGroupKeyPattern.GroupKeyState> groupKeyStates = FuzzyGroupKeyPattern.diffGroupKeys(
                 patternMatchedServiceKeys, clientReceivedGroupKeys);
-        Set<NamingFuzzyWatchSyncRequest.Context> syncContext = convert(groupKeyStates);
+        
+        // delete notify protection when pattern match count over limit because patternMatchedServiceKeys may not full set.
+        if (namingFuzzyWatchContextService.reachToUpLimit(completedPattern)) {
+            groupKeyStates.removeIf(item -> !item.isExist());
+        }
+        
         String syncType =
                 clientFuzzyWatchEvent.isInitializing() ? FUZZY_WATCH_INIT_NOTIFY : FUZZY_WATCH_DIFF_SYNC_NOTIFY;
+        
+        Set<NamingFuzzyWatchSyncRequest.Context> syncContext = convert(groupKeyStates);
         
         if (CollectionUtils.isNotEmpty(groupKeyStates)) {
             Set<Set<NamingFuzzyWatchSyncRequest.Context>> dividedServices = divideServiceByBatch(syncContext);

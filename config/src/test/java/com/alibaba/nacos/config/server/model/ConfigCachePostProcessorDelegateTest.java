@@ -31,7 +31,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.Collections;
 
 import static org.mockito.Mockito.doNothing;
@@ -83,8 +82,9 @@ class ConfigCachePostProcessorDelegateTest {
                 .thenReturn(Collections.singletonList(mockConfigCacheMd5PostProcessor));
         Constructor constructor = ConfigCachePostProcessorDelegate.class.getDeclaredConstructor();
         constructor.setAccessible(true);
-        ConfigCachePostProcessorDelegate delegate = (ConfigCachePostProcessorDelegate) constructor.newInstance();
         Field field = ConfigCachePostProcessorDelegate.class.getDeclaredField("INSTANCE");
+        field.setAccessible(true);
+        ConfigCachePostProcessorDelegate delegate = (ConfigCachePostProcessorDelegate) constructor.newInstance();
         setStaticFinalField(field, delegate);
         ConfigCachePostProcessorDelegate.getInstance().postProcess(null, null);
         verify(mockConfigCacheMd5PostProcessor, times(1)).postProcess(null, null);

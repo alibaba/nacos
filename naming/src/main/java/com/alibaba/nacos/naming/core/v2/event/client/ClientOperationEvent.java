@@ -134,35 +134,8 @@ public class ClientOperationEvent extends Event {
             return clientReceivedServiceKeys;
         }
         
-        public void setClientReceivedServiceKeys(Set<String> clientReceivedServiceKeys) {
-            this.clientReceivedServiceKeys = clientReceivedServiceKeys;
-        }
-        
         public boolean isInitializing() {
             return isInitializing;
-        }
-        
-        public void setInitializing(boolean initializing) {
-            isInitializing = initializing;
-        }
-    }
-    
-    /**
-     * Client cancel fuzzy watch service event.
-     */
-    public static class ClientCancelFuzzyWatchEvent extends ClientOperationEvent {
-        
-        private static final long serialVersionUID = -4518919987813223118L;
-        
-        private final String pattern;
-        
-        public ClientCancelFuzzyWatchEvent(String pattern, String clientId) {
-            super(clientId, null);
-            this.pattern = pattern;
-        }
-        
-        public String getPattern() {
-            return pattern;
         }
     }
     

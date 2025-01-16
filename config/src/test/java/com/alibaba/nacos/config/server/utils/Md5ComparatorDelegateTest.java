@@ -33,7 +33,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.HashMap;
 
@@ -91,8 +90,9 @@ class Md5ComparatorDelegateTest {
                 .thenReturn(Collections.singletonList(nacosMd5Comparator));
         Constructor constructor = Md5ComparatorDelegate.class.getDeclaredConstructor();
         constructor.setAccessible(true);
-        Md5ComparatorDelegate delegate = (Md5ComparatorDelegate) constructor.newInstance();
         Field field = Md5ComparatorDelegate.class.getDeclaredField("INSTANCE");
+        field.setAccessible(true);
+        Md5ComparatorDelegate delegate = (Md5ComparatorDelegate) constructor.newInstance();
         setStaticFinalField(field, delegate);
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();

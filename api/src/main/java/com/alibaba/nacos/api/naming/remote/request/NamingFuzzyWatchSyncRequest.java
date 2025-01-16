@@ -16,15 +16,13 @@
 
 package com.alibaba.nacos.api.naming.remote.request;
 
-import com.alibaba.nacos.api.common.Constants;
-
-import java.util.HashSet;
 import java.util.Set;
 
 import static com.alibaba.nacos.api.common.Constants.Naming.NAMING_MODULE;
 
 /**
  * fuzzy watch sync request from Nacos server.
+ *
  * @author shiyiyue
  */
 public class NamingFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest {
@@ -67,10 +65,6 @@ public class NamingFuzzyWatchSyncRequest extends AbstractFuzzyWatchNotifyRequest
     
     public void setCurrentBatch(int currentBatch) {
         this.currentBatch = currentBatch;
-    }
-    
-    public static NamingFuzzyWatchSyncRequest buildInitNotifyFinishRequest(String pattern) {
-        return new NamingFuzzyWatchSyncRequest(pattern, Constants.FINISH_FUZZY_WATCH_INIT_NOTIFY, new HashSet<>(1));
     }
     
     /**
