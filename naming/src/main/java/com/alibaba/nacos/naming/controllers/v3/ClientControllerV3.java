@@ -17,7 +17,6 @@
 package com.alibaba.nacos.naming.controllers.v3;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -26,6 +25,7 @@ import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.naming.core.ClientService;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.model.form.ClientServiceForm;
 import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
@@ -105,13 +105,12 @@ public class ClientControllerV3 {
      */
     @GetMapping("/service/publisher/list")
     @Secured(resource = UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
-    public Result<List<ObjectNode>> getPublishedClientList(
-            @RequestParam(value = "namespaceId", required = false, defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam(value = "groupName", required = false, defaultValue = Constants.DEFAULT_GROUP) String groupName,
-            @RequestParam(value = "ephemeral", required = false, defaultValue = "true") Boolean ephemeral,
-            @RequestParam("serviceName") String serviceName, @RequestParam(value = "ip", required = false) String ip,
-            @RequestParam(value = "port", required = false) Integer port) {
-        return Result.success(clientServiceV2Impl.getPublishedClientList(namespaceId, groupName, serviceName, ephemeral, ip, port));
+    public Result<List<ObjectNode>> getPublishedClientList(ClientServiceForm clientServiceForm)
+            throws NacosApiException {
+        clientServiceForm.validate();
+        return Result.success(clientServiceV2Impl.getPublishedClientList(clientServiceForm.getNamespaceId(),
+                clientServiceForm.getGroupName(), clientServiceForm.getServiceName(), clientServiceForm.getEphemeral(),
+                clientServiceForm.getIp(), clientServiceForm.getPort()));
     }
     
     /**
@@ -119,13 +118,12 @@ public class ClientControllerV3 {
      */
     @GetMapping("/service/subscriber/list")
     @Secured(resource = UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
-    public Result<List<ObjectNode>> getSubscribeClientList(
-            @RequestParam(value = "namespaceId", required = false, defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam(value = "groupName", required = false, defaultValue = Constants.DEFAULT_GROUP) String groupName,
-            @RequestParam(value = "ephemeral", required = false, defaultValue = "true") Boolean ephemeral,
-            @RequestParam("serviceName") String serviceName, @RequestParam(value = "ip", required = false) String ip,
-            @RequestParam(value = "port", required = false) Integer port) {
-        return Result.success(clientServiceV2Impl.getSubscribeClientList(namespaceId, groupName, serviceName, ephemeral, ip, port));
+    public Result<List<ObjectNode>> getSubscribeClientList(ClientServiceForm clientServiceForm)
+            throws NacosApiException {
+        clientServiceForm.validate();
+        return Result.success(clientServiceV2Impl.getSubscribeClientList(clientServiceForm.getNamespaceId(),
+                clientServiceForm.getGroupName(), clientServiceForm.getServiceName(), clientServiceForm.getEphemeral(),
+                clientServiceForm.getIp(), clientServiceForm.getPort()));
     }
     
     /**

@@ -50,7 +50,7 @@ import static com.alibaba.nacos.core.utils.Commons.NACOS_ADMIN_CORE_CONTEXT_V3;
  * Cluster communication interface v3.
  *
  * @author yunye
- * @since 3.0.0-beta
+ * @since 3.0.0
  */
 @NacosApi
 @RestController

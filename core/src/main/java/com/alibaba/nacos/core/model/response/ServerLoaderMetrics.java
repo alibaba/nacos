@@ -22,7 +22,7 @@ import java.util.List;
  * Server loader metric summary.
  *
  * @author yunye
- * @since 3.0.0-beta
+ * @since 3.0.0
  */
 public class ServerLoaderMetrics {
     

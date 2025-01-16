@@ -31,7 +31,6 @@ import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
-import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -66,7 +65,7 @@ public class ListenerControllerV3 {
     public Result<GroupkeyListenserStatus> getAllSubClientConfigByIp(@RequestParam("ip") String ip,
             @RequestParam(value = "all", required = false) boolean all,
             @RequestParam(value = "namespaceId", required = false) String namespaceId,
-            @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime, ModelMap modelMap) {
+            @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime) {
         SampleResult collectSampleResult = configSubService.getCollectSampleResultByIp(ip, sampleTime);
         GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
         gls.setCollectStatus(200);
