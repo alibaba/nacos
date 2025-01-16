@@ -108,7 +108,8 @@ public class ConfigFuzzyWatchContextService {
      * @return
      */
     public Set<String> matchGroupKeys(String groupKeyPattern) {
-        return matchedGroupKeysMap.get(groupKeyPattern);
+        Set<String> stringSet = matchedGroupKeysMap.get(groupKeyPattern);
+        return stringSet == null ? new HashSet<>() : new HashSet<>(matchedGroupKeysMap.get(groupKeyPattern));
     }
     
     /**

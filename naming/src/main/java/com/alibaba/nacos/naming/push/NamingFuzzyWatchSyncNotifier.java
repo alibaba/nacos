@@ -54,7 +54,7 @@ public class NamingFuzzyWatchSyncNotifier extends SmartSubscriber {
     
     private FuzzyWatchPushDelayTaskEngine fuzzyWatchPushDelayTaskEngine;
     
-    private static final int BATCH_SIZE = 10;
+    static final int BATCH_SIZE = 10;
     
     public NamingFuzzyWatchSyncNotifier(NamingFuzzyWatchContextService namingFuzzyWatchContextService,
             FuzzyWatchPushDelayTaskEngine fuzzyWatchPushDelayTaskEngine) {
@@ -86,7 +86,7 @@ public class NamingFuzzyWatchSyncNotifier extends SmartSubscriber {
         //sync fuzzy watch context
         Set<String> patternMatchedServiceKeys = namingFuzzyWatchContextService.matchServiceKeys(completedPattern);
         
-        Set<String> clientReceivedGroupKeys = clientFuzzyWatchEvent.getClientReceivedServiceKeys();
+        Set<String> clientReceivedGroupKeys = new HashSet<>(clientFuzzyWatchEvent.getClientReceivedServiceKeys());
         List<FuzzyGroupKeyPattern.GroupKeyState> groupKeyStates = FuzzyGroupKeyPattern.diffGroupKeys(
                 patternMatchedServiceKeys, clientReceivedGroupKeys);
         

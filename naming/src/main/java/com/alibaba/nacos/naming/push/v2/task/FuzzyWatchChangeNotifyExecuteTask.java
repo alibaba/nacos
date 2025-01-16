@@ -23,7 +23,7 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.push.v2.NoRequiredRetryException;
 import com.alibaba.nacos.naming.push.v2.PushConfig;
 
-import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_RESOURCE_CHANGED;
+import static com.alibaba.nacos.naming.push.v2.task.FuzzyWatchPushDelayTaskEngine.getTaskKey;
 
 /**
  * Nacos naming fuzzy watch notify service change push delay task.
@@ -78,7 +78,7 @@ public class FuzzyWatchChangeNotifyExecuteTask extends AbstractExecuteTask {
         
         @Override
         public void onSuccess() {
-            Loggers.PUSH.info("[FUZZY-WATCH] change notify success ,clientId {}, serviceKey {] ,changedType {} ",
+            Loggers.PUSH.info("[fuzzy watch] change notify success ,clientId {}, serviceKey {] ,changedType {} ",
                     clientId, clientId, changedType);
             
         }
@@ -86,13 +86,13 @@ public class FuzzyWatchChangeNotifyExecuteTask extends AbstractExecuteTask {
         @Override
         public void onFail(Throwable e) {
             
-            Loggers.PUSH.warn("[FUZZY-WATCH] change notify fail ,clientId {}, serviceKey {] ,changedType {} ", clientId,
+            Loggers.PUSH.warn("[fuzzy watch] change notify fail ,clientId {}, serviceKey {] ,changedType {} ", clientId,
                     clientId, changedType, e);
             
             if (!(e instanceof NoRequiredRetryException)) {
-                delayTaskEngine.addTask(System.currentTimeMillis(),
-                        new FuzzyWatchChangeNotifyTask(serviceKey, changedType, clientId,
-                                PushConfig.getInstance().getPushTaskRetryDelay()));
+                FuzzyWatchChangeNotifyTask fuzzyWatchChangeNotifyTask = new FuzzyWatchChangeNotifyTask(serviceKey,
+                        changedType, clientId, PushConfig.getInstance().getPushTaskRetryDelay());
+                delayTaskEngine.addTask(getTaskKey(fuzzyWatchChangeNotifyTask), fuzzyWatchChangeNotifyTask);
             }
         }
     }

@@ -39,11 +39,13 @@ public class FuzzyWatchSyncNotifyTask extends AbstractDelayTask {
     
     private final String syncType;
     
-    private int totalBatch;
+    private int totalBatch = 1;
     
-    private int currentBatch;
+    private int currentBatch = 1;
     
     private BatchTaskCounter batchTaskCounter;
+    
+    private long executeStartTime = System.currentTimeMillis();
     
     public FuzzyWatchSyncNotifyTask(String clientId, String pattern, String syncType,
             Set<NamingFuzzyWatchSyncRequest.Context> syncServiceKeys, long delay) {
@@ -113,4 +115,7 @@ public class FuzzyWatchSyncNotifyTask extends AbstractDelayTask {
         this.batchTaskCounter = batchTaskCounter;
     }
     
+    public long getExecuteStartTime() {
+        return executeStartTime;
+    }
 }

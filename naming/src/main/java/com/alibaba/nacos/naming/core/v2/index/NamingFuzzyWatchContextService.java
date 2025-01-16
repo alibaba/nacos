@@ -66,10 +66,7 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
      */
     private final ConcurrentMap<String, Set<String>> matchedServiceKeysMap = new ConcurrentHashMap<>();
     
-    GlobalConfig globalConfig;
-    
-    public NamingFuzzyWatchContextService(GlobalConfig globalConfig) {
-        this.globalConfig = globalConfig;
+    public NamingFuzzyWatchContextService() {
     }
     
     @PostConstruct
@@ -83,7 +80,7 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
      * if watchedClients is null. pattern matchedServiceKeys will be removed in second period to avoid frequently
      * matchedServiceKeys init.
      */
-    private void trimFuzzyWatchContext() {
+    void trimFuzzyWatchContext() {
         try {
             Iterator<Map.Entry<String, Set<String>>> iterator = matchedServiceKeysMap.entrySet().iterator();
             while (iterator.hasNext()) {
@@ -125,7 +122,6 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
     
     @Override
     public void onEvent(Event event) {
-        
         if (event instanceof ClientOperationEvent.ClientReleaseEvent) {
             removeFuzzyWatchContext(((ClientOperationEvent.ClientReleaseEvent) event).getClientId());
         }
@@ -207,7 +203,7 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
     }
     
     private boolean reachToUpLimit(int size) {
-        return size >= globalConfig.getMaxMatchedServiceCount();
+        return size >= GlobalConfig.getMaxMatchedServiceCount();
     }
     
     public boolean reachToUpLimit(String groupKeyPattern) {
@@ -262,13 +258,14 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
     }
     
     /**
-     * get matched exist group keys with the groupKeyPattern. return null if not matched.
+     * get matched exist group keys with the groupKeyPattern.
      *
      * @param groupKeyPattern groupKeyPattern.
      * @return
      */
     public Set<String> matchServiceKeys(String groupKeyPattern) {
-        return matchedServiceKeysMap.get(groupKeyPattern);
+        Set<String> stringSet = matchedServiceKeysMap.get(groupKeyPattern);
+        return stringSet == null ? new HashSet<>() : new HashSet<>(stringSet);
     }
     
     private void removeFuzzyWatchContext(String clientId) {
@@ -300,7 +297,7 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
     public Set<String> initWatchMatchService(String completedPattern) throws NacosException {
         
         if (!matchedServiceKeysMap.containsKey(completedPattern)) {
-            if (matchedServiceKeysMap.size() >= globalConfig.getMaxPatternCount()) {
+            if (matchedServiceKeysMap.size() >= GlobalConfig.getMaxPatternCount()) {
                 Loggers.SRV_LOG.warn(
                         "FUZZY_WATCH: fuzzy watch pattern count is over limit ,pattern {} init fail,current count is {}",
                         completedPattern, matchedServiceKeysMap.size());
@@ -316,7 +313,7 @@ public class NamingFuzzyWatchContextService extends SmartSubscriber {
             for (Service service : namespaceServices) {
                 if (FuzzyGroupKeyPattern.matchPattern(completedPattern, service.getName(), service.getGroup(),
                         service.getNamespace())) {
-                    if (matchedServices.size() >= globalConfig.getMaxMatchedServiceCount()) {
+                    if (matchedServices.size() >= GlobalConfig.getMaxMatchedServiceCount()) {
                         
                         Loggers.SRV_LOG.warn("[fuzzy-watch] pattern matched service count is over limit , "
                                         + "other services will stop notify for pattern {} ,current count is {}",
