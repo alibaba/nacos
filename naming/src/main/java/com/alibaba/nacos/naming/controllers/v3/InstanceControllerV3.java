@@ -41,6 +41,7 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.InstanceForm;
+import com.alibaba.nacos.naming.model.form.InstanceListForm;
 import com.alibaba.nacos.naming.model.form.InstanceMetadataBatchOperationForm;
 import com.alibaba.nacos.naming.model.vo.InstanceDetailInfoVo;
 import com.alibaba.nacos.naming.model.vo.InstanceMetadataBatchOperationVo;
@@ -62,7 +63,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
@@ -262,19 +262,18 @@ public class InstanceControllerV3 {
     @TpsControl(pointName = "NamingServiceSubscribe", name = "HttpNamingServiceSubscribe")
     @ExtractorManager.Extractor(httpExtractor = NamingInstanceListHttpParamExtractor.class)
     @Secured(resource = UtilsAndCommons.SERVICE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
-    public Result<ServiceInfo> list(InstanceForm instanceForm,
-            @RequestParam(defaultValue = "false") Boolean healthyOnly) throws NacosApiException {
-        instanceForm.validate();
-        String compositeServiceName = NamingUtils.getGroupedName(instanceForm.getServiceName(),
-                instanceForm.getGroupName());
-        String namespaceId = instanceForm.getNamespaceId();
-        String clusterName = instanceForm.getClusterName();
+    public Result<ServiceInfo> list(InstanceListForm instanceListForm) throws NacosApiException {
+        instanceListForm.validate();
+        String compositeServiceName = NamingUtils.getGroupedName(instanceListForm.getServiceName(),
+                instanceListForm.getGroupName());
+        String namespaceId = instanceListForm.getNamespaceId();
+        String clusterName = instanceListForm.getClusterName();
         // TODO Deprecated, the subscriber is used by client 1.0 to subs service, admin api don't need it,
         //  InstanceOperator should support no subscribe api.
         Subscriber subscriber = new Subscriber("Deprecated", "Deprecated", "Deprecated", "Deprecated", namespaceId,
                 compositeServiceName, 0, clusterName);
-        return Result.success(
-                instanceService.listInstance(namespaceId, compositeServiceName, subscriber, clusterName, healthyOnly));
+        return Result.success(instanceService.listInstance(namespaceId, compositeServiceName, subscriber, clusterName,
+                instanceListForm.getHealthyOnly()));
     }
     
     /**
