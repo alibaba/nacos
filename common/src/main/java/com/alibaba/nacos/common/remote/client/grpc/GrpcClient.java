@@ -248,7 +248,7 @@ public abstract class GrpcClient extends RpcClient {
     
     private StreamObserver<Payload> bindRequestStream(final BiRequestStreamGrpc.BiRequestStreamStub streamStub,
             final GrpcConnection grpcConn) {
-        return streamStub.requestBiStream(new StreamObserver<>() {
+        return streamStub.requestBiStream(new StreamObserver<Payload>() {
             @Override
             public void onNext(Payload payload) {
                 LoggerUtils.printIfDebugEnabled(LOGGER, "[{}]Stream server request receive, original info: {}",

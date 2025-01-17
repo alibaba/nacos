@@ -55,9 +55,9 @@ class ApiCompatibilityConfigTest {
         config.getConfigFromEnv();
         assertTrue(config.isClientApiCompatibility());
         assertFalse(config.isConsoleApiCompatibility());
-        assertTrue(config.isAdminApiCompatibility());
+        assertFalse(config.isAdminApiCompatibility());
         assertEquals(
-                "ApiCompatibilityConfig{clientApiCompatibility=true, consoleApiCompatibility=false, adminApiCompatibility=true}",
+                "ApiCompatibilityConfig{clientApiCompatibility=true, consoleApiCompatibility=false, adminApiCompatibility=false}",
                 config.printConfig());
     }
     
@@ -66,7 +66,7 @@ class ApiCompatibilityConfigTest {
         MockEnvironment properties = new MockEnvironment();
         properties.setProperty(ApiCompatibilityConfig.CLIENT_API_COMPATIBILITY_KEY, "false");
         properties.setProperty(ApiCompatibilityConfig.CONSOLE_API_COMPATIBILITY_KEY, "true");
-        properties.setProperty(ApiCompatibilityConfig.ADMIN_API_COMPATIBILITY_KEY, "false");
+        properties.setProperty(ApiCompatibilityConfig.ADMIN_API_COMPATIBILITY_KEY, "true");
         EnvUtil.setEnvironment(properties);
         
         ApiCompatibilityConfig config = ApiCompatibilityConfig.getInstance();
@@ -74,9 +74,9 @@ class ApiCompatibilityConfigTest {
         
         assertFalse(config.isClientApiCompatibility());
         assertTrue(config.isConsoleApiCompatibility());
-        assertFalse(config.isAdminApiCompatibility());
+        assertTrue(config.isAdminApiCompatibility());
         assertEquals(
-                "ApiCompatibilityConfig{clientApiCompatibility=false, consoleApiCompatibility=true, adminApiCompatibility=false}",
+                "ApiCompatibilityConfig{clientApiCompatibility=false, consoleApiCompatibility=true, adminApiCompatibility=true}",
                 config.printConfig());
     }
 }
