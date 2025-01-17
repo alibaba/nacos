@@ -52,14 +52,14 @@ class ServerIdentityCheckerHolderTest {
     void testConstructorWithSingleImplementation()
             throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
         ServerIdentityCheckerHolder holder = getNewHolder(1);
-        assertInstanceOf(MockChecker.class, holder.getChecker());
+        assertInstanceOf(MockChecker.class, holder.newChecker());
     }
     
     @Test
     void testConstructorWithMultipleImplementation()
             throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
         ServerIdentityCheckerHolder holder = getNewHolder(2);
-        assertInstanceOf(MockChecker.class, holder.getChecker());
+        assertInstanceOf(MockChecker.class, holder.newChecker());
     }
     
     ServerIdentityCheckerHolder getNewHolder(int size)

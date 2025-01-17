@@ -29,6 +29,7 @@ import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.InstanceForm;
+import com.alibaba.nacos.naming.model.form.InstanceListForm;
 import com.alibaba.nacos.naming.model.form.InstanceMetadataBatchOperationForm;
 import com.alibaba.nacos.naming.model.vo.InstanceDetailInfoVo;
 import com.alibaba.nacos.naming.model.vo.InstanceMetadataBatchOperationVo;
@@ -224,14 +225,12 @@ class InstanceControllerV3Test extends BaseTest {
         
         when(instanceService.listInstance(eq(TEST_NAMESPACE), eq(TEST_SERVICE_NAME), any(), eq(TEST_CLUSTER_NAME),
                 eq(false))).thenReturn(serviceInfo);
-        InstanceForm instanceForm = new InstanceForm();
+        InstanceListForm instanceForm = new InstanceListForm();
         instanceForm.setNamespaceId(TEST_NAMESPACE);
         instanceForm.setGroupName("DEFAULT_GROUP");
         instanceForm.setServiceName("test-service");
         instanceForm.setClusterName(TEST_CLUSTER_NAME);
-        instanceForm.setIp(TEST_IP);
-        instanceForm.setPort(9999);
-        Result<ServiceInfo> result = instanceControllerV3.list(instanceForm, false);
+        Result<ServiceInfo> result = instanceControllerV3.list(instanceForm);
         
         verify(instanceService).listInstance(eq(TEST_NAMESPACE), eq(TEST_SERVICE_NAME), any(), eq(TEST_CLUSTER_NAME),
                 eq(false));

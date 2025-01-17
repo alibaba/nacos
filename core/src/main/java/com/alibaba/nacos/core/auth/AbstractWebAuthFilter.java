@@ -75,6 +75,7 @@ public abstract class AbstractWebAuthFilter implements Filter {
             chain.doFilter(request, response);
             return;
         }
+
         try {
             if (Loggers.AUTH.isDebugEnabled()) {
                 Loggers.AUTH.debug("auth start, request: {} {}", req.getMethod(), req.getRequestURI());
@@ -93,7 +94,10 @@ public abstract class AbstractWebAuthFilter implements Filter {
                 default:
                     break;
             }
-            
+            if (!isMatchFilter(secured)) {
+                chain.doFilter(request, response);
+                return;
+            }
             if (!protocolAuthService.enableAuth(secured)) {
                 chain.doFilter(request, response);
                 return;
@@ -130,6 +134,16 @@ public abstract class AbstractWebAuthFilter implements Filter {
             Loggers.AUTH.warn("[AUTH-FILTER] Server failed: ", e);
             
         }
+    }
+    
+    /**
+     * Check whether this filter should be applied for this {@link Secured} API.
+     *
+     * @param secured api Secured annotation
+     * @return {@code true} if this auth filter should handle this request, {@code false} otherwise
+     */
+    protected boolean isMatchFilter(Secured secured) {
+        return true;
     }
     
     protected ServerIdentityResult checkServerIdentity(HttpServletRequest request, Secured secured) {

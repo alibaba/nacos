@@ -29,6 +29,8 @@ public class Constants {
     
         public static final String NACOS_CORE_AUTH_CONSOLE_ENABLED = "nacos.core.auth.console.enabled";
         
+        public static final String NACOS_CORE_AUTH_ADMIN_ENABLED = "nacos.core.auth.admin.enabled";
+        
         public static final String NACOS_CORE_AUTH_SYSTEM_TYPE = "nacos.core.auth.system.type";
         
         public static final String NACOS_CORE_AUTH_CACHING_ENABLED = "nacos.core.auth.caching.enabled";
