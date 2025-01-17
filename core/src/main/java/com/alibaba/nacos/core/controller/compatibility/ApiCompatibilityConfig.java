@@ -57,7 +57,7 @@ public class ApiCompatibilityConfig extends AbstractDynamicConfig {
     protected void getConfigFromEnv() {
         clientApiCompatibility = EnvUtil.getProperty(CLIENT_API_COMPATIBILITY_KEY, Boolean.class, true);
         consoleApiCompatibility = EnvUtil.getProperty(CONSOLE_API_COMPATIBILITY_KEY, Boolean.class, false);
-        adminApiCompatibility = EnvUtil.getProperty(ADMIN_API_COMPATIBILITY_KEY, Boolean.class, true);
+        adminApiCompatibility = EnvUtil.getProperty(ADMIN_API_COMPATIBILITY_KEY, Boolean.class, false);
     }
     
     @Override

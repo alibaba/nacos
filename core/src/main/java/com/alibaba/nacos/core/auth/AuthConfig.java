@@ -38,12 +38,26 @@ public class AuthConfig {
         registration.addUrlPatterns("/*");
         registration.setName("authFilter");
         registration.setOrder(6);
-        
+        return registration;
+    }
+    
+    @Bean
+    public FilterRegistrationBean<AuthAdminFilter> authAdminFilterRegistration(AuthAdminFilter authAdminFilter) {
+        FilterRegistrationBean<AuthAdminFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(authAdminFilter);
+        registration.addUrlPatterns("/*");
+        registration.setName("authAdminFilter");
+        registration.setOrder(6);
         return registration;
     }
     
     @Bean
     public AuthFilter authFilter(ControllerMethodsCache methodsCache) {
         return new AuthFilter(NacosServerAuthConfig.getInstance(), methodsCache);
+    }
+    
+    @Bean
+    public AuthAdminFilter authAdminFilter(ControllerMethodsCache methodsCache) {
+        return new AuthAdminFilter(NacosServerAdminAuthConfig.getInstance(), methodsCache);
     }
 }

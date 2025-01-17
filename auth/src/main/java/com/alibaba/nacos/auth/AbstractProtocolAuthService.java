@@ -51,7 +51,7 @@ public abstract class AbstractProtocolAuthService<R> implements ProtocolAuthServ
     
     protected AbstractProtocolAuthService(NacosAuthConfig authConfig) {
         this.authConfig = authConfig;
-        this.checker = ServerIdentityCheckerHolder.getInstance().getChecker();
+        this.checker = ServerIdentityCheckerHolder.getInstance().newChecker();
     }
     
     @Override

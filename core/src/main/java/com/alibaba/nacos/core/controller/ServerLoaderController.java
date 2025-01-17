@@ -111,7 +111,7 @@ public class ServerLoaderController {
      */
     @Secured(resource = Commons.NACOS_CORE_CONTEXT_V2 + "/loader", action = ActionTypes.READ)
     @GetMapping("/current")
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/core/loader/current")
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/admin/core/loader/current")
     public ResponseEntity<Map<String, Connection>> currentClients() {
         Map<String, Connection> stringConnectionMap = connectionManager.currentClients();
         return ResponseEntity.ok().body(stringConnectionMap);
@@ -124,7 +124,7 @@ public class ServerLoaderController {
      */
     @Secured(resource = Commons.NACOS_CORE_CONTEXT_V2 + "/loader", action = ActionTypes.WRITE)
     @GetMapping("/reloadCurrent")
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/core/loader/reloadCurrent")
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/admin/core/loader/reloadCurrent")
     public ResponseEntity<String> reloadCount(@RequestParam Integer count,
             @RequestParam(value = "redirectAddress", required = false) String redirectAddress) {
         connectionManager.loadCount(count, redirectAddress);
@@ -139,7 +139,7 @@ public class ServerLoaderController {
      */
     @Secured(resource = Commons.NACOS_CORE_CONTEXT_V2 + "/loader", action = ActionTypes.WRITE)
     @GetMapping("/smartReloadCluster")
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/core/loader/smartReloadCluster")
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/admin/core/loader/smartReloadCluster")
     public ResponseEntity<String> smartReload(HttpServletRequest request,
             @RequestParam(value = "loaderFactor", required = false) String loaderFactorStr,
             @RequestParam(value = "force", required = false) String force) {
@@ -250,7 +250,7 @@ public class ServerLoaderController {
      */
     @Secured(resource = Commons.NACOS_CORE_CONTEXT_V2 + "/loader", action = ActionTypes.WRITE)
     @GetMapping("/reloadClient")
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/core/loader/reloadClient")
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/admin/core/loader/reloadClient")
     public ResponseEntity<String> reloadSingle(@RequestParam String connectionId,
             @RequestParam(value = "redirectAddress", required = false) String redirectAddress) {
         connectionManager.loadSingle(connectionId, redirectAddress);
@@ -264,7 +264,7 @@ public class ServerLoaderController {
      */
     @Secured(resource = Commons.NACOS_CORE_CONTEXT_V2 + "/loader", action = ActionTypes.READ)
     @GetMapping("/cluster")
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/core/loader/cluster")
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/admin/core/loader/cluster")
     public ResponseEntity<Map<String, Object>> loaderMetrics() {
         
         Map<String, Object> serverLoadMetrics = getServerLoadMetrics();

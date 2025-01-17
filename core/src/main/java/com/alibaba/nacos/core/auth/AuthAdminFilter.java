@@ -27,11 +27,11 @@ import com.alibaba.nacos.plugin.auth.constant.ApiType;
  * @author nkorange
  * @since 1.2.0
  */
-public class AuthFilter extends AbstractWebAuthFilter {
+public class AuthAdminFilter extends AbstractWebAuthFilter {
     
     private final NacosAuthConfig authConfig;
     
-    public AuthFilter(NacosAuthConfig authConfig, ControllerMethodsCache methodsCache) {
+    public AuthAdminFilter(NacosAuthConfig authConfig, ControllerMethodsCache methodsCache) {
         super(authConfig, methodsCache);
         this.authConfig = authConfig;
     }
@@ -43,7 +43,7 @@ public class AuthFilter extends AbstractWebAuthFilter {
     
     @Override
     protected boolean isMatchFilter(Secured secured) {
-        // ADMIN API use {@link AuthAdminFilter} to handle
-        return !ApiType.ADMIN_API.equals(secured.apiType());
+        // Other API authed by {@link AuthFilter}
+        return ApiType.ADMIN_API.equals(secured.apiType());
     }
 }
