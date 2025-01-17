@@ -291,7 +291,7 @@ public class ConfigServletInner {
             ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, pullEvent,
                     ConfigTraceService.PULL_TYPE_NOTFOUND, -1, clientIp, notify, "http");
         } else {
-            long delayed = notify ? -1 : System.currentTimeMillis() - chainResponse.getLastModified();
+            long delayed = System.currentTimeMillis() - chainResponse.getLastModified();
             ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, chainResponse.getLastModified(),
                     pullEvent, ConfigTraceService.PULL_TYPE_OK, delayed, clientIp, notify, "http");
         }

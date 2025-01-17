@@ -127,7 +127,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
             
             String pullEvent = resolvePullEventType(chainResponse, request.getTag());
             LogUtil.PULL_CHECK_LOG.warn("{}|{}|{}|{}", groupKey, clientIp, response.getMd5(), TimeUtils.getCurrentTimeStr());
-            final long delayed = notify ? -1 : System.currentTimeMillis() - response.getLastModified();
+            final long delayed = System.currentTimeMillis() - response.getLastModified();
             ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, response.getLastModified(), pullEvent, pullType,
                     delayed, clientIp, notify, "grpc");
             
