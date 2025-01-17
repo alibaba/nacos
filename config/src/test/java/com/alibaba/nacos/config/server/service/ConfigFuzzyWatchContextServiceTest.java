@@ -114,7 +114,7 @@ public class ConfigFuzzyWatchContextServiceTest {
         //trim twice, matchedGroupKeys2 is  empty
         configFuzzyWatchContextService.trimFuzzyWatchContext();
         Set<String> matchedGroupKeys3 = configFuzzyWatchContextService.matchGroupKeys(groupKeyPattern);
-        Assertions.assertTrue(matchedGroupKeys3 == null);
+        Assertions.assertTrue(matchedGroupKeys3.isEmpty());
     }
     
     @Test

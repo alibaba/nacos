@@ -29,6 +29,11 @@
     <name>nacos-logback-adapter-12 ${revision}</name>
     <description>Nacos client logback adapter for logback 1.2.x and lower version pom.xml file</description>
     
+    <properties>
+        <maven.compiler.source>${client.java.version}</maven.compiler.source>
+        <maven.compiler.target>${client.java.version}</maven.compiler.target>
+    </properties>
+    
     <dependencies>
         <dependency>
             <groupId>org.slf4j</groupId>
