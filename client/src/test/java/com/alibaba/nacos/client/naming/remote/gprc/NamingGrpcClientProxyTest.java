@@ -47,7 +47,7 @@ import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
-import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
+import com.alibaba.nacos.client.address.ServerListChangeEvent;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.NamingGrpcRedoService;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -683,7 +683,7 @@ class NamingGrpcClientProxyTest {
         String newServer = "www.aliyun.com";
         when(factory.genNextServer()).thenReturn(newServer);
         when(factory.getServerList()).thenReturn(Stream.of(newServer, "anotherServer").collect(Collectors.toList()));
-        NotifyCenter.publishEvent(new ServerListChangedEvent());
+        NotifyCenter.publishEvent(new ServerListChangeEvent());
         
         retry = 10;
         while (ORIGIN_SERVER.equals(rpc.getCurrentServer().getServerIp())) {
@@ -708,5 +708,22 @@ class NamingGrpcClientProxyTest {
         GrpcClientConfig config = (GrpcClientConfig) clientConfig.get(rpcClient);
         String appName = config.labels().get(Constants.APPNAME);
         assertNotNull(appName);
+    }
+    
+    @Test
+    void testResponseCode403Exception() throws NacosException {
+        Throwable exception = assertThrows(NacosException.class, () -> {
+
+            when(this.rpcClient.request(Mockito.any())).thenReturn(ErrorResponse.build(403, "Invalid signature"));
+
+            try {
+                client.registerService(SERVICE_NAME, GROUP_NAME, instance);
+            } catch (NacosException ex) {
+                assertNull(ex.getCause());
+
+                throw ex;
+            }
+        });
+        assertTrue(exception.getMessage().contains("Invalid signature"));
     }
 }

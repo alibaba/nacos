@@ -25,11 +25,14 @@ import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
+import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
+import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.remote.ConfigClusterRpcClientProxy;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
@@ -46,6 +49,8 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+
+import static com.alibaba.nacos.core.cluster.MemberMetaDataConstants.SUPPORT_GRAY_MODEL;
 
 /**
  * Async notify service.
@@ -101,12 +106,8 @@ public class AsyncNotifyService {
     void handleConfigDataChangeEvent(Event event) {
         if (event instanceof ConfigDataChangeEvent) {
             ConfigDataChangeEvent evt = (ConfigDataChangeEvent) event;
-            long dumpTs = evt.lastModifiedTs;
-            String dataId = evt.dataId;
-            String group = evt.group;
-            String tenant = evt.tenant;
-            String tag = evt.tag;
-            MetricsMonitor.incrementConfigChangeCount(tenant, group, dataId);
+            
+            MetricsMonitor.incrementConfigChangeCount(evt.tenant, evt.group, evt.dataId);
             
             Collection<Member> ipList = memberManager.allMembersWithoutSelf();
             
@@ -115,13 +116,40 @@ public class AsyncNotifyService {
             
             for (Member member : ipList) {
                 // grpc report data change only
-                rpcQueue.add(
-                        new NotifySingleRpcTask(dataId, group, tenant, tag, dumpTs, evt.isBeta, evt.isBatch, member));
+                NotifySingleRpcTask notifySingleRpcTask = generateTask(evt, member);
+                if (notifySingleRpcTask != null) {
+                    rpcQueue.add(notifySingleRpcTask);
+                }
+                
             }
             if (!rpcQueue.isEmpty()) {
                 ConfigExecutor.executeAsyncNotify(new AsyncRpcTask(rpcQueue));
             }
         }
+    }
+    
+    private NotifySingleRpcTask generateTask(ConfigDataChangeEvent configDataChangeEvent, Member member) {
+        
+        NotifySingleRpcTask task = new NotifySingleRpcTask(configDataChangeEvent.dataId, configDataChangeEvent.group,
+                configDataChangeEvent.tenant, configDataChangeEvent.grayName, configDataChangeEvent.lastModifiedTs,
+                member);
+        
+        if (PropertyUtil.isGrayCompatibleModel() && StringUtils.isNotBlank(configDataChangeEvent.grayName)) {
+            
+            // old server should set beta or tag flag
+            if (!(Boolean) member.getExtendInfo().getOrDefault(SUPPORT_GRAY_MODEL, Boolean.FALSE)) {
+                String underLine = "_";
+                task.setBeta(BetaGrayRule.TYPE_BETA.equals(configDataChangeEvent.grayName));
+                if (configDataChangeEvent.grayName.startsWith(TagGrayRule.TYPE_TAG + underLine)) {
+                    task.setTag(configDataChangeEvent.grayName.substring(
+                            configDataChangeEvent.grayName.indexOf(TagGrayRule.TYPE_TAG + underLine) + 4));
+                }
+                
+            }
+        }
+        
+        // compatible with gray model
+        return task;
     }
     
     private boolean isUnHealthy(String targetIp) {
@@ -134,12 +162,12 @@ public class AsyncNotifyService {
             
             ConfigChangeClusterSyncRequest syncRequest = new ConfigChangeClusterSyncRequest();
             syncRequest.setDataId(task.getDataId());
-            syncRequest.setGroup(task.getGroup());
-            syncRequest.setBeta(task.isBeta());
-            syncRequest.setLastModified(task.getLastModified());
-            syncRequest.setTag(task.getTag());
-            syncRequest.setBatch(task.isBatch());
             syncRequest.setTenant(task.getTenant());
+            syncRequest.setGroup(task.getGroup());
+            syncRequest.setLastModified(task.getLastModified());
+            syncRequest.setGrayName(task.getGrayName());
+            syncRequest.setBeta(task.isBeta());
+            syncRequest.setTag(task.getTag());
             Member member = task.member;
             
             String event = getNotifyEvent(task);
@@ -200,27 +228,24 @@ public class AsyncNotifyService {
         
         private Member member;
         
+        private String grayName;
+        
+        @Deprecated
         private boolean isBeta;
         
+        @Deprecated
         private String tag;
         
-        private boolean isBatch;
-        
-        public NotifySingleRpcTask(String dataId, String group, String tenant, String tag, long lastModified,
-                boolean isBeta, boolean isBatch, Member member) {
-            this(dataId, group, tenant, lastModified);
-            this.member = member;
-            this.isBeta = isBeta;
-            this.tag = tag;
-            this.isBatch = isBatch;
-        }
-        
-        private NotifySingleRpcTask(String dataId, String group, String tenant, long lastModified) {
+        public NotifySingleRpcTask(String dataId, String group, String tenant, String grayName, long lastModified,
+                Member member) {
             this.dataId = dataId;
             this.group = group;
             this.tenant = tenant;
             this.lastModified = lastModified;
+            this.member = member;
+            this.grayName = grayName;
             setTaskInterval(3000L);
+            
         }
         
         public boolean isBeta() {
@@ -239,12 +264,12 @@ public class AsyncNotifyService {
             this.tag = tag;
         }
         
-        public boolean isBatch() {
-            return isBatch;
+        public String getGrayName() {
+            return grayName;
         }
         
-        public void setBatch(boolean batch) {
-            isBatch = batch;
+        public void setGrayName(String grayName) {
+            this.grayName = grayName;
         }
         
         public String getDataId() {
@@ -293,8 +318,8 @@ public class AsyncNotifyService {
             event = ConfigTraceService.NOTIFY_EVENT_BETA;
         } else if (!StringUtils.isBlank(task.tag)) {
             event = ConfigTraceService.NOTIFY_EVENT_TAG + "-" + task.tag;
-        } else if (task.isBatch()) {
-            event = ConfigTraceService.NOTIFY_EVENT_BATCH;
+        } else if (StringUtils.isNotBlank(task.grayName)) {
+            event = ConfigTraceService.NOTIFY_EVENT + "-" + task.grayName;
         }
         return event;
     }

@@ -79,7 +79,7 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
             if (authConfigs.isAuthEnabled()) {
                 throw new IllegalArgumentException(
                         "the length of secret key must great than or equal 32 bytes; And the secret key  must be encoded by base64."
-                                + "Please see https://nacos.io/zh-cn/docs/v2/guide/user/auth.html", e);
+                                + "Please see https://nacos.io/docs/latest/manual/admin/auth/", e);
             }
         }
         
@@ -175,7 +175,7 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
     private void checkJwtParser() {
         if (null == jwtParser) {
             throw new NacosRuntimeException(NacosException.INVALID_PARAM,
-                    "Please config `nacos.core.auth.plugin.nacos.token.secret.key`, detail see https://nacos.io/zh-cn/docs/v2/guide/user/auth.html");
+                    "Please config `nacos.core.auth.plugin.nacos.token.secret.key`, detail see https://nacos.io/docs/latest/manual/admin/auth/");
         }
     }
 }

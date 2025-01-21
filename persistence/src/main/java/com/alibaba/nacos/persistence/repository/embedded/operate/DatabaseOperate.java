@@ -24,7 +24,6 @@ import org.springframework.jdbc.core.RowMapper;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
@@ -147,28 +146,6 @@ public interface DatabaseOperate {
     default Boolean blockUpdate(BiConsumer<Boolean, Throwable> consumer) {
         try {
             return update(EmbeddedStorageContextHolder.getCurrentSqlContext(), consumer);
-        } finally {
-            EmbeddedStorageContextHolder.cleanAllContext();
-        }
-    }
-    
-    /**
-     * data modify transaction The SqlContext to be executed in the current thread will be executed and automatically
-     * cleared.
-     *
-     * @return is success
-     */
-    default CompletableFuture<Boolean> futureUpdate() {
-        try {
-            CompletableFuture<Boolean> future = new CompletableFuture<>();
-            update(EmbeddedStorageContextHolder.getCurrentSqlContext(), (o, throwable) -> {
-                if (Objects.nonNull(throwable)) {
-                    future.completeExceptionally(throwable);
-                    return;
-                }
-                future.complete(o);
-            });
-            return future;
         } finally {
             EmbeddedStorageContextHolder.cleanAllContext();
         }

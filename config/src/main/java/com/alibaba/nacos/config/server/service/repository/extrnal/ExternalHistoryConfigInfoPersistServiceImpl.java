@@ -46,11 +46,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.HISTORY_DETAIL_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.HISTORY_LIST_ROW_MAPPER;
 
@@ -88,20 +88,23 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     
     @Override
     public void insertConfigHistoryAtomic(long id, ConfigInfo configInfo, String srcIp, String srcUser,
-            final Timestamp time, String ops) {
+            final Timestamp time, String ops, String publishType, String grayName, String extInfo) {
         String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
         String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
         String encryptedDataKey = StringUtils.defaultEmptyIfBlank(configInfo.getEncryptedDataKey());
+        String publishTypeTmp = StringUtils.defaultEmptyIfBlank(publishType);
+        String grayNameTemp = StringUtils.defaultEmptyIfBlank(grayName);
         
         try {
             HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
                     dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
             jt.update(historyConfigInfoMapper.insert(
                             Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "src_ip",
-                                    "src_user", "gmt_modified", "op_type", "encrypted_data_key")), id, configInfo.getDataId(),
-                    configInfo.getGroup(), tenantTmp, appNameTmp, configInfo.getContent(), md5Tmp, srcIp, srcUser, time,
-                    ops, encryptedDataKey);
+                                    "src_user", "gmt_modified", "op_type", "publish_type", "gray_name", "ext_info",
+                                    "encrypted_data_key")), id, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
+                    appNameTmp, configInfo.getContent(), md5Tmp, srcIp, srcUser, time, ops, publishTypeTmp,
+                    grayNameTemp, extInfo, encryptedDataKey);
         } catch (DataAccessException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;
@@ -121,7 +124,8 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     }
     
     @Override
-    public List<ConfigInfoStateWrapper> findDeletedConfig(final Timestamp startTime, long startId, int pageSize) {
+    public List<ConfigInfoStateWrapper> findDeletedConfig(final Timestamp startTime, long startId, int pageSize,
+            String publishType) {
         try {
             HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
                     dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
@@ -129,10 +133,25 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
             context.putWhereParameter(FieldConstant.START_TIME, startTime);
             context.putWhereParameter(FieldConstant.PAGE_SIZE, pageSize);
             context.putWhereParameter(FieldConstant.LAST_MAX_ID, startId);
+            context.putWhereParameter(FieldConstant.PUBLISH_TYPE, publishType);
             
             MapperResult mapperResult = historyConfigInfoMapper.findDeletedConfig(context);
-            return jt.query(mapperResult.getSql(), mapperResult.getParamList().toArray(),
-                    CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER);
+            List<ConfigHistoryInfo> configHistoryInfos = jt.query(mapperResult.getSql(),
+                    mapperResult.getParamList().toArray(), HISTORY_DETAIL_ROW_MAPPER);
+            
+            List<ConfigInfoStateWrapper> configInfoStateWrappers = new ArrayList<>();
+            for (ConfigHistoryInfo configHistoryInfo : configHistoryInfos) {
+                ConfigInfoStateWrapper configInfoStateWrapper = new ConfigInfoStateWrapper();
+                configInfoStateWrapper.setId(configHistoryInfo.getId());
+                configInfoStateWrapper.setDataId(configHistoryInfo.getDataId());
+                configInfoStateWrapper.setGroup(configHistoryInfo.getGroup());
+                configInfoStateWrapper.setTenant(configHistoryInfo.getTenant());
+                configInfoStateWrapper.setMd5(configHistoryInfo.getMd5());
+                configInfoStateWrapper.setLastModified(configHistoryInfo.getLastModifiedTime().getTime());
+                configInfoStateWrapper.setGrayName(configHistoryInfo.getGrayName());
+                configInfoStateWrappers.add(configInfoStateWrapper);
+            }
+            return configInfoStateWrappers;
         } catch (DataAccessException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;
@@ -174,8 +193,8 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
                 dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
         String sqlFetchRows = historyConfigInfoMapper.select(
                 Arrays.asList("nid", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "src_user",
-                        "src_ip", "op_type", "gmt_create", "gmt_modified", "encrypted_data_key"),
-                Collections.singletonList("nid"));
+                        "src_ip", "op_type", "gmt_create", "gmt_modified", "publish_type", "gray_name", "ext_info",
+                        "encrypted_data_key"), Collections.singletonList("nid"));
         try {
             ConfigHistoryInfo historyInfo = jt.queryForObject(sqlFetchRows, new Object[] {nid},
                     HISTORY_DETAIL_ROW_MAPPER);
@@ -221,5 +240,30 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
             throw new IllegalArgumentException("findConfigHistoryCountByTime error");
         }
         return result;
+    }
+
+    @Override
+    public ConfigHistoryInfo getNextHistoryInfo(String dataId, String group, String tenant, String publishType,
+            String grayName, long startNid) {
+        HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
+                dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
+        MapperContext context = new MapperContext();
+        context.putWhereParameter(FieldConstant.DATA_ID, dataId);
+        context.putWhereParameter(FieldConstant.GROUP_ID, group);
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenant);
+        context.putWhereParameter(FieldConstant.PUBLISH_TYPE, publishType);
+        context.putWhereParameter(FieldConstant.NID, startNid);
+        context.putWhereParameter(FieldConstant.GRAY_NAME, grayName);
+        MapperResult sqlFetchRows = historyConfigInfoMapper.getNextHistoryInfo(context);
+        try {
+            ConfigHistoryInfo historyInfo = jt.queryForObject(sqlFetchRows.getSql(),
+                    sqlFetchRows.getParamList().toArray(), HISTORY_DETAIL_ROW_MAPPER);
+            return historyInfo;
+        } catch (EmptyResultDataAccessException emptyResultDataAccessException) {
+            return null;
+        } catch (DataAccessException e) {
+            LogUtil.FATAL_LOG.error("[db-error] " + e, e);
+            throw e;
+        }
     }
 }

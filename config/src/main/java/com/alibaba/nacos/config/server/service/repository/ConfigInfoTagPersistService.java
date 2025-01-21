@@ -29,9 +29,10 @@ import java.util.List;
 
 /**
  * Database service, providing access to config_info_tag in the database.
- *
+ * Deprecated since 2.5.0，only support on compatibility,replaced with ConfigInfoGray model, will be  soon removed on further version.
  * @author lixiaoshuang
  */
+@Deprecated
 public interface ConfigInfoTagPersistService {
     
     /**

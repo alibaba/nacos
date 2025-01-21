@@ -26,8 +26,8 @@ import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.naming.core.ServerListManager;
-import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
+import com.alibaba.nacos.client.naming.core.NamingServerListManager;
+import com.alibaba.nacos.client.address.ServerListChangeEvent;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.common.http.HttpRestResult;
@@ -74,7 +74,7 @@ class NamingHttpClientProxyTest {
     private SecurityProxy proxy;
     
     @Mock
-    private ServerListManager mgr;
+    private NamingServerListManager mgr;
     
     private Properties props;
     
@@ -96,13 +96,13 @@ class NamingHttpClientProxyTest {
     
     @Test
     void testOnEvent() {
-        clientProxy.onEvent(new ServerListChangedEvent());
+        clientProxy.onEvent(new ServerListChangeEvent());
         // Do nothing
     }
     
     @Test
     void testSubscribeType() {
-        assertEquals(ServerListChangedEvent.class, clientProxy.subscribeType());
+        assertEquals(ServerListChangeEvent.class, clientProxy.subscribeType());
     }
     
     @Test
@@ -640,11 +640,34 @@ class NamingHttpClientProxyTest {
     void testRegApiForDomain() throws NacosException {
         assertThrows(NacosException.class, () -> {
             Map<String, String> params = new HashMap<>();
-            when(mgr.isDomain()).thenReturn(true);
-            when(mgr.getNacosDomain()).thenReturn("http://test.nacos.domain");
             clientProxy.reqApi("api", params, Collections.emptyMap(), Collections.emptyList(), HttpMethod.GET);
             
         });
         
+    }
+    
+    @Test
+    void testCallServerFail403() throws Exception {
+        //given
+        NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
+
+        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any())).thenAnswer(invocationOnMock -> {
+            //return url
+            HttpRestResult<Object> res = new HttpRestResult<Object>();
+            res.setMessage("Invalid signature");
+            res.setCode(403);
+            return res;
+        });
+
+        final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
+        nacosRestTemplateField.setAccessible(true);
+        nacosRestTemplateField.set(clientProxy, nacosRestTemplate);
+        String api = "/api";
+        Map<String, String> params = new HashMap<>();
+        Map<String, String> body = new HashMap<>();
+        String method = HttpMethod.GET;
+        String curServer = "127.0.0.1";
+        //then
+        assertThrows(NacosException.class, () -> clientProxy.callServer(api, params, body, curServer, method));
     }
 }

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.persistence.repository.embedded.operate;
 
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.persistence.exception.NJdbcException;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.persistence.repository.embedded.sql.ModifyRequest;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -25,10 +26,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.mock.env.MockEnvironment;
@@ -36,27 +37,30 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.io.File;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class StandaloneDatabaseOperateImplTest {
     
-    @Spy
-    @InjectMocks
     private StandaloneDatabaseOperateImpl operate;
     
     @Mock
@@ -71,9 +75,6 @@ class StandaloneDatabaseOperateImplTest {
     @Mock
     private BiConsumer<Boolean, Throwable> biConsumer;
     
-    /*   @Mock
-       private File file;
-       */
     @Mock
     private TransactionTemplate transactionTemplate;
     
@@ -86,6 +87,8 @@ class StandaloneDatabaseOperateImplTest {
     
     @BeforeEach
     void setUp() {
+        operate = new StandaloneDatabaseOperateImpl();
+        operate.init();
         ReflectionTestUtils.setField(operate, "jdbcTemplate", jdbcTemplate);
         ReflectionTestUtils.setField(operate, "transactionTemplate", transactionTemplate);
     }
@@ -93,6 +96,7 @@ class StandaloneDatabaseOperateImplTest {
     @AfterAll
     static void afterAll() {
         EnvUtil.setEnvironment(null);
+        EmbeddedStorageContextHolder.cleanAllContext();
     }
     
     @Test
@@ -102,6 +106,14 @@ class StandaloneDatabaseOperateImplTest {
         Long num = 1L;
         when(jdbcTemplate.queryForObject(sql, clazz)).thenReturn(num);
         assertEquals(operate.queryOne(sql, clazz), (Long) 1L);
+        when(jdbcTemplate.queryForObject(sql, clazz)).thenThrow(new IncorrectResultSizeDataAccessException("test", 1));
+        assertNull(operate.queryOne(sql, clazz));
+        reset(jdbcTemplate);
+        when(jdbcTemplate.queryForObject(sql, clazz)).thenThrow(new CannotGetJdbcConnectionException("test"));
+        assertThrows(CannotGetJdbcConnectionException.class, () -> operate.queryOne(sql, clazz));
+        reset(jdbcTemplate);
+        when(jdbcTemplate.queryForObject(sql, clazz)).thenThrow(new NJdbcException("test", "OriginalExceptionName"));
+        assertThrows(NJdbcException.class, () -> operate.queryOne(sql, clazz));
     }
     
     @Test
@@ -114,6 +126,17 @@ class StandaloneDatabaseOperateImplTest {
         Object[] args = new Object[] {configInfo.getId(), configInfo.getDataId(), configInfo.getGroup()};
         when(jdbcTemplate.queryForObject(sql, args, MockConfigInfo.class)).thenReturn(configInfo);
         assertEquals(operate.queryOne(sql, args, MockConfigInfo.class), configInfo);
+        when(jdbcTemplate.queryForObject(sql, args, MockConfigInfo.class)).thenThrow(
+                new IncorrectResultSizeDataAccessException("test", 1));
+        assertNull(operate.queryOne(sql, args, MockConfigInfo.class));
+        reset(jdbcTemplate);
+        when(jdbcTemplate.queryForObject(sql, args, MockConfigInfo.class)).thenThrow(
+                new CannotGetJdbcConnectionException("test"));
+        assertThrows(CannotGetJdbcConnectionException.class, () -> operate.queryOne(sql, args, MockConfigInfo.class));
+        reset(jdbcTemplate);
+        when(jdbcTemplate.queryForObject(sql, args, MockConfigInfo.class)).thenThrow(
+                new NJdbcException("test", "OriginalExceptionName"));
+        assertThrows(NJdbcException.class, () -> operate.queryOne(sql, args, MockConfigInfo.class));
     }
     
     @Test
@@ -126,6 +149,17 @@ class StandaloneDatabaseOperateImplTest {
         Object[] args = new Object[] {configInfo.getId(), configInfo.getDataId(), configInfo.getGroup()};
         when(jdbcTemplate.queryForObject(eq(sql), eq(args), any(RowMapper.class))).thenReturn(configInfo);
         assertEquals(operate.queryOne(sql, args, rowMapper), configInfo);
+        when(jdbcTemplate.queryForObject(eq(sql), eq(args), any(RowMapper.class))).thenThrow(
+                new IncorrectResultSizeDataAccessException("test", 1));
+        assertNull(operate.queryOne(sql, args, rowMapper));
+        reset(jdbcTemplate);
+        when(jdbcTemplate.queryForObject(eq(sql), eq(args), any(RowMapper.class))).thenThrow(
+                new CannotGetJdbcConnectionException("test"));
+        assertThrows(CannotGetJdbcConnectionException.class, () -> operate.queryOne(sql, args, rowMapper));
+        reset(jdbcTemplate);
+        when(jdbcTemplate.queryForObject(eq(sql), eq(args), any(RowMapper.class))).thenThrow(
+                new NJdbcException("test", "OriginalExceptionName"));
+        assertThrows(NJdbcException.class, () -> operate.queryOne(sql, args, rowMapper));
     }
     
     @Test
@@ -174,6 +208,13 @@ class StandaloneDatabaseOperateImplTest {
         configInfos.add(configInfo2);
         when(jdbcTemplate.query(eq(sql), eq(args), any(RowMapper.class))).thenReturn(configInfos);
         assertEquals(configInfos, operate.queryMany(sql, args, rowMapper));
+        when(jdbcTemplate.query(eq(sql), eq(args), any(RowMapper.class))).thenThrow(
+                new CannotGetJdbcConnectionException("test"));
+        assertThrows(CannotGetJdbcConnectionException.class, () -> operate.queryMany(sql, args, rowMapper));
+        reset(jdbcTemplate);
+        when(jdbcTemplate.query(eq(sql), eq(args), any(RowMapper.class))).thenThrow(
+                new NJdbcException("test", "OriginalExceptionName"));
+        assertThrows(NJdbcException.class, () -> operate.queryMany(sql, args, rowMapper));
     }
     
     @Test
@@ -197,6 +238,11 @@ class StandaloneDatabaseOperateImplTest {
         
         when(jdbcTemplate.queryForList(sql, args)).thenReturn(resultList);
         assertEquals(operate.queryMany(sql, args), resultList);
+        when(jdbcTemplate.queryForList(sql, args)).thenThrow(new CannotGetJdbcConnectionException("test"));
+        assertThrows(CannotGetJdbcConnectionException.class, () -> operate.queryMany(sql, args));
+        reset(jdbcTemplate);
+        when(jdbcTemplate.queryForList(sql, args)).thenThrow(new NJdbcException("test", "OriginalExceptionName"));
+        assertThrows(NJdbcException.class, () -> operate.queryMany(sql, args));
     }
     
     @Test
@@ -211,6 +257,17 @@ class StandaloneDatabaseOperateImplTest {
         Class clazz = dataId1.getClass();
         when(jdbcTemplate.queryForList(sql, args, clazz)).thenReturn(resultList);
         assertEquals(operate.queryMany(sql, args, clazz), resultList);
+        when(jdbcTemplate.queryForList(sql, args, clazz)).thenThrow(
+                new IncorrectResultSizeDataAccessException("test", 1));
+        assertNull(operate.queryMany(sql, args, clazz));
+        reset(jdbcTemplate);
+        when(jdbcTemplate.queryForList(sql, args, clazz)).thenThrow(new CannotGetJdbcConnectionException("test"));
+        assertThrows(CannotGetJdbcConnectionException.class, () -> operate.queryMany(sql, args, clazz));
+        reset(jdbcTemplate);
+        when(jdbcTemplate.queryForList(sql, args, clazz)).thenThrow(
+                new NJdbcException("test", "OriginalExceptionName"));
+        assertThrows(NJdbcException.class, () -> operate.queryMany(sql, args, clazz));
+        
     }
     
     @Test
@@ -265,12 +322,41 @@ class StandaloneDatabaseOperateImplTest {
     }
     
     @Test
-    void testDataImport() throws ExecutionException, InterruptedException {
-        RestResult<String> errorResult = RestResult.<String>builder().withCode(500).withMsg("null").withData(null).build();
-        CompletableFuture<RestResult<String>> errorFuture = new CompletableFuture<>();
-        errorFuture.complete(errorResult);
-        doReturn(errorFuture).when(operate).dataImport(null);
-        assertEquals(operate.dataImport(null).get(), errorResult);
+    void testDataImportSuccess() throws ExecutionException, InterruptedException, URISyntaxException {
+        File file = new File(getClass().getClassLoader().getResource("META-INF/test-derby-import.sql").toURI());
+        int[] executeResult = new int[21];
+        for (int i = executeResult.length - 1; i > executeResult.length - 6; i--) {
+            executeResult[i] = 1;
+        }
+        when(jdbcTemplate.batchUpdate(any(String[].class))).thenReturn(executeResult);
+        CompletableFuture<RestResult<String>> result = operate.dataImport(file);
+        TimeUnit.MILLISECONDS.sleep(1000L);
+        assertTrue(result.get().ok());
+        assertEquals(200, result.get().getCode());
+    }
+    
+    @Test
+    void testDataImportFailed() throws ExecutionException, InterruptedException, URISyntaxException {
+        File file = new File(getClass().getClassLoader().getResource("META-INF/test-derby-import.sql").toURI());
+        int[] executeResult = new int[5];
+        when(jdbcTemplate.batchUpdate(any(String[].class))).thenReturn(executeResult);
+        CompletableFuture<RestResult<String>> result = operate.dataImport(file);
+        TimeUnit.MILLISECONDS.sleep(1000L);
+        assertFalse(result.get().ok());
+        assertEquals(500, result.get().getCode());
+        assertNull(result.get().getMessage());
+    }
+    
+    @Test
+    void testDataImportException() throws ExecutionException, InterruptedException, URISyntaxException {
+        File file = new File(getClass().getClassLoader().getResource("META-INF/test-derby-import.sql").toURI());
+        when(jdbcTemplate.batchUpdate(any(String[].class))).thenThrow(new NJdbcException("test import failed"));
+        CompletableFuture<RestResult<String>> result = operate.dataImport(file);
+        TimeUnit.MILLISECONDS.sleep(1000L);
+        assertFalse(result.get().ok());
+        assertEquals(500, result.get().getCode());
+        assertEquals("com.alibaba.nacos.persistence.exception.NJdbcException: test import failed",
+                result.get().getMessage());
     }
     
     @Test
@@ -342,6 +428,15 @@ class StandaloneDatabaseOperateImplTest {
     }
     
     @Test
+    void testBlockUpdateWithException() {
+        String sql = "UPDATE config_info SET data_id = 'test' WHERE id = 1;";
+        EmbeddedStorageContextHolder.addSqlContext(sql);
+        when(transactionTemplate.execute(any(TransactionCallback.class))).thenThrow(new NJdbcException("test"));
+        assertThrows(NJdbcException.class, () -> operate.blockUpdate(biConsumer));
+        assertTrue(EmbeddedStorageContextHolder.getCurrentSqlContext().isEmpty());
+    }
+    
+    @Test
     void testDoDataImport() {
         List<ModifyRequest> modifyRequests = new ArrayList<>();
         ModifyRequest modifyRequest1 = new ModifyRequest();
@@ -352,16 +447,5 @@ class StandaloneDatabaseOperateImplTest {
         modifyRequests.add(modifyRequest1);
         when(tempJdbcTemplate.batchUpdate(sql)).thenReturn(new int[] {1});
         assertTrue(operate.doDataImport(tempJdbcTemplate, modifyRequests));
-    }
-    
-    @Test
-    void testFutureUpdate() throws ExecutionException, InterruptedException {
-        String sql = "SELECT 1";
-        EmbeddedStorageContextHolder.addSqlContext(sql);
-        CompletableFuture<Boolean> future = new CompletableFuture<>();
-        future.complete(true);
-        doAnswer((invocationOnMock) -> null).when(operate).futureUpdate();
-        when(operate.futureUpdate()).thenReturn(future);
-        assertTrue(operate.futureUpdate().get());
     }
 }

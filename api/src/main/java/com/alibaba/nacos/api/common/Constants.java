@@ -35,6 +35,8 @@ public class Constants {
     
     public static final String CLIENT_VERSION_KEY = "ClientVersion";
     
+    public static final String CLIENT_IP = "ClientIp";
+    
     public static final String UNKNOWN_APP = "UnknownApp";
     
     public static final String DEFAULT_DOMAINNAME = "commonconfig.config-host.taobao.com";
@@ -251,6 +253,8 @@ public class Constants {
      * Since 2.3.3, For some situation like java agent using nacos-client which can't use env ram info.
      */
     public static final String DEFAULT_USE_RAM_INFO_PARSING = "true";
+    
+    public static final String CLIENT_MODULE_TYPE = "clientModuleType";
     
     /**
      * The constants in config directory.

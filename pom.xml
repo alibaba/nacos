@@ -88,7 +88,7 @@
     </issueManagement>
     
     <properties>
-        <revision>2.4.3</revision>
+        <revision>2.5.0</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Compiler settings properties -->
@@ -105,7 +105,7 @@
         <versions-maven-plugin.version>2.2</versions-maven-plugin.version>
         <dependency-mediator-maven-plugin.version>1.0.2</dependency-mediator-maven-plugin.version>
         <clirr-maven-plugin.version>2.7</clirr-maven-plugin.version>
-        <maven-enforcer-plugin.version>1.4.1</maven-enforcer-plugin.version>
+        <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
         <maven-compiler-plugin.version>3.5.1</maven-compiler-plugin.version>
         <maven-javadoc-plugin.version>2.10.4</maven-javadoc-plugin.version>
         <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
@@ -123,7 +123,7 @@
         <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
         <maven-easyj-version>1.1.5</maven-easyj-version>
         <!-- dependency version related to plugin -->
-        <extra-enforcer-rules.version>1.0-beta-4</extra-enforcer-rules.version>
+        <extra-enforcer-rules.version>1.9.0</extra-enforcer-rules.version>
         <p3c-pmd.version>1.3.0</p3c-pmd.version>
         
         <!-- dependency version -->
@@ -153,8 +153,8 @@
         
         <!-- override dependency version -->
         <spring.version>5.3.39</spring.version>
-        <spring-security.version>5.7.12</spring-security.version>
-        <tomcat.version>9.0.93</tomcat.version>
+        <spring-security.version>5.8.15</spring-security.version>
+        <tomcat.version>9.0.98</tomcat.version>
     </properties>
     <!-- == -->
     <!-- =========================================================Build plugins================================================ -->

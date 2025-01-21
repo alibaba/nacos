@@ -49,9 +49,15 @@ class AbstractMapperTest {
             }
         };
     }
-    
+
     @Test
-    void testSelect() {
+    void testSelectSingleField() {
+        String sql = abstractMapper.select(Arrays.asList("id"), Arrays.asList("id"));
+        assertEquals("SELECT id FROM tenant_info WHERE id = ?", sql);
+    }
+
+    @Test
+    public void testSelectMultiField() {
         String sql = abstractMapper.select(Arrays.asList("id", "name"), Arrays.asList("id"));
         assertEquals("SELECT id,name FROM tenant_info WHERE id = ?", sql);
     }
@@ -67,11 +73,17 @@ class AbstractMapperTest {
         String sql = abstractMapper.update(Arrays.asList("id", "name"), Arrays.asList("id"));
         assertEquals("UPDATE tenant_info SET id = ?,name = ? WHERE id = ?", sql);
     }
-    
+
     @Test
-    void testDelete() {
+    public void testDeleteSingleField() {
         String sql = abstractMapper.delete(Arrays.asList("id"));
-        assertEquals("DELETE FROM tenant_info WHERE id = ? ", sql);
+        assertEquals("DELETE FROM tenant_info WHERE id = ?", sql);
+    }
+
+    @Test
+    public void testDeleteMultiField() {
+        String sql = abstractMapper.delete(Arrays.asList("id", "name"));
+        assertEquals("DELETE FROM tenant_info WHERE id = ? AND name = ?", sql);
     }
     
     @Test
@@ -89,12 +101,12 @@ class AbstractMapperTest {
     @Test
     void testSelectAll() {
         String sql = abstractMapper.select(Arrays.asList("id", "name"), null);
-        assertEquals("SELECT id,name FROM tenant_info ", sql);
+        assertEquals("SELECT id,name FROM tenant_info", sql);
     }
     
     @Test
     void testCountAll() {
         String sql = abstractMapper.count(null);
-        assertEquals("SELECT COUNT(*) FROM tenant_info ", sql);
+        assertEquals("SELECT COUNT(*) FROM tenant_info", sql);
     }
 }

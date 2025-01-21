@@ -39,6 +39,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.List;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
@@ -55,14 +56,9 @@ public class ConfigHttpClientManager implements Closeable {
     
     private static final int CON_TIME_OUT_MILLIS = ParamUtil.getConnectTimeout();
     
-    private static final int READ_TIME_OUT_MILLIS = 3000;
+    private static final int READ_TIME_OUT_MILLIS = ParamUtil.getReadTimeout();
     
-    private static final NacosRestTemplate NACOS_REST_TEMPLATE;
-    
-    static {
-        NACOS_REST_TEMPLATE = HttpClientBeanHolder.getNacosRestTemplate(HTTP_CLIENT_FACTORY);
-        NACOS_REST_TEMPLATE.getInterceptors().add(new LimiterHttpClientRequestInterceptor());
-    }
+    private final LimiterHttpClientRequestInterceptor limiterHttpClientRequestInterceptor = new LimiterHttpClientRequestInterceptor();
     
     private static class ConfigHttpClientManagerInstance {
         
@@ -75,14 +71,14 @@ public class ConfigHttpClientManager implements Closeable {
     
     @Override
     public void shutdown() throws NacosException {
-        NAMING_LOGGER.warn("[ConfigHttpClientManager] Start destroying NacosRestTemplate");
+        NAMING_LOGGER.info("[ConfigHttpClientManager] Start destroying NacosRestTemplate");
         try {
             HttpClientBeanHolder.shutdownNacosSyncRest(HTTP_CLIENT_FACTORY.getClass().getName());
         } catch (Exception ex) {
             NAMING_LOGGER.error("[ConfigHttpClientManager] An exception occurred when the HTTP client was closed : {}",
                     ExceptionUtil.getStackTrace(ex));
         }
-        NAMING_LOGGER.warn("[ConfigHttpClientManager] Destruction of the end");
+        NAMING_LOGGER.info("[ConfigHttpClientManager] Completed destruction of NacosRestTemplate");
     }
     
     /**
@@ -101,7 +97,12 @@ public class ConfigHttpClientManager implements Closeable {
      * @return NacosRestTemplate
      */
     public NacosRestTemplate getNacosRestTemplate() {
-        return NACOS_REST_TEMPLATE;
+        NacosRestTemplate nacosRestTemplate = HttpClientBeanHolder.getNacosRestTemplate(HTTP_CLIENT_FACTORY);
+        List<HttpClientRequestInterceptor> interceptors = nacosRestTemplate.getInterceptors();
+        if (!interceptors.contains(limiterHttpClientRequestInterceptor)) {
+            interceptors.add(limiterHttpClientRequestInterceptor);
+        }
+        return nacosRestTemplate;
     }
     
     /**

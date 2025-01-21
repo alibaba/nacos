@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.controller;
 
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionInfo;
@@ -84,6 +85,14 @@ public class PermissionControllerTest {
         
         verify(nacosRoleService, times(1)).deletePermission(anyString(), anyString(), anyString());
         assertEquals(200, result.getCode());
+    }
+    
+    @Test
+    void testDuplicatePermission() {
+        when(nacosRoleService.isDuplicatePermission(anyString(), anyString(), anyString())).thenReturn(
+                Result.success(Boolean.TRUE));
+        Result<Boolean> result = permissionController.isDuplicatePermission("admin", "test", "test");
+        assertEquals(0, result.getCode());
     }
     
 }

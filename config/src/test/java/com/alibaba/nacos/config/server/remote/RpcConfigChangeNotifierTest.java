@@ -131,7 +131,7 @@ class RpcConfigChangeNotifierTest {
         //mock push tps passed
         Mockito.when(tpsControlManager.check(any(TpsCheckRequest.class))).thenReturn(new TpsCheckResponse(true, 200, "success"));
         
-        rpcConfigChangeNotifier.onEvent(new LocalDataChangeEvent(groupKey, true, betaIps));
+        rpcConfigChangeNotifier.onEvent(new LocalDataChangeEvent(groupKey));
         //wait rpc push executed.
         Thread.sleep(50L);
         //expect rpc push task run.

@@ -22,6 +22,7 @@ import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.ConfigServletInner;
+import com.alibaba.nacos.config.server.enums.ApiVersionEnum;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
@@ -29,6 +30,7 @@ import com.alibaba.nacos.config.server.service.ConfigDetailService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.core.auth.AuthFilter;
+import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -52,7 +54,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -90,6 +94,9 @@ class ConfigControllerV2Test {
     
     @Mock
     private AuthConfigs authConfigs;
+    
+    @Mock
+    private ControllerMethodsCache controllerMethodsCache;
     
     private ConfigControllerV2 configControllerV2;
     
@@ -130,12 +137,12 @@ class ConfigControllerV2Test {
             x.getArgument(1, HttpServletResponse.class).getWriter().print(JacksonUtils.toJson(stringResult));
             return null;
         }).when(inner).doGetConfig(any(HttpServletRequest.class), any(HttpServletResponse.class), eq(TEST_DATA_ID), eq(TEST_GROUP),
-                eq(TEST_NAMESPACE_ID), eq(TEST_TAG), eq(null), anyString(), eq(true));
+                eq(TEST_NAMESPACE_ID), eq(TEST_TAG), eq(null), anyString(), eq(ApiVersionEnum.V2));
         
         configControllerV2.getConfig(request, response, TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, TEST_TAG);
         
         verify(inner).doGetConfig(eq(request), eq(response), eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG),
-                eq(null), anyString(), eq(true));
+                eq(null), anyString(), eq(ApiVersionEnum.V2));
         JsonNode resNode = JacksonUtils.toObj(response.getContentAsString());
         Integer errCode = JacksonUtils.toObj(resNode.get("code").toString(), Integer.class);
         String actContent = JacksonUtils.toObj(resNode.get("data").toString(), String.class);
@@ -311,10 +318,14 @@ class ConfigControllerV2Test {
     @Test
     void testGetConfigAuthFilter() throws Exception {
         when(authConfigs.isAuthEnabled()).thenReturn(true);
-        
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CONFIG_CONTROLLER_V2_PATH + "/searchDetail")
-                .param("search", "accurate").param("dataId", "test").param("group", "test").param("appName", "").param("tenant", "")
-                .param("config_tags", "").param("pageNo", "1").param("pageSize", "10").param("config_detail", "server.port");
+        Method method = Arrays.stream(ConfigControllerV2.class.getMethods())
+                .filter(m -> m.getName().equals("searchConfigByDetails")).findFirst().get();
+        when(controllerMethodsCache.getMethod(any(HttpServletRequest.class))).thenReturn(method);
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(
+                        Constants.CONFIG_CONTROLLER_V2_PATH + "/searchDetail").param("search", "accurate")
+                .param("dataId", "test").param("group", "test").param("appName", "").param("tenant", "")
+                .param("config_tags", "").param("pageNo", "1").param("pageSize", "10")
+                .param("config_detail", "server.port");
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         
         assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());

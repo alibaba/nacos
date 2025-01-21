@@ -28,16 +28,16 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
+import com.alibaba.nacos.client.address.ServerListChangeEvent;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
-import com.alibaba.nacos.client.naming.core.ServerListManager;
-import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
+import com.alibaba.nacos.client.naming.core.NamingServerListManager;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
-import com.alibaba.nacos.client.naming.utils.NamingHttpUtil;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.common.http.HttpRestResult;
+import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
@@ -72,6 +72,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     private static final int DEFAULT_SERVER_PORT = 8848;
     
+    private static final String MODULE_NAME = "Naming";
+    
     private static final String IP_PARAM = "ip";
     
     private static final String PORT_PARAM = "port";
@@ -100,13 +102,13 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     private final String namespaceId;
     
-    private final ServerListManager serverListManager;
+    private final NamingServerListManager serverListManager;
     
     private final int maxRetry;
     
     private int serverPort = DEFAULT_SERVER_PORT;
     
-    public NamingHttpClientProxy(String namespaceId, SecurityProxy securityProxy, ServerListManager serverListManager,
+    public NamingHttpClientProxy(String namespaceId, SecurityProxy securityProxy, NamingServerListManager serverListManager,
             NacosClientProperties properties) {
         super(securityProxy);
         this.serverListManager = serverListManager;
@@ -117,13 +119,13 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     }
     
     @Override
-    public void onEvent(ServerListChangedEvent event) {
+    public void onEvent(ServerListChangeEvent event) {
         // do nothing in http client
     }
     
     @Override
     public Class<? extends Event> subscribeType() {
-        return ServerListChangedEvent.class;
+        return ServerListChangeEvent.class;
     }
     
     @Override
@@ -356,7 +358,6 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         }
         
         NacosException exception = new NacosException();
-        
         if (serverListManager.isDomain()) {
             String nacosDomain = serverListManager.getNacosDomain();
             for (int i = 0; i < maxRetry; i++) {
@@ -414,7 +415,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         String group = params.get(CommonParams.GROUP_NAME);
         String serviceName = params.get(CommonParams.SERVICE_NAME);
         params.putAll(getSecurityHeaders(namespace, group, serviceName));
-        Header header = NamingHttpUtil.builderHeader();
+        Header header = HttpUtils.builderHeader(MODULE_NAME);
         
         String url;
         if (curServer.startsWith(HTTPS_PREFIX) || curServer.startsWith(HTTP_PREFIX)) {
@@ -439,6 +440,12 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
             if (HttpStatus.SC_NOT_MODIFIED == restResult.getCode()) {
                 return StringUtils.EMPTY;
             }
+            
+            // If the 403 login operation is triggered, refresh the accessToken of the client
+            if (HttpStatus.SC_FORBIDDEN == restResult.getCode()) {
+                reLogin();
+            }
+
             throw new NacosException(restResult.getCode(), restResult.getMessage());
         } catch (NacosException e) {
             NAMING_LOGGER.error("[NA] failed to request", e);

@@ -56,6 +56,13 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     private static boolean isManageCapacity = true;
     
     /**
+     * gray compatible model.
+     */
+    private static boolean grayCompatibleModel = true;
+    
+    public static final ThreadLocal<Boolean> GRAY_MIGRATE_FLAG = ThreadLocal.withInitial(() -> false);
+    
+    /**
      * Whether to enable the limit check function of capacity management, including the upper limit of configuration
      * number, configuration content size limit, etc.
      */
@@ -102,12 +109,12 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     private static int correctUsageDelay = 10 * 60;
     
     private static boolean dumpChangeOn = true;
-
+    
     /**
      * The number of days to retain the configuration history, the default is 30 days.
      */
     private static int configRententionDays = 30;
-
+    
     /**
      * dumpChangeWorkerInterval, default 30 seconds.
      */
@@ -233,6 +240,19 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
         PropertyUtil.defaultMaxAggrCount = defaultMaxAggrCount;
     }
     
+    /**
+     * control whether persist beta and tag to old model.
+     *
+     * @return
+     */
+    public static boolean isGrayCompatibleModel() {
+        return grayCompatibleModel;
+    }
+    
+    public static void setGrayCompatibleModel(boolean grayCompatibleModel) {
+        PropertyUtil.grayCompatibleModel = grayCompatibleModel;
+    }
+    
     public static int getDefaultMaxAggrSize() {
         return defaultMaxAggrSize;
     }
@@ -248,13 +268,13 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     public static void setCorrectUsageDelay(int correctUsageDelay) {
         PropertyUtil.correctUsageDelay = correctUsageDelay;
     }
-
+    
     public static int getConfigRententionDays() {
         return configRententionDays;
     }
-
+    
     private void setConfigRententionDays() {
-        String val =  getProperty(PropertiesConstant.CONFIG_RENTENTION_DAYS);
+        String val = getProperty(PropertiesConstant.CONFIG_RENTENTION_DAYS);
         if (null != val) {
             int tmp = 0;
             try {
@@ -267,7 +287,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
             }
         }
     }
-
+    
     public static boolean isStandaloneMode() {
         return EnvUtil.getStandaloneMode();
     }
@@ -305,6 +325,8 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
             setDumpChangeOn(getBoolean(PropertiesConstant.DUMP_CHANGE_ON, dumpChangeOn));
             setDumpChangeWorkerInterval(
                     getLong(PropertiesConstant.DUMP_CHANGE_WORKER_INTERVAL, dumpChangeWorkerInterval));
+            setGrayCompatibleModel(getBoolean(PropertiesConstant.GRAY_CAPATIBEL_MODEL, grayCompatibleModel));
+            
         } catch (Exception e) {
             LOGGER.error("read application.properties failed", e);
             throw e;

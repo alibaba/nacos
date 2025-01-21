@@ -100,7 +100,7 @@ public class HistoryController {
             @RequestParam("nid") Long nid) throws AccessException {
         return historyService.getConfigHistoryInfo(dataId, group, tenant, nid);
     }
-    
+
     /**
      * Query previous config history information. notes:
      *

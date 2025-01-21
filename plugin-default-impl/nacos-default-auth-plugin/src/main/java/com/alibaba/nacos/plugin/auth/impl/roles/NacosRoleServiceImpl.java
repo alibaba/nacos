@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.roles;
 
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
@@ -41,6 +42,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
@@ -120,8 +122,7 @@ public class NacosRoleServiceImpl {
      * @return true if granted, false otherwise
      */
     public boolean hasPermission(NacosUser nacosUser, Permission permission) {
-        //update password
-        if (AuthConstants.UPDATE_PASSWORD_ENTRY_POINT.equals(permission.getResource().getName())) {
+        if (isUpdatePasswordPermission(permission)) {
             return true;
         }
         
@@ -159,6 +160,14 @@ public class NacosRoleServiceImpl {
             }
         }
         return false;
+    }
+    
+    /**
+     * If API is update user password, don't do permission check, because there is permission check in API logic.
+     */
+    private boolean isUpdatePasswordPermission(Permission permission) {
+        Properties properties = permission.getResource().getProperties();
+        return null != properties && properties.contains(AuthConstants.UPDATE_PASSWORD_ENTRY_POINT);
     }
     
     public List<RoleInfo> getRoles(String username) {
@@ -227,6 +236,12 @@ public class NacosRoleServiceImpl {
             throw new IllegalArgumentException(
                     "role '" + AuthConstants.GLOBAL_ADMIN_ROLE + "' is not permitted to create!");
         }
+
+        if (isUserBoundToRole(role, username)) {
+            throw new IllegalArgumentException(
+                    "user '" + username + "' already bound to the role '" + role + "'!");
+        }
+
         rolePersistService.addRole(role, username);
         roleSet.add(role);
     }
@@ -361,6 +376,47 @@ public class NacosRoleServiceImpl {
                 .anyMatch(roleInfo -> AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole()));
         authConfigs.setHasGlobalAdminRole(hasGlobalAdminRole);
         return hasGlobalAdminRole;
+    }
+
+    /**
+     * judge whether the permission is duplicate.
+     *
+     * @param role role name
+     * @param resource resource
+     * @param action action
+     * @return true if duplicate, false otherwise
+     */
+    public Result<Boolean> isDuplicatePermission(String role, String resource, String action) {
+        List<PermissionInfo> permissionInfos = getPermissions(role);
+        if (CollectionUtils.isEmpty(permissionInfos)) {
+            return Result.success(Boolean.FALSE);
+        }
+        for (PermissionInfo permissionInfo : permissionInfos) {
+            boolean resourceMatch = StringUtils.equals(resource, permissionInfo.getResource());
+            boolean actionMatch = StringUtils.equals(action, permissionInfo.getAction()) || "rw".equals(permissionInfo.getAction());
+            if (resourceMatch && actionMatch) {
+                return Result.success(Boolean.TRUE);
+            }
+        }
+        return Result.success(Boolean.FALSE);
+    }
+
+    /**
+     * judge whether the user is already bound to the role.
+     *
+     * @param role     role name
+     * @param username user name
+     * @return true if the user is already bound to the role.
+     */
+    public boolean isUserBoundToRole(String role, String username) {
+        Page<RoleInfo> roleInfoPage = rolePersistService.getRolesByUserNameAndRoleName(username,
+                role, DEFAULT_PAGE_NO, 1);
+        if (roleInfoPage == null) {
+            return false;
+        }
+        List<RoleInfo> roleInfos = roleInfoPage.getPageItems();
+        return CollectionUtils.isNotEmpty(roleInfos) && roleInfos.stream()
+                .anyMatch(roleInfo -> role.equals(roleInfo.getRole()));
     }
     
 }

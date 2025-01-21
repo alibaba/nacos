@@ -22,7 +22,6 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.configuration.ConfigCommonConfig;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
@@ -39,7 +38,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -86,8 +84,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
      *
      * @param groupKey groupKey
      */
-    public void configDataChanged(String groupKey, String dataId, String group, String tenant, boolean isBeta,
-            List<String> betaIps, String tag) {
+    public void configDataChanged(String groupKey, String dataId, String group, String tenant) {
         
         Set<String> listeners = configChangeListenContext.getListeners(groupKey);
         if (CollectionUtils.isEmpty(listeners)) {
@@ -102,12 +99,6 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
             
             ConnectionMeta metaInfo = connection.getMetaInfo();
             String clientIp = metaInfo.getClientIp();
-            String clientTag = metaInfo.getTag();
-            
-            //tag check
-            if (StringUtils.isNotBlank(tag) && !tag.equals(clientTag)) {
-                continue;
-            }
             
             ConfigChangeNotifyRequest notifyRequest = ConfigChangeNotifyRequest.build(dataId, group, tenant);
             
@@ -122,15 +113,13 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     @Override
     public void onEvent(LocalDataChangeEvent event) {
         String groupKey = event.groupKey;
-        boolean isBeta = event.isBeta;
-        List<String> betaIps = event.betaIps;
+        
         String[] strings = GroupKey.parseKey(groupKey);
         String dataId = strings[0];
         String group = strings[1];
         String tenant = strings.length > 2 ? strings[2] : "";
-        String tag = event.tag;
         
-        configDataChanged(groupKey, dataId, group, tenant, isBeta, betaIps, tag);
+        configDataChanged(groupKey, dataId, group, tenant);
         
     }
     

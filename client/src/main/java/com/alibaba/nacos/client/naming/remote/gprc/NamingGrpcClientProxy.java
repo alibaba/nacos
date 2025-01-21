@@ -46,7 +46,7 @@ import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
-import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
+import com.alibaba.nacos.client.address.ServerListChangeEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.NamingGrpcRedoService;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.BatchInstanceRedoData;
@@ -119,13 +119,13 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     }
     
     @Override
-    public void onEvent(ServerListChangedEvent event) {
+    public void onEvent(ServerListChangeEvent event) {
         rpcClient.onServerListChange();
     }
     
     @Override
     public Class<? extends Event> subscribeType() {
-        return ServerListChangedEvent.class;
+        return ServerListChangeEvent.class;
     }
     
     @Override
@@ -446,6 +446,10 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                     getSecurityHeaders(request.getNamespace(), request.getGroupName(), request.getServiceName()));
             response = requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
             if (ResponseCode.SUCCESS.getCode() != response.getResultCode()) {
+                // If the 403 login operation is triggered, refresh the accessToken of the client
+                if (NacosException.NO_RIGHT == response.getErrorCode()) {
+                    reLogin();
+                }
                 throw new NacosException(response.getErrorCode(), response.getMessage());
             }
             if (responseClass.isAssignableFrom(response.getClass())) {
