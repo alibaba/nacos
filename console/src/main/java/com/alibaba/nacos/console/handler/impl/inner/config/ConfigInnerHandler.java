@@ -41,10 +41,12 @@ import com.alibaba.nacos.config.server.service.ConfigDetailService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
@@ -106,10 +108,13 @@ public class ConfigInnerHandler implements ConfigHandler {
     
     private ConfigInfoBetaPersistService configInfoBetaPersistService;
     
+    private ConfigInfoGrayPersistService configInfoGrayPersistService;
+    
     public ConfigInnerHandler(ConfigServletInner inner, ConfigOperationService configOperationService,
             ConfigInfoPersistService configInfoPersistService, ConfigDetailService configDetailService,
             ConfigSubService configSubService, NamespacePersistService namespacePersistService,
-            ConfigInfoBetaPersistService configInfoBetaPersistService) {
+            ConfigInfoBetaPersistService configInfoBetaPersistService,
+            ConfigInfoGrayPersistService configInfoGrayPersistService) {
         this.inner = inner;
         this.configOperationService = configOperationService;
         this.configInfoPersistService = configInfoPersistService;
@@ -117,6 +122,7 @@ public class ConfigInnerHandler implements ConfigHandler {
         this.configSubService = configSubService;
         this.namespacePersistService = namespacePersistService;
         this.configInfoBetaPersistService = configInfoBetaPersistService;
+        this.configInfoGrayPersistService = configInfoGrayPersistService;
     }
     
     @Override
@@ -592,15 +598,19 @@ public class ConfigInnerHandler implements ConfigHandler {
     
     @Override
     public boolean removeBetaConfig(String dataId, String group, String namespaceId, String remoteIp,
-            String requestIpApp) {
+            String requestIpApp, String srcUser) {
         try {
-            configInfoBetaPersistService.removeConfigInfo4Beta(dataId, group, namespaceId);
+            configInfoGrayPersistService.removeConfigInfoGray(dataId, group, namespaceId, BetaGrayRule.TYPE_BETA,
+                    remoteIp, srcUser);
         } catch (Throwable e) {
             LOGGER.error("remove beta data error", e);
             return false;
         }
         ConfigTraceService.logPersistenceEvent(dataId, group, namespaceId, requestIpApp, System.currentTimeMillis(),
                 remoteIp, ConfigTraceService.PERSISTENCE_EVENT_BETA, ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
+        if (PropertyUtil.isGrayCompatibleModel()) {
+            configInfoBetaPersistService.removeConfigInfo4Beta(dataId, group, namespaceId);
+        }
         ConfigChangePublisher.notifyConfigChange(
                 new ConfigDataChangeEvent(dataId, group, namespaceId, BetaGrayRule.TYPE_BETA,
                         System.currentTimeMillis()));

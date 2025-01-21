@@ -153,8 +153,8 @@ public class ConfigProxy {
      * Remove beta configuration based on dataId, group, and namespaceId.
      */
     public boolean removeBetaConfig(String dataId, String group, String namespaceId, String remoteIp,
-            String requestIpApp) throws NacosException {
-        return configHandler.removeBetaConfig(dataId, group, namespaceId, remoteIp, requestIpApp);
+            String requestIpApp, String srcUser) throws NacosException {
+        return configHandler.removeBetaConfig(dataId, group, namespaceId, remoteIp, requestIpApp, srcUser);
     }
     
     /**
