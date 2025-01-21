@@ -216,7 +216,8 @@ public interface ConfigHandler {
      * @param requestIpApp the name of the application making the request
      * @return true if the beta configuration is successfully removed
      */
-    boolean removeBetaConfig(String dataId, String group, String namespaceId, String remoteIp, String requestIpApp);
+    boolean removeBetaConfig(String dataId, String group, String namespaceId, String remoteIp, String requestIpApp,
+            String srcUser);
     
     /**
      * Query beta configuration based on dataId, group, and namespaceId.

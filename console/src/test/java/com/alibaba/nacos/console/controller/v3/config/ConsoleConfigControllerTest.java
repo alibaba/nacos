@@ -435,8 +435,8 @@ public class ConsoleConfigControllerTest {
         String dataId = "testDataId";
         String group = "testGroup";
         String namespaceId = "testNamespaceId";
-        when(configProxy.removeBetaConfig(anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(
-                true);
+        when(configProxy.removeBetaConfig(anyString(), anyString(), anyString(), anyString(), anyString(),
+                anyString())).thenReturn(true);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.delete("/v3/console/cs/config/beta")
                 .param("dataId", dataId).param("groupName", group).param("namespaceId", namespaceId);

@@ -411,7 +411,8 @@ public class ConsoleConfigController {
         String dataId = configForm.getDataId();
         String groupName = configForm.getGroupName();
         String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
-        boolean success = configProxy.removeBetaConfig(dataId, groupName, namespaceId, remoteIp, requestIpApp);
+        String srcUser = RequestUtil.getSrcUserName(httpServletRequest);
+        boolean success = configProxy.removeBetaConfig(dataId, groupName, namespaceId, remoteIp, requestIpApp, srcUser);
         if (!success) {
             return Result.failure(HttpStatus.INTERNAL_SERVER_ERROR.value(),
                     HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(), false);
