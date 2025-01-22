@@ -65,7 +65,7 @@ public class ConfigProxy {
     /**
      * Get the specific configuration information.
      */
-    public ConfigAllInfo getConfigDetail(String dataId, String group, String namespaceId) throws NacosException {
+    public ConfigAllInfo getConfigDetail(String dataId, String group, String namespaceId) throws Exception {
         return configHandler.getConfigDetail(dataId, group, namespaceId);
     }
     

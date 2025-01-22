@@ -69,7 +69,7 @@ public interface ConfigHandler {
      * @return A ConfigAllInfo object containing all details of the specified configuration.
      * @throws NacosException If an error related to Nacos configuration occurs.
      */
-    ConfigAllInfo getConfigDetail(String dataId, String group, String namespaceId) throws NacosException;
+    ConfigAllInfo getConfigDetail(String dataId, String group, String namespaceId) throws Exception;
     
     /**
      * Publishes a new configuration or updates an existing configuration.
