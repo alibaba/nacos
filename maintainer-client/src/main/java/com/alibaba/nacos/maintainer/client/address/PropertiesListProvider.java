@@ -68,12 +68,6 @@ public class PropertiesListProvider extends AbstractServerListProvider {
     }
     
     @Override
-    public String getServerName() {
-        return FIXED_NAME + "-" + (StringUtils.isNotBlank(namespace) ? (StringUtils.trim(namespace) + "-")
-                : "") + ParamUtil.getNameSuffixByServerIps(serverList.toArray(new String[0]));
-    }
-    
-    @Override
     public int getOrder() {
         return PropertyKeyConstants.ADDRESS_SERVER_LIST_PROVIDER_ORDER;
     }

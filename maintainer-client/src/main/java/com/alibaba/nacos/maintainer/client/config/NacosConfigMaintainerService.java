@@ -16,26 +16,28 @@
 
 package com.alibaba.nacos.maintainer.client.config;
 
+import com.alibaba.nacos.maintainer.client.exception.NacosException;
 import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
 import com.alibaba.nacos.maintainer.client.remote.HttpRestResult;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * Configuration management.
  *
  * @author Nacos
  */
-@Service
-public class ConfigServiceImpl implements ConfigService {
+public class NacosConfigMaintainerService implements ConfigMaintainerService {
     
     private static final String CONFIG_PATH_ADMIN_PATH = "/v3/admin/cs/config";
     
-    @Autowired
-    private ClientHttpProxy clientHttpProxy;
+    private final ClientHttpProxy clientHttpProxy;
+    
+    public NacosConfigMaintainerService(Properties properties) throws NacosException {
+        this.clientHttpProxy = new ClientHttpProxy(properties);
+    }
     
     @Override
     public String getConfig(String dataId, String groupName, String namespaceId) throws Exception {

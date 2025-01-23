@@ -18,6 +18,7 @@ package com.alibaba.nacos.console.handler.impl.remote.config;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -27,12 +28,13 @@ import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.console.handler.config.ConfigHandler;
-import com.alibaba.nacos.maintainer.client.config.ConfigService;
-import com.alibaba.nacos.maintainer.client.utils.JacksonUtils;
+import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
+import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerService;
 import com.alibaba.nacos.persistence.model.Page;
 import jakarta.servlet.ServletException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -47,15 +49,16 @@ import java.util.Map;
  * @author Nacos
  */
 @Service
-//@EnabledRemoteHandler
+@EnabledRemoteHandler
 public class ConfigRemoteHandler implements ConfigHandler {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigRemoteHandler.class);
     
-    private final ConfigService configService;
+    @Autowired
+    private  ConfigMaintainerService configMaintainerService;
     
-    public ConfigRemoteHandler(ConfigService configService) {
-        this.configService = configService;
+    public ConfigRemoteHandler() {
+        LOGGER.info("ConfigRemoteHandler init");
     }
     
     @Override
@@ -66,7 +69,7 @@ public class ConfigRemoteHandler implements ConfigHandler {
     
     @Override
     public ConfigAllInfo getConfigDetail(String dataId, String group, String namespaceId) throws Exception {
-        return JacksonUtils.toObj(configService.getConfig(dataId, group, namespaceId), ConfigAllInfo.class);
+        return JacksonUtils.toObj(configMaintainerService.getConfig(dataId, group, namespaceId), ConfigAllInfo.class);
     }
     
     @Override

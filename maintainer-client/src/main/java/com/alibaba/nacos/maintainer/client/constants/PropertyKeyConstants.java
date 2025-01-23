@@ -160,4 +160,6 @@ public class PropertyKeyConstants {
     
     public static final String NULL = "";
     
+    public static final String NACOS_ADMIN_API_CONTEXT_PATH = "nacos.admin.api.context.path";
+    
 }

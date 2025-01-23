@@ -52,8 +52,6 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
     
     private NacosRestTemplate nacosRestTemplate;
     
-    private static final String CUSTOM_NAME = "custom";
-    
     private final long refreshServerListInternal = TimeUnit.SECONDS.toMillis(30);
     
     private final int initServerListRetryTimes = 5;
@@ -64,7 +62,7 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
     
     private String endpoint;
     
-    private int endpointPort = 8080;
+    private int endpointPort = 8848;
     
     private String endpointContextPath;
     
@@ -74,7 +72,7 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
     
     private String addressServerUrl;
     
-    private String moduleName = "default";
+    private static final String MODULE_NAME = "maintainSdk";
     
     @Override
     public void init(final NacosClientProperties properties, final NacosRestTemplate nacosRestTemplate)
@@ -86,21 +84,12 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
         initEndpointContextPath(properties);
         initServerListName(properties);
         initAddressServerUrl(properties);
-        initModuleName(properties);
         startRefreshServerListTask(properties);
     }
     
     @Override
     public List<String> getServerList() {
         return serversFromEndpoint;
-    }
-    
-    @Override
-    public String getServerName() {
-        String contextPathTmp =
-                StringUtils.isNotBlank(this.endpointContextPath) ? this.endpointContextPath : this.contextPath;
-        return CUSTOM_NAME + "-" + String.join("_", endpoint, String.valueOf(endpointPort), contextPathTmp,
-                serverListName) + (StringUtils.isNotBlank(namespace) ? ("_" + StringUtils.trim(namespace)) : "");
     }
     
     @Override
@@ -186,9 +175,9 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
     private List<String> getServerListFromEndpoint() {
         try {
             HttpRestResult<String> httpResult = nacosRestTemplate.get(addressServerUrl,
-                    HttpUtils.builderHeader(moduleName), Query.EMPTY, String.class);
+                    HttpUtils.builderHeader(MODULE_NAME), Query.EMPTY, String.class);
             
-            if (httpResult.getCode().equals(0)) {
+            if (httpResult.getCode().equals(200)) {
                 LOGGER.error("[check-serverlist] error. addressServerUrl: {}, code: {}", addressServerUrl,
                         httpResult.getCode());
                 return null;
@@ -252,24 +241,12 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
         StringBuilder addressServerUrlTem = new StringBuilder(
                 String.format("http://%s:%d%s/%s", this.endpoint, this.endpointPort, contextPathTmp,
                         this.serverListName));
-        boolean hasQueryString = false;
-        if (StringUtils.isNotBlank(namespace)) {
-            addressServerUrlTem.append("?namespace=").append(namespace);
-            hasQueryString = true;
-        }
         if (properties.containsKey(PropertyKeyConstants.ENDPOINT_QUERY_PARAMS)) {
-            addressServerUrlTem.append(hasQueryString ? "&" : "?");
+            addressServerUrlTem.append("?");
             addressServerUrlTem.append(properties.getProperty(PropertyKeyConstants.ENDPOINT_QUERY_PARAMS));
         }
         this.addressServerUrl = addressServerUrlTem.toString();
         LOGGER.info("address server url = {}", this.addressServerUrl);
-    }
-    
-    private void initModuleName(NacosClientProperties properties) {
-        String moduleNameTmp = properties.getProperty(PropertyKeyConstants.CLIENT_MODULE_TYPE);
-        if (StringUtils.isNotBlank(moduleNameTmp)) {
-            this.moduleName = moduleNameTmp;
-        }
     }
     
     @Override

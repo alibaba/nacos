@@ -10,8 +10,8 @@
 	<groupId>com.alibaba.nacos</groupId>
 	<artifactId>maintainer-client</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>maintainer-client</name>
-	<description>maintainer-client</description>
+	<name>nacos-maintainer-client</name>
+	<description>nacos-maintainer-client</description>
 	<url/>
 	<licenses>
 		<license/>

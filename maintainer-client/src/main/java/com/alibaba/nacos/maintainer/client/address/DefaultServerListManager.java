@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.maintainer.client.address;
 
-import com.alibaba.nacos.maintainer.client.constants.PropertyKeyConstants;
 import com.alibaba.nacos.maintainer.client.env.NacosClientProperties;
 import com.alibaba.nacos.maintainer.client.exception.NacosException;
 import com.alibaba.nacos.maintainer.client.remote.HttpClientManager;
@@ -42,28 +41,12 @@ public class DefaultServerListManager extends AbstractServerListManager {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultServerListManager.class);
     
-    /**
-     * The name of the different environment.
-     */
-    private String name;
-    
-    private String tenant = "";
-    
     private volatile String currentServerAddr;
     
     private Iterator<String> iterator;
     
     public DefaultServerListManager(NacosClientProperties properties) {
         super(properties);
-        String namespace = properties.getProperty(PropertyKeyConstants.NAMESPACE);
-        if (StringUtils.isNotBlank(namespace)) {
-            this.tenant = namespace;
-        }
-    }
-    
-    @Override
-    protected String getModuleName() {
-        return "Config";
     }
     
     @Override
@@ -74,28 +57,14 @@ public class DefaultServerListManager extends AbstractServerListManager {
     @Override
     public void start() throws NacosException {
         super.start();
-        this.name = initServerName(properties);
         iterator = iterator();
         currentServerAddr = iterator.next();
-    }
-    
-    private String initServerName(NacosClientProperties properties) {
-        String serverName;
-        //1.user define server name.
-        if (properties.containsKey(PropertyKeyConstants.SERVER_NAME)) {
-            serverName = properties.getProperty(PropertyKeyConstants.SERVER_NAME);
-        } else {
-            serverName = getServerName();
-        }
-        serverName = serverName.replaceAll("\\/", "_");
-        serverName = serverName.replaceAll("\\:", "_");
-        return serverName;
     }
     
     Iterator<String> iterator() {
         List<String> serverList = getServerList();
         if (serverList.isEmpty()) {
-            LOGGER.error("[{}] [iterator-serverlist] No server address defined!", name);
+            LOGGER.error("[iterator-serverlist] No server address defined!");
         }
         return new ServerAddressIterator(serverList);
     }
@@ -129,7 +98,7 @@ public class DefaultServerListManager extends AbstractServerListManager {
     
     @Override
     public String toString() {
-        return "ServerManager-" + name + "-" + getUrlString();
+        return "ServerManager-"  + "-" + getUrlString();
     }
     
     public boolean contain(String ip) {
@@ -147,14 +116,6 @@ public class DefaultServerListManager extends AbstractServerListManager {
     
     public Iterator<String> getIterator() {
         return iterator;
-    }
-    
-    public String getName() {
-        return name;
-    }
-    
-    public String getTenant() {
-        return tenant;
     }
     
     /**

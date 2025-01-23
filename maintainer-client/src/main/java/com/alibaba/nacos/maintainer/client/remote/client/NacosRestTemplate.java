@@ -22,6 +22,7 @@ import com.alibaba.nacos.maintainer.client.remote.HttpClientConfig;
 import com.alibaba.nacos.maintainer.client.remote.HttpRestResult;
 import com.alibaba.nacos.maintainer.client.remote.HttpUtils;
 import com.alibaba.nacos.maintainer.client.remote.client.handler.ResponseHandler;
+import com.alibaba.nacos.maintainer.client.remote.client.handler.ResponseHandlerManager;
 import com.alibaba.nacos.maintainer.client.remote.client.request.DefaultHttpClientRequest;
 import com.alibaba.nacos.maintainer.client.remote.client.request.HttpClientRequest;
 import com.alibaba.nacos.maintainer.client.remote.client.request.JdkHttpClientRequest;
@@ -29,14 +30,11 @@ import com.alibaba.nacos.maintainer.client.remote.client.response.HttpClientResp
 import com.alibaba.nacos.maintainer.client.remote.param.Header;
 import com.alibaba.nacos.maintainer.client.remote.param.MediaType;
 import com.alibaba.nacos.maintainer.client.remote.param.Query;
-import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -51,8 +49,6 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosRestTemplate.class);
     
     private final HttpClientRequest requestClient;
-    
-    private final List<HttpClientRequestInterceptor> interceptors = new ArrayList<>();
     
     public NacosRestTemplate(HttpClientRequest requestClient) {
         super();
@@ -450,27 +446,6 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
         return execute(url, httpMethod, requestHttpEntity, responseType);
     }
     
-    /**
-     * Set the request interceptors that this accessor should use.
-     *
-     * @param interceptors {@link HttpClientRequestInterceptor}
-     */
-    public void setInterceptors(List<HttpClientRequestInterceptor> interceptors) {
-        if (this.interceptors != interceptors) {
-            this.interceptors.clear();
-            this.interceptors.addAll(interceptors);
-        }
-    }
-    
-    /**
-     * Return the request interceptors that this accessor uses.
-     *
-     * <p>The returned {@link List} is active and may get appended to.
-     */
-    public List<HttpClientRequestInterceptor> getInterceptors() {
-        return interceptors;
-    }
-    
     @SuppressWarnings("unchecked")
     private <T> HttpRestResult<T> execute(String url, String httpMethod, RequestHttpEntity requestEntity,
             Type responseType) throws Exception {
@@ -478,8 +453,7 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("HTTP method: {}, url: {}, body: {}", httpMethod, uri, requestEntity.getBody());
         }
-        
-        ResponseHandler<T> responseHandler = super.selectResponseHandler(responseType);
+        ResponseHandler responseHandler = ResponseHandlerManager.getInstance().selectResponseHandler(responseType);
         HttpClientResponse response = null;
         try {
             response = this.requestClient().execute(uri, httpMethod, requestEntity);
@@ -492,12 +466,6 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
     }
     
     private HttpClientRequest requestClient() {
-        if (CollectionUtils.isNotEmpty(interceptors)) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Execute via interceptors :{}", interceptors);
-            }
-            return new InterceptingHttpClientRequest(requestClient, interceptors.iterator());
-        }
         return requestClient;
     }
     

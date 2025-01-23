@@ -21,7 +21,7 @@ package com.alibaba.nacos.maintainer.client.config;
  *
  * @author Nacos
  */
-public interface ConfigService {
+public interface ConfigMaintainerService {
     
     String getConfig(String namespaceId, String groupName, String dataId) throws Exception;
 }

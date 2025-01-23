@@ -25,7 +25,7 @@ import com.alibaba.nacos.maintainer.client.utils.JacksonUtils;
 import java.lang.reflect.Type;
 
 /**
- * RestResult response handler, Mainly converter response type as {@link Result} type.
+ * RestResult response handler.
  *
  * @author Nacos
  */

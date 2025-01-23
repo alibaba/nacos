@@ -46,22 +46,6 @@ public interface ServerListProvider extends Closeable {
     List<String> getServerList();
     
     /**
-     * Get server name.
-     * @return server name
-     */
-    default String getServerName() {
-        return "";
-    }
-    
-    /**
-     * Get namespace.
-     * @return namespace
-     */
-    default String getNamespace() {
-        return "";
-    }
-    
-    /**
      * Get context path.
      * @return context path
      */
@@ -97,5 +81,4 @@ public interface ServerListProvider extends Closeable {
     default String getAddressSource() {
         return "";
     }
-    
 }

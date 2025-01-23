@@ -16,20 +16,17 @@
 
 package com.alibaba.nacos.maintainer.client.address;
 
-import com.alibaba.nacos.maintainer.client.constants.PropertyKeyConstants;
 import com.alibaba.nacos.maintainer.client.env.NacosClientProperties;
 import com.alibaba.nacos.maintainer.client.exception.NacosException;
 import com.alibaba.nacos.maintainer.client.lifecycle.Closeable;
 import com.alibaba.nacos.maintainer.client.remote.client.NacosRestTemplate;
 import com.alibaba.nacos.maintainer.client.spi.NacosServiceLoader;
 import com.alibaba.nacos.maintainer.client.utils.JustForTest;
-import com.alibaba.nacos.maintainer.client.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Server list Manager.
@@ -45,17 +42,7 @@ public abstract class AbstractServerListManager implements ServerListManager, Cl
     protected NacosClientProperties properties;
     
     public AbstractServerListManager(NacosClientProperties properties) {
-        this(properties, null);
-    }
-    
-    public AbstractServerListManager(NacosClientProperties properties, String namespace) {
-        // To avoid set operation affect the original properties.
-        NacosClientProperties tmpProperties = properties.derive();
-        if (StringUtils.isNotBlank(namespace)) {
-            tmpProperties.setProperty(PropertyKeyConstants.NAMESPACE, namespace);
-        }
-        tmpProperties.setProperty(PropertyKeyConstants.CLIENT_MODULE_TYPE, getModuleName());
-        this.properties = tmpProperties;
+        this.properties = properties;
     }
     
     @Override
@@ -82,7 +69,7 @@ public abstract class AbstractServerListManager implements ServerListManager, Cl
     public void start() throws NacosException {
         Collection<ServerListProvider> serverListProviders = NacosServiceLoader.load(ServerListProvider.class);
         Collection<ServerListProvider> sorted = serverListProviders.stream()
-                .sorted((a, b) -> b.getOrder() - a.getOrder()).collect(Collectors.toList());
+                .sorted((a, b) -> b.getOrder() - a.getOrder()).toList();
         for (ServerListProvider each : sorted) {
             boolean matchResult = each.match(properties);
             LOGGER.info("Load and match ServerListProvider {}, match result: {}", each.getClass().getCanonicalName(),
@@ -100,16 +87,8 @@ public abstract class AbstractServerListManager implements ServerListManager, Cl
         this.serverListProvider.init(properties, getNacosRestTemplate());
     }
     
-    public String getServerName() {
-        return getModuleName() + "-" + serverListProvider.getServerName();
-    }
-    
     public String getContextPath() {
         return serverListProvider.getContextPath();
-    }
-    
-    public String getNamespace() {
-        return serverListProvider.getNamespace();
     }
     
     public String getAddressSource() {
@@ -119,13 +98,6 @@ public abstract class AbstractServerListManager implements ServerListManager, Cl
     public boolean isFixed() {
         return serverListProvider.isFixed();
     }
-    
-    /**
-     * get module name.
-     *
-     * @return module name
-     */
-    protected abstract String getModuleName();
     
     /**
      * get nacos rest template.

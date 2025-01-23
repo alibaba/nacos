@@ -21,6 +21,7 @@ import com.alibaba.nacos.maintainer.client.model.RequestHttpEntity;
 import com.alibaba.nacos.maintainer.client.remote.Callback;
 import com.alibaba.nacos.maintainer.client.remote.HttpUtils;
 import com.alibaba.nacos.maintainer.client.remote.client.handler.ResponseHandler;
+import com.alibaba.nacos.maintainer.client.remote.client.handler.ResponseHandlerManager;
 import com.alibaba.nacos.maintainer.client.remote.client.request.AsyncHttpClientRequest;
 import com.alibaba.nacos.maintainer.client.remote.client.response.HttpClientResponse;
 import com.alibaba.nacos.maintainer.client.remote.param.Header;
@@ -36,7 +37,7 @@ import java.util.Map;
 /**
  * Nacos async rest template.
  *
- * @author mai.jh
+ * @author Nacos
  * @see AsyncHttpClientRequest
  * @see HttpClientResponse
  */
@@ -363,7 +364,7 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("HTTP method: {}, url: {}, body: {}", httpMethod, uri, requestEntity.getBody());
             }
-            ResponseHandler<T> responseHandler = super.selectResponseHandler(type);
+            ResponseHandler responseHandler = ResponseHandlerManager.getInstance().selectResponseHandler(type);
             clientRequest.execute(uri, httpMethod, requestEntity, responseHandler, callback);
         } catch (Exception e) {
             // When an exception occurs, use Callback to pass it instead of throw it directly.

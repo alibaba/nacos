@@ -34,15 +34,12 @@ public abstract class AbstractServerListProvider implements ServerListProvider {
     
     protected String contextPath = ParamUtil.getDefaultContextPath();
     
-    protected String namespace = "";
-    
     @Override
     public void init(final NacosClientProperties properties, final NacosRestTemplate nacosRestTemplate) throws NacosException {
         if (null == properties) {
             throw new NacosException(NacosException.INVALID_PARAM, "properties is null");
         }
         initContextPath(properties);
-        initNameSpace(properties);
     }
     
     /**
@@ -51,13 +48,6 @@ public abstract class AbstractServerListProvider implements ServerListProvider {
      */
     @Override
     public abstract List<String> getServerList();
-    
-    /**
-     * Get server name.
-     * @return server name
-     */
-    @Override
-    public abstract String getServerName();
     
     /**
      * Get order.
@@ -70,21 +60,10 @@ public abstract class AbstractServerListProvider implements ServerListProvider {
         return contextPath;
     }
     
-    public String getNamespace() {
-        return namespace;
-    }
-    
     private void initContextPath(NacosClientProperties properties) {
         String contentPathTmp = properties.getProperty(PropertyKeyConstants.CONTEXT_PATH);
         if (!StringUtils.isBlank(contentPathTmp)) {
             this.contextPath = contentPathTmp;
-        }
-    }
-    
-    private void initNameSpace(NacosClientProperties properties) {
-        String namespace = properties.getProperty(PropertyKeyConstants.NAMESPACE);
-        if (StringUtils.isNotBlank(namespace)) {
-            this.namespace = namespace;
         }
     }
 }
