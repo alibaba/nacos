@@ -29,6 +29,7 @@ import org.springframework.security.config.BeanIds;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
@@ -62,8 +63,12 @@ public class NacosAuthPluginWebConfig {
         if (StringUtils.isBlank(ignoreUrls)) {
             return http.build();
         }
-        return http.authorizeHttpRequests().requestMatchers(ignoreUrls.trim().split(SECURITY_IGNORE_URLS_SPILT_CHAR))
-                .permitAll().and().csrf().disable().build();
+        final String finalIgnoreUrls = ignoreUrls;
+        http.authorizeHttpRequests((authorizeHttpRequests) ->
+                authorizeHttpRequests.requestMatchers(finalIgnoreUrls.trim().split(SECURITY_IGNORE_URLS_SPILT_CHAR)).permitAll()
+        );
+        http.csrf(AbstractHttpConfigurer::disable);
+        return http.build();
     }
     
     /**

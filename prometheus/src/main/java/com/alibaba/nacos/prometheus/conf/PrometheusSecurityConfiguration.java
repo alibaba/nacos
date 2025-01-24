@@ -19,6 +19,7 @@ package com.alibaba.nacos.prometheus.conf;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.web.NacosWebBean;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
@@ -39,14 +40,16 @@ import static com.alibaba.nacos.prometheus.api.ApiConstants.PROMETHEUS_CONTROLLE
  */
 @Configuration
 @NacosWebBean
+@ConditionalOnProperty(name = "nacos.prometheus.metrics.enabled", havingValue = "true")
 public class PrometheusSecurityConfiguration {
     
     @Bean
     @Conditional(ConditionOnNoAuthPluginType.class)
     public SecurityFilterChain prometheusSecurityFilterChain(HttpSecurity http) throws Exception {
-        return http.authorizeHttpRequests()
-                .requestMatchers(PROMETHEUS_CONTROLLER_PATH, PROMETHEUS_CONTROLLER_NAMESPACE_PATH,
-                        PROMETHEUS_CONTROLLER_SERVICE_PATH).permitAll().and().getOrBuild();
+        http.authorizeHttpRequests(
+                (authorizeHttpRequests) -> authorizeHttpRequests.requestMatchers(PROMETHEUS_CONTROLLER_PATH,
+                        PROMETHEUS_CONTROLLER_NAMESPACE_PATH, PROMETHEUS_CONTROLLER_SERVICE_PATH).permitAll());
+        return http.getOrBuild();
     }
     
     private static class ConditionOnNoAuthPluginType implements Condition {

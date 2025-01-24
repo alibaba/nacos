@@ -214,6 +214,7 @@ public interface ConfigHandler {
      * @param namespaceId  the namespaceId
      * @param remoteIp     the IP address of the client making the request
      * @param requestIpApp the name of the application making the request
+     * @param srcUser      the src user performing the operation
      * @return true if the beta configuration is successfully removed
      */
     boolean removeBetaConfig(String dataId, String group, String namespaceId, String remoteIp, String requestIpApp,
