@@ -19,23 +19,19 @@ package com.alibaba.nacos.console.controller.v3.core;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.api.NacosApiException;
-import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
 import com.alibaba.nacos.console.proxy.core.NamespaceProxy;
 import com.alibaba.nacos.core.namespace.model.Namespace;
 import com.alibaba.nacos.core.namespace.model.form.CreateNamespaceForm;
 import com.alibaba.nacos.core.namespace.model.form.NamespaceForm;
-import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -59,11 +55,8 @@ public class ConsoleNamespaceController {
     
     private final NamespaceProxy namespaceProxy;
     
-    private final NamespacePersistService namespacePersistService;
-    
-    public ConsoleNamespaceController(NamespaceProxy namespaceProxy, NamespacePersistService namespacePersistService) {
+    public ConsoleNamespaceController(NamespaceProxy namespaceProxy) {
         this.namespaceProxy = namespaceProxy;
-        this.namespacePersistService = namespacePersistService;
     }
     
     /**
@@ -101,11 +94,6 @@ public class ConsoleNamespaceController {
     public Result<Boolean> createNamespace(CreateNamespaceForm namespaceForm) throws NacosException {
         namespaceForm.validate();
         String namespaceId = namespaceForm.getCustomNamespaceId();
-        // TODO sink to proxy - handler
-        if (namespacePersistService.tenantInfoCountByTenantId(namespaceId) > 0) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.ILLEGAL_NAMESPACE,
-                    "the namespaceId is existed, namespaceId: " + namespaceId);
-        }
         String namespaceName = namespaceForm.getNamespaceName();
         String namespaceDesc = namespaceForm.getNamespaceDesc();
         return Result.success(namespaceProxy.createNamespace(namespaceId, namespaceName, namespaceDesc));

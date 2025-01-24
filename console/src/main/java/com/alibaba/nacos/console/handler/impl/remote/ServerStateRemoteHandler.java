@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2023 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.console.handler.impl.inner;
+package com.alibaba.nacos.console.handler.impl.remote;
 
 import com.alibaba.nacos.console.handler.impl.AbstractServerStateHandler;
 import com.alibaba.nacos.sys.module.ModuleState;
@@ -25,15 +25,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Implementation of ServerStateHandler that performs server state operations.
+ * Remote Implementation of ServerStateHandler that performs server state operations.
  *
- * @author zhangyukun
+ * @author xiweng.yy
  */
 @Service
-@EnabledInnerHandler
-public class ServerStateInnerHandler extends AbstractServerStateHandler {
+@EnabledRemoteHandler
+public class ServerStateRemoteHandler extends AbstractServerStateHandler {
     
     public Map<String, String> getServerState() {
+        // TODO get state from nacos servers
         Map<String, String> serverState = new HashMap<>(4);
         for (ModuleState each : ModuleStateHolder.getInstance().getAllModuleStates()) {
             each.getStates().forEach((s, o) -> serverState.put(s, null == o ? null : o.toString()));

@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
 import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
 import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.namespace.model.Namespace;
@@ -57,19 +58,21 @@ import java.util.regex.Pattern;
 @RestController
 @RequestMapping("/v2/console/namespace")
 @ExtractorManager.Extractor(httpExtractor = ConsoleDefaultHttpParamExtractor.class)
+@EnabledInnerHandler
 public class NamespaceControllerV2 {
     
     private final NamespaceOperationService namespaceOperationService;
-
+    
     private NamespacePersistService namespacePersistService;
     
-    public NamespaceControllerV2(NamespaceOperationService namespaceOperationService, NamespacePersistService namespacePersistService) {
+    public NamespaceControllerV2(NamespaceOperationService namespaceOperationService,
+            NamespacePersistService namespacePersistService) {
         this.namespaceOperationService = namespaceOperationService;
         this.namespacePersistService = namespacePersistService;
     }
     
     private final Pattern namespaceIdCheckPattern = Pattern.compile("^[\\w-]+");
-
+    
     private final Pattern namespaceNameCheckPattern = Pattern.compile("^[^@#$%^&*]+$");
     
     private static final int NAMESPACE_ID_MAX_LENGTH = 128;
@@ -138,7 +141,7 @@ public class NamespaceControllerV2 {
         // contains illegal chars
         if (!namespaceNameCheckPattern.matcher(namespaceName).matches()) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.ILLEGAL_NAMESPACE,
-                "namespaceName [" + namespaceName + "] contains illegal char");
+                    "namespaceName [" + namespaceName + "] contains illegal char");
         }
         return Result.success(namespaceOperationService.createNamespace(namespaceId, namespaceName, namespaceDesc));
     }
@@ -158,11 +161,10 @@ public class NamespaceControllerV2 {
         // contains illegal chars
         if (!namespaceNameCheckPattern.matcher(namespaceForm.getNamespaceName()).matches()) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.ILLEGAL_NAMESPACE,
-                "namespaceName [" + namespaceForm.getNamespaceName() + "] contains illegal char");
+                    "namespaceName [" + namespaceForm.getNamespaceName() + "] contains illegal char");
         }
-        return Result.success(namespaceOperationService
-                .editNamespace(namespaceForm.getNamespaceId(), namespaceForm.getNamespaceName(),
-                        namespaceForm.getNamespaceDesc()));
+        return Result.success(namespaceOperationService.editNamespace(namespaceForm.getNamespaceId(),
+                namespaceForm.getNamespaceName(), namespaceForm.getNamespaceDesc()));
     }
     
     /**
