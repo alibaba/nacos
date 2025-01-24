@@ -119,6 +119,8 @@ public class EnvUtil {
     
     private static ConfigurableEnvironment environment;
     
+    private static DeploymentType deploymentType;
+    
     /**
      * customEnvironment.
      */
@@ -496,5 +498,13 @@ public class EnvUtil {
                 getProperty(Constants.AVAILABLE_PROCESSORS_BASIC, int.class, ThreadUtils.getSuitableThreadCount(1))
                         * scale;
         return result > 1 ? (int) result : 1;
+    }
+    
+    public static DeploymentType getDeploymentType() {
+        return deploymentType;
+    }
+    
+    public static void setDeploymentType(DeploymentType deploymentType) {
+        EnvUtil.deploymentType = deploymentType;
     }
 }

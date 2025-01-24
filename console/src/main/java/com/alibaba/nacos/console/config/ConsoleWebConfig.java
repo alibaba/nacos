@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.config;
 
+import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.console.filter.NacosConsoleAuthFilter;
 import com.alibaba.nacos.console.filter.XssFilter;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
@@ -96,7 +97,8 @@ public class ConsoleWebConfig {
     
     @Bean
     public NacosConsoleAuthFilter consoleAuthFilter(ControllerMethodsCache methodsCache) {
-        return new NacosConsoleAuthFilter(NacosConsoleAuthConfig.getInstance(), methodsCache);
+        return new NacosConsoleAuthFilter(NacosAuthConfigHolder.getInstance()
+                .getNacosAuthConfigByScope(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE), methodsCache);
     }
     
     @Bean

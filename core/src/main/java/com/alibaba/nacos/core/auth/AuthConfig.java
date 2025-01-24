@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.auth;
 
+import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.web.NacosWebBean;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -53,11 +54,13 @@ public class AuthConfig {
     
     @Bean
     public AuthFilter authFilter(ControllerMethodsCache methodsCache) {
-        return new AuthFilter(NacosServerAuthConfig.getInstance(), methodsCache);
+        return new AuthFilter(NacosAuthConfigHolder.getInstance()
+                .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE), methodsCache);
     }
     
     @Bean
     public AuthAdminFilter authAdminFilter(ControllerMethodsCache methodsCache) {
-        return new AuthAdminFilter(NacosServerAdminAuthConfig.getInstance(), methodsCache);
+        return new AuthAdminFilter(NacosAuthConfigHolder.getInstance()
+                .getNacosAuthConfigByScope(NacosServerAdminAuthConfig.NACOS_SERVER_ADMIN_AUTH_SCOPE), methodsCache);
     }
 }

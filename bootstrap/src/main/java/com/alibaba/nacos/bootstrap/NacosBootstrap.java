@@ -23,6 +23,7 @@ import com.alibaba.nacos.core.listener.startup.NacosStartUp;
 import com.alibaba.nacos.core.listener.startup.NacosStartUpManager;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.DeploymentType;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.boot.Banner;
 import org.springframework.boot.ResourceBanner;
 import org.springframework.boot.WebApplicationType;
@@ -46,6 +47,7 @@ public class NacosBootstrap {
     public static void main(String[] args) {
         String type = System.getProperty(Constants.NACOS_DEPLOYMENT_TYPE, Constants.NACOS_DEPLOYMENT_TYPE_MERGED);
         DeploymentType deploymentType = DeploymentType.getType(type);
+        EnvUtil.setDeploymentType(deploymentType);
         switch (deploymentType) {
             case MERGED:
                 startWithConsole(args);

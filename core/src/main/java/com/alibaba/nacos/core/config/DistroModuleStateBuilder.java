@@ -18,15 +18,15 @@ package com.alibaba.nacos.core.config;
 
 import com.alibaba.nacos.core.distributed.distro.DistroConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.module.AbstractServerModuleStateBuilder;
 import com.alibaba.nacos.sys.module.ModuleState;
-import com.alibaba.nacos.sys.module.ModuleStateBuilder;
 
 /**
  * distro state builder.
  * @author 985492783@qq.com
  * @date 2023/4/7 0:37
  */
-public class DistroModuleStateBuilder implements ModuleStateBuilder {
+public class DistroModuleStateBuilder extends AbstractServerModuleStateBuilder {
     
     @Override
     public ModuleState build() {

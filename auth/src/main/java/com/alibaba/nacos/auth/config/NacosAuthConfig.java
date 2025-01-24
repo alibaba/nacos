@@ -24,6 +24,13 @@ package com.alibaba.nacos.auth.config;
 public interface NacosAuthConfig {
     
     /**
+     * Get auth scope like 'server', 'server admin', 'console'.
+     *
+     * @return auth scope
+     */
+    String getAuthScope();
+    
+    /**
      * Whether nacos server or console auth enabled.
      *
      * @return {@code true} means enabled, otherwise {@code false}

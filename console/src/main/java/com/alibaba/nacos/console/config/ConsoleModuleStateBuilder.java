@@ -17,15 +17,15 @@
 package com.alibaba.nacos.console.config;
 
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.module.AbstractConsoleModuleStateBuilder;
 import com.alibaba.nacos.sys.module.ModuleState;
-import com.alibaba.nacos.sys.module.ModuleStateBuilder;
 
 /**
  * Console module state builder.
  *
  * @author xiweng.yy
  */
-public class ConsoleModuleStateBuilder implements ModuleStateBuilder {
+public class ConsoleModuleStateBuilder extends AbstractConsoleModuleStateBuilder {
     
     public static final String CONSOLE_MODULE = "console";
     

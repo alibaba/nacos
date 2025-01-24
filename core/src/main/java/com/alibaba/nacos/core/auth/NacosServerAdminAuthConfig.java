@@ -21,6 +21,7 @@ import com.alibaba.nacos.auth.config.AuthErrorCode;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.config.AbstractDynamicConfig;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
@@ -35,7 +36,7 @@ public class NacosServerAdminAuthConfig extends AbstractDynamicConfig implements
     
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosServerAdminAuthConfig.class);
     
-    private static final NacosServerAdminAuthConfig INSTANCE = new NacosServerAdminAuthConfig();
+    public static final String NACOS_SERVER_ADMIN_AUTH_SCOPE = ApiType.ADMIN_API.name();
     
     /**
      * Whether server auth enabled.
@@ -51,14 +52,10 @@ public class NacosServerAdminAuthConfig extends AbstractDynamicConfig implements
     
     private String serverIdentityValue;
     
-    private NacosServerAdminAuthConfig() {
+    public NacosServerAdminAuthConfig() {
         super("NacosServerAdminAuth");
         resetConfig();
         validate();
-    }
-    
-    public static NacosServerAdminAuthConfig getInstance() {
-        return INSTANCE;
     }
     
     /**
@@ -75,6 +72,11 @@ public class NacosServerAdminAuthConfig extends AbstractDynamicConfig implements
             throw new NacosRuntimeException(AuthErrorCode.EMPTY_IDENTITY.getCode(),
                     AuthErrorCode.EMPTY_IDENTITY.getMsg());
         }
+    }
+    
+    @Override
+    public String getAuthScope() {
+        return NACOS_SERVER_ADMIN_AUTH_SCOPE;
     }
     
     /**
