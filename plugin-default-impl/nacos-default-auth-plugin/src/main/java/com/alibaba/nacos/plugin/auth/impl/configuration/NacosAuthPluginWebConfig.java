@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.configuration;
 
+import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.auth.NacosServerAuthConfig;
 import com.alibaba.nacos.core.web.NacosWebBean;
@@ -51,7 +52,8 @@ public class NacosAuthPluginWebConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         String ignoreUrls = null;
-        String authSystemType = NacosServerAuthConfig.getInstance().getNacosAuthSystemType();
+        String authSystemType = NacosAuthConfigHolder.getInstance()
+                .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE).getNacosAuthSystemType();
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authSystemType)) {
             ignoreUrls = DEFAULT_ALL_PATH_PATTERN;
         } else if (AuthSystemTypes.LDAP.name().equalsIgnoreCase(authSystemType)) {
@@ -64,9 +66,8 @@ public class NacosAuthPluginWebConfig {
             return http.build();
         }
         final String finalIgnoreUrls = ignoreUrls;
-        http.authorizeHttpRequests((authorizeHttpRequests) ->
-                authorizeHttpRequests.requestMatchers(finalIgnoreUrls.trim().split(SECURITY_IGNORE_URLS_SPILT_CHAR)).permitAll()
-        );
+        http.authorizeHttpRequests((authorizeHttpRequests) -> authorizeHttpRequests.requestMatchers(
+                finalIgnoreUrls.trim().split(SECURITY_IGNORE_URLS_SPILT_CHAR)).permitAll());
         http.csrf(AbstractHttpConfigurer::disable);
         return http.build();
     }

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.config;
 
+import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.NacosDuplicateConfigurationBeanPostProcessor;
 import com.alibaba.nacos.sys.env.NacosDuplicateSpringBeanPostProcessor;
@@ -32,6 +33,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @ConditionalOnProperty(value = Constants.NACOS_DUPLICATE_BEAN_ENHANCEMENT_ENABLED, havingValue = "true", matchIfMissing = true)
+@EnabledInnerHandler
 public class NacosConsoleBeanPostProcessorConfiguration {
     
     @Bean

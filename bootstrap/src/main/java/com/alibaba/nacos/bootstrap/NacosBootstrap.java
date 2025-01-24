@@ -22,6 +22,8 @@ import com.alibaba.nacos.console.NacosConsole;
 import com.alibaba.nacos.core.listener.startup.NacosStartUp;
 import com.alibaba.nacos.core.listener.startup.NacosStartUpManager;
 import com.alibaba.nacos.sys.env.Constants;
+import com.alibaba.nacos.sys.env.DeploymentType;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.boot.Banner;
 import org.springframework.boot.ResourceBanner;
 import org.springframework.boot.WebApplicationType;
@@ -43,33 +45,48 @@ public class NacosBootstrap {
     private static final String SPRING_JXM_ENABLED = "spring.jmx.enabled";
     
     public static void main(String[] args) {
-        ConfigurableApplicationContext coreContext = startCoreContext(args);
-        String type = prepareCoreContext(coreContext);
-        if (Constants.NACOS_DEPLOYMENT_TYPE_MERGED.equals(type)) {
-            startWithConsole(args, coreContext);
-        } else if (Constants.NACOS_DEPLOYMENT_TYPE_SERVER.equals(type)) {
-            startWithoutConsole(args, coreContext);
-        } else {
-            throw new IllegalArgumentException("Unsupported type " + type);
+        String type = System.getProperty(Constants.NACOS_DEPLOYMENT_TYPE, Constants.NACOS_DEPLOYMENT_TYPE_MERGED);
+        DeploymentType deploymentType = DeploymentType.getType(type);
+        EnvUtil.setDeploymentType(deploymentType);
+        switch (deploymentType) {
+            case MERGED:
+                startWithConsole(args);
+                break;
+            case SERVER:
+                startWithoutConsole(args);
+                break;
+            case CONSOLE:
+                startOnlyConsole(args);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported nacos deployment type " + type);
         }
     }
     
-    private static String prepareCoreContext(ConfigurableApplicationContext coreContext) {
+    private static void prepareCoreContext(ConfigurableApplicationContext coreContext) {
         if (coreContext.getEnvironment().getProperty(SPRING_JXM_ENABLED, Boolean.class, false)) {
             // Avoid duplicate registration MBean to exporter.
             coreContext.getBean(MBeanExporter.class).setRegistrationPolicy(RegistrationPolicy.IGNORE_EXISTING);
         }
-        return coreContext.getEnvironment()
-                .getProperty(Constants.NACOS_DEPLOYMENT_TYPE, Constants.NACOS_DEPLOYMENT_TYPE_MERGED);
     }
     
-    private static void startWithoutConsole(String[] args, ConfigurableApplicationContext coreContext) {
+    private static void startWithoutConsole(String[] args) {
+        ConfigurableApplicationContext coreContext = startCoreContext(args);
+        prepareCoreContext(coreContext);
         ConfigurableApplicationContext webContext = startServerWebContext(args, coreContext);
     }
     
-    private static void startWithConsole(String[] args, ConfigurableApplicationContext coreContext) {
+    private static void startWithConsole(String[] args) {
+        ConfigurableApplicationContext coreContext = startCoreContext(args);
+        prepareCoreContext(coreContext);
         ConfigurableApplicationContext serverWebContext = startServerWebContext(args, coreContext);
         ConfigurableApplicationContext consoleContext = startConsoleContext(args, coreContext);
+    }
+    
+    private static ConfigurableApplicationContext startCoreContext(String[] args) {
+        NacosStartUpManager.start(NacosStartUp.CORE_START_UP_PHASE);
+        return new SpringApplicationBuilder(NacosServerBasicApplication.class).web(WebApplicationType.NONE)
+                .banner(getBanner("core-banner.txt")).run(args);
     }
     
     private static ConfigurableApplicationContext startServerWebContext(String[] args,
@@ -86,10 +103,10 @@ public class NacosBootstrap {
                 .banner(getBanner("nacos-console-banner.txt")).run(args);
     }
     
-    private static ConfigurableApplicationContext startCoreContext(String[] args) {
-        NacosStartUpManager.start(NacosStartUp.CORE_START_UP_PHASE);
-        return new SpringApplicationBuilder(NacosServerBasicApplication.class).web(WebApplicationType.NONE)
-                .banner(getBanner("core-banner.txt")).run(args);
+    private static void startOnlyConsole(String[] args) {
+        NacosStartUpManager.start(NacosStartUp.CONSOLE_START_UP_PHASE);
+        ConfigurableApplicationContext consoleContext = new SpringApplicationBuilder(NacosConsole.class).banner(
+                getBanner("nacos-console-banner.txt")).run(args);
     }
     
     private static Banner getBanner(String bannerFileName) {

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.config;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.controller.v3.PermissionControllerV3;
 import com.alibaba.nacos.plugin.auth.impl.controller.v3.RoleControllerV3;
@@ -24,7 +25,6 @@ import com.alibaba.nacos.plugin.auth.impl.controller.v3.UserControllerV3;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -34,14 +34,15 @@ import org.springframework.context.annotation.Configuration;
  * @author xiweng.yy
  */
 @Configuration
-@ConditionalOnProperty(value = "nacos.deployment.type", havingValue = "merged")
+@EnabledInnerHandler
 public class NacosConsoleAuthControllerConfig {
     
     @Bean
     public UserControllerV3 consoleUserControllerV3(NacosUserDetailsServiceImpl userDetailsService,
             NacosRoleServiceImpl roleService, AuthConfigs authConfigs, IAuthenticationManager iAuthenticationManager,
             TokenManagerDelegate jwtTokenManager) {
-        return new UserControllerV3(userDetailsService, roleService, authConfigs, iAuthenticationManager, jwtTokenManager);
+        return new UserControllerV3(userDetailsService, roleService, authConfigs, iAuthenticationManager,
+                jwtTokenManager);
     }
     
     @Bean

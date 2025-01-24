@@ -17,12 +17,14 @@
 package com.alibaba.nacos.plugin.auth.impl;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
+import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
@@ -105,7 +107,8 @@ public class NacosAuthPluginService implements AuthPluginService {
     
     @Override
     public boolean isLoginEnabled() {
-        return ApplicationUtils.getBean(AuthConfigs.class).isConsoleAuthEnabled();
+        return NacosAuthConfigHolder.getInstance().getNacosAuthConfigByScope(ApiType.CONSOLE_API.name())
+                .isAuthEnabled();
     }
     
     /**
@@ -115,8 +118,10 @@ public class NacosAuthPluginService implements AuthPluginService {
      */
     @Override
     public boolean isAdminRequest() {
-        AuthConfigs authConfigs = ApplicationUtils.getBean(AuthConfigs.class);
-        boolean authEnabled = authConfigs.isConsoleAuthEnabled() || authConfigs.isAuthEnabled();
+        boolean authEnabled = false;
+        for (NacosAuthConfig each : NacosAuthConfigHolder.getInstance().getAllNacosAuthConfig()) {
+            authEnabled |= each.isAuthEnabled();
+        }
         boolean hasGlobalAdminRole = ApplicationUtils.getBean(IAuthenticationManager.class).hasGlobalAdminRole();
         return authEnabled && !hasGlobalAdminRole;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2023 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.console.handler.impl.inner;
+package com.alibaba.nacos.console.handler.impl.remote;
 
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.console.handler.impl.AbstractServerStateHandler;
+import com.alibaba.nacos.sys.env.Constants;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.module.ModuleState;
 import com.alibaba.nacos.sys.module.ModuleStateHolder;
 import org.springframework.stereotype.Service;
@@ -25,16 +28,23 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Implementation of ServerStateHandler that performs server state operations.
+ * Remote Implementation of ServerStateHandler that performs server state operations.
  *
- * @author zhangyukun
+ * @author xiweng.yy
  */
 @Service
-@EnabledInnerHandler
-public class ServerStateInnerHandler extends AbstractServerStateHandler {
+@EnabledRemoteHandler
+public class ServerStateRemoteHandler extends AbstractServerStateHandler {
     
     public Map<String, String> getServerState() {
         Map<String, String> serverState = new HashMap<>(4);
+        // TODO get state from nacos servers
+        // Mock first
+        serverState.put(Constants.STARTUP_MODE_STATE, EnvUtil.STANDALONE_MODE_ALONE);
+        serverState.put(Constants.FUNCTION_MODE_STATE, EnvUtil.getFunctionMode());
+        serverState.put(Constants.NACOS_VERSION, VersionUtils.version);
+        serverState.put(Constants.SERVER_PORT_STATE, EnvUtil.getProperty("nacos.console.port", "8080"));
+        // Add current console states
         for (ModuleState each : ModuleStateHolder.getInstance().getAllModuleStates()) {
             each.getStates().forEach((s, o) -> serverState.put(s, null == o ? null : o.toString()));
         }

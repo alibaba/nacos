@@ -116,7 +116,9 @@ public interface ConfigHandler {
      * @param ids         A list of IDs of the configurations to export.
      * @return A ResponseEntity containing the exported configuration as a byte array.
      * @throws Exception If an unexpected error occurs during the export process.
+     * @deprecated nacos 3.0 not support export 1.x config dump data
      */
+    @Deprecated
     ResponseEntity<byte[]> exportConfig(String dataId, String group, String namespaceId, String appName, List<Long> ids)
             throws Exception;
     

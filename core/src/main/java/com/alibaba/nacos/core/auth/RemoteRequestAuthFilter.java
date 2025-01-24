@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.auth.GrpcProtocolAuthService;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
+import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.auth.serveridentity.ServerIdentityResult;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.context.RequestContext;
@@ -53,7 +54,8 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
     private final GrpcProtocolAuthService protocolAuthService;
     
     public RemoteRequestAuthFilter() {
-        this.authConfig = NacosServerAuthConfig.getInstance();
+        this.authConfig = NacosAuthConfigHolder.getInstance()
+                .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE);
         this.protocolAuthService = new GrpcProtocolAuthService(authConfig);
         this.protocolAuthService.initialize();
     }

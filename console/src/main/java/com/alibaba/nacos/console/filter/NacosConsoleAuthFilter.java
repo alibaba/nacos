@@ -17,8 +17,8 @@
 package com.alibaba.nacos.console.filter;
 
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.auth.serveridentity.ServerIdentityResult;
-import com.alibaba.nacos.console.config.NacosConsoleAuthConfig;
 import com.alibaba.nacos.core.auth.AbstractWebAuthFilter;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,9 +30,9 @@ import jakarta.servlet.http.HttpServletRequest;
  */
 public class NacosConsoleAuthFilter extends AbstractWebAuthFilter {
     
-    private final NacosConsoleAuthConfig authConfig;
+    private final NacosAuthConfig authConfig;
     
-    public NacosConsoleAuthFilter(NacosConsoleAuthConfig authConfig, ControllerMethodsCache methodsCache) {
+    public NacosConsoleAuthFilter(NacosAuthConfig authConfig, ControllerMethodsCache methodsCache) {
         super(authConfig, methodsCache);
         this.authConfig = authConfig;
     }

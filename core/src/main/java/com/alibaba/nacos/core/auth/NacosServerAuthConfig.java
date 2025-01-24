@@ -22,6 +22,7 @@ import com.alibaba.nacos.auth.config.AuthModuleStateBuilder;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.config.AbstractDynamicConfig;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.module.ModuleState;
@@ -45,7 +46,7 @@ public class NacosServerAuthConfig extends AbstractDynamicConfig implements Naco
     
     private static final String PREFIX = "nacos.core.auth.plugin";
     
-    private static final NacosServerAuthConfig INSTANCE = new NacosServerAuthConfig();
+    public static final String NACOS_SERVER_AUTH_SCOPE = ApiType.OPEN_API.name();
     
     /**
      * Whether server auth enabled.
@@ -63,14 +64,10 @@ public class NacosServerAuthConfig extends AbstractDynamicConfig implements Naco
     
     private Map<String, Properties> authPluginProperties = new HashMap<>();
     
-    private NacosServerAuthConfig() {
+    public NacosServerAuthConfig() {
         super("NacosServerAuth");
         resetConfig();
         validate();
-    }
-    
-    public static NacosServerAuthConfig getInstance() {
-        return INSTANCE;
     }
     
     /**
@@ -106,6 +103,11 @@ public class NacosServerAuthConfig extends AbstractDynamicConfig implements Naco
         } catch (Exception e) {
             LOGGER.warn("Refresh plugin properties failed ", e);
         }
+    }
+    
+    @Override
+    public String getAuthScope() {
+        return NACOS_SERVER_AUTH_SCOPE;
     }
     
     /**

@@ -26,18 +26,17 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.builder.InstanceBuilder;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.console.proxy.naming.InstanceProxy;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
-import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.InstanceForm;
 import com.alibaba.nacos.naming.model.form.ServiceForm;
 import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -56,8 +55,6 @@ import org.springframework.web.bind.annotation.RestController;
 @ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)
 public class ConsoleInstanceController {
     
-    private final SwitchDomain switchDomain;
-    
     private final InstanceProxy instanceProxy;
     
     /**
@@ -65,9 +62,8 @@ public class ConsoleInstanceController {
      *
      * @param instanceProxy the proxy used for handling instance-related operations
      */
-    public ConsoleInstanceController(InstanceProxy instanceProxy, SwitchDomain switchDomain) {
+    public ConsoleInstanceController(InstanceProxy instanceProxy) {
         this.instanceProxy = instanceProxy;
-        this.switchDomain = switchDomain;
     }
     
     /**
@@ -128,7 +124,8 @@ public class ConsoleInstanceController {
                 .setMetadata(UtilsAndCommons.parseMetadata(instanceForm.getMetadata()))
                 .setEphemeral(instanceForm.getEphemeral()).build();
         if (instanceForm.getEphemeral() == null) {
-            instance.setEphemeral((switchDomain.isDefaultInstanceEphemeral()));
+            // register instance by console default is persistent instance.
+            instance.setEphemeral(false);
         }
         return instance;
     }

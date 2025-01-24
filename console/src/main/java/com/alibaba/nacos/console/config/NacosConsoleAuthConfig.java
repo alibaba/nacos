@@ -18,6 +18,7 @@ package com.alibaba.nacos.console.config;
 
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.core.config.AbstractDynamicConfig;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
@@ -28,7 +29,7 @@ import com.alibaba.nacos.sys.env.EnvUtil;
  */
 public class NacosConsoleAuthConfig extends AbstractDynamicConfig implements NacosAuthConfig {
     
-    private static final NacosConsoleAuthConfig INSTANCE = new NacosConsoleAuthConfig();
+    public static final String NACOS_CONSOLE_AUTH_SCOPE = ApiType.CONSOLE_API.name();
     
     /**
      * Whether console auth enabled.
@@ -40,13 +41,14 @@ public class NacosConsoleAuthConfig extends AbstractDynamicConfig implements Nac
      */
     private String nacosAuthSystemType;
     
-    private NacosConsoleAuthConfig() {
+    public NacosConsoleAuthConfig() {
         super("NacosConsoleAuth");
         resetConfig();
     }
     
-    public static NacosConsoleAuthConfig getInstance() {
-        return INSTANCE;
+    @Override
+    public String getAuthScope() {
+        return NACOS_CONSOLE_AUTH_SCOPE;
     }
     
     @Override

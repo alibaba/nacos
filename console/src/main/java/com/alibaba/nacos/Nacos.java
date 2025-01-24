@@ -33,6 +33,7 @@ import org.springframework.context.annotation.ImportRuntimeHints;
  * </p>
  *
  * @author nacos
+ * @deprecated The old start up class will be removed, please use {@link NacosBootstrap} in nacos-bootstrap module instead.
  */
 @SpringBootApplication
 @ImportRuntimeHints(NacosRuntimeHints.class)
@@ -40,6 +41,7 @@ import org.springframework.context.annotation.ImportRuntimeHints;
         @ComponentScan.Filter(type = FilterType.CUSTOM, classes = {NacosTypeExcludeFilter.class}),
         @ComponentScan.Filter(type = FilterType.CUSTOM, classes = {TypeExcludeFilter.class}),
         @ComponentScan.Filter(type = FilterType.CUSTOM, classes = {AutoConfigurationExcludeFilter.class})})
+@Deprecated
 public class Nacos {
     
     public static void main(String[] args) {

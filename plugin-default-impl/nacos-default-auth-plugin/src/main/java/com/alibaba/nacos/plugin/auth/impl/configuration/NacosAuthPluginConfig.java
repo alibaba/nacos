@@ -17,6 +17,7 @@
 package com.alibaba.nacos.plugin.auth.impl.configuration;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.core.auth.NacosServerAuthConfig;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.DefaultAuthenticationManager;
@@ -71,8 +72,9 @@ public class NacosAuthPluginConfig {
         return new GlobalAuthenticationConfigurerAdapter() {
             @Override
             public void init(AuthenticationManagerBuilder auth) throws Exception {
-                if (AuthSystemTypes.NACOS.name()
-                        .equalsIgnoreCase(NacosServerAuthConfig.getInstance().getNacosAuthSystemType())) {
+                if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(NacosAuthConfigHolder.getInstance()
+                        .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE)
+                        .getNacosAuthSystemType())) {
                     auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
                 }
             }
