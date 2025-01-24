@@ -141,10 +141,6 @@
             <artifactId>hamcrest</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>com.alibaba.nacos</groupId>
-            <artifactId>nacos-control-plugin</artifactId>
-        </dependency>
     </dependencies>
     <build>
         <plugins>
