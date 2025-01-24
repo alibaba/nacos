@@ -261,7 +261,7 @@ public class InstanceControllerV3 {
     @GetMapping("/list")
     @TpsControl(pointName = "NamingServiceSubscribe", name = "HttpNamingServiceSubscribe")
     @ExtractorManager.Extractor(httpExtractor = NamingInstanceListHttpParamExtractor.class)
-    @Secured(resource = UtilsAndCommons.SERVICE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
+    @Secured(resource = UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<ServiceInfo> list(InstanceListForm instanceListForm) throws NacosApiException {
         instanceListForm.validate();
         String compositeServiceName = NamingUtils.getGroupedName(instanceListForm.getServiceName(),
