@@ -27,7 +27,6 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
-import com.alibaba.nacos.common.remote.client.RpcConstants;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,16 +43,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * NamingCompatibilityServiceTls_ITCase.
- *
- * @author githucheng2978.
- * @date .
+ * @author liaochuntao
+ * @date 2019-05-07 10:13
  **/
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos",
-        RpcConstants.NACOS_SERVER_RPC + ".enableTls=true", RpcConstants.NACOS_SERVER_RPC + ".compatibility=true",
-        RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem",
-        RpcConstants.NACOS_SERVER_RPC + ".certPrivateKey=test-server-key.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-class NamingCompatibilityServiceTls_ITCase {
+@SpringBootTest(classes = Nacos.class, properties = {
+        "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+class MaintainServiceNamingITCase {
     
     private NamingMaintainService namingMaintainService;
     

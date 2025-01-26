@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-class ClientBeat_ITCase extends NamingBase {
+class ClientBeatNamingITCase extends NamingBase {
     
     private NamingService naming;
     

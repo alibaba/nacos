@@ -53,14 +53,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
         RpcConstants.NACOS_SERVER_RPC + ".certPrivateKey=test-server-key.pem", RpcConstants.NACOS_SERVER_RPC
         + ".trustCollectionCertFile=test-ca-cert.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @Disabled("TODO, Fix cert expired problem")
-class NamingTlsServiceAndMutualAuth_ITCase {
+class TlsServiceAndMutualAuthNamingITCase {
     
     
     @LocalServerPort
     private int port;
     
     @Test
-    void test_a_MutualAuth() throws NacosException {
+    void testMutualAuth() throws NacosException {
         String serviceName = randomDomainName();
         System.setProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
         System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH, "test-ca-cert.pem");
@@ -92,7 +92,7 @@ class NamingTlsServiceAndMutualAuth_ITCase {
     
     
     @Test
-    void test_b_MutualAuthClientTrustCa() throws NacosException {
+    void testMutualAuthClientTrustCa() throws NacosException {
         assertThrows(NacosException.class, () -> {
             String serviceName = randomDomainName();
             System.setProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
@@ -118,7 +118,7 @@ class NamingTlsServiceAndMutualAuth_ITCase {
     }
     
     @Test
-    void test_c_MutualAuthClientTrustALl() throws NacosException {
+    void testMutualAuthClientTrustALl() throws NacosException {
         assertThrows(NacosException.class, () -> {
             String serviceName = randomDomainName();
             System.setProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
