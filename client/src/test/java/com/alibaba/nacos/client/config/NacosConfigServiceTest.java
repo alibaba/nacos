@@ -18,14 +18,18 @@ package com.alibaba.nacos.client.config;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigType;
+import com.alibaba.nacos.api.config.listener.ConfigFuzzyWatchChangeEvent;
+import com.alibaba.nacos.api.config.listener.FuzzyWatchEventWatcher;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
+import com.alibaba.nacos.client.config.impl.ConfigFuzzyWatchContext;
 import com.alibaba.nacos.client.config.impl.ConfigServerListManager;
 import com.alibaba.nacos.client.config.impl.ConfigTransportClient;
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.common.utils.FuzzyGroupKeyPattern;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,11 +45,15 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
 
+import static com.alibaba.nacos.api.common.Constants.ANY_PATTERN;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 
 @ExtendWith(MockitoExtension.class)
@@ -400,6 +408,103 @@ class NacosConfigServiceTest {
         
     }
     
+    @Test
+    void testFuzzyWatch1() throws NacosException {
+        String groupNamePattern = "default_group";
+        FuzzyWatchEventWatcher fuzzyWatchEventWatcher = new FuzzyWatchEventWatcher() {
+            @Override
+            public void onEvent(ConfigFuzzyWatchChangeEvent event) {
+            
+            }
+            
+            @Override
+            public Executor getExecutor() {
+                return null;
+            }
+        };
+        ConfigFuzzyWatchContext context = Mockito.mock(ConfigFuzzyWatchContext.class);
+        Mockito.when(mockWoker.addTenantFuzzyWatcher(anyString(), anyString(), any())).thenReturn(context);
+        nacosConfigService.fuzzyWatch(groupNamePattern, fuzzyWatchEventWatcher);
+        Mockito.verify(mockWoker, Mockito.times(1))
+                .addTenantFuzzyWatcher(ANY_PATTERN, groupNamePattern, fuzzyWatchEventWatcher);
+        Mockito.verify(context, Mockito.times(1)).createNewFuture();
+    }
+    
+    @Test
+    void testFuzzyWatch2() throws NacosException {
+        String groupNamePattern = "default_group";
+        String dataIdPattern = "dataId*";
+        FuzzyWatchEventWatcher fuzzyWatchEventWatcher = new FuzzyWatchEventWatcher() {
+            @Override
+            public void onEvent(ConfigFuzzyWatchChangeEvent event) {
+            
+            }
+            
+            @Override
+            public Executor getExecutor() {
+                return null;
+            }
+        };
+        ConfigFuzzyWatchContext context = Mockito.mock(ConfigFuzzyWatchContext.class);
+        Mockito.when(mockWoker.addTenantFuzzyWatcher(anyString(), anyString(), any())).thenReturn(context);
+        nacosConfigService.fuzzyWatch(dataIdPattern, groupNamePattern, fuzzyWatchEventWatcher);
+        Mockito.verify(mockWoker, Mockito.times(1))
+                .addTenantFuzzyWatcher(dataIdPattern, groupNamePattern, fuzzyWatchEventWatcher);
+        Mockito.verify(context, Mockito.times(1)).createNewFuture();
+    }
+    
+    @Test
+    void testFuzzyWatch3() throws NacosException {
+        String groupNamePattern = "group";
+        String dataIdPattern = "dataId*";
+        String namespace = "public";
+        FuzzyWatchEventWatcher fuzzyWatchEventWatcher = new FuzzyWatchEventWatcher() {
+            @Override
+            public void onEvent(ConfigFuzzyWatchChangeEvent event) {
+            
+            }
+            
+            @Override
+            public Executor getExecutor() {
+                return null;
+            }
+        };
+        String patternKey = FuzzyGroupKeyPattern.generatePattern(dataIdPattern, groupNamePattern, namespace);
+        ConfigFuzzyWatchContext context = new ConfigFuzzyWatchContext("", patternKey);
+        Mockito.when(mockWoker.addTenantFuzzyWatcher(anyString(), anyString(), any())).thenReturn(context);
+        Future<Set<String>> setFuture = nacosConfigService.fuzzyWatchWithGroupKeys(groupNamePattern,
+                fuzzyWatchEventWatcher);
+        Mockito.verify(mockWoker, Mockito.times(1))
+                .addTenantFuzzyWatcher(ANY_PATTERN, groupNamePattern, fuzzyWatchEventWatcher);
+        Assertions.assertNotNull(setFuture);
+    }
+    
+    @Test
+    void testFuzzyWatch4() throws NacosException {
+        String groupNamePattern = "group";
+        String dataIdPattern = "dataId*";
+        String namespace = "public";
+        FuzzyWatchEventWatcher fuzzyWatchEventWatcher = new FuzzyWatchEventWatcher() {
+            @Override
+            public void onEvent(ConfigFuzzyWatchChangeEvent event) {
+            
+            }
+            
+            @Override
+            public Executor getExecutor() {
+                return null;
+            }
+        };
+        String patternKey = FuzzyGroupKeyPattern.generatePattern(dataIdPattern, groupNamePattern, namespace);
+        ConfigFuzzyWatchContext context = new ConfigFuzzyWatchContext("", patternKey);
+        Mockito.when(mockWoker.addTenantFuzzyWatcher(anyString(), anyString(), any())).thenReturn(context);
+        Future<Set<String>> setFuture = nacosConfigService.fuzzyWatchWithGroupKeys(dataIdPattern, groupNamePattern,
+                fuzzyWatchEventWatcher);
+        Mockito.verify(mockWoker, Mockito.times(1))
+                .addTenantFuzzyWatcher(dataIdPattern, groupNamePattern, fuzzyWatchEventWatcher);
+        Assertions.assertNotNull(setFuture);
+    }
+
     @Test
     void testShutDown() {
         Assertions.assertDoesNotThrow(() -> {
