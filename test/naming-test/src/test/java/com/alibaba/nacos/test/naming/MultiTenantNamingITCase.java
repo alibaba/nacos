@@ -56,7 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-class MultiTenant_ITCase {
+class MultiTenantNamingITCase {
     
     private NamingService naming;
     
@@ -101,7 +101,7 @@ class MultiTenant_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_registerInstance() throws Exception {
+    void multipleTenantRegisterInstance() throws Exception {
         String serviceName = randomDomainName();
         
         naming1.registerInstance(serviceName, "11.11.11.11", 80);
@@ -132,7 +132,7 @@ class MultiTenant_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_multiGroup_registerInstance() throws Exception {
+    void multipleTenantMultiGroupRegisterInstance() throws Exception {
         String serviceName = randomDomainName();
         
         naming1.registerInstance(serviceName, TEST_GROUP_1, "11.11.11.11", 80);
@@ -164,7 +164,7 @@ class MultiTenant_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_equalIP() throws Exception {
+    void multipleTenantEqualIP() throws Exception {
         String serviceName = randomDomainName();
         naming1.registerInstance(serviceName, "11.11.11.11", 80);
         
@@ -196,7 +196,7 @@ class MultiTenant_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_selectInstances() throws Exception {
+    void multipleTenantSelectInstances() throws Exception {
         String serviceName = randomDomainName();
         naming1.registerInstance(serviceName, TEST_IP_4_DOM_1, TEST_PORT);
         
@@ -225,7 +225,7 @@ class MultiTenant_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_group_equalIP() throws Exception {
+    void multipleTenantGroupEqualIP() throws Exception {
         String serviceName = randomDomainName();
         naming1.registerInstance(serviceName, TEST_GROUP_1, "11.11.11.11", 80);
         
@@ -255,7 +255,7 @@ class MultiTenant_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_group_getInstances() throws Exception {
+    void multipleTenantGroupGetInstances() throws Exception {
         String serviceName = randomDomainName();
         System.out.println(serviceName);
         naming1.registerInstance(serviceName, TEST_GROUP_1, "11.11.11.11", 80);
@@ -281,7 +281,7 @@ class MultiTenant_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_getServicesOfServer() throws Exception {
+    void multipleTenantGetServicesOfServer() throws Exception {
         
         String serviceName = randomDomainName();
         naming1.registerInstance(serviceName, "11.11.11.11", TEST_PORT, "c1");
@@ -301,7 +301,7 @@ class MultiTenant_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_group_getServicesOfServer() throws Exception {
+    void multipleTenantGroupGetServicesOfServer() throws Exception {
         
         String serviceName = randomDomainName();
         naming1.registerInstance(serviceName, TEST_GROUP_1, "11.11.11.11", TEST_PORT, "c1");
@@ -325,7 +325,7 @@ class MultiTenant_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_subscribe() throws Exception {
+    void multipleTenantSubscribe() throws Exception {
         
         String serviceName = randomDomainName();
         
@@ -354,7 +354,7 @@ class MultiTenant_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_group_subscribe() throws Exception {
+    void multipleTenantGroupSubscribe() throws Exception {
         
         String serviceName = randomDomainName();
         
@@ -387,7 +387,7 @@ class MultiTenant_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_unSubscribe() throws Exception {
+    void multipleTenantUnSubscribe() throws Exception {
         
         String serviceName = randomDomainName();
         EventListener listener = new EventListener() {
@@ -421,7 +421,7 @@ class MultiTenant_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_group_nosubscribe_unSubscribe() throws Exception {
+    void multipleTenantGroupNoSubscribeUnsubscribe() throws Exception {
         
         String serviceName = randomDomainName();
         EventListener listener = new EventListener() {
@@ -457,7 +457,7 @@ class MultiTenant_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_group_unSubscribe() throws Exception {
+    void multipleTenantGroupUnsubscribe() throws Exception {
         
         String serviceName = randomDomainName();
         EventListener listener = new EventListener() {
@@ -497,7 +497,7 @@ class MultiTenant_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_serverStatus() throws Exception {
+    void multipleTenantServerStatus() throws Exception {
         assertEquals(TEST_SERVER_STATUS, naming1.getServerStatus());
         assertEquals(TEST_SERVER_STATUS, naming2.getServerStatus());
     }
@@ -508,7 +508,7 @@ class MultiTenant_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_deregisterInstance() throws Exception {
+    void multipleTenantDeregisterInstance() throws Exception {
         
         String serviceName = randomDomainName();
         
@@ -535,7 +535,7 @@ class MultiTenant_ITCase {
      */
     @Test
     @Disabled("nacos 2.0 deregister only judged by client and service")
-    void multipleTenant_group_deregisterInstance() throws Exception {
+    void multipleTenantGroupDeregisterInstance() throws Exception {
         
         String serviceName = randomDomainName();
         
@@ -560,7 +560,7 @@ class MultiTenant_ITCase {
      */
     @Test
     @Disabled("nacos 2.0 deregister only judged by client and service")
-    void multipleTenant_group_cluster_deregisterInstance() throws Exception {
+    void multipleTenantGroupClusterDeregisterInstance() throws Exception {
         
         String serviceName = randomDomainName();
         
@@ -586,7 +586,7 @@ class MultiTenant_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_selectOneHealthyInstance() throws Exception {
+    void multipleTenantSelectOneHealthyInstance() throws Exception {
         
         String serviceName = randomDomainName();
         
@@ -613,7 +613,7 @@ class MultiTenant_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_group_selectOneHealthyInstance() throws Exception {
+    void multipleTenantGroupSelectOneHealthyInstance() throws Exception {
         
         String serviceName = randomDomainName();
         naming1.registerInstance(serviceName, TEST_GROUP, "11.11.11.11", TEST_PORT, "c1");
@@ -643,7 +643,7 @@ class MultiTenant_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_noGroup_selectOneHealthyInstance() throws Exception {
+    void multipleTenantNoGroupSelectOneHealthyInstance() throws Exception {
         assertThrows(IllegalStateException.class, () -> {
             
             String serviceName = randomDomainName();
