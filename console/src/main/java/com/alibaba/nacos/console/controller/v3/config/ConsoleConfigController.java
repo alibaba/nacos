@@ -93,7 +93,7 @@ public class ConsoleConfigController {
      */
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
-    public Result<ConfigAllInfo> getConfigDetail(ConfigFormV3 configForm) throws Exception {
+    public Result<ConfigAllInfo> getConfigDetail(ConfigFormV3 configForm) throws NacosException {
         configForm.validate();
         String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
         String dataId = configForm.getDataId();
