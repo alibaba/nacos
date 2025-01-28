@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,34 +14,28 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.maintainer.client.address;
-
-import java.util.List;
+package com.alibaba.nacos.maintainer.client.model.config;
 
 /**
- * server list factory . use to inner client to connecte and switch servers.
- * @author liuzunfei
+ * SameConfigPolicy.
+ *
+ * @author klw
  */
-public interface ServerListManager {
+public enum SameConfigPolicy {
     
     /**
-     * switch to a new server and get it.
-     *
-     * @return server " ip:port".
+     * Abort import  on duplicate.
      */
-    String genNextServer();
+    ABORT,
     
     /**
-     * get current server.
-     * @return server " ip:port".
+     * Skipping on duplicate.
      */
-    String getCurrentServer();
+    SKIP,
     
     /**
-     * get current server.
-     *
-     * @return servers.
+     * Overwrite on duplicate.
      */
-    List<String> getServerList();
+    OVERWRITE
     
 }

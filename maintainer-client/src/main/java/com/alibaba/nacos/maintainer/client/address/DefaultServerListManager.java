@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.maintainer.client.address;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.maintainer.client.env.NacosClientProperties;
-import com.alibaba.nacos.maintainer.client.exception.NacosException;
 import com.alibaba.nacos.maintainer.client.remote.HttpClientManager;
-import com.alibaba.nacos.maintainer.client.remote.client.NacosRestTemplate;
-import com.alibaba.nacos.maintainer.client.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Config server list Manager.
+ * Server list Manager.
  *
  * @author Nacos
  */

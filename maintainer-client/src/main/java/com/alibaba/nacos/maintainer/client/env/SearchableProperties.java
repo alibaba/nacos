@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.maintainer.client.env;
 
-import com.alibaba.nacos.maintainer.client.constants.PropertyKeyConstants;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.env.convert.CompositeConverter;
-import com.alibaba.nacos.maintainer.client.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -64,9 +64,9 @@ class SearchableProperties implements NacosClientProperties {
     private static List<SourceType> init() {
         List<SourceType> initOrder = Arrays.asList(SourceType.PROPERTIES, SourceType.JVM, SourceType.ENV);
         
-        String firstEnv = JVM_ARGS_PROPERTY_SOURCE.getProperty(PropertyKeyConstants.SystemEnv.NACOS_ENV_FIRST);
+        String firstEnv = JVM_ARGS_PROPERTY_SOURCE.getProperty(Constants.SysEnv.NACOS_ENV_FIRST);
         if (StringUtils.isBlank(firstEnv)) {
-            firstEnv = SYSTEM_ENV_PROPERTY_SOURCE.getProperty(PropertyKeyConstants.SystemEnv.NACOS_ENV_FIRST);
+            firstEnv = SYSTEM_ENV_PROPERTY_SOURCE.getProperty(Constants.SysEnv.NACOS_ENV_FIRST);
         }
         
         if (StringUtils.isNotBlank(firstEnv)) {

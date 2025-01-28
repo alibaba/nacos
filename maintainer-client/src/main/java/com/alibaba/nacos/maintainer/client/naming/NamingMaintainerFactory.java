@@ -14,40 +14,40 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.maintainer.client.config;
+package com.alibaba.nacos.maintainer.client.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
 
 import java.util.Properties;
 
 /**
- * Nacos config maintainer service.
+ * Nacos naming maintainer service.
  *
  * @author Nacos
  */
-public class ConfigMaintainerFactory {
+public class NamingMaintainerFactory {
     
     /**
-     * create config maintainer service.
+     * create Naming maintainer service.
      *
      * @param serverList server list
-     * @return config maintainer service
+     * @return naming maintainer service
      * @throws NacosException nacos exception
      */
-    public static ConfigMaintainerService createConfigMaintainerService(String serverList) throws NacosException {
+    public static NamingMaintainerService createNamingMaintainerService(String serverList) throws NacosException {
         Properties properties = new Properties();
         properties.setProperty("serverAddr", serverList);
-        return new NacosConfigMaintainerService(properties);
+        return new NacosNamingMaintainerService(properties);
     }
     
     /**
-     * create config maintainer service.
+     * create Naming maintainer service.
      *
      * @param properties properties
-     * @return config maintainer service
+     * @return naming maintainer service
      * @throws NacosException nacos exception
      */
-    public static ConfigMaintainerService createConfigMaintainerService(Properties properties) throws NacosException {
-        return new NacosConfigMaintainerService(properties);
+    public static NamingMaintainerService createNamingMaintainerService(Properties properties) throws NacosException {
+        return new NacosNamingMaintainerService(properties);
     }
 }

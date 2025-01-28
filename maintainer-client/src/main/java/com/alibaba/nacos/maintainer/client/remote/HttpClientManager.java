@@ -16,11 +16,14 @@
 
 package com.alibaba.nacos.maintainer.client.remote;
 
-import com.alibaba.nacos.maintainer.client.exception.NacosException;
-import com.alibaba.nacos.maintainer.client.lifecycle.Closeable;
-import com.alibaba.nacos.maintainer.client.remote.client.NacosAsyncRestTemplate;
-import com.alibaba.nacos.maintainer.client.remote.client.NacosRestTemplate;
-import com.alibaba.nacos.maintainer.client.utils.ExceptionUtil;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.http.DefaultHttpClientFactory;
+import com.alibaba.nacos.common.http.HttpClientBeanHolder;
+import com.alibaba.nacos.common.http.HttpClientFactory;
+import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.utils.ExceptionUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +51,7 @@ public class HttpClientManager implements Closeable {
         return HttpClientManager.INSTANCE;
     }
     
-    private static final HttpClientFactory HTTP_CLIENT_FACTORY = new DefaultHttpClientFactory();
+    private static final HttpClientFactory HTTP_CLIENT_FACTORY = new DefaultHttpClientFactory(LOGGER);
     
     /**
      * get NacosRestTemplate Instance.
@@ -56,35 +59,19 @@ public class HttpClientManager implements Closeable {
      * @return NacosRestTemplate
      */
     public NacosRestTemplate getNacosRestTemplate() {
-        if (HTTP_CLIENT_FACTORY == null) {
-            throw new NullPointerException("httpClientFactory is null");
-        }
-        String factoryName = HTTP_CLIENT_FACTORY.getClass().getName();
-        NacosRestTemplate nacosRestTemplate = SINGLETON_REST.get(factoryName);
-        if (nacosRestTemplate == null) {
-            synchronized (SINGLETON_REST) {
-                nacosRestTemplate = SINGLETON_REST.get(factoryName);
-                if (nacosRestTemplate != null) {
-                    return nacosRestTemplate;
-                }
-                nacosRestTemplate = HTTP_CLIENT_FACTORY.createNacosRestTemplate();
-                SINGLETON_REST.put(factoryName, nacosRestTemplate);
-            }
-        }
-        
-        return nacosRestTemplate;
+        return HttpClientBeanHolder.getNacosRestTemplate(HTTP_CLIENT_FACTORY);
     }
     
     @Override
     public void shutdown() throws NacosException {
-        LOGGER.info("[ConfigHttpClientManager] Start destroying NacosRestTemplate");
+        LOGGER.info("[HttpClientManager] Start destroying NacosRestTemplate");
         try {
-            shutdown(HTTP_CLIENT_FACTORY.getClass().getName());
+            HttpClientBeanHolder.shutdownNacosSyncRest(HTTP_CLIENT_FACTORY.getClass().getName());
         } catch (Exception ex) {
-            LOGGER.error("[ConfigHttpClientManager] An exception occurred when the HTTP client was closed : {}",
+            LOGGER.error("[HttpClientManager] An exception occurred when the HTTP client was closed : {}",
                     ExceptionUtil.getStackTrace(ex));
         }
-        LOGGER.info("[ConfigHttpClientManager] Completed destruction of NacosRestTemplate");
+        LOGGER.info("[HttpClientManager] Completed destruction of NacosRestTemplate");
     }
     
     public static void shutdown(String className) throws Exception {

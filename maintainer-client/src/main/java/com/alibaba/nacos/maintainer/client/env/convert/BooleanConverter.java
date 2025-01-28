@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.maintainer.client.env.convert;
 
-import com.alibaba.nacos.maintainer.client.utils.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.HashSet;
 import java.util.Set;

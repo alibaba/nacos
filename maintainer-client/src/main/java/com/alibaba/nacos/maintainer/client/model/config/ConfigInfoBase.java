@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.maintainer.client.model.config;
 
-import com.alibaba.nacos.maintainer.client.constants.HttpConstants;
-import com.alibaba.nacos.maintainer.client.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 
@@ -56,7 +56,7 @@ public class ConfigInfoBase implements Serializable, Comparable<ConfigInfoBase> 
         this.group = group;
         this.content = content;
         if (this.content != null) {
-            this.md5 = MD5Utils.md5Hex(this.content, HttpConstants.PERSIST_ENCODE);
+            this.md5 = MD5Utils.md5Hex(this.content, Constants.PERSIST_ENCODE);
         }
     }
     

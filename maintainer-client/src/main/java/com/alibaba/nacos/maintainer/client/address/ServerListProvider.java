@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.maintainer.client.address;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.maintainer.client.env.NacosClientProperties;
-import com.alibaba.nacos.maintainer.client.exception.NacosException;
-import com.alibaba.nacos.maintainer.client.lifecycle.Closeable;
-import com.alibaba.nacos.maintainer.client.remote.client.NacosRestTemplate;
 import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
 
 import java.util.List;

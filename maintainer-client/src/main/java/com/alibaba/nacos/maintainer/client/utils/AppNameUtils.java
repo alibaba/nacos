@@ -16,7 +16,8 @@
 
 package com.alibaba.nacos.maintainer.client.utils;
 
-import com.alibaba.nacos.maintainer.client.constants.PropertyKeyConstants;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.env.NacosClientProperties;
 
 import java.io.File;
@@ -63,7 +64,7 @@ public class AppNameUtils {
     }
     
     private static String getAppNameByProjectName() {
-        return NacosClientProperties.PROTOTYPE.getProperty(PropertyKeyConstants.SystemEnv.PROJECT_NAME);
+        return NacosClientProperties.PROTOTYPE.getProperty(Constants.SysEnv.PROJECT_NAME);
     }
     
     private static String getAppNameByServerHome() {

@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.maintainer.client.utils;
 
+import com.alibaba.nacos.common.utils.StringUtils;
+
 /**
  * Context path Util.
  *

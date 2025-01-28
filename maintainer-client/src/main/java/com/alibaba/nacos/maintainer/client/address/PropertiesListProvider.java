@@ -16,14 +16,15 @@
 
 package com.alibaba.nacos.maintainer.client.address;
 
-import com.alibaba.nacos.maintainer.client.constants.PropertyKeyConstants;
-import com.alibaba.nacos.maintainer.client.constants.RequestUrlConstants;
+import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.constant.RequestUrlConstants;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.env.NacosClientProperties;
-import com.alibaba.nacos.maintainer.client.exception.NacosException;
-import com.alibaba.nacos.maintainer.client.remote.client.NacosRestTemplate;
-import com.alibaba.nacos.maintainer.client.utils.InternetAddressUtil;
 import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
-import com.alibaba.nacos.maintainer.client.utils.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +45,7 @@ public class PropertiesListProvider extends AbstractServerListProvider {
     public void init(final NacosClientProperties properties, final NacosRestTemplate nacosRestTemplate) throws NacosException {
         super.init(properties, nacosRestTemplate);
         serverList = new ArrayList<>();
-        String serverAddrsStr = properties.getProperty(PropertyKeyConstants.SERVER_ADDR);
+        String serverAddrsStr = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
         StringTokenizer serverAddrsTokens = new StringTokenizer(serverAddrsStr, ",;");
         while (serverAddrsTokens.hasMoreTokens()) {
             String serverAddr = serverAddrsTokens.nextToken().trim();
@@ -69,12 +70,12 @@ public class PropertiesListProvider extends AbstractServerListProvider {
     
     @Override
     public int getOrder() {
-        return PropertyKeyConstants.ADDRESS_SERVER_LIST_PROVIDER_ORDER;
+        return Constants.Address.ADDRESS_SERVER_LIST_PROVIDER_ORDER;
     }
     
     @Override
     public boolean match(final NacosClientProperties properties) {
-        return StringUtils.isNotBlank(properties.getProperty(PropertyKeyConstants.SERVER_ADDR));
+        return StringUtils.isNotBlank(properties.getProperty(PropertyKeyConst.SERVER_ADDR));
     }
     
     @Override

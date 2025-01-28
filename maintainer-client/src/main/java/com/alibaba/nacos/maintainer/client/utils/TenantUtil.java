@@ -16,7 +16,8 @@
 
 package com.alibaba.nacos.maintainer.client.utils;
 
-import com.alibaba.nacos.maintainer.client.constants.PropertyKeyConstants;
+import com.alibaba.nacos.api.SystemPropertyKeyConst;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.maintainer.client.env.NacosClientProperties;
 
 /**
@@ -66,7 +67,7 @@ public class TenantUtil {
         String tmp = USER_TENANT;
         
         if (StringUtils.isBlank(USER_TENANT)) {
-            tmp = NacosClientProperties.PROTOTYPE.getProperty(PropertyKeyConstants.ANS_NAMESPACE);
+            tmp = NacosClientProperties.PROTOTYPE.getProperty(SystemPropertyKeyConst.ANS_NAMESPACE);
         }
         return tmp;
     }

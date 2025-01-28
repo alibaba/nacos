@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.maintainer.client;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerFactory;
 import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerService;
-import com.alibaba.nacos.maintainer.client.exception.NacosException;
 
 import java.util.Properties;
 
@@ -29,7 +29,8 @@ import java.util.Properties;
  */
 public class NacosMaintainerFactory {
 
-    public static ConfigMaintainerService createConfigMaintainerService(String serverList) throws NacosException {
+    public static ConfigMaintainerService createConfigMaintainerService(String serverList)
+            throws NacosException, NacosException {
         return ConfigMaintainerFactory.createConfigMaintainerService(serverList);
     }
     

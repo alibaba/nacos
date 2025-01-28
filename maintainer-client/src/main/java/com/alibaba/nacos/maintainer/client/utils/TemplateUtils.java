@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.maintainer.client.utils;
 
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,8 +25,7 @@ import java.util.concurrent.Callable;
 /**
  * Template Utils.
  *
- * @author pbting
- * @date 2019-03-04 1:31 PM
+ * @author Nacos
  */
 public class TemplateUtils {
     

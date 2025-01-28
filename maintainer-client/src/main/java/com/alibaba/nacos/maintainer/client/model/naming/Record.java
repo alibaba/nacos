@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,34 +14,22 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.maintainer.client.address;
+package com.alibaba.nacos.maintainer.client.model.naming;
 
-import java.util.List;
+import java.io.Serializable;
 
 /**
- * server list factory . use to inner client to connecte and switch servers.
- * @author liuzunfei
+ * Record to transfer and store in Nacos cluster.
+ *
+ * @author nkorange
+ * @since 1.0.0
  */
-public interface ServerListManager {
+public interface Record extends Serializable {
     
     /**
-     * switch to a new server and get it.
+     * get the checksum of this record, usually for record comparison.
      *
-     * @return server " ip:port".
+     * @return checksum of record
      */
-    String genNextServer();
-    
-    /**
-     * get current server.
-     * @return server " ip:port".
-     */
-    String getCurrentServer();
-    
-    /**
-     * get current server.
-     *
-     * @return servers.
-     */
-    List<String> getServerList();
-    
+    String getChecksum();
 }

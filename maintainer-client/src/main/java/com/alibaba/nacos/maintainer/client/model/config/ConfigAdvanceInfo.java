@@ -16,14 +16,17 @@
 
 package com.alibaba.nacos.maintainer.client.model.config;
 
+import java.io.Serializable;
+import java.util.Objects;
+
 /**
- * ConfigAllInfo.
+ * Config advance info.
  *
  * @author Nacos
  */
-public class ConfigAllInfo extends ConfigInfo {
+public class ConfigAdvanceInfo implements Serializable {
     
-    private static final long serialVersionUID = 6492506189833320596L;
+    static final long serialVersionUID = 3148031484920416869L;
     
     private long createTime;
     
@@ -39,12 +42,11 @@ public class ConfigAllInfo extends ConfigInfo {
     
     private String effect;
     
+    private String type;
+    
     private String schema;
     
     private String configTags;
-    
-    public ConfigAllInfo() {
-    }
     
     public long getCreateTime() {
         return createTime;
@@ -101,7 +103,15 @@ public class ConfigAllInfo extends ConfigInfo {
     public void setEffect(String effect) {
         this.effect = effect;
     }
-
+    
+    public String getType() {
+        return type;
+    }
+    
+    public void setType(String type) {
+        this.type = type;
+    }
+    
     public String getSchema() {
         return schema;
     }
@@ -119,12 +129,18 @@ public class ConfigAllInfo extends ConfigInfo {
     }
     
     @Override
-    public int hashCode() {
-        return super.hashCode();
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ConfigAdvanceInfo that = (ConfigAdvanceInfo) o;
+        return createTime == that.createTime && modifyTime == that.modifyTime && Objects.equals(createUser,
+                that.createUser) && Objects.equals(createIp, that.createIp) && Objects.equals(desc, that.desc)
+                && Objects.equals(use, that.use) && Objects.equals(effect, that.effect) && Objects.equals(type,
+                that.type) && Objects.equals(schema, that.schema) && Objects.equals(configTags, that.configTags);
     }
     
-    @Override
-    public boolean equals(Object obj) {
-        return super.equals(obj);
-    }
 }

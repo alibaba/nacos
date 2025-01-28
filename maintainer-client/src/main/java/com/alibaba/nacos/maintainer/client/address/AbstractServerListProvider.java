@@ -16,12 +16,12 @@
 
 package com.alibaba.nacos.maintainer.client.address;
 
-import com.alibaba.nacos.maintainer.client.constants.PropertyKeyConstants;
+import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.maintainer.client.env.NacosClientProperties;
-import com.alibaba.nacos.maintainer.client.exception.NacosException;
-import com.alibaba.nacos.maintainer.client.remote.client.NacosRestTemplate;
 import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
-import com.alibaba.nacos.maintainer.client.utils.StringUtils;
 
 import java.util.List;
 
@@ -61,7 +61,7 @@ public abstract class AbstractServerListProvider implements ServerListProvider {
     }
     
     private void initContextPath(NacosClientProperties properties) {
-        String contentPathTmp = properties.getProperty(PropertyKeyConstants.CONTEXT_PATH);
+        String contentPathTmp = properties.getProperty(PropertyKeyConst.CONTEXT_PATH);
         if (!StringUtils.isBlank(contentPathTmp)) {
             this.contextPath = contentPathTmp;
         }

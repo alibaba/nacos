@@ -16,7 +16,13 @@
 
 package com.alibaba.nacos.maintainer.client.utils;
 
-import com.alibaba.nacos.maintainer.client.constants.PropertyKeyConstants;
+import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.SystemPropertyKeyConst;
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.utils.ConvertUtils;
+import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.maintainer.client.env.NacosClientProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +46,8 @@ public class ParamUtil {
     private static String defaultContextPath;
     
     private static String defaultNodesPath = "serverlist";
+    
+    private static final String DEFAULT_NAMESPACE_ID = "public";
     
     private static String appKey;
     
@@ -218,23 +226,23 @@ public class ParamUtil {
     public static String parseNamespace(NacosClientProperties properties) {
         String namespaceTmp = null;
         
-        String isUseCloudNamespaceParsing = properties.getProperty(PropertyKeyConstants.IS_USE_CLOUD_NAMESPACE_PARSING,
-                properties.getProperty(PropertyKeyConstants.IS_USE_CLOUD_NAMESPACE_PARSING,
-                        String.valueOf(PropertyKeyConstants.DEFAULT_USE_CLOUD_NAMESPACE_PARSING)));
+        String isUseCloudNamespaceParsing = properties.getProperty(PropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
+                properties.getProperty(SystemPropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
+                        String.valueOf(Constants.DEFAULT_USE_CLOUD_NAMESPACE_PARSING)));
         
         if (Boolean.parseBoolean(isUseCloudNamespaceParsing)) {
             namespaceTmp = TenantUtil.getUserTenantForAcm();
             
             namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, () -> {
-                String namespace = properties.getProperty(PropertyKeyConstants.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
+                String namespace = properties.getProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
                 return StringUtils.isNotBlank(namespace) ? namespace : StringUtils.EMPTY;
             });
         }
         
         if (StringUtils.isBlank(namespaceTmp)) {
-            namespaceTmp = properties.getProperty(PropertyKeyConstants.NAMESPACE);
+            namespaceTmp = properties.getProperty(PropertyKeyConst.NAMESPACE);
         }
-        return StringUtils.isNotBlank(namespaceTmp) ? namespaceTmp.trim() : PropertyKeyConstants.DEFAULT_NAMESPACE_ID;
+        return StringUtils.isNotBlank(namespaceTmp) ? namespaceTmp.trim() : Constants.DEFAULT_NAMESPACE_ID;
     }
     
     /**
@@ -248,7 +256,7 @@ public class ParamUtil {
         if (endpointUrl == null || !PATTERN.matcher(endpointUrl).find()) {
             // skip retrieve from system property and retrieve directly from system env
             String endpointUrlSource = NacosClientProperties.PROTOTYPE.getProperty(
-                    PropertyKeyConstants.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
+                    PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
             if (StringUtils.isNotBlank(endpointUrlSource)) {
                 endpointUrl = endpointUrlSource;
             }
@@ -267,7 +275,7 @@ public class ParamUtil {
         String endpointUrlSource = TemplateUtils.stringBlankAndThenExecute(
                 NacosClientProperties.PROTOTYPE.getProperty(endpointUrl),
                 () -> NacosClientProperties.PROTOTYPE.getProperty(
-                        PropertyKeyConstants.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL));
+                        PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL));
         
         if (StringUtils.isBlank(endpointUrlSource)) {
             if (StringUtils.isNotBlank(defaultEndpointUrl)) {
@@ -286,7 +294,7 @@ public class ParamUtil {
      * simply env name if name is too long.
      *
      * @param envName env name.
-     * @return
+     * @return env name.
      */
     public static String simplyEnvNameIfOverLimit(String envName) {
         if (StringUtils.isNotBlank(envName) && envName.length() > MAX_ENV_NAME_LENGTH) {
@@ -296,7 +304,7 @@ public class ParamUtil {
     }
     
     public static String getInputParameters(Properties properties) {
-        boolean logAllParameters = ConvertUtils.toBoolean(properties.getProperty(PropertyKeyConstants.LOG_ALL_PROPERTIES),
+        boolean logAllParameters = ConvertUtils.toBoolean(properties.getProperty(PropertyKeyConst.LOG_ALL_PROPERTIES),
                 false);
         StringBuilder result = new StringBuilder();
         if (logAllParameters) {
@@ -310,16 +318,16 @@ public class ParamUtil {
                             .append("\n"));
         } else {
             result.append("Nacos client key init properties: \n");
-            appendKeyParameters(result, properties, PropertyKeyConstants.SERVER_ADDR, false);
-            appendKeyParameters(result, properties, PropertyKeyConstants.NAMESPACE, false);
-            appendKeyParameters(result, properties, PropertyKeyConstants.ENDPOINT, false);
-            appendKeyParameters(result, properties, PropertyKeyConstants.ENDPOINT_PORT, false);
-            appendKeyParameters(result, properties, PropertyKeyConstants.USERNAME, false);
-            appendKeyParameters(result, properties, PropertyKeyConstants.PASSWORD, true);
-            appendKeyParameters(result, properties, PropertyKeyConstants.ACCESS_KEY, false);
-            appendKeyParameters(result, properties, PropertyKeyConstants.SECRET_KEY, true);
-            appendKeyParameters(result, properties, PropertyKeyConstants.RAM_ROLE_NAME, false);
-            appendKeyParameters(result, properties, PropertyKeyConstants.SIGNATURE_REGION_ID, false);
+            appendKeyParameters(result, properties, PropertyKeyConst.SERVER_ADDR, false);
+            appendKeyParameters(result, properties, PropertyKeyConst.NAMESPACE, false);
+            appendKeyParameters(result, properties, PropertyKeyConst.ENDPOINT, false);
+            appendKeyParameters(result, properties, PropertyKeyConst.ENDPOINT_PORT, false);
+            appendKeyParameters(result, properties, PropertyKeyConst.USERNAME, false);
+            appendKeyParameters(result, properties, PropertyKeyConst.PASSWORD, true);
+            appendKeyParameters(result, properties, PropertyKeyConst.ACCESS_KEY, false);
+            appendKeyParameters(result, properties, PropertyKeyConst.SECRET_KEY, true);
+            appendKeyParameters(result, properties, PropertyKeyConst.RAM_ROLE_NAME, false);
+            appendKeyParameters(result, properties, PropertyKeyConst.SIGNATURE_REGION_ID, false);
         }
         return result.toString();
     }
@@ -368,5 +376,9 @@ public class ParamUtil {
             split = "-";
         }
         return sb.toString();
+    }
+    
+    public static String getDefaultNamespaceId() {
+        return DEFAULT_NAMESPACE_ID;
     }
 }

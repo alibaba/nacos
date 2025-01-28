@@ -16,12 +16,12 @@
 
 package com.alibaba.nacos.maintainer.client.address;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.JustForTest;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.maintainer.client.env.NacosClientProperties;
-import com.alibaba.nacos.maintainer.client.exception.NacosException;
-import com.alibaba.nacos.maintainer.client.lifecycle.Closeable;
-import com.alibaba.nacos.maintainer.client.remote.client.NacosRestTemplate;
-import com.alibaba.nacos.maintainer.client.spi.NacosServiceLoader;
-import com.alibaba.nacos.maintainer.client.utils.JustForTest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
