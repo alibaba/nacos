@@ -17,9 +17,11 @@
 package com.alibaba.nacos.maintainer.client.config;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpRestResult;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.maintainer.client.constants.Constants;
@@ -42,15 +44,24 @@ import com.alibaba.nacos.maintainer.client.model.core.ServerLoaderMetrics;
 import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
 import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.context.request.async.DeferredResult;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 /**
  * Configuration management.
@@ -58,6 +69,8 @@ import java.util.Properties;
  * @author Nacos
  */
 public class NacosConfigMaintainerService implements ConfigMaintainerService {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(NacosConfigMaintainerService.class);
     
     private final ClientHttpProxy clientHttpProxy;
     
@@ -77,11 +90,8 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
         params.put("groupName", groupName);
         params.put("namespaceId", namespaceId);
         
-        HttpRequest httpRequest = new HttpRequest.Builder()
-                .setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH)
-                .setParamValue(params)
-                .build();
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
         Result<ConfigAllInfo> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<ConfigAllInfo>>() {
@@ -90,238 +100,737 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public boolean publishConfig(String dataId, String groupName, String content) throws NacosException {
-        return false;
+    public boolean publishConfig(String dataId, String groupName, String content) throws Exception {
+        return publishConfig(dataId, groupName, ParamUtil.getDefaultNamespaceId(), content);
     }
     
     @Override
-    public boolean publishConfig(String dataId, String groupName, String namespaceId, String content)
-            throws NacosException {
-        return false;
+    public boolean publishConfig(String dataId, String groupName, String namespaceId, String content) throws Exception {
+        return publishConfig(dataId, groupName, namespaceId, content, null, null, null, null, null, null, null, null,
+                null);
     }
     
     @Override
     public boolean publishConfig(String dataId, String groupName, String namespaceId, String content, String tag,
             String appName, String srcUser, String configTags, String desc, String use, String effect, String type,
-            String schema) throws NacosException {
-        return false;
+            String schema) throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("dataId", dataId);
+        params.put("groupName", groupName);
+        params.put("namespaceId", namespaceId);
+        params.put("content", content);
+        params.put("tag", tag);
+        params.put("appName", appName);
+        params.put("srcUser", srcUser);
+        params.put("configTags", configTags);
+        params.put("desc", desc);
+        params.put("use", use);
+        params.put("effect", effect);
+        params.put("type", type);
+        params.put("schema", schema);
+        
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
+        });
+        return result.getData();
     }
     
     @Override
-    public boolean deleteConfig(String dataId, String groupName, String namespaceId) throws NacosException {
-        return false;
+    public boolean deleteConfig(String dataId, String groupName) throws Exception {
+        return deleteConfig(dataId, groupName, ParamUtil.getDefaultNamespaceId(), null);
     }
     
     @Override
-    public boolean deleteConfig(String dataId, String groupName, String namespaceId, String tag) throws NacosException {
-        return false;
+    public boolean deleteConfig(String dataId, String groupName, String namespaceId) throws Exception {
+        return deleteConfig(dataId, groupName, namespaceId, null);
     }
     
     @Override
-    public boolean deleteConfigs(List<Long> ids) throws NacosException {
-        return false;
+    public boolean deleteConfig(String dataId, String groupName, String namespaceId, String tag) throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("dataId", dataId);
+        params.put("groupName", groupName);
+        params.put("namespaceId", namespaceId);
+        params.put("tag", tag);
+        
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.DELETE)
+                .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
+        });
+        return result.getData();
+    }
+    
+    @Override
+    public boolean deleteConfigs(List<Long> ids) throws Exception {
+        Map<String, String> params = new HashMap<>();
+        StringBuilder idStr = new StringBuilder();
+        for (Long id : ids) {
+            if (idStr.length() > 0) {
+                idStr.append(",");
+            }
+            idStr.append(id);
+        }
+        params.put("ids", idStr.toString());
+        
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.DELETE)
+                .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
+        });
+        return result.getData();
+    }
+    
+    @Override
+    public ConfigAdvanceInfo getConfigAdvanceInfo(String dataId, String groupName) throws Exception {
+        return getConfigAdvanceInfo(dataId, groupName, ParamUtil.getDefaultNamespaceId());
     }
     
     @Override
     public ConfigAdvanceInfo getConfigAdvanceInfo(String dataId, String groupName, String namespaceId)
-            throws NacosException {
-        return null;
+            throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("dataId", dataId);
+        params.put("groupName", groupName);
+        params.put("namespaceId", namespaceId);
+        
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<ConfigAdvanceInfo> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<ConfigAdvanceInfo>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public GroupkeyListenserStatus getListeners(String dataId, String groupName, String namespaceId) throws Exception {
-        return null;
+    public Page<ConfigInfo> searchConfigByDetails(String dataId, String groupName, String namespaceId,
+            String configDetail, String search, int pageNo, int pageSize) throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("dataId", dataId);
+        params.put("groupName", groupName);
+        params.put("namespaceId", namespaceId);
+        params.put("configDetail", configDetail);
+        params.put("search", search);
+        params.put("pageNo", String.valueOf(pageNo));
+        params.put("pageSize", String.valueOf(pageSize));
+        
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<Page<ConfigInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Page<ConfigInfo>>>() {
+                });
+        return result.getData();
+    }
+    
+    @Override
+    public GroupkeyListenserStatus getListeners(String dataId, String groupName) throws Exception {
+        return getListeners(dataId, groupName, ParamUtil.getDefaultNamespaceId(), 1);
     }
     
     @Override
     public GroupkeyListenserStatus getListeners(String dataId, String groupName, String namespaceId, int sampleTime)
             throws Exception {
-        return null;
+        Map<String, String> params = new HashMap<>();
+        params.put("dataId", dataId);
+        params.put("groupName", groupName);
+        params.put("namespaceId", namespaceId);
+        params.put("sampleTime", String.valueOf(sampleTime));
+        
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CONFIG_LISTENER_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<GroupkeyListenserStatus> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<GroupkeyListenserStatus>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public Page<ConfigInfo> searchConfigByDetails(String dataId, String groupName, String namespaceId,
-            String configDetail, String search, int pageNo, int pageSize) throws NacosException {
-        return null;
+    public boolean stopBeta(String dataId, String groupName) throws Exception {
+        return stopBeta(dataId, groupName, ParamUtil.getDefaultNamespaceId());
     }
     
     @Override
-    public boolean stopBeta(String dataId, String groupName) throws NacosException {
-        return false;
+    public boolean stopBeta(String dataId, String groupName, String namespaceId) throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("dataId", dataId);
+        params.put("groupName", groupName);
+        params.put("namespaceId", namespaceId);
+        
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.DELETE)
+                .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
+        });
+        return result.getData();
     }
     
     @Override
-    public boolean stopBeta(String dataId, String groupName, String namespaceId) throws NacosException {
-        return false;
+    public ConfigInfo4Beta queryBeta(String dataId, String groupName) throws Exception {
+        return queryBeta(dataId, groupName, ParamUtil.getDefaultNamespaceId());
     }
     
     @Override
-    public ConfigInfo4Beta queryBeta(String dataId, String groupName) throws NacosException {
-        return null;
-    }
-    
-    @Override
-    public ConfigInfo4Beta queryBeta(String dataId, String groupName, String namespaceId) throws NacosException {
-        return null;
+    public ConfigInfo4Beta queryBeta(String dataId, String groupName, String namespaceId) throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("dataId", dataId);
+        params.put("groupName", groupName);
+        params.put("namespaceId", namespaceId);
+        
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<ConfigInfo4Beta> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<ConfigInfo4Beta>>() {
+                });
+        return result.getData();
     }
     
     @Override
     public Map<String, Object> importAndPublishConfig(String namespaceId, String srcUser, SameConfigPolicy policy,
-            MultipartFile file) throws NacosException {
-        return Map.of();
+            MultipartFile multipartFile) throws Exception {
+        File file = convertToFile(multipartFile);
+        try {
+            Map<String, String> params = new HashMap<>();
+            params.put("namespaceId", namespaceId);
+            params.put("srcUser", srcUser);
+            params.put("policy", policy.toString());
+            
+            HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
+                    .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH).setParamValue(params).setFile(file).build();
+            HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+            Result<Map<String, Object>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                    new TypeReference<Result<Map<String, Object>>>() {
+                    });
+            return result.getData();
+        } finally {
+            if (!file.delete()) {
+                LOGGER.warn("delete file failed: {}", file.getAbsolutePath());
+            }
+        }
     }
     
     @Override
     public ResponseEntity<byte[]> exportConfig(String dataId, String groupName, String namespaceId, List<Long> ids)
-            throws NacosException {
-        return null;
+            throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("dataId", dataId);
+        params.put("groupName", groupName);
+        params.put("namespaceId", namespaceId);
+        params.put("ids", ids.stream().map(String::valueOf).collect(Collectors.joining(",")));
+        
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH).setParamValue(params).build();
+        
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        byte[] responseBody = httpRestResult.getData().getBytes(StandardCharsets.UTF_8);
+        return ResponseEntity.ok().header(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
+                .header(HttpHeaderConsts.CONTENT_DISPOSITION, "attachment; filename=\"config_export.zip\"")
+                .body(responseBody);
     }
-    
+
     @Override
     public Map<String, Object> cloneConfig(String namespaceId, List<SameNamespaceCloneConfigBean> configBeansList,
-            String srcUser, SameConfigPolicy policy) throws NacosException {
-        return new HashMap<>();
+            String srcUser, SameConfigPolicy policy) throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("namespaceId", namespaceId);
+        params.put("srcUser", srcUser);
+        params.put("policy", policy.toString());
+        params.put("configBeansList", JacksonUtils.toJson(configBeansList));
+        
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH)
+                .setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<Map<String, Object>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Map<String, Object>>>() {
+                });
+        return result.getData();
     }
     
     @Override
     public Page<ConfigHistoryInfo> listConfigHistory(String dataId, String groupName, String namespaceId, int pageNo,
-            int pageSize) throws NacosApiException {
-        return null;
+            int pageSize) throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("dataId", dataId);
+        params.put("groupName", groupName);
+        params.put("namespaceId", namespaceId);
+        params.put("pageNo", String.valueOf(pageNo));
+        params.put("pageSize", String.valueOf(pageSize));
+        
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CONFIG_HISTORY_ADMIN_PATH)
+                .setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<Page<ConfigHistoryInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Page<ConfigHistoryInfo>>>() {
+                });
+        return result.getData();
     }
     
     @Override
     public ConfigHistoryInfo getConfigHistoryInfo(String dataId, String groupName, String namespaceId, Long nid)
-            throws NacosApiException {
-        return null;
+            throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("dataId", dataId);
+        params.put("groupName", groupName);
+        params.put("namespaceId", namespaceId);
+        params.put("nid", String.valueOf(nid));
+        
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH)
+                .setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<ConfigHistoryInfo> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<ConfigHistoryInfo>>() {
+                });
+        return result.getData();
     }
     
     @Override
     public ConfigHistoryInfo getPreviousConfigHistoryInfo(String dataId, String groupName, String namespaceId, Long id)
-            throws NacosApiException {
-        return null;
+            throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("dataId", dataId);
+        params.put("groupName", groupName);
+        params.put("namespaceId", namespaceId);
+        params.put("id", String.valueOf(id));
+        
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CONFIG_HISTORY_ADMIN_PATH)
+                .setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<ConfigHistoryInfo> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<ConfigHistoryInfo>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public List<ConfigInfoWrapper> getConfigListByNamespace(String namespaceId) throws NacosApiException {
-        return List.of();
+    public List<ConfigInfoWrapper> getConfigListByNamespace(String namespaceId) throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("namespaceId", namespaceId);
+        
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CONFIG_HISTORY_ADMIN_PATH)
+                .setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<List<ConfigInfoWrapper>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<List<ConfigInfoWrapper>>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public Capacity getCapacityWithDefault(String groupName, String namespaceId) throws NacosApiException {
-        return null;
-    }
-    
-    @Override
-    public void initCapacity(String groupName, String namespaceId) throws NacosApiException {
-    
+    public Capacity getCapacityWithDefault(String groupName, String namespaceId) throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("groupName", groupName);
+        params.put("namespaceId", namespaceId);
+        
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CONFIG_CAPACITY_ADMIN_PATH)
+                .setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<Capacity> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Capacity>>() {
+                });
+        return result.getData();
     }
     
     @Override
     public boolean insertOrUpdateCapacity(String groupName, String namespaceId, Integer quota, Integer maxSize,
-            Integer maxAggrCount, Integer maxAggrSize) throws NacosApiException {
-        return false;
+            Integer maxAggrCount, Integer maxAggrSize) throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("groupName", groupName);
+        params.put("namespaceId", namespaceId);
+        params.put("quota", String.valueOf(quota));
+        params.put("maxSize", String.valueOf(maxSize));
+        params.put("maxAggrCount", String.valueOf(maxAggrCount));
+        params.put("maxAggrSize", String.valueOf(maxAggrSize));
+        
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.CONFIG_CAPACITY_ADMIN_PATH)
+                .setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Boolean>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public String updateLocalCacheFromStore() {
-        return "";
+    public String updateLocalCacheFromStore() throws Exception {
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.CONFIG_OPS_ADMIN_PATH)
+                .build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<String>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public String setLogLevel(String logName, String logLevel) {
-        return "";
+    public String setLogLevel(String logName, String logLevel) throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("logName", logName);
+        params.put("logLevel", logLevel);
+        
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.CONFIG_OPS_ADMIN_PATH)
+                .setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<String>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public Object derbyOps(String sql) {
-        return null;
+    public Object derbyOps(String sql) throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("sql", sql);
+        
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.CONFIG_OPS_ADMIN_PATH)
+                .setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<Object> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Object>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public DeferredResult<Result<String>> importDerby(MultipartFile multipartFile) {
-        return null;
+    public DeferredResult<String> importDerby(MultipartFile multipartFile) throws Exception {
+        File file = convertToFile(multipartFile);
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.CONFIG_OPS_ADMIN_PATH)
+                .setFile(file)
+                .build();
+        DeferredResult<String> deferredResult = new DeferredResult<>();
+        Callback<String> callback = new Callback<String>() {
+            @Override
+            public void onReceive(RestResult<String> result) {
+                String res = JacksonUtils.toObj(result.getData(), new TypeReference<String>() {
+                });
+                deferredResult.setResult(res);
+            }
+            
+            @Override
+            public void onError(Throwable throwable) {
+                deferredResult.setErrorResult(throwable);
+            }
+            
+            @Override
+            public void onCancel() {
+                //
+            }
+        };
+        clientHttpProxy.executeAsyncHttpRequest(httpRequest, callback);
+        return deferredResult;
     }
     
     @Override
     public GroupkeyListenserStatus getAllSubClientConfigByIp(String ip, boolean all, String namespaceId,
-            int sampleTime) {
-        return null;
+            int sampleTime) throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("ip", ip);
+        params.put("all", String.valueOf(all));
+        params.put("namespaceId", namespaceId);
+        params.put("sampleTime", String.valueOf(sampleTime));
+        
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CONFIG_LISTENER_ADMIN_PATH)
+                .setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<GroupkeyListenserStatus> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<GroupkeyListenserStatus>>() {
+                });
+        return result.getData();
     }
     
     @Override
     public Map<String, Object> getClientMetrics(String ip, String dataId, String groupName, String namespaceId)
-            throws NacosException {
-        return new HashMap<>();
+            throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("ip", ip);
+        params.put("dataId", dataId);
+        params.put("groupName", groupName);
+        params.put("namespaceId", namespaceId);
+        
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CONFIG_METRICS_ADMIN_PATH)
+                .setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<Map<String, Object>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Map<String, Object>>>() {
+                });
+        return result.getData();
     }
     
     @Override
     public Map<String, Object> getClusterMetrics(String ip, String dataId, String groupName, String namespaceId)
-            throws NacosException {
-        return new HashMap<>();
+            throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("ip", ip);
+        params.put("dataId", dataId);
+        params.put("groupName", groupName);
+        params.put("namespaceId", namespaceId);
+        
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CONFIG_METRICS_ADMIN_PATH)
+                .setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<Map<String, Object>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Map<String, Object>>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public String raftOps(String command, String value, String groupId) {
-        return "";
+    public String raftOps(String command, String value, String groupId) throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("command", command);
+        params.put("value", value);
+        params.put("groupId", groupId);
+        
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.CORE_OPS_ADMIN_PATH + "/raft")
+                .setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<String>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public List<IdGeneratorVO> getIdsHealth() {
-        return List.of();
+    public List<IdGeneratorVO> getIdsHealth() throws Exception {
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CORE_OPS_ADMIN_PATH + "/ids")
+                .build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<List<IdGeneratorVO>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<List<IdGeneratorVO>>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public void updateLogLevel(String logName, String logLevel) {
-    
+    public void updateLogLevel(String logName, String logLevel) throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("logName", logName);
+        params.put("logLevel", logLevel);
+        
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.PUT)
+                .setPath(Constants.AdminApiPath.CORE_OPS_ADMIN_PATH + "/log")
+                .setParamValue(params)
+                .build();
+        clientHttpProxy.executeHttpRequest(httpRequest);
     }
     
     @Override
-    public Member getSelfNode() {
-        return null;
+    public Member getSelfNode() throws Exception {
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CORE_CLUSTER_ADMIN_PATH + "/node/self")
+                .build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<Member> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Member>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public Collection<Member> listClusterNodes(String address, String state) throws NacosException {
-        return List.of();
+    public Collection<Member> listClusterNodes(String address, String state) throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("address", address);
+        params.put("state", state);
+        
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CORE_CLUSTER_ADMIN_PATH + "/node/list")
+                .setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<Collection<Member>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Collection<Member>>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public String getSelfNodeHealth() {
-        return "";
+    public String getSelfNodeHealth() throws Exception {
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CORE_CLUSTER_ADMIN_PATH + "/node/self/health")
+                .build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<String>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public Boolean updateClusterNodes(List<Member> nodes) throws NacosApiException {
-        return null;
+    public Boolean updateClusterNodes(List<Member> nodes) throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("nodes", JacksonUtils.toJson(nodes));
+        
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.CORE_CLUSTER_ADMIN_PATH + "/node/list")
+                .setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Boolean>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public Boolean updateLookupMode(String type) throws NacosException {
-        return null;
+    public Boolean updateLookupMode(String type) throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("type", type);
+        
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.PUT)
+                .setPath(Constants.AdminApiPath.CORE_CLUSTER_ADMIN_PATH + "/lookup")
+                .setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Boolean>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public Map<String, Connection> getCurrentClients() {
-        return Map.of();
+    public Map<String, Connection> getCurrentClients() throws Exception {
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CORE_LOADER_ADMIN_PATH + "/current")
+                .build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<Map<String, Connection>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Map<String, Connection>>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public String reloadConnectionCount(Integer count, String redirectAddress) {
-        return "";
+    public String reloadConnectionCount(Integer count, String redirectAddress) throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("count", String.valueOf(count));
+        params.put("redirectAddress", redirectAddress);
+        
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CORE_LOADER_ADMIN_PATH + "/reloadCurrent")
+                .setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<String>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public String smartReloadCluster(String loaderFactorStr) {
-        return "";
+    public String smartReloadCluster(String loaderFactorStr) throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("loaderFactorStr", loaderFactorStr);
+        
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.CORE_LOADER_ADMIN_PATH + "/smartReloadCluster")
+                .setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<String>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public String reloadSingleClient(String connectionId, String redirectAddress) {
-        return "";
+    public String reloadSingleClient(String connectionId, String redirectAddress) throws Exception {
+        Map<String, String> params = new HashMap<>();
+        params.put("connectionId", connectionId);
+        params.put("redirectAddress", redirectAddress);
+        
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.CORE_LOADER_ADMIN_PATH + "/reloadClient")
+                .setParamValue(params)
+                .build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<String>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public ServerLoaderMetrics getClusterLoaderMetrics() {
-        return null;
+    public ServerLoaderMetrics getClusterLoaderMetrics() throws Exception {
+        HttpRequest httpRequest = new HttpRequest.Builder()
+                .setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CORE_LOADER_ADMIN_PATH + "/cluster")
+                .build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeHttpRequest(httpRequest);
+        Result<ServerLoaderMetrics> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<ServerLoaderMetrics>>() {
+                });
+        return result.getData();
     }
+    
+    private File convertToFile(MultipartFile multipartFile) throws IOException {
+        File tempFile = File.createTempFile("config-", ".tmp");
+        try (InputStream in = multipartFile.getInputStream(); FileOutputStream out = new FileOutputStream(tempFile)) {
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = in.read(buffer)) != -1) {
+                out.write(buffer, 0, bytesRead);
+            }
+        }
+        return tempFile;
+    }
+    
 }

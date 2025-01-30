@@ -18,7 +18,6 @@ package com.alibaba.nacos.maintainer.client.config;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
-import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.maintainer.client.model.config.Capacity;
 import com.alibaba.nacos.maintainer.client.model.config.ConfigAdvanceInfo;
 import com.alibaba.nacos.maintainer.client.model.config.ConfigAllInfo;
@@ -74,7 +73,7 @@ public interface ConfigMaintainerService {
      * @return Whether the configuration was published successfully.
      * @throws NacosException If the publish operation fails.
      */
-    boolean publishConfig(String dataId, String groupName, String content) throws NacosException;
+    boolean publishConfig(String dataId, String groupName, String content) throws Exception;
     
     /**
      * Publish a configuration by dataId, groupName, and namespaceId.
@@ -86,7 +85,7 @@ public interface ConfigMaintainerService {
      * @return Whether the configuration was published successfully.
      * @throws NacosException If the publish operation fails.
      */
-    boolean publishConfig(String dataId, String groupName, String namespaceId, String content) throws NacosException;
+    boolean publishConfig(String dataId, String groupName, String namespaceId, String content) throws Exception;
     
     /**
      * Publish a configuration.
@@ -108,7 +107,18 @@ public interface ConfigMaintainerService {
      * @throws NacosException If publishing fails
      */
     boolean publishConfig(String dataId, String groupName, String namespaceId, String content, String tag, String appName,
-            String srcUser, String configTags, String desc, String use, String effect, String type, String schema) throws NacosException;
+            String srcUser, String configTags, String desc, String use, String effect, String type, String schema)
+            throws Exception;
+    
+    /**
+     * Delete a configuration by dataId and groupName.
+     *
+     * @param dataId    Configuration data ID (required).
+     * @param groupName Configuration group name (required).
+     * @return Whether the configuration was deleted successfully.
+     * @throws NacosException If deletion fails.
+     */
+    boolean deleteConfig(String dataId, String groupName) throws Exception;
     
     /**
      * Delete a configuration.
@@ -117,9 +127,9 @@ public interface ConfigMaintainerService {
      * @param groupName   Configuration group name (required).
      * @param namespaceId Namespace ID (optional, defaults to "public").
      * @return Whether the configuration was deleted successfully.
-     * @throws NacosException If deletion fails.
+     * @throws Exception If deletion fails.
      */
-    boolean deleteConfig(String dataId, String groupName, String namespaceId) throws NacosException;
+    boolean deleteConfig(String dataId, String groupName, String namespaceId) throws Exception;
     
     /**
      * Delete a configuration.
@@ -131,7 +141,7 @@ public interface ConfigMaintainerService {
      * @return Whether the configuration was deleted successfully.
      * @throws NacosException If deletion fails.
      */
-    boolean deleteConfig(String dataId, String groupName, String namespaceId, String tag) throws NacosException;
+    boolean deleteConfig(String dataId, String groupName, String namespaceId, String tag) throws Exception;
     
     /**
      * Delete multiple configurations.
@@ -140,7 +150,17 @@ public interface ConfigMaintainerService {
      * @return Whether the configurations were deleted successfully.
      * @throws NacosException If deletion fails.
      */
-    boolean deleteConfigs(List<Long> ids) throws NacosException;
+    boolean deleteConfigs(List<Long> ids) throws Exception;
+    
+    /**
+     * Get the advanced information of a configuration.
+     *
+     * @param dataId    Configuration data ID (required).
+     * @param groupName Configuration group name (required).
+     * @return Advanced information of the configuration.
+     * @throws NacosException If retrieval fails.
+     */
+    ConfigAdvanceInfo getConfigAdvanceInfo(String dataId, String groupName) throws Exception;
     
     /**
      * Get the advanced information of a configuration.
@@ -151,18 +171,17 @@ public interface ConfigMaintainerService {
      * @return Advanced information of the configuration.
      * @throws NacosException If retrieval fails.
      */
-    ConfigAdvanceInfo getConfigAdvanceInfo(String dataId, String groupName, String namespaceId) throws NacosException;
+    ConfigAdvanceInfo getConfigAdvanceInfo(String dataId, String groupName, String namespaceId) throws Exception;
     
     /**
      * Get the listeners of a configuration.
      *
      * @param dataId      Configuration data ID (required).
      * @param groupName   Configuration group name (required).
-     * @param namespaceId Namespace ID (optional, defaults to "public").
      * @return List of listeners for the configuration.
      * @throws Exception If retrieval fails.
      */
-    GroupkeyListenserStatus getListeners(String dataId, String groupName, String namespaceId) throws Exception;
+    GroupkeyListenserStatus getListeners(String dataId, String groupName) throws Exception;
     
     /**
      * Get the advanced information of a configuration.
@@ -191,7 +210,7 @@ public interface ConfigMaintainerService {
      * @throws NacosException If the search fails.
      */
     Page<ConfigInfo> searchConfigByDetails(String dataId, String groupName, String namespaceId, String configDetail,
-            String search, int pageNo, int pageSize) throws NacosException;
+            String search, int pageNo, int pageSize) throws Exception;
 
     /**
      * Stop a beta configuration.
@@ -201,7 +220,7 @@ public interface ConfigMaintainerService {
      * @return Whether the beta configuration was stopped successfully.
      * @throws NacosException If stopping fails.
      */
-    boolean stopBeta(String dataId, String groupName) throws NacosException;
+    boolean stopBeta(String dataId, String groupName) throws Exception;
     
     /**
      * Stop a beta configuration.
@@ -212,7 +231,7 @@ public interface ConfigMaintainerService {
      * @return Whether the beta configuration was stopped successfully.
      * @throws NacosException If stopping fails.
      */
-    boolean stopBeta(String dataId, String groupName, String namespaceId) throws NacosException;
+    boolean stopBeta(String dataId, String groupName, String namespaceId) throws Exception;
     
     /**
      * Query beta configuration by dataId and groupName.
@@ -222,7 +241,7 @@ public interface ConfigMaintainerService {
      * @return Beta configuration information.
      * @throws NacosException If the query fails.
      */
-    ConfigInfo4Beta queryBeta(String dataId, String groupName) throws NacosException;
+    ConfigInfo4Beta queryBeta(String dataId, String groupName) throws Exception;
     
     /**
      * Query beta configuration by dataId, groupName, and namespaceId.
@@ -233,7 +252,7 @@ public interface ConfigMaintainerService {
      * @return Beta configuration information.
      * @throws NacosException If the query fails.
      */
-    ConfigInfo4Beta queryBeta(String dataId, String groupName, String namespaceId) throws NacosException;
+    ConfigInfo4Beta queryBeta(String dataId, String groupName, String namespaceId) throws Exception;
     
     /**
      * Import and publish configurations from a file.
@@ -245,7 +264,8 @@ public interface ConfigMaintainerService {
      * @return A map containing the import result (e.g., success count, unrecognized data).
      * @throws NacosException If the import fails.
      */
-    Map<String, Object> importAndPublishConfig(String namespaceId, String srcUser, SameConfigPolicy policy, MultipartFile file) throws NacosException;
+    Map<String, Object> importAndPublishConfig(String namespaceId, String srcUser, SameConfigPolicy policy, MultipartFile file)
+            throws Exception;
     
     /**
      * Export configurations as a zip file.
@@ -257,7 +277,8 @@ public interface ConfigMaintainerService {
      * @return A ResponseEntity containing the exported zip file.
      * @throws NacosException If the export fails.
      */
-    ResponseEntity<byte[]> exportConfig(String dataId, String groupName, String namespaceId, List<Long> ids) throws NacosException;
+    ResponseEntity<byte[]> exportConfig(String dataId, String groupName, String namespaceId, List<Long> ids)
+            throws Exception;
     
     /**
      * Clone configurations within the same namespace.
@@ -270,7 +291,7 @@ public interface ConfigMaintainerService {
      * @throws NacosException If the clone operation fails.
      */
     Map<String, Object> cloneConfig(String namespaceId, List<SameNamespaceCloneConfigBean> configBeansList, String srcUser, SameConfigPolicy policy)
-            throws NacosException;
+            throws Exception;
     
     /**
      * Query the list of configuration history.
@@ -283,7 +304,8 @@ public interface ConfigMaintainerService {
      * @return A paginated list of configuration history.
      * @throws NacosApiException If the query fails.
      */
-    Page<ConfigHistoryInfo> listConfigHistory(String dataId, String groupName, String namespaceId, int pageNo, int pageSize) throws NacosApiException;
+    Page<ConfigHistoryInfo> listConfigHistory(String dataId, String groupName, String namespaceId, int pageNo, int pageSize)
+            throws Exception;
     
     /**
      * Query detailed configuration history information.
@@ -295,7 +317,8 @@ public interface ConfigMaintainerService {
      * @return Detailed configuration history information.
      * @throws NacosApiException If the history record does not exist or the query fails.
      */
-    ConfigHistoryInfo getConfigHistoryInfo(String dataId, String groupName, String namespaceId, Long nid) throws NacosApiException;
+    ConfigHistoryInfo getConfigHistoryInfo(String dataId, String groupName, String namespaceId, Long nid)
+            throws Exception;
     
     /**
      * Query previous configuration history information.
@@ -307,7 +330,8 @@ public interface ConfigMaintainerService {
      * @return Previous configuration history information.
      * @throws NacosApiException If the previous history record does not exist or the query fails.
      */
-    ConfigHistoryInfo getPreviousConfigHistoryInfo(String dataId, String groupName, String namespaceId, Long id) throws NacosApiException;
+    ConfigHistoryInfo getPreviousConfigHistoryInfo(String dataId, String groupName, String namespaceId, Long id)
+            throws Exception;
     
     /**
      * Query configurations list by namespace.
@@ -316,7 +340,7 @@ public interface ConfigMaintainerService {
      * @return A list of configurations in the specified namespace.
      * @throws NacosApiException If the namespace is invalid or the query fails.
      */
-    List<ConfigInfoWrapper> getConfigListByNamespace(String namespaceId) throws NacosApiException;
+    List<ConfigInfoWrapper> getConfigListByNamespace(String namespaceId) throws Exception;
     
     /**
      * Get capacity information for a specific group or namespace.
@@ -326,16 +350,7 @@ public interface ConfigMaintainerService {
      * @return Capacity information.
      * @throws NacosApiException If the query fails or parameters are invalid.
      */
-    Capacity getCapacityWithDefault(String groupName, String namespaceId) throws NacosApiException;
-    
-    /**
-     * Initialize capacity information for a specific group or namespace.
-     *
-     * @param groupName   Group name (required).
-     * @param namespaceId Namespace ID (required).
-     * @throws NacosApiException If initialization fails.
-     */
-    void initCapacity(String groupName, String namespaceId) throws NacosApiException;
+    Capacity getCapacityWithDefault(String groupName, String namespaceId) throws Exception;
     
     /**
      * Insert or update capacity information.
@@ -350,14 +365,14 @@ public interface ConfigMaintainerService {
      * @throws NacosApiException If the operation fails.
      */
     boolean insertOrUpdateCapacity(String groupName, String namespaceId, Integer quota, Integer maxSize,
-            Integer maxAggrCount, Integer maxAggrSize) throws NacosApiException;
+            Integer maxAggrCount, Integer maxAggrSize) throws Exception;
     
     /**
      * Manually trigger dump of local configuration files from the store.
      *
      * @return A success message or error details.
      */
-    String updateLocalCacheFromStore();
+    String updateLocalCacheFromStore() throws Exception;
     
     /**
      * Set the log level for a specific module.
@@ -366,7 +381,7 @@ public interface ConfigMaintainerService {
      * @param logLevel Desired log level (required).
      * @return A success message or error details.
      */
-    String setLogLevel(String logName, String logLevel);
+    String setLogLevel(String logName, String logLevel) throws Exception;
     
     /**
      * Execute a SQL query on the embedded Derby database.
@@ -374,7 +389,7 @@ public interface ConfigMaintainerService {
      * @param sql SQL query to execute (required).
      * @return Query results or an error message.
      */
-    Object derbyOps(String sql);
+    Object derbyOps(String sql) throws Exception;
     
     /**
      * Import data into the embedded Derby database from a file.
@@ -382,7 +397,7 @@ public interface ConfigMaintainerService {
      * @param multipartFile File containing the data to import (required).
      * @return A deferred result indicating success or failure.
      */
-    DeferredResult<Result<String>> importDerby(MultipartFile multipartFile);
+    DeferredResult<String> importDerby(MultipartFile multipartFile) throws Exception;
     
     /**
      * Get all subscribed client configurations by IP.
@@ -393,7 +408,8 @@ public interface ConfigMaintainerService {
      * @param sampleTime  Sampling time in seconds (optional, default is 1).
      * @return Client subscription status.
      */
-    GroupkeyListenserStatus getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime);
+    GroupkeyListenserStatus getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime)
+            throws Exception;
     
     /**
      * Get client metrics for a specific IP.
@@ -405,7 +421,7 @@ public interface ConfigMaintainerService {
      * @return Client metrics.
      * @throws NacosException If the operation fails.
      */
-    Map<String, Object> getClientMetrics(String ip, String dataId, String groupName, String namespaceId) throws NacosException;
+    Map<String, Object> getClientMetrics(String ip, String dataId, String groupName, String namespaceId) throws Exception;
     
     /**
      * Get cluster-wide metrics for a specific IP.
@@ -417,7 +433,8 @@ public interface ConfigMaintainerService {
      * @return Cluster-wide metrics.
      * @throws NacosException If the operation fails.
      */
-    Map<String, Object> getClusterMetrics(String ip, String dataId, String groupName, String namespaceId) throws NacosException;
+    Map<String, Object> getClusterMetrics(String ip, String dataId, String groupName, String namespaceId)
+            throws Exception;
     
     // ------------------------- Core Operations -------------------------
     
@@ -429,14 +446,14 @@ public interface ConfigMaintainerService {
      * @param groupId the group ID for the operation
      * @return the result of the Raft operation
      */
-    String raftOps(String command, String value, String groupId);
+    String raftOps(String command, String value, String groupId) throws Exception;
     
     /**
      * Retrieve the current health status of the ID generator.
      *
      * @return a list of ID generator status objects
      */
-    List<IdGeneratorVO> getIdsHealth();
+    List<IdGeneratorVO> getIdsHealth() throws Exception;
     
     /**
      * Update the log level for a specific logger.
@@ -444,14 +461,14 @@ public interface ConfigMaintainerService {
      * @param logName the name of the logger to update
      * @param logLevel the new log level to set
      */
-    void updateLogLevel(String logName, String logLevel);
+    void updateLogLevel(String logName, String logLevel) throws Exception;
     
     /**
      * Retrieve information about the current node.
      *
      * @return the current node's information
      */
-    Member getSelfNode();
+    Member getSelfNode() throws Exception;
     
     /**
      * List cluster nodes based on the specified address and state.
@@ -461,14 +478,14 @@ public interface ConfigMaintainerService {
      * @return a collection of matching nodes
      * @throws NacosException if an error occurs during the operation
      */
-    Collection<Member> listClusterNodes(String address, String state) throws NacosException;
+    Collection<Member> listClusterNodes(String address, String state) throws Exception;
     
     /**
      * Retrieve the health status of the current node.
      *
      * @return the health status of the current node
      */
-    String getSelfNodeHealth();
+    String getSelfNodeHealth() throws Exception;
     
     /**
      * Update the list of cluster nodes.
@@ -477,7 +494,7 @@ public interface ConfigMaintainerService {
      * @return true if the operation was successful, false otherwise
      * @throws NacosApiException if an error occurs during the operation
      */
-    Boolean updateClusterNodes(List<Member> nodes) throws NacosApiException;
+    Boolean updateClusterNodes(List<Member> nodes) throws Exception;
     
     /**
      * Update the lookup mode for the cluster.
@@ -486,14 +503,14 @@ public interface ConfigMaintainerService {
      * @return true if the operation was successful, false otherwise
      * @throws NacosException if an error occurs during the operation
      */
-    Boolean updateLookupMode(String type) throws NacosException;
+    Boolean updateLookupMode(String type) throws Exception;
     
     /**
      * Retrieve the current client connections.
      *
      * @return a map of current client connections
      */
-    Map<String, Connection> getCurrentClients();
+    Map<String, Connection> getCurrentClients() throws Exception;
     
     /**
      * Reload the number of SDK connections on the current server.
@@ -502,7 +519,7 @@ public interface ConfigMaintainerService {
      * @param redirectAddress the address to redirect connections to
      * @return the result of the operation
      */
-    String reloadConnectionCount(Integer count, String redirectAddress);
+    String reloadConnectionCount(Integer count, String redirectAddress) throws Exception;
     
     /**
      * Smartly reload the cluster based on the specified loader factor.
@@ -510,7 +527,7 @@ public interface ConfigMaintainerService {
      * @param loaderFactorStr the loader factor string
      * @return the result of the operation
      */
-    String smartReloadCluster(String loaderFactorStr);
+    String smartReloadCluster(String loaderFactorStr) throws Exception;
     
     /**
      * Reload a single client connection.
@@ -519,12 +536,12 @@ public interface ConfigMaintainerService {
      * @param redirectAddress the address to redirect the connection to
      * @return the result of the operation
      */
-    String reloadSingleClient(String connectionId, String redirectAddress);
+    String reloadSingleClient(String connectionId, String redirectAddress) throws Exception;
     
     /**
      * Retrieve the current cluster loader metrics.
      *
      * @return the loader metrics for the cluster
      */
-    ServerLoaderMetrics getClusterLoaderMetrics();
+    ServerLoaderMetrics getClusterLoaderMetrics() throws Exception;
 }

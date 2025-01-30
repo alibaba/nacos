@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.maintainer.client.model;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,18 +35,16 @@ public class HttpRequest {
     
     private Map<String, String> paramValues;
     
+    private File file;
+    
     private long readTimeoutMs;
     
-    private long connectTimeoutMs;
-    
-    public HttpRequest(String httpMethod, String path, Map<String, String> headers, Map<String, String> paramValues, long readTimeoutMs,
-            long connectTimeoutMs) {
+    public HttpRequest(String httpMethod, String path, Map<String, String> headers, Map<String, String> paramValues, long readTimeoutMs) {
         this.httpMethod = httpMethod;
         this.path = path;
         this.headers = headers;
         this.paramValues = paramValues;
         this.readTimeoutMs = readTimeoutMs;
-        this.connectTimeoutMs = connectTimeoutMs;
     }
     
     public String getHttpMethod() {
@@ -80,20 +79,20 @@ public class HttpRequest {
         this.paramValues = paramValues;
     }
     
+    public File getFile() {
+        return file;
+    }
+    
+    public void setFile(File file) {
+        this.file = file;
+    }
+    
     public long getReadTimeoutMs() {
         return readTimeoutMs;
     }
     
     public void setReadTimeoutMs(long readTimeoutMs) {
         this.readTimeoutMs = readTimeoutMs;
-    }
-    
-    public long getConnectTimeoutMs() {
-        return connectTimeoutMs;
-    }
-    
-    public void setConnectTimeoutMs(long connectTimeoutMs) {
-        this.connectTimeoutMs = connectTimeoutMs;
     }
     
     public static class Builder {
@@ -106,9 +105,9 @@ public class HttpRequest {
         
         private final Map<String, String> paramValues = new HashMap<>();
         
-        private long readTimeoutMs;
+        private File file;
         
-        private long connectTimeoutMs;
+        private long readTimeoutMs;
         
         public Builder setHttpMethod(String httpMethod) {
             this.httpMethod = httpMethod;
@@ -135,13 +134,13 @@ public class HttpRequest {
             return this;
         }
         
-        public Builder setConnectTimeoutMs(long connectTimeoutMs) {
-            this.connectTimeoutMs = connectTimeoutMs;
+        public Builder setFile(File file) {
+            this.file = file;
             return this;
         }
         
         public HttpRequest build() {
-            return new HttpRequest(httpMethod, path, headers, paramValues, readTimeoutMs, connectTimeoutMs);
+            return new HttpRequest(httpMethod, path, headers, paramValues, readTimeoutMs);
         }
     }
 }

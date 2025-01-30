@@ -52,7 +52,7 @@ public class HttpClientManager implements Closeable {
     }
     
     private static final HttpClientFactory HTTP_CLIENT_FACTORY = new DefaultHttpClientFactory(LOGGER);
-    
+
     /**
      * get NacosRestTemplate Instance.
      *
@@ -60,6 +60,15 @@ public class HttpClientManager implements Closeable {
      */
     public NacosRestTemplate getNacosRestTemplate() {
         return HttpClientBeanHolder.getNacosRestTemplate(HTTP_CLIENT_FACTORY);
+    }
+    
+    /**
+     * get NacosAsyncRestTemplate Instance.
+     *
+     * @return NacosAsyncRestTemplate
+     */
+    public NacosAsyncRestTemplate getNacosAsyncRestTemplate() {
+        return HttpClientBeanHolder.getNacosAsyncRestTemplate(HTTP_CLIENT_FACTORY);
     }
     
     @Override

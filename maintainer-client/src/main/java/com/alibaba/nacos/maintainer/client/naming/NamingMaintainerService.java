@@ -50,7 +50,7 @@ public interface NamingMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
-    String createService(String serviceName) throws NacosException;
+    String createService(String serviceName) throws Exception;
     
     /**
      * Create a new service with detailed parameters.
@@ -66,7 +66,7 @@ public interface NamingMaintainerService {
      * @throws NacosException if an error occurs
      */
     String createService(String namespaceId, String groupName, String serviceName, String metadata,
-            boolean ephemeral, float protectThreshold, String selector) throws NacosException;
+            boolean ephemeral, float protectThreshold, String selector) throws Exception;
     
     /**
      * Update an existing service.
@@ -93,7 +93,7 @@ public interface NamingMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
-    String removeService(String namespaceId, String groupName, String serviceName) throws NacosException;
+    String removeService(String namespaceId, String groupName, String serviceName) throws Exception;
     
     /**
      * Get detailed information of a service.
@@ -104,7 +104,7 @@ public interface NamingMaintainerService {
      * @return the service detail information
      * @throws NacosException if an error occurs
      */
-    ServiceDetailInfo getServiceDetail(String namespaceId, String groupName, String serviceName) throws NacosException;
+    ServiceDetailInfo getServiceDetail(String namespaceId, String groupName, String serviceName) throws Exception;
     
     /**
      * List services with pagination.
@@ -127,7 +127,7 @@ public interface NamingMaintainerService {
      * @return the search result
      * @throws NacosException if an error occurs
      */
-    ObjectNode searchServiceNames(String namespaceId, String expr) throws NacosException;
+    ObjectNode searchService(String namespaceId, String expr) throws Exception;
     
     /**
      * Get subscribers of a service with pagination.
@@ -142,21 +142,21 @@ public interface NamingMaintainerService {
      * @throws NacosException if an error occurs
      */
     Result<ObjectNode> getSubscribers(String namespaceId, String groupName, String serviceName,
-            int pageNo, int pageSize, boolean aggregation) throws NacosException;
+            int pageNo, int pageSize, boolean aggregation) throws Exception;
     
     /**
      * List all selector types.
      *
      * @return the list of selector types
      */
-    List<String> listSelectorTypes();
+    List<String> listSelectorTypes() throws Exception;
     
     /**
      * Get the current switch configuration.
      *
      * @return the switch domain
      */
-    SwitchDomain getSwitches();
+    SwitchDomain getSwitches() throws Exception;
     
     /**
      * Update the switch configuration.
@@ -175,7 +175,7 @@ public interface NamingMaintainerService {
      * @param onlyStatus whether to return only status information
      * @return the metrics information
      */
-    MetricsInfoVo getMetrics(boolean onlyStatus);
+    MetricsInfoVo getMetrics(boolean onlyStatus) throws Exception;
     
     /**
      * Set the log level.
@@ -184,7 +184,7 @@ public interface NamingMaintainerService {
      * @param logLevel the new log level
      * @return the result of the operation
      */
-    String setLogLevel(String logName, String logLevel);
+    String setLogLevel(String logName, String logLevel) throws Exception;
     
     // ------------------------- Instance Operations -------------------------
     
@@ -206,7 +206,8 @@ public interface NamingMaintainerService {
      * @throws NacosException if an error occurs
      */
     String registerInstance(String namespaceId, String groupName, String serviceName, String clusterName, String ip,
-            int port, String weight, boolean healthy, boolean enabled, String ephemeral, String metadata) throws NacosException;
+            int port, String weight, boolean healthy, boolean enabled, String ephemeral, String metadata)
+            throws Exception;
     
     /**
      * Deregister an instance.
@@ -226,7 +227,7 @@ public interface NamingMaintainerService {
      * @throws NacosException if an error occurs
      */
     String deregisterInstance(String namespaceId, String groupName, String serviceName, String clusterName, String ip,
-            int port, String weight, boolean healthy, boolean enabled, String ephemeral, String metadata) throws NacosException;
+            int port, String weight, boolean healthy, boolean enabled, String ephemeral, String metadata) throws NacosException, Exception;
     
     /**
      * Update an existing instance.
@@ -246,7 +247,8 @@ public interface NamingMaintainerService {
      * @throws NacosException if an error occurs
      */
     String updateInstance(String namespaceId, String groupName, String serviceName, String clusterName, String ip,
-            int port, String weight, boolean healthy, boolean enabled, String ephemeral, String metadata) throws NacosException;
+            int port, String weight, boolean healthy, boolean enabled, String ephemeral, String metadata)
+            throws Exception;
     
     /**
      * Batch update instance metadata.
@@ -261,7 +263,7 @@ public interface NamingMaintainerService {
      * @throws NacosException if an error occurs
      */
     InstanceMetadataBatchOperationVo batchUpdateInstanceMetadata(String namespaceId, String groupName, String serviceName, String instance,
-            Map<String, String> metadata, String consistencyType) throws NacosException;
+            Map<String, String> metadata, String consistencyType) throws Exception;
     
     /**
      * Batch delete instance metadata.
@@ -276,7 +278,7 @@ public interface NamingMaintainerService {
      * @throws NacosException if an error occurs
      */
     InstanceMetadataBatchOperationVo batchDeleteInstanceMetadata(String namespaceId, String groupName, String serviceName, String instance,
-            Map<String, String> metadata, String consistencyType) throws NacosException;
+            Map<String, String> metadata, String consistencyType) throws Exception;
     
     /**
      * Partially update an instance.
@@ -293,7 +295,7 @@ public interface NamingMaintainerService {
      * @throws NacosException if an error occurs
      */
     String partialUpdateInstance(String namespaceId, String serviceName, String clusterName, int ip, int port,
-            double weight, boolean enabled, String metadata) throws NacosException;
+            double weight, boolean enabled, String metadata) throws Exception;
     
     /**
      * List instances of a service.
@@ -309,7 +311,7 @@ public interface NamingMaintainerService {
      * @throws NacosException if an error occurs
      */
     ServiceInfo listInstances(String namespaceId, String groupName, String serviceName, String clusterName,
-            String ip, int port, boolean healthyOnly) throws NacosException;
+            String ip, int port, boolean healthyOnly) throws Exception;
     
     /**
      * Get detailed information of an instance.
@@ -324,7 +326,7 @@ public interface NamingMaintainerService {
      * @throws NacosException if an error occurs
      */
     InstanceDetailInfoVo getInstanceDetail(String namespaceId, String groupName, String serviceName,
-            String clusterName, String ip, int port) throws NacosException;
+            String clusterName, String ip, int port) throws Exception;
     
     // ------------------------- Health Check Operations -------------------------
     
@@ -343,14 +345,14 @@ public interface NamingMaintainerService {
      * @throws NacosException if an error occurs
      */
     String updateInstanceHealthStatus(String namespaceId, String groupName, String serviceName, String clusterName, String metadata,
-            boolean ephemeral, float protectThreshold, String selector) throws NacosException;
+            boolean ephemeral, float protectThreshold, String selector) throws Exception;
     
     /**
      * Get all health checkers.
      *
      * @return the map of health checkers
      */
-    Map<String, AbstractHealthChecker> getHealthCheckers();
+    Map<String, AbstractHealthChecker> getHealthCheckers() throws Exception;
     
     // ------------------------- Cluster Operations -------------------------
     
@@ -377,7 +379,7 @@ public interface NamingMaintainerService {
      *
      * @return the list of client IDs
      */
-    List<String> getClientList();
+    List<String> getClientList() throws Exception;
     
     /**
      * Get detailed information of a client.
@@ -386,7 +388,7 @@ public interface NamingMaintainerService {
      * @return the client detail information
      * @throws NacosException if an error occurs
      */
-    ObjectNode getClientDetail(String clientId) throws NacosException;
+    ObjectNode getClientDetail(String clientId) throws Exception;
     
     /**
      * Get the list of services published by a client.
@@ -395,7 +397,7 @@ public interface NamingMaintainerService {
      * @return the list of published services
      * @throws NacosException if an error occurs
      */
-    List<ObjectNode> getPublishedServiceList(String clientId) throws NacosException;
+    List<ObjectNode> getPublishedServiceList(String clientId) throws Exception;
     
     /**
      * Get the list of services subscribed by a client.
@@ -404,7 +406,7 @@ public interface NamingMaintainerService {
      * @return the list of subscribed services
      * @throws NacosException if an error occurs
      */
-    List<ObjectNode> getSubscribeServiceList(String clientId) throws NacosException;
+    List<ObjectNode> getSubscribeServiceList(String clientId) throws Exception;
     
     /**
      * Get the list of clients that published a specific service.
@@ -419,7 +421,7 @@ public interface NamingMaintainerService {
      * @throws NacosException if an error occurs
      */
     List<ObjectNode> getPublishedClientList(String namespaceId, String groupName,
-            String serviceName, boolean ephemeral, String ip, Integer port) throws NacosException;
+            String serviceName, boolean ephemeral, String ip, Integer port) throws Exception;
     
     /**
      * Get the list of clients that subscribed to a specific service.
@@ -434,7 +436,7 @@ public interface NamingMaintainerService {
      * @throws NacosException if an error occurs
      */
     List<ObjectNode> getSubscribeClientList(String namespaceId, String groupName,
-            String serviceName, boolean ephemeral, String ip, Integer port) throws NacosException;
+            String serviceName, boolean ephemeral, String ip, Integer port) throws Exception;
     
     /**
      * Get the responsible server for a client based on its IP and port.
@@ -443,7 +445,7 @@ public interface NamingMaintainerService {
      * @param port the port of the client
      * @return the responsible server information
      */
-    ObjectNode getResponsibleServerForClient(String ip, String port);
+    ObjectNode getResponsibleServerForClient(String ip, String port) throws Exception;
     
     // ------------------------- Core Operations -------------------------
     
@@ -455,14 +457,14 @@ public interface NamingMaintainerService {
      * @param groupId the group ID for the operation
      * @return the result of the Raft operation
      */
-    String raftOps(String command, String value, String groupId);
+    String raftOps(String command, String value, String groupId) throws Exception;
     
     /**
      * Retrieve the current health status of the ID generator.
      *
      * @return a list of ID generator status objects
      */
-    List<IdGeneratorVO> getIdsHealth();
+    List<IdGeneratorVO> getIdsHealth() throws Exception;
     
     /**
      * Update the log level for a specific logger.
@@ -470,14 +472,14 @@ public interface NamingMaintainerService {
      * @param logName the name of the logger to update
      * @param logLevel the new log level to set
      */
-    void updateLogLevel(String logName, String logLevel);
+    void updateLogLevel(String logName, String logLevel) throws Exception;
     
     /**
      * Retrieve information about the current node.
      *
      * @return the current node's information
      */
-    Member getSelfNode();
+    Member getSelfNode() throws Exception;
     
     /**
      * List cluster nodes based on the specified address and state.
@@ -487,14 +489,14 @@ public interface NamingMaintainerService {
      * @return a collection of matching nodes
      * @throws NacosException if an error occurs during the operation
      */
-    Collection<Member> listClusterNodes(String address, String state) throws NacosException;
+    Collection<Member> listClusterNodes(String address, String state) throws NacosException, Exception;
     
     /**
      * Retrieve the health status of the current node.
      *
      * @return the health status of the current node
      */
-    String getSelfNodeHealth();
+    String getSelfNodeHealth() throws Exception;
     
     /**
      * Update the list of cluster nodes.
@@ -503,7 +505,7 @@ public interface NamingMaintainerService {
      * @return true if the operation was successful, false otherwise
      * @throws NacosApiException if an error occurs during the operation
      */
-    Boolean updateClusterNodes(List<Member> nodes) throws NacosApiException;
+    Boolean updateClusterNodes(List<Member> nodes) throws NacosException, Exception;
     
     /**
      * Update the lookup mode for the cluster.
@@ -512,14 +514,14 @@ public interface NamingMaintainerService {
      * @return true if the operation was successful, false otherwise
      * @throws NacosException if an error occurs during the operation
      */
-    Boolean updateLookupMode(String type) throws NacosException;
+    Boolean updateLookupMode(String type) throws NacosException, Exception;
     
     /**
      * Retrieve the current client connections.
      *
      * @return a map of current client connections
      */
-    Map<String, Connection> getCurrentClients();
+    Map<String, Connection> getCurrentClients() throws Exception;
     
     /**
      * Reload the number of SDK connections on the current server.
@@ -528,7 +530,7 @@ public interface NamingMaintainerService {
      * @param redirectAddress the address to redirect connections to
      * @return the result of the operation
      */
-    String reloadConnectionCount(Integer count, String redirectAddress);
+    String reloadConnectionCount(Integer count, String redirectAddress) throws Exception;
     
     /**
      * Smartly reload the cluster based on the specified loader factor.
@@ -536,7 +538,7 @@ public interface NamingMaintainerService {
      * @param loaderFactorStr the loader factor string
      * @return the result of the operation
      */
-    String smartReloadCluster(String loaderFactorStr);
+    String smartReloadCluster(String loaderFactorStr) throws Exception;
     
     /**
      * Reload a single client connection.
@@ -545,12 +547,12 @@ public interface NamingMaintainerService {
      * @param redirectAddress the address to redirect the connection to
      * @return the result of the operation
      */
-    String reloadSingleClient(String connectionId, String redirectAddress);
+    String reloadSingleClient(String connectionId, String redirectAddress) throws Exception;
     
     /**
      * Retrieve the current cluster loader metrics.
      *
      * @return the loader metrics for the cluster
      */
-    ServerLoaderMetrics getClusterLoaderMetrics();
+    ServerLoaderMetrics getClusterLoaderMetrics() throws Exception;
 }

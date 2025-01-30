@@ -43,6 +43,8 @@ public class ParamUtil {
     
     private static final Pattern PATTERN = Pattern.compile("\\$\\{[^}]+\\}");
     
+    private static final String DEFAULT_GROUP_NAME = "DEFAULT_GROUP";
+    
     private static String defaultContextPath;
     
     private static String defaultNodesPath = "serverlist";
@@ -380,5 +382,9 @@ public class ParamUtil {
     
     public static String getDefaultNamespaceId() {
         return DEFAULT_NAMESPACE_ID;
+    }
+    
+    public static String getDefaultGroupName() {
+        return DEFAULT_GROUP_NAME;
     }
 }
