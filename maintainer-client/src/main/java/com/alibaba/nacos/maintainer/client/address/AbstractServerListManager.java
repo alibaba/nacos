@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Server list Manager.
@@ -69,7 +70,7 @@ public abstract class AbstractServerListManager implements ServerListManager, Cl
     public void start() throws NacosException {
         Collection<ServerListProvider> serverListProviders = NacosServiceLoader.load(ServerListProvider.class);
         Collection<ServerListProvider> sorted = serverListProviders.stream()
-                .sorted((a, b) -> b.getOrder() - a.getOrder()).toList();
+                .sorted((a, b) -> b.getOrder() - a.getOrder()).collect(Collectors.toList());
         for (ServerListProvider each : sorted) {
             boolean matchResult = each.match(properties);
             LOGGER.info("Load and match ServerListProvider {}, match result: {}", each.getClass().getCanonicalName(),

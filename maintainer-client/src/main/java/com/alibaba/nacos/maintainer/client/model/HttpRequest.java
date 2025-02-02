@@ -37,14 +37,12 @@ public class HttpRequest {
     
     private File file;
     
-    private long readTimeoutMs;
-    
-    public HttpRequest(String httpMethod, String path, Map<String, String> headers, Map<String, String> paramValues, long readTimeoutMs) {
+    public HttpRequest(String httpMethod, String path, Map<String, String> headers, Map<String, String> paramValues, File file) {
         this.httpMethod = httpMethod;
         this.path = path;
         this.headers = headers;
         this.paramValues = paramValues;
-        this.readTimeoutMs = readTimeoutMs;
+        this.file = file;
     }
     
     public String getHttpMethod() {
@@ -87,14 +85,6 @@ public class HttpRequest {
         this.file = file;
     }
     
-    public long getReadTimeoutMs() {
-        return readTimeoutMs;
-    }
-    
-    public void setReadTimeoutMs(long readTimeoutMs) {
-        this.readTimeoutMs = readTimeoutMs;
-    }
-    
     public static class Builder {
         
         private String httpMethod;
@@ -129,18 +119,13 @@ public class HttpRequest {
             return this;
         }
         
-        public Builder setReadTimeoutMs(long readTimeoutMs) {
-            this.readTimeoutMs = readTimeoutMs;
-            return this;
-        }
-        
         public Builder setFile(File file) {
             this.file = file;
             return this;
         }
         
         public HttpRequest build() {
-            return new HttpRequest(httpMethod, path, headers, paramValues, readTimeoutMs);
+            return new HttpRequest(httpMethod, path, headers, paramValues, file);
         }
     }
 }

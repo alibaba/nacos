@@ -65,7 +65,7 @@ public class ParamUtil {
     
     private static int readTimeout;
     
-    private static double perTaskConfigSize = 3000;
+    private static int maxRetryTimes;
     
     private static final String NACOS_CLIENT_APP_KEY = "nacos.client.appKey";
     
@@ -77,17 +77,17 @@ public class ParamUtil {
     
     private static final String NACOS_SERVER_PORT_KEY = "nacos.server.port";
     
-    private static final String NACOS_CONNECT_TIMEOUT_KEY = "NACOS.CONNECT.TIMEOUT";
+    private static final String MAINTAINER_CLIENT_CONNECT_TIMEOUT_KEY = "MAINTAINER.CLIENT.CONNECT.TIMEOUT";
     
-    private static final String NACOS_READ_TIMEOUT_KEY = "NACOS.READ.TIMEOUT";
+    private static final String MAINTAINER_CLIENT_READ_TIMEOUT_KEY = "MAINTAINER.CLIENT.READ.TIMEOUT";
     
-    private static final String DEFAULT_NACOS_CONNECT_TIMEOUT = "1000";
+    private static final String MAINTAINER_CLIENT_MAX_RETRY_TIMES_KEY = "MAINTAINER.CLIENT.MAX.RETRY.TIMES";
     
-    private static final String DEFAULT_NACOS_READ_TIMEOUT = "3000";
+    private static final String DEFAULT_CONNECT_TIMEOUT = "2000";
     
-    private static final String PER_TASK_CONFIG_SIZE_KEY = "PER_TASK_CONFIG_SIZE";
+    private static final String DEFAULT_READ_TIMEOUT = "5000";
     
-    private static final String DEFAULT_PER_TASK_CONFIG_SIZE_KEY = "3000";
+    private static final int DEFAULT_MAX_RETRY_TIMES = 3;
     
     private static final int DESENSITISE_PARAMETER_MIN_LENGTH = 2;
     
@@ -106,48 +106,47 @@ public class ParamUtil {
         LOGGER.info("[settings] [req-serv] nacos-server port:{}", serverPort);
         
         connectTimeout = initConnectionTimeout();
-        LOGGER.info("[settings] [http-client] connect timeout:{}", connectTimeout);
+        LOGGER.info("[settings] [maintainer-http-client] connect timeout:{}", connectTimeout);
         
         readTimeout = initReadTimeout();
-        LOGGER.info("[settings] [http-client] read timeout:{}", readTimeout);
+        LOGGER.info("[settings] [maintainer-http-client] read timeout:{}", readTimeout);
+        
+        maxRetryTimes = initMaxRetryTimes();
+        LOGGER.info("[settings] [maintainer-http-client] max retry times:{}", maxRetryTimes);
         
         clientVersion = VersionUtils.version;
-        
-        perTaskConfigSize = initPerTaskConfigSize();
-        LOGGER.info("PER_TASK_CONFIG_SIZE: {}", perTaskConfigSize);
     }
     
     private static int initConnectionTimeout() {
-        String tmp = DEFAULT_NACOS_CONNECT_TIMEOUT;
         try {
-            tmp = NacosClientProperties.PROTOTYPE.getProperty(NACOS_CONNECT_TIMEOUT_KEY, DEFAULT_NACOS_CONNECT_TIMEOUT);
-            return Integer.parseInt(tmp);
+            String connectTimeout = NacosClientProperties.PROTOTYPE.getProperty(MAINTAINER_CLIENT_CONNECT_TIMEOUT_KEY, DEFAULT_CONNECT_TIMEOUT);
+            return Integer.parseInt(connectTimeout);
         } catch (NumberFormatException e) {
-            final String msg = "[http-client] invalid connect timeout:" + tmp;
+            final String msg = "[http-client] invalid connect timeout:" + connectTimeout;
             LOGGER.error("[settings] " + msg, e);
             throw new IllegalArgumentException(msg, e);
         }
     }
     
     private static int initReadTimeout() {
-        String tmp = DEFAULT_NACOS_READ_TIMEOUT;
         try {
-            tmp = NacosClientProperties.PROTOTYPE.getProperty(NACOS_READ_TIMEOUT_KEY, DEFAULT_NACOS_READ_TIMEOUT);
-            return Integer.parseInt(tmp);
+            String readTimeout = NacosClientProperties.PROTOTYPE.getProperty(MAINTAINER_CLIENT_READ_TIMEOUT_KEY, DEFAULT_READ_TIMEOUT);
+            return Integer.parseInt(readTimeout);
         } catch (NumberFormatException e) {
-            final String msg = "[http-client] invalid read timeout:" + tmp;
+            final String msg = "[http-client] invalid read timeout:" + readTimeout;
             LOGGER.error("[settings] " + msg, e);
             throw new IllegalArgumentException(msg, e);
         }
     }
     
-    private static double initPerTaskConfigSize() {
+    private static int initMaxRetryTimes() {
         try {
-            return Double.parseDouble(NacosClientProperties.PROTOTYPE.getProperty(PER_TASK_CONFIG_SIZE_KEY,
-                    DEFAULT_PER_TASK_CONFIG_SIZE_KEY));
+            return Integer.parseInt(NacosClientProperties.PROTOTYPE.getProperty(MAINTAINER_CLIENT_MAX_RETRY_TIMES_KEY,
+                    String.valueOf(DEFAULT_MAX_RETRY_TIMES)));
         } catch (NumberFormatException e) {
-            LOGGER.error("[PER_TASK_CONFIG_SIZE] PER_TASK_CONFIG_SIZE invalid", e);
-            throw new IllegalArgumentException("invalid PER_TASK_CONFIG_SIZE, expected value type double", e);
+            final String msg = "[http-client] invalid max retry times:" + maxRetryTimes;
+            LOGGER.error("[settings] " + msg, e);
+            throw new IllegalArgumentException(msg, e);
         }
     }
     
@@ -199,12 +198,8 @@ public class ParamUtil {
         ParamUtil.readTimeout = readTimeout;
     }
     
-    public static double getPerTaskConfigSize() {
-        return perTaskConfigSize;
-    }
-    
-    public static void setPerTaskConfigSize(double perTaskConfigSize) {
-        ParamUtil.perTaskConfigSize = perTaskConfigSize;
+    public static int getMaxRetryTimes() {
+        return maxRetryTimes;
     }
     
     public static String getDefaultServerPort() {

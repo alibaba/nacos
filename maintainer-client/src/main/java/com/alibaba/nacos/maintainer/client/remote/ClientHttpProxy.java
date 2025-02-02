@@ -25,6 +25,7 @@ import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.tls.TlsSystemConfig;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.maintainer.client.address.DefaultServerListManager;
@@ -56,13 +57,12 @@ public class ClientHttpProxy {
     
     private final boolean enableHttps = Boolean.getBoolean(TlsSystemConfig.TLS_ENABLE);
     
-    private final int maxRetry;
+    private final int maxRetry = ParamUtil.getMaxRetryTimes();
     
     private final DefaultServerListManager serverListManager;
     
     public ClientHttpProxy(Properties properties) throws NacosException {
         this.serverListManager = new DefaultServerListManager(NacosClientProperties.PROTOTYPE.derive(properties));
-        this.maxRetry = 3;
         start();
     }
     
@@ -71,20 +71,20 @@ public class ClientHttpProxy {
     }
     
     /**
-     * Execute http request.
+     * Execute sync http request.
      *
      * @param request http request
      * @return http result
      * @throws Exception exception
      */
-    public HttpRestResult<String> executeHttpRequest(HttpRequest request) throws Exception {
+    public HttpRestResult<String> executeSyncHttpRequest(HttpRequest request) throws Exception {
         long endTime = System.currentTimeMillis() + ParamUtil.getReadTimeout();
         String currentServerAddr = serverListManager.getCurrentServer();
         int retryCount = maxRetry;
         
-        do {
+        while (System.currentTimeMillis() <= endTime && retryCount >= 0) {
             try {
-                HttpRestResult<String> result = executeHttpRequest(request, currentServerAddr);
+                HttpRestResult<String> result = executeSync(request, currentServerAddr);
                 if (!isFail(result)) {
                     serverListManager.updateCurrentServerAddr(currentServerAddr);
                     return result;
@@ -95,12 +95,18 @@ public class ClientHttpProxy {
             
             currentServerAddr = getNextServerAddress();
             retryCount--;
-        } while (System.currentTimeMillis() <= endTime && retryCount >= 0);
+            
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
         
-        throw new ConnectException("No available server");
+        throw new ConnectException("No available server after " + maxRetry + " retries, last tried server: " + currentServerAddr);
     }
     
-    private HttpRestResult<String> executeHttpRequest(HttpRequest request, String serverAddr) throws Exception {
+    private HttpRestResult<String> executeSync(HttpRequest request, String serverAddr) throws Exception {
         long readTimeoutMs = ParamUtil.getReadTimeout();
         long connectTimeoutMs = ParamUtil.getConnectTimeout();
         Map<String, String> paramValues = request.getParamValues();
@@ -115,7 +121,7 @@ public class ClientHttpProxy {
             httpHeaders.addAll(headers);
         }
         Query query = Query.newInstance().initParams(paramValues);
-        String url = getUrl(serverAddr, request.getPath());
+        String url = buildUrl(serverAddr, request.getPath());
         
         switch (request.getHttpMethod()) {
             case HttpMethod.GET:
@@ -143,38 +149,63 @@ public class ClientHttpProxy {
     public void executeAsyncHttpRequest(HttpRequest request, Callback<String> callback) throws Exception {
         long endTime = System.currentTimeMillis() + ParamUtil.getReadTimeout();
         String currentServerAddr = serverListManager.getCurrentServer();
-        int retryCount = maxRetry;
-        
-        do {
-            try {
-                executeAsyncHttpRequest(request, currentServerAddr, callback);
-                serverListManager.updateCurrentServerAddr(currentServerAddr);
-            } catch (Exception ex) {
-                LOGGER.error("[NACOS Exception] Server address: {}, Error: {}", currentServerAddr, ex.getMessage());
-            }
-            
-            currentServerAddr = getNextServerAddress();
-            retryCount--;
-        } while (System.currentTimeMillis() <= endTime && retryCount >= 0);
-        
-        throw new ConnectException("No available server");
+        executeAsyncWithRetry(request, callback, endTime, currentServerAddr, maxRetry);
     }
     
-    private void executeAsyncHttpRequest(HttpRequest request, String serverAddr, Callback<String> callback) throws Exception {
-        long readTimeoutMs = ParamUtil.getReadTimeout();
-        long connectTimeoutMs = ParamUtil.getConnectTimeout();
+    private void executeAsyncWithRetry(HttpRequest request, Callback<String> callback, long endTime, String currentServerAddr, int retryCount) {
+        if (System.currentTimeMillis() > endTime || retryCount < 0) {
+            callback.onError(new ConnectException("No available server after " + maxRetry + " retries, last tried server: " + currentServerAddr));
+            return;
+        }
+        
+        try {
+            executeAsync(request, currentServerAddr, new Callback<String>() {
+                @Override
+                public void onReceive(RestResult<String> result) {
+                    if (!isFail(result)) {
+                        serverListManager.updateCurrentServerAddr(currentServerAddr);
+                        callback.onReceive(result);
+                    } else {
+                        retryAsync(request, callback, endTime, retryCount);
+                    }
+                }
+                
+                @Override
+                public void onError(Throwable throwable) {
+                    retryAsync(request, callback, endTime, retryCount);
+                }
+                
+                @Override
+                public void onCancel() {
+                    callback.onCancel();
+                }
+            });
+        } catch (Exception ex) {
+            LOGGER.error("[NACOS Exception] Server address: {}, Error: {}", currentServerAddr, ex.getMessage());
+            retryAsync(request, callback, endTime, retryCount);
+        }
+    }
+    
+    private void retryAsync(HttpRequest request, Callback<String> callback, long endTime, int retryCount) {
+        String nextServerAddr = getNextServerAddress();
+        int remainingRetries = retryCount - 1;
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        executeAsyncWithRetry(request, callback, endTime, nextServerAddr, remainingRetries);
+    }
+    
+    private void executeAsync(HttpRequest request, String serverAddr, Callback<String> callback) throws Exception {
         Map<String, String> paramValues = request.getParamValues();
         Map<String, String> headers = request.getHeaders();
-        
-        HttpClientConfig httpConfig = HttpClientConfig.builder()
-                .setReadTimeOutMillis(Long.valueOf(readTimeoutMs).intValue())
-                .setConTimeOutMillis(Long.valueOf(connectTimeoutMs).intValue()).build();
         Header httpHeaders = Header.newInstance();
         if (headers != null) {
             httpHeaders.addAll(headers);
         }
         Query query = Query.newInstance().initParams(paramValues);
-        String url = getUrl(serverAddr, request.getPath());
+        String url = buildUrl(serverAddr, request.getPath());
         
         switch (request.getHttpMethod()) {
             case HttpMethod.GET:
@@ -203,8 +234,8 @@ public class ClientHttpProxy {
         }
     }
     
-    private String getUrl(String serverAddr, String relativePath) {
-        if (!serverAddr.startsWith(RequestUrlConstants.HTTP_PREFIX) || !serverAddr.startsWith(RequestUrlConstants.HTTPS_PREFIX)) {
+    private String buildUrl(String serverAddr, String relativePath) {
+        if (!serverAddr.startsWith(RequestUrlConstants.HTTP_PREFIX) && !serverAddr.startsWith(RequestUrlConstants.HTTPS_PREFIX)) {
             serverAddr = getPrefix() + serverAddr;
         }
         String contextPath = serverListManager.getContextPath();
@@ -215,7 +246,7 @@ public class ClientHttpProxy {
         return enableHttps ? RequestUrlConstants.HTTPS_PREFIX : RequestUrlConstants.HTTP_PREFIX;
     }
     
-    private boolean isFail(HttpRestResult<String> result) {
+    private <T extends RestResult<?>> boolean isFail(T result) {
         return result.getCode() == HttpURLConnection.HTTP_INTERNAL_ERROR
                 || result.getCode() == HttpURLConnection.HTTP_BAD_GATEWAY
                 || result.getCode() == HttpURLConnection.HTTP_UNAVAILABLE
