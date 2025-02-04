@@ -43,12 +43,19 @@ public class HttpClientManager implements Closeable {
     
     private static final Map<String, NacosAsyncRestTemplate> SINGLETON_ASYNC_REST = new HashMap<>(10);
     
-    private static final HttpClientManager INSTANCE = new HttpClientManager();
+    private static volatile HttpClientManager httpClientManager;
     
     private HttpClientManager() {}
     
     public static HttpClientManager getInstance() {
-        return HttpClientManager.INSTANCE;
+        if (httpClientManager == null) {
+            synchronized (HttpClientManager.class) {
+                if (httpClientManager == null) {
+                    httpClientManager = new HttpClientManager();
+                }
+            }
+        }
+        return httpClientManager;
     }
     
     private static final HttpClientFactory HTTP_CLIENT_FACTORY = new DefaultHttpClientFactory(LOGGER);

@@ -48,6 +48,9 @@ public class NamingMaintainerFactory {
      * @throws NacosException nacos exception
      */
     public static NamingMaintainerService createNamingMaintainerService(Properties properties) throws NacosException {
+        if (properties == null) {
+            throw new NacosException(NacosException.INVALID_PARAM, "properties is null");
+        }
         return new NacosNamingMaintainerService(properties);
     }
 }
