@@ -21,8 +21,7 @@ import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,15 +39,11 @@ class ConfigRemoveRequestHandlerTest {
     private ConfigRemoveRequestHandler configRemoveRequestHandler;
     
     @Mock
-    private ConfigInfoPersistService configInfoPersistService;
-    
-    @Mock
-    private ConfigInfoGrayPersistService configInfoGrayPersistService;
+    private ConfigOperationService configOperationService;
     
     @BeforeEach
     void setUp() throws Exception {
-        configRemoveRequestHandler = new ConfigRemoveRequestHandler(configInfoPersistService,
-                configInfoGrayPersistService);
+        configRemoveRequestHandler = new ConfigRemoveRequestHandler(configOperationService);
         Mockito.mockStatic(ConfigTraceService.class);
     }
     
