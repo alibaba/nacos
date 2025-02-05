@@ -17,9 +17,10 @@
 package com.alibaba.nacos.maintainer.client.address;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.address.AbstractServerListManager;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.maintainer.client.env.NacosClientProperties;
 import com.alibaba.nacos.maintainer.client.remote.HttpClientManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +60,11 @@ public class DefaultServerListManager extends AbstractServerListManager {
         super.start();
         iterator = iterator();
         currentServerAddr = iterator.next();
+    }
+    
+    @Override
+    protected String getModuleName() {
+        return "";
     }
     
     Iterator<String> iterator() {

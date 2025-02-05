@@ -42,20 +42,6 @@ public class Constants {
         return persistEncode;
     }
     
-    public static class SysEnv {
-        
-        public static final String USER_HOME = "user.home";
-        
-        public static final String PROJECT_NAME = "project.name";
-        
-        public static final String JM_LOG_PATH = "JM.LOG.PATH";
-        
-        public static final String JM_SNAPSHOT_PATH = "JM.SNAPSHOT.PATH";
-        
-        public static final String NACOS_ENV_FIRST = "nacos.env.first";
-        
-    }
-    
     public static class AdminApiPath {
         
         public static final String CONFIG_ADMIN_PATH = "/v3/admin/cs/config";
@@ -87,39 +73,6 @@ public class Constants {
         public static final String CORE_CLUSTER_ADMIN_PATH = "/v3/admin/core/cluster";
         
         public static final String CORE_OPS_ADMIN_PATH = "/v3/admin/core/ops";
-    }
-    
-    public static class Address {
-        
-        public static final int ENDPOINT_SERVER_LIST_PROVIDER_ORDER = 500;
-        
-        public static final int ADDRESS_SERVER_LIST_PROVIDER_ORDER = 499;
-    }
-    
-    public static class MemberMetaDataConstants {
-        /**
-         * Raft port，This parameter is dropped when RPC is used as a whole.
-         */
-        public static final String RAFT_PORT = "raftPort";
-        
-        public static final String SITE_KEY = "site";
-        
-        public static final String AD_WEIGHT = "adWeight";
-        
-        public static final String WEIGHT = "weight";
-        
-        public static final String LAST_REFRESH_TIME = "lastRefreshTime";
-        
-        public static final String VERSION = "version";
-        
-        public static final String SUPPORT_REMOTE_C_TYPE = "remoteConnectType";
-        
-        public static final String READY_TO_UPGRADE = "readyToUpgrade";
-        
-        public static final String SUPPORT_GRAY_MODEL = "supportGrayModel";
-        
-        public static final String[] BASIC_META_KEYS = new String[] {SITE_KEY, AD_WEIGHT, RAFT_PORT, WEIGHT, VERSION,
-                READY_TO_UPGRADE};
     }
     
 }

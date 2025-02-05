@@ -17,6 +17,8 @@
 package com.alibaba.nacos.maintainer.client.remote;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.common.constant.RequestUrlConstants;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpClientConfig;
@@ -29,9 +31,7 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.tls.TlsSystemConfig;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.maintainer.client.address.DefaultServerListManager;
-import com.alibaba.nacos.maintainer.client.env.NacosClientProperties;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
-import com.alibaba.nacos.maintainer.client.utils.ContextPathUtil;
 import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +53,8 @@ public class ClientHttpProxy {
     
     private final NacosRestTemplate nacosRestTemplate = HttpClientManager.getInstance().getNacosRestTemplate();
     
-    private final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientManager.getInstance().getNacosAsyncRestTemplate();
+    private final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientManager.getInstance()
+            .getNacosAsyncRestTemplate();
     
     private final boolean enableHttps = Boolean.getBoolean(TlsSystemConfig.TLS_ENABLE);
     
@@ -103,7 +104,8 @@ public class ClientHttpProxy {
             }
         }
         
-        throw new ConnectException("No available server after " + maxRetry + " retries, last tried server: " + currentServerAddr);
+        throw new ConnectException(
+                "No available server after " + maxRetry + " retries, last tried server: " + currentServerAddr);
     }
     
     private HttpRestResult<String> executeSync(HttpRequest request, String serverAddr) throws Exception {
@@ -136,7 +138,8 @@ public class ClientHttpProxy {
                 return nacosRestTemplate.putForm(url, httpConfig, httpHeaders, paramValues, String.class);
             case HttpMethod.DELETE:
                 return nacosRestTemplate.delete(url, httpConfig, httpHeaders, query, String.class);
-            default: throw new RuntimeException("Unsupported HTTP method: " + request.getHttpMethod());
+            default:
+                throw new RuntimeException("Unsupported HTTP method: " + request.getHttpMethod());
         }
     }
     
@@ -152,9 +155,11 @@ public class ClientHttpProxy {
         executeAsyncWithRetry(request, callback, endTime, currentServerAddr, maxRetry);
     }
     
-    private void executeAsyncWithRetry(HttpRequest request, Callback<String> callback, long endTime, String currentServerAddr, int retryCount) {
+    private void executeAsyncWithRetry(HttpRequest request, Callback<String> callback, long endTime,
+            String currentServerAddr, int retryCount) {
         if (System.currentTimeMillis() > endTime || retryCount < 0) {
-            callback.onError(new ConnectException("No available server after " + maxRetry + " retries, last tried server: " + currentServerAddr));
+            callback.onError(new ConnectException(
+                    "No available server after " + maxRetry + " retries, last tried server: " + currentServerAddr));
             return;
         }
         
@@ -235,7 +240,8 @@ public class ClientHttpProxy {
     }
     
     private String buildUrl(String serverAddr, String relativePath) {
-        if (!serverAddr.startsWith(RequestUrlConstants.HTTP_PREFIX) && !serverAddr.startsWith(RequestUrlConstants.HTTPS_PREFIX)) {
+        if (!serverAddr.startsWith(RequestUrlConstants.HTTP_PREFIX) && !serverAddr.startsWith(
+                RequestUrlConstants.HTTPS_PREFIX)) {
             serverAddr = getPrefix() + serverAddr;
         }
         String contextPath = serverListManager.getContextPath();
