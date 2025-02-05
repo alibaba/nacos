@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2024 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,8 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.constant.Constants.Address;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.naming.utils.CollectionUtils;
+import com.alibaba.nacos.client.utils.ClientBasicParamUtil;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
-import com.alibaba.nacos.client.utils.LogUtils;
-import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.http.HttpRestResult;
@@ -33,10 +31,12 @@ import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -52,7 +52,9 @@ import java.util.concurrent.TimeUnit;
  */
 public class EndpointServerListProvider extends AbstractServerListProvider {
     
-    private static final Logger LOGGER = LogUtils.logger(EndpointServerListProvider.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(EndpointServerListProvider.class);
+    
+    private static final boolean USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE = true;
     
     private NacosRestTemplate nacosRestTemplate;
     
@@ -72,7 +74,7 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
     
     private String endpointContextPath;
     
-    private String serverListName = ParamUtil.getDefaultNodesPath();
+    private String serverListName = ClientBasicParamUtil.getDefaultNodesPath();
     
     private volatile List<String> serversFromEndpoint = new ArrayList<>();
     
@@ -127,9 +129,9 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
         String endpointTmp = properties.getProperty(PropertyKeyConst.ENDPOINT);
         String isUseEndpointRuleParsing = properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
                 properties.getProperty(SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
-                        String.valueOf(ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE)));
+                        String.valueOf(USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE)));
         if (Boolean.parseBoolean(isUseEndpointRuleParsing)) {
-            endpointTmp = ParamUtil.parsingEndpointRule(endpointTmp);
+            endpointTmp = ClientBasicParamUtil.parsingEndpointRule(endpointTmp);
         }
         return endpointTmp;
     }
@@ -204,7 +206,7 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
                 String[] ipPort = InternetAddressUtil.splitIpPortStr(serverAddr);
                 String ip = ipPort[0].trim();
                 if (ipPort.length == 1) {
-                    result.add(ip + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort());
+                    result.add(ip + InternetAddressUtil.IP_PORT_SPLITER + ClientBasicParamUtil.getDefaultServerPort());
                 } else {
                     result.add(serverAddr);
                 }

@@ -17,16 +17,19 @@
 package com.alibaba.nacos.client.utils;
 
 import com.alibaba.nacos.common.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Callable;
 
 /**
  * Template Utils.
  *
- * @author pbting
- * @date 2019-03-04 1:31 PM
+ * @author Nacos
  */
 public class TemplateUtils {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(TemplateUtils.class);
     
     /**
      * Execute if string not empty.
@@ -41,7 +44,7 @@ public class TemplateUtils {
             try {
                 runnable.run();
             } catch (Exception e) {
-                LogUtils.NAMING_LOGGER.error("string not empty and then execute cause an exception.", e);
+                LOGGER.error("string not empty and then execute cause an exception.", e);
             }
         }
     }
@@ -60,7 +63,7 @@ public class TemplateUtils {
             try {
                 return callable.call();
             } catch (Exception e) {
-                LogUtils.NAMING_LOGGER.error("string empty and then execute cause an exception.", e);
+                LOGGER.error("string empty and then execute cause an exception.", e);
             }
         }
         
@@ -81,7 +84,7 @@ public class TemplateUtils {
             try {
                 return callable.call();
             } catch (Exception e) {
-                LogUtils.NAMING_LOGGER.error("string empty and then execute cause an exception.", e);
+                LOGGER.error("string empty and then execute cause an exception.", e);
             }
         }
         

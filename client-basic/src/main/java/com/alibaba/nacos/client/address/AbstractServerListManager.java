@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2024 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.lifecycle.Closeable;
@@ -28,6 +27,7 @@ import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
  */
 public abstract class AbstractServerListManager implements ServerListFactory, Closeable {
     
-    private static final Logger LOGGER = LogUtils.logger(AbstractServerListManager.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractServerListManager.class);
     
     protected ServerListProvider serverListProvider;
     

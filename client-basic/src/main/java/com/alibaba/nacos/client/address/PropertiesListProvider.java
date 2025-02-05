@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.constant.Constants.Address;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.client.utils.ClientBasicParamUtil;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -57,7 +57,7 @@ public class PropertiesListProvider extends AbstractServerListProvider {
                 String[] serverAddrArr = InternetAddressUtil.splitIpPortStr(serverAddr);
                 if (serverAddrArr.length == 1) {
                     this.serverList
-                            .add(serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort());
+                            .add(serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER + ClientBasicParamUtil.getDefaultServerPort());
                 } else {
                     this.serverList.add(serverAddr);
                 }
@@ -73,7 +73,7 @@ public class PropertiesListProvider extends AbstractServerListProvider {
     @Override
     public String getServerName() {
         return FIXED_NAME + "-" + (StringUtils.isNotBlank(namespace) ? (StringUtils.trim(namespace) + "-")
-                : "") + ParamUtil.getNameSuffixByServerIps(serverList.toArray(new String[0]));
+                : "") + ClientBasicParamUtil.getNameSuffixByServerIps(serverList.toArray(new String[0]));
     }
     
     @Override

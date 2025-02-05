@@ -39,20 +39,6 @@ public class Constants {
         
     }
     
-    public static class Disk {
-    
-        public static final String READ_ONLY = "r";
-    
-        public static final String READ_WRITE = "rw";
-    }
-    
-    public static class HealthCheck {
-        
-        public static final String UP = "UP";
-        
-        public static final String DOWN = "DOWN";
-    }
-    
     public static class Security {
     
         public static final long SECURITY_INFO_REFRESH_INTERVAL_MILLS = TimeUnit.SECONDS.toMillis(5);

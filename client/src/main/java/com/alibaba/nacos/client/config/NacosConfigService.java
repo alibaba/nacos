@@ -34,8 +34,8 @@ import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
 import com.alibaba.nacos.client.config.impl.LocalEncryptedDataKeyProcessor;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.utils.ClientBasicParamUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
-import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.PreInitUtils;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -74,7 +74,7 @@ public class NacosConfigService implements ConfigService {
     public NacosConfigService(Properties properties) throws NacosException {
         PreInitUtils.asyncPreLoadCostComponent();
         final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
-        LOGGER.info(ParamUtil.getInputParameters(clientProperties.asProperties()));
+        LOGGER.info(ClientBasicParamUtil.getInputParameters(clientProperties.asProperties()));
         ValidatorUtils.checkInitParam(clientProperties);
         
         initNamespace(clientProperties);
@@ -87,7 +87,7 @@ public class NacosConfigService implements ConfigService {
     }
     
     private void initNamespace(NacosClientProperties properties) {
-        namespace = ParamUtil.parseNamespace(properties);
+        namespace = ClientBasicParamUtil.parseNamespace(properties);
         properties.setProperty(PropertyKeyConst.NAMESPACE, namespace);
     }
     

@@ -19,8 +19,8 @@ package com.alibaba.nacos.client.naming.core;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.utils.Chooser;
-import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.Pair;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.List;
