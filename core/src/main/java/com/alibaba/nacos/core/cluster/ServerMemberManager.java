@@ -86,7 +86,7 @@ import static com.alibaba.nacos.api.exception.NacosException.CLIENT_INVALID_PARA
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Component(value = "serverMemberManager")
-public class ServerMemberManager {
+public class ServerMemberManager implements NacosMemberManager {
     
     private final NacosAsyncRestTemplate asyncRestTemplate = HttpClientBeanHolder.getNacosAsyncRestTemplate(
             Loggers.CORE);
@@ -95,13 +95,9 @@ public class ServerMemberManager {
     
     private static final String SERVER_PORT_PROPERTY = "server.port";
     
-    private static final String SPRING_MANAGEMENT_CONTEXT_NAMESPACE = "management";
-    
     private static final String MEMBER_CHANGE_EVENT_QUEUE_SIZE_PROPERTY = "nacos.member-change-event.queue.size";
     
     private static final int DEFAULT_MEMBER_CHANGE_EVENT_QUEUE_SIZE = 128;
-    
-    private static boolean isUseAddressServer = false;
     
     private static final long DEFAULT_TASK_DELAY_TIME = 5_000L;
     
@@ -231,7 +227,7 @@ public class ServerMemberManager {
     
     private void initAndStartLookup() throws NacosException {
         this.lookup = LookupFactory.createLookUp(this);
-        isUseAddressServer = this.lookup.useAddressServer();
+        this.lookup.useAddressServer();
         this.lookup.start();
     }
     
@@ -243,12 +239,8 @@ public class ServerMemberManager {
      */
     public void switchLookup(String name) throws NacosException {
         this.lookup = LookupFactory.switchLookup(name, this);
-        isUseAddressServer = this.lookup.useAddressServer();
+        this.lookup.useAddressServer();
         this.lookup.start();
-    }
-    
-    public static boolean isUseAddressServer() {
-        return isUseAddressServer;
     }
     
     /**
@@ -338,6 +330,7 @@ public class ServerMemberManager {
      *
      * @return {@link Collection} all member
      */
+    @Override
     public Collection<Member> allMembers() {
         // We need to do a copy to avoid affecting the real data
         HashSet<Member> set = new HashSet<>(serverList.values());
@@ -356,7 +349,8 @@ public class ServerMemberManager {
         return members;
     }
     
-    synchronized boolean memberChange(Collection<Member> members) {
+    @Override
+    public synchronized boolean memberChange(Collection<Member> members) {
         
         if (members == null || members.isEmpty()) {
             return false;
@@ -512,11 +506,6 @@ public class ServerMemberManager {
     @JustForTest
     public void updateMember(Member member) {
         serverList.put(member.getAddress(), member);
-    }
-    
-    @JustForTest
-    public void setMemberAddressInfos(Set<String> memberAddressInfos) {
-        this.memberAddressInfos = memberAddressInfos;
     }
     
     @JustForTest

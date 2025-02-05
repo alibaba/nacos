@@ -16,13 +16,13 @@
 
 package com.alibaba.nacos.console.handler.impl.remote.core;
 
+import com.alibaba.nacos.console.cluster.RemoteServerMemberManager;
 import com.alibaba.nacos.console.handler.core.ClusterHandler;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.core.cluster.Member;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
-import java.util.Collections;
 
 /**
  * Remote Implementation of ClusterHandler that handles cluster-related operations.
@@ -33,7 +33,10 @@ import java.util.Collections;
 @EnabledRemoteHandler
 public class ClusterRemoteHandler implements ClusterHandler {
     
-    public ClusterRemoteHandler() {
+    private final RemoteServerMemberManager memberManager;
+    
+    public ClusterRemoteHandler(RemoteServerMemberManager memberManager) {
+        this.memberManager = memberManager;
     }
     
     /**
@@ -45,6 +48,6 @@ public class ClusterRemoteHandler implements ClusterHandler {
     @Override
     public Collection<Member> getNodeList(String ipKeyWord) {
         // TODO get from nacos servers
-        return Collections.emptyList();
+        return memberManager.allMembers();
     }
 }
