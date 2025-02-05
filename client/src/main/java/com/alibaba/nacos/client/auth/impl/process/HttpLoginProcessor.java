@@ -19,8 +19,8 @@ package com.alibaba.nacos.client.auth.impl.process;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.auth.impl.NacosAuthLoginConstant;
+import com.alibaba.nacos.client.utils.ClientBasicParamUtil;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
-import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
@@ -67,7 +67,7 @@ public class HttpLoginProcessor implements LoginProcessor {
         
         if (!server.startsWith(HTTPS_PREFIX) && !server.startsWith(HTTP_PREFIX)) {
             if (!InternetAddressUtil.containsPort(server)) {
-                server = server + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort();
+                server = server + InternetAddressUtil.IP_PORT_SPLITER + ClientBasicParamUtil.getDefaultServerPort();
             }
             server = HTTP_PREFIX + server;
         }
@@ -101,7 +101,7 @@ public class HttpLoginProcessor implements LoginProcessor {
         } catch (Exception e) {
             Map<String, String> newBodyMap = new HashMap<>(bodyMap);
             newBodyMap.put(PropertyKeyConst.PASSWORD,
-                    ParamUtil.desensitiseParameter(bodyMap.get(PropertyKeyConst.PASSWORD)));
+                    ClientBasicParamUtil.desensitiseParameter(bodyMap.get(PropertyKeyConst.PASSWORD)));
             SECURITY_LOGGER.error("[NacosClientAuthServiceImpl] login http request failed"
                     + " url: {}, params: {}, bodyMap: {}, errorMsg: {}", url, params, newBodyMap, e.getMessage());
             return null;

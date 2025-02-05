@@ -55,6 +55,11 @@
             <artifactId>nacos-common</artifactId>
             <optional>true</optional>
         </dependency>
+        
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-client-basic</artifactId>
+        </dependency>
     
         <dependency>
             <groupId>${project.groupId}</groupId>

@@ -88,7 +88,7 @@
     </issueManagement>
     
     <properties>
-        <revision>3.0.0-ALPHA.2</revision>
+        <revision>3.0.0-BETA</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Compiler settings properties -->
@@ -641,6 +641,7 @@
         <module>server</module>
         <module>lock</module>
         <module>maintainer-client</module>
+        <module>client-basic</module>
     </modules>
     
     <!-- Default dependencies in all subprojects -->
@@ -855,6 +856,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-sys</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.nacos</groupId>
+                <artifactId>nacos-client-basic</artifactId>
                 <version>${project.version}</version>
             </dependency>
             

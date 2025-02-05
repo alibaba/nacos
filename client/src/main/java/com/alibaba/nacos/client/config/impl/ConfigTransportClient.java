@@ -22,7 +22,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.security.SecurityProxy;
-import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.client.utils.AppNameUtils;
+import com.alibaba.nacos.client.utils.ClientBasicParamUtil;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -108,9 +109,9 @@ public abstract class ConfigTransportClient {
         Map<String, String> headers = new HashMap<>(16);
         
         String ts = String.valueOf(System.currentTimeMillis());
-        String token = MD5Utils.md5Hex(ts + ParamUtil.getAppKey(), Constants.ENCODE);
+        String token = MD5Utils.md5Hex(ts + ClientBasicParamUtil.getAppKey(), Constants.ENCODE);
         
-        headers.put(Constants.CLIENT_APPNAME_HEADER, ParamUtil.getAppName());
+        headers.put(Constants.CLIENT_APPNAME_HEADER, AppNameUtils.getAppName());
         headers.put(Constants.CLIENT_REQUEST_TS_HEADER, ts);
         headers.put(Constants.CLIENT_REQUEST_TOKEN_HEADER, token);
         headers.put(CONFIG_INFO_HEADER, DEFAULT_CONFIG_INFO);
