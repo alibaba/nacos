@@ -41,6 +41,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Nacos Config module maintainer service.
+ *
+ * @author Nacos
+ */
 public interface ConfigMaintainerService {
     
     /**
