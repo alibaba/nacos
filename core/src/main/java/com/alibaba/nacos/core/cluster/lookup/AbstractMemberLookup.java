@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.cluster;
+package com.alibaba.nacos.core.cluster.lookup;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MemberLookup;
+import com.alibaba.nacos.core.cluster.NacosMemberManager;
 
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -28,12 +31,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public abstract class AbstractMemberLookup implements MemberLookup {
     
-    protected ServerMemberManager memberManager;
+    protected NacosMemberManager memberManager;
     
     protected AtomicBoolean start = new AtomicBoolean(false);
     
     @Override
-    public void injectMemberManager(ServerMemberManager memberManager) {
+    public void injectMemberManager(NacosMemberManager memberManager) {
         this.memberManager = memberManager;
     }
     
