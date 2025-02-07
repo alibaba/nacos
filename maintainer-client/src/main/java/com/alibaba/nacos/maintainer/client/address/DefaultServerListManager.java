@@ -24,7 +24,6 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.maintainer.client.remote.HttpClientManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,7 +36,6 @@ import java.util.Random;
  *
  * @author Nacos
  */
-@Service
 public class DefaultServerListManager extends AbstractServerListManager {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultServerListManager.class);

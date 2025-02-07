@@ -18,10 +18,7 @@ package com.alibaba.nacos.maintainer.client.config;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
-import com.alibaba.nacos.common.constant.HttpHeaderConsts;
-import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpRestResult;
-import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.maintainer.client.constants.Constants;
@@ -46,45 +43,35 @@ import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.context.request.async.DeferredResult;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.stream.Collectors;
 
 /**
  * Configuration management.
  *
  * @author Nacos
  */
-public class NacosConfigMaintainerService implements ConfigMaintainerService {
+public class NacosConfigMaintainerServiceImpl implements ConfigMaintainerService {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(NacosConfigMaintainerService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(NacosConfigMaintainerServiceImpl.class);
     
     private final ClientHttpProxy clientHttpProxy;
     
-    public NacosConfigMaintainerService(Properties properties) throws NacosException {
+    public NacosConfigMaintainerServiceImpl(Properties properties) throws NacosException {
         this.clientHttpProxy = new ClientHttpProxy(properties);
     }
     
     @Override
-    public ConfigAllInfo getConfig(String dataId, String groupName) throws Exception {
+    public ConfigAllInfo getConfig(String dataId, String groupName) throws NacosException {
         return getConfig(dataId, groupName, ParamUtil.getDefaultNamespaceId());
     }
     
     @Override
-    public ConfigAllInfo getConfig(String dataId, String groupName, String namespaceId) throws Exception {
+    public ConfigAllInfo getConfig(String dataId, String groupName, String namespaceId) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("dataId", dataId);
         params.put("groupName", groupName);
@@ -103,12 +90,12 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public boolean publishConfig(String dataId, String groupName, String content) throws Exception {
+    public boolean publishConfig(String dataId, String groupName, String content) throws NacosException {
         return publishConfig(dataId, groupName, ParamUtil.getDefaultNamespaceId(), content);
     }
     
     @Override
-    public boolean publishConfig(String dataId, String groupName, String namespaceId, String content) throws Exception {
+    public boolean publishConfig(String dataId, String groupName, String namespaceId, String content) throws NacosException {
         return publishConfig(dataId, groupName, namespaceId, content, null, null, null, null, null, null, null, null,
                 null);
     }
@@ -116,7 +103,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     @Override
     public boolean publishConfig(String dataId, String groupName, String namespaceId, String content, String tag,
             String appName, String srcUser, String configTags, String desc, String use, String effect, String type,
-            String schema) throws Exception {
+            String schema) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("dataId", dataId);
         params.put("groupName", groupName);
@@ -144,17 +131,17 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public boolean deleteConfig(String dataId, String groupName) throws Exception {
+    public boolean deleteConfig(String dataId, String groupName) throws NacosException {
         return deleteConfig(dataId, groupName, ParamUtil.getDefaultNamespaceId(), null);
     }
     
     @Override
-    public boolean deleteConfig(String dataId, String groupName, String namespaceId) throws Exception {
+    public boolean deleteConfig(String dataId, String groupName, String namespaceId) throws NacosException {
         return deleteConfig(dataId, groupName, namespaceId, null);
     }
     
     @Override
-    public boolean deleteConfig(String dataId, String groupName, String namespaceId, String tag) throws Exception {
+    public boolean deleteConfig(String dataId, String groupName, String namespaceId, String tag) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("dataId", dataId);
         params.put("groupName", groupName);
@@ -173,7 +160,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public boolean deleteConfigs(List<Long> ids) throws Exception {
+    public boolean deleteConfigs(List<Long> ids) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         StringBuilder idStr = new StringBuilder();
         for (Long id : ids) {
@@ -196,13 +183,13 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public ConfigAdvanceInfo getConfigAdvanceInfo(String dataId, String groupName) throws Exception {
+    public ConfigAdvanceInfo getConfigAdvanceInfo(String dataId, String groupName) throws NacosException {
         return getConfigAdvanceInfo(dataId, groupName, ParamUtil.getDefaultNamespaceId());
     }
     
     @Override
     public ConfigAdvanceInfo getConfigAdvanceInfo(String dataId, String groupName, String namespaceId)
-            throws Exception {
+            throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("dataId", dataId);
         params.put("groupName", groupName);
@@ -222,7 +209,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     
     @Override
     public Page<ConfigInfo> searchConfigByDetails(String dataId, String groupName, String namespaceId,
-            String configDetail, String search, int pageNo, int pageSize) throws Exception {
+            String configDetail, String search, int pageNo, int pageSize) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("dataId", dataId);
         params.put("groupName", groupName);
@@ -245,13 +232,13 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public GroupkeyListenserStatus getListeners(String dataId, String groupName) throws Exception {
+    public GroupkeyListenserStatus getListeners(String dataId, String groupName) throws NacosException {
         return getListeners(dataId, groupName, ParamUtil.getDefaultNamespaceId(), 1);
     }
     
     @Override
     public GroupkeyListenserStatus getListeners(String dataId, String groupName, String namespaceId, int sampleTime)
-            throws Exception {
+            throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("dataId", dataId);
         params.put("groupName", groupName);
@@ -271,12 +258,12 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public boolean stopBeta(String dataId, String groupName) throws Exception {
+    public boolean stopBeta(String dataId, String groupName) throws NacosException {
         return stopBeta(dataId, groupName, ParamUtil.getDefaultNamespaceId());
     }
     
     @Override
-    public boolean stopBeta(String dataId, String groupName, String namespaceId) throws Exception {
+    public boolean stopBeta(String dataId, String groupName, String namespaceId) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("dataId", dataId);
         params.put("groupName", groupName);
@@ -294,12 +281,12 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public ConfigInfo4Beta queryBeta(String dataId, String groupName) throws Exception {
+    public ConfigInfo4Beta queryBeta(String dataId, String groupName) throws NacosException {
         return queryBeta(dataId, groupName, ParamUtil.getDefaultNamespaceId());
     }
     
     @Override
-    public ConfigInfo4Beta queryBeta(String dataId, String groupName, String namespaceId) throws Exception {
+    public ConfigInfo4Beta queryBeta(String dataId, String groupName, String namespaceId) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("dataId", dataId);
         params.put("groupName", groupName);
@@ -318,60 +305,8 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public Map<String, Object> importAndPublishConfig(String namespaceId, String srcUser, SameConfigPolicy policy, 
-            MultipartFile multipartFile) throws Exception {
-        if (multipartFile == null) {
-            return new HashMap<>(8);
-        }
-        File file = convertToFile(multipartFile);
-        try {
-            Map<String, String> params = new HashMap<>(8);
-            params.put("namespaceId", namespaceId);
-            params.put("srcUser", srcUser);
-            params.put("policy", policy.toString());
-            
-            HttpRequest httpRequest = new HttpRequest.Builder()
-                    .setHttpMethod(HttpMethod.POST)
-                    .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH + "/import")
-                    .setParamValue(params)
-                    .setFile(file)
-                    .build();
-            HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-            Result<Map<String, Object>> result = JacksonUtils.toObj(httpRestResult.getData(),
-                    new TypeReference<Result<Map<String, Object>>>() {
-                    });
-            return result.getData();
-        } finally {
-            if (!file.delete()) {
-                LOGGER.warn("delete file failed: {}", file.getAbsolutePath());
-            }
-        }
-    }
-    
-    @Override
-    public ResponseEntity<byte[]> exportConfig(String dataId, String groupName, String namespaceId, List<Long> ids)
-            throws Exception {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("dataId", dataId);
-        params.put("groupName", groupName);
-        params.put("namespaceId", namespaceId);
-        params.put("ids", ids.stream().map(String::valueOf).collect(Collectors.joining(",")));
-
-        HttpRequest httpRequest = new HttpRequest.Builder()
-                .setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH + "/export")
-                .setParamValue(params)
-                .build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        byte[] responseBody = httpRestResult.getData().getBytes(StandardCharsets.UTF_8);
-        return ResponseEntity.ok().header(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
-                .header(HttpHeaderConsts.CONTENT_DISPOSITION, "attachment; filename=\"config_export.zip\"")
-                .body(responseBody);
-    }
-
-    @Override
     public Map<String, Object> cloneConfig(String namespaceId, List<SameNamespaceCloneConfigBean> configBeansList,
-            String srcUser, SameConfigPolicy policy) throws Exception {
+            String srcUser, SameConfigPolicy policy) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("srcUser", srcUser);
@@ -392,7 +327,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     
     @Override
     public Page<ConfigHistoryInfo> listConfigHistory(String dataId, String groupName, String namespaceId, int pageNo,
-            int pageSize) throws Exception {
+            int pageSize) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("dataId", dataId);
         params.put("groupName", groupName);
@@ -414,7 +349,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     
     @Override
     public ConfigHistoryInfo getConfigHistoryInfo(String dataId, String groupName, String namespaceId, Long nid)
-            throws Exception {
+            throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("dataId", dataId);
         params.put("groupName", groupName);
@@ -435,7 +370,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     
     @Override
     public ConfigHistoryInfo getPreviousConfigHistoryInfo(String dataId, String groupName, String namespaceId, Long id)
-            throws Exception {
+            throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("dataId", dataId);
         params.put("groupName", groupName);
@@ -455,7 +390,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public List<ConfigInfoWrapper> getConfigListByNamespace(String namespaceId) throws Exception {
+    public List<ConfigInfoWrapper> getConfigListByNamespace(String namespaceId) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         
@@ -472,7 +407,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public Capacity getCapacityWithDefault(String groupName, String namespaceId) throws Exception {
+    public Capacity getCapacityWithDefault(String groupName, String namespaceId) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("groupName", groupName);
         params.put("namespaceId", namespaceId);
@@ -491,7 +426,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     
     @Override
     public boolean insertOrUpdateCapacity(String groupName, String namespaceId, Integer quota, Integer maxSize,
-            Integer maxAggrCount, Integer maxAggrSize) throws Exception {
+            Integer maxAggrCount, Integer maxAggrSize) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("groupName", groupName);
         params.put("namespaceId", namespaceId);
@@ -513,7 +448,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public String updateLocalCacheFromStore() throws Exception {
+    public String updateLocalCacheFromStore() throws NacosException {
         HttpRequest httpRequest = new HttpRequest.Builder()
                 .setHttpMethod(HttpMethod.POST)
                 .setPath(Constants.AdminApiPath.CONFIG_OPS_ADMIN_PATH + "/localCache")
@@ -526,7 +461,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public String setLogLevel(String logName, String logLevel) throws Exception {
+    public String setLogLevel(String logName, String logLevel) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("logName", logName);
         params.put("logLevel", logLevel);
@@ -544,7 +479,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public Object derbyOps(String sql) throws Exception {
+    public Object derbyOps(String sql) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("sql", sql);
         
@@ -561,39 +496,8 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public DeferredResult<String> importDerby(MultipartFile multipartFile) throws Exception {
-        File file = convertToFile(multipartFile);
-        HttpRequest httpRequest = new HttpRequest.Builder()
-                .setHttpMethod(HttpMethod.POST)
-                .setPath(Constants.AdminApiPath.CONFIG_OPS_ADMIN_PATH + "/derby/import")
-                .setFile(file)
-                .build();
-        DeferredResult<String> deferredResult = new DeferredResult<>();
-        Callback<String> callback = new Callback<String>() {
-            @Override
-            public void onReceive(RestResult<String> result) {
-                String res = JacksonUtils.toObj(result.getData(), new TypeReference<String>() {
-                });
-                deferredResult.setResult(res);
-            }
-            
-            @Override
-            public void onError(Throwable throwable) {
-                deferredResult.setErrorResult(throwable);
-            }
-            
-            @Override
-            public void onCancel() {
-                //
-            }
-        };
-        clientHttpProxy.executeAsyncHttpRequest(httpRequest, callback);
-        return deferredResult;
-    }
-    
-    @Override
     public GroupkeyListenserStatus getAllSubClientConfigByIp(String ip, boolean all, String namespaceId,
-            int sampleTime) throws Exception {
+            int sampleTime) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("ip", ip);
         params.put("all", String.valueOf(all));
@@ -614,7 +518,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     
     @Override
     public Map<String, Object> getClientMetrics(String ip, String dataId, String groupName, String namespaceId)
-            throws Exception {
+            throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("ip", ip);
         params.put("dataId", dataId);
@@ -635,7 +539,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     
     @Override
     public Map<String, Object> getClusterMetrics(String ip, String dataId, String groupName, String namespaceId)
-            throws Exception {
+            throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("ip", ip);
         params.put("dataId", dataId);
@@ -655,7 +559,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public String raftOps(String command, String value, String groupId) throws Exception {
+    public String raftOps(String command, String value, String groupId) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("command", command);
         params.put("value", value);
@@ -674,7 +578,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public List<IdGeneratorVO> getIdsHealth() throws Exception {
+    public List<IdGeneratorVO> getIdsHealth() throws NacosException {
         HttpRequest httpRequest = new HttpRequest.Builder()
                 .setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CORE_OPS_ADMIN_PATH + "/ids")
@@ -687,7 +591,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public void updateLogLevel(String logName, String logLevel) throws Exception {
+    public void updateLogLevel(String logName, String logLevel) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("logName", logName);
         params.put("logLevel", logLevel);
@@ -701,7 +605,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public Member getSelfNode() throws Exception {
+    public Member getSelfNode() throws NacosException {
         HttpRequest httpRequest = new HttpRequest.Builder()
                 .setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CORE_CLUSTER_ADMIN_PATH + "/node/self")
@@ -714,7 +618,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public Collection<Member> listClusterNodes(String address, String state) throws Exception {
+    public Collection<Member> listClusterNodes(String address, String state) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("address", address);
         params.put("state", state);
@@ -732,7 +636,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public String getSelfNodeHealth() throws Exception {
+    public String getSelfNodeHealth() throws NacosException {
         HttpRequest httpRequest = new HttpRequest.Builder()
                 .setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CORE_CLUSTER_ADMIN_PATH + "/node/self/health")
@@ -745,7 +649,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public Boolean updateClusterNodes(List<Member> nodes) throws Exception {
+    public Boolean updateClusterNodes(List<Member> nodes) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("nodes", JacksonUtils.toJson(nodes));
         
@@ -762,7 +666,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public Boolean updateLookupMode(String type) throws Exception {
+    public Boolean updateLookupMode(String type) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("type", type);
         
@@ -779,7 +683,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public Map<String, Connection> getCurrentClients() throws Exception {
+    public Map<String, Connection> getCurrentClients() throws NacosException {
         HttpRequest httpRequest = new HttpRequest.Builder()
                 .setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CORE_LOADER_ADMIN_PATH + "/current")
@@ -792,7 +696,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public String reloadConnectionCount(Integer count, String redirectAddress) throws Exception {
+    public String reloadConnectionCount(Integer count, String redirectAddress) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("count", String.valueOf(count));
         params.put("redirectAddress", redirectAddress);
@@ -810,7 +714,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public String smartReloadCluster(String loaderFactorStr) throws Exception {
+    public String smartReloadCluster(String loaderFactorStr) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("loaderFactorStr", loaderFactorStr);
         
@@ -827,7 +731,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public String reloadSingleClient(String connectionId, String redirectAddress) throws Exception {
+    public String reloadSingleClient(String connectionId, String redirectAddress) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("connectionId", connectionId);
         params.put("redirectAddress", redirectAddress);
@@ -845,7 +749,7 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
     }
     
     @Override
-    public ServerLoaderMetrics getClusterLoaderMetrics() throws Exception {
+    public ServerLoaderMetrics getClusterLoaderMetrics() throws NacosException {
         HttpRequest httpRequest = new HttpRequest.Builder()
                 .setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CORE_LOADER_ADMIN_PATH + "/cluster")
@@ -855,17 +759,5 @@ public class NacosConfigMaintainerService implements ConfigMaintainerService {
                 new TypeReference<Result<ServerLoaderMetrics>>() {
                 });
         return result.getData();
-    }
-    
-    private File convertToFile(MultipartFile multipartFile) throws IOException {
-        File tempFile = File.createTempFile("config-", ".tmp");
-        try (InputStream in = multipartFile.getInputStream(); FileOutputStream out = new FileOutputStream(tempFile)) {
-            byte[] buffer = new byte[1024];
-            int bytesRead;
-            while ((bytesRead = in.read(buffer)) != -1) {
-                out.write(buffer, 0, bytesRead);
-            }
-        }
-        return tempFile;
     }
 }

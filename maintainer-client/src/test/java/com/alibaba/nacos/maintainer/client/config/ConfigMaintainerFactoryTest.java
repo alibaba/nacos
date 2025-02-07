@@ -37,7 +37,7 @@ public class ConfigMaintainerFactoryTest {
         
         // Assert
         assertNotNull(service);
-        assertInstanceOf(NacosConfigMaintainerService.class, service);
+        assertInstanceOf(NacosConfigMaintainerServiceImpl.class, service);
     }
     
     @Test
@@ -51,7 +51,7 @@ public class ConfigMaintainerFactoryTest {
         
         // Assert
         assertNotNull(service);
-        assertInstanceOf(NacosConfigMaintainerService.class, service);
+        assertInstanceOf(NacosConfigMaintainerServiceImpl.class, service);
     }
     
     @Test

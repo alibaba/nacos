@@ -76,9 +76,9 @@ public class ClientHttpProxy {
      *
      * @param request http request
      * @return http result
-     * @throws Exception exception
+     * @throws NacosException exception when request
      */
-    public HttpRestResult<String> executeSyncHttpRequest(HttpRequest request) throws Exception {
+    public HttpRestResult<String> executeSyncHttpRequest(HttpRequest request) throws NacosException {
         long endTime = System.currentTimeMillis() + ParamUtil.getReadTimeout();
         String currentServerAddr = serverListManager.getCurrentServer();
         int retryCount = maxRetry;
@@ -104,7 +104,7 @@ public class ClientHttpProxy {
             }
         }
         
-        throw new ConnectException(
+        throw new NacosException(NacosException.BAD_GATEWAY,
                 "No available server after " + maxRetry + " retries, last tried server: " + currentServerAddr);
     }
     
@@ -147,9 +147,9 @@ public class ClientHttpProxy {
      * Execute async http request.
      *
      * @param request http request
-     * @throws Exception exception
+     * @throws NacosException exception when request
      */
-    public void executeAsyncHttpRequest(HttpRequest request, Callback<String> callback) throws Exception {
+    public void executeAsyncHttpRequest(HttpRequest request, Callback<String> callback) throws NacosException {
         long endTime = System.currentTimeMillis() + ParamUtil.getReadTimeout();
         String currentServerAddr = serverListManager.getCurrentServer();
         executeAsyncWithRetry(request, callback, endTime, currentServerAddr, maxRetry);

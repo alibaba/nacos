@@ -17,7 +17,6 @@
 package com.alibaba.nacos.maintainer.client.model.naming;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,7 +31,6 @@ import java.util.concurrent.TimeUnit;
  *
  * @author nacos
  */
-@Component
 @SuppressWarnings("PMD")
 public class SwitchDomain implements Record, Cloneable {
     

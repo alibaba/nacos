@@ -19,6 +19,11 @@ package com.alibaba.nacos.maintainer.client.model.core;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * ServerLoaderMetrics.
+ *
+ * @author Nacos
+ */
 public class ServerLoaderMetrics {
     
     String address;

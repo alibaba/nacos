@@ -37,7 +37,7 @@ public class NamingMaintainerFactoryTest {
         
         // Assert
         assertNotNull(service);
-        assertInstanceOf(NacosNamingMaintainerService.class, service);
+        assertInstanceOf(NacosNamingMaintainerServiceImpl.class, service);
     }
     
     @Test
@@ -51,7 +51,7 @@ public class NamingMaintainerFactoryTest {
         
         // Assert
         assertNotNull(service);
-        assertInstanceOf(NacosNamingMaintainerService.class, service);
+        assertInstanceOf(NacosNamingMaintainerServiceImpl.class, service);
     }
     
     @Test

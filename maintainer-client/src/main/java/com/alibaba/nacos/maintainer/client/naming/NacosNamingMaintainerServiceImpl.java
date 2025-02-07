@@ -45,22 +45,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-public class NacosNamingMaintainerService implements NamingMaintainerService {
+/**
+ * NacosNamingMaintainerServiceImpl.
+ *
+ * @author Nacos
+ */
+public class NacosNamingMaintainerServiceImpl implements NamingMaintainerService {
     
     private final ClientHttpProxy clientHttpProxy;
     
-    public NacosNamingMaintainerService(Properties properties) throws NacosException {
+    public NacosNamingMaintainerServiceImpl(Properties properties) throws NacosException {
         this.clientHttpProxy = new ClientHttpProxy(properties);
     }
     
     @Override
-    public String createService(String serviceName) throws Exception {
+    public String createService(String serviceName) throws NacosException {
         return createService(ParamUtil.getDefaultNamespaceId(), ParamUtil.getDefaultGroupName(), serviceName, "", false, 0.0f, "");
     }
     
     @Override
     public String createService(String namespaceId, String groupName, String serviceName, String metadata,
-            boolean ephemeral, float protectThreshold, String selector) throws Exception {
+            boolean ephemeral, float protectThreshold, String selector) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("groupName", groupName);
@@ -83,7 +88,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     
     @Override
     public String updateService(String namespaceId, String groupName, String serviceName, String metadata,
-            boolean ephemeral, float protectThreshold, String selector) throws Exception {
+            boolean ephemeral, float protectThreshold, String selector) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("groupName", groupName);
@@ -106,7 +111,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     }
     
     @Override
-    public String removeService(String namespaceId, String groupName, String serviceName) throws Exception {
+    public String removeService(String namespaceId, String groupName, String serviceName) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("groupName", groupName);
@@ -125,7 +130,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     
     @Override
     public ServiceDetailInfo getServiceDetail(String namespaceId, String groupName, String serviceName)
-            throws Exception {
+            throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("groupName", groupName);
@@ -145,7 +150,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     
     @Override
     public Object listServices(String namespaceId, String groupName, String selector, int pageNo, int pageSize)
-            throws Exception {
+            throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("groupName", groupName);
@@ -163,7 +168,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     }
     
     @Override
-    public ObjectNode searchService(String namespaceId, String expr) throws Exception {
+    public ObjectNode searchService(String namespaceId, String expr) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("expr", expr);
@@ -179,7 +184,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     
     @Override
     public Result<ObjectNode> getSubscribers(String namespaceId, String groupName, String serviceName, int pageNo,
-            int pageSize, boolean aggregation) throws Exception {
+            int pageSize, boolean aggregation) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("groupName", groupName);
@@ -199,7 +204,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     }
     
     @Override
-    public List<String> listSelectorTypes() throws Exception {
+    public List<String> listSelectorTypes() throws NacosException {
         HttpRequest httpRequest = new HttpRequest.Builder()
                 .setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.NAMING_SERVICE_ADMIN_PATH + "/selector/types")
@@ -209,7 +214,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     }
     
     @Override
-    public SwitchDomain getSwitches() throws Exception {
+    public SwitchDomain getSwitches() throws NacosException {
         HttpRequest httpRequest = new HttpRequest.Builder()
                 .setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.NAMING_OPS_ADMIN_PATH + "/switches")
@@ -219,7 +224,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     }
     
     @Override
-    public String updateSwitch(String entry, String value, boolean debug) throws Exception {
+    public String updateSwitch(String entry, String value, boolean debug) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("entry", entry);
         params.put("value", value);
@@ -236,7 +241,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     }
     
     @Override
-    public MetricsInfoVo getMetrics(boolean onlyStatus) throws Exception {
+    public MetricsInfoVo getMetrics(boolean onlyStatus) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("onlyStatus", String.valueOf(onlyStatus));
         
@@ -250,7 +255,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     }
     
     @Override
-    public String setLogLevel(String logName, String logLevel) throws Exception {
+    public String setLogLevel(String logName, String logLevel) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("logName", logName);
         params.put("logLevel", logLevel);
@@ -268,7 +273,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     @Override
     public String registerInstance(String namespaceId, String groupName, String serviceName, String clusterName,
             String ip, int port, String weight, boolean healthy, boolean enabled, String ephemeral, String metadata)
-            throws Exception {
+            throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("groupName", groupName);
@@ -295,7 +300,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     @Override
     public String deregisterInstance(String namespaceId, String groupName, String serviceName, String clusterName,
             String ip, int port, String weight, boolean healthy, boolean enabled, String ephemeral, String metadata)
-            throws Exception {
+            throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("groupName", groupName);
@@ -322,7 +327,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     @Override
     public String updateInstance(String namespaceId, String groupName, String serviceName, String clusterName,
             String ip, int port, String weight, boolean healthy, boolean enabled, String ephemeral, String metadata)
-            throws Exception {
+            throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("groupName", groupName);
@@ -349,7 +354,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     @Override
     public InstanceMetadataBatchOperationVo batchUpdateInstanceMetadata(String namespaceId, String groupName,
             String serviceName, String instance, Map<String, String> metadata, String consistencyType)
-            throws Exception {
+            throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("groupName", groupName);
@@ -370,7 +375,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     @Override
     public InstanceMetadataBatchOperationVo batchDeleteInstanceMetadata(String namespaceId, String groupName,
             String serviceName, String instance, Map<String, String> metadata, String consistencyType)
-            throws Exception {
+            throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("groupName", groupName);
@@ -390,7 +395,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     
     @Override
     public String partialUpdateInstance(String namespaceId, String serviceName, String clusterName, int ip, int port,
-            double weight, boolean enabled, String metadata) throws Exception {
+            double weight, boolean enabled, String metadata) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("serviceName", serviceName);
@@ -413,7 +418,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     
     @Override
     public ServiceInfo listInstances(String namespaceId, String groupName, String serviceName, String clusterName,
-            String ip, int port, boolean healthyOnly) throws Exception {
+            String ip, int port, boolean healthyOnly) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("groupName", groupName);
@@ -434,7 +439,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     
     @Override
     public InstanceDetailInfoVo getInstanceDetail(String namespaceId, String groupName, String serviceName,
-            String clusterName, String ip, int port) throws Exception {
+            String clusterName, String ip, int port) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("groupName", groupName);
@@ -455,7 +460,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     @Override
     public String updateInstanceHealthStatus(String namespaceId, String groupName, String serviceName,
             String clusterName, String metadata, boolean ephemeral, float protectThreshold, String selector)
-            throws Exception {
+            throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("groupName", groupName);
@@ -478,7 +483,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     }
     
     @Override
-    public Map<String, AbstractHealthChecker> getHealthCheckers() throws Exception {
+    public Map<String, AbstractHealthChecker> getHealthCheckers() throws NacosException {
         HttpRequest httpRequest = new HttpRequest.Builder()
                 .setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.NAMING_HEALTH_ADMIN_PATH + "/checkers")
@@ -489,7 +494,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     
     @Override
     public String updateCluster(String namespaceId, String groupName, String clusterName, Integer checkPort,
-            Boolean useInstancePort4Check, String healthChecker, Map<String, String> metadata) throws Exception {
+            Boolean useInstancePort4Check, String healthChecker, Map<String, String> metadata) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("groupName", groupName);
@@ -510,7 +515,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     }
     
     @Override
-    public List<String> getClientList() throws Exception {
+    public List<String> getClientList() throws NacosException {
         HttpRequest httpRequest = new HttpRequest.Builder()
                 .setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.NAMING_CLIENT_ADMIN_PATH + "/list")
@@ -520,7 +525,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     }
     
     @Override
-    public ObjectNode getClientDetail(String clientId) throws Exception {
+    public ObjectNode getClientDetail(String clientId) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("clientId", clientId);
         
@@ -534,7 +539,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     }
     
     @Override
-    public List<ObjectNode> getPublishedServiceList(String clientId) throws Exception {
+    public List<ObjectNode> getPublishedServiceList(String clientId) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("clientId", clientId);
         
@@ -548,7 +553,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     }
     
     @Override
-    public List<ObjectNode> getSubscribeServiceList(String clientId) throws Exception {
+    public List<ObjectNode> getSubscribeServiceList(String clientId) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("clientId", clientId);
         
@@ -563,7 +568,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     
     @Override
     public List<ObjectNode> getPublishedClientList(String namespaceId, String groupName, String serviceName,
-            boolean ephemeral, String ip, Integer port) throws Exception {
+            boolean ephemeral, String ip, Integer port) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("groupName", groupName);
@@ -583,7 +588,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     
     @Override
     public List<ObjectNode> getSubscribeClientList(String namespaceId, String groupName, String serviceName,
-            boolean ephemeral, String ip, Integer port) throws Exception {
+            boolean ephemeral, String ip, Integer port) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("groupName", groupName);
@@ -602,7 +607,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     }
     
     @Override
-    public ObjectNode getResponsibleServerForClient(String ip, String port) throws Exception {
+    public ObjectNode getResponsibleServerForClient(String ip, String port) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("ip", ip);
         params.put("port", port);
@@ -617,7 +622,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     }
     
     @Override
-    public String raftOps(String command, String value, String groupId) throws Exception {
+    public String raftOps(String command, String value, String groupId) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("command", command);
         params.put("value", value);
@@ -636,7 +641,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     }
     
     @Override
-    public List<IdGeneratorVO> getIdsHealth() throws Exception {
+    public List<IdGeneratorVO> getIdsHealth() throws NacosException {
         HttpRequest httpRequest = new HttpRequest.Builder()
                 .setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CORE_OPS_ADMIN_PATH + "/ids")
@@ -649,7 +654,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     }
     
     @Override
-    public void updateLogLevel(String logName, String logLevel) throws Exception {
+    public void updateLogLevel(String logName, String logLevel) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("logName", logName);
         params.put("logLevel", logLevel);
@@ -663,7 +668,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     }
     
     @Override
-    public Member getSelfNode() throws Exception {
+    public Member getSelfNode() throws NacosException {
         HttpRequest httpRequest = new HttpRequest.Builder()
                 .setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CORE_CLUSTER_ADMIN_PATH + "/node/self")
@@ -676,7 +681,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     }
     
     @Override
-    public Collection<Member> listClusterNodes(String address, String state) throws Exception {
+    public Collection<Member> listClusterNodes(String address, String state) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("address", address);
         params.put("state", state);
@@ -694,7 +699,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     }
     
     @Override
-    public String getSelfNodeHealth() throws Exception {
+    public String getSelfNodeHealth() throws NacosException {
         HttpRequest httpRequest = new HttpRequest.Builder()
                 .setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CORE_CLUSTER_ADMIN_PATH + "/node/self/health")
@@ -707,7 +712,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     }
     
     @Override
-    public Boolean updateClusterNodes(List<Member> nodes) throws Exception {
+    public Boolean updateClusterNodes(List<Member> nodes) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("nodes", JacksonUtils.toJson(nodes));
         
@@ -724,7 +729,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     }
     
     @Override
-    public Boolean updateLookupMode(String type) throws Exception {
+    public Boolean updateLookupMode(String type) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("type", type);
         
@@ -741,7 +746,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     }
     
     @Override
-    public Map<String, Connection> getCurrentClients() throws Exception {
+    public Map<String, Connection> getCurrentClients() throws NacosException {
         HttpRequest httpRequest = new HttpRequest.Builder()
                 .setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CORE_LOADER_ADMIN_PATH + "/current")
@@ -754,7 +759,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     }
     
     @Override
-    public String reloadConnectionCount(Integer count, String redirectAddress) throws Exception {
+    public String reloadConnectionCount(Integer count, String redirectAddress) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("count", String.valueOf(count));
         params.put("redirectAddress", redirectAddress);
@@ -772,7 +777,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     }
     
     @Override
-    public String smartReloadCluster(String loaderFactorStr) throws Exception {
+    public String smartReloadCluster(String loaderFactorStr) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("loaderFactorStr", loaderFactorStr);
         
@@ -789,7 +794,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     }
     
     @Override
-    public String reloadSingleClient(String connectionId, String redirectAddress) throws Exception {
+    public String reloadSingleClient(String connectionId, String redirectAddress) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("connectionId", connectionId);
         params.put("redirectAddress", redirectAddress);
@@ -807,7 +812,7 @@ public class NacosNamingMaintainerService implements NamingMaintainerService {
     }
     
     @Override
-    public ServerLoaderMetrics getClusterLoaderMetrics() throws Exception {
+    public ServerLoaderMetrics getClusterLoaderMetrics() throws NacosException {
         HttpRequest httpRequest = new HttpRequest.Builder()
                 .setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CORE_LOADER_ADMIN_PATH + "/cluster")

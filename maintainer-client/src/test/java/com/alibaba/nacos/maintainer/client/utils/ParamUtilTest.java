@@ -18,7 +18,6 @@
 
 package com.alibaba.nacos.maintainer.client.utils;
 
-import com.alibaba.nacos.api.PropertyKeyConst;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,18 +36,16 @@ class ParamUtilTest {
     
     @BeforeEach
     void before() {
-        defaultConnectTimeout = 1000;
-        defaultReadTimeout = 3000;
+        defaultConnectTimeout = ParamUtil.getConnectTimeout();
+        defaultReadTimeout = ParamUtil.getReadTimeout();
     }
     
     @AfterEach
     void after() {
         ParamUtil.setConnectTimeout(defaultConnectTimeout);
         ParamUtil.setReadTimeout(defaultReadTimeout);
-        System.clearProperty("NACOS.CONNECT.TIMEOUT");
-        System.clearProperty("NACOS_READ_TIMEOUT");
-        System.clearProperty("PER_TASK_CONFIG_SIZE");
-        System.clearProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
+        System.clearProperty("MAINTAINER.CLIENT.CONNECT.TIMEOUT");
+        System.clearProperty("MAINTAINER.CLIENT.READ.TIMEOUT");
     }
     
     @Test
@@ -76,7 +73,7 @@ class ParamUtilTest {
         assertThrows(IllegalArgumentException.class, () -> {
             Method method = ParamUtil.class.getDeclaredMethod("initConnectionTimeout");
             method.setAccessible(true);
-            System.setProperty("NACOS.CONNECT.TIMEOUT", "test");
+            System.setProperty("MAINTAINER.CLIENT.CONNECT.TIMEOUT", "test");
             try {
                 method.invoke(null);
             } catch (InvocationTargetException e) {
@@ -90,21 +87,7 @@ class ParamUtilTest {
         assertThrows(IllegalArgumentException.class, () -> {
             Method method = ParamUtil.class.getDeclaredMethod("initReadTimeout");
             method.setAccessible(true);
-            System.setProperty("NACOS.READ.TIMEOUT", "test");
-            try {
-                method.invoke(null);
-            } catch (InvocationTargetException e) {
-                throw e.getCause();
-            }
-        });
-    }
-    
-    @Test
-    void testInitPerTaskConfigSizeWithException() throws Throwable {
-        assertThrows(IllegalArgumentException.class, () -> {
-            Method method = ParamUtil.class.getDeclaredMethod("initPerTaskConfigSize");
-            method.setAccessible(true);
-            System.setProperty("PER_TASK_CONFIG_SIZE", "test");
+            System.setProperty("MAINTAINER.CLIENT.READ.TIMEOUT", "test");
             try {
                 method.invoke(null);
             } catch (InvocationTargetException e) {

@@ -54,7 +54,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class NacosNamingMaintainerServiceTest {
+public class NacosNamingMaintainerServiceImplTest {
     
     @Mock
     private ClientHttpProxy clientHttpProxy;
@@ -66,8 +66,8 @@ public class NacosNamingMaintainerServiceTest {
         MockitoAnnotations.openMocks(this);
         Properties properties = new Properties();
         properties.setProperty("serverAddr", "localhost:8848");
-        nacosNamingMaintainerService = new NacosNamingMaintainerService(properties);
-        Field clientHttpProxyField = NacosNamingMaintainerService.class.getDeclaredField("clientHttpProxy");
+        nacosNamingMaintainerService = new NacosNamingMaintainerServiceImpl(properties);
+        Field clientHttpProxyField = NacosNamingMaintainerServiceImpl.class.getDeclaredField("clientHttpProxy");
         clientHttpProxyField.setAccessible(true);
         clientHttpProxyField.set(nacosNamingMaintainerService, clientHttpProxy);
     }
