@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.maintainer.client.model.naming;
+package com.alibaba.nacos.api.naming.pojo.maintainer;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.io.Serializable;
 
 /**
- * Metrics Information.
- * @author dongyafei
- * @date 2022/9/15
+ * Nacos Naming Metrics Information.
+ *
+ * @author xiweng.yy
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class MetricsInfoVo implements Serializable {
+public class MetricsInfo implements Serializable {
     
     private static final long serialVersionUID = -5064297490423743871L;
     
@@ -48,13 +48,7 @@ public class MetricsInfoVo implements Serializable {
     
     private Integer responsibleClientCount;
     
-    private Float cpu;
-
-    private Float load;
-
-    private Float mem;
-    
-    public MetricsInfoVo() {
+    public MetricsInfo() {
     }
     
     public String getStatus() {
@@ -127,29 +121,5 @@ public class MetricsInfoVo implements Serializable {
     
     public void setResponsibleClientCount(Integer responsibleClientCount) {
         this.responsibleClientCount = responsibleClientCount;
-    }
-    
-    public Float getCpu() {
-        return cpu;
-    }
-    
-    public void setCpu(Float cpu) {
-        this.cpu = cpu;
-    }
-    
-    public Float getLoad() {
-        return load;
-    }
-    
-    public void setLoad(Float load) {
-        this.load = load;
-    }
-    
-    public Float getMem() {
-        return mem;
-    }
-    
-    public void setMem(Float mem) {
-        this.mem = mem;
     }
 }

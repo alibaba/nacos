@@ -17,17 +17,17 @@
 package com.alibaba.nacos.maintainer.client.naming;
 
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+import com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.maintainer.client.model.core.Connection;
 import com.alibaba.nacos.maintainer.client.model.core.IdGeneratorVO;
 import com.alibaba.nacos.maintainer.client.model.core.Member;
 import com.alibaba.nacos.maintainer.client.model.core.ServerLoaderMetrics;
-import com.alibaba.nacos.maintainer.client.model.naming.InstanceDetailInfoVo;
 import com.alibaba.nacos.maintainer.client.model.naming.InstanceMetadataBatchOperationVo;
-import com.alibaba.nacos.maintainer.client.model.naming.MetricsInfoVo;
 import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -244,14 +244,15 @@ public class NacosNamingMaintainerServiceImplTest {
         // Arrange
         boolean onlyStatus = true;
         
-        MetricsInfoVo expectedMetrics = new MetricsInfoVo();
+        MetricsInfo expectedMetrics = new MetricsInfo();
+        Result<MetricsInfo> expectedResult = Result.success(expectedMetrics);
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(expectedMetrics));
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(expectedResult));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        MetricsInfoVo result = nacosNamingMaintainerService.getMetrics(onlyStatus);
+        MetricsInfo result = nacosNamingMaintainerService.getMetrics(onlyStatus);
         
         // Assert
         assertNotNull(result);
@@ -476,15 +477,15 @@ public class NacosNamingMaintainerServiceImplTest {
         String ip = "127.0.0.1";
         int port = 8080;
         
-        InstanceDetailInfoVo expectedVo = new InstanceDetailInfoVo();
+        Instance expectedVo = new Instance();
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(expectedVo));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        InstanceDetailInfoVo result = nacosNamingMaintainerService.getInstanceDetail(namespaceId, groupName,
-                serviceName, clusterName, ip, port);
+        Instance result = nacosNamingMaintainerService.getInstanceDetail(namespaceId, groupName, serviceName,
+                clusterName, ip, port);
         
         // Assert
         assertNotNull(result);

@@ -18,16 +18,16 @@ package com.alibaba.nacos.maintainer.client.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+import com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.maintainer.client.model.core.Connection;
 import com.alibaba.nacos.maintainer.client.model.core.IdGeneratorVO;
 import com.alibaba.nacos.maintainer.client.model.core.Member;
 import com.alibaba.nacos.maintainer.client.model.core.ServerLoaderMetrics;
-import com.alibaba.nacos.maintainer.client.model.naming.InstanceDetailInfoVo;
 import com.alibaba.nacos.maintainer.client.model.naming.InstanceMetadataBatchOperationVo;
-import com.alibaba.nacos.maintainer.client.model.naming.MetricsInfoVo;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.util.Collection;
@@ -42,6 +42,7 @@ import java.util.Map;
 public interface NamingMaintainerService {
     
     // ------------------------- Service Operations -------------------------
+    
     /**
      * Create a new service with the given service name.
      *
@@ -159,7 +160,7 @@ public interface NamingMaintainerService {
      * @return the metrics information
      * @throws NacosException if an error occurs
      */
-    MetricsInfoVo getMetrics(boolean onlyStatus) throws NacosException;
+    MetricsInfo getMetrics(boolean onlyStatus) throws NacosException;
     
     /**
      * Set the log level.
@@ -313,8 +314,8 @@ public interface NamingMaintainerService {
      * @return the instance detail information
      * @throws NacosException if an error occurs
      */
-    InstanceDetailInfoVo getInstanceDetail(String namespaceId, String groupName, String serviceName, String clusterName,
-            String ip, int port) throws NacosException;
+    Instance getInstanceDetail(String namespaceId, String groupName, String serviceName, String clusterName, String ip,
+            int port) throws NacosException;
     
     // ------------------------- Health Check Operations -------------------------
     

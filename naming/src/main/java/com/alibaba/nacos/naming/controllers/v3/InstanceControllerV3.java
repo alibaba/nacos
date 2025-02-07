@@ -43,7 +43,6 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.InstanceForm;
 import com.alibaba.nacos.naming.model.form.InstanceListForm;
 import com.alibaba.nacos.naming.model.form.InstanceMetadataBatchOperationForm;
-import com.alibaba.nacos.naming.model.vo.InstanceDetailInfoVo;
 import com.alibaba.nacos.naming.model.vo.InstanceMetadataBatchOperationVo;
 import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.naming.paramcheck.NamingInstanceListHttpParamExtractor;
@@ -282,7 +281,7 @@ public class InstanceControllerV3 {
     @GetMapping
     @TpsControl(pointName = "NamingInstanceQuery", name = "HttpNamingInstanceQuery")
     @Secured(resource = UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
-    public Result<InstanceDetailInfoVo> detail(InstanceForm instanceForm) throws NacosException {
+    public Result<Instance> detail(InstanceForm instanceForm) throws NacosException {
         instanceForm.validate();
         String compositeServiceName = NamingUtils.getGroupedName(instanceForm.getServiceName(),
                 instanceForm.getGroupName());
@@ -291,16 +290,7 @@ public class InstanceControllerV3 {
         String ip = instanceForm.getIp();
         int port = instanceForm.getPort();
         Instance instance = instanceService.getInstance(namespaceId, compositeServiceName, clusterName, ip, port);
-        InstanceDetailInfoVo instanceDetailInfoVo = new InstanceDetailInfoVo();
-        instanceDetailInfoVo.setServiceName(compositeServiceName);
-        instanceDetailInfoVo.setIp(ip);
-        instanceDetailInfoVo.setPort(port);
-        instanceDetailInfoVo.setClusterName(clusterName);
-        instanceDetailInfoVo.setWeight(instance.getWeight());
-        instanceDetailInfoVo.setHealthy(instance.isHealthy());
-        instanceDetailInfoVo.setInstanceId(instance.getInstanceId());
-        instanceDetailInfoVo.setMetadata(instance.getMetadata());
-        return Result.success(instanceDetailInfoVo);
+        return Result.success(instance);
     }
     
     private void checkWeight(Double weight) throws NacosException {
