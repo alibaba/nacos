@@ -19,6 +19,7 @@ package com.alibaba.nacos.maintainer.client.config;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.maintainer.client.core.AbstractCoreMaintainerService;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
 import com.alibaba.nacos.maintainer.client.model.config.Capacity;
 import com.alibaba.nacos.maintainer.client.model.config.ConfigAdvanceInfo;
@@ -31,21 +32,17 @@ import com.alibaba.nacos.maintainer.client.model.config.GroupkeyListenserStatus;
 import com.alibaba.nacos.maintainer.client.model.config.Page;
 import com.alibaba.nacos.maintainer.client.model.config.SameConfigPolicy;
 import com.alibaba.nacos.maintainer.client.model.config.SameNamespaceCloneConfigBean;
-import com.alibaba.nacos.maintainer.client.model.core.Connection;
-import com.alibaba.nacos.maintainer.client.model.core.IdGeneratorVO;
-import com.alibaba.nacos.maintainer.client.model.core.Member;
-import com.alibaba.nacos.maintainer.client.model.core.ServerLoaderMetrics;
 import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +56,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class NacosConfigMaintainerServiceImplTest {
     
     @Mock
@@ -68,11 +66,10 @@ class NacosConfigMaintainerServiceImplTest {
     
     @BeforeEach
     void setUp() throws Exception {
-        MockitoAnnotations.openMocks(this);
         Properties properties = new Properties();
         properties.setProperty("serverAddr", "localhost:8848");
         nacosConfigMaintainerServiceImpl = new NacosConfigMaintainerServiceImpl(properties);
-        Field clientHttpProxyField = NacosConfigMaintainerServiceImpl.class.getDeclaredField("clientHttpProxy");
+        Field clientHttpProxyField = AbstractCoreMaintainerService.class.getDeclaredField("clientHttpProxy");
         clientHttpProxyField.setAccessible(true);
         clientHttpProxyField.set(nacosConfigMaintainerServiceImpl, clientHttpProxy);
     }
@@ -163,7 +160,8 @@ class NacosConfigMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockHttpRestResult);
         
         // Act
-        ConfigAdvanceInfo result = nacosConfigMaintainerServiceImpl.getConfigAdvanceInfo(dataId, groupName, namespaceId);
+        ConfigAdvanceInfo result = nacosConfigMaintainerServiceImpl.getConfigAdvanceInfo(dataId, groupName,
+                namespaceId);
         
         // Assert
         assertNotNull(result);
@@ -320,8 +318,8 @@ class NacosConfigMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        Page<ConfigHistoryInfo> result = nacosConfigMaintainerServiceImpl.listConfigHistory(dataId, groupName, namespaceId,
-                pageNo, pageSize);
+        Page<ConfigHistoryInfo> result = nacosConfigMaintainerServiceImpl.listConfigHistory(dataId, groupName,
+                namespaceId, pageNo, pageSize);
         
         // Assert
         assertNotNull(result);
@@ -491,8 +489,8 @@ class NacosConfigMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        GroupkeyListenserStatus result = nacosConfigMaintainerServiceImpl.getAllSubClientConfigByIp(ip, all, namespaceId,
-                sampleTime);
+        GroupkeyListenserStatus result = nacosConfigMaintainerServiceImpl.getAllSubClientConfigByIp(ip, all,
+                namespaceId, sampleTime);
         
         // Assert
         assertNotNull(result);
@@ -514,7 +512,8 @@ class NacosConfigMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        Map<String, Object> result = nacosConfigMaintainerServiceImpl.getClientMetrics(ip, dataId, groupName, namespaceId);
+        Map<String, Object> result = nacosConfigMaintainerServiceImpl.getClientMetrics(ip, dataId, groupName,
+                namespaceId);
         
         // Assert
         assertNotNull(result);
@@ -536,235 +535,8 @@ class NacosConfigMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        Map<String, Object> result = nacosConfigMaintainerServiceImpl.getClusterMetrics(ip, dataId, groupName, namespaceId);
-        
-        // Assert
-        assertNotNull(result);
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
-    }
-    
-    @Test
-    void testRaftOps() throws Exception {
-        // Arrange
-        String command = "testCommand";
-        String value = "testValue";
-        String groupId = "testGroup";
-        
-        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>("success")));
-        
-        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-        
-        // Act
-        String result = nacosConfigMaintainerServiceImpl.raftOps(command, value, groupId);
-        
-        // Assert
-        assertEquals("success", result);
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
-    }
-    
-    @Test
-    void testGetIdsHealth() throws Exception {
-        // Arrange
-        List<IdGeneratorVO> expectedList = new ArrayList<>();
-        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedList)));
-        
-        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-        
-        // Act
-        List<IdGeneratorVO> result = nacosConfigMaintainerServiceImpl.getIdsHealth();
-        
-        // Assert
-        assertNotNull(result);
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
-    }
-    
-    @Test
-    void testUpdateLogLevel() throws Exception {
-        // Arrange
-        String logName = "testLog";
-        String logLevel = "INFO";
-        
-        // Act
-        nacosConfigMaintainerServiceImpl.updateLogLevel(logName, logLevel);
-        
-        // Assert
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
-    }
-    
-    @Test
-    void testGetSelfNode() throws Exception {
-        // Arrange
-        Member expectedMember = new Member();
-        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedMember)));
-        
-        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-        
-        // Act
-        Member result = nacosConfigMaintainerServiceImpl.getSelfNode();
-        
-        // Assert
-        assertNotNull(result);
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
-    }
-    
-    @Test
-    void testListClusterNodes() throws Exception {
-        // Arrange
-        String address = "127.0.0.1:8848";
-        String state = "UP";
-        
-        Collection<Member> expectedMembers = new ArrayList<>();
-        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedMembers)));
-        
-        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-        
-        // Act
-        Collection<Member> result = nacosConfigMaintainerServiceImpl.listClusterNodes(address, state);
-        
-        // Assert
-        assertNotNull(result);
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
-    }
-    
-    @Test
-    void testGetSelfNodeHealth() throws Exception {
-        // Arrange
-        String expectedHealth = "HEALTHY";
-        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedHealth)));
-        
-        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-        
-        // Act
-        String result = nacosConfigMaintainerServiceImpl.getSelfNodeHealth();
-        
-        // Assert
-        assertEquals(expectedHealth, result);
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
-    }
-    
-    @Test
-    void testUpdateClusterNodes() throws Exception {
-        // Arrange
-        List<Member> nodes = new ArrayList<>();
-        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(true)));
-        
-        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-        
-        // Act
-        Boolean result = nacosConfigMaintainerServiceImpl.updateClusterNodes(nodes);
-        
-        // Assert
-        assertTrue(result);
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
-    }
-    
-    @Test
-    void testUpdateLookupMode() throws Exception {
-        // Arrange
-        String type = "testType";
-        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(true)));
-        
-        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-        
-        // Act
-        Boolean result = nacosConfigMaintainerServiceImpl.updateLookupMode(type);
-        
-        // Assert
-        assertTrue(result);
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
-    }
-    
-    @Test
-    void testGetCurrentClients() throws Exception {
-        // Arrange
-        Map<String, Connection> expectedMap = new HashMap<>();
-        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedMap)));
-        
-        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-        
-        // Act
-        Map<String, Connection> result = nacosConfigMaintainerServiceImpl.getCurrentClients();
-        
-        // Assert
-        assertNotNull(result);
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
-    }
-    
-    @Test
-    void testReloadConnectionCount() throws Exception {
-        // Arrange
-        Integer count = 10;
-        String redirectAddress = "localhost:8848";
-        
-        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>("success")));
-        
-        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-        
-        // Act
-        String result = nacosConfigMaintainerServiceImpl.reloadConnectionCount(count, redirectAddress);
-        
-        // Assert
-        assertEquals("success", result);
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
-    }
-    
-    @Test
-    void testSmartReloadCluster() throws Exception {
-        // Arrange
-        String loaderFactorStr = "testFactor";
-        
-        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>("success")));
-        
-        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-        
-        // Act
-        String result = nacosConfigMaintainerServiceImpl.smartReloadCluster(loaderFactorStr);
-        
-        // Assert
-        assertEquals("success", result);
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
-    }
-    
-    @Test
-    void testReloadSingleClient() throws Exception {
-        // Arrange
-        String connectionId = "testConnectionId";
-        String redirectAddress = "localhost:8848";
-        
-        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>("success")));
-        
-        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-        
-        // Act
-        String result = nacosConfigMaintainerServiceImpl.reloadSingleClient(connectionId, redirectAddress);
-        
-        // Assert
-        assertEquals("success", result);
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
-    }
-    
-    @Test
-    void testGetClusterLoaderMetrics() throws Exception {
-        // Arrange
-        ServerLoaderMetrics expectedMetrics = new ServerLoaderMetrics();
-        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedMetrics)));
-        
-        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-        
-        // Act
-        ServerLoaderMetrics result = nacosConfigMaintainerServiceImpl.getClusterLoaderMetrics();
+        Map<String, Object> result = nacosConfigMaintainerServiceImpl.getClusterMetrics(ip, dataId, groupName,
+                namespaceId);
         
         // Assert
         assertNotNull(result);
