@@ -361,16 +361,7 @@ public interface ConfigMaintainerService {
     String setLogLevel(String logName, String logLevel) throws NacosException;
     
     /**
-     * Execute a SQL query on the embedded Derby database.
-     *
-     * @param sql SQL query to execute (required).
-     * @return Query results or an error message.
-     * @throws NacosException if the operation fails.
-     */
-    Object derbyOps(String sql) throws NacosException;
-    
-    /**
-     * Get the status of all subscriptions for a specific IP.
+     * Get all subscribed client configurations by IP.
      *
      * @param ip          Client IP address (required).
      * @param all         Whether to include all subscriptions (optional, defaults to false).

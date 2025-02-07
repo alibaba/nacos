@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -39,7 +40,6 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.ServiceForm;
 import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
-import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
 import com.alibaba.nacos.naming.pojo.ServiceNameView;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.SelectorManager;
@@ -129,13 +129,15 @@ public class ServiceControllerV2 {
     @TpsControl(pointName = "NamingServiceQuery", name = "HttpNamingServiceQuery")
     @Secured(action = ActionTypes.READ)
     @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/service")
-    public Result<ServiceDetailInfo> detail(
+    public Result<com.alibaba.nacos.naming.pojo.ServiceDetailInfo> detail(
             @RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam("serviceName") String serviceName,
             @RequestParam(value = "groupName", defaultValue = Constants.DEFAULT_GROUP) String groupName)
             throws Exception {
-        ServiceDetailInfo result = serviceOperatorV2.queryService(
+        ServiceDetailInfo serviceDetailInfo = serviceOperatorV2.queryService(
                 Service.newService(namespaceId, groupName, serviceName));
+        com.alibaba.nacos.naming.pojo.ServiceDetailInfo result = com.alibaba.nacos.naming.pojo.ServiceDetailInfo.from(
+                serviceDetailInfo);
         return Result.success(result);
     }
     

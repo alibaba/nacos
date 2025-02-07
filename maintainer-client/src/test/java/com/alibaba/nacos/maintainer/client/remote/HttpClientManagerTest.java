@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.maintainer.client.remote;
 
-import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -39,18 +38,6 @@ public class HttpClientManagerTest {
     }
     
     @Test
-    public void testGetNacosAsyncRestTemplate() {
-        try {
-            HttpClientManager httpClientManager = HttpClientManager.getInstance();
-            NacosAsyncRestTemplate asyncTemplate = httpClientManager.getNacosAsyncRestTemplate();
-            assert asyncTemplate != null : "NacosAsyncRestTemplate should not be null.";
-            LOGGER.info("Successfully obtained NacosAsyncRestTemplate instance.");
-        } catch (Exception e) {
-            LOGGER.error("Failed to get NacosAsyncRestTemplate.", e);
-        }
-    }
-    
-    @Test
     public void testShutdown() {
         try {
             HttpClientManager.shutdown(HttpClientManager.class.getName());
@@ -59,5 +46,5 @@ public class HttpClientManagerTest {
             LOGGER.error("Failed to shutdown HttpClientManager.", e);
         }
     }
-
+    
 }

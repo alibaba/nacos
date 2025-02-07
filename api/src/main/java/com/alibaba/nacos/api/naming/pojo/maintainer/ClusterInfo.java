@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.maintainer.client.model.naming;
+package com.alibaba.nacos.api.naming.pojo.maintainer;
 
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 
 import java.io.Serializable;
@@ -23,10 +24,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Cluster info.
+ * Cluster detail information for nacos maintain client, contain cluster detail information; instance information is optional.
  *
- * @author caogu.wyp
- * @version $Id: ClusterInfo.java, v 0.1 2018-09-17 上午11:36 caogu.wyp Exp $$
+ * <p>
+ *     Cluster detail information can't get by independent, must be get by {@link ServiceDetailInfo#getClusterMap()}
+ * </p>
+ *
+ * @author xiweng.yy
  */
 public class ClusterInfo implements Serializable {
 
@@ -38,14 +42,14 @@ public class ClusterInfo implements Serializable {
     
     private Map<String, String> metadata;
     
-    private List<IpAddressInfo> hosts;
+    private List<Instance> hosts;
     
     /**
      * Getter method for property <tt>hosts</tt>.
      *
      * @return property value of hosts
      */
-    public List<IpAddressInfo> getHosts() {
+    public List<Instance> getHosts() {
         return hosts;
     }
     
@@ -54,7 +58,7 @@ public class ClusterInfo implements Serializable {
      *
      * @param hosts value to be assigned to property hosts
      */
-    public void setHosts(List<IpAddressInfo> hosts) {
+    public void setHosts(List<Instance> hosts) {
         this.hosts = hosts;
     }
     

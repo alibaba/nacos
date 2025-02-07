@@ -16,7 +16,12 @@
 
 package com.alibaba.nacos.maintainer.client.utils;
 
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.selector.ExpressionSelector;
+import com.alibaba.nacos.api.selector.NoneSelector;
+import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,10 +33,6 @@ import org.slf4j.LoggerFactory;
 public class ParamUtil {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ParamUtil.class);
-    
-    private static final String DEFAULT_GROUP_NAME = "DEFAULT_GROUP";
-    
-    private static final String DEFAULT_NAMESPACE_ID = "public";
     
     private static int connectTimeout;
     
@@ -116,10 +117,30 @@ public class ParamUtil {
     }
     
     public static String getDefaultNamespaceId() {
-        return DEFAULT_NAMESPACE_ID;
+        return Constants.DEFAULT_NAMESPACE_ID;
     }
     
     public static String getDefaultGroupName() {
-        return DEFAULT_GROUP_NAME;
+        return Constants.DEFAULT_GROUP;
+    }
+    
+    /**
+     * Register subType for serialization.
+     *
+     * <p>
+     * Now these subType implementation class has registered in static code. But there are some problem for classloader.
+     * The implementation class will be loaded when they are used, which will make deserialize before register.
+     * </p>
+     *
+     * <p>
+     * 子类实现类中的静态代码串中已经向Jackson进行了注册，但是由于classloader的原因，只有当 该子类被使用的时候，才会加载该类。这可能会导致Jackson先进性反序列化，再注册子类，从而导致 反序列化失败。
+     * </p>
+     */
+    public static void initSerialization() {
+        // TODO register in implementation class or remove subType
+        JacksonUtils.registerSubtype(NoneSelector.class, SelectorType.none.name());
+        JacksonUtils.registerSubtype(NoneSelector.class, "NoneSelector");
+        JacksonUtils.registerSubtype(ExpressionSelector.class, SelectorType.label.name());
+        JacksonUtils.registerSubtype(ExpressionSelector.class, "LabelSelector");
     }
 }

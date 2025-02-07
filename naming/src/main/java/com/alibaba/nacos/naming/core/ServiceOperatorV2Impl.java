@@ -20,6 +20,8 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -33,8 +35,6 @@ import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataOperateService;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.pojo.ClusterInfo;
-import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -190,7 +190,7 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     }
     
     private void setServiceMetadata(ServiceDetailInfo serviceDetail, ServiceMetadata serviceMetadata, Service service) {
-        serviceDetail.setNamespace(service.getNamespace());
+        serviceDetail.setNamespaceId(service.getNamespace());
         serviceDetail.setGroupName(service.getGroup());
         serviceDetail.setServiceName(service.getName());
         serviceDetail.setProtectThreshold(serviceMetadata.getProtectThreshold());

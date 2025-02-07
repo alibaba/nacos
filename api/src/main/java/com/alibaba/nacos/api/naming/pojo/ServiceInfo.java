@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * ServiceInfo.
+ * Service Information with instances and without cluster information, used in data pushing and cached for nacos-client.
  *
  * @author nkorange
  * @author shizhengxing

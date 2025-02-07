@@ -19,6 +19,7 @@ package com.alibaba.nacos.maintainer.client.naming;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.maintainer.client.model.core.Connection;
 import com.alibaba.nacos.maintainer.client.model.core.IdGeneratorVO;
@@ -27,8 +28,6 @@ import com.alibaba.nacos.maintainer.client.model.core.ServerLoaderMetrics;
 import com.alibaba.nacos.maintainer.client.model.naming.InstanceDetailInfoVo;
 import com.alibaba.nacos.maintainer.client.model.naming.InstanceMetadataBatchOperationVo;
 import com.alibaba.nacos.maintainer.client.model.naming.MetricsInfoVo;
-import com.alibaba.nacos.maintainer.client.model.naming.ServiceDetailInfo;
-import com.alibaba.nacos.maintainer.client.model.naming.SwitchDomain;
 import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -237,43 +236,6 @@ public class NacosNamingMaintainerServiceImplTest {
         
         // Assert
         assertNotNull(result);
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
-    }
-    
-    @Test
-    void testGetSwitches() throws Exception {
-        // Arrange
-        SwitchDomain expectedSwitches = new SwitchDomain();
-        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(expectedSwitches));
-        
-        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-        
-        // Act
-        SwitchDomain result = nacosNamingMaintainerService.getSwitches();
-        
-        // Assert
-        assertNotNull(result);
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
-    }
-    
-    @Test
-    void testUpdateSwitch() throws Exception {
-        // Arrange
-        String entry = "testEntry";
-        String value = "testValue";
-        boolean debug = true;
-        
-        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>("success")));
-        
-        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-        
-        // Act
-        String result = nacosNamingMaintainerService.updateSwitch(entry, value, debug);
-        
-        // Assert
-        assertEquals("success", result);
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
     }
     

@@ -20,13 +20,13 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.naming.constants.FieldsConstants;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -89,9 +89,11 @@ class CatalogServiceV2ImplTest {
         ObjectNode objectNode = (ObjectNode) obj;
         assertEquals("C", objectNode.get(FieldsConstants.SERVICE).get(FieldsConstants.NAME).asText());
         assertEquals("B", objectNode.get(FieldsConstants.SERVICE).get(FieldsConstants.GROUP_NAME).asText());
-        assertEquals("none", objectNode.get(FieldsConstants.SERVICE).get(FieldsConstants.SELECTOR).get("type").asText());
+        assertEquals("none",
+                objectNode.get(FieldsConstants.SERVICE).get(FieldsConstants.SELECTOR).get("type").asText());
         assertEquals(0, objectNode.get(FieldsConstants.SERVICE).get(FieldsConstants.METADATA).size());
-        assertEquals(0.75, objectNode.get(FieldsConstants.SERVICE).get(FieldsConstants.PROTECT_THRESHOLD).asDouble(), 0.1);
+        assertEquals(0.75, objectNode.get(FieldsConstants.SERVICE).get(FieldsConstants.PROTECT_THRESHOLD).asDouble(),
+                0.1);
     }
     
     @Test
@@ -192,7 +194,8 @@ class CatalogServiceV2ImplTest {
             serviceInfo.setHosts(instances);
             Mockito.when(serviceStorage.getData(Mockito.any())).thenReturn(serviceInfo);
             
-            List<ServiceDetailInfo> result = (List<ServiceDetailInfo>) catalogServiceV2Impl.pageListServiceDetail("A", "B", "C", 1, 10);
+            List<ServiceDetailInfo> result = (List<ServiceDetailInfo>) catalogServiceV2Impl.pageListServiceDetail("A",
+                    "B", "C", 1, 10);
             
             assertEquals(1, result.size());
         } catch (NacosException e) {
