@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.maintainer.client.remote;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
@@ -138,7 +139,7 @@ public class ClientHttpProxyTest {
         
         HttpRequest request = new HttpRequest("GET", "/test", new HashMap<>(), new HashMap<>(), null);
         
-        Exception exception = assertThrows(ConnectException.class, () -> {
+        Exception exception = assertThrows(NacosException.class, () -> {
             clientHttpProxy.executeSyncHttpRequest(request);
         });
         

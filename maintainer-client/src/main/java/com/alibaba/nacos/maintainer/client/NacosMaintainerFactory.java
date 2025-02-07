@@ -29,8 +29,7 @@ import java.util.Properties;
  */
 public class NacosMaintainerFactory {
 
-    public static ConfigMaintainerService createConfigMaintainerService(String serverList)
-            throws NacosException, NacosException {
+    public static ConfigMaintainerService createConfigMaintainerService(String serverList) throws NacosException {
         return ConfigMaintainerFactory.createConfigMaintainerService(serverList);
     }
     

@@ -37,7 +37,7 @@ public class NamingMaintainerFactory {
     public static NamingMaintainerService createNamingMaintainerService(String serverList) throws NacosException {
         Properties properties = new Properties();
         properties.setProperty("serverAddr", serverList);
-        return new NacosNamingMaintainerService(properties);
+        return new NacosNamingMaintainerServiceImpl(properties);
     }
     
     /**
@@ -51,6 +51,6 @@ public class NamingMaintainerFactory {
         if (properties == null) {
             throw new NacosException(NacosException.INVALID_PARAM, "properties is null");
         }
-        return new NacosNamingMaintainerService(properties);
+        return new NacosNamingMaintainerServiceImpl(properties);
     }
 }

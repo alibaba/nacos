@@ -52,7 +52,6 @@ public class ParamUtil {
     private static final int DEFAULT_MAX_RETRY_TIMES = 3;
     
     static {
-        // Client identity information
         connectTimeout = initConnectionTimeout();
         LOGGER.info("[settings] [maintainer-http-client] connect timeout:{}", connectTimeout);
         
@@ -69,7 +68,7 @@ public class ParamUtil {
             return Integer.parseInt(connectTimeout);
         } catch (NumberFormatException e) {
             final String msg = "[http-client] invalid connect timeout:" + connectTimeout;
-            LOGGER.error("[settings] " + msg, e);
+            LOGGER.error("[settings] {}", msg, e);
             throw new IllegalArgumentException(msg, e);
         }
     }
@@ -80,7 +79,7 @@ public class ParamUtil {
             return Integer.parseInt(readTimeout);
         } catch (NumberFormatException e) {
             final String msg = "[http-client] invalid read timeout:" + readTimeout;
-            LOGGER.error("[settings] " + msg, e);
+            LOGGER.error("[settings] {}", msg, e);
             throw new IllegalArgumentException(msg, e);
         }
     }
@@ -91,7 +90,7 @@ public class ParamUtil {
                     String.valueOf(DEFAULT_MAX_RETRY_TIMES)));
         } catch (NumberFormatException e) {
             final String msg = "[http-client] invalid max retry times:" + maxRetryTimes;
-            LOGGER.error("[settings] " + msg, e);
+            LOGGER.error("[settings] {}", msg, e);
             throw new IllegalArgumentException(msg, e);
         }
     }
