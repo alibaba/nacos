@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+import com.alibaba.nacos.api.naming.pojo.maintainer.InstanceMetadataBatchResult;
 import com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.common.http.HttpRestResult;
@@ -32,7 +33,6 @@ import com.alibaba.nacos.maintainer.client.model.core.Connection;
 import com.alibaba.nacos.maintainer.client.model.core.IdGeneratorVO;
 import com.alibaba.nacos.maintainer.client.model.core.Member;
 import com.alibaba.nacos.maintainer.client.model.core.ServerLoaderMetrics;
-import com.alibaba.nacos.maintainer.client.model.naming.InstanceMetadataBatchOperationVo;
 import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
 import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -297,7 +297,7 @@ public class NacosNamingMaintainerServiceImpl implements NamingMaintainerService
     }
     
     @Override
-    public InstanceMetadataBatchOperationVo batchUpdateInstanceMetadata(String namespaceId, String groupName,
+    public InstanceMetadataBatchResult batchUpdateInstanceMetadata(String namespaceId, String groupName,
             String serviceName, String instance, Map<String, String> metadata, String consistencyType)
             throws NacosException {
         Map<String, String> params = new HashMap<>(8);
@@ -312,11 +312,14 @@ public class NacosNamingMaintainerServiceImpl implements NamingMaintainerService
                 .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH + "/metadata/batch").setParamValue(params)
                 .build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        return JacksonUtils.toObj(httpRestResult.getData(), InstanceMetadataBatchOperationVo.class);
+        Result<InstanceMetadataBatchResult> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<InstanceMetadataBatchResult>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public InstanceMetadataBatchOperationVo batchDeleteInstanceMetadata(String namespaceId, String groupName,
+    public InstanceMetadataBatchResult batchDeleteInstanceMetadata(String namespaceId, String groupName,
             String serviceName, String instance, Map<String, String> metadata, String consistencyType)
             throws NacosException {
         Map<String, String> params = new HashMap<>(8);
@@ -331,7 +334,10 @@ public class NacosNamingMaintainerServiceImpl implements NamingMaintainerService
                 .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH + "/metadata/batch").setParamValue(params)
                 .build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        return JacksonUtils.toObj(httpRestResult.getData(), InstanceMetadataBatchOperationVo.class);
+        Result<InstanceMetadataBatchResult> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<InstanceMetadataBatchResult>>() {
+                });
+        return result.getData();
     }
     
     @Override

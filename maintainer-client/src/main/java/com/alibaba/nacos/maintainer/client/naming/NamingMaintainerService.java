@@ -21,13 +21,13 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+import com.alibaba.nacos.api.naming.pojo.maintainer.InstanceMetadataBatchResult;
 import com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.maintainer.client.model.core.Connection;
 import com.alibaba.nacos.maintainer.client.model.core.IdGeneratorVO;
 import com.alibaba.nacos.maintainer.client.model.core.Member;
 import com.alibaba.nacos.maintainer.client.model.core.ServerLoaderMetrics;
-import com.alibaba.nacos.maintainer.client.model.naming.InstanceMetadataBatchOperationVo;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.util.Collection;
@@ -249,9 +249,8 @@ public interface NamingMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
-    InstanceMetadataBatchOperationVo batchUpdateInstanceMetadata(String namespaceId, String groupName,
-            String serviceName, String instance, Map<String, String> metadata, String consistencyType)
-            throws NacosException;
+    InstanceMetadataBatchResult batchUpdateInstanceMetadata(String namespaceId, String groupName, String serviceName,
+            String instance, Map<String, String> metadata, String consistencyType) throws NacosException;
     
     /**
      * Batch delete instance metadata.
@@ -265,9 +264,8 @@ public interface NamingMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
-    InstanceMetadataBatchOperationVo batchDeleteInstanceMetadata(String namespaceId, String groupName,
-            String serviceName, String instance, Map<String, String> metadata, String consistencyType)
-            throws NacosException;
+    InstanceMetadataBatchResult batchDeleteInstanceMetadata(String namespaceId, String groupName, String serviceName,
+            String instance, Map<String, String> metadata, String consistencyType) throws NacosException;
     
     /**
      * Partially update an instance.

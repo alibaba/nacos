@@ -52,7 +52,6 @@ class MetricsInfoTest {
     @Test
     void testSerialize() throws JsonProcessingException {
         String json = mapper.writeValueAsString(metricsInfo);
-        System.out.println(json);
         assertTrue(json.contains("\"status\":\"UP\""));
         assertTrue(json.contains("\"serviceCount\":20"));
         assertTrue(json.contains("\"instanceCount\":100"));

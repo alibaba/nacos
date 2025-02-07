@@ -104,7 +104,9 @@ public class ClientHttpProxy {
         }
         
         if (null != requestException) {
-            throw requestException;
+            throw new NacosException(requestException.getErrCode(),
+                    "No available server after " + maxRetry + " retries, last tried server: " + currentServerAddr
+                            + ", last errMsg: " + requestException.getErrMsg());
         }
         throw new NacosException(NacosException.BAD_GATEWAY,
                 "No available server after " + maxRetry + " retries, last tried server: " + currentServerAddr);

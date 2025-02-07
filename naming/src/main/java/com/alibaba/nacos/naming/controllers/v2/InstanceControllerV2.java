@@ -26,6 +26,7 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.pojo.builder.InstanceBuilder;
+import com.alibaba.nacos.api.naming.pojo.maintainer.InstanceMetadataBatchResult;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
@@ -49,7 +50,6 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.InstanceForm;
 import com.alibaba.nacos.naming.model.form.InstanceMetadataBatchOperationForm;
 import com.alibaba.nacos.naming.model.vo.InstanceDetailInfoVo;
-import com.alibaba.nacos.naming.model.vo.InstanceMetadataBatchOperationVo;
 import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.naming.paramcheck.NamingInstanceBeatHttpParamExtractor;
 import com.alibaba.nacos.naming.paramcheck.NamingInstanceListHttpParamExtractor;
@@ -181,7 +181,7 @@ public class InstanceControllerV2 {
     @Secured(action = ActionTypes.WRITE)
     @ExtractorManager.Extractor(httpExtractor = NamingInstanceMetadataBatchHttpParamExtractor.class)
     @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "PUT ${contextPath:nacos}/v3/admin/ns/instance/metadata/batch")
-    public Result<InstanceMetadataBatchOperationVo> batchUpdateInstanceMetadata(InstanceMetadataBatchOperationForm form)
+    public Result<InstanceMetadataBatchResult> batchUpdateInstanceMetadata(InstanceMetadataBatchOperationForm form)
             throws NacosException {
         form.validate();
         
@@ -194,7 +194,7 @@ public class InstanceControllerV2 {
                 instanceOperationInfo, targetMetadata);
         
         ArrayList<String> ipList = new ArrayList<>(operatedInstances);
-        return Result.success(new InstanceMetadataBatchOperationVo(ipList));
+        return Result.success(new InstanceMetadataBatchResult(ipList));
     }
     
     /**
@@ -206,7 +206,7 @@ public class InstanceControllerV2 {
     @Secured(action = ActionTypes.WRITE)
     @ExtractorManager.Extractor(httpExtractor = NamingInstanceMetadataBatchHttpParamExtractor.class)
     @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "DELETE ${contextPath:nacos}/v3/admin/ns/instance/metadata/batch")
-    public Result<InstanceMetadataBatchOperationVo> batchDeleteInstanceMetadata(InstanceMetadataBatchOperationForm form)
+    public Result<InstanceMetadataBatchResult> batchDeleteInstanceMetadata(InstanceMetadataBatchOperationForm form)
             throws NacosException {
         form.validate();
         List<Instance> targetInstances = parseBatchInstances(form.getInstances());
@@ -216,7 +216,7 @@ public class InstanceControllerV2 {
         List<String> operatedInstances = instanceServiceV2.batchDeleteMetadata(form.getNamespaceId(),
                 instanceOperationInfo, targetMetadata);
         ArrayList<String> ipList = new ArrayList<>(operatedInstances);
-        return Result.success(new InstanceMetadataBatchOperationVo(ipList));
+        return Result.success(new InstanceMetadataBatchResult(ipList));
     }
     
     private InstanceOperationInfo buildOperationInfo(String serviceName, String consistencyType,
