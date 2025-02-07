@@ -33,7 +33,6 @@ import com.alibaba.nacos.maintainer.client.model.naming.InstanceDetailInfoVo;
 import com.alibaba.nacos.maintainer.client.model.naming.InstanceMetadataBatchOperationVo;
 import com.alibaba.nacos.maintainer.client.model.naming.MetricsInfoVo;
 import com.alibaba.nacos.maintainer.client.model.naming.ServiceDetailInfo;
-import com.alibaba.nacos.maintainer.client.model.naming.SwitchDomain;
 import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
 import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -211,33 +210,6 @@ public class NacosNamingMaintainerServiceImpl implements NamingMaintainerService
                 .build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
         return JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<List<String>>() { });
-    }
-    
-    @Override
-    public SwitchDomain getSwitches() throws NacosException {
-        HttpRequest httpRequest = new HttpRequest.Builder()
-                .setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.NAMING_OPS_ADMIN_PATH + "/switches")
-                .build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        return JacksonUtils.toObj(httpRestResult.getData(), SwitchDomain.class);
-    }
-    
-    @Override
-    public String updateSwitch(String entry, String value, boolean debug) throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("entry", entry);
-        params.put("value", value);
-        params.put("debug", String.valueOf(debug));
-        
-        HttpRequest httpRequest = new HttpRequest.Builder()
-                .setHttpMethod(HttpMethod.PUT)
-                .setPath(Constants.AdminApiPath.NAMING_OPS_ADMIN_PATH + "/switches")
-                .setParamValue(params)
-                .build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() { });
-        return result.getData();
     }
     
     @Override

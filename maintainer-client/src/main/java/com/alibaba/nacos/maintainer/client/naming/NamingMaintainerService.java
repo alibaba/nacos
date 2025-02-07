@@ -28,7 +28,6 @@ import com.alibaba.nacos.maintainer.client.model.naming.InstanceDetailInfoVo;
 import com.alibaba.nacos.maintainer.client.model.naming.InstanceMetadataBatchOperationVo;
 import com.alibaba.nacos.maintainer.client.model.naming.MetricsInfoVo;
 import com.alibaba.nacos.maintainer.client.model.naming.ServiceDetailInfo;
-import com.alibaba.nacos.maintainer.client.model.naming.SwitchDomain;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.util.Collection;
@@ -152,25 +151,6 @@ public interface NamingMaintainerService {
      * @throws NacosException if an error occurs
      */
     List<String> listSelectorTypes() throws NacosException;
-    
-    /**
-     * Get the current switch configuration.
-     *
-     * @return the switch domain
-     * @throws NacosException if an error occurs
-     */
-    SwitchDomain getSwitches() throws NacosException;
-    
-    /**
-     * Update the switch configuration.
-     *
-     * @param entry the switch entry
-     * @param value the new value
-     * @param debug whether to enable debug mode
-     * @return the result of the operation
-     * @throws NacosException if an error occurs
-     */
-    String updateSwitch(String entry, String value, boolean debug) throws NacosException;
     
     /**
      * Get system metrics.
