@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.controllers.v3;
 
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.core.Operator;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -93,7 +94,7 @@ class OperatorControllerV3Test {
         MetricsInfoVo metricsInfoVo = new MetricsInfoVo();
         metricsInfoVo.setStatus(ServerStatus.UP.toString());
         Mockito.when(operatorV2Impl.metrics(false)).thenReturn(metricsInfoVo);
-        Result<MetricsInfoVo> result = operatorControllerV3.metrics(false);
+        Result<MetricsInfo> result = operatorControllerV3.metrics(false);
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(ServerStatus.UP.toString(), result.getData().getStatus());
     }

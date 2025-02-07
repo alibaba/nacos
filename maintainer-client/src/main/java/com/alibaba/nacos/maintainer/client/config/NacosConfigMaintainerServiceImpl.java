@@ -18,7 +18,6 @@ package com.alibaba.nacos.maintainer.client.config;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
-import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -94,7 +93,8 @@ public class NacosConfigMaintainerServiceImpl implements ConfigMaintainerService
     }
     
     @Override
-    public boolean publishConfig(String dataId, String groupName, String namespaceId, String content) throws NacosException {
+    public boolean publishConfig(String dataId, String groupName, String namespaceId, String content)
+            throws NacosException {
         return publishConfig(dataId, groupName, namespaceId, content, null, null, null, null, null, null, null, null,
                 null);
     }

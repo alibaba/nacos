@@ -14,26 +14,26 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.maintainer.client.model.naming;
+package com.alibaba.nacos.api.naming.pojo.maintainer;
 
 import java.io.Serializable;
 import java.util.List;
 
 /**
- * InstanceUpdateVo.
- * @author dongyafei
- * @date 2022/9/7
+ * Nacos instance metadata batch operation result, include updated instance ip list.
+ *
+ * @author xiweng.yy
  */
-public class InstanceMetadataBatchOperationVo implements Serializable {
+public class InstanceMetadataBatchResult implements Serializable {
     
     private static final long serialVersionUID = -5793871911227035729L;
     
     private List<String> updated;
     
-    public InstanceMetadataBatchOperationVo() {
+    public InstanceMetadataBatchResult() {
     }
     
-    public InstanceMetadataBatchOperationVo(List<String> updated) {
+    public InstanceMetadataBatchResult(List<String> updated) {
         this.updated = updated;
     }
     

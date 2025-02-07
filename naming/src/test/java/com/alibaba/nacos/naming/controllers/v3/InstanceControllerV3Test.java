@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.InstanceMetadataBatchResult;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
@@ -31,8 +32,6 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.InstanceForm;
 import com.alibaba.nacos.naming.model.form.InstanceListForm;
 import com.alibaba.nacos.naming.model.form.InstanceMetadataBatchOperationForm;
-import com.alibaba.nacos.naming.model.vo.InstanceDetailInfoVo;
-import com.alibaba.nacos.naming.model.vo.InstanceMetadataBatchOperationVo;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -196,9 +195,9 @@ class InstanceControllerV3Test extends BaseTest {
         ipList.add(TEST_IP);
         when(instanceService.batchUpdateMetadata(eq(TEST_NAMESPACE), any(), any())).thenReturn(ipList);
         
-        InstanceMetadataBatchOperationVo expectUpdate = new InstanceMetadataBatchOperationVo(ipList);
+        InstanceMetadataBatchResult expectUpdate = new InstanceMetadataBatchResult(ipList);
         
-        Result<InstanceMetadataBatchOperationVo> result = instanceControllerV3.batchUpdateInstanceMetadata(form);
+        Result<InstanceMetadataBatchResult> result = instanceControllerV3.batchUpdateInstanceMetadata(form);
         verify(instanceService).batchUpdateMetadata(eq(TEST_NAMESPACE), any(), any());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
@@ -254,7 +253,7 @@ class InstanceControllerV3Test extends BaseTest {
         instanceForm.setClusterName(TEST_CLUSTER_NAME);
         instanceForm.setIp(TEST_IP);
         instanceForm.setPort(9999);
-        Result<InstanceDetailInfoVo> result = instanceControllerV3.detail(instanceForm);
+        Result<Instance> result = instanceControllerV3.detail(instanceForm);
         
         verify(instanceService).getInstance(TEST_NAMESPACE, TEST_SERVICE_NAME, TEST_CLUSTER_NAME, TEST_IP, 9999);
         

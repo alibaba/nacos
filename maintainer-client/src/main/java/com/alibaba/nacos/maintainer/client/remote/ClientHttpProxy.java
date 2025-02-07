@@ -35,7 +35,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.util.Map;
 import java.util.Properties;
@@ -105,7 +104,9 @@ public class ClientHttpProxy {
         }
         
         if (null != requestException) {
-            throw requestException;
+            throw new NacosException(requestException.getErrCode(),
+                    "No available server after " + maxRetry + " retries, last tried server: " + currentServerAddr
+                            + ", last errMsg: " + requestException.getErrMsg());
         }
         throw new NacosException(NacosException.BAD_GATEWAY,
                 "No available server after " + maxRetry + " retries, last tried server: " + currentServerAddr);

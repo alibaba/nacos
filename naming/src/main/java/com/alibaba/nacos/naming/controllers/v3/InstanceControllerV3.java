@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.pojo.builder.InstanceBuilder;
+import com.alibaba.nacos.api.naming.pojo.maintainer.InstanceMetadataBatchResult;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -43,8 +44,6 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.InstanceForm;
 import com.alibaba.nacos.naming.model.form.InstanceListForm;
 import com.alibaba.nacos.naming.model.form.InstanceMetadataBatchOperationForm;
-import com.alibaba.nacos.naming.model.vo.InstanceDetailInfoVo;
-import com.alibaba.nacos.naming.model.vo.InstanceMetadataBatchOperationVo;
 import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.naming.paramcheck.NamingInstanceListHttpParamExtractor;
 import com.alibaba.nacos.naming.paramcheck.NamingInstanceMetadataBatchHttpParamExtractor;
@@ -167,7 +166,7 @@ public class InstanceControllerV3 {
     @TpsControl(pointName = "NamingInstanceMetadataUpdate", name = "HttpNamingInstanceMetadataBatchUpdate")
     @ExtractorManager.Extractor(httpExtractor = NamingInstanceMetadataBatchHttpParamExtractor.class)
     @Secured(resource = UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
-    public Result<InstanceMetadataBatchOperationVo> batchUpdateInstanceMetadata(InstanceMetadataBatchOperationForm form)
+    public Result<InstanceMetadataBatchResult> batchUpdateInstanceMetadata(InstanceMetadataBatchOperationForm form)
             throws NacosException {
         form.validate();
         
@@ -180,7 +179,7 @@ public class InstanceControllerV3 {
                 instanceOperationInfo, targetMetadata);
         ArrayList<String> ipList = new ArrayList<>(operatedInstances);
         
-        return Result.success(new InstanceMetadataBatchOperationVo(ipList));
+        return Result.success(new InstanceMetadataBatchResult(ipList));
     }
     
     /**
@@ -191,7 +190,7 @@ public class InstanceControllerV3 {
     @TpsControl(pointName = "NamingInstanceMetadataUpdate", name = "HttpNamingInstanceMetadataBatchUpdate")
     @ExtractorManager.Extractor(httpExtractor = NamingInstanceMetadataBatchHttpParamExtractor.class)
     @Secured(resource = UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
-    public Result<InstanceMetadataBatchOperationVo> batchDeleteInstanceMetadata(InstanceMetadataBatchOperationForm form)
+    public Result<InstanceMetadataBatchResult> batchDeleteInstanceMetadata(InstanceMetadataBatchOperationForm form)
             throws NacosException {
         form.validate();
         List<Instance> targetInstances = parseBatchInstances(form.getInstances());
@@ -202,7 +201,7 @@ public class InstanceControllerV3 {
                 instanceOperationInfo, targetMetadata);
         ArrayList<String> ipList = new ArrayList<>(operatedInstances);
         
-        return Result.success(new InstanceMetadataBatchOperationVo(ipList));
+        return Result.success(new InstanceMetadataBatchResult(ipList));
     }
     
     private InstanceOperationInfo buildOperationInfo(String serviceName, String consistencyType,
@@ -282,7 +281,7 @@ public class InstanceControllerV3 {
     @GetMapping
     @TpsControl(pointName = "NamingInstanceQuery", name = "HttpNamingInstanceQuery")
     @Secured(resource = UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
-    public Result<InstanceDetailInfoVo> detail(InstanceForm instanceForm) throws NacosException {
+    public Result<Instance> detail(InstanceForm instanceForm) throws NacosException {
         instanceForm.validate();
         String compositeServiceName = NamingUtils.getGroupedName(instanceForm.getServiceName(),
                 instanceForm.getGroupName());
@@ -291,16 +290,7 @@ public class InstanceControllerV3 {
         String ip = instanceForm.getIp();
         int port = instanceForm.getPort();
         Instance instance = instanceService.getInstance(namespaceId, compositeServiceName, clusterName, ip, port);
-        InstanceDetailInfoVo instanceDetailInfoVo = new InstanceDetailInfoVo();
-        instanceDetailInfoVo.setServiceName(compositeServiceName);
-        instanceDetailInfoVo.setIp(ip);
-        instanceDetailInfoVo.setPort(port);
-        instanceDetailInfoVo.setClusterName(clusterName);
-        instanceDetailInfoVo.setWeight(instance.getWeight());
-        instanceDetailInfoVo.setHealthy(instance.isHealthy());
-        instanceDetailInfoVo.setInstanceId(instance.getInstanceId());
-        instanceDetailInfoVo.setMetadata(instance.getMetadata());
-        return Result.success(instanceDetailInfoVo);
+        return Result.success(instance);
     }
     
     private void checkWeight(Double weight) throws NacosException {

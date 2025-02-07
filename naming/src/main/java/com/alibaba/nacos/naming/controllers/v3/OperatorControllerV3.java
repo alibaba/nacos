@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.naming.core.Operator;
@@ -84,9 +85,9 @@ public class OperatorControllerV3 {
      */
     @GetMapping("/metrics")
     @Secured(resource = UtilsAndCommons.OPERATOR_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
-    public Result<MetricsInfoVo> metrics(
+    public Result<MetricsInfo> metrics(
             @RequestParam(value = "onlyStatus", required = false, defaultValue = "true") Boolean onlyStatus) {
-        return Result.success(operatorV2Impl.metrics(onlyStatus));
+        return Result.success(MetricsInfoVo.toNewMetricsInfo(operatorV2Impl.metrics(onlyStatus)));
     }
     
     /**

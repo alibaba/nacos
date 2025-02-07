@@ -44,6 +44,7 @@ public interface Operator {
     
     /**
      * Retrieves system metrics information.
+     * TODO use {@link com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo} replaced return object, after v1/v2 api removed.
      *
      * @param onlyStatus If true, returns only the status information; otherwise, returns full metrics.
      * @return A {@link MetricsInfoVo} object containing the requested metrics data.

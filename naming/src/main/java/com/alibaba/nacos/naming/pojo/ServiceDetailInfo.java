@@ -160,7 +160,7 @@ public class ServiceDetailInfo implements Serializable {
         serviceDetailInfo.setProtectThreshold(newServiceDetailInfo.getProtectThreshold());
         serviceDetailInfo.setSelector(newServiceDetailInfo.getSelector());
         serviceDetailInfo.setEphemeral(newServiceDetailInfo.isEphemeral());
-        Map<String, ClusterInfo> clusterInfoMap = new HashMap<>();
+        Map<String, ClusterInfo> clusterInfoMap = new HashMap<>(newServiceDetailInfo.getClusterMap().size());
         for (Map.Entry<String, com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo> entry : newServiceDetailInfo.getClusterMap()
                 .entrySet()) {
             clusterInfoMap.put(entry.getKey(), ClusterInfo.from(entry.getValue()));
