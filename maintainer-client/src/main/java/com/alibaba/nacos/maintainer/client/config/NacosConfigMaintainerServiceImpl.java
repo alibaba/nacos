@@ -64,6 +64,7 @@ public class NacosConfigMaintainerServiceImpl implements ConfigMaintainerService
     
     public NacosConfigMaintainerServiceImpl(Properties properties) throws NacosException {
         this.clientHttpProxy = new ClientHttpProxy(properties);
+        ParamUtil.initSerialization();
     }
     
     @Override

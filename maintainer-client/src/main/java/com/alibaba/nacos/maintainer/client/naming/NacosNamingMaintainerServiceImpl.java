@@ -55,6 +55,7 @@ public class NacosNamingMaintainerServiceImpl implements NamingMaintainerService
     
     public NacosNamingMaintainerServiceImpl(Properties properties) throws NacosException {
         this.clientHttpProxy = new ClientHttpProxy(properties);
+        ParamUtil.initSerialization();
     }
     
     @Override

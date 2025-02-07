@@ -77,14 +77,19 @@ public class ClientHttpProxy {
         long endTime = System.currentTimeMillis() + ParamUtil.getReadTimeout();
         String currentServerAddr = serverListManager.getCurrentServer();
         int retryCount = maxRetry;
-        
+        NacosException requestException = null;
         while (System.currentTimeMillis() <= endTime && retryCount >= 0) {
             try {
                 HttpRestResult<String> result = executeSync(request, currentServerAddr);
                 if (!isFail(result)) {
                     serverListManager.updateCurrentServerAddr(currentServerAddr);
+                }
+                if (result.ok()) {
                     return result;
                 }
+                throw new NacosException(result.getCode(), result.getMessage());
+            } catch (NacosException nacosException) {
+                requestException = nacosException;
             } catch (Exception ex) {
                 LOGGER.error("[NACOS Exception] Server address: {}, Error: {}", currentServerAddr, ex.getMessage());
             }
@@ -99,6 +104,9 @@ public class ClientHttpProxy {
             }
         }
         
+        if (null != requestException) {
+            throw requestException;
+        }
         throw new NacosException(NacosException.BAD_GATEWAY,
                 "No available server after " + maxRetry + " retries, last tried server: " + currentServerAddr);
     }
@@ -134,7 +142,7 @@ public class ClientHttpProxy {
             case HttpMethod.DELETE:
                 return nacosRestTemplate.delete(url, httpConfig, httpHeaders, query, String.class);
             default:
-                throw new RuntimeException("Unsupported HTTP method: " + request.getHttpMethod());
+                throw new IllegalArgumentException("Unsupported HTTP method: " + request.getHttpMethod());
         }
     }
     
@@ -164,7 +172,7 @@ public class ClientHttpProxy {
         return result.getCode() == HttpURLConnection.HTTP_INTERNAL_ERROR
                 || result.getCode() == HttpURLConnection.HTTP_BAD_GATEWAY
                 || result.getCode() == HttpURLConnection.HTTP_UNAVAILABLE
-                || result.getCode() == HttpURLConnection.HTTP_NOT_FOUND;
+                || result.getCode() == HttpURLConnection.HTTP_GATEWAY_TIMEOUT;
     }
     
     /**
