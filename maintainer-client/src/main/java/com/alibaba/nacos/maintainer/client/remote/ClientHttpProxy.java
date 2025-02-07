@@ -20,10 +20,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.common.constant.RequestUrlConstants;
-import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.HttpRestResult;
-import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
@@ -52,9 +50,6 @@ public class ClientHttpProxy {
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientHttpProxy.class);
     
     private final NacosRestTemplate nacosRestTemplate = HttpClientManager.getInstance().getNacosRestTemplate();
-    
-    private final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientManager.getInstance()
-            .getNacosAsyncRestTemplate();
     
     private final boolean enableHttps = Boolean.getBoolean(TlsSystemConfig.TLS_ENABLE);
     
@@ -138,93 +133,6 @@ public class ClientHttpProxy {
                 return nacosRestTemplate.putForm(url, httpConfig, httpHeaders, paramValues, String.class);
             case HttpMethod.DELETE:
                 return nacosRestTemplate.delete(url, httpConfig, httpHeaders, query, String.class);
-            default:
-                throw new RuntimeException("Unsupported HTTP method: " + request.getHttpMethod());
-        }
-    }
-    
-    /**
-     * Execute async http request.
-     *
-     * @param request http request
-     * @throws NacosException exception when request
-     */
-    public void executeAsyncHttpRequest(HttpRequest request, Callback<String> callback) throws NacosException {
-        long endTime = System.currentTimeMillis() + ParamUtil.getReadTimeout();
-        String currentServerAddr = serverListManager.getCurrentServer();
-        executeAsyncWithRetry(request, callback, endTime, currentServerAddr, maxRetry);
-    }
-    
-    private void executeAsyncWithRetry(HttpRequest request, Callback<String> callback, long endTime,
-            String currentServerAddr, int retryCount) {
-        if (System.currentTimeMillis() > endTime || retryCount < 0) {
-            callback.onError(new ConnectException(
-                    "No available server after " + maxRetry + " retries, last tried server: " + currentServerAddr));
-            return;
-        }
-        
-        try {
-            executeAsync(request, currentServerAddr, new Callback<String>() {
-                @Override
-                public void onReceive(RestResult<String> result) {
-                    if (!isFail(result)) {
-                        serverListManager.updateCurrentServerAddr(currentServerAddr);
-                        callback.onReceive(result);
-                    } else {
-                        retryAsync(request, callback, endTime, retryCount);
-                    }
-                }
-                
-                @Override
-                public void onError(Throwable throwable) {
-                    retryAsync(request, callback, endTime, retryCount);
-                }
-                
-                @Override
-                public void onCancel() {
-                    callback.onCancel();
-                }
-            });
-        } catch (Exception ex) {
-            LOGGER.error("[NACOS Exception] Server address: {}, Error: {}", currentServerAddr, ex.getMessage());
-            retryAsync(request, callback, endTime, retryCount);
-        }
-    }
-    
-    private void retryAsync(HttpRequest request, Callback<String> callback, long endTime, int retryCount) {
-        String nextServerAddr = getNextServerAddress();
-        int remainingRetries = retryCount - 1;
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-        executeAsyncWithRetry(request, callback, endTime, nextServerAddr, remainingRetries);
-    }
-    
-    private void executeAsync(HttpRequest request, String serverAddr, Callback<String> callback) throws Exception {
-        Map<String, String> paramValues = request.getParamValues();
-        Map<String, String> headers = request.getHeaders();
-        Header httpHeaders = Header.newInstance();
-        if (headers != null) {
-            httpHeaders.addAll(headers);
-        }
-        Query query = Query.newInstance().initParams(paramValues);
-        String url = buildUrl(serverAddr, request.getPath());
-        
-        switch (request.getHttpMethod()) {
-            case HttpMethod.GET:
-                nacosAsyncRestTemplate.get(url, httpHeaders, query, String.class, callback);
-                break;
-            case HttpMethod.POST:
-                nacosAsyncRestTemplate.postForm(url, httpHeaders, paramValues, String.class, callback);
-                break;
-            case HttpMethod.PUT:
-                nacosAsyncRestTemplate.putForm(url, httpHeaders, paramValues, String.class, callback);
-                break;
-            case HttpMethod.DELETE:
-                nacosAsyncRestTemplate.delete(url, httpHeaders, query, String.class, callback);
-                break;
             default:
                 throw new RuntimeException("Unsupported HTTP method: " + request.getHttpMethod());
         }

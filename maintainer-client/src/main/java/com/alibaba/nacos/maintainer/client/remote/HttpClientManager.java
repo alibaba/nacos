@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.http.DefaultHttpClientFactory;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpClientFactory;
-import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
@@ -41,11 +40,10 @@ public class HttpClientManager implements Closeable {
     
     private static final Map<String, NacosRestTemplate> SINGLETON_REST = new HashMap<>(10);
     
-    private static final Map<String, NacosAsyncRestTemplate> SINGLETON_ASYNC_REST = new HashMap<>(10);
-    
     private static volatile HttpClientManager httpClientManager;
     
-    private HttpClientManager() {}
+    private HttpClientManager() {
+    }
     
     public static HttpClientManager getInstance() {
         if (httpClientManager == null) {
@@ -59,7 +57,7 @@ public class HttpClientManager implements Closeable {
     }
     
     private static final HttpClientFactory HTTP_CLIENT_FACTORY = new DefaultHttpClientFactory(LOGGER);
-
+    
     /**
      * get NacosRestTemplate Instance.
      *
@@ -67,15 +65,6 @@ public class HttpClientManager implements Closeable {
      */
     public NacosRestTemplate getNacosRestTemplate() {
         return HttpClientBeanHolder.getNacosRestTemplate(HTTP_CLIENT_FACTORY);
-    }
-    
-    /**
-     * get NacosAsyncRestTemplate Instance.
-     *
-     * @return NacosAsyncRestTemplate
-     */
-    public NacosAsyncRestTemplate getNacosAsyncRestTemplate() {
-        return HttpClientBeanHolder.getNacosAsyncRestTemplate(HTTP_CLIENT_FACTORY);
     }
     
     @Override
@@ -92,7 +81,6 @@ public class HttpClientManager implements Closeable {
     
     public static void shutdown(String className) throws Exception {
         shutdownNacosSyncRest(className);
-        shutdownNacosAsyncRest(className);
     }
     
     /**
@@ -109,17 +97,4 @@ public class HttpClientManager implements Closeable {
         }
     }
     
-    /**
-     * Shutdown async http client holder and remove template.
-     *
-     * @param className HttpClientFactory implement class name
-     * @throws Exception ex
-     */
-    public static void shutdownNacosAsyncRest(String className) throws Exception {
-        final NacosAsyncRestTemplate nacosAsyncRestTemplate = SINGLETON_ASYNC_REST.get(className);
-        if (nacosAsyncRestTemplate != null) {
-            nacosAsyncRestTemplate.close();
-            SINGLETON_ASYNC_REST.remove(className);
-        }
-    }
 }
