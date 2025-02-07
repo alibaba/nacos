@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.maintainer.client.model.naming;
+package com.alibaba.nacos.api.naming.pojo.maintainer;
 
 import com.alibaba.nacos.api.selector.Selector;
 
@@ -22,16 +22,15 @@ import java.io.Serializable;
 import java.util.Map;
 
 /**
- * Service detial info.
+ * Service detail information for nacos maintain client, contain service detail information and cluster information.
  *
- * @author caogu.wyp
- * @version $Id: ServiceDetailInfo.java, v 0.1 2018-09-17 上午10:47 caogu.wyp Exp $$
+ * @author xiweng.yy
  */
 public class ServiceDetailInfo implements Serializable {
-
+    
     private static final long serialVersionUID = 6351606608785841722L;
-
-    private String namespace;
+    
+    private String namespaceId;
     
     private String serviceName;
     
@@ -109,12 +108,12 @@ public class ServiceDetailInfo implements Serializable {
         this.metadata = metadata;
     }
     
-    public String getNamespace() {
-        return namespace;
+    public String getNamespaceId() {
+        return namespaceId;
     }
     
-    public void setNamespace(String namespace) {
-        this.namespace = namespace;
+    public void setNamespaceId(String namespaceId) {
+        this.namespaceId = namespaceId;
     }
     
     public float getProtectThreshold() {

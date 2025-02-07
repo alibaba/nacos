@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -91,8 +92,8 @@ public class CatalogController {
             @RequestParam int pageSize) throws NacosException {
         String serviceNameWithoutGroup = NamingUtils.getServiceName(serviceName);
         String groupName = NamingUtils.getGroupName(serviceName);
-        List<? extends Instance> instances = judgeCatalogService()
-                .listInstances(namespaceId, groupName, serviceNameWithoutGroup, clusterName);
+        List<? extends Instance> instances = judgeCatalogService().listInstances(namespaceId, groupName,
+                serviceNameWithoutGroup, clusterName);
         int start = (page - 1) * pageSize;
         int end = page * pageSize;
         
@@ -140,10 +141,12 @@ public class CatalogController {
             @RequestParam(required = false) boolean hasIpCount) throws NacosException {
         
         if (withInstances) {
-            return judgeCatalogService().pageListServiceDetail(namespaceId, groupName, serviceName, pageNo, pageSize);
+            ServiceDetailInfo serviceDetailInfo = (ServiceDetailInfo) judgeCatalogService().pageListServiceDetail(
+                    namespaceId, groupName, serviceName, pageNo, pageSize);
+            return com.alibaba.nacos.naming.pojo.ServiceDetailInfo.from(serviceDetailInfo);
         }
-        return judgeCatalogService()
-                .pageListService(namespaceId, groupName, serviceName, pageNo, pageSize, containedInstance, hasIpCount);
+        return judgeCatalogService().pageListService(namespaceId, groupName, serviceName, pageNo, pageSize,
+                containedInstance, hasIpCount);
     }
     
     private CatalogService judgeCatalogService() {

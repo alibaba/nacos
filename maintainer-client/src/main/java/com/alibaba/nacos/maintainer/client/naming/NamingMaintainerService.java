@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.maintainer.client.model.core.Connection;
 import com.alibaba.nacos.maintainer.client.model.core.IdGeneratorVO;
 import com.alibaba.nacos.maintainer.client.model.core.Member;
@@ -27,7 +28,6 @@ import com.alibaba.nacos.maintainer.client.model.core.ServerLoaderMetrics;
 import com.alibaba.nacos.maintainer.client.model.naming.InstanceDetailInfoVo;
 import com.alibaba.nacos.maintainer.client.model.naming.InstanceMetadataBatchOperationVo;
 import com.alibaba.nacos.maintainer.client.model.naming.MetricsInfoVo;
-import com.alibaba.nacos.maintainer.client.model.naming.ServiceDetailInfo;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.util.Collection;

@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.pojo;
 import com.alibaba.nacos.api.selector.Selector;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -26,7 +27,10 @@ import java.util.Map;
  *
  * @author caogu.wyp
  * @version $Id: ServiceDetailInfo.java, v 0.1 2018-09-17 上午10:47 caogu.wyp Exp $$
+ *
+ * @deprecated use {@link com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo} replaced
  */
+@Deprecated
 public class ServiceDetailInfo implements Serializable {
 
     private static final long serialVersionUID = 6351606608785841722L;
@@ -139,5 +143,29 @@ public class ServiceDetailInfo implements Serializable {
     
     public void setEphemeral(boolean ephemeral) {
         this.ephemeral = ephemeral;
+    }
+    
+    /**
+     * For some old apis, from new {@link com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo} to this deprecated one.
+     *
+     * @param newServiceDetailInfo new {@link com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo}
+     * @return this deprecated one
+     */
+    public static ServiceDetailInfo from(com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo newServiceDetailInfo) {
+        ServiceDetailInfo serviceDetailInfo = new ServiceDetailInfo();
+        serviceDetailInfo.setNamespace(newServiceDetailInfo.getNamespaceId());
+        serviceDetailInfo.setServiceName(newServiceDetailInfo.getServiceName());
+        serviceDetailInfo.setGroupName(newServiceDetailInfo.getGroupName());
+        serviceDetailInfo.setMetadata(newServiceDetailInfo.getMetadata());
+        serviceDetailInfo.setProtectThreshold(newServiceDetailInfo.getProtectThreshold());
+        serviceDetailInfo.setSelector(newServiceDetailInfo.getSelector());
+        serviceDetailInfo.setEphemeral(newServiceDetailInfo.isEphemeral());
+        Map<String, ClusterInfo> clusterInfoMap = new HashMap<>();
+        for (Map.Entry<String, com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo> entry : newServiceDetailInfo.getClusterMap()
+                .entrySet()) {
+            clusterInfoMap.put(entry.getKey(), ClusterInfo.from(entry.getValue()));
+        }
+        serviceDetailInfo.setClusterMap(clusterInfoMap);
+        return serviceDetailInfo;
     }
 }

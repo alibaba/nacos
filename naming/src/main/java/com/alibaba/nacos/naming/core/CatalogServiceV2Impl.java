@@ -21,6 +21,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Cluster;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.constants.FieldsConstants;
@@ -30,9 +32,6 @@ import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import com.alibaba.nacos.naming.pojo.ClusterInfo;
-import com.alibaba.nacos.naming.pojo.IpAddressInfo;
-import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
 import com.alibaba.nacos.naming.pojo.ServiceView;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -178,8 +177,8 @@ public class CatalogServiceV2Impl implements CatalogService {
     }
     
     private boolean isProtectThreshold(ServiceView serviceView, ServiceMetadata metadata) {
-        return (serviceView.getHealthyInstanceCount() * 1.0 / serviceView.getIpCount()) <= metadata
-                .getProtectThreshold();
+        return (serviceView.getHealthyInstanceCount() * 1.0 / serviceView.getIpCount())
+                <= metadata.getProtectThreshold();
     }
     
     @Override
@@ -203,25 +202,13 @@ public class CatalogServiceV2Impl implements CatalogService {
     private Map<String, ClusterInfo> getClusterMap(Service service) {
         Map<String, ClusterInfo> result = new HashMap<>(1);
         for (Instance each : serviceStorage.getData(service).getHosts()) {
-            final IpAddressInfo info = transferToIpAddressInfo(each);
             if (!result.containsKey(each.getClusterName())) {
                 ClusterInfo clusterInfo = new ClusterInfo();
                 clusterInfo.setHosts(new LinkedList<>());
                 result.put(each.getClusterName(), clusterInfo);
             }
-            result.get(each.getClusterName()).getHosts().add(info);
+            result.get(each.getClusterName()).getHosts().add(each);
         }
-        return result;
-    }
-    
-    private IpAddressInfo transferToIpAddressInfo(Instance instance) {
-        IpAddressInfo result = new IpAddressInfo();
-        result.setIp(instance.getIp());
-        result.setPort(instance.getPort());
-        result.setEnabled(instance.isEnabled());
-        result.setValid(instance.isHealthy());
-        result.setWeight(instance.getWeight());
-        result.setMetadata(instance.getMetadata());
         return result;
     }
     
