@@ -17,10 +17,10 @@
 package com.alibaba.nacos.maintainer.client.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.response.IdGeneratorInfo;
+import com.alibaba.nacos.api.model.response.ServerLoaderMetrics;
 import com.alibaba.nacos.maintainer.client.model.core.Connection;
-import com.alibaba.nacos.maintainer.client.model.core.IdGeneratorVO;
 import com.alibaba.nacos.maintainer.client.model.core.Member;
-import com.alibaba.nacos.maintainer.client.model.core.ServerLoaderMetrics;
 
 import java.util.Collection;
 import java.util.List;
@@ -50,7 +50,7 @@ public interface CoreMaintainerService {
      * @return a list of ID generator status objects.
      * @throws NacosException if the operation fails.
      */
-    List<IdGeneratorVO> getIdsHealth() throws NacosException;
+    List<IdGeneratorInfo> getIdGenerators() throws NacosException;
     
     /**
      * Update the log level for a specific logger.

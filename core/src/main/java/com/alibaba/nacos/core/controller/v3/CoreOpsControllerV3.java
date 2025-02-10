@@ -24,7 +24,7 @@ import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.core.model.form.v3.RaftCommandForm;
 import com.alibaba.nacos.core.model.request.LogUpdateRequest;
-import com.alibaba.nacos.core.model.vo.IdGeneratorVO;
+import com.alibaba.nacos.api.model.response.IdGeneratorInfo;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
@@ -87,13 +87,13 @@ public class CoreOpsControllerV3 {
     @GetMapping(value = "/ids")
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
             + "/ops", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
-    public Result<List<IdGeneratorVO>> ids() {
-        List<IdGeneratorVO> result = new ArrayList<>();
+    public Result<List<IdGeneratorInfo>> ids() {
+        List<IdGeneratorInfo> result = new ArrayList<>();
         idGeneratorManager.getGeneratorMap().forEach((resource, idGenerator) -> {
-            IdGeneratorVO vo = new IdGeneratorVO();
+            IdGeneratorInfo vo = new IdGeneratorInfo();
             vo.setResource(resource);
             
-            IdGeneratorVO.IdInfo info = new IdGeneratorVO.IdInfo();
+            IdGeneratorInfo.IdInfo info = new IdGeneratorInfo.IdInfo();
             info.setCurrentId(idGenerator.currentId());
             info.setWorkerId(idGenerator.workerId());
             vo.setInfo(info);

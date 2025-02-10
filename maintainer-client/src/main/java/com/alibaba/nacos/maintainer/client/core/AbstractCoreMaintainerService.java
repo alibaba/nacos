@@ -17,6 +17,8 @@
 package com.alibaba.nacos.maintainer.client.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.response.IdGeneratorInfo;
+import com.alibaba.nacos.api.model.response.ServerLoaderMetrics;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
@@ -24,9 +26,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
 import com.alibaba.nacos.maintainer.client.model.core.Connection;
-import com.alibaba.nacos.maintainer.client.model.core.IdGeneratorVO;
 import com.alibaba.nacos.maintainer.client.model.core.Member;
-import com.alibaba.nacos.maintainer.client.model.core.ServerLoaderMetrics;
 import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
 import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -67,12 +67,12 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
     }
     
     @Override
-    public List<IdGeneratorVO> getIdsHealth() throws NacosException {
+    public List<IdGeneratorInfo> getIdGenerators() throws NacosException {
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CORE_OPS_ADMIN_PATH + "/ids").build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<List<IdGeneratorVO>> result = JacksonUtils.toObj(httpRestResult.getData(),
-                new TypeReference<Result<List<IdGeneratorVO>>>() {
+        Result<List<IdGeneratorInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<List<IdGeneratorInfo>>>() {
                 });
         return result.getData();
     }

@@ -16,18 +16,18 @@
 
 package com.alibaba.nacos.core.controller.v2;
 
+import com.alibaba.nacos.api.model.response.IdGeneratorInfo;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.core.controller.compatibility.Compatibility;
-import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.common.Beta;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.core.model.request.LogUpdateRequest;
-import com.alibaba.nacos.core.model.vo.IdGeneratorVO;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -85,13 +85,13 @@ public class CoreOpsV2Controller {
      */
     @GetMapping(value = "/ids")
     @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/admin/core/ops/ids")
-    public RestResult<List<IdGeneratorVO>> ids() {
-        List<IdGeneratorVO> result = new ArrayList<>();
+    public RestResult<List<IdGeneratorInfo>> ids() {
+        List<IdGeneratorInfo> result = new ArrayList<>();
         idGeneratorManager.getGeneratorMap().forEach((resource, idGenerator) -> {
-            IdGeneratorVO vo = new IdGeneratorVO();
+            IdGeneratorInfo vo = new IdGeneratorInfo();
             vo.setResource(resource);
             
-            IdGeneratorVO.IdInfo info = new IdGeneratorVO.IdInfo();
+            IdGeneratorInfo.IdInfo info = new IdGeneratorInfo.IdInfo();
             info.setCurrentId(idGenerator.currentId());
             info.setWorkerId(idGenerator.workerId());
             vo.setInfo(info);

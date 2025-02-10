@@ -16,12 +16,12 @@
 
 package com.alibaba.nacos.maintainer.client.core;
 
+import com.alibaba.nacos.api.model.response.IdGeneratorInfo;
+import com.alibaba.nacos.api.model.response.ServerLoaderMetrics;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.maintainer.client.model.core.Connection;
-import com.alibaba.nacos.maintainer.client.model.core.IdGeneratorVO;
 import com.alibaba.nacos.maintainer.client.model.core.Member;
-import com.alibaba.nacos.maintainer.client.model.core.ServerLoaderMetrics;
 import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -86,16 +86,16 @@ class AbstractCoreMaintainerServiceTest {
     }
     
     @Test
-    void testGetIdsHealth() throws Exception {
+    void testGetIdGenerators() throws Exception {
         // Arrange
-        List<IdGeneratorVO> expectedList = new ArrayList<>();
+        List<IdGeneratorInfo> expectedList = new ArrayList<>();
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedList)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        List<IdGeneratorVO> result = coreMaintainerService.getIdsHealth();
+        List<IdGeneratorInfo> result = coreMaintainerService.getIdGenerators();
         
         // Assert
         assertNotNull(result);
