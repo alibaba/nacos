@@ -117,7 +117,7 @@ class ConfigQueryRequestHandlerTest {
         RequestMeta requestMeta = new RequestMeta();
         requestMeta.setClientIp("127.0.0.1");
         
-        when(configRocksDbDiskService.getContent(eq(dataId), eq(group), eq(null))).thenReturn(content);
+        when(configRocksDbDiskService.getContent(eq(dataId), eq(group), eq(""))).thenReturn(content);
         ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
         assertEquals(content, response.getContent());
         assertEquals(MD5Utils.md5Hex(content, "UTF-8"), response.getMd5());
@@ -160,7 +160,7 @@ class ConfigQueryRequestHandlerTest {
         RequestMeta requestMeta = new RequestMeta();
         requestMeta.setClientIp("127.0.0.1");
         
-        when(configRocksDbDiskService.getGrayContent(eq(dataId), eq(group), eq(null),
+        when(configRocksDbDiskService.getGrayContent(eq(dataId), eq(group), eq(""),
                 eq(BetaGrayRule.TYPE_BETA))).thenReturn(content);
         ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
         //check content&md5
@@ -256,7 +256,7 @@ class ConfigQueryRequestHandlerTest {
         requestMeta.setClientIp("127.0.0.1");
         
         //mock disk read.
-        when(configRocksDbDiskService.getGrayContent(eq(dataId), eq(group), eq(null),
+        when(configRocksDbDiskService.getGrayContent(eq(dataId), eq(group), eq(""),
                 eq(TagGrayRule.TYPE_TAG + "_" + specificTag))).thenReturn(tagContent);
         ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
         
@@ -304,7 +304,7 @@ class ConfigQueryRequestHandlerTest {
         requestMeta.setClientIp("127.0.0.1");
         requestMeta.getAppLabels().put(VIPSERVER_TAG, autoTag);
         //mock disk read.
-        when(configRocksDbDiskService.getGrayContent(eq(dataId), eq(group), eq(null),
+        when(configRocksDbDiskService.getGrayContent(eq(dataId), eq(group), eq(""),
                 eq(TagGrayRule.TYPE_TAG + "_" + autoTag))).thenReturn(tagContent);
         ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
         
