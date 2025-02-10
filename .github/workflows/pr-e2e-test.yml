@@ -31,7 +31,7 @@ jobs:
       version-json: ${{ steps.show_versions.outputs.version-json }}
     steps:
       - name: 'Download artifact'
-        uses: actions/github-script@v3.1.0
+        uses: actions/github-script@v7
         with:
           script: |
             var artifacts = await github.actions.listWorkflowRunArtifacts({
@@ -529,7 +529,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: 'Download artifact'
-        uses: actions/github-script@v3.1.0
+        uses: actions/github-script@7
         with:
           script: |
             var artifacts = await github.actions.listWorkflowRunArtifacts({
