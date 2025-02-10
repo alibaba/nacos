@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.model.vo;
+package com.alibaba.nacos.api.model.response;
 
 /**
  * Id generator vo.
  *
  * @author wuzhiguo
  */
-public class IdGeneratorVO {
+public class IdGeneratorInfo {
     
     private String resource;
     

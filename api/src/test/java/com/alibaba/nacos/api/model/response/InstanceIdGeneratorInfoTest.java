@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.model.vo;
+package com.alibaba.nacos.api.model.response;
 
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class InstanceIdGeneratorVOTest {
+class InstanceIdGeneratorInfoTest {
     
     @Test
     void test() {
-        IdGeneratorVO vo = new IdGeneratorVO();
-        IdGeneratorVO.IdInfo info = new IdGeneratorVO.IdInfo();
+        IdGeneratorInfo vo = new IdGeneratorInfo();
+        IdGeneratorInfo.IdInfo info = new IdGeneratorInfo.IdInfo();
         info.setWorkerId(1L);
         info.setCurrentId(2L);
         vo.setResource("test");
@@ -35,5 +35,7 @@ class InstanceIdGeneratorVOTest {
         assertEquals("test", vo.getResource());
         assertEquals(1L, vo.getInfo().getWorkerId().longValue());
         assertEquals(2L, vo.getInfo().getCurrentId().longValue());
+        
+        assertEquals("IdGeneratorVO{resource='test', info=IdInfo{currentId=2, workerId=1}}", vo.toString());
     }
 }

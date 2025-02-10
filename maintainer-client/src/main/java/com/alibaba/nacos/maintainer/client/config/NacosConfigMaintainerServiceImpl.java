@@ -22,6 +22,7 @@ import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.maintainer.client.constants.Constants;
+import com.alibaba.nacos.maintainer.client.core.AbstractCoreMaintainerService;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
 import com.alibaba.nacos.maintainer.client.model.config.Capacity;
 import com.alibaba.nacos.maintainer.client.model.config.ConfigAdvanceInfo;
@@ -34,17 +35,9 @@ import com.alibaba.nacos.maintainer.client.model.config.GroupkeyListenserStatus;
 import com.alibaba.nacos.maintainer.client.model.config.Page;
 import com.alibaba.nacos.maintainer.client.model.config.SameConfigPolicy;
 import com.alibaba.nacos.maintainer.client.model.config.SameNamespaceCloneConfigBean;
-import com.alibaba.nacos.maintainer.client.model.core.Connection;
-import com.alibaba.nacos.maintainer.client.model.core.IdGeneratorVO;
-import com.alibaba.nacos.maintainer.client.model.core.Member;
-import com.alibaba.nacos.maintainer.client.model.core.ServerLoaderMetrics;
-import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
 import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,15 +48,10 @@ import java.util.Properties;
  *
  * @author Nacos
  */
-public class NacosConfigMaintainerServiceImpl implements ConfigMaintainerService {
-    
-    private static final Logger LOGGER = LoggerFactory.getLogger(NacosConfigMaintainerServiceImpl.class);
-    
-    private final ClientHttpProxy clientHttpProxy;
+public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerService implements ConfigMaintainerService {
     
     public NacosConfigMaintainerServiceImpl(Properties properties) throws NacosException {
-        this.clientHttpProxy = new ClientHttpProxy(properties);
-        ParamUtil.initSerialization();
+        super(properties);
     }
     
     @Override
@@ -80,7 +68,7 @@ public class NacosConfigMaintainerServiceImpl implements ConfigMaintainerService
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH).setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<ConfigAllInfo> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<ConfigAllInfo>>() {
                 });
@@ -120,7 +108,7 @@ public class NacosConfigMaintainerServiceImpl implements ConfigMaintainerService
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
                 .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH).setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
         });
         return result.getData();
@@ -146,7 +134,7 @@ public class NacosConfigMaintainerServiceImpl implements ConfigMaintainerService
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.DELETE)
                 .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH).setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
         });
         return result.getData();
@@ -166,7 +154,7 @@ public class NacosConfigMaintainerServiceImpl implements ConfigMaintainerService
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.DELETE)
                 .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH + "/batch").setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
         });
         return result.getData();
@@ -187,7 +175,7 @@ public class NacosConfigMaintainerServiceImpl implements ConfigMaintainerService
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH + "/extInfo").setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<ConfigAdvanceInfo> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<ConfigAdvanceInfo>>() {
                 });
@@ -208,7 +196,7 @@ public class NacosConfigMaintainerServiceImpl implements ConfigMaintainerService
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH + "/searchDetail").setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<Page<ConfigInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<Page<ConfigInfo>>>() {
                 });
@@ -231,7 +219,7 @@ public class NacosConfigMaintainerServiceImpl implements ConfigMaintainerService
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CONFIG_LISTENER_ADMIN_PATH + "/listener").setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<GroupkeyListenserStatus> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<GroupkeyListenserStatus>>() {
                 });
@@ -252,7 +240,7 @@ public class NacosConfigMaintainerServiceImpl implements ConfigMaintainerService
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.DELETE)
                 .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH + "/beta").setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
         });
         return result.getData();
@@ -272,7 +260,7 @@ public class NacosConfigMaintainerServiceImpl implements ConfigMaintainerService
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH + "/beta").setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<ConfigInfo4Beta> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<ConfigInfo4Beta>>() {
                 });
@@ -290,7 +278,7 @@ public class NacosConfigMaintainerServiceImpl implements ConfigMaintainerService
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
                 .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH + "/clone").setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<Map<String, Object>> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<Map<String, Object>>>() {
                 });
@@ -309,7 +297,7 @@ public class NacosConfigMaintainerServiceImpl implements ConfigMaintainerService
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CONFIG_HISTORY_ADMIN_PATH + "/list").setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<Page<ConfigHistoryInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<Page<ConfigHistoryInfo>>>() {
                 });
@@ -327,7 +315,7 @@ public class NacosConfigMaintainerServiceImpl implements ConfigMaintainerService
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CONFIG_HISTORY_ADMIN_PATH).setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<ConfigHistoryInfo> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<ConfigHistoryInfo>>() {
                 });
@@ -345,7 +333,7 @@ public class NacosConfigMaintainerServiceImpl implements ConfigMaintainerService
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CONFIG_HISTORY_ADMIN_PATH + "/previous").setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<ConfigHistoryInfo> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<ConfigHistoryInfo>>() {
                 });
@@ -359,7 +347,7 @@ public class NacosConfigMaintainerServiceImpl implements ConfigMaintainerService
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CONFIG_HISTORY_ADMIN_PATH + "/configs").setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<List<ConfigInfoWrapper>> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<List<ConfigInfoWrapper>>>() {
                 });
@@ -374,7 +362,7 @@ public class NacosConfigMaintainerServiceImpl implements ConfigMaintainerService
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CONFIG_CAPACITY_ADMIN_PATH).setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<Capacity> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Capacity>>() {
         });
         return result.getData();
@@ -393,7 +381,7 @@ public class NacosConfigMaintainerServiceImpl implements ConfigMaintainerService
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
                 .setPath(Constants.AdminApiPath.CONFIG_CAPACITY_ADMIN_PATH).setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
         });
         return result.getData();
@@ -403,7 +391,7 @@ public class NacosConfigMaintainerServiceImpl implements ConfigMaintainerService
     public String updateLocalCacheFromStore() throws NacosException {
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
                 .setPath(Constants.AdminApiPath.CONFIG_OPS_ADMIN_PATH + "/localCache").build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<String> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
         });
         return result.getData();
@@ -417,7 +405,7 @@ public class NacosConfigMaintainerServiceImpl implements ConfigMaintainerService
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.PUT)
                 .setPath(Constants.AdminApiPath.CONFIG_OPS_ADMIN_PATH + "/log").setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<String> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
         });
         return result.getData();
@@ -434,7 +422,7 @@ public class NacosConfigMaintainerServiceImpl implements ConfigMaintainerService
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CONFIG_LISTENER_ADMIN_PATH).setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<GroupkeyListenserStatus> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<GroupkeyListenserStatus>>() {
                 });
@@ -452,7 +440,7 @@ public class NacosConfigMaintainerServiceImpl implements ConfigMaintainerService
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CONFIG_METRICS_ADMIN_PATH + "/ip").setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<Map<String, Object>> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<Map<String, Object>>>() {
                 });
@@ -470,172 +458,9 @@ public class NacosConfigMaintainerServiceImpl implements ConfigMaintainerService
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CONFIG_METRICS_ADMIN_PATH + "/cluster").setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<Map<String, Object>> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<Map<String, Object>>>() {
-                });
-        return result.getData();
-    }
-    
-    @Override
-    public String raftOps(String command, String value, String groupId) throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("command", command);
-        params.put("value", value);
-        params.put("groupId", groupId);
-        
-        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
-                .setPath(Constants.AdminApiPath.CORE_OPS_ADMIN_PATH + "/raft").setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
-        });
-        return result.getData();
-    }
-    
-    @Override
-    public List<IdGeneratorVO> getIdsHealth() throws NacosException {
-        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.CORE_OPS_ADMIN_PATH + "/ids").build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<List<IdGeneratorVO>> result = JacksonUtils.toObj(httpRestResult.getData(),
-                new TypeReference<Result<List<IdGeneratorVO>>>() {
-                });
-        return result.getData();
-    }
-    
-    @Override
-    public void updateLogLevel(String logName, String logLevel) throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("logName", logName);
-        params.put("logLevel", logLevel);
-        
-        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.PUT)
-                .setPath(Constants.AdminApiPath.CORE_OPS_ADMIN_PATH + "/log").setParamValue(params).build();
-        clientHttpProxy.executeSyncHttpRequest(httpRequest);
-    }
-    
-    @Override
-    public Member getSelfNode() throws NacosException {
-        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.CORE_CLUSTER_ADMIN_PATH + "/node/self").build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Member> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Member>>() {
-        });
-        return result.getData();
-    }
-    
-    @Override
-    public Collection<Member> listClusterNodes(String address, String state) throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("address", address);
-        params.put("state", state);
-        
-        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.CORE_CLUSTER_ADMIN_PATH + "/node/list").setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Collection<Member>> result = JacksonUtils.toObj(httpRestResult.getData(),
-                new TypeReference<Result<Collection<Member>>>() {
-                });
-        return result.getData();
-    }
-    
-    @Override
-    public String getSelfNodeHealth() throws NacosException {
-        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.CORE_CLUSTER_ADMIN_PATH + "/node/self/health").build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
-        });
-        return result.getData();
-    }
-    
-    @Override
-    public Boolean updateClusterNodes(List<Member> nodes) throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("nodes", JacksonUtils.toJson(nodes));
-        
-        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.PUT)
-                .setPath(Constants.AdminApiPath.CORE_CLUSTER_ADMIN_PATH + "/node/list").setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
-        });
-        return result.getData();
-    }
-    
-    @Override
-    public Boolean updateLookupMode(String type) throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("type", type);
-        
-        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.PUT)
-                .setPath(Constants.AdminApiPath.CORE_CLUSTER_ADMIN_PATH + "/lookup").setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
-        });
-        return result.getData();
-    }
-    
-    @Override
-    public Map<String, Connection> getCurrentClients() throws NacosException {
-        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.CORE_LOADER_ADMIN_PATH + "/current").build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Map<String, Connection>> result = JacksonUtils.toObj(httpRestResult.getData(),
-                new TypeReference<Result<Map<String, Connection>>>() {
-                });
-        return result.getData();
-    }
-    
-    @Override
-    public String reloadConnectionCount(Integer count, String redirectAddress) throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("count", String.valueOf(count));
-        params.put("redirectAddress", redirectAddress);
-        
-        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.CORE_LOADER_ADMIN_PATH + "/reloadCurrent").setParamValue(params)
-                .build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
-        });
-        return result.getData();
-    }
-    
-    @Override
-    public String smartReloadCluster(String loaderFactorStr) throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("loaderFactorStr", loaderFactorStr);
-        
-        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.CORE_LOADER_ADMIN_PATH + "/smartReloadCluster").setParamValue(params)
-                .build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
-        });
-        return result.getData();
-    }
-    
-    @Override
-    public String reloadSingleClient(String connectionId, String redirectAddress) throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("connectionId", connectionId);
-        params.put("redirectAddress", redirectAddress);
-        
-        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.CORE_LOADER_ADMIN_PATH + "/reloadClient").setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<String> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
-        });
-        return result.getData();
-    }
-    
-    @Override
-    public ServerLoaderMetrics getClusterLoaderMetrics() throws NacosException {
-        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.CORE_LOADER_ADMIN_PATH + "/cluster").build();
-        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<ServerLoaderMetrics> result = JacksonUtils.toObj(httpRestResult.getData(),
-                new TypeReference<Result<ServerLoaderMetrics>>() {
                 });
         return result.getData();
     }
