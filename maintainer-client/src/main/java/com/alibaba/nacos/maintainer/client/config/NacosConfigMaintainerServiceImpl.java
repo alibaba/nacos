@@ -24,7 +24,6 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.core.AbstractCoreMaintainerService;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
-import com.alibaba.nacos.maintainer.client.model.config.Capacity;
 import com.alibaba.nacos.maintainer.client.model.config.ConfigAdvanceInfo;
 import com.alibaba.nacos.maintainer.client.model.config.ConfigAllInfo;
 import com.alibaba.nacos.maintainer.client.model.config.ConfigHistoryInfo;
@@ -351,39 +350,6 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Result<List<ConfigInfoWrapper>> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<List<ConfigInfoWrapper>>>() {
                 });
-        return result.getData();
-    }
-    
-    @Override
-    public Capacity getCapacityWithDefault(String groupName, String namespaceId) throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("groupName", groupName);
-        params.put("namespaceId", namespaceId);
-        
-        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.CONFIG_CAPACITY_ADMIN_PATH).setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        Result<Capacity> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Capacity>>() {
-        });
-        return result.getData();
-    }
-    
-    @Override
-    public boolean insertOrUpdateCapacity(String groupName, String namespaceId, Integer quota, Integer maxSize,
-            Integer maxAggrCount, Integer maxAggrSize) throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("groupName", groupName);
-        params.put("namespaceId", namespaceId);
-        params.put("quota", String.valueOf(quota));
-        params.put("maxSize", String.valueOf(maxSize));
-        params.put("maxAggrCount", String.valueOf(maxAggrCount));
-        params.put("maxAggrSize", String.valueOf(maxAggrSize));
-        
-        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
-                .setPath(Constants.AdminApiPath.CONFIG_CAPACITY_ADMIN_PATH).setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
-        });
         return result.getData();
     }
     

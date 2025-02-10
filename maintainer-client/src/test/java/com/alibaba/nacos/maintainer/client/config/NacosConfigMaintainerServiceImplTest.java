@@ -21,7 +21,6 @@ import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.maintainer.client.core.AbstractCoreMaintainerService;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
-import com.alibaba.nacos.maintainer.client.model.config.Capacity;
 import com.alibaba.nacos.maintainer.client.model.config.ConfigAdvanceInfo;
 import com.alibaba.nacos.maintainer.client.model.config.ConfigAllInfo;
 import com.alibaba.nacos.maintainer.client.model.config.ConfigHistoryInfo;
@@ -392,50 +391,6 @@ class NacosConfigMaintainerServiceImplTest {
         
         // Assert
         assertNotNull(result);
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
-    }
-    
-    @Test
-    void testGetCapacityWithDefault() throws Exception {
-        // Arrange
-        String groupName = "testGroup";
-        String namespaceId = "testNamespace";
-        
-        Capacity expectedCapacity = new Capacity();
-        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedCapacity)));
-        
-        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-        
-        // Act
-        Capacity result = nacosConfigMaintainerServiceImpl.getCapacityWithDefault(groupName, namespaceId);
-        
-        // Assert
-        assertNotNull(result);
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
-    }
-    
-    @Test
-    void testInsertOrUpdateCapacity() throws Exception {
-        // Arrange
-        String groupName = "testGroup";
-        String namespaceId = "testNamespace";
-        Integer quota = 100;
-        Integer maxSize = 200;
-        Integer maxAggrCount = 300;
-        Integer maxAggrSize = 400;
-        
-        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(true)));
-        
-        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-        
-        // Act
-        boolean result = nacosConfigMaintainerServiceImpl.insertOrUpdateCapacity(groupName, namespaceId, quota, maxSize,
-                maxAggrCount, maxAggrSize);
-        
-        // Assert
-        assertTrue(result);
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
     }
     

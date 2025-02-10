@@ -18,7 +18,6 @@ package com.alibaba.nacos.maintainer.client.config;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.maintainer.client.core.CoreMaintainerService;
-import com.alibaba.nacos.maintainer.client.model.config.Capacity;
 import com.alibaba.nacos.maintainer.client.model.config.ConfigAdvanceInfo;
 import com.alibaba.nacos.maintainer.client.model.config.ConfigAllInfo;
 import com.alibaba.nacos.maintainer.client.model.config.ConfigHistoryInfo;
@@ -312,31 +311,6 @@ public interface ConfigMaintainerService extends CoreMaintainerService {
      * @throws NacosException If the namespace is invalid or the query fails.
      */
     List<ConfigInfoWrapper> getConfigListByNamespace(String namespaceId) throws NacosException;
-    
-    /**
-     * Get capacity information for a specific group or namespace.
-     *
-     * @param groupName   Group name (optional).
-     * @param namespaceId Namespace ID (optional).
-     * @return Capacity information.
-     * @throws NacosException If the query fails or parameters are invalid.
-     */
-    Capacity getCapacityWithDefault(String groupName, String namespaceId) throws NacosException;
-    
-    /**
-     * Insert or update capacity information.
-     *
-     * @param groupName    Group name (required).
-     * @param namespaceId  Namespace ID (required).
-     * @param quota        Quota value (required).
-     * @param maxSize      Maximum size (required).
-     * @param maxAggrCount Maximum aggregation count (required).
-     * @param maxAggrSize  Maximum aggregation size (required).
-     * @return Whether the operation was successful.
-     * @throws NacosException If the operation fails.
-     */
-    boolean insertOrUpdateCapacity(String groupName, String namespaceId, Integer quota, Integer maxSize,
-            Integer maxAggrCount, Integer maxAggrSize) throws NacosException;
     
     /**
      * Manually trigger dump of local configuration files from the store.
