@@ -18,6 +18,7 @@ package com.alibaba.nacos.maintainer.client.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.response.IdGeneratorInfo;
+import com.alibaba.nacos.api.model.response.NacosMember;
 import com.alibaba.nacos.api.model.response.ServerLoaderMetrics;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.http.HttpRestResult;
@@ -26,7 +27,6 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
 import com.alibaba.nacos.maintainer.client.model.core.Connection;
-import com.alibaba.nacos.maintainer.client.model.core.Member;
 import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
 import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -89,7 +89,7 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
     }
     
     @Override
-    public Collection<Member> listClusterNodes(String address, String state) throws NacosException {
+    public Collection<NacosMember> listClusterNodes(String address, String state) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("address", address);
         params.put("state", state);
@@ -97,8 +97,8 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CORE_CLUSTER_ADMIN_PATH + "/node/list").setParamValue(params).build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Collection<Member>> result = JacksonUtils.toObj(httpRestResult.getData(),
-                new TypeReference<Result<Collection<Member>>>() {
+        Result<Collection<NacosMember>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Collection<NacosMember>>>() {
                 });
         return result.getData();
     }

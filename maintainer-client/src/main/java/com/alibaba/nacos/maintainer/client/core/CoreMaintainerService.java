@@ -18,9 +18,9 @@ package com.alibaba.nacos.maintainer.client.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.response.IdGeneratorInfo;
+import com.alibaba.nacos.api.model.response.NacosMember;
 import com.alibaba.nacos.api.model.response.ServerLoaderMetrics;
 import com.alibaba.nacos.maintainer.client.model.core.Connection;
-import com.alibaba.nacos.maintainer.client.model.core.Member;
 
 import java.util.Collection;
 import java.util.List;
@@ -69,7 +69,7 @@ public interface CoreMaintainerService {
      * @return a collection of matching nodes.
      * @throws NacosException if an error occurs during the operation.
      */
-    Collection<Member> listClusterNodes(String address, String state) throws NacosException;
+    Collection<NacosMember> listClusterNodes(String address, String state) throws NacosException;
     
     /**
      * Update the lookup mode for the cluster.
