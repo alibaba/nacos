@@ -26,7 +26,7 @@ import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
-import com.alibaba.nacos.maintainer.client.model.core.Connection;
+import com.alibaba.nacos.api.model.response.ConnectionInfo;
 import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
 import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -117,12 +117,12 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
     }
     
     @Override
-    public Map<String, Connection> getCurrentClients() throws NacosException {
+    public Map<String, ConnectionInfo> getCurrentClients() throws NacosException {
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CORE_LOADER_ADMIN_PATH + "/current").build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Map<String, Connection>> result = JacksonUtils.toObj(httpRestResult.getData(),
-                new TypeReference<Result<Map<String, Connection>>>() {
+        Result<Map<String, ConnectionInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Map<String, ConnectionInfo>>>() {
                 });
         return result.getData();
     }

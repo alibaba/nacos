@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.response.IdGeneratorInfo;
 import com.alibaba.nacos.api.model.response.NacosMember;
 import com.alibaba.nacos.api.model.response.ServerLoaderMetrics;
-import com.alibaba.nacos.maintainer.client.model.core.Connection;
+import com.alibaba.nacos.api.model.response.ConnectionInfo;
 
 import java.util.Collection;
 import java.util.List;
@@ -86,7 +86,7 @@ public interface CoreMaintainerService {
      * @return a map of current client connections.
      * @throws NacosException if the operation fails.
      */
-    Map<String, Connection> getCurrentClients() throws NacosException;
+    Map<String, ConnectionInfo> getCurrentClients() throws NacosException;
     
     /**
      * Reload the number of SDK connections on the current server.

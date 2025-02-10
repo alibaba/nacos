@@ -151,7 +151,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
             ConnectionMeta metaInfo = new ConnectionMeta(connectionId, payload.getMetadata().getClientIp(),
                     remoteIp, remotePort, localPort, ConnectionType.GRPC.getType(),
                     setUpRequest.getClientVersion(), appName, setUpRequest.getLabels());
-            metaInfo.setTenant(setUpRequest.getTenant());
+            metaInfo.setNamespaceId(setUpRequest.getTenant());
             GrpcConnection connection = new GrpcConnection(metaInfo, responseObserver,
                     GrpcServerConstants.CONTEXT_KEY_CHANNEL.get());
             // null if supported

@@ -21,7 +21,7 @@ import com.alibaba.nacos.api.model.response.NacosMember;
 import com.alibaba.nacos.api.model.response.ServerLoaderMetrics;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.http.HttpRestResult;
-import com.alibaba.nacos.maintainer.client.model.core.Connection;
+import com.alibaba.nacos.api.model.response.ConnectionInfo;
 import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -155,14 +155,14 @@ class AbstractCoreMaintainerServiceTest {
     @Test
     void testGetCurrentClients() throws Exception {
         // Arrange
-        Map<String, Connection> expectedMap = new HashMap<>();
+        Map<String, ConnectionInfo> expectedMap = new HashMap<>();
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedMap)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        Map<String, Connection> result = coreMaintainerService.getCurrentClients();
+        Map<String, ConnectionInfo> result = coreMaintainerService.getCurrentClients();
         
         // Assert
         assertNotNull(result);
