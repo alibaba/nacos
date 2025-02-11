@@ -16,13 +16,12 @@
 
 package com.alibaba.nacos.maintainer.client.config;
 
+import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
+import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
+import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.maintainer.client.core.CoreMaintainerService;
-import com.alibaba.nacos.maintainer.client.model.config.ConfigAdvanceInfo;
-import com.alibaba.nacos.maintainer.client.model.config.ConfigAllInfo;
 import com.alibaba.nacos.maintainer.client.model.config.ConfigHistoryInfo;
-import com.alibaba.nacos.maintainer.client.model.config.ConfigInfo;
-import com.alibaba.nacos.maintainer.client.model.config.ConfigInfo4Beta;
 import com.alibaba.nacos.maintainer.client.model.config.ConfigInfoWrapper;
 import com.alibaba.nacos.maintainer.client.model.config.GroupkeyListenserStatus;
 import com.alibaba.nacos.maintainer.client.model.config.Page;
@@ -47,7 +46,7 @@ public interface ConfigMaintainerService extends CoreMaintainerService {
      * @return Configuration information.
      * @throws NacosException If the query fails.
      */
-    ConfigAllInfo getConfig(String dataId, String groupName) throws NacosException;
+    ConfigDetailInfo getConfig(String dataId, String groupName) throws NacosException;
     
     /**
      * Get configuration information by dataId, groupName, and namespaceId.
@@ -58,7 +57,7 @@ public interface ConfigMaintainerService extends CoreMaintainerService {
      * @return Configuration information.
      * @throws NacosException If the query fails.
      */
-    ConfigAllInfo getConfig(String dataId, String groupName, String namespaceId) throws NacosException;
+    ConfigDetailInfo getConfig(String dataId, String groupName, String namespaceId) throws NacosException;
     
     /**
      * Publish a configuration by dataId and groupName.
@@ -149,27 +148,6 @@ public interface ConfigMaintainerService extends CoreMaintainerService {
     boolean deleteConfigs(List<Long> ids) throws NacosException;
     
     /**
-     * Get the advanced information of a configuration by dataId and groupName.
-     *
-     * @param dataId    Configuration data ID (required).
-     * @param groupName Configuration group name (required).
-     * @return Advanced information of the configuration.
-     * @throws NacosException If retrieval fails.
-     */
-    ConfigAdvanceInfo getConfigAdvanceInfo(String dataId, String groupName) throws NacosException;
-    
-    /**
-     * Get the advanced information of a configuration by dataId, groupName, and namespaceId.
-     *
-     * @param dataId      Configuration data ID (required).
-     * @param groupName   Configuration group name (required).
-     * @param namespaceId Namespace ID (optional, defaults to "public").
-     * @return Advanced information of the configuration.
-     * @throws NacosException If retrieval fails.
-     */
-    ConfigAdvanceInfo getConfigAdvanceInfo(String dataId, String groupName, String namespaceId) throws NacosException;
-    
-    /**
      * Get the listeners of a configuration by dataId and groupName.
      *
      * @param dataId    Configuration data ID (required).
@@ -205,7 +183,7 @@ public interface ConfigMaintainerService extends CoreMaintainerService {
      * @return A paginated list of configurations matching the search criteria.
      * @throws NacosException If the search fails.
      */
-    Page<ConfigInfo> searchConfigByDetails(String dataId, String groupName, String namespaceId, String configDetail,
+    Page<ConfigBasicInfo> searchConfigByDetails(String dataId, String groupName, String namespaceId, String configDetail,
             String search, int pageNo, int pageSize) throws NacosException;
     
     /**
@@ -237,7 +215,7 @@ public interface ConfigMaintainerService extends CoreMaintainerService {
      * @return Beta configuration information.
      * @throws NacosException If the query fails.
      */
-    ConfigInfo4Beta queryBeta(String dataId, String groupName) throws NacosException;
+    ConfigGrayInfo queryBeta(String dataId, String groupName) throws NacosException;
     
     /**
      * Query beta configuration by dataId, groupName, and namespaceId.
@@ -248,7 +226,7 @@ public interface ConfigMaintainerService extends CoreMaintainerService {
      * @return Beta configuration information.
      * @throws NacosException If the query fails.
      */
-    ConfigInfo4Beta queryBeta(String dataId, String groupName, String namespaceId) throws NacosException;
+    ConfigGrayInfo queryBeta(String dataId, String groupName, String namespaceId) throws NacosException;
     
     /**
      * Clone configurations within the same namespace.

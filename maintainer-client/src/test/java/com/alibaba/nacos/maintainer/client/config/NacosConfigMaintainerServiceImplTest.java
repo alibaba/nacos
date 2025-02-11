@@ -16,16 +16,15 @@
 
 package com.alibaba.nacos.maintainer.client.config;
 
+import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
+import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
+import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.maintainer.client.core.AbstractCoreMaintainerService;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
-import com.alibaba.nacos.maintainer.client.model.config.ConfigAdvanceInfo;
-import com.alibaba.nacos.maintainer.client.model.config.ConfigAllInfo;
 import com.alibaba.nacos.maintainer.client.model.config.ConfigHistoryInfo;
-import com.alibaba.nacos.maintainer.client.model.config.ConfigInfo;
-import com.alibaba.nacos.maintainer.client.model.config.ConfigInfo4Beta;
 import com.alibaba.nacos.maintainer.client.model.config.ConfigInfoWrapper;
 import com.alibaba.nacos.maintainer.client.model.config.GroupkeyListenserStatus;
 import com.alibaba.nacos.maintainer.client.model.config.Page;
@@ -79,10 +78,10 @@ class NacosConfigMaintainerServiceImplTest {
         String dataId = "testDataId";
         String groupName = "testGroup";
         String namespaceId = "testNamespace";
-        ConfigAllInfo expectedConfig = new ConfigAllInfo();
+        ConfigDetailInfo expectedConfig = new ConfigDetailInfo();
         expectedConfig.setDataId(dataId);
-        expectedConfig.setGroup(groupName);
-        expectedConfig.setTenant(namespaceId);
+        expectedConfig.setGroupName(groupName);
+        expectedConfig.setNamespaceId(namespaceId);
         
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(JacksonUtils.toJson(new Result<>(expectedConfig)));
@@ -90,13 +89,13 @@ class NacosConfigMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockHttpRestResult);
         
         // Act
-        ConfigAllInfo result = nacosConfigMaintainerServiceImpl.getConfig(dataId, groupName, namespaceId);
+        ConfigDetailInfo result = nacosConfigMaintainerServiceImpl.getConfig(dataId, groupName, namespaceId);
         
         // Assert
         assertNotNull(result);
         assertEquals(dataId, result.getDataId());
-        assertEquals(groupName, result.getGroup());
-        assertEquals(namespaceId, result.getTenant());
+        assertEquals(groupName, result.getGroupName());
+        assertEquals(namespaceId, result.getNamespaceId());
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any(HttpRequest.class));
     }
     
@@ -142,34 +141,6 @@ class NacosConfigMaintainerServiceImplTest {
     }
     
     @Test
-    void testGetConfigAdvanceInfo() throws Exception {
-        // Arrange
-        final String dataId = "testId";
-        final String groupName = "testGroupName";
-        final String namespaceId = "testNamespace";
-        String createUser = "testCreateUser";
-        String createIp = "testCreateIp";
-        ConfigAdvanceInfo expectedAdvanceInfo = new ConfigAdvanceInfo();
-        expectedAdvanceInfo.setCreateUser(createUser);
-        expectedAdvanceInfo.setCreateIp(createIp);
-        
-        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(JacksonUtils.toJson(new Result<>(expectedAdvanceInfo)));
-        
-        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockHttpRestResult);
-        
-        // Act
-        ConfigAdvanceInfo result = nacosConfigMaintainerServiceImpl.getConfigAdvanceInfo(dataId, groupName,
-                namespaceId);
-        
-        // Assert
-        assertNotNull(result);
-        assertEquals(createUser, result.getCreateUser());
-        assertEquals(createIp, result.getCreateIp());
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any(HttpRequest.class));
-    }
-    
-    @Test
     void testSearchConfigByDetails() throws Exception {
         // Arrange
         final String dataId = "testDataId";
@@ -180,7 +151,7 @@ class NacosConfigMaintainerServiceImplTest {
         int pageNo = 1;
         int pageSize = 10;
         
-        Page<ConfigInfo> expectedPage = new Page<>();
+        Page<ConfigBasicInfo> expectedPage = new Page<>();
         expectedPage.setPageNumber(pageNo);
         expectedPage.setPagesAvailable(pageSize);
         
@@ -190,8 +161,8 @@ class NacosConfigMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockHttpRestResult);
         
         // Act
-        Page<ConfigInfo> result = nacosConfigMaintainerServiceImpl.searchConfigByDetails(dataId, groupName, namespaceId,
-                configDetail, search, pageNo, pageSize);
+        Page<ConfigBasicInfo> result = nacosConfigMaintainerServiceImpl.searchConfigByDetails(dataId, groupName,
+                namespaceId, configDetail, search, pageNo, pageSize);
         
         // Assert
         assertNotNull(result);
@@ -256,9 +227,9 @@ class NacosConfigMaintainerServiceImplTest {
         final String groupName = "testGroup";
         final String namespaceId = "testNamespace";
         
-        ConfigInfo4Beta expectedConfig = new ConfigInfo4Beta();
+        ConfigGrayInfo expectedConfig = new ConfigGrayInfo();
         expectedConfig.setDataId(dataId);
-        expectedConfig.setGroup(groupName);
+        expectedConfig.setGroupName(groupName);
         
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(JacksonUtils.toJson(new Result<>(expectedConfig)));
@@ -266,12 +237,12 @@ class NacosConfigMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockHttpRestResult);
         
         // Act
-        ConfigInfo4Beta result = nacosConfigMaintainerServiceImpl.queryBeta(dataId, groupName, namespaceId);
+        ConfigGrayInfo result = nacosConfigMaintainerServiceImpl.queryBeta(dataId, groupName, namespaceId);
         
         // Assert
         assertNotNull(result);
         assertEquals(dataId, result.getDataId());
-        assertEquals(groupName, result.getGroup());
+        assertEquals(groupName, result.getGroupName());
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any(HttpRequest.class));
     }
     

@@ -16,6 +16,13 @@
 
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
+import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
+import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
+import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.model.ConfigAllInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletResponse;
 
@@ -37,5 +44,100 @@ class ResponseUtilTest {
         } catch (UnsupportedEncodingException e) {
             System.out.println(e.toString());
         }
+    }
+    
+    @Test
+    void testTransferToConfigDetailInfo() {
+        ConfigAllInfo configAllInfo = new ConfigAllInfo();
+        configAllInfo.setId(1L);
+        configAllInfo.setTenant("testNs");
+        configAllInfo.setGroup(Constants.DEFAULT_GROUP);
+        configAllInfo.setDataId("testDs");
+        configAllInfo.setMd5("testMd5");
+        configAllInfo.setEncryptedDataKey("testEncryptedDataKey");
+        configAllInfo.setContent("testContent");
+        configAllInfo.setDesc("testDesc");
+        configAllInfo.setType("text");
+        configAllInfo.setAppName("testAppName");
+        configAllInfo.setCreateIp("1.1.1.1");
+        configAllInfo.setCreateUser("testCreateUser");
+        configAllInfo.setCreateTime(System.currentTimeMillis());
+        configAllInfo.setModifyTime(System.currentTimeMillis());
+        configAllInfo.setConfigTags("testConfigTag1,testConfigTag2");
+        configAllInfo.setUse("testUse");
+        configAllInfo.setEffect("testEffect");
+        configAllInfo.setSchema("testSchema");
+        ConfigDetailInfo configDetailInfo = ResponseUtil.transferToConfigDetailInfo(configAllInfo);
+        assertEquals(String.valueOf(configAllInfo.getId()), configDetailInfo.getId());
+        assertEquals(configAllInfo.getTenant(), configDetailInfo.getNamespaceId());
+        assertEquals(configAllInfo.getGroup(), configDetailInfo.getGroupName());
+        assertEquals(configAllInfo.getDataId(), configDetailInfo.getDataId());
+        assertEquals(configAllInfo.getMd5(), configDetailInfo.getMd5());
+        assertEquals(configAllInfo.getEncryptedDataKey(), configDetailInfo.getEncryptedDataKey());
+        assertEquals(configAllInfo.getContent(), configDetailInfo.getContent());
+        assertEquals(configAllInfo.getDesc(), configDetailInfo.getDesc());
+        assertEquals(configAllInfo.getType(), configDetailInfo.getType());
+        assertEquals(configAllInfo.getAppName(), configDetailInfo.getAppName());
+        assertEquals(configAllInfo.getCreateIp(), configDetailInfo.getCreateIp());
+        assertEquals(configAllInfo.getCreateUser(), configDetailInfo.getCreateUser());
+        assertEquals(configAllInfo.getCreateTime(), configDetailInfo.getCreateTime());
+        assertEquals(configAllInfo.getModifyTime(), configDetailInfo.getModifyTime());
+        assertEquals(configAllInfo.getConfigTags(), configDetailInfo.getConfigTags());
+    }
+    
+    @Test
+    void testTransferToConfigBasicInfo() {
+        ConfigInfo configInfo = new ConfigInfo();
+        configInfo.setId(1L);
+        configInfo.setTenant("testNs");
+        configInfo.setGroup(Constants.DEFAULT_GROUP);
+        configInfo.setDataId("testDs");
+        configInfo.setMd5("testMd5");
+        configInfo.setEncryptedDataKey("testEncryptedDataKey");
+        configInfo.setContent("testContent");
+        configInfo.setType("text");
+        configInfo.setAppName("testAppName");
+        ConfigBasicInfo configBasicInfo = ResponseUtil.transferToConfigBasicInfo(configInfo);
+        assertEquals(String.valueOf(configInfo.getId()), configBasicInfo.getId());
+        assertEquals(configInfo.getTenant(), configBasicInfo.getNamespaceId());
+        assertEquals(configInfo.getGroup(), configBasicInfo.getGroupName());
+        assertEquals(configInfo.getDataId(), configBasicInfo.getDataId());
+        assertEquals(configInfo.getMd5(), configBasicInfo.getMd5());
+        assertEquals(configInfo.getType(), configBasicInfo.getType());
+        assertEquals(configInfo.getAppName(), configBasicInfo.getAppName());
+        assertEquals(0L, configBasicInfo.getCreateTime());
+        assertEquals(0L, configBasicInfo.getModifyTime());
+    }
+    
+    @Test
+    void testTransferToConfigGrayInfo() {
+        ConfigInfoGrayWrapper configInfoGray = new ConfigInfoGrayWrapper();
+        configInfoGray.setId(1L);
+        configInfoGray.setTenant("testNs");
+        configInfoGray.setGroup(Constants.DEFAULT_GROUP);
+        configInfoGray.setDataId("testDs");
+        configInfoGray.setMd5("testMd5");
+        configInfoGray.setEncryptedDataKey("testEncryptedDataKey");
+        configInfoGray.setContent("testContent");
+        configInfoGray.setType("text");
+        configInfoGray.setAppName("testAppName");
+        configInfoGray.setGrayName("testGrayName");
+        configInfoGray.setGrayRule("testGrayRule");
+        configInfoGray.setSrcUser("testSrcUser");
+        configInfoGray.setLastModified(System.currentTimeMillis());
+        ConfigGrayInfo configGrayInfo = ResponseUtil.transferToConfigGrayInfo(configInfoGray);
+        assertEquals(String.valueOf(configInfoGray.getId()), configGrayInfo.getId());
+        assertEquals(configInfoGray.getTenant(), configGrayInfo.getNamespaceId());
+        assertEquals(configInfoGray.getGroup(), configGrayInfo.getGroupName());
+        assertEquals(configInfoGray.getDataId(), configGrayInfo.getDataId());
+        assertEquals(configInfoGray.getMd5(), configGrayInfo.getMd5());
+        assertEquals(configInfoGray.getType(), configGrayInfo.getType());
+        assertEquals(configInfoGray.getEncryptedDataKey(), configGrayInfo.getEncryptedDataKey());
+        assertEquals(configInfoGray.getAppName(), configGrayInfo.getAppName());
+        assertEquals(0, configGrayInfo.getCreateTime());
+        assertEquals(configInfoGray.getLastModified(), configGrayInfo.getModifyTime());
+        assertEquals(configInfoGray.getSrcUser(), configGrayInfo.getCreateUser());
+        assertEquals(configInfoGray.getGrayName(), configGrayInfo.getGrayName());
+        assertEquals(configInfoGray.getGrayRule(), configGrayInfo.getGrayRule());
     }
 }

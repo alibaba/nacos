@@ -16,13 +16,21 @@
 
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
+import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
+import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
+import com.alibaba.nacos.config.server.model.ConfigAllInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.BeanUtils;
+
 import java.io.IOException;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 
 /**
- * Write response.
+ * Response Utils.
  *
  * @author Nacos
  */
@@ -38,5 +46,52 @@ public class ResponseUtil {
         } catch (IOException e) {
             DEFAULT_LOG.error("ResponseUtil:writeErrMsg wrong", e);
         }
+    }
+    
+    /**
+     * Transfer from {@link ConfigAllInfo} to {@link ConfigDetailInfo} for APIs.
+     *
+     * @param configAllInfo {@link ConfigAllInfo} config all information from storage.
+     * @return {@link ConfigDetailInfo} for APIs response.
+     */
+    public static ConfigDetailInfo transferToConfigDetailInfo(ConfigAllInfo configAllInfo) {
+        ConfigDetailInfo result = new ConfigDetailInfo();
+        BeanUtils.copyProperties(configAllInfo, result);
+        result.setNamespaceId(configAllInfo.getTenant());
+        result.setGroupName(configAllInfo.getGroup());
+        result.setId(String.valueOf(configAllInfo.getId()));
+        return result;
+    }
+    
+    /**
+     * Transfer from {@link ConfigInfo} to {@link ConfigBasicInfo} for APIs.
+     *
+     * @param configInfo {@link ConfigInfo} config basic information from storage.
+     * @return {@link ConfigBasicInfo} for APIs response.
+     */
+    public static ConfigBasicInfo transferToConfigBasicInfo(ConfigInfo configInfo) {
+        ConfigBasicInfo result = new ConfigBasicInfo();
+        BeanUtils.copyProperties(configInfo, result);
+        result.setNamespaceId(configInfo.getTenant());
+        result.setGroupName(configInfo.getGroup());
+        result.setId(String.valueOf(configInfo.getId()));
+        return result;
+    }
+    
+    /**
+     * Transfer from {@link ConfigInfoGrayWrapper} to {@link ConfigGrayInfo} for APIs.
+     *
+     * @param configInfoGray {@link ConfigInfoGrayWrapper} config gray information from storage.
+     * @return {@link ConfigGrayInfo} for APIs response.
+     */
+    public static ConfigGrayInfo transferToConfigGrayInfo(ConfigInfoGrayWrapper configInfoGray) {
+        ConfigGrayInfo result = new ConfigGrayInfo();
+        BeanUtils.copyProperties(configInfoGray, result);
+        result.setNamespaceId(configInfoGray.getTenant());
+        result.setGroupName(configInfoGray.getGroup());
+        result.setId(String.valueOf(configInfoGray.getId()));
+        result.setCreateUser(configInfoGray.getSrcUser());
+        result.setModifyTime(configInfoGray.getLastModified());
+        return result;
     }
 }
