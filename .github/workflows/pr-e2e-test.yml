@@ -541,7 +541,7 @@ jobs:
             let matchArtifactPR = artifacts.data.artifacts.filter((artifact) => {
                return artifact.name == "pr"
             })[0];
-            let download = await github.rest.actions.listWorkflowRunArtifacts({
+            let download = await github.rest.actions.downloadArtifact({
                owner: context.repo.owner,
                repo: context.repo.repo,
                artifact_id: matchArtifactPR.id,
