@@ -529,7 +529,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: 'Download artifact'
-        uses: actions/github-script@6
+        uses: actions/github-script@v6
         with:
           script: |
             let artifacts = await github.rest.actions.listWorkflowRunArtifacts({
