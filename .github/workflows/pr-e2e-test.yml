@@ -157,7 +157,7 @@ jobs:
                 branch: main
               repoType: git
               retries: 3
-              url: https://ghproxy.com/https://github.com/nacos-group/nacos-e2e.git
+              url: https://github.com/nacos-group/nacos-e2e.git
               values:
                 namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
                 global:
