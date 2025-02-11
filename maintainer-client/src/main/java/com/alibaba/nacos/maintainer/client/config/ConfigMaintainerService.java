@@ -19,10 +19,10 @@ package com.alibaba.nacos.maintainer.client.config;
 import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
 import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
+import com.alibaba.nacos.api.config.model.ConfigHistoryBasicInfo;
+import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.maintainer.client.core.CoreMaintainerService;
-import com.alibaba.nacos.maintainer.client.model.config.ConfigHistoryInfo;
-import com.alibaba.nacos.maintainer.client.model.config.ConfigInfoWrapper;
 import com.alibaba.nacos.maintainer.client.model.config.GroupkeyListenserStatus;
 import com.alibaba.nacos.maintainer.client.model.config.Page;
 import com.alibaba.nacos.maintainer.client.model.config.SameConfigPolicy;
@@ -183,8 +183,8 @@ public interface ConfigMaintainerService extends CoreMaintainerService {
      * @return A paginated list of configurations matching the search criteria.
      * @throws NacosException If the search fails.
      */
-    Page<ConfigBasicInfo> searchConfigByDetails(String dataId, String groupName, String namespaceId, String configDetail,
-            String search, int pageNo, int pageSize) throws NacosException;
+    Page<ConfigBasicInfo> searchConfigByDetails(String dataId, String groupName, String namespaceId,
+            String configDetail, String search, int pageNo, int pageSize) throws NacosException;
     
     /**
      * Stop a beta configuration by dataId and groupName.
@@ -252,7 +252,7 @@ public interface ConfigMaintainerService extends CoreMaintainerService {
      * @return A paginated list of configuration history.
      * @throws NacosException If the query fails.
      */
-    Page<ConfigHistoryInfo> listConfigHistory(String dataId, String groupName, String namespaceId, int pageNo,
+    Page<ConfigHistoryBasicInfo> listConfigHistory(String dataId, String groupName, String namespaceId, int pageNo,
             int pageSize) throws NacosException;
     
     /**
@@ -265,7 +265,7 @@ public interface ConfigMaintainerService extends CoreMaintainerService {
      * @return Detailed configuration history information.
      * @throws NacosException If the history record does not exist or the query fails.
      */
-    ConfigHistoryInfo getConfigHistoryInfo(String dataId, String groupName, String namespaceId, Long nid)
+    ConfigHistoryDetailInfo getConfigHistoryInfo(String dataId, String groupName, String namespaceId, Long nid)
             throws NacosException;
     
     /**
@@ -278,7 +278,7 @@ public interface ConfigMaintainerService extends CoreMaintainerService {
      * @return Previous configuration history information.
      * @throws NacosException If the previous history record does not exist or the query fails.
      */
-    ConfigHistoryInfo getPreviousConfigHistoryInfo(String dataId, String groupName, String namespaceId, Long id)
+    ConfigHistoryDetailInfo getPreviousConfigHistoryInfo(String dataId, String groupName, String namespaceId, Long id)
             throws NacosException;
     
     /**
@@ -288,7 +288,7 @@ public interface ConfigMaintainerService extends CoreMaintainerService {
      * @return A list of configurations in the specified namespace.
      * @throws NacosException If the namespace is invalid or the query fails.
      */
-    List<ConfigInfoWrapper> getConfigListByNamespace(String namespaceId) throws NacosException;
+    List<ConfigBasicInfo> getConfigListByNamespace(String namespaceId) throws NacosException;
     
     /**
      * Manually trigger dump of local configuration files from the store.
@@ -319,31 +319,5 @@ public interface ConfigMaintainerService extends CoreMaintainerService {
      * @throws NacosException if the operation fails.
      */
     GroupkeyListenserStatus getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime)
-            throws NacosException;
-    
-    /**
-     * Get client metrics for a specific IP.
-     *
-     * @param ip          Client IP address (required).
-     * @param dataId      Configuration data ID (optional).
-     * @param groupName   Configuration group name (optional).
-     * @param namespaceId Namespace ID (optional).
-     * @return a map containing the client metrics.
-     * @throws NacosException if the operation fails.
-     */
-    Map<String, Object> getClientMetrics(String ip, String dataId, String groupName, String namespaceId)
-            throws NacosException;
-    
-    /**
-     * Get cluster-wide metrics for a specific IP.
-     *
-     * @param ip          Client IP address (required).
-     * @param dataId      Configuration data ID (optional).
-     * @param groupName   Configuration group name (optional).
-     * @param namespaceId Namespace ID (optional).
-     * @return a map containing the cluster-wide metrics.
-     * @throws NacosException if the operation fails.
-     */
-    Map<String, Object> getClusterMetrics(String ip, String dataId, String groupName, String namespaceId)
             throws NacosException;
 }

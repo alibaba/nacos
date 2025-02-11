@@ -19,6 +19,8 @@ package com.alibaba.nacos.maintainer.client.config;
 import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
 import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
+import com.alibaba.nacos.api.config.model.ConfigHistoryBasicInfo;
+import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.http.HttpRestResult;
@@ -27,8 +29,6 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.core.AbstractCoreMaintainerService;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
-import com.alibaba.nacos.maintainer.client.model.config.ConfigHistoryInfo;
-import com.alibaba.nacos.maintainer.client.model.config.ConfigInfoWrapper;
 import com.alibaba.nacos.maintainer.client.model.config.GroupkeyListenserStatus;
 import com.alibaba.nacos.maintainer.client.model.config.Page;
 import com.alibaba.nacos.maintainer.client.model.config.SameConfigPolicy;
@@ -262,8 +262,8 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public Page<ConfigHistoryInfo> listConfigHistory(String dataId, String groupName, String namespaceId, int pageNo,
-            int pageSize) throws NacosException {
+    public Page<ConfigHistoryBasicInfo> listConfigHistory(String dataId, String groupName, String namespaceId,
+            int pageNo, int pageSize) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("dataId", dataId);
         params.put("groupName", groupName);
@@ -274,14 +274,14 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CONFIG_HISTORY_ADMIN_PATH + "/list").setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        Result<Page<ConfigHistoryInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
-                new TypeReference<Result<Page<ConfigHistoryInfo>>>() {
+        Result<Page<ConfigHistoryBasicInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Page<ConfigHistoryBasicInfo>>>() {
                 });
         return result.getData();
     }
     
     @Override
-    public ConfigHistoryInfo getConfigHistoryInfo(String dataId, String groupName, String namespaceId, Long nid)
+    public ConfigHistoryDetailInfo getConfigHistoryInfo(String dataId, String groupName, String namespaceId, Long nid)
             throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("dataId", dataId);
@@ -292,15 +292,15 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CONFIG_HISTORY_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        Result<ConfigHistoryInfo> result = JacksonUtils.toObj(httpRestResult.getData(),
-                new TypeReference<Result<ConfigHistoryInfo>>() {
+        Result<ConfigHistoryDetailInfo> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<ConfigHistoryDetailInfo>>() {
                 });
         return result.getData();
     }
     
     @Override
-    public ConfigHistoryInfo getPreviousConfigHistoryInfo(String dataId, String groupName, String namespaceId, Long id)
-            throws NacosException {
+    public ConfigHistoryDetailInfo getPreviousConfigHistoryInfo(String dataId, String groupName, String namespaceId,
+            Long id) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("dataId", dataId);
         params.put("groupName", groupName);
@@ -310,22 +310,22 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CONFIG_HISTORY_ADMIN_PATH + "/previous").setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        Result<ConfigHistoryInfo> result = JacksonUtils.toObj(httpRestResult.getData(),
-                new TypeReference<Result<ConfigHistoryInfo>>() {
+        Result<ConfigHistoryDetailInfo> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<ConfigHistoryDetailInfo>>() {
                 });
         return result.getData();
     }
     
     @Override
-    public List<ConfigInfoWrapper> getConfigListByNamespace(String namespaceId) throws NacosException {
+    public List<ConfigBasicInfo> getConfigListByNamespace(String namespaceId) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CONFIG_HISTORY_ADMIN_PATH + "/configs").setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        Result<List<ConfigInfoWrapper>> result = JacksonUtils.toObj(httpRestResult.getData(),
-                new TypeReference<Result<List<ConfigInfoWrapper>>>() {
+        Result<List<ConfigBasicInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<List<ConfigBasicInfo>>>() {
                 });
         return result.getData();
     }
@@ -368,42 +368,6 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<GroupkeyListenserStatus> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<GroupkeyListenserStatus>>() {
-                });
-        return result.getData();
-    }
-    
-    @Override
-    public Map<String, Object> getClientMetrics(String ip, String dataId, String groupName, String namespaceId)
-            throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("ip", ip);
-        params.put("dataId", dataId);
-        params.put("groupName", groupName);
-        params.put("namespaceId", namespaceId);
-        
-        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.CONFIG_METRICS_ADMIN_PATH + "/ip").setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        Result<Map<String, Object>> result = JacksonUtils.toObj(httpRestResult.getData(),
-                new TypeReference<Result<Map<String, Object>>>() {
-                });
-        return result.getData();
-    }
-    
-    @Override
-    public Map<String, Object> getClusterMetrics(String ip, String dataId, String groupName, String namespaceId)
-            throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("ip", ip);
-        params.put("dataId", dataId);
-        params.put("groupName", groupName);
-        params.put("namespaceId", namespaceId);
-        
-        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.CONFIG_METRICS_ADMIN_PATH + "/cluster").setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        Result<Map<String, Object>> result = JacksonUtils.toObj(httpRestResult.getData(),
-                new TypeReference<Result<Map<String, Object>>>() {
                 });
         return result.getData();
     }

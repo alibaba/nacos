@@ -19,14 +19,19 @@ package com.alibaba.nacos.config.server.utils;
 import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
 import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
+import com.alibaba.nacos.api.config.model.ConfigHistoryBasicInfo;
+import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
+import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
+import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.io.UnsupportedEncodingException;
+import java.sql.Timestamp;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -110,6 +115,31 @@ class ResponseUtilTest {
     }
     
     @Test
+    void testTransferToConfigBasicInfoFromWrapper() {
+        ConfigInfoWrapper configInfo = new ConfigInfoWrapper();
+        configInfo.setId(1L);
+        configInfo.setTenant("testNs");
+        configInfo.setGroup(Constants.DEFAULT_GROUP);
+        configInfo.setDataId("testDs");
+        configInfo.setMd5("testMd5");
+        configInfo.setEncryptedDataKey("testEncryptedDataKey");
+        configInfo.setContent("testContent");
+        configInfo.setType("text");
+        configInfo.setAppName("testAppName");
+        configInfo.setLastModified(System.currentTimeMillis());
+        ConfigBasicInfo configBasicInfo = ResponseUtil.transferToConfigBasicInfo(configInfo);
+        assertEquals(String.valueOf(configInfo.getId()), configBasicInfo.getId());
+        assertEquals(configInfo.getTenant(), configBasicInfo.getNamespaceId());
+        assertEquals(configInfo.getGroup(), configBasicInfo.getGroupName());
+        assertEquals(configInfo.getDataId(), configBasicInfo.getDataId());
+        assertEquals(configInfo.getMd5(), configBasicInfo.getMd5());
+        assertEquals(configInfo.getType(), configBasicInfo.getType());
+        assertEquals(configInfo.getAppName(), configBasicInfo.getAppName());
+        assertEquals(0L, configBasicInfo.getCreateTime());
+        assertEquals(configInfo.getLastModified(), configBasicInfo.getModifyTime());
+    }
+    
+    @Test
     void testTransferToConfigGrayInfo() {
         ConfigInfoGrayWrapper configInfoGray = new ConfigInfoGrayWrapper();
         configInfoGray.setId(1L);
@@ -139,5 +169,62 @@ class ResponseUtilTest {
         assertEquals(configInfoGray.getSrcUser(), configGrayInfo.getCreateUser());
         assertEquals(configInfoGray.getGrayName(), configGrayInfo.getGrayName());
         assertEquals(configInfoGray.getGrayRule(), configGrayInfo.getGrayRule());
+    }
+    
+    @Test
+    void testTransferToConfigHistoryBasicInfo() {
+        ConfigHistoryInfo configHistoryInfo = mockConfigHistoryInfo();
+        ConfigHistoryBasicInfo configHistoryBasicInfo = ResponseUtil.transferToConfigHistoryBasicInfo(
+                configHistoryInfo);
+        assertConfigHistoryBasicInfo(configHistoryInfo, configHistoryBasicInfo);
+    }
+    
+    @Test
+    void testTransferToConfigHistoryDetialInfo() {
+        ConfigHistoryInfo configHistoryInfo = mockConfigHistoryInfo();
+        ConfigHistoryDetailInfo configHistoryBasicInfo = ResponseUtil.transferToConfigHistoryDetailInfo(
+                configHistoryInfo);
+        assertConfigHistoryBasicInfo(configHistoryInfo, configHistoryBasicInfo);
+        assertEquals(configHistoryInfo.getContent(), configHistoryBasicInfo.getContent());
+        assertEquals(configHistoryInfo.getEncryptedDataKey(), configHistoryBasicInfo.getEncryptedDataKey());
+        assertEquals(configHistoryInfo.getGrayName(), configHistoryBasicInfo.getGrayName());
+        assertEquals(configHistoryInfo.getExtInfo(), configHistoryBasicInfo.getExtInfo());
+    }
+    
+    private ConfigHistoryInfo mockConfigHistoryInfo() {
+        ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
+        configHistoryInfo.setId(1L);
+        configHistoryInfo.setTenant("testNs");
+        configHistoryInfo.setGroup(Constants.DEFAULT_GROUP);
+        configHistoryInfo.setDataId("testDs");
+        configHistoryInfo.setAppName("testAppName");
+        configHistoryInfo.setMd5("testMd5");
+        configHistoryInfo.setContent("testContent");
+        configHistoryInfo.setSrcIp("1.1.1.1");
+        configHistoryInfo.setSrcUser("testSrcUser");
+        configHistoryInfo.setOpType("I");
+        configHistoryInfo.setPublishType("formal");
+        configHistoryInfo.setGrayName("testGrayName");
+        configHistoryInfo.setExtInfo("{\"type\":\"text\"}");
+        configHistoryInfo.setCreatedTime(new Timestamp(System.currentTimeMillis()));
+        configHistoryInfo.setLastModifiedTime(new Timestamp(System.currentTimeMillis()));
+        configHistoryInfo.setEncryptedDataKey("testEncryptedDataKey");
+        return configHistoryInfo;
+    }
+    
+    private void assertConfigHistoryBasicInfo(ConfigHistoryInfo configHistoryInfo,
+            ConfigHistoryBasicInfo configHistoryBasicInfo) {
+        assertEquals(String.valueOf(configHistoryInfo.getId()), configHistoryBasicInfo.getId());
+        assertEquals(configHistoryInfo.getTenant(), configHistoryBasicInfo.getNamespaceId());
+        assertEquals(configHistoryInfo.getGroup(), configHistoryBasicInfo.getGroupName());
+        assertEquals(configHistoryInfo.getDataId(), configHistoryBasicInfo.getDataId());
+        assertEquals(configHistoryInfo.getAppName(), configHistoryBasicInfo.getAppName());
+        assertEquals(configHistoryInfo.getMd5(), configHistoryBasicInfo.getMd5());
+        assertEquals(configHistoryInfo.getSrcIp(), configHistoryBasicInfo.getSrcIp());
+        assertEquals(configHistoryInfo.getSrcUser(), configHistoryBasicInfo.getSrcUser());
+        assertEquals(configHistoryInfo.getOpType(), configHistoryBasicInfo.getOpType());
+        assertEquals(configHistoryInfo.getPublishType(), configHistoryBasicInfo.getPublishType());
+        assertEquals(configHistoryInfo.getCreatedTime().getTime(), configHistoryBasicInfo.getCreateTime());
+        assertEquals(configHistoryInfo.getLastModifiedTime().getTime(), configHistoryBasicInfo.getModifyTime());
     }
 }

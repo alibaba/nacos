@@ -19,13 +19,13 @@ package com.alibaba.nacos.maintainer.client.config;
 import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
 import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
+import com.alibaba.nacos.api.config.model.ConfigHistoryBasicInfo;
+import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.maintainer.client.core.AbstractCoreMaintainerService;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
-import com.alibaba.nacos.maintainer.client.model.config.ConfigHistoryInfo;
-import com.alibaba.nacos.maintainer.client.model.config.ConfigInfoWrapper;
 import com.alibaba.nacos.maintainer.client.model.config.GroupkeyListenserStatus;
 import com.alibaba.nacos.maintainer.client.model.config.Page;
 import com.alibaba.nacos.maintainer.client.model.config.SameConfigPolicy;
@@ -39,7 +39,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -281,14 +280,14 @@ class NacosConfigMaintainerServiceImplTest {
         int pageNo = 1;
         int pageSize = 10;
         
-        Page<ConfigHistoryInfo> expectedPage = new Page<>();
+        Page<ConfigHistoryBasicInfo> expectedPage = new Page<>();
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedPage)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        Page<ConfigHistoryInfo> result = nacosConfigMaintainerServiceImpl.listConfigHistory(dataId, groupName,
+        Page<ConfigHistoryBasicInfo> result = nacosConfigMaintainerServiceImpl.listConfigHistory(dataId, groupName,
                 namespaceId, pageNo, pageSize);
         
         // Assert
@@ -304,17 +303,17 @@ class NacosConfigMaintainerServiceImplTest {
         final String namespaceId = "testNamespace";
         final Long nid = 1L;
         
-        ConfigHistoryInfo expectedConfig = new ConfigHistoryInfo();
-        expectedConfig.setCreatedTime(new Timestamp(System.currentTimeMillis()));
-        expectedConfig.setLastModifiedTime(new Timestamp(System.currentTimeMillis()));
+        ConfigHistoryDetailInfo expectedConfig = new ConfigHistoryDetailInfo();
+        expectedConfig.setCreateTime(System.currentTimeMillis());
+        expectedConfig.setModifyTime(System.currentTimeMillis());
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedConfig)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        ConfigHistoryInfo result = nacosConfigMaintainerServiceImpl.getConfigHistoryInfo(dataId, groupName, namespaceId,
-                nid);
+        ConfigHistoryDetailInfo result = nacosConfigMaintainerServiceImpl.getConfigHistoryInfo(dataId, groupName,
+                namespaceId, nid);
         
         // Assert
         assertNotNull(result);
@@ -329,17 +328,17 @@ class NacosConfigMaintainerServiceImplTest {
         final String namespaceId = "testNamespace";
         final Long id = 1L;
         
-        ConfigHistoryInfo expectedConfig = new ConfigHistoryInfo();
-        expectedConfig.setCreatedTime(new Timestamp(System.currentTimeMillis()));
-        expectedConfig.setLastModifiedTime(new Timestamp(System.currentTimeMillis()));
+        ConfigHistoryDetailInfo expectedConfig = new ConfigHistoryDetailInfo();
+        expectedConfig.setCreateTime(System.currentTimeMillis());
+        expectedConfig.setModifyTime(System.currentTimeMillis());
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedConfig)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        ConfigHistoryInfo result = nacosConfigMaintainerServiceImpl.getPreviousConfigHistoryInfo(dataId, groupName,
-                namespaceId, id);
+        ConfigHistoryDetailInfo result = nacosConfigMaintainerServiceImpl.getPreviousConfigHistoryInfo(dataId,
+                groupName, namespaceId, id);
         
         // Assert
         assertNotNull(result);
@@ -351,14 +350,14 @@ class NacosConfigMaintainerServiceImplTest {
         // Arrange
         String namespaceId = "testNamespace";
         
-        List<ConfigInfoWrapper> expectedList = new ArrayList<>();
+        List<ConfigBasicInfo> expectedList = new ArrayList<>();
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedList)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        List<ConfigInfoWrapper> result = nacosConfigMaintainerServiceImpl.getConfigListByNamespace(namespaceId);
+        List<ConfigBasicInfo> result = nacosConfigMaintainerServiceImpl.getConfigListByNamespace(namespaceId);
         
         // Assert
         assertNotNull(result);
@@ -417,52 +416,6 @@ class NacosConfigMaintainerServiceImplTest {
         // Act
         GroupkeyListenserStatus result = nacosConfigMaintainerServiceImpl.getAllSubClientConfigByIp(ip, all,
                 namespaceId, sampleTime);
-        
-        // Assert
-        assertNotNull(result);
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
-    }
-    
-    @Test
-    void testGetClientMetrics() throws Exception {
-        // Arrange
-        String ip = "127.0.0.1";
-        String dataId = "testDataId";
-        String groupName = "testGroup";
-        String namespaceId = "testNamespace";
-        
-        Map<String, Object> expectedMap = new HashMap<>();
-        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedMap)));
-        
-        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-        
-        // Act
-        Map<String, Object> result = nacosConfigMaintainerServiceImpl.getClientMetrics(ip, dataId, groupName,
-                namespaceId);
-        
-        // Assert
-        assertNotNull(result);
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
-    }
-    
-    @Test
-    void testGetClusterMetrics() throws Exception {
-        // Arrange
-        String ip = "127.0.0.1";
-        String dataId = "testDataId";
-        String groupName = "testGroup";
-        String namespaceId = "testNamespace";
-        
-        Map<String, Object> expectedMap = new HashMap<>();
-        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedMap)));
-        
-        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-        
-        // Act
-        Map<String, Object> result = nacosConfigMaintainerServiceImpl.getClusterMetrics(ip, dataId, groupName,
-                namespaceId);
         
         // Assert
         assertNotNull(result);

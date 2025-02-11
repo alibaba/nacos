@@ -33,9 +33,9 @@ public class Constants {
     public static final String DEFAULT_GROUP = "DEFAULT_GROUP";
     
     public static final String DATASOURCE_PLATFORM_PROPERTY_STATE = "datasource_platform";
-
+    
     public static final String CONFIG_RENTENTION_DAYS_PROPERTY_STATE = "config_retention_days";
-
+    
     /**
      * Config file directory in server side.
      */
@@ -140,7 +140,7 @@ public class Constants {
     
     public static final String HISTORY_CONTROLLER_V2_PATH = BASE_V2_PATH + "/history";
     
-    public static final String HISTORY_CONTROLLER_V3_ADMIN_PATH = BASE_ADMIN_V3_PATH + "/history";
+    public static final String HISTORY_ADMIN_V3_PATH = BASE_ADMIN_V3_PATH + "/history";
     
     public static final String LISTENER_CONTROLLER_PATH = BASE_PATH + "/listener";
     

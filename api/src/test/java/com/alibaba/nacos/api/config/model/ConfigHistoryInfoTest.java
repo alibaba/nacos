@@ -25,15 +25,13 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class ConfigInfoTest {
+class ConfigHistoryInfoTest {
     
     private ObjectMapper mapper;
     
-    private ConfigBasicInfo basicInfo;
+    private ConfigHistoryBasicInfo basicInfo;
     
-    private ConfigDetailInfo detailInfo;
-    
-    private ConfigGrayInfo grayInfo;
+    private ConfigHistoryDetailInfo detailInfo;
     
     private long createTime;
     
@@ -44,21 +42,15 @@ class ConfigInfoTest {
         createTime = System.currentTimeMillis();
         mapper = new ObjectMapper();
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        basicInfo = new ConfigBasicInfo();
-        detailInfo = new ConfigDetailInfo();
-        grayInfo = new ConfigGrayInfo();
+        basicInfo = new ConfigHistoryBasicInfo();
+        detailInfo = new ConfigHistoryDetailInfo();
         modifyTime = System.currentTimeMillis();
         mockBasicInfo(basicInfo, createTime, modifyTime);
         mockBasicInfo(detailInfo, createTime, modifyTime);
-        mockBasicInfo(grayInfo, createTime, modifyTime);
         mockDetailInfo(detailInfo);
-        mockDetailInfo(grayInfo);
-        grayInfo.setGrayName("testGrayName");
-        grayInfo.setGrayRule(
-                "{\"type\":\"beta\",\"version\":\"1.0.0\",\"expr\":\"127.0.0.1,127.0.0.2\",\"priority\":-1000}");
     }
     
-    private void mockBasicInfo(ConfigBasicInfo basicInfo, long createTime, long modifyTime) {
+    private void mockBasicInfo(ConfigHistoryBasicInfo basicInfo, long createTime, long modifyTime) {
         basicInfo.setId("1");
         basicInfo.setNamespaceId("testNs");
         basicInfo.setGroupName("testGroup");
@@ -68,15 +60,17 @@ class ConfigInfoTest {
         basicInfo.setAppName("testApp");
         basicInfo.setCreateTime(createTime);
         basicInfo.setModifyTime(modifyTime);
+        basicInfo.setSrcIp("1.1.1.1");
+        basicInfo.setSrcUser("testCreateUser");
+        basicInfo.setOpType("I");
+        basicInfo.setPublishType("formal");
     }
     
-    private void mockDetailInfo(ConfigDetailInfo detailInfo) {
+    private void mockDetailInfo(ConfigHistoryDetailInfo detailInfo) {
         detailInfo.setContent("testContent");
-        detailInfo.setDesc("testDesc");
         detailInfo.setEncryptedDataKey("testEncryptedDataKey");
-        detailInfo.setCreateUser("testCreateUser");
-        detailInfo.setCreateIp("1.1.1.1");
-        detailInfo.setConfigTags("testConfigTag1,testConfigTag2");
+        detailInfo.setGrayName("testGrayName");
+        detailInfo.setExtInfo("{\"type\":\"text\"}");
     }
     
     @Test
@@ -88,14 +82,16 @@ class ConfigInfoTest {
     @Test
     public void testBasicInfoDeserialize() throws JsonProcessingException {
         String json = "{\"id\":\"1\",\"namespaceId\":\"testNs\",\"groupName\":\"testGroup\",\"dataId\":\"testDataId\","
-                + "\"md5\":\"testMd5\",\"type\":\"text\",\"appName\":\"testApp\",\"createTime\":%s,\"modifyTime\":%s}";
+                + "\"md5\":\"testMd5\",\"type\":\"text\",\"appName\":\"testApp\",\"createTime\":%s,\"modifyTime\":%s,"
+                + "\"srcIp\":\"1.1.1.1\",\"srcUser\":\"testCreateUser\",\"opType\":\"I\",\"publishType\":\"formal\"}";
         json = String.format(json, createTime, modifyTime);
-        assertBasicInfo(mapper.readValue(json, ConfigBasicInfo.class));
+        assertBasicInfo(mapper.readValue(json, ConfigHistoryBasicInfo.class));
     }
     
     @Test
     public void testDetailInfoSerialize() throws JsonProcessingException {
         String json = mapper.writeValueAsString(detailInfo);
+        System.out.println(json);
         assertJsonContainBasicInfos(json);
         asserJsonContainDetailInfos(json);
     }
@@ -103,43 +99,14 @@ class ConfigInfoTest {
     @Test
     public void testDetailInfoDeserialize() throws JsonProcessingException {
         String json = "{\"id\":\"1\",\"namespaceId\":\"testNs\",\"groupName\":\"testGroup\",\"dataId\":\"testDataId\","
-                + "\"md5\":\"testMd5\",\"type\":\"text\",\"appName\":\"testApp\",\"createTime\":%s,"
-                + "\"modifyTime\":%s,\"content\":\"testContent\",\"desc\":\"testDesc\","
-                + "\"encryptedDataKey\":\"testEncryptedDataKey\",\"createUser\":\"testCreateUser\","
-                + "\"createIp\":\"1.1.1.1\",\"configTags\":\"testConfigTag1,testConfigTag2\"}";
+                + "\"md5\":\"testMd5\",\"type\":\"text\",\"appName\":\"testApp\",\"createTime\":%s,\"modifyTime\":%s,"
+                + "\"srcIp\":\"1.1.1.1\",\"srcUser\":\"testCreateUser\",\"opType\":\"I\",\"publishType\":\"formal\","
+                + "\"content\":\"testContent\",\"encryptedDataKey\":\"testEncryptedDataKey\",\"grayName\":\"testGrayName\","
+                + "\"extInfo\":\"{\\\"type\\\":\\\"text\\\"}\"}";
         json = String.format(json, createTime, modifyTime);
-        ConfigDetailInfo detailInfo = mapper.readValue(json, ConfigDetailInfo.class);
+        ConfigHistoryDetailInfo detailInfo = mapper.readValue(json, ConfigHistoryDetailInfo.class);
         assertBasicInfo(detailInfo);
         assertDetailInfo(detailInfo);
-    }
-    
-    @Test
-    public void testGrayInfoSerialize() throws JsonProcessingException {
-        String json = mapper.writeValueAsString(grayInfo);
-        assertJsonContainBasicInfos(json);
-        asserJsonContainDetailInfos(json);
-        assertTrue(json.contains("\"grayName\":\"testGrayName\""));
-        assertTrue(json.contains("\"grayRule\":\"{"));
-        assertTrue(json.contains("\\\"type\\\":\\\"beta\\\""));
-        assertTrue(json.contains("\\\"version\\\":\\\"1.0.0\\\""));
-        assertTrue(json.contains("\\\"expr\\\":\\\"127.0.0.1,127.0.0.2\\\""));
-        assertTrue(json.contains("\\\"priority\\\":-1000"));
-    }
-    
-    @Test
-    public void testGrayInfoDeserialize() throws JsonProcessingException {
-        String json = "{\"id\":\"1\",\"namespaceId\":\"testNs\",\"groupName\":\"testGroup\",\"dataId\":\"testDataId\","
-                + "\"md5\":\"testMd5\",\"type\":\"text\",\"appName\":\"testApp\",\"createTime\":%s,\"modifyTime\":%s,"
-                + "\"content\":\"testContent\",\"desc\":\"testDesc\",\"encryptedDataKey\":\"testEncryptedDataKey\","
-                + "\"createUser\":\"testCreateUser\",\"createIp\":\"1.1.1.1\",\"configTags\":\"testConfigTag1,testConfigTag2\","
-                + "\"grayName\":\"testGrayName\",\"grayRule\":"
-                + "\"{\\\"type\\\":\\\"beta\\\",\\\"version\\\":\\\"1.0.0\\\",\\\"expr\\\":\\\"127.0.0.1,127.0.0.2\\\",\\\"priority\\\":-1000}\"}";
-        json = String.format(json, createTime, modifyTime);
-        ConfigGrayInfo actualGrayInfo = mapper.readValue(json, ConfigGrayInfo.class);
-        assertBasicInfo(actualGrayInfo);
-        assertDetailInfo(actualGrayInfo);
-        assertEquals(grayInfo.getGrayName(), actualGrayInfo.getGrayName());
-        assertEquals(grayInfo.getGrayRule(), actualGrayInfo.getGrayRule());
     }
     
     private void assertJsonContainBasicInfos(String json) {
@@ -152,18 +119,20 @@ class ConfigInfoTest {
         assertTrue(json.contains("\"appName\":\"testApp\""));
         assertTrue(json.contains("\"createTime\":" + createTime));
         assertTrue(json.contains("\"modifyTime\":" + modifyTime));
+        assertTrue(json.contains("\"srcIp\":\"1.1.1.1\""));
+        assertTrue(json.contains("\"srcUser\":\"testCreateUser\""));
+        assertTrue(json.contains("\"opType\":\"I\""));
+        assertTrue(json.contains("\"publishType\":\"formal\""));
     }
     
     private void asserJsonContainDetailInfos(String json) {
         assertTrue(json.contains("\"content\":\"testContent\""));
-        assertTrue(json.contains("\"desc\":\"testDesc\""));
         assertTrue(json.contains("\"encryptedDataKey\":\"testEncryptedDataKey\""));
-        assertTrue(json.contains("\"createUser\":\"testCreateUser\""));
-        assertTrue(json.contains("\"createIp\":\"1.1.1.1\""));
-        assertTrue(json.contains("\"configTags\":\"testConfigTag1,testConfigTag2\""));
+        assertTrue(json.contains("\"grayName\":\"testGrayName\""));
+        assertTrue(json.contains("\"extInfo\":\"{\\\"type\\\":\\\"text\\\"}\""));
     }
     
-    private void assertBasicInfo(ConfigBasicInfo actual) {
+    private void assertBasicInfo(ConfigHistoryBasicInfo actual) {
         assertEquals(basicInfo.getId(), actual.getId());
         assertEquals(basicInfo.getNamespaceId(), actual.getNamespaceId());
         assertEquals(basicInfo.getGroupName(), actual.getGroupName());
@@ -173,14 +142,16 @@ class ConfigInfoTest {
         assertEquals(basicInfo.getAppName(), actual.getAppName());
         assertEquals(basicInfo.getCreateTime(), actual.getCreateTime());
         assertEquals(basicInfo.getModifyTime(), actual.getModifyTime());
+        assertEquals(basicInfo.getSrcIp(), actual.getSrcIp());
+        assertEquals(basicInfo.getSrcUser(), actual.getSrcUser());
+        assertEquals(basicInfo.getPublishType(), actual.getPublishType());
+        assertEquals(basicInfo.getOpType(), actual.getOpType());
     }
     
-    private void assertDetailInfo(ConfigDetailInfo actual) {
+    private void assertDetailInfo(ConfigHistoryDetailInfo actual) {
         assertEquals(detailInfo.getContent(), actual.getContent());
-        assertEquals(detailInfo.getDesc(), actual.getDesc());
         assertEquals(detailInfo.getEncryptedDataKey(), actual.getEncryptedDataKey());
-        assertEquals(detailInfo.getCreateUser(), actual.getCreateUser());
-        assertEquals(detailInfo.getCreateIp(), actual.getCreateIp());
-        assertEquals(detailInfo.getConfigTags(), actual.getConfigTags());
+        assertEquals(detailInfo.getGrayName(), actual.getGrayName());
+        assertEquals(detailInfo.getExtInfo(), actual.getExtInfo());
     }
 }

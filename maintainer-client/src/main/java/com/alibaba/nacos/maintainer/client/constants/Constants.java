@@ -48,8 +48,6 @@ public class Constants {
         
         public static final String CONFIG_HISTORY_ADMIN_PATH = "/v3/admin/cs/history";
         
-        public static final String CONFIG_CAPACITY_ADMIN_PATH = "/v3/admin/cs/capacity";
-        
         public static final String CONFIG_OPS_ADMIN_PATH = "/v3/admin/cs/ops";
         
         public static final String CONFIG_LISTENER_ADMIN_PATH = "/v3/admin/cs/listener";
