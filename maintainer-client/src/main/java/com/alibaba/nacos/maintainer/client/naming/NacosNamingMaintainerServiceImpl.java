@@ -130,13 +130,14 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public Object listServices(String namespaceId, String groupName, String selector, int pageNo, int pageSize)
-            throws NacosException {
-        // TODO Fix wrong parameters for `/v3/admin/ns/service/list`.
+    public Object listServices(String namespaceId, String groupNameParam, String serviceNameParam,
+            boolean withInstances, boolean ignoreEmptyService, int pageNo, int pageSize) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
-        params.put("groupName", groupName);
-        params.put("selector", selector);
+        params.put("groupNameParam", groupNameParam);
+        params.put("serviceNameParam", serviceNameParam);
+        params.put("withInstances", String.valueOf(withInstances));
+        params.put("ignoreEmptyService", String.valueOf(ignoreEmptyService));
         params.put("pageNo", String.valueOf(pageNo));
         params.put("pageSize", String.valueOf(pageSize));
         
@@ -427,11 +428,12 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public String updateCluster(String namespaceId, String groupName, String clusterName, Integer checkPort,
+    public String updateCluster(String namespaceId, String groupName, String serviceName, String clusterName, Integer checkPort,
             Boolean useInstancePort4Check, String healthChecker, Map<String, String> metadata) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("groupName", groupName);
+        params.put("serviceName", serviceName);
         params.put("clusterName", clusterName);
         params.put("checkPort", String.valueOf(checkPort));
         params.put("useInstancePort4Check", String.valueOf(useInstancePort4Check));

@@ -32,7 +32,6 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-config</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -41,6 +40,10 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-lock</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-maintainer-client</artifactId>
         </dependency>
         
         <dependency>

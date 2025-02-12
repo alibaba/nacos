@@ -155,7 +155,7 @@ public class NacosNamingMaintainerServiceImplTest {
         // Arrange
         String namespaceId = "testNamespace";
         String groupName = "testGroup";
-        String selector = "testSelector";
+        String serviceName = "testService";
         int pageNo = 1;
         int pageSize = 10;
         
@@ -165,7 +165,8 @@ public class NacosNamingMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        Object result = nacosNamingMaintainerService.listServices(namespaceId, groupName, selector, pageNo, pageSize);
+        Object result = nacosNamingMaintainerService.listServices(namespaceId, groupName, serviceName, false, false,
+                pageNo, pageSize);
         
         // Assert
         assertNotNull(result);
@@ -202,8 +203,7 @@ public class NacosNamingMaintainerServiceImplTest {
         final int pageSize = 10;
         final boolean aggregation = true;
         
-        Result<ObjectNode> expectedResult = new Result<>();
-        Result.success(new ObjectMapper().createObjectNode());
+        Result<ObjectNode> expectedResult = Result.success(new ObjectMapper().createObjectNode());
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(expectedResult));
         
@@ -539,6 +539,7 @@ public class NacosNamingMaintainerServiceImplTest {
         // Arrange
         String namespaceId = "testNamespace";
         String groupName = "testGroup";
+        String serviceName = "testService";
         String clusterName = "testCluster";
         Integer checkPort = 8080;
         Boolean useInstancePort4Check = true;
@@ -551,8 +552,8 @@ public class NacosNamingMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        String result = nacosNamingMaintainerService.updateCluster(namespaceId, groupName, clusterName, checkPort,
-                useInstancePort4Check, healthChecker, metadata);
+        String result = nacosNamingMaintainerService.updateCluster(namespaceId, groupName, serviceName, clusterName,
+                checkPort, useInstancePort4Check, healthChecker, metadata);
         
         // Assert
         assertEquals("success", result);

@@ -69,8 +69,9 @@ public interface ServiceHandler {
      * Get all selector types.
      *
      * @return a list of selector types
+     * @throws NacosException if an error occurs during get selector types
      */
-    List<String> getSelectorTypeList();
+    List<String> getSelectorTypeList() throws NacosException;
     
     /**
      * Get the list of subscribers for a service.

@@ -98,7 +98,7 @@ public class ServiceInnerHandler implements ServiceHandler {
     }
     
     @Override
-    public List<String> getSelectorTypeList() {
+    public List<String> getSelectorTypeList() throws NacosException {
         return selectorManager.getAllSelectorTypes();
     }
     

@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckerFactory;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.naming.core.ClusterOperatorV2Impl;
@@ -69,8 +70,9 @@ public class ClusterControllerV3 {
         clusterMetadata.setHealthChecker(healthChecker);
         clusterMetadata.setHealthyCheckType(healthChecker.getType());
         clusterMetadata.setExtendData(UtilsAndCommons.parseMetadata(updateClusterForm.getMetadata()));
-        
-        clusterOperatorV2.updateClusterMetadata(namespaceId, serviceName, clusterName, clusterMetadata);
+        // TODO use split serviceName and groupName
+        String groupedServiceName = NamingUtils.getGroupedName(serviceName, updateClusterForm.getGroupName());
+        clusterOperatorV2.updateClusterMetadata(namespaceId, groupedServiceName, clusterName, clusterMetadata);
         
         return Result.success("ok");
     }

@@ -88,7 +88,7 @@ public class ServiceProxy {
      *
      * @return a list of selector types
      */
-    public List<String> getSelectorTypeList() {
+    public List<String> getSelectorTypeList() throws NacosException {
         return serviceHandler.getSelectorTypeList();
     }
     

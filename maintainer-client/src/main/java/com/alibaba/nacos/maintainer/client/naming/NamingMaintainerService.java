@@ -104,16 +104,18 @@ public interface NamingMaintainerService extends CoreMaintainerService {
     /**
      * List services with pagination.
      *
-     * @param namespaceId the namespace ID
-     * @param groupName   the group name
-     * @param selector    the selector for filtering
-     * @param pageNo      the page number
-     * @param pageSize    the page size
+     * @param namespaceId        the namespace ID
+     * @param groupNameParam     the group name pattern, e.g., "" for all groups, "group" for all services groupName match `.*group.*`.
+     * @param serviceNameParam   the service name pattern, e.g., "" for all services, "service" for all services name match `.*service.*`.
+     * @param withInstances      Whether to include instances in the response.
+     * @param ignoreEmptyService Whether to exclude empty services in the response, effect when #withInstances is {@code true}.
+     * @param pageNo             the page number
+     * @param pageSize           the page size
      * @return the list of services
      * @throws NacosException if an error occurs
      */
-    Object listServices(String namespaceId, String groupName, String selector, int pageNo, int pageSize)
-            throws NacosException;
+    Object listServices(String namespaceId, String groupNameParam, String serviceNameParam, boolean withInstances,
+            boolean ignoreEmptyService, int pageNo, int pageSize) throws NacosException;
     
     /**
      * Search service names by expression.
@@ -137,8 +139,8 @@ public interface NamingMaintainerService extends CoreMaintainerService {
      * @return the list of subscribers
      * @throws NacosException if an error occurs
      */
-    ObjectNode getSubscribers(String namespaceId, String groupName, String serviceName, int pageNo,
-            int pageSize, boolean aggregation) throws NacosException;
+    ObjectNode getSubscribers(String namespaceId, String groupName, String serviceName, int pageNo, int pageSize,
+            boolean aggregation) throws NacosException;
     
     /**
      * List all selector types.
@@ -344,6 +346,7 @@ public interface NamingMaintainerService extends CoreMaintainerService {
      *
      * @param namespaceId           the namespace ID
      * @param groupName             the group name
+     * @param serviceName           the service name
      * @param clusterName           the cluster name
      * @param checkPort             the health check port
      * @param useInstancePort4Check whether to use the instance port for health check
@@ -352,8 +355,9 @@ public interface NamingMaintainerService extends CoreMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
-    String updateCluster(String namespaceId, String groupName, String clusterName, Integer checkPort,
-            Boolean useInstancePort4Check, String healthChecker, Map<String, String> metadata) throws NacosException;
+    String updateCluster(String namespaceId, String groupName, String serviceName, String clusterName,
+            Integer checkPort, Boolean useInstancePort4Check, String healthChecker, Map<String, String> metadata)
+            throws NacosException;
     
     // ------------------------- Client Operations -------------------------
     

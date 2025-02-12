@@ -127,7 +127,7 @@ public class ConsoleServiceController {
         serviceMetadata.setSelector(parseSelector(serviceForm.getSelector()));
         Service service = Service.newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(),
                 serviceForm.getServiceName());
-        
+        // TODO change to input form only, parse metadata to serviceMetadata should be do in inner handle or service logic.
         serviceProxy.updateService(serviceForm, service, serviceMetadata, metadata);
         return Result.success("ok");
     }
@@ -138,7 +138,7 @@ public class ConsoleServiceController {
      * @return {@link Selector} types.
      */
     @GetMapping("/selector/types")
-    public Result<List<String>> getSelectorTypeList() {
+    public Result<List<String>> getSelectorTypeList() throws NacosException {
         return Result.success(serviceProxy.getSelectorTypeList());
     }
     
