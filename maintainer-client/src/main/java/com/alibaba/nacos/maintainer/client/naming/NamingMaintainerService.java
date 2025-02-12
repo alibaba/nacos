@@ -17,7 +17,6 @@
 package com.alibaba.nacos.maintainer.client.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
@@ -138,7 +137,7 @@ public interface NamingMaintainerService extends CoreMaintainerService {
      * @return the list of subscribers
      * @throws NacosException if an error occurs
      */
-    Result<ObjectNode> getSubscribers(String namespaceId, String groupName, String serviceName, int pageNo,
+    ObjectNode getSubscribers(String namespaceId, String groupName, String serviceName, int pageNo,
             int pageSize, boolean aggregation) throws NacosException;
     
     /**

@@ -210,8 +210,8 @@ public class NacosNamingMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        Result<ObjectNode> result = nacosNamingMaintainerService.getSubscribers(namespaceId, groupName, serviceName,
-                pageNo, pageSize, aggregation);
+        ObjectNode result = nacosNamingMaintainerService.getSubscribers(namespaceId, groupName, serviceName, pageNo,
+                pageSize, aggregation);
         
         // Assert
         assertNotNull(result);

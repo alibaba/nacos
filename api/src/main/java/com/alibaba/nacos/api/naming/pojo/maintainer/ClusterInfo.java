@@ -40,6 +40,13 @@ public class ClusterInfo implements Serializable {
     
     private AbstractHealthChecker healthChecker;
     
+    private int healthyCheckPort = 80;
+    
+    /**
+     * Whether Nacos use instance port to do health check.
+     */
+    private boolean useInstancePortForCheck = true;
+    
     private Map<String, String> metadata;
     
     private List<Instance> hosts;
@@ -84,5 +91,21 @@ public class ClusterInfo implements Serializable {
     
     public void setMetadata(Map<String, String> metadata) {
         this.metadata = metadata;
+    }
+    
+    public int getHealthyCheckPort() {
+        return healthyCheckPort;
+    }
+    
+    public void setHealthyCheckPort(int healthyCheckPort) {
+        this.healthyCheckPort = healthyCheckPort;
+    }
+    
+    public boolean isUseInstancePortForCheck() {
+        return useInstancePortForCheck;
+    }
+    
+    public void setUseInstancePortForCheck(boolean useInstancePortForCheck) {
+        this.useInstancePortForCheck = useInstancePortForCheck;
     }
 }

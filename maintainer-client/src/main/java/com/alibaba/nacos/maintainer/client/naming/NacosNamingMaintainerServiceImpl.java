@@ -132,6 +132,7 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     @Override
     public Object listServices(String namespaceId, String groupName, String selector, int pageNo, int pageSize)
             throws NacosException {
+        // TODO Fix wrong parameters for `/v3/admin/ns/service/list`.
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("groupName", groupName);
@@ -142,7 +143,10 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.NAMING_SERVICE_ADMIN_PATH + "/list").setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        return JacksonUtils.toObj(httpRestResult.getData());
+        Result<Object> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Object>>() {
+        });
+        // TODO uniform return type.
+        return result.getData();
     }
     
     @Override
@@ -158,8 +162,8 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public Result<ObjectNode> getSubscribers(String namespaceId, String groupName, String serviceName, int pageNo,
-            int pageSize, boolean aggregation) throws NacosException {
+    public ObjectNode getSubscribers(String namespaceId, String groupName, String serviceName, int pageNo, int pageSize,
+            boolean aggregation) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("groupName", groupName);
@@ -173,7 +177,7 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
                 .build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         return JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<ObjectNode>>() {
-        });
+        }).getData();
     }
     
     @Override

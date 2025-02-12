@@ -55,6 +55,8 @@ class ServiceDetailInfoTest {
         clusterInfo.setHealthChecker(new AbstractHealthChecker.None());
         clusterInfo.setMetadata(metadata);
         clusterInfo.setHosts(Collections.emptyList());
+        clusterInfo.setHealthyCheckPort(8080);
+        clusterInfo.setUseInstancePortForCheck(false);
         Map<String, ClusterInfo> clusterMap = new HashMap<>();
         clusterMap.put("testC", clusterInfo);
         serviceDetailInfo.setClusterMap(clusterMap);
@@ -74,13 +76,16 @@ class ServiceDetailInfoTest {
         assertTrue(json.contains("\"clusterName\":\"testC\""));
         assertTrue(json.contains("\"healthChecker\":{\"type\":\"NONE\"}"));
         assertTrue(json.contains("\"hosts\":[]"));
+        assertTrue(json.contains("\"healthyCheckPort\":8080"));
+        assertTrue(json.contains("\"useInstancePortForCheck\":false"));
     }
     
     @Test
     void testDeserialize() throws IOException {
         String jsonString = "{\"namespaceId\":\"testNs\",\"serviceName\":\"testS\",\"groupName\":\"testG\","
                 + "\"clusterMap\":{\"testC\":{\"clusterName\":\"testC\",\"healthChecker\":{\"type\":\"NONE\"},"
-                + "\"metadata\":{\"testKey\":\"testValue\"},\"hosts\":[]}},\"metadata\":{\"testKey\":\"testValue\"},"
+                + "\"metadata\":{\"testKey\":\"testValue\"},\"hosts\":[],\"healthyCheckPort\":8080,\"useInstancePortForCheck\":false}},"
+                + "\"metadata\":{\"testKey\":\"testValue\"},"
                 + "\"protectThreshold\":0.5,\"selector\":null,\"ephemeral\":false}";
         ServiceDetailInfo serviceDetailInfo1 = mapper.readValue(jsonString, ServiceDetailInfo.class);
         assertEquals(serviceDetailInfo.getNamespaceId(), serviceDetailInfo1.getNamespaceId());
@@ -99,6 +104,8 @@ class ServiceDetailInfoTest {
             assertEquals(clusterInfo.getHealthChecker().getType(), clusterInfo1.getHealthChecker().getType());
             assertEquals(clusterInfo.getMetadata(), clusterInfo1.getMetadata());
             assertEquals(clusterInfo.getHosts(), clusterInfo1.getHosts());
+            assertEquals(clusterInfo.getHealthyCheckPort(), clusterInfo1.getHealthyCheckPort());
+            assertEquals(clusterInfo.isUseInstancePortForCheck(), clusterInfo1.isUseInstancePortForCheck());
         }
     }
     

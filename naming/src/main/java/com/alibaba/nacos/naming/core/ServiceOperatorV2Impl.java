@@ -212,6 +212,8 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
         result.setClusterName(clusterName);
         result.setHealthChecker(clusterMetadata.getHealthChecker());
         result.setMetadata(clusterMetadata.getExtendData());
+        result.setUseInstancePortForCheck(clusterMetadata.isUseInstancePortForCheck());
+        result.setHealthyCheckPort(clusterMetadata.getHealthyCheckPort());
         return result;
     }
     
