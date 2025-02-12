@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.config.server.controller.v3;
 
+import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
+import com.alibaba.nacos.api.config.model.ConfigHistoryBasicInfo;
+import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -24,7 +27,7 @@ import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.form.ConfigFormV3;
 import com.alibaba.nacos.config.server.service.HistoryService;
 import com.alibaba.nacos.core.model.form.PageForm;
-import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.api.model.Page;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -92,18 +95,18 @@ class HistoryControllerV3Test {
         PageForm pageForm = new PageForm();
         pageForm.setPageNo(1);
         pageForm.setPageSize(10);
-        Result<Page<ConfigHistoryInfo>> pageResult = historyControllerV3.listConfigHistory(configForm, pageForm);
+        Result<Page<ConfigHistoryBasicInfo>> pageResult = historyControllerV3.listConfigHistory(configForm, pageForm);
         
         verify(historyService).listConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC, 1, 10);
         
-        List<ConfigHistoryInfo> resultList = pageResult.getData().getPageItems();
-        ConfigHistoryInfo resConfigHistoryInfo = resultList.get(0);
+        List<ConfigHistoryBasicInfo> resultList = pageResult.getData().getPageItems();
+        ConfigHistoryBasicInfo resConfigHistoryInfo = resultList.get(0);
         
         assertEquals(ErrorCode.SUCCESS.getCode(), pageResult.getCode());
         assertEquals(configHistoryInfoList.size(), resultList.size());
         assertEquals(configHistoryInfo.getDataId(), resConfigHistoryInfo.getDataId());
-        assertEquals(configHistoryInfo.getGroup(), resConfigHistoryInfo.getGroup());
-        assertEquals(configHistoryInfo.getContent(), resConfigHistoryInfo.getContent());
+        assertEquals(configHistoryInfo.getGroup(), resConfigHistoryInfo.getGroupName());
+        assertEquals(configHistoryInfo.getTenant(), resConfigHistoryInfo.getNamespaceId());
         
     }
     
@@ -136,18 +139,17 @@ class HistoryControllerV3Test {
         pageForm.setPageNo(1);
         pageForm.setPageSize(10);
         
-        Result<Page<ConfigHistoryInfo>> pageResult = historyControllerV3.listConfigHistory(configForm, pageForm);
+        Result<Page<ConfigHistoryBasicInfo>> pageResult = historyControllerV3.listConfigHistory(configForm, pageForm);
         
         verify(historyService).listConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC, 1, 10);
         
-        List<ConfigHistoryInfo> resultList = pageResult.getData().getPageItems();
-        ConfigHistoryInfo resConfigHistoryInfo = resultList.get(0);
+        List<ConfigHistoryBasicInfo> resultList = pageResult.getData().getPageItems();
+        ConfigHistoryBasicInfo resConfigHistoryInfo = resultList.get(0);
         
         assertEquals(ErrorCode.SUCCESS.getCode(), pageResult.getCode());
         assertEquals(configHistoryInfoList.size(), resultList.size());
         assertEquals(configHistoryInfo.getDataId(), resConfigHistoryInfo.getDataId());
-        assertEquals(configHistoryInfo.getGroup(), resConfigHistoryInfo.getGroup());
-        assertEquals(configHistoryInfo.getContent(), resConfigHistoryInfo.getContent());
+        assertEquals(configHistoryInfo.getGroup(), resConfigHistoryInfo.getGroupName());
         
     }
     
@@ -169,15 +171,15 @@ class HistoryControllerV3Test {
         configForm.setDataId(TEST_DATA_ID);
         configForm.setGroupName(TEST_GROUP);
         configForm.setNamespaceId(TEST_NAMESPACE_ID_PUBLIC);
-        Result<ConfigHistoryInfo> result = historyControllerV3.getConfigHistoryInfo(configForm, 1L);
+        Result<ConfigHistoryDetailInfo> result = historyControllerV3.getConfigHistoryInfo(configForm, 1L);
         
         verify(historyService).getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC, 1L);
         
-        ConfigHistoryInfo resConfigHistoryInfo = result.getData();
+        ConfigHistoryDetailInfo resConfigHistoryInfo = result.getData();
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(configHistoryInfo.getDataId(), resConfigHistoryInfo.getDataId());
-        assertEquals(configHistoryInfo.getGroup(), resConfigHistoryInfo.getGroup());
+        assertEquals(configHistoryInfo.getGroup(), resConfigHistoryInfo.getGroupName());
         assertEquals(configHistoryInfo.getContent(), resConfigHistoryInfo.getContent());
         
     }
@@ -200,15 +202,15 @@ class HistoryControllerV3Test {
         configForm.setDataId(TEST_DATA_ID);
         configForm.setGroupName(TEST_GROUP);
         configForm.setNamespaceId(TEST_NAMESPACE_ID);
-        Result<ConfigHistoryInfo> result = historyControllerV3.getConfigHistoryInfo(configForm, 1L);
+        Result<ConfigHistoryDetailInfo> result = historyControllerV3.getConfigHistoryInfo(configForm, 1L);
         
         verify(historyService).getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC, 1L);
         
-        ConfigHistoryInfo resConfigHistoryInfo = result.getData();
+        ConfigHistoryDetailInfo resConfigHistoryInfo = result.getData();
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(configHistoryInfo.getDataId(), resConfigHistoryInfo.getDataId());
-        assertEquals(configHistoryInfo.getGroup(), resConfigHistoryInfo.getGroup());
+        assertEquals(configHistoryInfo.getGroup(), resConfigHistoryInfo.getGroupName());
         assertEquals(configHistoryInfo.getContent(), resConfigHistoryInfo.getContent());
         
     }
@@ -231,15 +233,15 @@ class HistoryControllerV3Test {
         configForm.setDataId(TEST_DATA_ID);
         configForm.setGroupName(TEST_GROUP);
         configForm.setNamespaceId(TEST_NAMESPACE_ID);
-        Result<ConfigHistoryInfo> result = historyControllerV3.getPreviousConfigHistoryInfo(configForm, 1L);
+        Result<ConfigHistoryDetailInfo> result = historyControllerV3.getPreviousConfigHistoryInfo(configForm, 1L);
         
         verify(historyService).getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC, 1L);
         
-        ConfigHistoryInfo resConfigHistoryInfo = result.getData();
+        ConfigHistoryDetailInfo resConfigHistoryInfo = result.getData();
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(configHistoryInfo.getDataId(), resConfigHistoryInfo.getDataId());
-        assertEquals(configHistoryInfo.getGroup(), resConfigHistoryInfo.getGroup());
+        assertEquals(configHistoryInfo.getGroup(), resConfigHistoryInfo.getGroupName());
         assertEquals(configHistoryInfo.getContent(), resConfigHistoryInfo.getContent());
         
     }
@@ -262,15 +264,15 @@ class HistoryControllerV3Test {
         configForm.setDataId(TEST_DATA_ID);
         configForm.setGroupName(TEST_GROUP);
         configForm.setNamespaceId(TEST_NAMESPACE_ID_PUBLIC);
-        Result<ConfigHistoryInfo> result = historyControllerV3.getPreviousConfigHistoryInfo(configForm, 1L);
+        Result<ConfigHistoryDetailInfo> result = historyControllerV3.getPreviousConfigHistoryInfo(configForm, 1L);
         
         verify(historyService).getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC, 1L);
         
-        ConfigHistoryInfo resConfigHistoryInfo = result.getData();
+        ConfigHistoryDetailInfo resConfigHistoryInfo = result.getData();
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(configHistoryInfo.getDataId(), resConfigHistoryInfo.getDataId());
-        assertEquals(configHistoryInfo.getGroup(), resConfigHistoryInfo.getGroup());
+        assertEquals(configHistoryInfo.getGroup(), resConfigHistoryInfo.getGroupName());
         assertEquals(configHistoryInfo.getContent(), resConfigHistoryInfo.getContent());
         
     }
@@ -284,16 +286,15 @@ class HistoryControllerV3Test {
         List<ConfigInfoWrapper> configInfoWrappers = Collections.singletonList(configInfoWrapper);
         
         when(historyService.getConfigListByNamespace("test")).thenReturn(configInfoWrappers);
-        Result<List<ConfigInfoWrapper>> result = historyControllerV3.getConfigsByTenant("test");
+        Result<List<ConfigBasicInfo>> result = historyControllerV3.getConfigsByNamespace("test");
         verify(historyService).getConfigListByNamespace("test");
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
-        List<ConfigInfoWrapper> actualList = result.getData();
+        List<ConfigBasicInfo> actualList = result.getData();
         assertEquals(configInfoWrappers.size(), actualList.size());
-        ConfigInfoWrapper actualConfigInfoWrapper = actualList.get(0);
+        ConfigBasicInfo actualConfigInfoWrapper = actualList.get(0);
         assertEquals(configInfoWrapper.getDataId(), actualConfigInfoWrapper.getDataId());
-        assertEquals(configInfoWrapper.getGroup(), actualConfigInfoWrapper.getGroup());
-        assertEquals(configInfoWrapper.getContent(), actualConfigInfoWrapper.getContent());
+        assertEquals(configInfoWrapper.getGroup(), actualConfigInfoWrapper.getGroupName());
     }
     
     @Test
@@ -305,15 +306,14 @@ class HistoryControllerV3Test {
         List<ConfigInfoWrapper> configInfoWrappers = Collections.singletonList(configInfoWrapper);
         
         when(historyService.getConfigListByNamespace(TEST_NAMESPACE_ID_PUBLIC)).thenReturn(configInfoWrappers);
-        Result<List<ConfigInfoWrapper>> result = historyControllerV3.getConfigsByTenant(TEST_NAMESPACE_ID_PUBLIC);
+        Result<List<ConfigBasicInfo>> result = historyControllerV3.getConfigsByNamespace(TEST_NAMESPACE_ID_PUBLIC);
         verify(historyService).getConfigListByNamespace(TEST_NAMESPACE_ID_PUBLIC);
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
-        List<ConfigInfoWrapper> actualList = result.getData();
+        List<ConfigBasicInfo> actualList = result.getData();
         assertEquals(configInfoWrappers.size(), actualList.size());
-        ConfigInfoWrapper actualConfigInfoWrapper = actualList.get(0);
+        ConfigBasicInfo actualConfigInfoWrapper = actualList.get(0);
         assertEquals(configInfoWrapper.getDataId(), actualConfigInfoWrapper.getDataId());
-        assertEquals(configInfoWrapper.getGroup(), actualConfigInfoWrapper.getGroup());
-        assertEquals(configInfoWrapper.getContent(), actualConfigInfoWrapper.getContent());
+        assertEquals(configInfoWrapper.getGroup(), actualConfigInfoWrapper.getGroupName());
     }
 }

@@ -28,6 +28,7 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.tls.TlsSystemConfig;
 import com.alibaba.nacos.common.utils.HttpMethod;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.maintainer.client.address.DefaultServerListManager;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
 import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
@@ -135,6 +136,8 @@ public class ClientHttpProxy {
             case HttpMethod.POST:
                 if (file != null) {
                     return nacosRestTemplate.postFile(url, httpConfig, httpHeaders, request.getFile(), String.class);
+                } else if (StringUtils.isNotBlank(request.getBody())) {
+                    return nacosRestTemplate.postJson(url, httpHeaders, query, request.getBody(), String.class);
                 } else {
                     return nacosRestTemplate.postForm(url, httpConfig, httpHeaders, paramValues, String.class);
                 }

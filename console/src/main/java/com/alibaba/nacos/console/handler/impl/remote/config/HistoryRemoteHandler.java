@@ -22,7 +22,7 @@ import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.console.handler.config.HistoryHandler;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
-import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.api.model.Page;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;

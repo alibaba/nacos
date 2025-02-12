@@ -17,12 +17,12 @@
 package com.alibaba.nacos.config.server.controller.v3;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
@@ -62,16 +62,16 @@ public class ListenerControllerV3 {
     @GetMapping
     @Secured(resource = Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
-    public Result<GroupkeyListenserStatus> getAllSubClientConfigByIp(@RequestParam("ip") String ip,
+    public Result<ConfigListenerInfo> getAllSubClientConfigByIp(@RequestParam("ip") String ip,
             @RequestParam(value = "all", required = false) boolean all,
             @RequestParam(value = "namespaceId", required = false) String namespaceId,
             @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime) {
         SampleResult collectSampleResult = configSubService.getCollectSampleResultByIp(ip, sampleTime);
-        GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
-        gls.setCollectStatus(200);
+        ConfigListenerInfo result = new ConfigListenerInfo();
+        result.setQueryType(ConfigListenerInfo.QUERY_TYPE_IP);
         Map<String, String> configMd5Status = new HashMap<>(100);
         if (collectSampleResult.getLisentersGroupkeyStatus() == null) {
-            return Result.success(gls);
+            return Result.success(result);
         }
         Map<String, String> status = collectSampleResult.getLisentersGroupkeyStatus();
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
@@ -90,8 +90,8 @@ public class ListenerControllerV3 {
                 }
             }
         }
-        gls.setLisentersGroupkeyStatus(configMd5Status);
-        return Result.success(gls);
+        result.setListenersStatus(configMd5Status);
+        return Result.success(result);
     }
     
 }

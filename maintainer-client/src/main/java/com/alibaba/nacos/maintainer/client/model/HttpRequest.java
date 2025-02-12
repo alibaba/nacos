@@ -35,14 +35,17 @@ public class HttpRequest {
     
     private Map<String, String> paramValues;
     
+    private String body;
+    
     private File file;
     
-    public HttpRequest(String httpMethod, String path, Map<String, String> headers, Map<String, String> paramValues, File file) {
+    public HttpRequest(String httpMethod, String path, Map<String, String> headers, Map<String, String> paramValues,
+            File file, String body) {
         this.httpMethod = httpMethod;
         this.path = path;
         this.headers = headers;
         this.paramValues = paramValues;
-        this.file = file;
+        this.body = body;
     }
     
     public String getHttpMethod() {
@@ -77,6 +80,14 @@ public class HttpRequest {
         this.paramValues = paramValues;
     }
     
+    public String getBody() {
+        return body;
+    }
+    
+    public void setBody(String body) {
+        this.body = body;
+    }
+    
     public File getFile() {
         return file;
     }
@@ -94,6 +105,8 @@ public class HttpRequest {
         private final Map<String, String> headers = new HashMap<>();
         
         private final Map<String, String> paramValues = new HashMap<>();
+        
+        private String body;
         
         private File file;
         
@@ -119,13 +132,18 @@ public class HttpRequest {
             return this;
         }
         
+        public Builder setBody(String body) {
+            this.body = body;
+            return this;
+        }
+        
         public Builder setFile(File file) {
             this.file = file;
             return this;
         }
         
         public HttpRequest build() {
-            return new HttpRequest(httpMethod, path, headers, paramValues, file);
+            return new HttpRequest(httpMethod, path, headers, paramValues, file, body);
         }
     }
 }
