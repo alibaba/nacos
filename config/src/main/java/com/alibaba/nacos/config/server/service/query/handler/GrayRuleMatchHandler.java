@@ -25,9 +25,8 @@ import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRespo
 import java.io.IOException;
 
 /**
- * GrayRuleMatchHandler.
- * This class represents a gray rule handler in the configuration query processing chain.
- * It checks if the request matches any gray rules and processes the request accordingly.
+ * GrayRuleMatchHandler. This class represents a gray rule handler in the configuration query processing chain. It
+ * checks if the request matches any gray rules and processes the request accordingly.
  *
  * @author Nacos
  */
@@ -69,7 +68,7 @@ public class GrayRuleMatchHandler extends AbstractConfigQueryHandler {
             response.setLastModified(lastModified);
             response.setEncryptedDataKey(encryptedDataKey);
             response.setMatchedGray(matchedGray);
-            response.setContentType(cacheItem.getType());
+            response.setConfigType(cacheItem.getType());
             response.setStatus(ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_FOUND_GRAY);
             
             return response;

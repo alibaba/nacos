@@ -36,7 +36,7 @@ import java.util.List;
 public class ServiceInfo {
     
     /**
-     * file name pattern: groupName@@name@clusters.
+     * file name pattern: groupName@@name@@clusters.
      */
     private static final int GROUP_POSITION = 0;
     
@@ -83,7 +83,7 @@ public class ServiceInfo {
     }
     
     /**
-     * There is only one form of the key:groupName@@name@clusters. This constructor used by DiskCache.read(String) and
+     * There is only one form of the key:groupName@@name@@clusters. This constructor used by DiskCache.read(String) and
      * FailoverReactor.FailoverFileReader,you should know that 'groupName' must not be null,and 'clusters' can be null.
      */
     public ServiceInfo(final String key) {
