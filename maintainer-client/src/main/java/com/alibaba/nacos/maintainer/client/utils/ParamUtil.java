@@ -40,17 +40,23 @@ public class ParamUtil {
     
     private static int maxRetryTimes;
     
+    private static long refreshIntervalMills;
+    
     private static final String MAINTAINER_CLIENT_CONNECT_TIMEOUT_KEY = "MAINTAINER.CLIENT.CONNECT.TIMEOUT";
     
     private static final String MAINTAINER_CLIENT_READ_TIMEOUT_KEY = "MAINTAINER.CLIENT.READ.TIMEOUT";
     
     private static final String MAINTAINER_CLIENT_MAX_RETRY_TIMES_KEY = "MAINTAINER.CLIENT.MAX.RETRY.TIMES";
     
+    private static final String MAINTAINER_CLIENT_REFRESH_INTERVAL_MILLS_KEY = "MAINTAINER.CLIENT.REFRESH.INTERVAL.MILLS";
+    
     private static final String DEFAULT_CONNECT_TIMEOUT = "2000";
     
     private static final String DEFAULT_READ_TIMEOUT = "5000";
     
     private static final int DEFAULT_MAX_RETRY_TIMES = 3;
+    
+    private static final int DEFAULT_REFRESH_INTERVAL_MILLS = 5000;
     
     static {
         connectTimeout = initConnectionTimeout();
@@ -61,6 +67,9 @@ public class ParamUtil {
         
         maxRetryTimes = initMaxRetryTimes();
         LOGGER.info("[settings] [maintainer-http-client] max retry times:{}", maxRetryTimes);
+        
+        refreshIntervalMills = initRefreshIntervalMills();
+        LOGGER.info("[settings] [maintainer-http-client] auth refresh interval mills:{}", refreshIntervalMills);
     }
     
     private static int initConnectionTimeout() {
@@ -96,6 +105,17 @@ public class ParamUtil {
         }
     }
     
+    private static long initRefreshIntervalMills() {
+        try {
+            return Long.parseLong(NacosClientProperties.PROTOTYPE.getProperty(MAINTAINER_CLIENT_REFRESH_INTERVAL_MILLS_KEY,
+                    String.valueOf(DEFAULT_REFRESH_INTERVAL_MILLS)));
+        } catch (NumberFormatException e) {
+            final String msg = "[http-client] invalid auth refresh interval :" + refreshIntervalMills;
+            LOGGER.error("[settings] {}", msg, e);
+            throw new IllegalArgumentException(msg, e);
+        }
+    }
+    
     public static int getConnectTimeout() {
         return connectTimeout;
     }
@@ -122,6 +142,10 @@ public class ParamUtil {
     
     public static String getDefaultGroupName() {
         return Constants.DEFAULT_GROUP;
+    }
+    
+    public static long getRefreshIntervalMills() {
+        return refreshIntervalMills;
     }
     
     /**

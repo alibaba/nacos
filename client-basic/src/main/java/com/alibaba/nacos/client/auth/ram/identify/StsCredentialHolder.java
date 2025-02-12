@@ -18,14 +18,14 @@ package com.alibaba.nacos.client.auth.ram.identify;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
-import com.alibaba.nacos.client.config.impl.ConfigHttpClientManager;
-import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.client.remote.HttpClientManager;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Sts credential holder.
@@ -34,7 +34,7 @@ import org.slf4j.Logger;
  */
 public class StsCredentialHolder {
     
-    private static final Logger LOGGER = LogUtils.logger(StsCredentialHolder.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(StsCredentialHolder.class);
     
     private static final StsCredentialHolder INSTANCE = new StsCredentialHolder();
     
@@ -78,7 +78,7 @@ public class StsCredentialHolder {
         }
         String securityCredentialsUrl = StsConfig.getInstance().getSecurityCredentialsUrl();
         try {
-            HttpRestResult<String> result = ConfigHttpClientManager.getInstance().getNacosRestTemplate()
+            HttpRestResult<String> result = HttpClientManager.getInstance().getNacosRestTemplate()
                     .get(securityCredentialsUrl, Header.EMPTY, Query.EMPTY, String.class);
             
             if (!result.ok()) {

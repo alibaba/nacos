@@ -55,6 +55,11 @@
             <artifactId>slf4j-api</artifactId>
             <optional>true</optional>
         </dependency>
+        
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-auth-plugin</artifactId>
+        </dependency>
     </dependencies>
 
 </project>
