@@ -78,7 +78,7 @@ public class ClientHttpProxyTest {
         mockResult.setData("Success");
         when(mockNacosRestTemplate.get(anyString(), any(), any(), any(), eq(String.class))).thenReturn(mockResult);
         
-        HttpRequest request = new HttpRequest("GET", "/test", new HashMap<>(), new HashMap<>(), null);
+        HttpRequest request = new HttpRequest("GET", "/test", new HashMap<>(), new HashMap<>(), null, null);
         
         HttpRestResult<String> result = clientHttpProxy.executeSyncHttpRequest(request);
         
@@ -103,7 +103,7 @@ public class ClientHttpProxyTest {
         when(mockNacosRestTemplate.get(anyString(), any(), any(), any(), eq(String.class))).thenReturn(
                 mockFailureResult).thenReturn(mockSuccessResult);
         
-        HttpRequest request = new HttpRequest("GET", "/test", new HashMap<>(), new HashMap<>(), null);
+        HttpRequest request = new HttpRequest("GET", "/test", new HashMap<>(), new HashMap<>(), null, null);
         
         HttpRestResult<String> result = clientHttpProxy.executeSyncHttpRequest(request);
         
@@ -124,7 +124,7 @@ public class ClientHttpProxyTest {
         when(mockNacosRestTemplate.get(anyString(), any(), any(), any(), eq(String.class))).thenReturn(
                 mockFailureResult);
         
-        HttpRequest request = new HttpRequest("GET", "/test", new HashMap<>(), new HashMap<>(), null);
+        HttpRequest request = new HttpRequest("GET", "/test", new HashMap<>(), new HashMap<>(), null, null);
         
         Exception exception = assertThrows(NacosException.class, () -> {
             clientHttpProxy.executeSyncHttpRequest(request);

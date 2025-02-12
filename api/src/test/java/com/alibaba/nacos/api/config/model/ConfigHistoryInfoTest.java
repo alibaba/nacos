@@ -51,7 +51,7 @@ class ConfigHistoryInfoTest {
     }
     
     private void mockBasicInfo(ConfigHistoryBasicInfo basicInfo, long createTime, long modifyTime) {
-        basicInfo.setId("1");
+        basicInfo.setId(1L);
         basicInfo.setNamespaceId("testNs");
         basicInfo.setGroupName("testGroup");
         basicInfo.setDataId("testDataId");
@@ -81,7 +81,7 @@ class ConfigHistoryInfoTest {
     
     @Test
     public void testBasicInfoDeserialize() throws JsonProcessingException {
-        String json = "{\"id\":\"1\",\"namespaceId\":\"testNs\",\"groupName\":\"testGroup\",\"dataId\":\"testDataId\","
+        String json = "{\"id\":1,\"namespaceId\":\"testNs\",\"groupName\":\"testGroup\",\"dataId\":\"testDataId\","
                 + "\"md5\":\"testMd5\",\"type\":\"text\",\"appName\":\"testApp\",\"createTime\":%s,\"modifyTime\":%s,"
                 + "\"srcIp\":\"1.1.1.1\",\"srcUser\":\"testCreateUser\",\"opType\":\"I\",\"publishType\":\"formal\"}";
         json = String.format(json, createTime, modifyTime);
@@ -98,7 +98,7 @@ class ConfigHistoryInfoTest {
     
     @Test
     public void testDetailInfoDeserialize() throws JsonProcessingException {
-        String json = "{\"id\":\"1\",\"namespaceId\":\"testNs\",\"groupName\":\"testGroup\",\"dataId\":\"testDataId\","
+        String json = "{\"id\":1,\"namespaceId\":\"testNs\",\"groupName\":\"testGroup\",\"dataId\":\"testDataId\","
                 + "\"md5\":\"testMd5\",\"type\":\"text\",\"appName\":\"testApp\",\"createTime\":%s,\"modifyTime\":%s,"
                 + "\"srcIp\":\"1.1.1.1\",\"srcUser\":\"testCreateUser\",\"opType\":\"I\",\"publishType\":\"formal\","
                 + "\"content\":\"testContent\",\"encryptedDataKey\":\"testEncryptedDataKey\",\"grayName\":\"testGrayName\","
@@ -110,7 +110,7 @@ class ConfigHistoryInfoTest {
     }
     
     private void assertJsonContainBasicInfos(String json) {
-        assertTrue(json.contains("\"id\":\"1\""));
+        assertTrue(json.contains("\"id\":1"));
         assertTrue(json.contains("\"namespaceId\":\"testNs\""));
         assertTrue(json.contains("\"groupName\":\"testGroup\""));
         assertTrue(json.contains("\"dataId\":\"testDataId\""));

@@ -17,19 +17,20 @@
 package com.alibaba.nacos.config.server.controller.v3;
 
 import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
+import com.alibaba.nacos.api.config.model.ConfigCloneInfo;
 import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
+import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigMetadata;
-import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
@@ -41,7 +42,6 @@ import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistServi
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
-import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.servlet.ServletContext;
@@ -223,10 +223,10 @@ class ConfigControllerV3Test {
         String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         final String code = JacksonUtils.toObj(actualValue).get("code").toString();
         String data = JacksonUtils.toObj(actualValue).get("data").toString();
-        GroupkeyListenserStatus groupkeyListenserStatus = JacksonUtils.toObj(data, GroupkeyListenserStatus.class);
-        assertEquals(200, groupkeyListenserStatus.getCollectStatus());
-        assertEquals(1, groupkeyListenserStatus.getLisentersGroupkeyStatus().size());
-        assertEquals("test", groupkeyListenserStatus.getLisentersGroupkeyStatus().get("test"));
+        ConfigListenerInfo configListenerInfo = JacksonUtils.toObj(data, ConfigListenerInfo.class);
+        assertEquals(ConfigListenerInfo.QUERY_TYPE_CONFIG, configListenerInfo.getQueryType());
+        assertEquals(1, configListenerInfo.getListenersStatus().size());
+        assertEquals("test", configListenerInfo.getListenersStatus().get("test"));
         assertEquals("0", code);
     }
     
@@ -440,12 +440,12 @@ class ConfigControllerV3Test {
     
     @Test
     void testCloneConfig() throws Exception {
-        SameNamespaceCloneConfigBean sameNamespaceCloneConfigBean = new SameNamespaceCloneConfigBean();
-        sameNamespaceCloneConfigBean.setCfgId(1L);
-        sameNamespaceCloneConfigBean.setDataId("test");
-        sameNamespaceCloneConfigBean.setGroup("test");
-        List<SameNamespaceCloneConfigBean> configBeansList = new ArrayList<>();
-        configBeansList.add(sameNamespaceCloneConfigBean);
+        ConfigCloneInfo cloneInfo = new ConfigCloneInfo();
+        cloneInfo.setConfigId(1L);
+        cloneInfo.setTargetDataId("test");
+        cloneInfo.setTargetGroupName("test");
+        List<ConfigCloneInfo> configBeansList = new ArrayList<>();
+        configBeansList.add(cloneInfo);
         
         when(namespacePersistService.tenantInfoCountByTenantId("public")).thenReturn(1);
         
@@ -456,7 +456,7 @@ class ConfigControllerV3Test {
         queryedDataList.add(configAllInfo);
         
         List<Long> idList = new ArrayList<>(configBeansList.size());
-        idList.add(sameNamespaceCloneConfigBean.getCfgId());
+        idList.add(cloneInfo.getConfigId());
         
         when(configInfoPersistService.findAllConfigInfo4Export(null, null, null, null, idList)).thenReturn(
                 queryedDataList);

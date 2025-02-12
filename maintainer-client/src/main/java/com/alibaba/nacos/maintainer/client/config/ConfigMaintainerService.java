@@ -17,16 +17,16 @@
 package com.alibaba.nacos.maintainer.client.config;
 
 import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
+import com.alibaba.nacos.api.config.model.ConfigCloneInfo;
 import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
 import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
 import com.alibaba.nacos.api.config.model.ConfigHistoryBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
+import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
+import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.maintainer.client.core.CoreMaintainerService;
-import com.alibaba.nacos.maintainer.client.model.config.GroupkeyListenserStatus;
-import com.alibaba.nacos.maintainer.client.model.config.SameConfigPolicy;
-import com.alibaba.nacos.maintainer.client.model.config.SameNamespaceCloneConfigBean;
 
 import java.util.List;
 import java.util.Map;
@@ -155,7 +155,7 @@ public interface ConfigMaintainerService extends CoreMaintainerService {
      * @return List of listeners for the configuration.
      * @throws NacosException If retrieval fails.
      */
-    GroupkeyListenserStatus getListeners(String dataId, String groupName) throws NacosException;
+    ConfigListenerInfo getListeners(String dataId, String groupName) throws NacosException;
     
     /**
      * Get the listeners of a configuration by dataId, groupName, namespaceId, and sampleTime.
@@ -167,7 +167,7 @@ public interface ConfigMaintainerService extends CoreMaintainerService {
      * @return List of listeners for the configuration.
      * @throws NacosException If retrieval fails.
      */
-    GroupkeyListenserStatus getListeners(String dataId, String groupName, String namespaceId, int sampleTime)
+    ConfigListenerInfo getListeners(String dataId, String groupName, String namespaceId, int sampleTime)
             throws NacosException;
     
     /**
@@ -232,14 +232,14 @@ public interface ConfigMaintainerService extends CoreMaintainerService {
      * Clone configurations within the same namespace.
      *
      * @param namespaceId     Namespace ID (optional, defaults to "public").
-     * @param configBeansList List of configurations to clone (required).
+     * @param cloneInfos      List of configurations to clone (required).
      * @param srcUser         Source user (optional).
      * @param policy          Conflict resolution policy (required).
      * @return A map containing the clone result (e.g., success count, unrecognized data).
      * @throws NacosException If the clone operation fails.
      */
-    Map<String, Object> cloneConfig(String namespaceId, List<SameNamespaceCloneConfigBean> configBeansList,
-            String srcUser, SameConfigPolicy policy) throws NacosException;
+    Map<String, Object> cloneConfig(String namespaceId, List<ConfigCloneInfo> cloneInfos, String srcUser,
+            SameConfigPolicy policy) throws NacosException;
     
     /**
      * Query the list of configuration history by dataId, groupName, namespaceId, pageNo, and pageSize.
@@ -318,6 +318,6 @@ public interface ConfigMaintainerService extends CoreMaintainerService {
      * @return the subscription status.
      * @throws NacosException if the operation fails.
      */
-    GroupkeyListenserStatus getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime)
+    ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime)
             throws NacosException;
 }

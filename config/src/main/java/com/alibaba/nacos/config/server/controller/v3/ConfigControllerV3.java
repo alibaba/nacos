@@ -19,10 +19,14 @@ package com.alibaba.nacos.config.server.controller.v3;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
+import com.alibaba.nacos.api.config.model.ConfigCloneInfo;
 import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
 import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
+import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
+import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
@@ -32,14 +36,11 @@ import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.constant.ParametersField;
-import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigMetadata;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
-import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
-import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.model.form.ConfigFormV3;
@@ -65,7 +66,6 @@ import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
-import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
@@ -267,19 +267,18 @@ public class ConfigControllerV3 {
      */
     @GetMapping("/listener")
     @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
-    public Result<GroupkeyListenserStatus> getListeners(ConfigFormV3 configForm,
+    public Result<ConfigListenerInfo> getListeners(ConfigFormV3 configForm,
             @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime) throws Exception {
         String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
         SampleResult collectSampleResult = configSubService.getCollectSampleResult(configForm.getDataId(),
                 configForm.getGroupName(), namespaceId, sampleTime);
-        
-        GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
-        gls.setCollectStatus(200);
+        ConfigListenerInfo result = new ConfigListenerInfo();
+        result.setQueryType(ConfigListenerInfo.QUERY_TYPE_CONFIG);
         if (collectSampleResult.getLisentersGroupkeyStatus() != null) {
-            gls.setLisentersGroupkeyStatus(collectSampleResult.getLisentersGroupkeyStatus());
+            result.setListenersStatus(collectSampleResult.getLisentersGroupkeyStatus());
         }
         
-        return Result.success(gls);
+        return Result.success(result);
     }
     
     /**
@@ -374,7 +373,8 @@ public class ConfigControllerV3 {
             ConfigGrayInfo result = ResponseUtil.transferToConfigGrayInfo(beta4Gray);
             return Result.success(result);
         } else {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND, "Config is not in beta.");
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                    "Config is not in beta.");
         }
     }
     
@@ -647,15 +647,14 @@ public class ConfigControllerV3 {
     @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Map<String, Object>> cloneConfig(HttpServletRequest request,
             @RequestParam(value = "src_user", required = false) String srcUser,
-            @RequestParam(value = "namespaceId") String namespaceId,
-            @RequestBody List<SameNamespaceCloneConfigBean> configBeansList,
+            @RequestParam(value = "namespaceId") String namespaceId, @RequestBody List<ConfigCloneInfo> cloneInfos,
             @RequestParam(value = "policy", defaultValue = "ABORT") SameConfigPolicy policy) throws NacosException {
         Map<String, Object> failedData = new HashMap<>(4);
-        if (CollectionUtils.isEmpty(configBeansList)) {
+        if (CollectionUtils.isEmpty(cloneInfos)) {
             failedData.put("succCount", 0);
             return Result.failure(ErrorCode.NO_SELECTED_CONFIG, failedData);
         }
-        configBeansList.removeAll(Collections.singleton(null));
+        cloneInfos.removeAll(Collections.singleton(null));
         
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         if (StringUtils.isNotBlank(namespaceId)
@@ -664,10 +663,10 @@ public class ConfigControllerV3 {
             return Result.failure(ErrorCode.NAMESPACE_ALREADY_EXIST, failedData);
         }
         
-        List<Long> idList = new ArrayList<>(configBeansList.size());
-        Map<Long, SameNamespaceCloneConfigBean> configBeansMap = configBeansList.stream()
-                .collect(Collectors.toMap(SameNamespaceCloneConfigBean::getCfgId, cfg -> {
-                    idList.add(cfg.getCfgId());
+        List<Long> idList = new ArrayList<>(cloneInfos.size());
+        Map<Long, ConfigCloneInfo> configBeansMap = cloneInfos.stream()
+                .collect(Collectors.toMap(ConfigCloneInfo::getConfigId, cfg -> {
+                    idList.add(cfg.getConfigId());
                     return cfg;
                 }, (k1, k2) -> k1));
         
@@ -682,15 +681,14 @@ public class ConfigControllerV3 {
         List<ConfigAllInfo> configInfoList4Clone = new ArrayList<>(queryedDataList.size());
         
         for (ConfigAllInfo ci : queryedDataList) {
-            SameNamespaceCloneConfigBean paramBean = configBeansMap.get(ci.getId());
+            ConfigCloneInfo paramBean = configBeansMap.get(ci.getId());
             ConfigAllInfo ci4save = new ConfigAllInfo();
             ci4save.setTenant(namespaceId);
             ci4save.setType(ci.getType());
-            ci4save.setGroup((paramBean != null && StringUtils.isNotBlank(paramBean.getGroup())) ? paramBean.getGroup()
-                    : ci.getGroup());
-            ci4save.setDataId(
-                    (paramBean != null && StringUtils.isNotBlank(paramBean.getDataId())) ? paramBean.getDataId()
-                            : ci.getDataId());
+            ci4save.setGroup((paramBean != null && StringUtils.isNotBlank(paramBean.getTargetGroupName()))
+                    ? paramBean.getTargetGroupName() : ci.getGroup());
+            ci4save.setDataId((paramBean != null && StringUtils.isNotBlank(paramBean.getTargetDataId()))
+                    ? paramBean.getTargetDataId() : ci.getDataId());
             ci4save.setContent(ci.getContent());
             if (StringUtils.isNotBlank(ci.getAppName())) {
                 ci4save.setAppName(ci.getAppName());

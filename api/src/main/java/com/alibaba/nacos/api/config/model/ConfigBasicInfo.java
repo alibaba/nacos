@@ -34,7 +34,7 @@ public class ConfigBasicInfo implements Serializable {
      *     Different storage datasource will have different id. Such as Relational Database the id is auto-generated table ids.
      * </p>
      */
-    private String id;
+    private Long id;
     
     private String namespaceId;
     
@@ -52,11 +52,11 @@ public class ConfigBasicInfo implements Serializable {
     
     private long modifyTime;
     
-    public String getId() {
+    public Long getId() {
         return id;
     }
     
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
     

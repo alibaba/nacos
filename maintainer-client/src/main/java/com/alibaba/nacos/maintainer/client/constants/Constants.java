@@ -52,8 +52,6 @@ public class Constants {
         
         public static final String CONFIG_LISTENER_ADMIN_PATH = "/v3/admin/cs/listener";
         
-        public static final String CONFIG_METRICS_ADMIN_PATH = "/v3/admin/cs/metrics";
-        
         public static final String NAMING_SERVICE_ADMIN_PATH = "/v3/admin/ns/service";
         
         public static final String NAMING_INSTANCE_ADMIN_PATH = "/v3/admin/ns/instance";

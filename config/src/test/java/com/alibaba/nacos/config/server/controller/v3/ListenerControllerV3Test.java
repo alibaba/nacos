@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.config.server.controller.v3;
 
+import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -84,9 +84,9 @@ class ListenerControllerV3Test {
         String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         assertEquals("0", JacksonUtils.toObj(actualValue).get("code").toString());
         String data = JacksonUtils.toObj(actualValue).get("data").toString();
-        GroupkeyListenserStatus groupkeyListenserStatus = JacksonUtils.toObj(data, GroupkeyListenserStatus.class);
-        Map<String, String> resultMap = groupkeyListenserStatus.getLisentersGroupkeyStatus();
-        
+        ConfigListenerInfo configListenerInfo = JacksonUtils.toObj(data, ConfigListenerInfo.class);
+        Map<String, String> resultMap = configListenerInfo.getListenersStatus();
+        assertEquals(ConfigListenerInfo.QUERY_TYPE_IP, configListenerInfo.getQueryType());
         assertEquals(map.get("test"), resultMap.get("test"));
         
     }

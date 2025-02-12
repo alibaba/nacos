@@ -17,10 +17,13 @@
 package com.alibaba.nacos.maintainer.client.config;
 
 import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
+import com.alibaba.nacos.api.config.model.ConfigCloneInfo;
 import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
 import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
 import com.alibaba.nacos.api.config.model.ConfigHistoryBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
+import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
+import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -30,9 +33,6 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.core.AbstractCoreMaintainerService;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
-import com.alibaba.nacos.maintainer.client.model.config.GroupkeyListenserStatus;
-import com.alibaba.nacos.maintainer.client.model.config.SameConfigPolicy;
-import com.alibaba.nacos.maintainer.client.model.config.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 
@@ -180,12 +180,12 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public GroupkeyListenserStatus getListeners(String dataId, String groupName) throws NacosException {
+    public ConfigListenerInfo getListeners(String dataId, String groupName) throws NacosException {
         return getListeners(dataId, groupName, ParamUtil.getDefaultNamespaceId(), 1);
     }
     
     @Override
-    public GroupkeyListenserStatus getListeners(String dataId, String groupName, String namespaceId, int sampleTime)
+    public ConfigListenerInfo getListeners(String dataId, String groupName, String namespaceId, int sampleTime)
             throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("dataId", dataId);
@@ -194,10 +194,10 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
         params.put("sampleTime", String.valueOf(sampleTime));
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.CONFIG_LISTENER_ADMIN_PATH + "/listener").setParamValue(params).build();
+                .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH + "/listener").setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        Result<GroupkeyListenserStatus> result = JacksonUtils.toObj(httpRestResult.getData(),
-                new TypeReference<Result<GroupkeyListenserStatus>>() {
+        Result<ConfigListenerInfo> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<ConfigListenerInfo>>() {
                 });
         return result.getData();
     }
@@ -244,16 +244,16 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public Map<String, Object> cloneConfig(String namespaceId, List<SameNamespaceCloneConfigBean> configBeansList,
-            String srcUser, SameConfigPolicy policy) throws NacosException {
+    public Map<String, Object> cloneConfig(String namespaceId, List<ConfigCloneInfo> cloneInfos, String srcUser,
+            SameConfigPolicy policy) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("srcUser", srcUser);
         params.put("policy", policy.toString());
-        params.put("configBeansList", JacksonUtils.toJson(configBeansList));
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
-                .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH + "/clone").setParamValue(params).build();
+                .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH + "/clone").setParamValue(params)
+                .setBody(JacksonUtils.toJson(cloneInfos)).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<Map<String, Object>> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<Map<String, Object>>>() {
@@ -355,7 +355,7 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public GroupkeyListenserStatus getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime)
+    public ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime)
             throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("ip", ip);
@@ -366,8 +366,8 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CONFIG_LISTENER_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        Result<GroupkeyListenserStatus> result = JacksonUtils.toObj(httpRestResult.getData(),
-                new TypeReference<Result<GroupkeyListenserStatus>>() {
+        Result<ConfigListenerInfo> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<ConfigListenerInfo>>() {
                 });
         return result.getData();
     }

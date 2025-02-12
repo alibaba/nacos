@@ -17,19 +17,19 @@
 package com.alibaba.nacos.maintainer.client.config;
 
 import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
+import com.alibaba.nacos.api.config.model.ConfigCloneInfo;
 import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
 import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
 import com.alibaba.nacos.api.config.model.ConfigHistoryBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
+import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
+import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.maintainer.client.core.AbstractCoreMaintainerService;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
-import com.alibaba.nacos.maintainer.client.model.config.GroupkeyListenserStatus;
-import com.alibaba.nacos.maintainer.client.model.config.SameConfigPolicy;
-import com.alibaba.nacos.maintainer.client.model.config.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -177,11 +177,10 @@ class NacosConfigMaintainerServiceImplTest {
         final String groupName = "testGroup";
         final String namespaceId = "testNamespace";
         final int sampleTime = 1;
-        int collectionStatus = 1;
         Map<String, String> lisentersGroupkeyStatusMap = new HashMap<>();
-        GroupkeyListenserStatus expectedStatus = new GroupkeyListenserStatus();
-        expectedStatus.setCollectStatus(collectionStatus);
-        expectedStatus.setLisentersGroupkeyStatus(lisentersGroupkeyStatusMap);
+        ConfigListenerInfo expectedStatus = new ConfigListenerInfo();
+        expectedStatus.setQueryType(ConfigListenerInfo.QUERY_TYPE_CONFIG);
+        expectedStatus.setListenersStatus(lisentersGroupkeyStatusMap);
         
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(JacksonUtils.toJson(new Result<>(expectedStatus)));
@@ -189,13 +188,13 @@ class NacosConfigMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockHttpRestResult);
         
         // Act
-        GroupkeyListenserStatus result = nacosConfigMaintainerServiceImpl.getListeners(dataId, groupName, namespaceId,
+        ConfigListenerInfo result = nacosConfigMaintainerServiceImpl.getListeners(dataId, groupName, namespaceId,
                 sampleTime);
         
         // Assert
         assertNotNull(result);
-        assertEquals(collectionStatus, result.getCollectStatus());
-        assertEquals(lisentersGroupkeyStatusMap, result.getLisentersGroupkeyStatus());
+        assertEquals(ConfigListenerInfo.QUERY_TYPE_CONFIG, result.getQueryType());
+        assertEquals(lisentersGroupkeyStatusMap, result.getListenersStatus());
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any(HttpRequest.class));
     }
     
@@ -249,7 +248,7 @@ class NacosConfigMaintainerServiceImplTest {
     void testCloneConfig() throws Exception {
         // Arrange
         final String namespaceId = "testNamespace";
-        final List<SameNamespaceCloneConfigBean> configBeansList = new ArrayList<>();
+        final List<ConfigCloneInfo> configBeansList = new ArrayList<>();
         final String srcUser = "testUser";
         final SameConfigPolicy policy = SameConfigPolicy.ABORT;
         
@@ -401,21 +400,21 @@ class NacosConfigMaintainerServiceImplTest {
     
     @Test
     void testGetAllSubClientConfigByIp() throws Exception {
+        
+        ConfigListenerInfo expectedStatus = new ConfigListenerInfo();
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        expectedStatus.setQueryType(ConfigListenerInfo.QUERY_TYPE_IP);
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedStatus)));
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         // Arrange
         String ip = "127.0.0.1";
         boolean all = true;
         String namespaceId = "testNamespace";
         int sampleTime = 1;
         
-        GroupkeyListenserStatus expectedStatus = new GroupkeyListenserStatus();
-        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedStatus)));
-        
-        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-        
         // Act
-        GroupkeyListenserStatus result = nacosConfigMaintainerServiceImpl.getAllSubClientConfigByIp(ip, all,
-                namespaceId, sampleTime);
+        ConfigListenerInfo result = nacosConfigMaintainerServiceImpl.getAllSubClientConfigByIp(ip, all, namespaceId,
+                sampleTime);
         
         // Assert
         assertNotNull(result);
