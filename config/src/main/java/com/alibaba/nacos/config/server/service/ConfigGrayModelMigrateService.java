@@ -29,7 +29,7 @@ import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistS
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.stereotype.Service;
 

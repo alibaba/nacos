@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.persistence.repository.extrnal;
 
-import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;

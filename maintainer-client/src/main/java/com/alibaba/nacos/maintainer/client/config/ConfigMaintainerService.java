@@ -22,9 +22,9 @@ import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
 import com.alibaba.nacos.api.config.model.ConfigHistoryBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.maintainer.client.core.CoreMaintainerService;
 import com.alibaba.nacos.maintainer.client.model.config.GroupkeyListenserStatus;
-import com.alibaba.nacos.maintainer.client.model.config.Page;
 import com.alibaba.nacos.maintainer.client.model.config.SameConfigPolicy;
 import com.alibaba.nacos.maintainer.client.model.config.SameNamespaceCloneConfigBean;
 

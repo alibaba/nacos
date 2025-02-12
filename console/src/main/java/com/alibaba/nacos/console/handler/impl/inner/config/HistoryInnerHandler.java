@@ -24,7 +24,7 @@ import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.HistoryService;
 import com.alibaba.nacos.console.handler.config.HistoryHandler;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
-import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.api.model.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
