@@ -24,8 +24,10 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckerFactory;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -199,10 +201,12 @@ public class ConsoleServiceController {
      */
     @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)
     @GetMapping()
-    public Object getServiceDetail(ServiceForm serviceForm) throws NacosException {
+    public Result<Object> getServiceDetail(ServiceForm serviceForm) throws NacosException {
         serviceForm.validate();
-        return Result.success(serviceProxy.getServiceDetail(serviceForm.getNamespaceId(), serviceForm.getServiceName(),
-                serviceForm.getGroupName()));
+        ServiceDetailInfo result = serviceProxy.getServiceDetail(serviceForm.getNamespaceId(), serviceForm.getServiceName(),
+                serviceForm.getGroupName());
+        // TODO use ServiceDetailInfo directly after console-ui after modified
+        return Result.success(ServiceUtil.transferToConsoleResult(result));
     }
     
     /**

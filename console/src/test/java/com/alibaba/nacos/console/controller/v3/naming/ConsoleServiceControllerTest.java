@@ -19,6 +19,7 @@ package com.alibaba.nacos.console.controller.v3.naming;
 
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.console.proxy.naming.ServiceProxy;
 import com.alibaba.nacos.core.model.form.AggregationForm;
 import com.alibaba.nacos.core.model.form.PageForm;
@@ -45,6 +46,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -135,7 +137,7 @@ public class ConsoleServiceControllerTest {
     
     @Test
     void testGetServiceDetail() throws Exception {
-        Object serviceDetail = new Object();
+        ServiceDetailInfo serviceDetail = new ServiceDetailInfo();
 
         when(serviceProxy.getServiceDetail(any(String.class), any(String.class), any(String.class))).thenReturn(
                 serviceDetail);
@@ -143,12 +145,13 @@ public class ConsoleServiceControllerTest {
         serviceForm.setServiceName("testService");
         serviceForm.setNamespaceId("testNamespace");
         serviceForm.setGroupName("testGroup");
-        Result<Object> actual = (Result<Object>) consoleServiceController.getServiceDetail(serviceForm);
+        Result<Object> actual = consoleServiceController.getServiceDetail(serviceForm);
 
         verify(serviceProxy).getServiceDetail(any(String.class), any(String.class), any(String.class));
 
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
-        assertEquals(serviceDetail, actual.getData());
+        // controller transfer ServiceDetailInfo to old console result
+        assertNotEquals(serviceDetail, actual.getData());
     }
     
     @Test

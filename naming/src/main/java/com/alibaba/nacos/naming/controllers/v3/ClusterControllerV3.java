@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckerFactory;
-import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.naming.core.ClusterOperatorV2Impl;
@@ -33,7 +32,6 @@ import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 
 /**
  * Cluster controller.
@@ -60,9 +58,6 @@ public class ClusterControllerV3 {
     public Result<String> update(UpdateClusterForm updateClusterForm) throws Exception {
         updateClusterForm.validate();
         
-        final String namespaceId = updateClusterForm.getNamespaceId();
-        final String clusterName = updateClusterForm.getClusterName();
-        final String serviceName = updateClusterForm.getServiceName();
         ClusterMetadata clusterMetadata = new ClusterMetadata();
         clusterMetadata.setHealthyCheckPort(updateClusterForm.getCheckPort());
         clusterMetadata.setUseInstancePortForCheck(updateClusterForm.isUseInstancePort4Check());
@@ -70,9 +65,9 @@ public class ClusterControllerV3 {
         clusterMetadata.setHealthChecker(healthChecker);
         clusterMetadata.setHealthyCheckType(healthChecker.getType());
         clusterMetadata.setExtendData(UtilsAndCommons.parseMetadata(updateClusterForm.getMetadata()));
-        // TODO use split serviceName and groupName
-        String groupedServiceName = NamingUtils.getGroupedName(serviceName, updateClusterForm.getGroupName());
-        clusterOperatorV2.updateClusterMetadata(namespaceId, groupedServiceName, clusterName, clusterMetadata);
+        
+        clusterOperatorV2.updateClusterMetadata(updateClusterForm.getNamespaceId(), updateClusterForm.getGroupName(),
+                updateClusterForm.getServiceName(), updateClusterForm.getClusterName(), clusterMetadata);
         
         return Result.success("ok");
     }

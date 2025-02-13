@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.handler.impl.inner.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.trace.event.naming.DeregisterServiceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.RegisterServiceTraceEvent;
@@ -149,7 +150,8 @@ public class ServiceInnerHandler implements ServiceHandler {
     }
     
     @Override
-    public Object getServiceDetail(String namespaceId, String serviceName, String groupName) throws NacosException {
+    public ServiceDetailInfo getServiceDetail(String namespaceId, String serviceName, String groupName)
+            throws NacosException {
         return catalogServiceV2.getServiceDetail(namespaceId, groupName, serviceName);
     }
     

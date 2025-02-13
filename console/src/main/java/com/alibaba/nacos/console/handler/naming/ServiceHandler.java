@@ -18,6 +18,7 @@
 package com.alibaba.nacos.console.handler.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -113,7 +114,7 @@ public interface ServiceHandler {
      * @return service detail information
      * @throws NacosException if an error occurs during fetching service details
      */
-    Object getServiceDetail(String namespaceId, String serviceName, String groupName) throws NacosException;
+    ServiceDetailInfo getServiceDetail(String namespaceId, String serviceName, String groupName) throws NacosException;
     
     /**
      * Update the metadata of a cluster.

@@ -18,6 +18,7 @@
 package com.alibaba.nacos.console.proxy.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.console.handler.naming.ServiceHandler;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
@@ -137,7 +138,7 @@ public class ServiceProxy {
      * @return service detail information
      * @throws NacosException if an error occurs during fetching service details
      */
-    public Object getServiceDetail(String namespaceId, String serviceName, String groupName) throws NacosException {
+    public ServiceDetailInfo getServiceDetail(String namespaceId, String serviceName, String groupName) throws NacosException {
         return serviceHandler.getServiceDetail(namespaceId, serviceName, groupName);
     }
     

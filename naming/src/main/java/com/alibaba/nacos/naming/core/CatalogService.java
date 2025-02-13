@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 
 import java.util.List;
 
@@ -37,7 +38,7 @@ public interface CatalogService {
      * @return detail information of service
      * @throws NacosException exception in query
      */
-    Object getServiceDetail(String namespaceId, String groupName, String serviceName) throws NacosException;
+    ServiceDetailInfo getServiceDetail(String namespaceId, String groupName, String serviceName) throws NacosException;
     
     /**
      * List all instances of specified services.
