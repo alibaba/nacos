@@ -19,7 +19,6 @@ package com.alibaba.nacos.naming.controllers.v3;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.InstanceMetadataBatchResult;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -27,6 +26,7 @@ import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.trace.event.naming.UpdateInstanceTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.BaseTest;
+import com.alibaba.nacos.naming.core.CatalogService;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.InstanceForm;
@@ -53,6 +53,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -70,6 +71,9 @@ class InstanceControllerV3Test extends BaseTest {
     
     @Mock
     private InstanceOperatorClientImpl instanceService;
+    
+    @Mock
+    private CatalogService catalogService;
     
     private MockMvc mockmvc;
     
@@ -218,24 +222,22 @@ class InstanceControllerV3Test extends BaseTest {
     
     @Test
     void listInstance() throws Exception {
-        
-        ServiceInfo serviceInfo = new ServiceInfo();
-        serviceInfo.setName("serviceInfo");
-        
-        when(instanceService.listInstance(eq(TEST_NAMESPACE), eq(TEST_SERVICE_NAME), any(), eq(TEST_CLUSTER_NAME),
-                eq(false))).thenReturn(serviceInfo);
+        Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
+        instance.setPort(3306);
+        List<Instance> expected = new LinkedList<>();
+        expected.add(instance);
+        doReturn(expected).when(catalogService)
+                .listInstances(eq(TEST_NAMESPACE), eq(TEST_GROUP_NAME), eq("test-service"), eq(TEST_CLUSTER_NAME));
         InstanceListForm instanceForm = new InstanceListForm();
         instanceForm.setNamespaceId(TEST_NAMESPACE);
-        instanceForm.setGroupName("DEFAULT_GROUP");
+        instanceForm.setGroupName(TEST_GROUP_NAME);
         instanceForm.setServiceName("test-service");
         instanceForm.setClusterName(TEST_CLUSTER_NAME);
-        Result<ServiceInfo> result = instanceControllerV3.list(instanceForm);
-        
-        verify(instanceService).listInstance(eq(TEST_NAMESPACE), eq(TEST_SERVICE_NAME), any(), eq(TEST_CLUSTER_NAME),
-                eq(false));
+        Result<List<? extends Instance>> result = instanceControllerV3.list(instanceForm);
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
-        assertEquals(serviceInfo.getName(), result.getData().getName());
+        assertEquals(instance, result.getData().get(0));
     }
     
     @Test

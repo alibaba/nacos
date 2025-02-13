@@ -51,15 +51,13 @@ public class InstanceProxy {
      * @param groupName               the group name
      * @param page                    the page number
      * @param pageSize                the size of the page
-     * @param healthyOnly             filter by healthy instances only
-     * @param enabledOnly             filter by enabled instances only
      * @return a JSON node containing the instances information
      * @throws IllegalArgumentException if the deployment type is invalid
+     * @throws NacosException           if the list operation fails
      */
     public ObjectNode listInstances(String namespaceId, String serviceNameWithoutGroup, String groupName, int page,
-            int pageSize, Boolean healthyOnly, Boolean enabledOnly) {
-        return instanceHandler.listInstances(namespaceId, serviceNameWithoutGroup, groupName, page, pageSize,
-                healthyOnly, enabledOnly);
+            int pageSize) throws NacosException {
+        return instanceHandler.listInstances(namespaceId, serviceNameWithoutGroup, groupName, page, pageSize);
     }
     
     /**

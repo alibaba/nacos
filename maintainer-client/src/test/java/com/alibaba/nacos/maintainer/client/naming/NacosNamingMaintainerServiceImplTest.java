@@ -18,7 +18,6 @@ package com.alibaba.nacos.maintainer.client.naming;
 
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.maintainer.InstanceMetadataBatchResult;
 import com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo;
@@ -339,10 +338,10 @@ public class NacosNamingMaintainerServiceImplTest {
         String clusterName = "testCluster";
         String ip = "127.0.0.1";
         int port = 8080;
-        String weight = "1.0";
+        double weight = 1.0D;
         boolean healthy = true;
         boolean enabled = true;
-        String ephemeral = "true";
+        boolean ephemeral = true;
         String metadata = "testMetadata";
         
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
@@ -442,26 +441,30 @@ public class NacosNamingMaintainerServiceImplTest {
     @Test
     void testListInstances() throws Exception {
         // Arrange
-        String namespaceId = "testNamespace";
-        String groupName = "testGroup";
-        String serviceName = "testService";
-        String clusterName = "testCluster";
-        String ip = "127.0.0.1";
-        int port = 8080;
-        boolean healthyOnly = true;
         
-        ServiceInfo expectedInfo = new ServiceInfo();
+        List<Instance> expectedInfo = new ArrayList<>();
+        expectedInfo.add(new Instance());
+        expectedInfo.get(0).setIp("11.1.1.1");
+        expectedInfo.get(0).setPort(8848);
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(expectedInfo));
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(Result.success(expectedInfo)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        ServiceInfo result = nacosNamingMaintainerService.listInstances(namespaceId, groupName, serviceName,
-                clusterName, ip, port, healthyOnly);
+        String namespaceId = "testNamespace";
+        String groupName = "testGroup";
+        String serviceName = "testService";
+        String clusterName = "testCluster";
+        boolean healthyOnly = true;
+        List<Instance> result = nacosNamingMaintainerService.listInstances(namespaceId, groupName, serviceName,
+                clusterName, healthyOnly);
         
         // Assert
         assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("11.1.1.1", result.get(0).getIp());
+        assertEquals(8848, result.get(0).getPort());
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
     }
     

@@ -19,11 +19,16 @@ package com.alibaba.nacos.console.handler.impl.remote.naming;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
+import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
 import com.alibaba.nacos.console.handler.naming.InstanceHandler;
+import com.alibaba.nacos.core.utils.PageUtil;
 import com.alibaba.nacos.naming.model.form.InstanceForm;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 /**
  * Remote Implementation of InstanceHandler that handles instance-related operations.
@@ -34,38 +39,32 @@ import org.springframework.stereotype.Service;
 @EnabledRemoteHandler
 public class InstanceRemoteHandler implements InstanceHandler {
     
-    public InstanceRemoteHandler() {
+    private final NacosMaintainerClientHolder clientHolder;
+    
+    public InstanceRemoteHandler(NacosMaintainerClientHolder clientHolder) {
+        this.clientHolder = clientHolder;
     }
     
-    /**
-     * Retrieves a list of instances for a specific service and returns as an ObjectNode.
-     *
-     * @param namespaceId             the namespace ID
-     * @param serviceNameWithoutGroup the service name without group
-     * @param groupName               the group name
-     * @param page                    the page number
-     * @param pageSize                the size of the page
-     * @param healthyOnly             filter by healthy instances only
-     * @param enabledOnly             filter by enabled instances only
-     * @return a JSON node containing the instances information
-     */
     @Override
     public ObjectNode listInstances(String namespaceId, String serviceNameWithoutGroup, String groupName, int page,
-            int pageSize, Boolean healthyOnly, Boolean enabledOnly) {
-        // TODO get from nacos servers
-        return JacksonUtils.createEmptyJsonNode();
+            int pageSize) throws NacosException {
+        List<Instance> instances = clientHolder.getNamingMaintainerService()
+                .listInstances(namespaceId, groupName, serviceNameWithoutGroup, StringUtils.EMPTY, false);
+        List<? extends Instance> resultInstances = PageUtil.subPage(instances, page, pageSize);
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+        result.replace("instances", JacksonUtils.transferToJsonNode(resultInstances));
+        result.put("count", instances.size());
+        return result;
     }
     
-    /**
-     * Updates an instance.
-     *
-     * @param instanceForm the instanceForm
-     * @param instance    the instance to update
-     * @throws NacosException if the update operation fails
-     */
     @Override
     public void updateInstance(InstanceForm instanceForm, Instance instance) throws NacosException {
-        // TODO get from nacos servers
+        // TODO use instance directly after maintain client support input instance.
+        clientHolder.getNamingMaintainerService()
+                .updateInstance(instanceForm.getNamespaceId(), instanceForm.getGroupName(),
+                        instanceForm.getServiceName(), instance.getClusterName(), instance.getIp(), instance.getPort(),
+                        instance.getWeight(), instance.isHealthy(), instance.isEnabled(), instance.isEphemeral(),
+                        JacksonUtils.toJson(instance.getMetadata()));
     }
 }
 

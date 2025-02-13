@@ -77,6 +77,7 @@ public class ServiceRemoteHandler implements ServiceHandler {
     @Override
     public ObjectNode getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName, String groupName,
             boolean aggregation) throws Exception {
+        // TODO use an specified Object replace
         return clientHolder.getNamingMaintainerService()
                 .getSubscribers(namespaceId, groupName, serviceName, pageNo, pageSize, aggregation);
     }

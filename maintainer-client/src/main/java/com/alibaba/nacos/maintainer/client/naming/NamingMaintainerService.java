@@ -18,7 +18,6 @@ package com.alibaba.nacos.maintainer.client.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.maintainer.InstanceMetadataBatchResult;
 import com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo;
@@ -129,6 +128,7 @@ public interface NamingMaintainerService extends CoreMaintainerService {
     
     /**
      * Get subscribers of a service with pagination.
+     * // TODO use an specified Object replace
      *
      * @param namespaceId the namespace ID
      * @param groupName   the group name
@@ -231,7 +231,7 @@ public interface NamingMaintainerService extends CoreMaintainerService {
      * @throws NacosException if an error occurs
      */
     String updateInstance(String namespaceId, String groupName, String serviceName, String clusterName, String ip,
-            int port, String weight, boolean healthy, boolean enabled, String ephemeral, String metadata)
+            int port, double weight, boolean healthy, boolean enabled, boolean ephemeral, String metadata)
             throws NacosException;
     
     /**
@@ -288,14 +288,12 @@ public interface NamingMaintainerService extends CoreMaintainerService {
      * @param groupName   the group name
      * @param serviceName the service name
      * @param clusterName the cluster name
-     * @param ip          the IP address of the instance (optional)
-     * @param port        the port of the instance (optional)
      * @param healthyOnly whether to list only healthy instances
      * @return the list of instances
      * @throws NacosException if an error occurs
      */
-    ServiceInfo listInstances(String namespaceId, String groupName, String serviceName, String clusterName, String ip,
-            int port, boolean healthyOnly) throws NacosException;
+    List<Instance> listInstances(String namespaceId, String groupName, String serviceName, String clusterName,
+            boolean healthyOnly) throws NacosException;
     
     /**
      * Get detailed information of an instance.

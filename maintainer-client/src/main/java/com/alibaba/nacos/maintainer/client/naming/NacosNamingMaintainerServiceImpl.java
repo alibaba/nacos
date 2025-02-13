@@ -19,7 +19,6 @@ package com.alibaba.nacos.maintainer.client.naming;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.maintainer.InstanceMetadataBatchResult;
 import com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo;
@@ -270,7 +269,7 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     
     @Override
     public String updateInstance(String namespaceId, String groupName, String serviceName, String clusterName,
-            String ip, int port, String weight, boolean healthy, boolean enabled, String ephemeral, String metadata)
+            String ip, int port, double weight, boolean healthy, boolean enabled, boolean ephemeral, String metadata)
             throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
@@ -279,10 +278,10 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         params.put("clusterName", clusterName);
         params.put("ip", ip);
         params.put("port", String.valueOf(port));
-        params.put("weight", weight);
+        params.put("weight", String.valueOf(weight));
         params.put("healthy", String.valueOf(healthy));
         params.put("enabled", String.valueOf(enabled));
-        params.put("ephemeral", ephemeral);
+        params.put("ephemeral", String.valueOf(ephemeral));
         params.put("metadata", metadata);
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.PUT)
@@ -359,21 +358,22 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public ServiceInfo listInstances(String namespaceId, String groupName, String serviceName, String clusterName,
-            String ip, int port, boolean healthyOnly) throws NacosException {
+    public List<Instance> listInstances(String namespaceId, String groupName, String serviceName, String clusterName,
+            boolean healthyOnly) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("groupName", groupName);
         params.put("serviceName", serviceName);
         params.put("clusterName", clusterName);
-        params.put("ip", ip);
-        params.put("port", String.valueOf(port));
         params.put("healthyOnly", String.valueOf(healthyOnly));
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH + "/list").setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        return JacksonUtils.toObj(httpRestResult.getData(), ServiceInfo.class);
+        Result<List<Instance>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<List<Instance>>>() {
+                });
+        return result.getData();
     }
     
     @Override
@@ -428,8 +428,9 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public String updateCluster(String namespaceId, String groupName, String serviceName, String clusterName, Integer checkPort,
-            Boolean useInstancePort4Check, String healthChecker, Map<String, String> metadata) throws NacosException {
+    public String updateCluster(String namespaceId, String groupName, String serviceName, String clusterName,
+            Integer checkPort, Boolean useInstancePort4Check, String healthChecker, Map<String, String> metadata)
+            throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
         params.put("groupName", groupName);
