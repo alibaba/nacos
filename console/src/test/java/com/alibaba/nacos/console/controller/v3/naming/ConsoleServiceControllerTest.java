@@ -138,7 +138,10 @@ public class ConsoleServiceControllerTest {
     @Test
     void testGetServiceDetail() throws Exception {
         ServiceDetailInfo serviceDetail = new ServiceDetailInfo();
-
+        serviceDetail.setNamespaceId("testNamespace");
+        serviceDetail.setServiceName("testService");
+        serviceDetail.setGroupName("testGroup");
+        serviceDetail.setClusterMap(Collections.emptyMap());
         when(serviceProxy.getServiceDetail(any(String.class), any(String.class), any(String.class))).thenReturn(
                 serviceDetail);
         ServiceForm serviceForm = new ServiceForm();

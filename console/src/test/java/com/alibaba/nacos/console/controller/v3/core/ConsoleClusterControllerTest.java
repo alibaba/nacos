@@ -17,9 +17,9 @@
 
 package com.alibaba.nacos.console.controller.v3.core;
 
+import com.alibaba.nacos.api.model.response.NacosMember;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.console.proxy.core.ClusterProxy;
-import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,8 +37,8 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -78,10 +78,10 @@ public class ConsoleClusterControllerTest {
     
     @Test
     void testGetNodeList() throws Exception {
-        Member member = new Member();
+        NacosMember member = new NacosMember();
         member.setIp("127.0.0.1");
         member.setPort(8848);
-        Collection<Member> members = Arrays.asList(member);
+        Collection<NacosMember> members = List.of(member);
         
         when(clusterProxy.getNodeList(anyString())).thenReturn(members);
         
@@ -91,9 +91,8 @@ public class ConsoleClusterControllerTest {
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         
-        Result<Collection<Member>> result = new ObjectMapper().readValue(actualValue,
-                new TypeReference<Result<Collection<Member>>>() {
-                });
+        Result<Collection<NacosMember>> result = new ObjectMapper().readValue(actualValue, new TypeReference<>() {
+        });
         
         assertEquals(1, result.getData().size());
         assertEquals("127.0.0.1", result.getData().iterator().next().getIp());

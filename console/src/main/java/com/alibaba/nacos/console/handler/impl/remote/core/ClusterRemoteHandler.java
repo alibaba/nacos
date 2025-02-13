@@ -16,10 +16,13 @@
 
 package com.alibaba.nacos.console.handler.impl.remote.core;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.response.NacosMember;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.cluster.RemoteServerMemberManager;
 import com.alibaba.nacos.console.handler.core.ClusterHandler;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
-import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
@@ -35,8 +38,11 @@ public class ClusterRemoteHandler implements ClusterHandler {
     
     private final RemoteServerMemberManager memberManager;
     
-    public ClusterRemoteHandler(RemoteServerMemberManager memberManager) {
+    private final NacosMaintainerClientHolder clientHolder;
+    
+    public ClusterRemoteHandler(RemoteServerMemberManager memberManager, NacosMaintainerClientHolder clientHolder) {
         this.memberManager = memberManager;
+        this.clientHolder = clientHolder;
     }
     
     /**
@@ -46,8 +52,7 @@ public class ClusterRemoteHandler implements ClusterHandler {
      * @return a collection of matching members
      */
     @Override
-    public Collection<Member> getNodeList(String ipKeyWord) {
-        // TODO get from nacos servers
-        return memberManager.allMembers();
+    public Collection<? extends NacosMember> getNodeList(String ipKeyWord) throws NacosException {
+        return clientHolder.getNamingMaintainerService().listClusterNodes(StringUtils.EMPTY, StringUtils.EMPTY);
     }
 }

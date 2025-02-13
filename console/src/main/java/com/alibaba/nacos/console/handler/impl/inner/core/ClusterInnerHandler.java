@@ -16,15 +16,13 @@
 
 package com.alibaba.nacos.console.handler.impl.inner.core;
 
-import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.api.model.response.NacosMember;
 import com.alibaba.nacos.console.handler.core.ClusterHandler;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
-import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.Collection;
 
 /**
@@ -48,28 +46,8 @@ public class ClusterInnerHandler implements ClusterHandler {
         this.memberManager = memberManager;
     }
     
-    /**
-     * Retrieves a list of cluster members with an optional search keyword.
-     *
-     * @param ipKeyWord the search keyword for filtering members
-     * @return a collection of matching members
-     */
     @Override
-    public Collection<Member> getNodeList(String ipKeyWord) {
-        Collection<Member> members = memberManager.allMembers();
-        Collection<Member> result = new ArrayList<>();
-        
-        members.stream().sorted().forEach(member -> {
-            if (StringUtils.isBlank(ipKeyWord)) {
-                result.add(member);
-                return;
-            }
-            final String address = member.getAddress();
-            if (StringUtils.equals(address, ipKeyWord) || StringUtils.startsWith(address, ipKeyWord)) {
-                result.add(member);
-            }
-        });
-        
-        return result;
+    public Collection<? extends NacosMember> getNodeList(String ipKeyWord) {
+        return memberManager.allMembers();
     }
 }

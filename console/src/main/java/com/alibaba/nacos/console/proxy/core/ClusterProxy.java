@@ -17,10 +17,13 @@
 
 package com.alibaba.nacos.console.proxy.core;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.response.NacosMember;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.handler.core.ClusterHandler;
-import com.alibaba.nacos.core.cluster.Member;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 /**
@@ -49,8 +52,20 @@ public class ClusterProxy {
      * @return a collection of matching members
      * @throws IllegalArgumentException if the deployment type is invalid
      */
-    public Collection<Member> getNodeList(String ipKeyWord) {
-        return clusterHandler.getNodeList(ipKeyWord);
+    public Collection<NacosMember> getNodeList(String ipKeyWord) throws NacosException {
+        Collection<? extends NacosMember> members = clusterHandler.getNodeList(ipKeyWord);
+        Collection<NacosMember> result = new ArrayList<>();
+        members.stream().sorted().forEach(member -> {
+            if (StringUtils.isBlank(ipKeyWord)) {
+                result.add(member);
+                return;
+            }
+            final String address = member.getAddress();
+            if (StringUtils.equals(address, ipKeyWord) || StringUtils.startsWith(address, ipKeyWord)) {
+                result.add(member);
+            }
+        });
+        return result;
     }
 }
 
