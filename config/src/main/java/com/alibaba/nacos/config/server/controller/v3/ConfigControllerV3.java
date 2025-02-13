@@ -163,14 +163,15 @@ public class ConfigControllerV3 {
         String dataId = configForm.getDataId();
         String groupName = configForm.getGroupName();
         ConfigAllInfo configAllInfo = configInfoPersistService.findConfigAllInfo(dataId, groupName, namespaceId);
-        
-        // decrypted
-        if (Objects.nonNull(configAllInfo)) {
-            String encryptedDataKey = configAllInfo.getEncryptedDataKey();
-            Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey,
-                    configAllInfo.getContent());
-            configAllInfo.setContent(pair.getSecond());
+        if (Objects.isNull(configAllInfo)) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                    "Config not exist, please publish Config first.");
         }
+        // decrypted
+        String encryptedDataKey = configAllInfo.getEncryptedDataKey();
+        Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey,
+                configAllInfo.getContent());
+        configAllInfo.setContent(pair.getSecond());
         ConfigDetailInfo result = ResponseUtil.transferToConfigDetailInfo(configAllInfo);
         return Result.success(result);
     }

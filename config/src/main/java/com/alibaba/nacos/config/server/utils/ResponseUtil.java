@@ -63,7 +63,6 @@ public class ResponseUtil {
         BeanUtils.copyProperties(configAllInfo, result);
         result.setNamespaceId(configAllInfo.getTenant());
         result.setGroupName(configAllInfo.getGroup());
-        result.setId(Long.valueOf(configAllInfo.getId()));
         return result;
     }
     
@@ -78,7 +77,6 @@ public class ResponseUtil {
         BeanUtils.copyProperties(configInfo, result);
         result.setNamespaceId(configInfo.getTenant());
         result.setGroupName(configInfo.getGroup());
-        result.setId(Long.valueOf(configInfo.getId()));
         return result;
     }
     
@@ -105,7 +103,6 @@ public class ResponseUtil {
         BeanUtils.copyProperties(configInfoGray, result);
         result.setNamespaceId(configInfoGray.getTenant());
         result.setGroupName(configInfoGray.getGroup());
-        result.setId(Long.valueOf(configInfoGray.getId()));
         result.setCreateUser(configInfoGray.getSrcUser());
         result.setModifyTime(configInfoGray.getLastModified());
         return result;
@@ -140,7 +137,6 @@ public class ResponseUtil {
     private static void injectHistoryBasicInfo(ConfigHistoryBasicInfo historyBasicInfo, ConfigHistoryInfo historyInfo) {
         historyBasicInfo.setNamespaceId(historyInfo.getTenant());
         historyBasicInfo.setGroupName(historyInfo.getGroup());
-        historyBasicInfo.setId(Long.valueOf(historyInfo.getId()));
         historyBasicInfo.setCreateTime(historyInfo.getCreatedTime().getTime());
         historyBasicInfo.setModifyTime(historyInfo.getLastModifiedTime().getTime());
     }

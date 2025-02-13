@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigCloneInfo;
 import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
 import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
+import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
 import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
@@ -38,13 +39,11 @@ import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
 import com.alibaba.nacos.console.handler.config.ConfigHandler;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
-import jakarta.servlet.ServletException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -68,16 +67,23 @@ public class ConfigRemoteHandler implements ConfigHandler {
     
     @Override
     public Page<ConfigInfo> getConfigList(int pageNo, int pageSize, String dataId, String group, String namespaceId,
-            Map<String, Object> configAdvanceInfo) throws IOException, ServletException, NacosException {
+            Map<String, Object> configAdvanceInfo) throws NacosException {
         String search = dataId.contains(ALL_PATTERN) ? Constants.CONFIG_SEARCH_BLUR : Constants.CONFIG_SEARCH_ACCURATE;
         return listConfigInfo(search, pageNo, pageSize, dataId, group, namespaceId, configAdvanceInfo);
     }
     
     @Override
     public ConfigAllInfo getConfigDetail(String dataId, String group, String namespaceId) throws NacosException {
-        ConfigDetailInfo configDetailInfo = clientHolder.getConfigMaintainerService()
-                .getConfig(dataId, group, namespaceId);
-        return transferToConfigAllInfo(configDetailInfo);
+        try {
+            ConfigDetailInfo configDetailInfo = clientHolder.getConfigMaintainerService()
+                    .getConfig(dataId, group, namespaceId);
+            return transferToConfigAllInfo(configDetailInfo);
+        } catch (NacosException e) {
+            if (NacosException.NOT_FOUND == e.getErrCode()) {
+                return null;
+            }
+            throw e;
+        }
     }
     
     @Override
@@ -109,15 +115,25 @@ public class ConfigRemoteHandler implements ConfigHandler {
     @Override
     public GroupkeyListenserStatus getListeners(String dataId, String group, String namespaceId, int sampleTime)
             throws Exception {
-        // TODO get from nacos servers
-        return new GroupkeyListenserStatus();
+        ConfigListenerInfo listenerInfo = clientHolder.getConfigMaintainerService()
+                .getListeners(dataId, group, namespaceId, sampleTime);
+        // TODO use ConfigListenerInfo after console ui modified
+        GroupkeyListenserStatus result = new GroupkeyListenserStatus();
+        result.setCollectStatus(200);
+        result.setLisentersGroupkeyStatus(listenerInfo.getListenersStatus());
+        return result;
     }
     
     @Override
-    public GroupkeyListenserStatus getAllSubClientConfigByIp(String ip, boolean all, String namespaceId,
-            int sampleTime) {
-        // TODO get from nacos servers
-        return new GroupkeyListenserStatus();
+    public GroupkeyListenserStatus getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime)
+            throws NacosException {
+        ConfigListenerInfo listenerInfo = clientHolder.getConfigMaintainerService()
+                .getAllSubClientConfigByIp(ip, all, namespaceId, sampleTime);
+        // TODO use ConfigListenerInfo after console ui modified
+        GroupkeyListenserStatus result = new GroupkeyListenserStatus();
+        result.setCollectStatus(200);
+        result.setLisentersGroupkeyStatus(listenerInfo.getListenersStatus());
+        return result;
     }
     
     @Override

@@ -18,10 +18,9 @@
 package com.alibaba.nacos.console.handler.config;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
-import com.alibaba.nacos.api.model.Page;
 
 import java.util.List;
 
@@ -77,7 +76,7 @@ public interface HistoryHandler {
      *
      * @param namespaceId the namespace ID
      * @return the list of configurations
-     * @throws NacosApiException if any error occurs during the operation
+     * @throws NacosException if any error occurs during the operation
      */
-    List<ConfigInfoWrapper> getConfigsByTenant(String namespaceId) throws NacosApiException;
+    List<ConfigInfoWrapper> getConfigsByTenant(String namespaceId) throws NacosException;
 }

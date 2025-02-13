@@ -174,8 +174,10 @@ public interface ConfigHandler {
      * @param namespaceId Tenant information
      * @param sampleTime Sample time for the subscription
      * @return GroupkeyListenserStatus object containing subscription information
+     * @throws NacosException If an error occurs while retrieving the subscription information.
      */
-    GroupkeyListenserStatus getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime);
+    GroupkeyListenserStatus getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime)
+            throws NacosException;
 
     /**
      * Imports and publishes a configuration from a file.
