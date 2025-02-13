@@ -21,6 +21,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.cluster.RemoteServerMemberManager;
 import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerFactory;
+import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerService;
 import com.alibaba.nacos.maintainer.client.naming.NamingMaintainerFactory;
 import com.alibaba.nacos.maintainer.client.naming.NamingMaintainerService;
 import org.springframework.stereotype.Component;
@@ -41,6 +43,8 @@ public class NacosMaintainerClientHolder {
     
     private final NamingMaintainerService namingMaintainerService;
     
+    private final ConfigMaintainerService configMaintainerService;
+    
     public NacosMaintainerClientHolder(RemoteServerMemberManager memberManager) throws NacosException {
         this.memberManager = memberManager;
         List<String> memberAddress = memberManager.allMembers().stream().map(Member::getAddress).toList();
@@ -49,10 +53,15 @@ public class NacosMaintainerClientHolder {
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, memberAddressString);
         // TODO Add admin user and pass
         namingMaintainerService = NamingMaintainerFactory.createNamingMaintainerService(properties);
+        configMaintainerService = ConfigMaintainerFactory.createConfigMaintainerService(properties);
         // TODO sub member change event to upgrade maintainer client server members.
     }
     
     public NamingMaintainerService getNamingMaintainerService() {
         return namingMaintainerService;
+    }
+    
+    public ConfigMaintainerService getConfigMaintainerService() {
+        return configMaintainerService;
     }
 }

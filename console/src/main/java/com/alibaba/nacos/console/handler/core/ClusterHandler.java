@@ -34,6 +34,7 @@ public interface ClusterHandler {
      *
      * @param ipKeyWord the search keyword for filtering members
      * @return a collection of matching members
+     * @throws NacosException if an error occurs during the operation
      */
     Collection<? extends NacosMember> getNodeList(String ipKeyWord) throws NacosException;
 }

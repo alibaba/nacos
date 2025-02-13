@@ -45,6 +45,7 @@ import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.model.form.ConfigFormV3;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
+import com.alibaba.nacos.config.server.paramcheck.ConfigBlurSearchHttpParamExtractor;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
@@ -286,6 +287,7 @@ public class ConfigControllerV3 {
      */
     @GetMapping("/searchDetail")
     @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @ExtractorManager.Extractor(httpExtractor = ConfigBlurSearchHttpParamExtractor.class)
     public Result<Page<ConfigBasicInfo>> searchConfigByDetails(ConfigFormV3 configForm, PageForm pageForm,
             String configDetail, @RequestParam(defaultValue = "blur") String search) throws NacosApiException {
         configForm.blurSearchValidate();
