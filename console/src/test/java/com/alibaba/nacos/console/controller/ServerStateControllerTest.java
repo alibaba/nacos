@@ -20,7 +20,12 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.module.ModuleState;
+import com.alibaba.nacos.sys.module.ModuleStateBuilder;
+import com.alibaba.nacos.sys.module.ModuleStateHolder;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,10 +34,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import java.util.LinkedList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -52,15 +61,45 @@ class ServerStateControllerTest {
     @InjectMocks
     private ServerStateController serverStateController;
     
+    private static List<ModuleStateBuilder> cachedBuilders;
+    
     private MockMvc mockmvc;
     
     private ConfigurableEnvironment environment;
+    
+    @BeforeAll
+    static void setUpBeforeAll() {
+        cachedBuilders = (List<ModuleStateBuilder>) ReflectionTestUtils.getField(ModuleStateHolder.getInstance(),
+                "moduleStateBuilders");
+        List<ModuleStateBuilder> mockBuilders = new LinkedList<>();
+        mockBuilders.add(new ModuleStateBuilder() {
+            @Override
+            public ModuleState build() {
+                ModuleState moduleState = new ModuleState("mock");
+                moduleState.newState(Constants.STARTUP_MODE_STATE, EnvUtil.STANDALONE_MODE_CLUSTER);
+                moduleState.newState(Constants.FUNCTION_MODE_STATE, null);
+                moduleState.newState(Constants.NACOS_VERSION, VersionUtils.version);
+                return moduleState;
+            }
+            
+            @Override
+            public boolean isCacheable() {
+                return false;
+            }
+        });
+        ReflectionTestUtils.setField(ModuleStateHolder.getInstance(), "moduleStateBuilders", mockBuilders);
+    }
     
     @BeforeEach
     void setUp() {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         mockmvc = MockMvcBuilders.standaloneSetup(serverStateController).build();
+    }
+    
+    @AfterAll
+    static void tearDownAfterAll() {
+        ReflectionTestUtils.setField(ModuleStateHolder.getInstance(), "moduleStateBuilders", cachedBuilders);
     }
     
     @Test
