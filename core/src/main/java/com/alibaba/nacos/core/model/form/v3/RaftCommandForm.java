@@ -19,7 +19,7 @@ package com.alibaba.nacos.core.model.form.v3;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftConstants;
-import com.alibaba.nacos.core.model.form.NacosForm;
+import com.alibaba.nacos.api.model.NacosForm;
 
 import java.util.HashMap;
 import java.util.Map;

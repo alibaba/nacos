@@ -19,7 +19,7 @@ package com.alibaba.nacos.naming.model.form;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.core.model.form.NacosForm;
+import com.alibaba.nacos.api.model.NacosForm;
 
 /**
  * Nacos HTTP service list API form.

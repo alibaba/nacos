@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.core.utils;
 
+import com.alibaba.nacos.api.model.Page;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -35,27 +37,66 @@ public class PageUtil {
      * @param <T>       The Type of List element.
      * @return Empty list if input list is empty or expected page is larger than source list size, otherwise paged list.
      */
-    public static <T> List<T> subPage(List<T> source, int page, int pageSize) {
+    public static <T> List<T> subPageList(List<T> source, int page, int pageSize) {
         if (source.isEmpty()) {
             return source;
         }
+        PageMetadata metadata = calculatePageMetadata(page, pageSize, source.size());
+        if (source.size() > metadata.start) {
+            return source.subList(metadata.start, metadata.end);
+        }
+        return Collections.emptyList();
+    }
+    
+    /**
+     * Do page operation for input list.
+     *
+     * @param source    need paged source list
+     * @param page      page number
+     * @param pageSize  size of each page
+     * @param <T>       The Type of List element.
+     * @return Empty Page if input list is empty or expected page is larger than source list size, otherwise page obj.
+     */
+    public static <T> Page<T> subPage(List<T> source, int page, int pageSize) {
+        Page<T> result = new Page<>();
+        result.setPageNumber(page);
+        if (source.isEmpty()) {
+            result.setPageItems(Collections.emptyList());
+            return result;
+        }
+        int totalCount = source.size();
+        result.setTotalCount(totalCount);
+        PageMetadata metadata = calculatePageMetadata(page, pageSize, totalCount);
+        int pagesAvailable = (totalCount / pageSize) + 1;
+        result.setPagesAvailable(pagesAvailable);
+        if (totalCount > metadata.start) {
+            result.setPageItems(source.subList(metadata.start, metadata.end));
+        }
+        return result;
+    }
+    
+    private static PageMetadata calculatePageMetadata(int page, int pageSize, int totalCount) {
         int start = (page - 1) * pageSize;
-        
         if (start < 0) {
             start = 0;
         }
         int end = start + pageSize;
+        if (start > totalCount) {
+            start = totalCount;
+        }
+        if (end > totalCount) {
+            end = totalCount;
+        }
+        PageMetadata result = new PageMetadata();
+        result.start = start;
+        result.end = end;
+        return result;
+    }
+    
+    private static class PageMetadata {
         
-        if (start > source.size()) {
-            start = source.size();
-        }
+        private int start;
         
-        if (end > source.size()) {
-            end = source.size();
-        }
-        if (source.size() > start) {
-            return source.subList(start, end);
-        }
-        return Collections.emptyList();
+        private int end;
     }
 }

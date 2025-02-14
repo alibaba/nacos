@@ -17,21 +17,21 @@
 
 package com.alibaba.nacos.console.controller.v3.naming;
 
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
 import com.alibaba.nacos.console.proxy.naming.ServiceProxy;
 import com.alibaba.nacos.core.model.form.AggregationForm;
 import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
-import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.model.form.ServiceForm;
 import com.alibaba.nacos.naming.model.form.ServiceListForm;
 import com.alibaba.nacos.naming.model.form.UpdateClusterForm;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.SelectorManager;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,7 +42,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -127,9 +126,7 @@ public class ConsoleServiceControllerTest {
         
         Result<String> actual = consoleServiceController.updateService(serviceForm);
         
-        verify(serviceProxy).updateService(eq(serviceForm),
-                eq(Service.newService("testNamespace", "testGroup", "testService")), any(ServiceMetadata.class),
-                any(Map.class));
+        verify(serviceProxy).updateService(eq(serviceForm), any(ServiceMetadata.class));
         
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals("ok", actual.getData());
@@ -172,9 +169,14 @@ public class ConsoleServiceControllerTest {
     
     @Test
     void testGetSubscribers() throws Exception {
-        ObjectNode subscribers = new ObjectMapper().createObjectNode();
-        subscribers.put("subscriber", "testSubscriber");
-        
+        Page<SubscriberInfo> subscribers = new Page<>();
+        subscribers.setTotalCount(1);
+        subscribers.setPagesAvailable(1);
+        subscribers.setPageItems(Collections.singletonList(new SubscriberInfo()));
+        subscribers.setPageNumber(1);
+        subscribers.getPageItems().get(0).setNamespaceId("testNamespace");
+        subscribers.getPageItems().get(0).setServiceName("testService");
+        subscribers.getPageItems().get(0).setGroupName("testGroup");
         when(serviceProxy.getSubscribers(anyInt(), anyInt(), anyString(), anyString(), anyString(),
                 anyBoolean())).thenReturn(subscribers);
         
@@ -192,7 +194,10 @@ public class ConsoleServiceControllerTest {
         verify(serviceProxy).getSubscribers(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyBoolean());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
-        assertEquals(subscribers, actual.getData());
+        assertEquals(1, actual.getData().get("count").asInt());
+        assertEquals(1, actual.getData().get("subscribers").size());
+        assertEquals("testGroup@@testService", actual.getData().get("subscribers").get(0).get("serviceName").asText());
+        assertEquals("testNamespace", actual.getData().get("subscribers").get(0).get("namespaceId").asText());
     }
     
     @Test

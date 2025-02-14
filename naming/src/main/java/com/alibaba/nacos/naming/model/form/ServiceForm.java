@@ -18,9 +18,9 @@ package com.alibaba.nacos.naming.model.form;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.NacosForm;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.core.model.form.NacosForm;
 import org.springframework.http.HttpStatus;
 
 import java.util.Objects;

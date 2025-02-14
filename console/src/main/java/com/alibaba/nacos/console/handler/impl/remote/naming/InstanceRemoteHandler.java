@@ -50,7 +50,7 @@ public class InstanceRemoteHandler implements InstanceHandler {
             int pageSize) throws NacosException {
         List<Instance> instances = clientHolder.getNamingMaintainerService()
                 .listInstances(namespaceId, groupName, serviceNameWithoutGroup, StringUtils.EMPTY, false);
-        List<? extends Instance> resultInstances = PageUtil.subPage(instances, page, pageSize);
+        List<? extends Instance> resultInstances = PageUtil.subPageList(instances, page, pageSize);
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         result.replace("instances", JacksonUtils.transferToJsonNode(resultInstances));
         result.put("count", instances.size());

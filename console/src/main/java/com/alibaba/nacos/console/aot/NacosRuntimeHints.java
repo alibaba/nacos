@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.aot;
 
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceView;
 import org.springframework.aot.hint.MemberCategory;
 import org.springframework.aot.hint.RuntimeHints;
 import org.springframework.aot.hint.RuntimeHintsRegistrar;
@@ -419,7 +420,7 @@ public class NacosRuntimeHints implements RuntimeHintsRegistrar {
             com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Http.class,
             com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql.class,
             com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Tcp.class,
-            com.alibaba.nacos.api.remote.request.Request.class, com.alibaba.nacos.naming.pojo.ServiceView.class,
+            com.alibaba.nacos.api.remote.request.Request.class, ServiceView.class,
             com.alibaba.nacos.naming.pojo.Subscriber.class, com.alibaba.nacos.naming.pojo.Subscribers.class,
             com.alibaba.nacos.naming.pojo.ClusterInfo.class, com.alibaba.nacos.naming.pojo.InstanceOperationInfo.class,
             com.alibaba.nacos.naming.pojo.IpAddressInfo.class, com.alibaba.nacos.naming.pojo.Record.class,

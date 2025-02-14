@@ -19,12 +19,14 @@ package com.alibaba.nacos.naming.controllers.v3;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceView;
+import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.common.Beta;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.trace.event.naming.DeregisterServiceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.RegisterServiceTraceEvent;
@@ -48,18 +50,14 @@ import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URLDecoder;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -146,6 +144,15 @@ public class ServiceControllerV3 {
     
     /**
      * List all service names.
+     *
+     * <ul>
+     *     <li>
+     *         if {@link ServiceListForm#isWithInstances()} is {@code true}, will return list {@link ServiceDetailInfo }
+     *     </li>
+     *     <li>
+     *         if {@link ServiceListForm#isWithInstances()} is {@code false}, will return list {@link ServiceView }
+     *     </li>
+     * </ul>
      */
     @GetMapping("/list")
     @TpsControl(pointName = "NamingServiceListQuery", name = "HttpNamingServiceListQuery")
@@ -213,41 +220,12 @@ public class ServiceControllerV3 {
     }
     
     /**
-     * Search service names.
-     */
-    @GetMapping("/names")
-    @Secured(resource = UtilsAndCommons.SERVICE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
-    @Beta
-    public Result<ObjectNode> searchService(@RequestParam(defaultValue = StringUtils.EMPTY) String namespaceId,
-            @RequestParam(defaultValue = StringUtils.EMPTY) String expr) throws NacosException {
-        Map<String, Collection<String>> serviceNameMap = new HashMap<>(16);
-        int totalCount = 0;
-        if (StringUtils.isNotBlank(namespaceId)) {
-            Collection<String> names = serviceOperatorV2.searchServiceName(namespaceId, expr);
-            serviceNameMap.put(namespaceId, names);
-            totalCount = names.size();
-        } else {
-            for (String each : serviceOperatorV2.listAllNamespace()) {
-                Collection<String> names = serviceOperatorV2.searchServiceName(each, expr);
-                serviceNameMap.put(each, names);
-                totalCount += names.size();
-            }
-        }
-        
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        result.replace("META-INF/services", JacksonUtils.transferToJsonNode(serviceNameMap));
-        result.put("count", totalCount);
-        
-        return Result.success(result);
-    }
-    
-    /**
      * get subscriber list.
      */
     @GetMapping("/subscribers")
     @Secured(resource = UtilsAndCommons.SERVICE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
-    public Result<ObjectNode> subscribers(ServiceForm serviceForm, PageForm pageForm, AggregationForm aggregationForm)
-            throws Exception {
+    public Result<Page<SubscriberInfo>> subscribers(ServiceForm serviceForm, PageForm pageForm,
+            AggregationForm aggregationForm) throws Exception {
         serviceForm.validate();
         pageForm.validate();
         int pageNo = pageForm.getPageNo();
@@ -256,9 +234,8 @@ public class ServiceControllerV3 {
         String serviceName = serviceForm.getServiceName();
         String groupName = serviceForm.getGroupName();
         boolean aggregation = aggregationForm.isAggregation();
-        
         return Result.success(
-                serviceOperatorV2.getSubscribers(pageNo, pageSize, namespaceId, serviceName, groupName, aggregation));
+                serviceOperatorV2.getSubscribers(namespaceId, serviceName, groupName, aggregation, pageNo, pageSize));
     }
     
     /**

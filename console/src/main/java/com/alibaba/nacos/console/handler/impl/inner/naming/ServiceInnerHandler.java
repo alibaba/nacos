@@ -17,12 +17,15 @@
 package com.alibaba.nacos.console.handler.impl.inner.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.trace.event.naming.DeregisterServiceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.RegisterServiceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.UpdateServiceTraceEvent;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
 import com.alibaba.nacos.console.handler.naming.ServiceHandler;
@@ -30,18 +33,15 @@ import com.alibaba.nacos.naming.core.CatalogServiceV2Impl;
 import com.alibaba.nacos.naming.core.ClusterOperatorV2Impl;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.SubscribeManager;
+import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.model.form.ServiceForm;
-import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.selector.SelectorManager;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Implementation of ServiceHandler that handles service-related operations.
@@ -91,11 +91,17 @@ public class ServiceInnerHandler implements ServiceHandler {
     }
     
     @Override
-    public void updateService(ServiceForm serviceForm, com.alibaba.nacos.naming.core.v2.pojo.Service service,
-            ServiceMetadata serviceMetadata, Map<String, String> metadata) throws Exception {
+    public void updateService(ServiceForm serviceForm, ServiceMetadata serviceMetadata) throws Exception {
+        Service service = Service.newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(),
+                serviceForm.getServiceName());
+        if (!ServiceManager.getInstance().containSingleton(service)) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.SERVICE_NOT_EXIST,
+                    "service %s is not exist.".formatted(service.toString()));
+        }
+        service = ServiceManager.getInstance().getSingleton(service);
         serviceOperatorV2.update(service, serviceMetadata);
         NotifyCenter.publishEvent(new UpdateServiceTraceEvent(System.currentTimeMillis(), serviceForm.getNamespaceId(),
-                serviceForm.getGroupName(), serviceForm.getServiceName(), metadata));
+                serviceForm.getGroupName(), serviceForm.getServiceName(), serviceMetadata.getExtendData()));
     }
     
     @Override
@@ -104,49 +110,19 @@ public class ServiceInnerHandler implements ServiceHandler {
     }
     
     @Override
-    public ObjectNode getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName, String groupName,
-            boolean aggregation) throws Exception {
-        
-        Service service = Service.newService(namespaceId, groupName, serviceName);
-        
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        
-        int count = 0;
-        
-        try {
-            List<Subscriber> subscribers = subscribeManager.getSubscribers(service, aggregation);
-            
-            int start = (pageNo - 1) * pageSize;
-            if (start < 0) {
-                start = 0;
-            }
-            
-            int end = start + pageSize;
-            count = subscribers.size();
-            if (end > count) {
-                end = count;
-            }
-            
-            result.replace("subscribers", JacksonUtils.transferToJsonNode(subscribers.subList(start, end)));
-            result.put("count", count);
-            
-            return result;
-        } catch (Exception e) {
-            Loggers.SRV_LOG.warn("query subscribers failed!", e);
-            result.replace("subscribers", JacksonUtils.createEmptyArrayNode());
-            result.put("count", count);
-            return result;
-        }
+    public Page<SubscriberInfo> getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName,
+            String groupName, boolean aggregation) throws Exception {
+        return serviceOperatorV2.getSubscribers(namespaceId, serviceName, groupName, aggregation, pageNo, pageSize);
     }
     
     @Override
     public Object getServiceList(boolean withInstances, String namespaceId, int pageNo, int pageSize,
-            String serviceName, String groupName, boolean hasIpCount) throws NacosException {
+            String serviceName, String groupName, boolean ignoreEmptyService) throws NacosException {
         if (withInstances) {
             return catalogServiceV2.pageListServiceDetail(namespaceId, groupName, serviceName, pageNo, pageSize);
         }
         return catalogServiceV2.pageListService(namespaceId, groupName, serviceName, pageNo, pageSize,
-                StringUtils.EMPTY, hasIpCount);
+                StringUtils.EMPTY, ignoreEmptyService);
     }
     
     @Override

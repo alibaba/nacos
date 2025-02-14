@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.model.form;
 
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.NacosForm;
 
 /**
  * Nacos HTTP Aggregatable API Form.

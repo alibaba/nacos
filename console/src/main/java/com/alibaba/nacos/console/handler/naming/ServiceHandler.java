@@ -18,15 +18,15 @@
 package com.alibaba.nacos.console.handler.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceView;
+import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
-import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.model.form.ServiceForm;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Interface for handling service-related operations.
@@ -58,13 +58,10 @@ public interface ServiceHandler {
      * Update an existing service.
      *
      * @param serviceForm     the service form containing the service details
-     * @param service         the service object created from serviceForm
      * @param serviceMetadata the service metadata created from serviceForm
-     * @param metadata        the service metadata
      * @throws Exception if an error occurs during service update
      */
-    void updateService(ServiceForm serviceForm, Service service, ServiceMetadata serviceMetadata,
-            Map<String, String> metadata) throws Exception;
+    void updateService(ServiceForm serviceForm, ServiceMetadata serviceMetadata) throws Exception;
     
     /**
      * Get all selector types.
@@ -86,24 +83,24 @@ public interface ServiceHandler {
      * @return a JSON node containing the list of subscribers
      * @throws Exception if an error occurs during fetching subscribers
      */
-    ObjectNode getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName, String groupName,
-            boolean aggregation) throws Exception;
+    Page<SubscriberInfo> getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName,
+            String groupName, boolean aggregation) throws Exception;
     
     /**
      * List service detail information.
      *
-     * @param withInstances whether to include instances
-     * @param namespaceId   the namespace ID
-     * @param pageNo        the page number
-     * @param pageSize      the size of the page
-     * @param serviceName   the service name
-     * @param groupName     the group name
-     * @param hasIpCount    whether to filter services with empty instances
-     * @return service detail information
+     * @param withInstances         whether to include instances
+     * @param namespaceId           the namespace ID
+     * @param pageNo                the page number
+     * @param pageSize              the size of the page
+     * @param serviceName           the service name
+     * @param groupName             the group name
+     * @param ignoreEmptyService    whether to filter services with empty instances
+     * @return if withInstances is {@code true}, return List of {@link ServiceDetailInfo}, otherwise return List of {@link ServiceView}
      * @throws NacosException if an error occurs during fetching service details
      */
     Object getServiceList(boolean withInstances, String namespaceId, int pageNo, int pageSize, String serviceName,
-            String groupName, boolean hasIpCount) throws NacosException;
+            String groupName, boolean ignoreEmptyService) throws NacosException;
     
     /**
      * Get the detail of a specific service.

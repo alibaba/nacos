@@ -16,12 +16,17 @@
 
 package com.alibaba.nacos.maintainer.client.naming;
 
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.maintainer.InstanceMetadataBatchResult;
 import com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceView;
+import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
+import com.alibaba.nacos.api.selector.NoneSelector;
+import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.maintainer.client.core.AbstractCoreMaintainerService;
 import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
@@ -36,6 +41,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,13 +92,10 @@ public class NacosNamingMaintainerServiceImplTest {
     @Test
     void testUpdateService() throws Exception {
         // Arrange
-        String namespaceId = "testNamespace";
-        String groupName = "testGroup";
         String serviceName = "testService";
-        String metadata = "testMetadata";
-        boolean ephemeral = true;
+        Map<String, String> metadata = Collections.singletonMap("key", "value");
         float protectThreshold = 0.5f;
-        String selector = "testSelector";
+        Selector selector = new NoneSelector();
         
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>("success")));
@@ -100,8 +103,7 @@ public class NacosNamingMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        String result = nacosNamingMaintainerService.updateService(namespaceId, groupName, serviceName, metadata,
-                ephemeral, protectThreshold, selector);
+        String result = nacosNamingMaintainerService.updateService(serviceName, metadata, protectThreshold, selector);
         
         // Assert
         assertEquals("success", result);
@@ -111,8 +113,6 @@ public class NacosNamingMaintainerServiceImplTest {
     @Test
     void testRemoveService() throws Exception {
         // Arrange
-        String namespaceId = "testNamespace";
-        String groupName = "testGroup";
         String serviceName = "testService";
         
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
@@ -121,7 +121,7 @@ public class NacosNamingMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        String result = nacosNamingMaintainerService.removeService(namespaceId, groupName, serviceName);
+        String result = nacosNamingMaintainerService.removeService(serviceName);
         
         // Assert
         assertEquals("success", result);
@@ -131,89 +131,103 @@ public class NacosNamingMaintainerServiceImplTest {
     @Test
     void testGetServiceDetail() throws Exception {
         // Arrange
-        String namespaceId = "testNamespace";
-        String groupName = "testGroup";
         String serviceName = "testService";
         
         ServiceDetailInfo expectedDetail = new ServiceDetailInfo();
+        expectedDetail.setServiceName(serviceName);
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedDetail)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        ServiceDetailInfo result = nacosNamingMaintainerService.getServiceDetail(namespaceId, groupName, serviceName);
+        ServiceDetailInfo result = nacosNamingMaintainerService.getServiceDetail(serviceName);
         
         // Assert
         assertNotNull(result);
+        assertEquals(serviceName, result.getServiceName());
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
     }
     
     @Test
     void testListServices() throws Exception {
-        // Arrange
-        String namespaceId = "testNamespace";
-        String groupName = "testGroup";
-        String serviceName = "testService";
-        int pageNo = 1;
-        int pageSize = 10;
-        
+        List<ServiceView> expected = new ArrayList<>();
+        expected.add(new ServiceView());
+        expected.get(0).setName("testService");
+        expected.get(0).setGroupName("testGroup");
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>("success")));
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expected)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        Object result = nacosNamingMaintainerService.listServices(namespaceId, groupName, serviceName, false, false,
-                pageNo, pageSize);
+        List<ServiceView> result = nacosNamingMaintainerService.listServices("testNamespace");
         
         // Assert
         assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("testService", result.get(0).getName());
+        assertEquals("testGroup", result.get(0).getGroupName());
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
     }
     
     @Test
-    void testSearchService() throws Exception {
+    void testListServicesWithDetail() throws Exception {
         // Arrange
         String namespaceId = "testNamespace";
-        String expr = "testExpr";
-        
-        ObjectNode expectedNode = new ObjectMapper().createObjectNode();
+        List<ServiceDetailInfo> expected = new ArrayList<>();
+        expected.add(new ServiceDetailInfo());
+        expected.get(0).setNamespaceId(namespaceId);
+        expected.get(0).setServiceName("testService");
+        expected.get(0).setGroupName("testGroup");
+        expected.get(0).setMetadata(Collections.singletonMap("key", "value"));
+        expected.get(0).setClusterMap(Collections.emptyMap());
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(expectedNode));
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expected)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        ObjectNode result = nacosNamingMaintainerService.searchService(namespaceId, expr);
+        List<ServiceDetailInfo> result = nacosNamingMaintainerService.listServicesWithDetail(namespaceId);
         
         // Assert
         assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals(namespaceId, result.get(0).getNamespaceId());
+        assertEquals("testService", result.get(0).getServiceName());
+        assertEquals("testGroup", result.get(0).getGroupName());
+        assertEquals(Collections.singletonMap("key", "value"), result.get(0).getMetadata());
+        assertEquals(Collections.emptyMap(), result.get(0).getClusterMap());
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
     }
     
     @Test
     void testGetSubscribers() throws Exception {
         // Arrange
-        final String namespaceId = "testNamespace";
-        final String groupName = "testGroup";
         final String serviceName = "testService";
-        final int pageNo = 1;
-        final int pageSize = 10;
-        final boolean aggregation = true;
         
-        Result<ObjectNode> expectedResult = Result.success(new ObjectMapper().createObjectNode());
+        Page<SubscriberInfo> expectedPage = new Page<>();
+        expectedPage.setPageNumber(1);
+        expectedPage.setPagesAvailable(1);
+        expectedPage.setTotalCount(1);
+        expectedPage.setPageItems(Collections.singletonList(new SubscriberInfo()));
+        expectedPage.getPageItems().get(0).setServiceName(serviceName);
+        Result<Page<SubscriberInfo>> expectedResult = Result.success(expectedPage);
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(expectedResult));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        ObjectNode result = nacosNamingMaintainerService.getSubscribers(namespaceId, groupName, serviceName, pageNo,
-                pageSize, aggregation);
+        Page<SubscriberInfo> result = nacosNamingMaintainerService.getSubscribers(serviceName);
         
         // Assert
         assertNotNull(result);
+        assertEquals(1, result.getPageNumber());
+        assertEquals(1, result.getPagesAvailable());
+        assertEquals(1, result.getTotalCount());
+        assertEquals(1, result.getPageItems().size());
+        assertEquals(serviceName, result.getPageItems().get(0).getServiceName());
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
     }
     

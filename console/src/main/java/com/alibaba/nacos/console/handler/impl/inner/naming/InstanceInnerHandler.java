@@ -61,7 +61,7 @@ public class InstanceInnerHandler implements InstanceHandler {
             int pageSize) {
         List<? extends Instance> instances = catalogServiceV2.listAllInstances(namespaceId, groupName,
                 serviceNameWithoutGroup);
-        List<? extends Instance> resultInstances = PageUtil.subPage(instances, page, pageSize);
+        List<? extends Instance> resultInstances = PageUtil.subPageList(instances, page, pageSize);
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         result.replace("instances", JacksonUtils.transferToJsonNode(resultInstances));
         result.put("count", instances.size());
