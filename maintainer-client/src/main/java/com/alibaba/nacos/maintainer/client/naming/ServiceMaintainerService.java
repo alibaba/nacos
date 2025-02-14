@@ -488,6 +488,8 @@ public interface ServiceMaintainerService {
      * @param namespaceId the namespace ID
      * @param groupName   the group name
      * @param serviceName the service name
+     * @param pageNo      the page number
+     * @param pageSize    the page size
      * @return the page of subscribers
      * @throws NacosException if an error occurs
      */
