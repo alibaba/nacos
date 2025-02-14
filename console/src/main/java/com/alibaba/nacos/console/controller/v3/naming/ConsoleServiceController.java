@@ -185,7 +185,7 @@ public class ConsoleServiceController {
         String namespaceId = serviceListForm.getNamespaceId();
         String serviceName = serviceListForm.getServiceNameParam();
         String groupName = serviceListForm.getGroupNameParam();
-        boolean hasIpCount = serviceListForm.isHasIpCount();
+        boolean hasIpCount = serviceListForm.isIgnoreEmptyService();
         boolean withInstances = serviceListForm.isWithInstances();
         return Result.success(
                 serviceProxy.getServiceList(withInstances, namespaceId, pageForm.getPageNo(), pageForm.getPageSize(),

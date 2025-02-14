@@ -156,7 +156,7 @@ public class ServiceControllerV3 {
         String namespaceId = serviceListForm.getNamespaceId();
         String serviceName = serviceListForm.getServiceNameParam();
         String groupName = serviceListForm.getGroupNameParam();
-        boolean hasIpCount = serviceListForm.isHasIpCount();
+        boolean hasIpCount = serviceListForm.isIgnoreEmptyService();
         boolean withInstances = serviceListForm.isWithInstances();
         int pageNo = pageForm.getPageNo();
         int pageSize = pageForm.getPageSize();

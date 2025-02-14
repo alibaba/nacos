@@ -36,7 +36,7 @@ public class ServiceListForm implements NacosForm {
     
     private String groupNameParam = StringUtils.EMPTY;
     
-    private boolean hasIpCount;
+    private boolean ignoreEmptyService;
     
     boolean withInstances;
     
@@ -71,12 +71,12 @@ public class ServiceListForm implements NacosForm {
         this.groupNameParam = groupNameParam;
     }
     
-    public boolean isHasIpCount() {
-        return hasIpCount;
+    public boolean isIgnoreEmptyService() {
+        return ignoreEmptyService;
     }
     
-    public void setHasIpCount(boolean hasIpCount) {
-        this.hasIpCount = hasIpCount;
+    public void setIgnoreEmptyService(boolean ignoreEmptyService) {
+        this.ignoreEmptyService = ignoreEmptyService;
     }
     
     public boolean isWithInstances() {

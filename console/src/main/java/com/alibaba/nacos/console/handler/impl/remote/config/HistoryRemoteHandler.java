@@ -143,6 +143,7 @@ public class HistoryRemoteHandler implements HistoryHandler {
             configInfo.setType(configInfo.getType());
             configInfoWrapper.setAppName(configInfo.getAppName());
             configInfoWrapper.setLastModified(configInfo.getModifyTime());
+            result.add(configInfoWrapper);
         });
         return result;
     }
