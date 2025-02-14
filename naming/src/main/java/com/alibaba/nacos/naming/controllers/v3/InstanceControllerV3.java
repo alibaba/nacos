@@ -22,7 +22,6 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.pojo.builder.InstanceBuilder;
 import com.alibaba.nacos.api.naming.pojo.maintainer.InstanceMetadataBatchResult;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
@@ -36,6 +35,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.naming.core.CatalogService;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
 import com.alibaba.nacos.naming.core.InstancePatchObject;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -48,14 +48,12 @@ import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.naming.paramcheck.NamingInstanceListHttpParamExtractor;
 import com.alibaba.nacos.naming.paramcheck.NamingInstanceMetadataBatchHttpParamExtractor;
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
-import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.utils.NamingRequestUtil;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.collections.CollectionUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -82,11 +80,18 @@ import static com.alibaba.nacos.naming.misc.UtilsAndCommons.DEFAULT_CLUSTER_NAME
 @ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)
 public class InstanceControllerV3 {
     
-    @Autowired
-    private SwitchDomain switchDomain;
+    private final SwitchDomain switchDomain;
     
-    @Autowired
-    private InstanceOperatorClientImpl instanceService;
+    private final InstanceOperatorClientImpl instanceService;
+    
+    private final CatalogService catalogService;
+    
+    public InstanceControllerV3(SwitchDomain switchDomain, InstanceOperatorClientImpl instanceService,
+            CatalogService catalogService) {
+        this.switchDomain = switchDomain;
+        this.instanceService = instanceService;
+        this.catalogService = catalogService;
+    }
     
     /**
      * Register new instance.
@@ -261,18 +266,14 @@ public class InstanceControllerV3 {
     @TpsControl(pointName = "NamingServiceSubscribe", name = "HttpNamingServiceSubscribe")
     @ExtractorManager.Extractor(httpExtractor = NamingInstanceListHttpParamExtractor.class)
     @Secured(resource = UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
-    public Result<ServiceInfo> list(InstanceListForm instanceListForm) throws NacosApiException {
+    public Result<List<? extends Instance>> list(InstanceListForm instanceListForm) throws NacosException {
         instanceListForm.validate();
-        String compositeServiceName = NamingUtils.getGroupedName(instanceListForm.getServiceName(),
-                instanceListForm.getGroupName());
-        String namespaceId = instanceListForm.getNamespaceId();
-        String clusterName = instanceListForm.getClusterName();
-        // TODO Deprecated, the subscriber is used by client 1.0 to subs service, admin api don't need it,
-        //  InstanceOperator should support no subscribe api.
-        Subscriber subscriber = new Subscriber("Deprecated", "Deprecated", "Deprecated", "Deprecated", namespaceId,
-                compositeServiceName, 0, clusterName);
-        return Result.success(instanceService.listInstance(namespaceId, compositeServiceName, subscriber, clusterName,
-                instanceListForm.getHealthyOnly()));
+        List<? extends Instance> instances = catalogService.listInstances(instanceListForm.getNamespaceId(),
+                instanceListForm.getGroupName(), instanceListForm.getServiceName(), instanceListForm.getClusterName());
+        if (instanceListForm.getHealthyOnly()) {
+            instances = instances.stream().filter(Instance::isHealthy).toList();
+        }
+        return Result.success(instances);
     }
     
     /**

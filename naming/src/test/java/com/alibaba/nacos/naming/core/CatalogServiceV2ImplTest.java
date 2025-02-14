@@ -85,15 +85,12 @@ class CatalogServiceV2ImplTest {
         serviceMetadata.setProtectThreshold(0.75F);
         Mockito.when(metadataManager.getServiceMetadata(Mockito.any())).thenReturn(Optional.of(serviceMetadata));
         Mockito.when(serviceStorage.getClusters(Mockito.any())).thenReturn(Collections.singleton("C"));
-        Object obj = catalogServiceV2Impl.getServiceDetail("A", "B", "C");
-        ObjectNode objectNode = (ObjectNode) obj;
-        assertEquals("C", objectNode.get(FieldsConstants.SERVICE).get(FieldsConstants.NAME).asText());
-        assertEquals("B", objectNode.get(FieldsConstants.SERVICE).get(FieldsConstants.GROUP_NAME).asText());
-        assertEquals("none",
-                objectNode.get(FieldsConstants.SERVICE).get(FieldsConstants.SELECTOR).get("type").asText());
-        assertEquals(0, objectNode.get(FieldsConstants.SERVICE).get(FieldsConstants.METADATA).size());
-        assertEquals(0.75, objectNode.get(FieldsConstants.SERVICE).get(FieldsConstants.PROTECT_THRESHOLD).asDouble(),
-                0.1);
+        ServiceDetailInfo actual = catalogServiceV2Impl.getServiceDetail("A", "B", "C");
+        assertEquals("C", actual.getServiceName());
+        assertEquals("B", actual.getGroupName());
+        assertEquals("none", actual.getSelector().getType());
+        assertEquals(0, actual.getMetadata().size());
+        assertEquals(0.75, actual.getProtectThreshold(), 0.1);
     }
     
     @Test

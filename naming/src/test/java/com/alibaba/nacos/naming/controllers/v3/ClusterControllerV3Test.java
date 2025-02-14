@@ -63,14 +63,15 @@ class ClusterControllerV3Test extends BaseTest {
         UpdateClusterForm updateClusterForm = new UpdateClusterForm();
         updateClusterForm.setNamespaceId("test-namespace");
         updateClusterForm.setClusterName(TEST_CLUSTER_NAME);
-        updateClusterForm.setServiceName(TEST_SERVICE_NAME);
+        updateClusterForm.setGroupName(TEST_GROUP_NAME);
+        updateClusterForm.setServiceName("test-service");
         updateClusterForm.setCheckPort(1);
         updateClusterForm.setUseInstancePort4Check(true);
         updateClusterForm.setHealthChecker("{\"type\":\"HTTP\"}");
         
         assertEquals("ok", clusterControllerV3.update(updateClusterForm).getData());
-        verify(clusterOperatorV2).updateClusterMetadata(eq("test-namespace"), eq(TEST_SERVICE_NAME), eq(TEST_CLUSTER_NAME),
-                any(ClusterMetadata.class));
+        verify(clusterOperatorV2).updateClusterMetadata(eq("test-namespace"), eq(TEST_GROUP_NAME), eq("test-service"),
+                eq(TEST_CLUSTER_NAME), any(ClusterMetadata.class));
     }
     
     private void mockRequestParameter(String paramKey, String value) {

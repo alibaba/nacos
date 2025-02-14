@@ -41,7 +41,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -71,21 +70,18 @@ public class ConsoleInstanceController {
      *
      * @param serviceForm service form
      * @param pageForm Page form
-     * @param healthyOnly whether only return health instance
-     * @param enabledOnly whether only return enabled instance
      * @return instances information
      */
     @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)
     @RequestMapping("/list")
-    public Result<ObjectNode> getInstanceList(ServiceForm serviceForm, PageForm pageForm,
-            @RequestParam(required = false) Boolean healthyOnly, @RequestParam(required = false) Boolean enabledOnly)
-            throws NacosApiException {
+    public Result<ObjectNode> getInstanceList(ServiceForm serviceForm, PageForm pageForm) throws NacosException {
         serviceForm.validate();
         String namespaceId = serviceForm.getNamespaceId();
         String groupName = serviceForm.getGroupName();
         String serviceName = serviceForm.getServiceName();
+        // TODO use Page + List<Instance> replace with console ui
         ObjectNode result = instanceProxy.listInstances(namespaceId, serviceName, groupName, pageForm.getPageNo(),
-                pageForm.getPageSize(), healthyOnly, enabledOnly);
+                pageForm.getPageSize());
         return Result.success(result);
     }
     

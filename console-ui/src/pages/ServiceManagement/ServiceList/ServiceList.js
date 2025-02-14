@@ -68,7 +68,7 @@ class ServiceList extends React.Component {
         serviceName: getParams('serviceNameParam') || '',
         groupName: getParams('groupNameParam') || '',
       },
-      hasIpCount: !(localStorage.getItem('hasIpCount') === 'false'),
+      ignoreEmptyService: !(localStorage.getItem('ignoreEmptyService') === 'false'),
     };
     this.field = new Field(this);
   }
@@ -88,9 +88,9 @@ class ServiceList extends React.Component {
   }
 
   queryServiceList() {
-    const { currentPage, pageSize, search, withInstances = false, hasIpCount } = this.state;
+    const { currentPage, pageSize, search, withInstances = false, ignoreEmptyService } = this.state;
     const parameter = [
-      `hasIpCount=${hasIpCount}`,
+      `ignoreEmptyService=${ignoreEmptyService}`,
       `withInstances=${withInstances}`,
       `pageNo=${currentPage}`,
       `pageSize=${pageSize}`,
@@ -205,7 +205,13 @@ class ServiceList extends React.Component {
       deleteAction,
       subscriber,
     } = locale;
-    const { search, nowNamespaceName, nowNamespaceId, nowNamespaceDesc, hasIpCount } = this.state;
+    const {
+      search,
+      nowNamespaceName,
+      nowNamespaceId,
+      nowNamespaceDesc,
+      ignoreEmptyService,
+    } = this.state;
     const { init, getValue } = this.field;
     this.init = init;
     this.getValue = getValue;
@@ -261,10 +267,10 @@ class ServiceList extends React.Component {
               </FormItem>
               <Form.Item label={`${hiddenEmptyService}`}>
                 <Switch
-                  checked={hasIpCount}
-                  onChange={hasIpCount =>
-                    this.setState({ hasIpCount, currentPage: 1 }, () => {
-                      localStorage.setItem('hasIpCount', hasIpCount);
+                  checked={ignoreEmptyService}
+                  onChange={ignoreEmptyService =>
+                    this.setState({ ignoreEmptyService, currentPage: 1 }, () => {
+                      localStorage.setItem('ignoreEmptyService', ignoreEmptyService);
                       this.queryServiceList();
                     })
                   }

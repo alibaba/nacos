@@ -17,7 +17,8 @@
 
 package com.alibaba.nacos.console.handler.core;
 
-import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.response.NacosMember;
 
 import java.util.Collection;
 
@@ -33,7 +34,8 @@ public interface ClusterHandler {
      *
      * @param ipKeyWord the search keyword for filtering members
      * @return a collection of matching members
+     * @throws NacosException if an error occurs during the operation
      */
-    Collection<Member> getNodeList(String ipKeyWord);
+    Collection<? extends NacosMember> getNodeList(String ipKeyWord) throws NacosException;
 }
 

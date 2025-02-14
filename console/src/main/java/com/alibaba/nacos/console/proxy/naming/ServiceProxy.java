@@ -18,15 +18,17 @@
 package com.alibaba.nacos.console.proxy.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceView;
+import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
 import com.alibaba.nacos.console.handler.naming.ServiceHandler;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.model.form.ServiceForm;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Proxy class for handling service-related operations.
@@ -74,13 +76,11 @@ public class ServiceProxy {
      * Updates an existing service by delegating the operation to the appropriate handler.
      *
      * @param serviceForm     the service form containing the service details
-     * @param service         the service object created from serviceForm
      * @param serviceMetadata the service metadata created from serviceForm
      * @throws Exception if an error occurs during service update
      */
-    public void updateService(ServiceForm serviceForm, com.alibaba.nacos.naming.core.v2.pojo.Service service,
-            ServiceMetadata serviceMetadata, Map<String, String> metadata) throws Exception {
-        serviceHandler.updateService(serviceForm, service, serviceMetadata, metadata);
+    public void updateService(ServiceForm serviceForm, ServiceMetadata serviceMetadata) throws Exception {
+        serviceHandler.updateService(serviceForm, serviceMetadata);
     }
     
     /**
@@ -88,7 +88,7 @@ public class ServiceProxy {
      *
      * @return a list of selector types
      */
-    public List<String> getSelectorTypeList() {
+    public List<String> getSelectorTypeList() throws NacosException {
         return serviceHandler.getSelectorTypeList();
     }
     
@@ -104,7 +104,7 @@ public class ServiceProxy {
      * @return a JSON node containing the list of subscribers
      * @throws Exception if an error occurs during fetching subscribers
      */
-    public ObjectNode getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName, String groupName,
+    public Page<SubscriberInfo> getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName, String groupName,
             boolean aggregation) throws Exception {
         return serviceHandler.getSubscribers(pageNo, pageSize, namespaceId, serviceName, groupName, aggregation);
     }
@@ -119,7 +119,7 @@ public class ServiceProxy {
      * @param serviceName   the service name
      * @param groupName     the group name
      * @param hasIpCount    whether to filter services with empty instances
-     * @return service detail information
+     * @return if withInstances is {@code true}, return List of {@link ServiceDetailInfo}, otherwise return List of {@link ServiceView}
      * @throws NacosException if an error occurs during fetching service details
      */
     public Object getServiceList(boolean withInstances, String namespaceId, int pageNo, int pageSize,
@@ -137,7 +137,8 @@ public class ServiceProxy {
      * @return service detail information
      * @throws NacosException if an error occurs during fetching service details
      */
-    public Object getServiceDetail(String namespaceId, String serviceName, String groupName) throws NacosException {
+    public ServiceDetailInfo getServiceDetail(String namespaceId, String serviceName, String groupName)
+            throws NacosException {
         return serviceHandler.getServiceDetail(namespaceId, serviceName, groupName);
     }
     

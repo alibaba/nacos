@@ -17,18 +17,20 @@
 package com.alibaba.nacos.console.handler.impl.remote.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.naming.pojo.Service;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
+import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
 import com.alibaba.nacos.console.handler.naming.ServiceHandler;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
-import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.model.form.ServiceForm;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Remote Implementation of ServiceHandler that handles service-related operations.
@@ -39,56 +41,80 @@ import java.util.Map;
 @EnabledRemoteHandler
 public class ServiceRemoteHandler implements ServiceHandler {
     
-    public ServiceRemoteHandler() {
+    private final NacosMaintainerClientHolder clientHolder;
+    
+    public ServiceRemoteHandler(NacosMaintainerClientHolder clientHolder) {
+        this.clientHolder = clientHolder;
     }
     
     @Override
     public void createService(ServiceForm serviceForm, ServiceMetadata serviceMetadata) throws Exception {
-        // TODO get from nacos servers
+        Service service = buildService(serviceForm, serviceMetadata);
+        clientHolder.getNamingMaintainerService().createService(service);
     }
     
     @Override
     public void deleteService(String namespaceId, String serviceName, String groupName) throws Exception {
-        // TODO get from nacos servers
+        clientHolder.getNamingMaintainerService().removeService(namespaceId, groupName, serviceName);
     }
     
     @Override
-    public void updateService(ServiceForm serviceForm, Service service, ServiceMetadata serviceMetadata,
-            Map<String, String> metadata) throws Exception {
-        // TODO get from nacos servers
+    public void updateService(ServiceForm serviceForm, ServiceMetadata serviceMetadata) throws Exception {
+        Service servicePojo = buildService(serviceForm, serviceMetadata);
+        clientHolder.getNamingMaintainerService().updateService(servicePojo);
     }
     
     @Override
-    public List<String> getSelectorTypeList() {
-        // TODO get from nacos servers
-        return Collections.emptyList();
+    public List<String> getSelectorTypeList() throws NacosException {
+        return clientHolder.getNamingMaintainerService().listSelectorTypes();
     }
     
     @Override
-    public ObjectNode getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName, String groupName,
+    public Page<SubscriberInfo> getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName, String groupName,
             boolean aggregation) throws Exception {
-        // TODO get from nacos servers
-        return JacksonUtils.createEmptyJsonNode();
+        // TODO use an specified Object replace
+        return clientHolder.getNamingMaintainerService()
+                .getSubscribers(namespaceId, groupName, serviceName, pageNo, pageSize, aggregation);
     }
     
     @Override
     public Object getServiceList(boolean withInstances, String namespaceId, int pageNo, int pageSize,
-            String serviceName, String groupName, boolean hasIpCount) throws NacosException {
-        // TODO get from nacos servers
-        return JacksonUtils.createEmptyJsonNode();
+            String serviceName, String groupName, boolean ignoreEmptyService) throws NacosException {
+        if (withInstances) {
+            return clientHolder.getNamingMaintainerService()
+                    .listServicesWithDetail(namespaceId, groupName, serviceName, ignoreEmptyService, pageNo, pageSize);
+        }
+        return clientHolder.getNamingMaintainerService()
+                .listServices(namespaceId, groupName, serviceName, pageNo, pageSize);
     }
     
     @Override
-    public Object getServiceDetail(String namespaceId, String serviceName, String groupName) throws NacosException {
-        // TODO get from nacos servers
-        return JacksonUtils.createEmptyJsonNode();
+    public ServiceDetailInfo getServiceDetail(String namespaceId, String serviceName, String groupName)
+            throws NacosException {
+        return clientHolder.getNamingMaintainerService().getServiceDetail(namespaceId, groupName, serviceName);
     }
     
     @Override
     public void updateClusterMetadata(String namespaceId, String serviceName, String clusterName,
             ClusterMetadata clusterMetadata) throws Exception {
-        // TODO get from nacos servers
+        String groupName = NamingUtils.getGroupName(serviceName);
+        String serviceNameWithoutGroup = NamingUtils.getServiceName(serviceName);
+        clientHolder.getNamingMaintainerService()
+                .updateCluster(namespaceId, groupName, serviceNameWithoutGroup, clusterName,
+                        clusterMetadata.getHealthyCheckPort(), clusterMetadata.isUseInstancePortForCheck(),
+                        JacksonUtils.toJson(clusterMetadata.getHealthChecker()), clusterMetadata.getExtendData());
     }
     
+    private Service buildService(ServiceForm serviceForm, ServiceMetadata metadata) {
+        Service service = new Service();
+        service.setNamespaceId(serviceForm.getNamespaceId());
+        service.setName(serviceForm.getServiceName());
+        service.setGroupName(serviceForm.getGroupName());
+        service.setProtectThreshold(serviceForm.getProtectThreshold());
+        service.setEphemeral(serviceForm.getEphemeral());
+        service.setMetadata(metadata.getExtendData());
+        service.setSelector(metadata.getSelector());
+        return service;
+    }
 }
 

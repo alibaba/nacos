@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.pojo.Cluster;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo;
@@ -32,7 +31,7 @@ import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import com.alibaba.nacos.naming.pojo.ServiceView;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceView;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.stereotype.Component;
@@ -68,47 +67,41 @@ public class CatalogServiceV2Impl implements CatalogService {
     }
     
     @Override
-    public Object getServiceDetail(String namespaceId, String groupName, String serviceName) throws NacosException {
+    public ServiceDetailInfo getServiceDetail(String namespaceId, String groupName, String serviceName)
+            throws NacosException {
         Service service = Service.newService(namespaceId, groupName, serviceName);
         if (!ServiceManager.getInstance().containSingleton(service)) {
             throw new NacosException(NacosException.NOT_FOUND,
                     String.format("service %s@@%s is not found!", groupName, serviceName));
         }
-        
+        service = ServiceManager.getInstance().getSingleton(service);
         Optional<ServiceMetadata> metadata = metadataManager.getServiceMetadata(service);
         ServiceMetadata detailedService = metadata.orElseGet(ServiceMetadata::new);
         
-        ObjectNode serviceObject = JacksonUtils.createEmptyJsonNode();
-        serviceObject.put(FieldsConstants.NAME, serviceName);
-        serviceObject.put(FieldsConstants.GROUP_NAME, groupName);
-        serviceObject.put(FieldsConstants.PROTECT_THRESHOLD, detailedService.getProtectThreshold());
-        serviceObject.replace(FieldsConstants.SELECTOR, JacksonUtils.transferToJsonNode(detailedService.getSelector()));
-        serviceObject.replace(FieldsConstants.METADATA,
-                JacksonUtils.transferToJsonNode(detailedService.getExtendData()));
+        ServiceDetailInfo result = new ServiceDetailInfo();
+        result.setNamespaceId(service.getNamespace());
+        result.setGroupName(service.getGroup());
+        result.setServiceName(serviceName);
+        result.setEphemeral(service.isEphemeral());
+        result.setProtectThreshold(detailedService.getProtectThreshold());
+        result.setSelector(detailedService.getSelector());
+        result.setMetadata(detailedService.getExtendData());
         
-        ObjectNode detailView = JacksonUtils.createEmptyJsonNode();
-        detailView.replace(FieldsConstants.SERVICE, serviceObject);
-        
-        List<com.alibaba.nacos.api.naming.pojo.Cluster> clusters = new ArrayList<>();
-        
+        Map<String, ClusterInfo> clusters = new HashMap<>(serviceStorage.getClusters(service).size());
         for (String each : serviceStorage.getClusters(service)) {
             ClusterMetadata clusterMetadata =
                     detailedService.getClusters().containsKey(each) ? detailedService.getClusters().get(each)
                             : new ClusterMetadata();
-            com.alibaba.nacos.api.naming.pojo.Cluster clusterView = new Cluster();
-            clusterView.setName(each);
-            clusterView.setHealthChecker(clusterMetadata.getHealthChecker());
-            clusterView.setMetadata(clusterMetadata.getExtendData());
-            clusterView.setUseIpPort4Check(clusterMetadata.isUseInstancePortForCheck());
-            clusterView.setDefaultPort(DEFAULT_PORT);
-            clusterView.setDefaultCheckPort(clusterMetadata.getHealthyCheckPort());
-            clusterView.setServiceName(service.getGroupedServiceName());
-            clusters.add(clusterView);
+            ClusterInfo clusterInfo = new ClusterInfo();
+            clusterInfo.setClusterName(each);
+            clusterInfo.setHealthChecker(clusterMetadata.getHealthChecker());
+            clusterInfo.setMetadata(clusterMetadata.getExtendData());
+            clusterInfo.setUseInstancePortForCheck(clusterMetadata.isUseInstancePortForCheck());
+            clusterInfo.setHealthyCheckPort(clusterMetadata.getHealthyCheckPort());
+            clusters.put(each, clusterInfo);
         }
-        
-        detailView.replace(FieldsConstants.CLUSTERS, JacksonUtils.transferToJsonNode(clusters));
-        
-        return detailView;
+        result.setClusterMap(clusters);
+        return result;
     }
     
     @Override

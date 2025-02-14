@@ -161,7 +161,7 @@ class NacosConfigMaintainerServiceImplTest {
         
         // Act
         Page<ConfigBasicInfo> result = nacosConfigMaintainerServiceImpl.searchConfigByDetails(dataId, groupName,
-                namespaceId, configDetail, search, pageNo, pageSize);
+                namespaceId, configDetail, search, "", "", "", pageNo, pageSize);
         
         // Assert
         assertNotNull(result);

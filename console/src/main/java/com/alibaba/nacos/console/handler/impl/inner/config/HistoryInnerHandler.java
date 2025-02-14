@@ -81,7 +81,7 @@ public class HistoryInnerHandler implements HistoryHandler {
     }
     
     @Override
-    public List<ConfigInfoWrapper> getConfigsByTenant(String namespaceId) throws NacosApiException {
+    public List<ConfigInfoWrapper> getConfigsByTenant(String namespaceId) {
         return historyService.getConfigListByNamespace(namespaceId);
     }
 }

@@ -17,13 +17,10 @@
 package com.alibaba.nacos.maintainer.client.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.maintainer.InstanceMetadataBatchResult;
 import com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo;
-import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.maintainer.client.core.CoreMaintainerService;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -35,119 +32,7 @@ import java.util.Map;
  *
  * @author Nacos
  */
-public interface NamingMaintainerService extends CoreMaintainerService {
-    
-    // ------------------------- Service Operations -------------------------
-    
-    /**
-     * Create a new service with the given service name.
-     *
-     * @param serviceName the name of the service
-     * @return the result of the operation
-     * @throws NacosException if an error occurs
-     */
-    String createService(String serviceName) throws NacosException;
-    
-    /**
-     * Create a new service with detailed parameters.
-     *
-     * @param namespaceId      the namespace ID
-     * @param groupName        the group name
-     * @param serviceName      the service name
-     * @param metadata         the metadata of the service
-     * @param ephemeral        whether the service is ephemeral
-     * @param protectThreshold the protect threshold
-     * @param selector         the selector for the service
-     * @return the result of the operation
-     * @throws NacosException if an error occurs
-     */
-    String createService(String namespaceId, String groupName, String serviceName, String metadata, boolean ephemeral,
-            float protectThreshold, String selector) throws NacosException;
-    
-    /**
-     * Update an existing service.
-     *
-     * @param namespaceId      the namespace ID
-     * @param groupName        the group name
-     * @param serviceName      the service name
-     * @param metadata         the updated metadata
-     * @param ephemeral        whether the service is ephemeral
-     * @param protectThreshold the updated protect threshold
-     * @param selector         the updated selector
-     * @return the result of the operation
-     * @throws NacosException if an error occurs
-     */
-    String updateService(String namespaceId, String groupName, String serviceName, String metadata, boolean ephemeral,
-            float protectThreshold, String selector) throws NacosException;
-    
-    /**
-     * Remove a service.
-     *
-     * @param namespaceId the namespace ID
-     * @param groupName   the group name
-     * @param serviceName the service name
-     * @return the result of the operation
-     * @throws NacosException if an error occurs
-     */
-    String removeService(String namespaceId, String groupName, String serviceName) throws NacosException;
-    
-    /**
-     * Get detailed information of a service.
-     *
-     * @param namespaceId the namespace ID
-     * @param groupName   the group name
-     * @param serviceName the service name
-     * @return the service detail information
-     * @throws NacosException if an error occurs
-     */
-    ServiceDetailInfo getServiceDetail(String namespaceId, String groupName, String serviceName) throws NacosException;
-    
-    /**
-     * List services with pagination.
-     *
-     * @param namespaceId the namespace ID
-     * @param groupName   the group name
-     * @param selector    the selector for filtering
-     * @param pageNo      the page number
-     * @param pageSize    the page size
-     * @return the list of services
-     * @throws NacosException if an error occurs
-     */
-    Object listServices(String namespaceId, String groupName, String selector, int pageNo, int pageSize)
-            throws NacosException;
-    
-    /**
-     * Search service names by expression.
-     *
-     * @param namespaceId the namespace ID
-     * @param expr        the search expression
-     * @return the search result
-     * @throws NacosException if an error occurs
-     */
-    ObjectNode searchService(String namespaceId, String expr) throws NacosException;
-    
-    /**
-     * Get subscribers of a service with pagination.
-     *
-     * @param namespaceId the namespace ID
-     * @param groupName   the group name
-     * @param serviceName the service name
-     * @param pageNo      the page number
-     * @param pageSize    the page size
-     * @param aggregation whether to aggregate results
-     * @return the list of subscribers
-     * @throws NacosException if an error occurs
-     */
-    Result<ObjectNode> getSubscribers(String namespaceId, String groupName, String serviceName, int pageNo,
-            int pageSize, boolean aggregation) throws NacosException;
-    
-    /**
-     * List all selector types.
-     *
-     * @return the list of selector types
-     * @throws NacosException if an error occurs
-     */
-    List<String> listSelectorTypes() throws NacosException;
+public interface NamingMaintainerService extends CoreMaintainerService, ServiceMaintainerService {
     
     /**
      * Get system metrics.
@@ -230,7 +115,7 @@ public interface NamingMaintainerService extends CoreMaintainerService {
      * @throws NacosException if an error occurs
      */
     String updateInstance(String namespaceId, String groupName, String serviceName, String clusterName, String ip,
-            int port, String weight, boolean healthy, boolean enabled, String ephemeral, String metadata)
+            int port, double weight, boolean healthy, boolean enabled, boolean ephemeral, String metadata)
             throws NacosException;
     
     /**
@@ -287,14 +172,12 @@ public interface NamingMaintainerService extends CoreMaintainerService {
      * @param groupName   the group name
      * @param serviceName the service name
      * @param clusterName the cluster name
-     * @param ip          the IP address of the instance (optional)
-     * @param port        the port of the instance (optional)
      * @param healthyOnly whether to list only healthy instances
      * @return the list of instances
      * @throws NacosException if an error occurs
      */
-    ServiceInfo listInstances(String namespaceId, String groupName, String serviceName, String clusterName, String ip,
-            int port, boolean healthyOnly) throws NacosException;
+    List<Instance> listInstances(String namespaceId, String groupName, String serviceName, String clusterName,
+            boolean healthyOnly) throws NacosException;
     
     /**
      * Get detailed information of an instance.
@@ -345,6 +228,7 @@ public interface NamingMaintainerService extends CoreMaintainerService {
      *
      * @param namespaceId           the namespace ID
      * @param groupName             the group name
+     * @param serviceName           the service name
      * @param clusterName           the cluster name
      * @param checkPort             the health check port
      * @param useInstancePort4Check whether to use the instance port for health check
@@ -353,8 +237,9 @@ public interface NamingMaintainerService extends CoreMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
-    String updateCluster(String namespaceId, String groupName, String clusterName, Integer checkPort,
-            Boolean useInstancePort4Check, String healthChecker, Map<String, String> metadata) throws NacosException;
+    String updateCluster(String namespaceId, String groupName, String serviceName, String clusterName,
+            Integer checkPort, Boolean useInstancePort4Check, String healthChecker, Map<String, String> metadata)
+            throws NacosException;
     
     // ------------------------- Client Operations -------------------------
     

@@ -75,8 +75,8 @@ public class ConsoleInstanceControllerTest {
     @Test
     void testGetInstanceList() throws Exception {
         ObjectNode instances = JsonNodeFactory.instance.objectNode();
-        when(instanceProxy.listInstances(anyString(), anyString(), anyString(), anyInt(), anyInt(), any(),
-                any())).thenReturn(instances);
+        when(instanceProxy.listInstances(anyString(), anyString(), anyString(), anyInt(), anyInt())).thenReturn(
+                instances);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/ns/instance/list")
                 .param("namespaceId", "default").param("serviceName", "testService").param("pageNo", "1")

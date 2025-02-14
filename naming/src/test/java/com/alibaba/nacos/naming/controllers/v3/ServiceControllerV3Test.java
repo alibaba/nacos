@@ -17,10 +17,11 @@
 package com.alibaba.nacos.naming.controllers.v3;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
@@ -52,7 +53,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -194,50 +194,29 @@ class ServiceControllerV3Test {
     }
     
     @Test
-    void testSearchService() {
-        try {
-            Mockito.when(serviceOperatorV2.searchServiceName(Mockito.anyString(), Mockito.anyString()))
-                    .thenReturn(Collections.singletonList("result"));
-            
-            ObjectNode objectNode = serviceControllerV3.searchService("test-namespace", "").getData();
-            assertEquals(1, objectNode.get("count").asInt());
-        } catch (NacosException e) {
-            e.printStackTrace();
-            fail(e.getMessage());
-        }
-        
-        try {
-            Mockito.when(serviceOperatorV2.searchServiceName(Mockito.anyString(), Mockito.anyString()))
-                    .thenReturn(Arrays.asList("re1", "re2"));
-            Mockito.when(serviceOperatorV2.listAllNamespace()).thenReturn(Arrays.asList("re1", "re2"));
-            
-            ObjectNode objectNode = serviceControllerV3.searchService(null, "").getData();
-            assertEquals(4, objectNode.get("count").asInt());
-        } catch (NacosException e) {
-            e.printStackTrace();
-            fail(e.getMessage());
-        }
-    }
-    
-    @Test
     void testSubscribers() throws Exception {
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        result.put(FieldsConstants.COUNT, 1);
-        
-        Mockito.when(serviceOperatorV2.getSubscribers(1, 10, "nameSpaceId", "serviceName", "groupName", true))
-                .thenReturn(result);
+        Page<SubscriberInfo> subscribers = new Page<>();
+        subscribers.setTotalCount(1);
+        subscribers.setPagesAvailable(1);
+        subscribers.setPageItems(Collections.singletonList(new SubscriberInfo()));
+        subscribers.setPageNumber(1);
+        subscribers.getPageItems().get(0).setNamespaceId("testNamespace");
+        subscribers.getPageItems().get(0).setServiceName("testService");
+        subscribers.getPageItems().get(0).setGroupName("testGroup");
+        Mockito.when(serviceOperatorV2.getSubscribers("nameSpaceId", "serviceName", "groupName", true, 1, 10))
+                .thenReturn(subscribers);
         
         ServiceForm serviceForm = new ServiceForm();
-        serviceForm.setNamespaceId("nameSpaceId");
-        serviceForm.setServiceName("serviceName");
-        serviceForm.setGroupName("groupName");
+        serviceForm.setNamespaceId("testNamespace");
+        serviceForm.setServiceName("testService");
+        serviceForm.setGroupName("testGroup");
         PageForm pageForm = new PageForm();
         pageForm.setPageNo(1);
         pageForm.setPageSize(10);
         AggregationForm aggregationForm = new AggregationForm();
         aggregationForm.setAggregation(true);
-        ObjectNode objectNode = serviceControllerV3.subscribers(serviceForm, pageForm, aggregationForm).getData();
-        assertEquals(1, objectNode.get("count").asInt());
+        Page<SubscriberInfo> actual = serviceControllerV3.subscribers(serviceForm, pageForm, aggregationForm).getData();
+        assertEquals(subscribers, actual);
     }
     
     @Test

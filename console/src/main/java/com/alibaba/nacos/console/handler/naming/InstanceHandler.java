@@ -37,12 +37,11 @@ public interface InstanceHandler {
      * @param groupName             the group name
      * @param page                  the page number
      * @param pageSize              the size of the page
-     * @param healthyOnly           filter by healthy instances only
-     * @param enabledOnly           filter by enabled instances only
      * @return a JSON node containing the instances information
+     * @throws NacosException if the list operation fails
      */
     ObjectNode listInstances(String namespaceId, String serviceNameWithoutGroup, String groupName,
-            int page, int pageSize, Boolean healthyOnly, Boolean enabledOnly);
+            int page, int pageSize) throws NacosException;
     
     /**
      * Update an instance.

@@ -19,7 +19,7 @@ package com.alibaba.nacos.naming.model.form;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.core.model.form.NacosForm;
+import com.alibaba.nacos.api.model.NacosForm;
 
 /**
  * Nacos HTTP service list API form.
@@ -36,7 +36,7 @@ public class ServiceListForm implements NacosForm {
     
     private String groupNameParam = StringUtils.EMPTY;
     
-    private boolean hasIpCount;
+    private boolean ignoreEmptyService;
     
     boolean withInstances;
     
@@ -71,12 +71,12 @@ public class ServiceListForm implements NacosForm {
         this.groupNameParam = groupNameParam;
     }
     
-    public boolean isHasIpCount() {
-        return hasIpCount;
+    public boolean isIgnoreEmptyService() {
+        return ignoreEmptyService;
     }
     
-    public void setHasIpCount(boolean hasIpCount) {
-        this.hasIpCount = hasIpCount;
+    public void setIgnoreEmptyService(boolean ignoreEmptyService) {
+        this.ignoreEmptyService = ignoreEmptyService;
     }
     
     public boolean isWithInstances() {

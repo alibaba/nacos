@@ -33,7 +33,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-
 /**
  * Cluster controller.
  *
@@ -59,9 +58,6 @@ public class ClusterControllerV3 {
     public Result<String> update(UpdateClusterForm updateClusterForm) throws Exception {
         updateClusterForm.validate();
         
-        final String namespaceId = updateClusterForm.getNamespaceId();
-        final String clusterName = updateClusterForm.getClusterName();
-        final String serviceName = updateClusterForm.getServiceName();
         ClusterMetadata clusterMetadata = new ClusterMetadata();
         clusterMetadata.setHealthyCheckPort(updateClusterForm.getCheckPort());
         clusterMetadata.setUseInstancePortForCheck(updateClusterForm.isUseInstancePort4Check());
@@ -70,7 +66,8 @@ public class ClusterControllerV3 {
         clusterMetadata.setHealthyCheckType(healthChecker.getType());
         clusterMetadata.setExtendData(UtilsAndCommons.parseMetadata(updateClusterForm.getMetadata()));
         
-        clusterOperatorV2.updateClusterMetadata(namespaceId, serviceName, clusterName, clusterMetadata);
+        clusterOperatorV2.updateClusterMetadata(updateClusterForm.getNamespaceId(), updateClusterForm.getGroupName(),
+                updateClusterForm.getServiceName(), updateClusterForm.getClusterName(), clusterMetadata);
         
         return Result.success("ok");
     }

@@ -103,8 +103,9 @@ public interface ConfigHandler {
      * @param clientIp The IP address of the client requesting the deletion.
      * @param srcUser  The source user requesting the deletion.
      * @return A Boolean indicating whether the deletion was successful.
+     * @throws NacosException If an error related to Nacos configuration occurs.
      */
-    Boolean batchDeleteConfigs(List<Long> ids, String clientIp, String srcUser);
+    Boolean batchDeleteConfigs(List<Long> ids, String clientIp, String srcUser) throws NacosException;
     
     /**
      * Exports the configuration based on the specified parameters.
@@ -173,8 +174,10 @@ public interface ConfigHandler {
      * @param namespaceId Tenant information
      * @param sampleTime Sample time for the subscription
      * @return GroupkeyListenserStatus object containing subscription information
+     * @throws NacosException If an error occurs while retrieving the subscription information.
      */
-    GroupkeyListenserStatus getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime);
+    GroupkeyListenserStatus getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime)
+            throws NacosException;
 
     /**
      * Imports and publishes a configuration from a file.
@@ -218,9 +221,10 @@ public interface ConfigHandler {
      * @param requestIpApp the name of the application making the request
      * @param srcUser      the src user performing the operation
      * @return true if the beta configuration is successfully removed
+     * @throws NacosException if an error occurs while removing the beta configuration
      */
     boolean removeBetaConfig(String dataId, String group, String namespaceId, String remoteIp, String requestIpApp,
-            String srcUser);
+            String srcUser) throws NacosException;
     
     /**
      * Query beta configuration based on dataId, group, and namespaceId.
@@ -229,6 +233,7 @@ public interface ConfigHandler {
      * @param group       the group
      * @param namespaceId the namespaceId
      * @return ConfigInfo4Beta containing the beta configuration details
+     * @throws NacosException if an error occurs while querying the beta configuration
      */
-    Result<ConfigInfo4Beta> queryBetaConfig(String dataId, String group, String namespaceId);
+    Result<ConfigInfo4Beta> queryBetaConfig(String dataId, String group, String namespaceId) throws NacosException;
 }

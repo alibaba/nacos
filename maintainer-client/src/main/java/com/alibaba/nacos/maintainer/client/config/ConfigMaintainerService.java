@@ -176,15 +176,19 @@ public interface ConfigMaintainerService extends CoreMaintainerService {
      * @param dataId       Configuration data ID (optional, defaults to "").
      * @param groupName    Configuration group name (optional, defaults to "").
      * @param namespaceId  Namespace ID (optional, defaults to "public").
-     * @param configDetail Configuration detail (optional).
      * @param search       Search mode ("blur" or "exact", optional, defaults to "blur").
+     * @param configDetail Configuration detail (optional).
+     * @param type         Type of Configuration (optional).
+     * @param configTags   Configuration tags (optional).
+     * @param appName      Application name of Configuration (optional).
      * @param pageNo       Page number (required, defaults to 1).
      * @param pageSize     Page size (required, defaults to 100).
      * @return A paginated list of configurations matching the search criteria.
      * @throws NacosException If the search fails.
      */
-    Page<ConfigBasicInfo> searchConfigByDetails(String dataId, String groupName, String namespaceId,
-            String configDetail, String search, int pageNo, int pageSize) throws NacosException;
+    Page<ConfigBasicInfo> searchConfigByDetails(String dataId, String groupName, String namespaceId, String search,
+            String configDetail, String type, String configTags, String appName, int pageNo, int pageSize)
+            throws NacosException;
     
     /**
      * Stop a beta configuration by dataId and groupName.

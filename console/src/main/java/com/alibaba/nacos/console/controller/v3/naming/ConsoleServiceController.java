@@ -20,13 +20,16 @@ package com.alibaba.nacos.console.controller.v3.naming;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckerFactory;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.proxy.naming.ServiceProxy;
@@ -36,15 +39,17 @@ import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
-import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.ServiceForm;
 import com.alibaba.nacos.naming.model.form.ServiceListForm;
 import com.alibaba.nacos.naming.model.form.UpdateClusterForm;
 import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
+import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.SelectorManager;
+import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -55,6 +60,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URLDecoder;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -119,16 +125,12 @@ public class ConsoleServiceController {
     @Secured(action = ActionTypes.WRITE, apiType = ApiType.CONSOLE_API)
     public Result<String> updateService(ServiceForm serviceForm) throws Exception {
         serviceForm.validate();
-        
         Map<String, String> metadata = UtilsAndCommons.parseMetadata(serviceForm.getMetadata());
         ServiceMetadata serviceMetadata = new ServiceMetadata();
         serviceMetadata.setProtectThreshold(serviceForm.getProtectThreshold());
         serviceMetadata.setExtendData(metadata);
         serviceMetadata.setSelector(parseSelector(serviceForm.getSelector()));
-        Service service = Service.newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(),
-                serviceForm.getServiceName());
-        
-        serviceProxy.updateService(serviceForm, service, serviceMetadata, metadata);
+        serviceProxy.updateService(serviceForm, serviceMetadata);
         return Result.success("ok");
     }
     
@@ -138,7 +140,7 @@ public class ConsoleServiceController {
      * @return {@link Selector} types.
      */
     @GetMapping("/selector/types")
-    public Result<List<String>> getSelectorTypeList() {
+    public Result<List<String>> getSelectorTypeList() throws NacosException {
         return Result.success(serviceProxy.getSelectorTypeList());
     }
     
@@ -163,9 +165,26 @@ public class ConsoleServiceController {
         String serviceName = serviceForm.getServiceName();
         String groupName = serviceForm.getGroupName();
         boolean aggregation = aggregationForm.isAggregation();
-        
-        return Result.success(
-                serviceProxy.getSubscribers(pageNo, pageSize, namespaceId, serviceName, groupName, aggregation));
+        Page<SubscriberInfo> subscribers = serviceProxy.getSubscribers(pageNo, pageSize, namespaceId, serviceName,
+                groupName, aggregation);
+        // TODO use Page<SubscriberInfo> directly after console-ui after modified
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+        List<Subscriber> subscribersList = new LinkedList<>();
+        for (SubscriberInfo subscriberInfo : subscribers.getPageItems()) {
+            Subscriber subscriber = new Subscriber();
+            subscriber.setAddrStr(subscriberInfo.getAddress());
+            subscriber.setAgent(subscriberInfo.getAgent());
+            subscriber.setApp(subscriberInfo.getAppName());
+            subscriber.setIp(subscriberInfo.getIp());
+            subscriber.setNamespaceId(subscriberInfo.getNamespaceId());
+            subscriber.setServiceName(
+                    NamingUtils.getGroupedName(subscriberInfo.getServiceName(), subscriberInfo.getGroupName()));
+            subscriber.setPort(subscriberInfo.getPort());
+            subscribersList.add(subscriber);
+        }
+        result.replace("subscribers", JacksonUtils.transferToJsonNode(subscribersList));
+        result.put("count", subscribers.getTotalCount());
+        return Result.success(result);
     }
     
     /**
@@ -183,7 +202,7 @@ public class ConsoleServiceController {
         String namespaceId = serviceListForm.getNamespaceId();
         String serviceName = serviceListForm.getServiceNameParam();
         String groupName = serviceListForm.getGroupNameParam();
-        boolean hasIpCount = serviceListForm.isHasIpCount();
+        boolean hasIpCount = serviceListForm.isIgnoreEmptyService();
         boolean withInstances = serviceListForm.isWithInstances();
         return Result.success(
                 serviceProxy.getServiceList(withInstances, namespaceId, pageForm.getPageNo(), pageForm.getPageSize(),
@@ -199,10 +218,12 @@ public class ConsoleServiceController {
      */
     @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)
     @GetMapping()
-    public Object getServiceDetail(ServiceForm serviceForm) throws NacosException {
+    public Result<Object> getServiceDetail(ServiceForm serviceForm) throws NacosException {
         serviceForm.validate();
-        return Result.success(serviceProxy.getServiceDetail(serviceForm.getNamespaceId(), serviceForm.getServiceName(),
-                serviceForm.getGroupName()));
+        ServiceDetailInfo result = serviceProxy.getServiceDetail(serviceForm.getNamespaceId(),
+                serviceForm.getServiceName(), serviceForm.getGroupName());
+        // TODO use ServiceDetailInfo directly after console-ui after modified
+        return Result.success(ServiceUtil.transferToConsoleResult(result));
     }
     
     /**

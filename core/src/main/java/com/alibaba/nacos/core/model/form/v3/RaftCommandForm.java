@@ -17,8 +17,9 @@
 package com.alibaba.nacos.core.model.form.v3;
 
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftConstants;
-import com.alibaba.nacos.core.model.form.NacosForm;
+import com.alibaba.nacos.api.model.NacosForm;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -32,7 +33,7 @@ import java.util.Map;
 public class RaftCommandForm implements NacosForm {
     
     /**
-     * Target raft group id.
+     * Target raft group id, If null or empty, will do command for all group.
      */
     private String groupId;
     
@@ -81,7 +82,9 @@ public class RaftCommandForm implements NacosForm {
      */
     public Map<String, String> toMap() {
         Map<String, String> map = new HashMap<>(4);
-        map.put(JRaftConstants.GROUP_ID, groupId);
+        if (StringUtils.isNotBlank(groupId)) {
+            map.put(JRaftConstants.GROUP_ID, groupId);
+        }
         map.put(JRaftConstants.COMMAND_NAME, command);
         map.put(JRaftConstants.COMMAND_VALUE, value);
         return map;

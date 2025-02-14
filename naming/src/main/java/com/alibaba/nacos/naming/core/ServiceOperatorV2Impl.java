@@ -19,12 +19,15 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.utils.PageUtil;
 import com.alibaba.nacos.naming.constants.FieldsConstants;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.event.metadata.InfoChangeEvent;
@@ -47,6 +50,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of service operator for v2.x.
@@ -160,8 +164,8 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     public ServiceDetailInfo queryService(Service service) throws NacosException {
         if (!ServiceManager.getInstance().containSingleton(service)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SERVICE_NOT_EXIST,
-                    "service not found, namespace: " + service.getNamespace() + ", serviceName: " + service
-                            .getGroupedServiceName());
+                    "service not found, namespace: " + service.getNamespace() + ", serviceName: "
+                            + service.getGroupedServiceName());
         }
         Service singleton = ServiceManager.getInstance().getSingleton(service);
         ServiceDetailInfo result = new ServiceDetailInfo();
@@ -184,8 +188,8 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
         serviceDetail.put(FieldsConstants.GROUP_NAME, service.getGroup());
         serviceDetail.put(FieldsConstants.NAME, service.getName());
         serviceDetail.put(FieldsConstants.PROTECT_THRESHOLD, serviceMetadata.getProtectThreshold());
-        serviceDetail
-                .replace(FieldsConstants.METADATA, JacksonUtils.transferToJsonNode(serviceMetadata.getExtendData()));
+        serviceDetail.replace(FieldsConstants.METADATA,
+                JacksonUtils.transferToJsonNode(serviceMetadata.getExtendData()));
         serviceDetail.replace(FieldsConstants.SELECTOR, JacksonUtils.transferToJsonNode(serviceMetadata.getSelector()));
     }
     
@@ -212,6 +216,8 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
         result.setClusterName(clusterName);
         result.setHealthChecker(clusterMetadata.getHealthChecker());
         result.setMetadata(clusterMetadata.getExtendData());
+        result.setUseInstancePortForCheck(clusterMetadata.isUseInstancePortForCheck());
+        result.setHealthyCheckPort(clusterMetadata.getHealthyCheckPort());
         return result;
     }
     
@@ -294,5 +300,39 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
             result.put("count", count);
             return result;
         }
+    }
+    
+    @Override
+    public Page<SubscriberInfo> getSubscribers(String namespaceId, String serviceName, String groupName,
+            boolean aggregation, int pageNo, int pageSize) throws NacosException {
+        Service service = Service.newService(namespaceId, groupName, serviceName);
+        Page<SubscriberInfo> result = new Page<>();
+        try {
+            List<Subscriber> subscribers = subscribeManager.getSubscribers(service, aggregation);
+            result = convertToSubscriberInfoPage(PageUtil.subPage(subscribers, pageNo, pageSize));
+        } catch (Exception e) {
+            Loggers.SRV_LOG.warn("query subscribers failed!", e);
+        }
+        return result;
+    }
+    
+    private Page<SubscriberInfo> convertToSubscriberInfoPage(Page<Subscriber> page) {
+        Page<SubscriberInfo> result = new Page<>();
+        result.setPageItems(page.getPageItems().stream().map(subscriber -> {
+            SubscriberInfo subscriberInfo = new SubscriberInfo();
+            subscriberInfo.setNamespaceId(subscriber.getNamespaceId());
+            String groupedServiceName = subscriber.getServiceName();
+            subscriberInfo.setServiceName(NamingUtils.getServiceName(groupedServiceName));
+            subscriberInfo.setGroupName(NamingUtils.getGroupName(groupedServiceName));
+            subscriberInfo.setAppName(subscriber.getApp());
+            subscriberInfo.setIp(subscriber.getIp());
+            subscriberInfo.setPort(subscriber.getPort());
+            subscriberInfo.setAgent(subscriber.getAgent());
+            return subscriberInfo;
+        }).collect(Collectors.toList()));
+        result.setTotalCount(page.getTotalCount());
+        result.setPagesAvailable(page.getPagesAvailable());
+        result.setPageNumber(page.getPageNumber());
+        return result;
     }
 }

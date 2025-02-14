@@ -18,11 +18,10 @@
 package com.alibaba.nacos.console.proxy.config;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.console.handler.config.HistoryHandler;
-import com.alibaba.nacos.api.model.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -99,7 +98,7 @@ public class HistoryProxy {
      *
      * @param namespaceId the namespace ID
      * @return the list of configurations
-     * @throws NacosApiException if any error occurs during the operation
+     * @throws NacosException if any error occurs during the operation
      */
     public List<ConfigInfoWrapper> getConfigsByTenant(String namespaceId) throws NacosException {
         return historyHandler.getConfigsByTenant(namespaceId);

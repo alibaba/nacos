@@ -30,6 +30,7 @@ import com.alibaba.nacos.naming.core.CatalogService;
 import com.alibaba.nacos.naming.core.CatalogServiceV2Impl;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
+import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -70,7 +71,8 @@ public class CatalogController {
             String serviceName) throws NacosException {
         String serviceNameWithoutGroup = NamingUtils.getServiceName(serviceName);
         String groupName = NamingUtils.getGroupName(serviceName);
-        return judgeCatalogService().getServiceDetail(namespaceId, groupName, serviceNameWithoutGroup);
+        ServiceDetailInfo result = judgeCatalogService().getServiceDetail(namespaceId, groupName, serviceNameWithoutGroup);
+        return ServiceUtil.transferToConsoleResult(result);
     }
     
     /**

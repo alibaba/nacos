@@ -734,6 +734,11 @@
             </dependency>
             <dependency>
                 <groupId>com.alibaba.nacos</groupId>
+                <artifactId>nacos-maintainer-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.nacos</groupId>
                 <artifactId>nacos-logback-adapter-12</artifactId>
                 <version>${project.version}</version>
             </dependency>

@@ -160,13 +160,17 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
     
     @Override
     public Page<ConfigBasicInfo> searchConfigByDetails(String dataId, String groupName, String namespaceId,
-            String configDetail, String search, int pageNo, int pageSize) throws NacosException {
+            String search, String configDetail, String type, String configTags, String appName, int pageNo,
+            int pageSize) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("dataId", dataId);
         params.put("groupName", groupName);
         params.put("namespaceId", namespaceId);
-        params.put("configDetail", configDetail);
         params.put("search", search);
+        params.put("configDetail", configDetail);
+        params.put("type", type);
+        params.put("configTags", configTags);
+        params.put("appName", appName);
         params.put("pageNo", String.valueOf(pageNo));
         params.put("pageSize", String.valueOf(pageSize));
         
