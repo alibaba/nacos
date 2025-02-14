@@ -29,8 +29,8 @@ import com.alibaba.nacos.client.auth.ram.utils.SignUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
-
-import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Resource Injector for naming module.
@@ -38,6 +38,8 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  * @author xiweng.yy
  */
 public class NamingResourceInjector extends AbstractResourceInjector {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(NamingResourceInjector.class);
     
     private static final String SIGNATURE_FILED = "signature";
     
@@ -70,7 +72,7 @@ public class NamingResourceInjector extends AbstractResourceInjector {
                 result.setParameter(DATA_FILED, signData);
                 result.setParameter(AK_FILED, accessKey);
             } catch (Exception e) {
-                NAMING_LOGGER.error("inject ak/sk failed.", e);
+                LOGGER.error("inject ak/sk failed.", e);
             }
         }
     }

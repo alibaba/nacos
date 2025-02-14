@@ -17,9 +17,9 @@
 package com.alibaba.nacos.client.auth.ram.identify;
 
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class CredentialService implements SpasCredentialLoader {
     
-    private static final Logger LOGGER = LogUtils.logger(CredentialService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CredentialService.class);
     
     private static final ConcurrentHashMap<String, CredentialService> INSTANCES = new ConcurrentHashMap<>();
     

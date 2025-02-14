@@ -17,9 +17,11 @@
 package com.alibaba.nacos.maintainer.client.remote;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.auth.impl.NacosAuthLoginConstant;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.common.constant.RequestUrlConstants;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
@@ -32,13 +34,21 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.maintainer.client.address.DefaultServerListManager;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
 import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
+import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
+import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthPluginManager;
+import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.HttpURLConnection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Client Http Proxy.
@@ -53,17 +63,51 @@ public class ClientHttpProxy {
     
     private final boolean enableHttps = Boolean.getBoolean(TlsSystemConfig.TLS_ENABLE);
     
+    private final long refreshIntervalMills = ParamUtil.getRefreshIntervalMills();
+    
     private final int maxRetry = ParamUtil.getMaxRetryTimes();
     
-    private final DefaultServerListManager serverListManager;
+    private DefaultServerListManager serverListManager;
+    
+    private ClientAuthPluginManager clientAuthPluginManager;
+    
+    private ScheduledExecutorService executor;
     
     public ClientHttpProxy(Properties properties) throws NacosException {
-        this.serverListManager = new DefaultServerListManager(NacosClientProperties.PROTOTYPE.derive(properties));
-        start();
+        initServerListManager(properties);
+        initClientAuthService();
+        initScheduledExecutor(properties);
     }
     
-    public void start() throws NacosException {
+    public void initServerListManager(Properties properties) throws NacosException {
+        serverListManager = new DefaultServerListManager(NacosClientProperties.PROTOTYPE.derive(properties));
         serverListManager.start();
+    }
+    
+    private void initClientAuthService() {
+        clientAuthPluginManager = new ClientAuthPluginManager();
+        clientAuthPluginManager.init(serverListManager.getServerList(), nacosRestTemplate);
+    }
+    
+    private void initScheduledExecutor(Properties properties) {
+        executor = new ScheduledThreadPoolExecutor(1,
+                new NameThreadFactory("com.alibaba.nacos.maintainer.client.http.proxy"));
+        executor.scheduleWithFixedDelay(() -> login(properties), 0,
+                this.refreshIntervalMills, TimeUnit.MILLISECONDS);
+    }
+    
+    /**
+     * Login all available ClientAuthService instance.
+     *
+     * @param properties login identity information.
+     */
+    public void login(Properties properties) {
+        if (clientAuthPluginManager.getAuthServiceSpiImplSet().isEmpty()) {
+            return;
+        }
+        for (ClientAuthService clientAuthService : clientAuthPluginManager.getAuthServiceSpiImplSet()) {
+            clientAuthService.login(properties);
+        }
     }
     
     /**
@@ -83,6 +127,9 @@ public class ClientHttpProxy {
                 HttpRestResult<String> result = executeSync(request, currentServerAddr);
                 if (!isFail(result)) {
                     serverListManager.updateCurrentServerAddr(currentServerAddr);
+                }
+                if (result.isNoRight()) {
+                    reLogin();
                 }
                 if (result.ok()) {
                     return result;
@@ -124,6 +171,7 @@ public class ClientHttpProxy {
                 .setReadTimeOutMillis(Long.valueOf(readTimeoutMs).intValue())
                 .setConTimeOutMillis(Long.valueOf(connectTimeoutMs).intValue()).build();
         Header httpHeaders = Header.newInstance();
+        addAuthHeader(httpHeaders);
         if (headers != null) {
             httpHeaders.addAll(headers);
         }
@@ -148,6 +196,25 @@ public class ClientHttpProxy {
             default:
                 throw new IllegalArgumentException("Unsupported HTTP method: " + request.getHttpMethod());
         }
+    }
+    
+    private void addAuthHeader(Header header) {
+        if (clientAuthPluginManager.getAuthServiceSpiImplSet().isEmpty()) {
+            return;
+        }
+        
+        clientAuthPluginManager.getAuthServiceSpiImplSet().forEach(clientAuthService -> {
+            LoginIdentityContext loginIdentityContext = clientAuthService.getLoginIdentityContext(
+                    new RequestResource());
+            if (loginIdentityContext != null) {
+                if (loginIdentityContext.getAllKey().contains(NacosAuthLoginConstant.ACCESSTOKEN)) {
+                    Map<String, String> accessToken = new HashMap<>(4);
+                    accessToken.put(NacosAuthLoginConstant.ACCESSTOKEN,
+                            loginIdentityContext.getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
+                    header.addAll(accessToken);
+                }
+            }
+        });
     }
     
     private String getNextServerAddress() {
@@ -177,6 +244,25 @@ public class ClientHttpProxy {
                 || result.getCode() == HttpURLConnection.HTTP_BAD_GATEWAY
                 || result.getCode() == HttpURLConnection.HTTP_UNAVAILABLE
                 || result.getCode() == HttpURLConnection.HTTP_GATEWAY_TIMEOUT;
+    }
+    
+    /**
+     * Login again to refresh the accessToken.
+     */
+    public void reLogin() {
+        if (clientAuthPluginManager.getAuthServiceSpiImplSet().isEmpty()) {
+            return;
+        }
+        for (ClientAuthService clientAuthService : clientAuthPluginManager.getAuthServiceSpiImplSet()) {
+            try {
+                LoginIdentityContext loginIdentityContext = clientAuthService.getLoginIdentityContext(new RequestResource());
+                if (loginIdentityContext != null) {
+                    loginIdentityContext.setParameter(NacosAuthLoginConstant.RELOGINFLAG, "true");
+                }
+            } catch (Exception e) {
+                LOGGER.error("[ClientHttpProxy] set reLoginFlag failed.", e);
+            }
+        }
     }
     
     /**

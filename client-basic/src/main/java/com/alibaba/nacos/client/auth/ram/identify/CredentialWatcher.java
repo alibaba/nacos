@@ -17,11 +17,11 @@
 package com.alibaba.nacos.client.auth.ram.identify;
 
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class CredentialWatcher {
     
-    private static final Logger SPAS_LOGGER = LogUtils.logger(CredentialWatcher.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CredentialWatcher.class);
     
     private static final long REFRESH_INTERVAL = 10 * 1000L;
     
@@ -104,7 +104,7 @@ public class CredentialWatcher {
                 executor.shutdown();
             }
         }
-        SPAS_LOGGER.info("[{}] {} is stopped", appName, this.getClass().getSimpleName());
+        LOGGER.info("[{}] {} is stopped", appName, this.getClass().getSimpleName());
     }
     
     private void loadCredential(boolean init) {
@@ -117,7 +117,7 @@ public class CredentialWatcher {
             return;
         }
         if (!credentials.valid()) {
-            SPAS_LOGGER
+            LOGGER
                     .warn("[1] Credential file missing required property {} Credential file missing {} or {}", appName,
                             IdentifyConstants.ACCESS_KEY, IdentifyConstants.SECRET_KEY);
             propertyPath = null;
@@ -131,7 +131,7 @@ public class CredentialWatcher {
         try {
             properties.load(propertiesIs);
         } catch (IOException e) {
-            SPAS_LOGGER
+            LOGGER
                     .error("[26] Unable to load credential file, appName:" + appName + "Unable to load credential file "
                             + propertyPath, e);
             propertyPath = null;
@@ -140,13 +140,13 @@ public class CredentialWatcher {
             try {
                 propertiesIs.close();
             } catch (IOException e) {
-                SPAS_LOGGER.error("[27] Unable to close credential file, appName:" + appName
+                LOGGER.error("[27] Unable to close credential file, appName:" + appName
                         + "Unable to close credential file " + propertyPath, e);
             }
         }
         
         if (init) {
-            SPAS_LOGGER.info("[{}] Load credential file {}", appName, propertyPath);
+            LOGGER.info("[{}] Load credential file {}", appName, propertyPath);
         }
         
         String accessKey = null;
@@ -186,7 +186,7 @@ public class CredentialWatcher {
         String secretKey = NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.ENV_SECRET_KEY);
         if (accessKey == null && secretKey == null) {
             if (init) {
-                SPAS_LOGGER.info("{} No credential found", appName);
+                LOGGER.info("{} No credential found", appName);
             }
             return false;
         }
@@ -213,12 +213,12 @@ public class CredentialWatcher {
                                     : appName);
                 } else {
                     if (init) {
-                        SPAS_LOGGER.info("[{}] Defined credential file: -Dspas.identity={}", appName, propertyPath);
+                        LOGGER.info("[{}] Defined credential file: -Dspas.identity={}", appName, propertyPath);
                     }
                 }
             } else {
                 if (init) {
-                    SPAS_LOGGER.info("[{}] Load credential file from classpath: {}", appName,
+                    LOGGER.info("[{}] Load credential file from classpath: {}", appName,
                             IdentifyConstants.PROPERTIES_FILENAME);
                 }
             }

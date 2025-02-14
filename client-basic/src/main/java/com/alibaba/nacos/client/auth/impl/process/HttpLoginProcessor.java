@@ -37,7 +37,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import static com.alibaba.nacos.client.naming.utils.UtilAndComs.webContext;
 import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTPS_PREFIX;
 import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 
@@ -52,6 +51,8 @@ public class HttpLoginProcessor implements LoginProcessor {
     
     private static final String LOGIN_URL = "/v1/auth/users/login";
     
+    public static final String DEFAULT_NACOS_WEB_CONTEXT = "/nacos";
+    
     private final NacosRestTemplate nacosRestTemplate;
     
     public HttpLoginProcessor(NacosRestTemplate nacosRestTemplate) {
@@ -62,7 +63,7 @@ public class HttpLoginProcessor implements LoginProcessor {
     public LoginIdentityContext getResponse(Properties properties) {
         
         String contextPath = ContextPathUtil.normalizeContextPath(
-                properties.getProperty(PropertyKeyConst.CONTEXT_PATH, webContext));
+                properties.getProperty(PropertyKeyConst.CONTEXT_PATH, DEFAULT_NACOS_WEB_CONTEXT));
         String server = properties.getProperty(NacosAuthLoginConstant.SERVER, StringUtils.EMPTY);
         
         if (!server.startsWith(HTTPS_PREFIX) && !server.startsWith(HTTP_PREFIX)) {
