@@ -32,7 +32,8 @@ import java.util.Map;
  *
  * @author Nacos
  */
-public interface NamingMaintainerService extends CoreMaintainerService, ServiceMaintainerService {
+public interface NamingMaintainerService
+        extends CoreMaintainerService, ServiceMaintainerService, InstanceMaintainerService {
     
     /**
      * Get system metrics.
@@ -54,27 +55,6 @@ public interface NamingMaintainerService extends CoreMaintainerService, ServiceM
     String setLogLevel(String logName, String logLevel) throws NacosException;
     
     // ------------------------- Instance Operations -------------------------
-    
-    /**
-     * Register a new instance.
-     *
-     * @param namespaceId the namespace ID
-     * @param groupName   the group name
-     * @param serviceName the service name
-     * @param clusterName the cluster name
-     * @param ip          the IP address of the instance
-     * @param port        the port of the instance
-     * @param weight      the weight of the instance
-     * @param healthy     whether the instance is healthy
-     * @param enabled     whether the instance is enabled
-     * @param ephemeral   whether the instance is ephemeral
-     * @param metadata    the metadata of the instance
-     * @return the result of the operation
-     * @throws NacosException if an error occurs
-     */
-    String registerInstance(String namespaceId, String groupName, String serviceName, String clusterName, String ip,
-            int port, String weight, boolean healthy, boolean enabled, String ephemeral, String metadata)
-            throws NacosException;
     
     /**
      * Deregister an instance.

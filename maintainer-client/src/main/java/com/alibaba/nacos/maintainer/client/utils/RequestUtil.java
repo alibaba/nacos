@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.maintainer.client.utils;
 
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 
@@ -44,6 +45,29 @@ public class RequestUtil {
         params.put("ephemeral", String.valueOf(service.isEphemeral()));
         params.put("protectThreshold", String.valueOf(service.getProtectThreshold()));
         params.put("selector", JacksonUtils.toJson(service.getSelector()));
+        return params;
+    }
+    
+    /**
+     * Transfer {@link Service} and {@link Instance} to HTTP API request parameters.
+     *
+     * @param service {@link Service} object
+     * @param instance {@link Instance} object
+     * @return HTTP API request parameters
+     */
+    public static Map<String, String> toParameters(Service service, Instance instance) {
+        Map<String, String> params = new HashMap<>(11);
+        params.put("namespaceId", service.getNamespaceId());
+        params.put("groupName", service.getGroupName());
+        params.put("serviceName", service.getName());
+        params.put("clusterName", instance.getClusterName());
+        params.put("ip", instance.getIp());
+        params.put("port", String.valueOf(instance.getPort()));
+        params.put("weight", String.valueOf(instance.getWeight()));
+        params.put("healthy", String.valueOf(instance.isHealthy()));
+        params.put("enabled", String.valueOf(instance.isEnabled()));
+        params.put("metadata", JacksonUtils.toJson(instance.getMetadata()));
+        params.put("ephemeral", String.valueOf(instance.isEphemeral()));
         return params;
     }
 }

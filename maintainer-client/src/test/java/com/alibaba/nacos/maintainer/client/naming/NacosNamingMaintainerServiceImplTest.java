@@ -288,17 +288,9 @@ public class NacosNamingMaintainerServiceImplTest {
     @Test
     void testRegisterInstance() throws Exception {
         // Arrange
-        String namespaceId = "testNamespace";
-        String groupName = "testGroup";
         String serviceName = "testService";
-        String clusterName = "testCluster";
         String ip = "127.0.0.1";
         int port = 8080;
-        String weight = "1.0";
-        boolean healthy = true;
-        boolean enabled = true;
-        String ephemeral = "true";
-        String metadata = "testMetadata";
         
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>("success")));
@@ -306,8 +298,7 @@ public class NacosNamingMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        String result = nacosNamingMaintainerService.registerInstance(namespaceId, groupName, serviceName, clusterName,
-                ip, port, weight, healthy, enabled, ephemeral, metadata);
+        String result = nacosNamingMaintainerService.registerInstance(serviceName, ip, port);
         
         // Assert
         assertEquals("success", result);

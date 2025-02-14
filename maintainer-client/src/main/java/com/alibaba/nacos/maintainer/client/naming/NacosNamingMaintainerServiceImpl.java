@@ -19,6 +19,7 @@ package com.alibaba.nacos.maintainer.client.naming;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
@@ -38,6 +39,8 @@ import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
 import com.alibaba.nacos.maintainer.client.utils.RequestUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -50,6 +53,8 @@ import java.util.Properties;
  * @author Nacos
  */
 public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerService implements NamingMaintainerService {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(NacosNamingMaintainerServiceImpl.class);
     
     public NacosNamingMaintainerServiceImpl(Properties properties) throws NacosException {
         super(properties);
@@ -252,22 +257,25 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public String registerInstance(String namespaceId, String groupName, String serviceName, String clusterName,
-            String ip, int port, String weight, boolean healthy, boolean enabled, String ephemeral, String metadata)
-            throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("namespaceId", namespaceId);
-        params.put("groupName", groupName);
-        params.put("serviceName", serviceName);
-        params.put("clusterName", clusterName);
-        params.put("ip", ip);
-        params.put("port", String.valueOf(port));
-        params.put("weight", weight);
-        params.put("healthy", String.valueOf(healthy));
-        params.put("enabled", String.valueOf(enabled));
-        params.put("ephemeral", ephemeral);
-        params.put("metadata", metadata);
-        
+    public String registerInstance(Service service, Instance instance) throws NacosException {
+        service.validate();
+        instance.validate();
+        if (service.isEphemeral() != instance.isEphemeral()) {
+            LOGGER.warn(
+                    "Registered instance ephemeral parameters conflict, service: {}, instance: {}, will use instance value.",
+                    service.isEphemeral(), instance.isEphemeral());
+        }
+        if (instance.isEphemeral()) {
+            LOGGER.warn(
+                    "Using maintainer client to register an ephemeral instance, the instance will be auto-deregister after {} milliseconds.",
+                    instance.getIpDeleteTimeout());
+            LOGGER.warn(
+                    "Strongly recommended to use the nacos-client for ephemeral instance registration to avoid auto-deregister.");
+            LOGGER.warn("If wanted to register ephemeral instance with maintainer client, "
+                            + "please set `{}` in instance metadata to delay auto-deregister time.",
+                    PreservedMetadataKeys.IP_DELETE_TIMEOUT);
+        }
+        Map<String, String> params = RequestUtil.toParameters(service, instance);
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
                 .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
