@@ -89,7 +89,7 @@ class ConfigOperationServiceTest {
                 any())).thenReturn(new ConfigOperateResult());
         when(configInfoGrayPersistService.insertOrUpdateGray(any(ConfigInfo.class), eq("beta"), anyString(),
                 eq(configRequestInfo.getSrcIp()), eq(configForm.getSrcUser()))).thenReturn(new ConfigOperateResult());
-        Boolean eResult = configOperationService.publishConfig(configForm, configRequestInfo, "");
+        Boolean eResult = configOperationService.publishConfig(configForm, configRequestInfo, "", null);
         verify(configInfoBetaPersistService).insertOrUpdateBeta(any(ConfigInfo.class), eq("test-betaIps"), any(),
                 any());
         assertTrue(eResult);
@@ -115,7 +115,7 @@ class ConfigOperationServiceTest {
                 any())).thenReturn(new ConfigOperateResult());
         when(configInfoGrayPersistService.insertOrUpdateGrayCas(any(ConfigInfo.class), eq("beta"), anyString(),
                 eq(configRequestInfo.getSrcIp()), eq(configForm.getSrcUser()))).thenReturn(new ConfigOperateResult());
-        Boolean fResult = configOperationService.publishConfig(configForm, configRequestInfo, "");
+        Boolean fResult = configOperationService.publishConfig(configForm, configRequestInfo, "", null);
         verify(configInfoBetaPersistService).insertOrUpdateBetaCas(any(ConfigInfo.class), eq("test-betaIps"), any(),
                 any());
         assertTrue(fResult);
@@ -138,7 +138,7 @@ class ConfigOperationServiceTest {
                 new ConfigOperateResult());
         when(configInfoGrayPersistService.insertOrUpdateGray(any(ConfigInfo.class), eq("tag_" + tag), anyString(),
                 eq(configRequestInfo.getSrcIp()), eq(configForm.getSrcUser()))).thenReturn(new ConfigOperateResult());
-        Boolean cResult = configOperationService.publishConfig(configForm, configRequestInfo, "");
+        Boolean cResult = configOperationService.publishConfig(configForm, configRequestInfo, "", null);
         verify(configInfoTagPersistService).insertOrUpdateTag(any(ConfigInfo.class), eq(tag), any(), any());
         assertTrue(cResult);
         
@@ -160,7 +160,7 @@ class ConfigOperationServiceTest {
                 new ConfigOperateResult());
         when(configInfoGrayPersistService.insertOrUpdateGrayCas(any(ConfigInfo.class), eq("tag_" + tag), anyString(),
                 eq(configRequestInfo.getSrcIp()), eq(configForm.getSrcUser()))).thenReturn(new ConfigOperateResult());
-        Boolean dResult = configOperationService.publishConfig(configForm, configRequestInfo, "");
+        Boolean dResult = configOperationService.publishConfig(configForm, configRequestInfo, "", null);
         verify(configInfoTagPersistService).insertOrUpdateTagCas(any(ConfigInfo.class), eq(tag), any(), any());
         assertTrue(dResult);
     }
@@ -177,7 +177,7 @@ class ConfigOperationServiceTest {
         // if betaIps is blank, tag is blank and casMd5 is blank
         when(configInfoPersistService.insertOrUpdate(any(), any(), any(ConfigInfo.class), any())).thenReturn(
                 new ConfigOperateResult());
-        Boolean aResult = configOperationService.publishConfig(configForm, configRequestInfo, "");
+        Boolean aResult = configOperationService.publishConfig(configForm, configRequestInfo, "", null);
         verify(configInfoPersistService).insertOrUpdate(any(), any(), any(ConfigInfo.class), any());
         assertTrue(aResult);
         
@@ -185,7 +185,7 @@ class ConfigOperationServiceTest {
         configRequestInfo.setCasMd5("test casMd5");
         when(configInfoPersistService.insertOrUpdateCas(any(), any(), any(ConfigInfo.class), any())).thenReturn(
                 new ConfigOperateResult());
-        Boolean bResult = configOperationService.publishConfig(configForm, configRequestInfo, "");
+        Boolean bResult = configOperationService.publishConfig(configForm, configRequestInfo, "", null);
         verify(configInfoPersistService).insertOrUpdateCas(any(), any(), any(ConfigInfo.class), any());
         assertTrue(bResult);
         configRequestInfo.setCasMd5("");

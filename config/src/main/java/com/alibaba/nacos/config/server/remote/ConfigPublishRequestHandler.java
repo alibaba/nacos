@@ -42,6 +42,8 @@ import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import org.springframework.stereotype.Component;
 
+import static com.alibaba.nacos.config.server.constant.Constants.RPC;
+
 /**
  * request handler to publish config.
  *
@@ -101,7 +103,7 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
             
             ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
             configRequestInfo.setSrcIp(srcIp);
-            configRequestInfo.setSrcType("rpc");
+            configRequestInfo.setSrcType(RPC);
             configRequestInfo.setRequestIpApp(meta.getLabels().get(Constants.APPNAME));
             configRequestInfo.setBetaIps(request.getAdditionParam("betaIps"));
             configRequestInfo.setCasMd5(request.getCasMd5());
@@ -116,7 +118,7 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
                 configForm.setContent(content);
             }
             try {
-                configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal);
+                configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal, null);
                 return ConfigPublishResponse.buildSuccessResponse();
             } catch (NacosApiException nacosApiException) {
                 return ConfigPublishResponse.buildFailResponse(ResponseCode.FAIL.getCode(),

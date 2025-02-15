@@ -142,12 +142,12 @@ public class ConfigControllerV2 {
         
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
         configRequestInfo.setSrcIp(RequestUtil.getRemoteIp(request));
-        configRequestInfo.setSrcType("http");
+        configRequestInfo.setSrcType(Constants.HTTP);
         configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
         configRequestInfo.setBetaIps(request.getHeader("betaIps"));
         configRequestInfo.setCasMd5(request.getHeader("casMd5"));
         
-        return Result.success(configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal));
+        return Result.success(configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal, null));
     }
     
     /**
@@ -170,7 +170,7 @@ public class ConfigControllerV2 {
         
         String clientIp = RequestUtil.getRemoteIp(request);
         String srcUser = RequestUtil.getSrcUserName(request);
-        return Result.success(configOperationService.deleteConfig(dataId, group, namespaceId, tag, clientIp, srcUser, "http"));
+        return Result.success(configOperationService.deleteConfig(dataId, group, namespaceId, tag, clientIp, srcUser, Constants.HTTP));
     }
     
     /**

@@ -22,7 +22,9 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.common.utils.NumberUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.enums.ConfigImportResEnum;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
+import com.alibaba.nacos.config.server.model.ConfigImportWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
@@ -39,6 +41,7 @@ import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistS
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
+import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
@@ -46,6 +49,7 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -74,6 +78,8 @@ public class ConfigOperationService {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigOperationService.class);
     
+    private static final String SPOT = ".";
+    
     public ConfigOperationService(ConfigInfoPersistService configInfoPersistService,
             ConfigInfoTagPersistService configInfoTagPersistService,
             ConfigInfoBetaPersistService configInfoBetaPersistService,
@@ -89,9 +95,8 @@ public class ConfigOperationService {
      *
      * @throws NacosException NacosException.
      */
-    public Boolean publishConfig(ConfigForm configForm, ConfigRequestInfo configRequestInfo, String encryptedDataKey)
-            throws NacosException {
-        
+    public Boolean publishConfig(ConfigForm configForm, ConfigRequestInfo configRequestInfo, String encryptedDataKey,
+            ConfigImportWrapper configImportWrapper) throws NacosException {
         Map<String, Object> configAdvanceInfo = getConfigAdvanceInfo(configForm);
         ParamUtils.checkParam(configAdvanceInfo);
         
@@ -104,8 +109,16 @@ public class ConfigOperationService {
         }
         configInfo.setType(configForm.getType());
         configInfo.setEncryptedDataKey(encryptedDataKey);
-        ConfigOperateResult configOperateResult;
         
+        // import and publish config
+        if (configImportWrapper != null) {
+            ConfigImportResEnum result = importAndPublishConfig(configInfo, configAdvanceInfo,
+                    configForm.getSrcUser(), configRequestInfo.getSrcIp(), configImportWrapper.getSameConfigPolicy());
+            configImportWrapper.setConfigImportResEnum(result);
+            return Boolean.TRUE;
+        }
+        
+        ConfigOperateResult configOperateResult;
         //beta publish
         if (StringUtils.isNotBlank(configRequestInfo.getBetaIps())) {
             configForm.setGrayName(BetaGrayRule.TYPE_BETA);
@@ -150,6 +163,43 @@ public class ConfigOperationService {
                 InetUtils.getSelfIP(), ConfigTraceService.PERSISTENCE_EVENT, ConfigTraceService.PERSISTENCE_TYPE_PUB,
                 configForm.getContent());
         return true;
+    }
+    
+    private ConfigImportResEnum importAndPublishConfig(ConfigInfo configInfo, Map<String, Object> configAdvanceInfo,
+            String srcUser, String srcIp, SameConfigPolicy policy) throws NacosException {
+        try {
+            ParamUtils.checkParam(configInfo.getDataId(), configInfo.getGroup(), "datumId",
+                    configInfo.getContent());
+        } catch (NacosException e) {
+            LogUtil.DEFAULT_LOG.error("Imported configuration data verification failed，dataId:{}, groupId:{}, namespaceId:{}",
+                    configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(), e);
+            throw e;
+        }
+        
+        boolean success;
+        try {
+            ConfigOperateResult configOperateResult = configInfoPersistService.addConfigInfo(srcIp, srcUser, configInfo,
+                    configAdvanceInfo);
+            success = configOperateResult.isSuccess();
+        } catch (DataIntegrityViolationException ive) {
+            success = false;
+        }
+        
+        if (success) {
+            return ConfigImportResEnum.SUCCESS;
+        } else {
+            // uniqueness constraint conflict or add config info fail.
+            if (SameConfigPolicy.ABORT.equals(policy)) {
+                return ConfigImportResEnum.FAIL;
+            } else if (SameConfigPolicy.SKIP.equals(policy)) {
+                return ConfigImportResEnum.SKIP;
+            } else if (SameConfigPolicy.OVERWRITE.equals(policy)) {
+                configInfoPersistService.updateConfigInfo(configInfo, srcIp, srcUser, configAdvanceInfo);
+                return ConfigImportResEnum.SUCCESS;
+            }
+        }
+        
+        return ConfigImportResEnum.SUCCESS;
     }
     
     private void persistTagv1(ConfigForm configForm, ConfigInfo configInfo, ConfigRequestInfo configRequestInfo)

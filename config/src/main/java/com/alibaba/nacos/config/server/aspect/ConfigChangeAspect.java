@@ -22,10 +22,8 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.config.server.configuration.ConfigChangeConfigs;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
-import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
-import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.plugin.config.ConfigChangePluginManager;
 import com.alibaba.nacos.plugin.config.constants.ConfigChangeConstants;
@@ -40,13 +38,13 @@ import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletRequest;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Properties;
+import java.util.List;
 import java.util.Locale;
+import java.util.Properties;
+
+import static com.alibaba.nacos.config.server.constant.Constants.HTTP;
 
 /**
  * Config change pointcut aspect,which config change plugin services will pointcut.
@@ -65,10 +63,6 @@ public class ConfigChangeAspect {
     
     private static final String ENABLED = "enabled";
     
-    private static final String SCR_TYPE_HTTP = "http";
-    
-    private static final String SCR_TYPE_RPC = "rpc";
-    
     /**
      * Publish config.
      */
@@ -80,19 +74,6 @@ public class ConfigChangeAspect {
      */
     private static final String DELETE_CONFIG =
             "execution(* com.alibaba.nacos.config.server.service.ConfigOperationService.deleteConfig(..))";
-    
-    /**
-     * Batch delete config by ids.
-     */
-    private static final String BATCH_DELETE_CONFIG =
-            "execution(* com.alibaba.nacos.config.server.service.ConfigOperationService.deleteConfigs(..))";
-        
-    /**
-     * Import file.
-     */
-    private static final String IMPORT_CONFIG =
-            "execution(* com.alibaba.nacos.config.server.controller.ConfigController.importAndPublishConfig(..)) "
-                    + "&& args(request,srcUser,namespace,policy,file)";
     
     private final ConfigChangeConfigs configChangeConfigs;
     
@@ -123,10 +104,10 @@ public class ConfigChangeAspect {
         final String scrType = configRequestInfo.getSrcType();
         
         ConfigChangePointCutTypes configChangePointCutType = null;
-        if (SCR_TYPE_HTTP.equals(scrType)) {
+        if (HTTP.equals(scrType)) {
             // via console or api calls
             configChangePointCutType = ConfigChangePointCutTypes.PUBLISH_BY_HTTP;  
-        } else if (SCR_TYPE_RPC.equals(scrType)) {
+        } else {
             // via sdk rpc calls
             configChangePointCutType = ConfigChangePointCutTypes.PUBLISH_BY_RPC;
         }
@@ -163,14 +144,15 @@ public class ConfigChangeAspect {
         final String group = (String) args[1];
         final String namespaceId = (String) args[2];
         final String tag = (String) args[3];
-        final String srcUser = (String) args[4];
-        String scrType = (String) args[5];
+        final String srcIp = (String) args[4];
+        final String srcUser = (String) args[5];
+        final String scrType = (String) args[6];
         
         ConfigChangePointCutTypes configChangePointCutType = null;
-        if (SCR_TYPE_HTTP.equals(scrType)) {
+        if (HTTP.equals(scrType)) {
             // via console or api calls
             configChangePointCutType = ConfigChangePointCutTypes.PUBLISH_BY_HTTP;
-        } else if (SCR_TYPE_RPC.equals(scrType)) {
+        } else {
             // via sdk rpc calls
             configChangePointCutType = ConfigChangePointCutTypes.PUBLISH_BY_RPC;
         }
@@ -184,57 +166,10 @@ public class ConfigChangeAspect {
         configChangeRequest.setArg("dataId", dataId);
         configChangeRequest.setArg("group", group);
         configChangeRequest.setArg("namespaceId", namespaceId);
+        configChangeRequest.setArg("srcIp", srcIp);
         configChangeRequest.setArg("srcUser", srcUser);
         configChangeRequest.setArg("tag", tag);
         configChangeRequest.setArg("modifyTime", TimeUtils.getCurrentTimeStr());
-        return configChangeServiceHandle(pjp, pluginServices, configChangeRequest);
-    }
-    
-    /**
-     * Delete config by ids.
-     */
-    @Around(BATCH_DELETE_CONFIG)
-    public Object removeConfigByIdsAround(ProceedingJoinPoint pjp) throws Throwable {
-        Object[] args = pjp.getArgs();
-        List<Integer> ids = (List<Integer>) args[0];
-        String srcIp = (String) args[1];
-        final String srcUser = (String) args[2];
-        
-        final ConfigChangePointCutTypes configChangePointCutType = ConfigChangePointCutTypes.REMOVE_BATCH_HTTP;
-        final List<ConfigChangePluginService> pluginServices = getPluginServices(configChangePointCutType);
-        // didn't enabled or add relative plugin
-        if (pluginServices.isEmpty()) {
-            return pjp.proceed();
-        }
-        
-        ConfigChangeRequest configChangeRequest = new ConfigChangeRequest(configChangePointCutType);
-        configChangeRequest.setArg("dataId", ids.toString());
-        configChangeRequest.setArg("srcIp", srcIp);
-        configChangeRequest.setArg("srcUser", srcUser);
-        return configChangeServiceHandle(pjp, pluginServices, configChangeRequest);
-    }
-    
-    /**
-     * Import config.
-     */
-    @Around(IMPORT_CONFIG)
-    public Object importConfigAround(ProceedingJoinPoint pjp, HttpServletRequest request, String srcUser,
-            String namespace, SameConfigPolicy policy, MultipartFile file) throws Throwable {
-        final ConfigChangePointCutTypes configChangePointCutType = ConfigChangePointCutTypes.IMPORT_BY_HTTP;
-        final List<ConfigChangePluginService> pluginServices = getPluginServices(
-                configChangePointCutType);
-        // didn't enabled or add relative plugin
-        if (pluginServices.isEmpty()) {
-            return pjp.proceed();
-        }
-        ConfigChangeRequest configChangeRequest = new ConfigChangeRequest(configChangePointCutType);
-        configChangeRequest.setArg("srcUser", srcUser);
-        configChangeRequest.setArg("namespace", namespace);
-        configChangeRequest.setArg("policy", policy);
-        configChangeRequest.setArg("file", file);
-        configChangeRequest.setArg("srcIp", RequestUtil.getRemoteIp(request));
-        configChangeRequest.setArg("requestIpApp", RequestUtil.getAppName(request));
-        configChangeRequest.setArg("use", RequestUtil.getSrcUserName(request));
         return configChangeServiceHandle(pjp, pluginServices, configChangeRequest);
     }
     

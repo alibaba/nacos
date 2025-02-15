@@ -29,8 +29,10 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.constant.ParametersField;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.enums.ApiVersionEnum;
+import com.alibaba.nacos.config.server.enums.ConfigImportResEnum;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
+import com.alibaba.nacos.config.server.model.ConfigImportWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
@@ -60,7 +62,6 @@ import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
-import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.core.control.TpsControl;
@@ -70,7 +71,6 @@ import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
-import com.alibaba.nacos.sys.utils.InetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -92,7 +92,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLDecoder;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -103,6 +102,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.alibaba.nacos.config.server.constant.Constants.COLON;
 import static com.alibaba.nacos.config.server.utils.RequestUtil.getRemoteIp;
 
 /**
@@ -215,12 +215,12 @@ public class ConfigController {
         
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
         configRequestInfo.setSrcIp(RequestUtil.getRemoteIp(request));
-        configRequestInfo.setSrcType("http");
+        configRequestInfo.setSrcType(Constants.HTTP);
         configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
         configRequestInfo.setBetaIps(request.getHeader("betaIps"));
         configRequestInfo.setCasMd5(request.getHeader("casMd5"));
         
-        return configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal);
+        return configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal, null);
     }
     
     /**
@@ -301,7 +301,7 @@ public class ConfigController {
         String clientIp = RequestUtil.getRemoteIp(request);
         String srcUser = RequestUtil.getSrcUserName(request);
         
-        return configOperationService.deleteConfig(dataId, group, tenant, tag, clientIp, srcUser, "http");
+        return configOperationService.deleteConfig(dataId, group, tenant, tag, clientIp, srcUser, Constants.HTTP);
     }
     
     /**
@@ -312,8 +312,17 @@ public class ConfigController {
     public RestResult<Boolean> deleteConfigs(HttpServletRequest request, @RequestParam(value = "ids") List<Long> ids) {
         String clientIp = RequestUtil.getRemoteIp(request);
         String srcUser = RequestUtil.getSrcUserName(request);
-        
-        return RestResultUtils.success(configOperationService.deleteConfigs(ids, clientIp, srcUser));
+        try {
+            for (Long id : ids) {
+                ConfigInfo configInfo = configInfoPersistService.findConfigInfo(id);
+                configOperationService.deleteConfig(configInfo.getDataId(), configInfo.getGroup(),
+                        configInfo.getTenant(), null, clientIp, srcUser, Constants.HTTP);
+            }
+            return RestResultUtils.success(true);
+        } catch (Exception e) {
+            LOGGER.error("delete configs based on the IDs list error, IDs: {}", ids, e);
+            return RestResultUtils.failed(e.getMessage());
+        }
     }
     
     @GetMapping("/catalog")
@@ -665,24 +674,57 @@ public class ConfigController {
         }
         final String srcIp = RequestUtil.getRemoteIp(request);
         String requestIpApp = RequestUtil.getAppName(request);
-        final Timestamp time = TimeUtils.getCurrentTime();
-        Map<String, Object> saveResult = configOperationService.batchInsertOrUpdate(configInfoList, srcUser, srcIp,
-                null, policy);
-        for (ConfigInfo configInfo : configInfoList) {
-            ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
-                            time.getTime()));
-            ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
-                    configInfo.getTenant(), requestIpApp, time.getTime(), InetUtils.getSelfIP(),
-                    ConfigTraceService.PERSISTENCE_EVENT, ConfigTraceService.PERSISTENCE_TYPE_PUB,
-                    configInfo.getContent());
+        
+        Map<String, Object> saveResult = new HashMap<>(16);
+        int succCount = 0;
+        int failCount = 0;
+        List<String> failDataList = new ArrayList<>();
+        int skipCount = 0;
+        List<String> skipDataList = new ArrayList<>();
+        for (ConfigAllInfo configInfo : configInfoList) {
+            ConfigForm configForm = new ConfigForm();
+            configForm.setDataId(configInfo.getDataId());
+            configForm.setGroup(configInfo.getGroup());
+            configForm.setNamespaceId(namespace);
+            configForm.setContent(configInfo.getContent());
+            configForm.setAppName(configInfo.getAppName());
+            configForm.setConfigTags(configInfo.getConfigTags());
+            configForm.setDesc(configInfo.getDesc());
+            configForm.setUse(configInfo.getUse());
+            configForm.setEffect(configInfo.getEffect());
+            configForm.setType(configInfo.getType());
+            configForm.setSchema(configInfo.getSchema());
+            configForm.setEncryptedDataKey(configInfo.getEncryptedDataKey());
+            configForm.setSrcUser(RequestUtil.getSrcUserName(request));
+            
+            ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+            configRequestInfo.setSrcIp(srcIp);
+            configRequestInfo.setSrcType(Constants.HTTP);
+            configRequestInfo.setRequestIpApp(requestIpApp);
+            configRequestInfo.setBetaIps(request.getHeader("betaIps"));
+            
+            ConfigImportWrapper configImportWrapper = new ConfigImportWrapper(null, policy);
+            configOperationService.publishConfig(configForm, configRequestInfo, configInfo.getEncryptedDataKey(), configImportWrapper);
+            ConfigImportResEnum configImportRes = configImportWrapper.getConfigImportResEnum();
+            if (configImportRes == ConfigImportResEnum.SUCCESS) {
+                saveResult.put("succCount", ++succCount);
+            } else if (configImportRes == ConfigImportResEnum.SKIP) {
+                saveResult.put("skipCount", ++skipCount);
+                skipDataList.add(configInfo.getDataId() + COLON + configInfo.getGroup() + COLON + configInfo.getTenant());
+                saveResult.put("skipData", skipDataList);
+            } else if (configImportRes == ConfigImportResEnum.FAIL) {
+                saveResult.put("failCount", ++failCount);
+                failDataList.add(configInfo.getDataId() + COLON + configInfo.getGroup() + COLON + configInfo.getTenant());
+                saveResult.put("failData", failDataList);
+            }
         }
+        
         // unrecognizedCount
         if (!unrecognizedList.isEmpty()) {
             saveResult.put("unrecognizedCount", unrecognizedList.size());
             saveResult.put("unrecognizedData", unrecognizedList);
         }
-        return RestResultUtils.success("导入成功", saveResult);
+        return RestResultUtils.success("import success", saveResult);
     }
     
     /**
@@ -917,19 +959,51 @@ public class ConfigController {
         }
         final String srcIp = RequestUtil.getRemoteIp(request);
         String requestIpApp = RequestUtil.getAppName(request);
-        final Timestamp time = TimeUtils.getCurrentTime();
-        Map<String, Object> saveResult = configOperationService.batchInsertOrUpdate(configInfoList4Clone, srcUser,
-                srcIp, null, policy);
-        for (ConfigInfo configInfo : configInfoList4Clone) {
-            ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
-                            time.getTime()));
-            ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
-                    configInfo.getTenant(), requestIpApp, time.getTime(), InetUtils.getSelfIP(),
-                    ConfigTraceService.PERSISTENCE_EVENT, ConfigTraceService.PERSISTENCE_TYPE_PUB,
-                    configInfo.getContent());
+        
+        Map<String, Object> saveResult = new HashMap<>(16);
+        int succCount = 0;
+        int failCount = 0;
+        List<String> failDataList = new ArrayList<>();
+        int skipCount = 0;
+        List<String> skipDataList = new ArrayList<>();
+        for (ConfigAllInfo configInfo : configInfoList4Clone) {
+            ConfigForm configForm = new ConfigForm();
+            configForm.setDataId(configInfo.getDataId());
+            configForm.setGroup(configInfo.getGroup());
+            configForm.setNamespaceId(namespace);
+            configForm.setContent(configInfo.getContent());
+            configForm.setAppName(configInfo.getAppName());
+            configForm.setConfigTags(configInfo.getConfigTags());
+            configForm.setDesc(configInfo.getDesc());
+            configForm.setUse(configInfo.getUse());
+            configForm.setEffect(configInfo.getEffect());
+            configForm.setType(configInfo.getType());
+            configForm.setSchema(configInfo.getSchema());
+            configForm.setEncryptedDataKey(configInfo.getEncryptedDataKey());
+            configForm.setSrcUser(srcUser);
+            
+            ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+            configRequestInfo.setSrcIp(srcIp);
+            configRequestInfo.setSrcType(Constants.HTTP);
+            configRequestInfo.setRequestIpApp(requestIpApp);
+            configRequestInfo.setBetaIps(request.getHeader("betaIps"));
+            
+            ConfigImportWrapper configImportWrapper = new ConfigImportWrapper(null, policy);
+            configOperationService.publishConfig(configForm, configRequestInfo, configInfo.getEncryptedDataKey(), configImportWrapper);
+            ConfigImportResEnum configImportRes = configImportWrapper.getConfigImportResEnum();
+            if (configImportRes == ConfigImportResEnum.SUCCESS) {
+                saveResult.put("succCount", ++succCount);
+            } else if (configImportRes == ConfigImportResEnum.SKIP) {
+                saveResult.put("skipCount", ++skipCount);
+                skipDataList.add(configInfo.getDataId() + COLON + configInfo.getGroup() + COLON + configInfo.getTenant());
+                saveResult.put("skipData", skipDataList);
+            } else if (configImportRes == ConfigImportResEnum.FAIL) {
+                saveResult.put("failCount", ++failCount);
+                failDataList.add(configInfo.getDataId() + COLON + configInfo.getGroup() + COLON + configInfo.getTenant());
+                saveResult.put("failData", failDataList);
+            }
         }
+        
         return RestResultUtils.success("Clone Completed Successfully", saveResult);
     }
-    
 }

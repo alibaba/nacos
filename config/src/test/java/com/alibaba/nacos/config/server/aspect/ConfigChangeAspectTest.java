@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse;
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.config.server.configuration.ConfigChangeConfigs;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
-import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.plugin.config.ConfigChangePluginManager;
@@ -40,11 +39,8 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -104,26 +100,6 @@ class ConfigChangeAspectTest {
     }
     
     @Test
-    void testImportConfigAround() throws Throwable {
-        Mockito.when(configChangePluginService.executeType()).thenReturn(ConfigChangeExecuteTypes.EXECUTE_AFTER_TYPE);
-        ProceedingJoinPoint proceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
-        HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        String srcUser = "user12324";
-        String namespace = "tenant234";
-        SameConfigPolicy policy = SameConfigPolicy.ABORT;
-        MultipartFile file = Mockito.mock(MultipartFile.class);
-        Mockito.when(proceedingJoinPoint.proceed(any())).thenReturn("mock success return");
-        Object o = configChangeAspect.importConfigAround(proceedingJoinPoint, request, srcUser, namespace, policy, file);
-        Thread.sleep(20L);
-        
-        // expect service executed.
-        Mockito.verify(configChangePluginService, Mockito.times(1))
-                .execute(any(ConfigChangeRequest.class), any(ConfigChangeResponse.class));
-        //expect join point processed success.
-        assertEquals("mock success return", o);
-    }
-    
-    @Test
     void testPublishOrUpdateConfigAround() throws Throwable {
         Mockito.when(configChangePluginService.executeType()).thenReturn(ConfigChangeExecuteTypes.EXECUTE_AFTER_TYPE);
         
@@ -155,30 +131,14 @@ class ConfigChangeAspectTest {
         String namespaceId = "namespaceId1";
         String tag = "tag1";
         String clientIp = "127.0.0.1";
+        String srcUser = "mockedUser";
         String srcType = "http";
         
-        when(pjp.getArgs()).thenReturn(new Object[]{dataId, group, namespaceId, tag, clientIp, srcType});
+        when(pjp.getArgs()).thenReturn(new Object[]{dataId, group, namespaceId, tag, clientIp, srcUser, srcType});
         Mockito.when(pjp.proceed(any())).thenReturn("mock success return");
         Object o = configChangeAspect.removeConfigByIdAround(pjp);
         Thread.sleep(20L);
         
-        // expect service executed.
-        Mockito.verify(configChangePluginService, Mockito.times(1))
-                .execute(any(ConfigChangeRequest.class), any(ConfigChangeResponse.class));
-        //expect join point processed success.
-        assertEquals("mock success return", o);
-    }
-    
-    @Test
-    void testRemoveConfigByIdsAround() throws Throwable {
-        List<Integer> ids = Arrays.asList(1, 2, 3);
-        String srcIp = "dataId1";
-        String srcUser = "group1";
-        when(pjp.getArgs()).thenReturn(new Object[]{ids, srcIp, srcUser});
-        Mockito.when(configChangePluginService.executeType()).thenReturn(ConfigChangeExecuteTypes.EXECUTE_AFTER_TYPE);
-        Mockito.when(pjp.proceed(any())).thenReturn("mock success return");
-        Object o = configChangeAspect.removeConfigByIdsAround(pjp);
-        Thread.sleep(20L);
         // expect service executed.
         Mockito.verify(configChangePluginService, Mockito.times(1))
                 .execute(any(ConfigChangeRequest.class), any(ConfigChangeResponse.class));
@@ -195,9 +155,10 @@ class ConfigChangeAspectTest {
         String namespaceId = "namespaceId1";
         String tag = "tag1";
         String clientIp = "127.0.0.1";
+        String srcUser = "mockedUser";
         String srcType = "http";
         
-        when(pjp.getArgs()).thenReturn(new Object[]{dataId, group, namespaceId, tag, clientIp, srcType});
+        when(pjp.getArgs()).thenReturn(new Object[]{dataId, group, namespaceId, tag, clientIp, srcUser, srcType});
         propertiesStatic.when(
                 () -> PropertiesUtil.getPropertiesWithPrefix(any(), eq(ConfigChangeConstants.NACOS_CORE_CONFIG_PLUGIN_PREFIX)))
                 .thenReturn(properties);
