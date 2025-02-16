@@ -34,8 +34,9 @@ public interface NamespaceHandler {
      * Get a list of namespaces.
      *
      * @return list of namespaces
+     * @throws NacosException if there is an issue fetching the namespaces
      */
-    List<Namespace> getNamespaceList();
+    List<Namespace> getNamespaceList() throws NacosException;
     
     /**
      * Get details of a specific namespace.
@@ -71,15 +72,17 @@ public interface NamespaceHandler {
      *
      * @param namespaceId the ID of the namespace
      * @return true if the namespace was successfully deleted, otherwise false
+     * @throws NacosException if there is an issue deleting the namespace
      */
-    Boolean deleteNamespace(String namespaceId);
+    Boolean deleteNamespace(String namespaceId) throws NacosException;
     
     /**
      * Check if a namespace ID exists.
      *
      * @param namespaceId the ID of the namespace to check
      * @return true if the namespace exists, otherwise false
+     * @throws NacosException if there is an issue checking the namespace
      */
-    Boolean checkNamespaceIdExist(String namespaceId);
+    Boolean checkNamespaceIdExist(String namespaceId) throws NacosException;
 }
 

@@ -17,10 +17,11 @@
 package com.alibaba.nacos.maintainer.client.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.response.ConnectionInfo;
 import com.alibaba.nacos.api.model.response.IdGeneratorInfo;
 import com.alibaba.nacos.api.model.response.NacosMember;
+import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.api.model.response.ServerLoaderMetrics;
-import com.alibaba.nacos.api.model.response.ConnectionInfo;
 
 import java.util.Collection;
 import java.util.List;
@@ -124,4 +125,61 @@ public interface CoreMaintainerService {
      * @throws NacosException if the operation fails.
      */
     ServerLoaderMetrics getClusterLoaderMetrics() throws NacosException;
+    
+    /**
+     * Retrieve a list of all namespaces.
+     *
+     * @return A list of {@link Namespace} objects representing all available namespaces.
+     * @throws NacosException Thrown if any error occurs during the retrieval.
+     */
+    List<Namespace> getNamespaceList() throws NacosException;
+    
+    /**
+     * Get detailed information of a specific namespace by its ID.
+     *
+     * @param namespaceId The unique identifier of the namespace.
+     * @return A {@link Namespace} object containing all details of the specified namespace.
+     * @throws NacosException Thrown if any error occurs during the retrieval.
+     */
+    Namespace getNamespace(String namespaceId) throws NacosException;
+    
+    /**
+     * Create a new namespace with the provided details.
+     *
+     * @param namespaceId   The unique identifier for the new namespace.
+     * @param namespaceName The name of the new namespace.
+     * @param namespaceDesc The description of the new namespace.
+     * @return {@code true} if the namespace is created successfully, {@code false} otherwise.
+     * @throws NacosException Thrown if any error occurs during the creation.
+     */
+    Boolean createNamespace(String namespaceId, String namespaceName, String namespaceDesc) throws NacosException;
+    
+    /**
+     * Update an existing namespace with the provided details.
+     *
+     * @param namespaceId   The unique identifier of the namespace to be updated.
+     * @param namespaceName The new name for the namespace (can be null).
+     * @param namespaceDesc The new description for the namespace (can be null).
+     * @return {@code true} if the namespace is updated successfully, {@code false} otherwise.
+     * @throws NacosException Thrown if any error occurs during the update.
+     */
+    Boolean updateNamespace(String namespaceId, String namespaceName, String namespaceDesc) throws NacosException;
+    
+    /**
+     * Delete a namespace by its unique identifier.
+     *
+     * @param namespaceId The unique identifier of the namespace to be deleted.
+     * @return {@code true} if the namespace is deleted successfully, {@code false} otherwise.
+     * @throws NacosException Thrown if any error occurs during the deletion.
+     */
+    Boolean deleteNamespace(String namespaceId) throws NacosException;
+    
+    /**
+     * Check if a namespace with the specified ID exists.
+     *
+     * @param namespaceId The unique identifier of the namespace to check.
+     * @return {@code true} if the namespace exists, {@code false} otherwise.
+     * @throws NacosException Thrown if any error occurs during the check.
+     */
+    Boolean checkNamespaceIdExist(String namespaceId) throws NacosException;
 }

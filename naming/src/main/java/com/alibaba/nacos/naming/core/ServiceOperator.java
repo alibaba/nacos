@@ -114,6 +114,18 @@ public interface ServiceOperator {
     ObjectNode getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName, String groupName,
             boolean aggregation) throws Exception;
     
+    /**
+     * Get the list of subscribers for a service.
+     *
+     * @param namespaceId the namespace ID
+     * @param serviceName the service name
+     * @param groupName   the group name
+     * @param aggregation whether to aggregate the results
+     * @param pageNo      the page number
+     * @param pageSize    the size of the page
+     * @return a page of subscriber information
+     * @throws NacosException if an error occurs during fetching subscribers
+     */
     Page<SubscriberInfo> getSubscribers(String namespaceId, String serviceName, String groupName, boolean aggregation,
             int pageNo, int pageSize) throws NacosException;
 }
