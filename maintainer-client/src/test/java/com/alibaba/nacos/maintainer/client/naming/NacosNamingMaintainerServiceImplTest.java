@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.InstanceMetadataBatchResult;
 import com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
@@ -481,14 +482,11 @@ public class NacosNamingMaintainerServiceImplTest {
     @Test
     void testUpdateInstanceHealthStatus() throws Exception {
         // Arrange
-        String namespaceId = "testNamespace";
-        String groupName = "testGroup";
-        String serviceName = "testService";
-        String clusterName = "testCluster";
-        String metadata = "testMetadata";
-        boolean ephemeral = true;
-        float protectThreshold = 0.5f;
-        String selector = "testSelector";
+        Service service = new Service();
+        service.setName("testService");
+        Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
+        instance.setPort(8848);
         
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>("success")));
@@ -496,8 +494,7 @@ public class NacosNamingMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        String result = nacosNamingMaintainerService.updateInstanceHealthStatus(namespaceId, groupName, serviceName,
-                clusterName, metadata, ephemeral, protectThreshold, selector);
+        String result = nacosNamingMaintainerService.updateInstanceHealthStatus(service, instance);
         
         // Assert
         assertEquals("success", result);
@@ -524,14 +521,18 @@ public class NacosNamingMaintainerServiceImplTest {
     @Test
     void testUpdateCluster() throws Exception {
         // Arrange
-        String namespaceId = "testNamespace";
-        String groupName = "testGroup";
         String serviceName = "testService";
         String clusterName = "testCluster";
-        Integer checkPort = 8080;
-        Boolean useInstancePort4Check = true;
-        String healthChecker = "testChecker";
-        Map<String, String> metadata = new HashMap<>();
+        final int checkPort = 8080;
+        final Map<String, String> metadata = new HashMap<>();
+        Service service = new Service();
+        service.setName(serviceName);
+        ClusterInfo clusterInfo = new ClusterInfo();
+        clusterInfo.setClusterName(clusterName);
+        clusterInfo.setUseInstancePortForCheck(true);
+        clusterInfo.setHealthyCheckPort(checkPort);
+        clusterInfo.setMetadata(metadata);
+        clusterInfo.setHealthChecker(new AbstractHealthChecker.None());
         
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>("success")));
@@ -539,8 +540,7 @@ public class NacosNamingMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        String result = nacosNamingMaintainerService.updateCluster(namespaceId, groupName, serviceName, clusterName,
-                checkPort, useInstancePort4Check, healthChecker, metadata);
+        String result = nacosNamingMaintainerService.updateCluster(service, clusterInfo);
         
         // Assert
         assertEquals("success", result);

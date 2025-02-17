@@ -322,7 +322,7 @@ public interface ServiceMaintainerService {
      */
     default List<ServiceView> listServices(String namespaceId, String groupNameParam, String serviceNameParam)
             throws NacosException {
-        return listServices(namespaceId, groupNameParam, serviceNameParam, 1, 100);
+        return listServices(namespaceId, groupNameParam, serviceNameParam, true, 1, 100);
     }
     
     /**
@@ -330,16 +330,17 @@ public interface ServiceMaintainerService {
      *
      * <p>If input page info is larger than services count, will return empty list</p>
      *
-     * @param namespaceId       target namespace id
-     * @param groupNameParam    the group name pattern, e.g., "" for all groups, "group" for all services groupName match `.*group.*`.
-     * @param serviceNameParam  the service name pattern, e.g., "" for all services, "service" for all services name match `.*service.*`.
-     * @param pageNo            page number, start from 1
-     * @param pageSize          page size per page
+     * @param namespaceId        target namespace id
+     * @param groupNameParam     the group name pattern, e.g., "" for all groups, "group" for all services groupName match `.*group.*`.
+     * @param serviceNameParam   the service name pattern, e.g., "" for all services, "service" for all services name match `.*service.*`.
+     * @param ignoreEmptyService whether ignore empty service, {@code true} will exclude these services without any instance.
+     * @param pageNo             page number, start from 1
+     * @param pageSize           page size per page
      * @return list of service view, {@link ServiceView} is a summary of service.
      * @throws NacosException if an error occurs
      */
-    List<ServiceView> listServices(String namespaceId, String groupNameParam, String serviceNameParam, int pageNo,
-            int pageSize) throws NacosException;
+    List<ServiceView> listServices(String namespaceId, String groupNameParam, String serviceNameParam,
+            boolean ignoreEmptyService, int pageNo, int pageSize) throws NacosException;
     
     /**
      * List all services with detail for target namespace id with pattern.
@@ -377,28 +378,7 @@ public interface ServiceMaintainerService {
      */
     default List<ServiceDetailInfo> listServicesWithDetail(String namespaceId, String groupNameParam,
             String serviceNameParam) throws NacosException {
-        return listServicesWithDetail(namespaceId, groupNameParam, serviceNameParam, true);
-    }
-    
-    /**
-     * List all services with detail for target namespace id with pattern.
-     *
-     * <p>Only list the first 100 services if this namespace contains more than 100 services</p>
-     * <p>
-     *     The API may return a large amount of data, leading to significant network bandwidth and traffic consumption.
-     *     Please evaluate whether the network bandwidth and traffic are sufficient before calling.
-     * </p>
-     *
-     * @param namespaceId           target namespace id
-     * @param groupNameParam        the group name pattern, e.g., "" for all groups, "group" for all services groupName match `.*group.*`.
-     * @param serviceNameParam      the service name pattern, e.g., "" for all services, "service" for all services name match `.*service.*`.
-     * @param ignoreEmptyService    whether ignore empty service, {@code true} will exclude these services without any instance.
-     * @return list of service detail, {@link ServiceDetailInfo} is a detail info of service.
-     * @throws NacosException if an error occurs
-     */
-    default List<ServiceDetailInfo> listServicesWithDetail(String namespaceId, String groupNameParam,
-            String serviceNameParam, boolean ignoreEmptyService) throws NacosException {
-        return listServicesWithDetail(namespaceId, groupNameParam, serviceNameParam, ignoreEmptyService, 1, 100);
+        return listServicesWithDetail(namespaceId, groupNameParam, serviceNameParam, 1, 100);
     }
     
     /**
@@ -413,14 +393,13 @@ public interface ServiceMaintainerService {
      * @param namespaceId           target namespace id
      * @param groupNameParam        the group name pattern, e.g., "" for all groups, "group" for all services groupName match `.*group.*`.
      * @param serviceNameParam      the service name pattern, e.g., "" for all services, "service" for all services name match `.*service.*`.
-     * @param ignoreEmptyService    whether ignore empty service, {@code true} will exclude these services without any instance.
      * @param pageNo                page number, start from 1
      * @param pageSize              page size per page
      * @return list of service detail, {@link ServiceDetailInfo} is a detail info of service.
      * @throws NacosException if an error occurs
      */
     List<ServiceDetailInfo> listServicesWithDetail(String namespaceId, String groupNameParam, String serviceNameParam,
-            boolean ignoreEmptyService, int pageNo, int pageSize) throws NacosException;
+            int pageNo, int pageSize) throws NacosException;
     
     /**
      * Get pagination subscribers of a service with default namespace id and default group name.
@@ -472,7 +451,8 @@ public interface ServiceMaintainerService {
      * @return the page of subscribers
      * @throws NacosException if an error occurs
      */
-    default Page<SubscriberInfo> getSubscribers(String namespaceId, String groupName, String serviceName) throws NacosException {
+    default Page<SubscriberInfo> getSubscribers(String namespaceId, String groupName, String serviceName)
+            throws NacosException {
         return getSubscribers(namespaceId, groupName, serviceName, 1, 100);
     }
     

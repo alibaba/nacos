@@ -172,8 +172,8 @@ public class ServiceControllerV3 {
             return Result.success(
                     catalogServiceV2.pageListServiceDetail(namespaceId, groupName, serviceName, pageNo, pageSize));
         }
-        return Result.success(catalogServiceV2.pageListService(namespaceId, groupName, serviceName, pageNo, pageSize,
-                StringUtils.EMPTY, hasIpCount));
+        return Result.success(
+                catalogServiceV2.listService(namespaceId, groupName, serviceName, pageNo, pageSize, hasIpCount));
     }
     
     /**

@@ -18,6 +18,7 @@ package com.alibaba.nacos.maintainer.client.utils;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 
 import java.util.HashMap;
@@ -89,6 +90,26 @@ public class RequestUtil {
         params.put("instances", JacksonUtils.toJson(instances));
         params.put("consistencyType", instances.get(0).isEphemeral() ? "ephemeral" : "persist");
         params.put("metadata", JacksonUtils.toJson(newMetadata));
+        return params;
+    }
+    
+    /**
+     * Transfer {@link Service}, list of {@link ClusterInfo} to HTTP API request parameters.
+     *
+     * @param service {@link Service} object
+     * @param cluster list of  {@link ClusterInfo}
+     * @return HTTP API request parameters
+     */
+    public static Map<String, String> toParameters(Service service, ClusterInfo cluster) {
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", service.getNamespaceId());
+        params.put("groupName", service.getGroupName());
+        params.put("serviceName", service.getName());
+        params.put("clusterName", cluster.getClusterName());
+        params.put("checkPort", String.valueOf(cluster.getHealthyCheckPort()));
+        params.put("useInstancePort4Check", String.valueOf(cluster.isUseInstancePortForCheck()));
+        params.put("healthChecker", JacksonUtils.toJson(cluster.getHealthChecker()));
+        params.put("metadata", JacksonUtils.toJson(cluster.getMetadata()));
         return params;
     }
 }
