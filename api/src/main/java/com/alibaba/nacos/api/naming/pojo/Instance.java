@@ -41,6 +41,8 @@ public class Instance implements NacosForm {
     
     private static final long serialVersionUID = -742906310567291979L;
     
+    private static final int MAX_PORT = 65535;
+    
     /**
      * unique id of this instance.
      */
@@ -193,7 +195,7 @@ public class Instance implements NacosForm {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter 'ip' type String is not present");
         }
-        if (port < 0 || port > 65535) {
+        if (port < 0 || port > MAX_PORT) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "Required parameter 'port' type int is require 0 ~ 65535");
         }

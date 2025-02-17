@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -68,6 +69,26 @@ public class RequestUtil {
         params.put("enabled", String.valueOf(instance.isEnabled()));
         params.put("metadata", JacksonUtils.toJson(instance.getMetadata()));
         params.put("ephemeral", String.valueOf(instance.isEphemeral()));
+        return params;
+    }
+    
+    /**
+     * Transfer {@link Service}, list of {@link Instance} and new Metadata map to HTTP API request parameters.
+     *
+     * @param service {@link Service} object
+     * @param instances list of  {@link Instance}
+     * @param newMetadata new Metadata map
+     * @return HTTP API request parameters
+     */
+    public static Map<String, String> toParameters(Service service, List<Instance> instances,
+            Map<String, String> newMetadata) {
+        Map<String, String> params = new HashMap<>(6);
+        params.put("namespaceId", service.getNamespaceId());
+        params.put("groupName", service.getGroupName());
+        params.put("serviceName", service.getName());
+        params.put("instances", JacksonUtils.toJson(instances));
+        params.put("consistencyType", instances.get(0).isEphemeral() ? "ephemeral" : "persist");
+        params.put("metadata", JacksonUtils.toJson(newMetadata));
         return params;
     }
 }
