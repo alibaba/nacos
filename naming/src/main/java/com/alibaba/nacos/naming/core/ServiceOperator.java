@@ -123,7 +123,7 @@ public interface ServiceOperator {
      * @param aggregation whether to aggregate the results
      * @param pageNo      the page number
      * @param pageSize    the size of the page
-     * @return page of subscribers
+     * @return a page of subscriber information
      * @throws NacosException if an error occurs during fetching subscribers
      */
     Page<SubscriberInfo> getSubscribers(String namespaceId, String serviceName, String groupName, boolean aggregation,

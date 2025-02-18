@@ -16,12 +16,13 @@
 
 package com.alibaba.nacos.maintainer.client.core;
 
+import com.alibaba.nacos.api.model.response.ConnectionInfo;
 import com.alibaba.nacos.api.model.response.IdGeneratorInfo;
 import com.alibaba.nacos.api.model.response.NacosMember;
+import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.api.model.response.ServerLoaderMetrics;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.http.HttpRestResult;
-import com.alibaba.nacos.api.model.response.ConnectionInfo;
 import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,6 +33,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -39,6 +41,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -239,6 +242,146 @@ class AbstractCoreMaintainerServiceTest {
         
         // Assert
         assertNotNull(result);
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+    }
+    
+    @Test
+    void testGetNamespaceList() throws Exception {
+        // Arrange
+        List<Namespace> expectedNamespaces = Arrays.asList(
+                new Namespace("namespace-1", "test-namespace-1", "description-1", 100, 10, 0),
+                new Namespace("namespace-2", "test-namespace-2", "description-2", 200, 20, 1)
+        );
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedNamespaces)));
+        
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+        
+        // Act
+        List<Namespace> result = coreMaintainerService.getNamespaceList();
+        
+        // Assert
+        assertNotNull(result);
+        assertEquals(expectedNamespaces.size(), result.size());
+        assertEquals(expectedNamespaces.get(0).getNamespace(), result.get(0).getNamespace());
+        assertEquals(expectedNamespaces.get(0).getNamespaceShowName(), result.get(0).getNamespaceShowName());
+        assertEquals(expectedNamespaces.get(0).getNamespaceDesc(), result.get(0).getNamespaceDesc());
+        assertEquals(expectedNamespaces.get(0).getQuota(), result.get(0).getQuota());
+        assertEquals(expectedNamespaces.get(0).getConfigCount(), result.get(0).getConfigCount());
+        assertEquals(expectedNamespaces.get(0).getType(), result.get(0).getType());
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+    }
+    
+    @Test
+    void testGetNamespace() throws Exception {
+        // Arrange
+        String namespaceId = "test-namespace-id";
+        Namespace expectedNamespace = new Namespace(namespaceId, "test-namespace-name", "test-namespace-desc", 100, 10, 0);
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expectedNamespace)));
+        
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+        
+        // Act
+        Namespace result = coreMaintainerService.getNamespace(namespaceId);
+        
+        // Assert
+        assertNotNull(result);
+        assertEquals(expectedNamespace.getNamespace(), result.getNamespace());
+        assertEquals(expectedNamespace.getNamespaceShowName(), result.getNamespaceShowName());
+        assertEquals(expectedNamespace.getNamespaceDesc(), result.getNamespaceDesc());
+        assertEquals(expectedNamespace.getQuota(), result.getQuota());
+        assertEquals(expectedNamespace.getConfigCount(), result.getConfigCount());
+        assertEquals(expectedNamespace.getType(), result.getType());
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+    }
+    
+    @Test
+    void testCreateNamespace() throws Exception {
+        // Arrange
+        String namespaceId = "test-namespace-id";
+        String namespaceName = "test-namespace-name";
+        String namespaceDesc = "test-namespace-desc";
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(true)));
+        
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+        
+        // Act
+        Boolean result = coreMaintainerService.createNamespace(namespaceId, namespaceName, namespaceDesc);
+        
+        // Assert
+        assertTrue(result);
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+    }
+    
+    @Test
+    void testUpdateNamespace() throws Exception {
+        // Arrange
+        String namespaceId = "test-namespace-id";
+        String namespaceName = "updated-namespace-name";
+        String namespaceDesc = "updated-namespace-desc";
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(true)));
+        
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+        
+        // Act
+        Boolean result = coreMaintainerService.updateNamespace(namespaceId, namespaceName, namespaceDesc);
+        
+        // Assert
+        assertTrue(result);
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+    }
+    
+    @Test
+    void testDeleteNamespace() throws Exception {
+        // Arrange
+        String namespaceId = "test-namespace-id";
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(true)));
+        
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+        
+        // Act
+        Boolean result = coreMaintainerService.deleteNamespace(namespaceId);
+        
+        // Assert
+        assertTrue(result);
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+    }
+    
+    @Test
+    void testCheckNamespaceIdExist() throws Exception {
+        // Arrange
+        String namespaceId = "test-namespace-id";
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(1))); // 1表示存在
+        
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+        
+        // Act
+        Boolean result = coreMaintainerService.checkNamespaceIdExist(namespaceId);
+        
+        // Assert
+        assertTrue(result);
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+    }
+    
+    @Test
+    void testCheckNamespaceIdNotExist() throws Exception {
+        // Arrange
+        String namespaceId = "non-existent-namespace-id";
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(0))); // 0表示不存在
+        
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+        
+        // Act
+        Boolean result = coreMaintainerService.checkNamespaceIdExist(namespaceId);
+        
+        // Assert
+        assertFalse(result);
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
     }
 }

@@ -69,6 +69,8 @@ public class Constants {
         public static final String CORE_CLUSTER_ADMIN_PATH = "/v3/admin/core/cluster";
         
         public static final String CORE_OPS_ADMIN_PATH = "/v3/admin/core/ops";
+        
+        public static final String CORE_NAMESPACE_ADMIN_PATH = "/v3/admin/core/namespace";
     }
     
 }

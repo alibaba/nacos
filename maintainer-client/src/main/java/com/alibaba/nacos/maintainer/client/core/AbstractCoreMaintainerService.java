@@ -17,8 +17,10 @@
 package com.alibaba.nacos.maintainer.client.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.response.ConnectionInfo;
 import com.alibaba.nacos.api.model.response.IdGeneratorInfo;
 import com.alibaba.nacos.api.model.response.NacosMember;
+import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.api.model.response.ServerLoaderMetrics;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.http.HttpRestResult;
@@ -26,7 +28,6 @@ import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
-import com.alibaba.nacos.api.model.response.ConnectionInfo;
 import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
 import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -179,6 +180,93 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
                 new TypeReference<Result<ServerLoaderMetrics>>() {
                 });
         return result.getData();
+    }
+    
+    @Override
+    public List<Namespace> getNamespaceList() throws NacosException {
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CORE_NAMESPACE_ADMIN_PATH + "/list").build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<List<Namespace>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<List<Namespace>>>() {
+                });
+        return result.getData();
+    }
+    
+    @Override
+    public Namespace getNamespace(String namespaceId) throws NacosException {
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CORE_NAMESPACE_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<Namespace> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Namespace>>() {
+                });
+        return result.getData();
+    }
+    
+    @Override
+    public Boolean createNamespace(String namespaceId, String namespaceName, String namespaceDesc)
+            throws NacosException {
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        params.put("namespaceName", namespaceName);
+        params.put("namespaceDesc", namespaceDesc);
+        
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.CORE_NAMESPACE_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Boolean>>() {
+                });
+        return result.getData();
+    }
+    
+    @Override
+    public Boolean updateNamespace(String namespaceId, String namespaceName, String namespaceDesc)
+            throws NacosException {
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        params.put("namespaceName", namespaceName);
+        params.put("namespaceDesc", namespaceDesc);
+        
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.PUT)
+                .setPath(Constants.AdminApiPath.CORE_NAMESPACE_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Boolean>>() {
+                });
+        return result.getData();
+    }
+    
+    @Override
+    public Boolean deleteNamespace(String namespaceId) throws NacosException {
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.DELETE)
+                .setPath(Constants.AdminApiPath.CORE_NAMESPACE_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Boolean>>() {
+                });
+        return result.getData();
+    }
+    
+    @Override
+    public Boolean checkNamespaceIdExist(String namespaceId) throws NacosException {
+        Map<String, String> params = new HashMap<>(8);
+        params.put("namespaceId", namespaceId);
+        
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CORE_NAMESPACE_ADMIN_PATH + "/check").setParamValue(params).build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<Integer> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Integer>>() {
+                });
+        return result.getData() > 0;
     }
     
     protected ClientHttpProxy getClientHttpProxy() {

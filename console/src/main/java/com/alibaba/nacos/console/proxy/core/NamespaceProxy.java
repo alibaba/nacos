@@ -42,7 +42,7 @@ public class NamespaceProxy {
     /**
      * Get namespace list.
      */
-    public List<Namespace> getNamespaceList() {
+    public List<Namespace> getNamespaceList() throws NacosException {
         return namespaceHandler.getNamespaceList();
     }
     
@@ -71,14 +71,14 @@ public class NamespaceProxy {
     /**
      * Delete namespace.
      */
-    public Boolean deleteNamespace(String namespaceId) {
+    public Boolean deleteNamespace(String namespaceId) throws NacosException {
         return namespaceHandler.deleteNamespace(namespaceId);
     }
     
     /**
      * Check if namespace exists.
      */
-    public Boolean checkNamespaceIdExist(String namespaceId) {
+    public Boolean checkNamespaceIdExist(String namespaceId) throws NacosException {
         return namespaceHandler.checkNamespaceIdExist(namespaceId);
     }
 }
