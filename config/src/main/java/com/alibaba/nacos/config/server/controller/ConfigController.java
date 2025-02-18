@@ -907,6 +907,7 @@ public class ConfigController {
             ci4save.setDesc(ci.getDesc());
             ci4save.setEncryptedDataKey(
                     ci.getEncryptedDataKey() == null ? StringUtils.EMPTY : ci.getEncryptedDataKey());
+            ParamUtils.checkParam(ci4save.getDataId(), ci4save.getGroup(), "datumId", ci4save.getContent());
             configInfoList4Clone.add(ci4save);
         }
         if (StringUtils.isBlank(srcUser)) {
@@ -931,8 +932,7 @@ public class ConfigController {
                 configForm.setUpdateForExist(false);
             }
             ConfigRequestInfo configRequestInfo = transferToConfigRequestInfo(request);
-            Boolean importRes = configOperationService.publishConfig(configForm, configRequestInfo,
-                    configAllInfo.getEncryptedDataKey());
+            Boolean importRes = configOperationService.publishConfig(configForm, configRequestInfo, configAllInfo.getEncryptedDataKey());
             if (importRes) {
                 succCount++;
             } else if (SameConfigPolicy.SKIP == sameConfigPolicy) {
