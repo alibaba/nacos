@@ -23,9 +23,7 @@ import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo;
 import com.alibaba.nacos.maintainer.client.core.CoreMaintainerService;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -34,7 +32,7 @@ import java.util.Map;
  * @author Nacos
  */
 public interface NamingMaintainerService
-        extends CoreMaintainerService, ServiceMaintainerService, InstanceMaintainerService {
+        extends CoreMaintainerService, ServiceMaintainerService, InstanceMaintainerService, NamingClientMaintainerService {
     
     /**
      * Get system metrics.
@@ -104,72 +102,4 @@ public interface NamingMaintainerService
      * @throws NacosException if an error occurs
      */
     String updateCluster(Service service, ClusterInfo cluster) throws NacosException;
-    
-    // ------------------------- Client Operations -------------------------
-    
-    /**
-     * Get the list of all clients.
-     *
-     * @return the list of client IDs
-     * @throws NacosException if an error occurs
-     */
-    List<String> getClientList() throws NacosException;
-    
-    /**
-     * Get detailed information of a client.
-     *
-     * @param clientId the client ID
-     * @return the client detail information
-     * @throws NacosException if an error occurs
-     */
-    ObjectNode getClientDetail(String clientId) throws NacosException;
-    
-    /**
-     * Get the list of services published by a client.
-     *
-     * @param clientId the client ID
-     * @return the list of published services
-     * @throws NacosException if an error occurs
-     */
-    List<ObjectNode> getPublishedServiceList(String clientId) throws NacosException;
-    
-    /**
-     * Get the list of services subscribed by a client.
-     *
-     * @param clientId the client ID
-     * @return the list of subscribed services
-     * @throws NacosException if an error occurs
-     */
-    List<ObjectNode> getSubscribeServiceList(String clientId) throws NacosException;
-    
-    /**
-     * Get the list of clients that published a specific service.
-     *
-     * @param namespaceId the namespace ID
-     * @param groupName   the group name
-     * @param serviceName the service name
-     * @param ephemeral   whether the service is ephemeral
-     * @param ip          the IP address of the client
-     * @param port        the port of the client
-     * @return the list of clients
-     * @throws NacosException if an error occurs
-     */
-    List<ObjectNode> getPublishedClientList(String namespaceId, String groupName, String serviceName, boolean ephemeral,
-            String ip, Integer port) throws NacosException;
-    
-    /**
-     * Get the list of clients that subscribed to a specific service.
-     *
-     * @param namespaceId the namespace ID
-     * @param groupName   the group name
-     * @param serviceName the service name
-     * @param ephemeral   whether the service is ephemeral
-     * @param ip          the IP address of the client
-     * @param port        the port of the client
-     * @return the list of clients
-     * @throws NacosException if an error occurs
-     */
-    List<ObjectNode> getSubscribeClientList(String namespaceId, String groupName, String serviceName, boolean ephemeral,
-            String ip, Integer port) throws NacosException;
-    
 }

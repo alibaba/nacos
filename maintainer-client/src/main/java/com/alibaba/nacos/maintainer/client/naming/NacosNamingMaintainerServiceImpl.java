@@ -25,6 +25,10 @@ import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClientPublisherInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClientServiceInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClientSubscriberInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClientSummaryInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.InstanceMetadataBatchResult;
 import com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo;
@@ -42,7 +46,6 @@ import com.alibaba.nacos.maintainer.client.model.HttpRequest;
 import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
 import com.alibaba.nacos.maintainer.client.utils.RequestUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -481,18 +484,20 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public ObjectNode getClientDetail(String clientId) throws NacosException {
+    public ClientSummaryInfo getClientDetail(String clientId) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("clientId", clientId);
-        
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.NAMING_CLIENT_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        return JacksonUtils.toObj(httpRestResult.getData(), ObjectNode.class);
+        Result<ClientSummaryInfo> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<ClientSummaryInfo>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public List<ObjectNode> getPublishedServiceList(String clientId) throws NacosException {
+    public List<ClientServiceInfo> getPublishedServiceList(String clientId) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("clientId", clientId);
         
@@ -500,12 +505,14 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
                 .setPath(Constants.AdminApiPath.NAMING_CLIENT_ADMIN_PATH + "/publish/list").setParamValue(params)
                 .build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        return JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<List<ObjectNode>>() {
-        });
+        Result<List<ClientServiceInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<List<ClientServiceInfo>>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public List<ObjectNode> getSubscribeServiceList(String clientId) throws NacosException {
+    public List<ClientServiceInfo> getSubscribeServiceList(String clientId) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("clientId", clientId);
         
@@ -513,18 +520,19 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
                 .setPath(Constants.AdminApiPath.NAMING_CLIENT_ADMIN_PATH + "/subscribe/list").setParamValue(params)
                 .build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        return JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<List<ObjectNode>>() {
-        });
+        Result<List<ClientServiceInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<List<ClientServiceInfo>>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public List<ObjectNode> getPublishedClientList(String namespaceId, String groupName, String serviceName,
-            boolean ephemeral, String ip, Integer port) throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
+    public List<ClientPublisherInfo> getPublishedClientList(String namespaceId, String groupName, String serviceName,
+            String ip, Integer port) throws NacosException {
+        Map<String, String> params = new HashMap<>(5);
         params.put("namespaceId", namespaceId);
         params.put("groupName", groupName);
         params.put("serviceName", serviceName);
-        params.put("ephemeral", String.valueOf(ephemeral));
         params.put("ip", ip);
         params.put("port", String.valueOf(port));
         
@@ -532,18 +540,19 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
                 .setPath(Constants.AdminApiPath.NAMING_CLIENT_ADMIN_PATH + "/service/publisher/list")
                 .setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        return JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<List<ObjectNode>>() {
-        });
+        Result<List<ClientPublisherInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<List<ClientPublisherInfo>>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public List<ObjectNode> getSubscribeClientList(String namespaceId, String groupName, String serviceName,
-            boolean ephemeral, String ip, Integer port) throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
+    public List<ClientSubscriberInfo> getSubscribeClientList(String namespaceId, String groupName, String serviceName,
+            String ip, Integer port) throws NacosException {
+        Map<String, String> params = new HashMap<>(5);
         params.put("namespaceId", namespaceId);
         params.put("groupName", groupName);
         params.put("serviceName", serviceName);
-        params.put("ephemeral", String.valueOf(ephemeral));
         params.put("ip", ip);
         params.put("port", String.valueOf(port));
         
@@ -551,7 +560,9 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
                 .setPath(Constants.AdminApiPath.NAMING_CLIENT_ADMIN_PATH + "/service/subscriber/list")
                 .setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        return JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<List<ObjectNode>>() {
-        });
+        Result<List<ClientSubscriberInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<List<ClientSubscriberInfo>>>() {
+                });
+        return result.getData();
     }
 }
