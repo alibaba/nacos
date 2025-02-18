@@ -217,7 +217,7 @@ public class ConfigController {
         configRequestInfo.setBetaIps(request.getHeader("betaIps"));
         configRequestInfo.setCasMd5(request.getHeader("casMd5"));
         
-        return configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal, false);
+        return configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal);
     }
     
     /**
@@ -932,7 +932,7 @@ public class ConfigController {
             }
             ConfigRequestInfo configRequestInfo = transferToConfigRequestInfo(request);
             Boolean importRes = configOperationService.publishConfig(configForm, configRequestInfo,
-                    configAllInfo.getEncryptedDataKey(), true);
+                    configAllInfo.getEncryptedDataKey());
             if (importRes) {
                 succCount++;
             } else if (SameConfigPolicy.SKIP == sameConfigPolicy) {
@@ -994,7 +994,6 @@ public class ConfigController {
         configRequestInfo.setSrcIp(RequestUtil.getRemoteIp(request));
         configRequestInfo.setSrcType(Constants.HTTP);
         configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
-        configRequestInfo.setBetaIps(request.getHeader("betaIps"));
         return configRequestInfo;
     }
 }

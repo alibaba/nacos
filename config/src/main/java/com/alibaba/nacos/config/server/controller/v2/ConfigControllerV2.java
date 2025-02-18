@@ -147,7 +147,7 @@ public class ConfigControllerV2 {
         configRequestInfo.setBetaIps(request.getHeader("betaIps"));
         configRequestInfo.setCasMd5(request.getHeader("casMd5"));
         
-        return Result.success(configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal, false));
+        return Result.success(configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal));
     }
     
     /**

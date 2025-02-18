@@ -37,7 +37,6 @@ import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistS
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
-import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
@@ -91,8 +90,7 @@ public class ConfigOperationService {
      *
      * @throws NacosException NacosException.
      */
-    public Boolean publishConfig(ConfigForm configForm, ConfigRequestInfo configRequestInfo, String encryptedDataKey,
-            boolean isImportOperation) throws NacosException {
+    public Boolean publishConfig(ConfigForm configForm, ConfigRequestInfo configRequestInfo, String encryptedDataKey) throws NacosException {
         Map<String, Object> configAdvanceInfo = getConfigAdvanceInfo(configForm);
         ParamUtils.checkParam(configAdvanceInfo);
         
@@ -105,12 +103,6 @@ public class ConfigOperationService {
         }
         configInfo.setType(configForm.getType());
         configInfo.setEncryptedDataKey(encryptedDataKey);
-        
-        // import and publish config
-        if (isImportOperation) {
-            return importAndPublishConfig(configInfo, configAdvanceInfo, configForm.getSrcUser(),
-                    configRequestInfo.getSrcIp(), configForm.getUpdateForExist());
-        }
         
         ConfigOperateResult configOperateResult;
         //beta publish
@@ -146,8 +138,17 @@ public class ConfigOperationService {
                         "Cas publish fail, server md5 may have changed.");
             }
         } else {
-            configOperateResult = configInfoPersistService.insertOrUpdate(configRequestInfo.getSrcIp(),
-                    configForm.getSrcUser(), configInfo, configAdvanceInfo);
+            if (configForm.getUpdateForExist()) {
+                configOperateResult = configInfoPersistService.insertOrUpdate(configRequestInfo.getSrcIp(),
+                        configForm.getSrcUser(), configInfo, configAdvanceInfo);
+            } else {
+                try {
+                    configOperateResult = configInfoPersistService.addConfigInfo(configRequestInfo.getSrcIp(),
+                            configForm.getSrcUser(), configInfo, configAdvanceInfo);
+                } catch (DataIntegrityViolationException ive) {
+                    return false;
+                }
+            }
         }
         ConfigChangePublisher.notifyConfigChange(
                 new ConfigDataChangeEvent(configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId(),
@@ -157,39 +158,6 @@ public class ConfigOperationService {
                 InetUtils.getSelfIP(), ConfigTraceService.PERSISTENCE_EVENT, ConfigTraceService.PERSISTENCE_TYPE_PUB,
                 configForm.getContent());
         return true;
-    }
-    
-    private Boolean importAndPublishConfig(ConfigInfo configInfo, Map<String, Object> configAdvanceInfo,
-            String srcUser, String srcIp, boolean updateForExist) throws NacosException {
-        try {
-            ParamUtils.checkParam(configInfo.getDataId(), configInfo.getGroup(), "datumId",
-                    configInfo.getContent());
-        } catch (NacosException e) {
-            LogUtil.DEFAULT_LOG.error("Imported configuration data verification failed，dataId:{}, groupId:{}, namespaceId:{}",
-                    configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(), e);
-            throw e;
-        }
-        
-        boolean success;
-        try {
-            ConfigOperateResult configOperateResult = configInfoPersistService.addConfigInfo(srcIp, srcUser, configInfo,
-                    configAdvanceInfo);
-            success = configOperateResult.isSuccess();
-        } catch (DataIntegrityViolationException ive) {
-            success = false;
-        }
-        
-        if (success) {
-            return true;
-        } else {
-            // uniqueness constraint conflict or add config info fail.
-            if (updateForExist) {
-                configInfoPersistService.updateConfigInfo(configInfo, srcIp, srcUser, configAdvanceInfo);
-                return true;
-            } else {
-                return false;
-            }
-        }
     }
     
     private void persistTagv1(ConfigForm configForm, ConfigInfo configInfo, ConfigRequestInfo configRequestInfo)

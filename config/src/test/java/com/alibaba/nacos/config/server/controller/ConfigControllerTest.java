@@ -68,7 +68,6 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -124,7 +123,7 @@ class ConfigControllerTest {
     
     @Test
     void testPublishConfig() throws Exception {
-        when(configOperationService.publishConfig(any(), any(), anyString(), anyBoolean())).thenReturn(true);
+        when(configOperationService.publishConfig(any(), any(), anyString())).thenReturn(true);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(Constants.CONFIG_CONTROLLER_PATH)
                 .param("dataId", "test").param("group", "test").param("tenant", "").param("content", "test")
                 .param("tag", "").param("appName", "").param("src_user", "").param("config_tags", "").param("desc", "")
@@ -428,7 +427,7 @@ class ConfigControllerTest {
         
         zipUtilsMockedStatic.when(() -> ZipUtils.unzip(file.getBytes())).thenReturn(unziped);
         when(namespacePersistService.tenantInfoCountByTenantId("public")).thenReturn(1);
-        when(configOperationService.publishConfig(any(), any(), anyString(), anyBoolean())).thenReturn(true);
+        when(configOperationService.publishConfig(any(), any(), anyString())).thenReturn(true);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(Constants.CONFIG_CONTROLLER_PATH)
                 .file(file).param("import", "true").param("src_user", "test").param("namespace", "public")
@@ -466,7 +465,7 @@ class ConfigControllerTest {
         MockedStatic<ZipUtils> zipUtilsMockedStatic = Mockito.mockStatic(ZipUtils.class);
         zipUtilsMockedStatic.when(() -> ZipUtils.unzip(eq(file.getBytes()))).thenReturn(unziped);
         when(namespacePersistService.tenantInfoCountByTenantId("public")).thenReturn(1);
-        when(configOperationService.publishConfig(any(), any(), anyString(), anyBoolean())).thenReturn(true);
+        when(configOperationService.publishConfig(any(), any(), anyString())).thenReturn(true);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(Constants.CONFIG_CONTROLLER_PATH)
                 .file(file).param("import", "true").param("src_user", "test").param("namespace", "public")
@@ -505,7 +504,7 @@ class ConfigControllerTest {
         when(configInfoPersistService.findAllConfigInfo4Export(null, null, null, null, idList)).thenReturn(
                 queryedDataList);
         
-        when(configOperationService.publishConfig(any(), any(), anyString(), anyBoolean())).thenReturn(true);
+        when(configOperationService.publishConfig(any(), any(), anyString())).thenReturn(true);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(Constants.CONFIG_CONTROLLER_PATH)
                 .param("clone", "true").param("src_user", "test").param("tenant", "public").param("policy", "ABORT")

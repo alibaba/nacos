@@ -64,7 +64,6 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -163,13 +162,11 @@ class ConfigControllerV2Test {
         configForm.setContent(TEST_CONTENT);
         MockHttpServletRequest request = new MockHttpServletRequest();
         
-        when(configOperationService.publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class), anyString(),
-                anyBoolean())).thenReturn(true);
+        when(configOperationService.publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class), anyString())).thenReturn(true);
         
         Result<Boolean> booleanResult = configControllerV2.publishConfig(configForm, request);
         
-        verify(configOperationService).publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class), anyString(),
-                anyBoolean());
+        verify(configOperationService).publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class), anyString());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
         assertTrue(booleanResult.getData());
@@ -187,12 +184,11 @@ class ConfigControllerV2Test {
         MockHttpServletRequest request = new MockHttpServletRequest();
         
         when(configOperationService.publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class),
-                eq(TEST_ENCRYPTED_DATA_KEY), anyBoolean())).thenReturn(true);
+                eq(TEST_ENCRYPTED_DATA_KEY))).thenReturn(true);
         
         Result<Boolean> booleanResult = configControllerV2.publishConfig(configForm, request);
         
-        verify(configOperationService).publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class), anyString(),
-                anyBoolean());
+        verify(configOperationService).publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class), anyString());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
         assertTrue(booleanResult.getData());
@@ -208,8 +204,8 @@ class ConfigControllerV2Test {
         configForm.setContent(TEST_CONTENT);
         MockHttpServletRequest request = new MockHttpServletRequest();
         
-        when(configOperationService.publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class), anyString(),
-                anyBoolean())).thenAnswer((Answer<Boolean>) invocation -> {
+        when(configOperationService.publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class), anyString()
+                )).thenAnswer((Answer<Boolean>) invocation -> {
                     if (invocation.getArgument(0, ConfigForm.class).getNamespaceId().equals(TEST_NAMESPACE_ID)) {
                         return true;
                     }
@@ -218,8 +214,7 @@ class ConfigControllerV2Test {
         
         Result<Boolean> booleanResult = configControllerV2.publishConfig(configForm, request);
         
-        verify(configOperationService).publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class), anyString(),
-                anyBoolean());
+        verify(configOperationService).publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class), anyString());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
         assertTrue(booleanResult.getData());

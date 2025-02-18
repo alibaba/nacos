@@ -118,7 +118,7 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
                 configForm.setContent(content);
             }
             try {
-                configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal, false);
+                configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal);
                 return ConfigPublishResponse.buildSuccessResponse();
             } catch (NacosApiException nacosApiException) {
                 return ConfigPublishResponse.buildFailResponse(ResponseCode.FAIL.getCode(),
