@@ -30,11 +30,10 @@ import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
+import com.alibaba.nacos.config.server.service.ConfigGrayModelMigrateService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
@@ -62,15 +61,12 @@ class ConfigPublishRequestHandlerTest {
     
     @Mock
     ConfigInfoPersistService configInfoPersistService;
-    
-    @Mock
-    ConfigInfoBetaPersistService configInfoBetaPersistService;
-    
-    @Mock
-    ConfigInfoTagPersistService configInfoTagPersistService;
-    
+
     @Mock
     ConfigInfoGrayPersistService configInfoGrayPersistService;
+
+    @Mock
+    ConfigGrayModelMigrateService configGrayModelMigrateService;
     
     MockedStatic<EnvUtil> envUtilMockedStatic;
     
@@ -80,10 +76,9 @@ class ConfigPublishRequestHandlerTest {
     void setUp() {
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
         ConfigOperationService configOperationService = new ConfigOperationService(configInfoPersistService,
-                configInfoTagPersistService, configInfoBetaPersistService, configInfoGrayPersistService);
+                 configInfoGrayPersistService,configGrayModelMigrateService);
         configPublishRequestHandler = new ConfigPublishRequestHandler(configOperationService);
         DatasourceConfiguration.setEmbeddedStorage(false);
-        
     }
     
     @AfterEach
@@ -325,8 +320,6 @@ class ConfigPublishRequestHandlerTest {
         long id = timestamp / 1000;
         configOperateResult.setId(id);
         configOperateResult.setLastModified(timestamp);
-        when(configInfoBetaPersistService.insertOrUpdateBeta(any(ConfigInfo.class), eq(betaIps),
-                eq(requestMeta.getClientIp()), eq(srcUser))).thenReturn(new ConfigOperateResult());
         when(configInfoGrayPersistService.insertOrUpdateGray(any(ConfigInfo.class), eq(BetaGrayRule.TYPE_BETA),
                 anyString(), eq(requestMeta.getClientIp()), eq(srcUser))).thenReturn(configOperateResult);
         ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
@@ -388,8 +381,7 @@ class ConfigPublishRequestHandlerTest {
         long id = timestamp / 1000;
         configOperateResult.setId(id);
         configOperateResult.setLastModified(timestamp);
-        when(configInfoBetaPersistService.insertOrUpdateBetaCas(any(ConfigInfo.class), eq(betaIps),
-                eq(requestMeta.getClientIp()), eq(srcUser))).thenReturn(new ConfigOperateResult());
+
         when(configInfoGrayPersistService.insertOrUpdateGrayCas(any(ConfigInfo.class), eq(BetaGrayRule.TYPE_BETA),
                 anyString(), eq(requestMeta.getClientIp()), eq(srcUser))).thenReturn(configOperateResult);
         ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
@@ -453,8 +445,7 @@ class ConfigPublishRequestHandlerTest {
         long id = timestamp / 1000;
         configOperateResult.setId(id);
         configOperateResult.setLastModified(timestamp);
-        when(configInfoTagPersistService.insertOrUpdateTag(any(ConfigInfo.class), eq(tag),
-                eq(requestMeta.getClientIp()), eq(srcUser))).thenReturn(new ConfigOperateResult());
+
         when(configInfoGrayPersistService.insertOrUpdateGray(any(ConfigInfo.class), eq("tag_" + tag), anyString(),
                 eq(requestMeta.getClientIp()), eq(srcUser))).thenReturn(configOperateResult);
         ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
@@ -512,8 +503,7 @@ class ConfigPublishRequestHandlerTest {
         long id = timestamp / 1000;
         configOperateResult.setId(id);
         configOperateResult.setLastModified(timestamp);
-        when(configInfoTagPersistService.insertOrUpdateTagCas(any(ConfigInfo.class), eq(tag),
-                eq(requestMeta.getClientIp()), eq(srcUser))).thenReturn(new ConfigOperateResult());
+
         when(configInfoGrayPersistService.insertOrUpdateGrayCas(any(ConfigInfo.class), eq("tag_" + tag), anyString(),
                 eq(requestMeta.getClientIp()), eq(srcUser))).thenReturn(configOperateResult);
         ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
