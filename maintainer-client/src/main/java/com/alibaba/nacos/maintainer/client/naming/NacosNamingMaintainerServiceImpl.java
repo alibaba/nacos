@@ -35,7 +35,6 @@ import com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceView;
 import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
-import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -43,7 +42,6 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.core.AbstractCoreMaintainerService;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
-import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
 import com.alibaba.nacos.maintainer.client.utils.RequestUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
@@ -82,40 +80,6 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public String updateService(String serviceName, Map<String, String> newMetadata, float newProtectThreshold,
-            Selector newSelector) throws NacosException {
-        return updateService(ParamUtil.getDefaultGroupName(), serviceName, newMetadata, newProtectThreshold,
-                newSelector);
-    }
-    
-    @Override
-    public String updateService(String groupName, String serviceName, Map<String, String> newMetadata,
-            float newProtectThreshold, Selector newSelector) throws NacosException {
-        return updateService(ParamUtil.getDefaultNamespaceId(), groupName, serviceName, newMetadata,
-                newProtectThreshold, newSelector);
-    }
-    
-    @Override
-    public String updateService(String namespaceId, String groupName, String serviceName,
-            Map<String, String> newMetadata, float newProtectThreshold, Selector newSelector) throws NacosException {
-        return updateService(namespaceId, groupName, serviceName, false, newMetadata, newProtectThreshold, newSelector);
-    }
-    
-    @Override
-    public String updateService(String namespaceId, String groupName, String serviceName, boolean ephemeral,
-            Map<String, String> newMetadata, float newProtectThreshold, Selector newSelector) throws NacosException {
-        Service service = new Service();
-        service.setNamespaceId(namespaceId);
-        service.setGroupName(groupName);
-        service.setName(serviceName);
-        service.setEphemeral(ephemeral);
-        service.setProtectThreshold(newProtectThreshold);
-        service.setMetadata(newMetadata);
-        service.setSelector(newSelector);
-        return updateService(service);
-    }
-    
-    @Override
     public String updateService(Service service) throws NacosException {
         service.validate();
         Map<String, String> params = RequestUtil.toParameters(service);
@@ -125,25 +89,6 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Result<String> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
         });
         return result.getData();
-    }
-    
-    @Override
-    public String removeService(String serviceName) throws NacosException {
-        return removeService(ParamUtil.getDefaultGroupName(), serviceName);
-    }
-    
-    @Override
-    public String removeService(String groupName, String serviceName) throws NacosException {
-        return removeService(ParamUtil.getDefaultNamespaceId(), groupName, serviceName);
-    }
-    
-    @Override
-    public String removeService(String namespaceId, String groupName, String serviceName) throws NacosException {
-        Service service = new Service();
-        service.setNamespaceId(namespaceId);
-        service.setGroupName(groupName);
-        service.setName(serviceName);
-        return removeService(service);
     }
     
     @Override

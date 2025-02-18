@@ -25,6 +25,7 @@ import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceView;
 import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.api.utils.StringUtils;
+import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
 
 import java.util.List;
 import java.util.Map;
@@ -138,8 +139,10 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
-    String updateService(String serviceName, Map<String, String> newMetadata, float newProtectThreshold,
-            Selector newSelector) throws NacosException;
+    default String updateService(String serviceName, Map<String, String> newMetadata, float newProtectThreshold,
+            Selector newSelector) throws NacosException {
+        return updateService(Constants.DEFAULT_GROUP, serviceName, newMetadata, newProtectThreshold, newSelector);
+    }
     
     /**
      * Update an existing persistent service for default namespace id.
@@ -152,8 +155,11 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
-    String updateService(String groupName, String serviceName, Map<String, String> newMetadata,
-            float newProtectThreshold, Selector newSelector) throws NacosException;
+    default String updateService(String groupName, String serviceName, Map<String, String> newMetadata,
+            float newProtectThreshold, Selector newSelector) throws NacosException {
+        return updateService(ParamUtil.getDefaultNamespaceId(), groupName, serviceName, newMetadata,
+                newProtectThreshold, newSelector);
+    }
     
     /**
      * Update an existing persistent service.
@@ -167,8 +173,10 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
-    String updateService(String namespaceId, String groupName, String serviceName, Map<String, String> newMetadata,
-            float newProtectThreshold, Selector newSelector) throws NacosException;
+    default String updateService(String namespaceId, String groupName, String serviceName,
+            Map<String, String> newMetadata, float newProtectThreshold, Selector newSelector) throws NacosException {
+        return updateService(namespaceId, groupName, serviceName, false, newMetadata, newProtectThreshold, newSelector);
+    }
     
     /**
      * Update an existing service.
@@ -183,8 +191,18 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
-    String updateService(String namespaceId, String groupName, String serviceName, boolean ephemeral,
-            Map<String, String> newMetadata, float newProtectThreshold, Selector newSelector) throws NacosException;
+    default String updateService(String namespaceId, String groupName, String serviceName, boolean ephemeral,
+            Map<String, String> newMetadata, float newProtectThreshold, Selector newSelector) throws NacosException {
+        Service service = new Service();
+        service.setNamespaceId(namespaceId);
+        service.setGroupName(groupName);
+        service.setName(serviceName);
+        service.setEphemeral(ephemeral);
+        service.setProtectThreshold(newProtectThreshold);
+        service.setMetadata(newMetadata);
+        service.setSelector(newSelector);
+        return updateService(service);
+    }
     
     /**
      * Update an existing service.
@@ -212,7 +230,9 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
-    String removeService(String serviceName) throws NacosException;
+    default String removeService(String serviceName) throws NacosException {
+        return removeService(ParamUtil.getDefaultGroupName(), serviceName);
+    }
     
     /**
      * Remove a service with default namespace id.
@@ -224,7 +244,9 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
-    String removeService(String groupName, String serviceName) throws NacosException;
+    default String removeService(String groupName, String serviceName) throws NacosException {
+        return removeService(ParamUtil.getDefaultNamespaceId(), groupName, serviceName);
+    }
     
     /**
      * Remove a service.
@@ -235,7 +257,13 @@ public interface ServiceMaintainerService {
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
-    String removeService(String namespaceId, String groupName, String serviceName) throws NacosException;
+    default String removeService(String namespaceId, String groupName, String serviceName) throws NacosException {
+        Service service = new Service();
+        service.setNamespaceId(namespaceId);
+        service.setGroupName(groupName);
+        service.setName(serviceName);
+        return removeService(service);
+    }
     
     /**
      * Remove a service.
