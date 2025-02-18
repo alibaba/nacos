@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClientSummaryInfo;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
@@ -79,7 +80,7 @@ public class ClientInfoControllerV2 {
     @GetMapping()
     @Secured(action = ActionTypes.READ, resource = "nacos/admin")
     @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/client")
-    public Result<ObjectNode> getClientDetail(@RequestParam("clientId") String clientId) throws NacosApiException {
+    public Result<ClientSummaryInfo> getClientDetail(@RequestParam("clientId") String clientId) throws NacosApiException {
         checkClientId(clientId);
         return Result.success(clientServiceV2Impl.getClientDetail(clientId));
     }
@@ -96,7 +97,7 @@ public class ClientInfoControllerV2 {
             throws NacosApiException {
         checkClientId(clientId);
         
-        return Result.success(clientServiceV2Impl.getPublishedServiceList(clientId));
+        return Result.success(clientServiceV2Impl.getPublishedServiceListAdapt(clientId));
     }
     
     /**
@@ -111,7 +112,7 @@ public class ClientInfoControllerV2 {
             throws NacosApiException {
         checkClientId(clientId);
         
-        return Result.success(clientServiceV2Impl.getSubscribeServiceList(clientId));
+        return Result.success(clientServiceV2Impl.getSubscribeServiceListAdapt(clientId));
     }
     
     /**

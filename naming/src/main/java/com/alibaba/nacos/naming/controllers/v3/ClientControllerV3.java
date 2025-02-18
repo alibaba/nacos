@@ -20,6 +20,10 @@ import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClientPublisherInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClientServiceInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClientSubscriberInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClientSummaryInfo;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.naming.core.ClientService;
@@ -73,7 +77,8 @@ public class ClientControllerV3 {
      */
     @GetMapping()
     @Secured(resource = UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
-    public Result<ObjectNode> getClientDetail(@RequestParam("clientId") String clientId) throws NacosApiException {
+    public Result<ClientSummaryInfo> getClientDetail(@RequestParam("clientId") String clientId)
+            throws NacosApiException {
         checkClientId(clientId);
         return Result.success(clientServiceV2Impl.getClientDetail(clientId));
     }
@@ -83,7 +88,7 @@ public class ClientControllerV3 {
      */
     @GetMapping("/publish/list")
     @Secured(resource = UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
-    public Result<List<ObjectNode>> getPublishedServiceList(@RequestParam("clientId") String clientId)
+    public Result<List<ClientServiceInfo>> getPublishedServiceList(@RequestParam("clientId") String clientId)
             throws NacosApiException {
         checkClientId(clientId);
         return Result.success(clientServiceV2Impl.getPublishedServiceList(clientId));
@@ -94,7 +99,7 @@ public class ClientControllerV3 {
      */
     @GetMapping("/subscribe/list")
     @Secured(resource = UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
-    public Result<List<ObjectNode>> getSubscribeServiceList(@RequestParam("clientId") String clientId)
+    public Result<List<ClientServiceInfo>> getSubscribeServiceList(@RequestParam("clientId") String clientId)
             throws NacosApiException {
         checkClientId(clientId);
         return Result.success(clientServiceV2Impl.getSubscribeServiceList(clientId));
@@ -105,12 +110,12 @@ public class ClientControllerV3 {
      */
     @GetMapping("/service/publisher/list")
     @Secured(resource = UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
-    public Result<List<ObjectNode>> getPublishedClientList(ClientServiceForm clientServiceForm)
+    public Result<List<ClientPublisherInfo>> getPublishedClientList(ClientServiceForm clientServiceForm)
             throws NacosApiException {
         clientServiceForm.validate();
         return Result.success(clientServiceV2Impl.getPublishedClientList(clientServiceForm.getNamespaceId(),
-                clientServiceForm.getGroupName(), clientServiceForm.getServiceName(), clientServiceForm.getEphemeral(),
-                clientServiceForm.getIp(), clientServiceForm.getPort()));
+                clientServiceForm.getGroupName(), clientServiceForm.getServiceName(), clientServiceForm.getIp(),
+                clientServiceForm.getPort()));
     }
     
     /**
@@ -118,12 +123,12 @@ public class ClientControllerV3 {
      */
     @GetMapping("/service/subscriber/list")
     @Secured(resource = UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
-    public Result<List<ObjectNode>> getSubscribeClientList(ClientServiceForm clientServiceForm)
+    public Result<List<ClientSubscriberInfo>> getSubscribeClientList(ClientServiceForm clientServiceForm)
             throws NacosApiException {
         clientServiceForm.validate();
         return Result.success(clientServiceV2Impl.getSubscribeClientList(clientServiceForm.getNamespaceId(),
-                clientServiceForm.getGroupName(), clientServiceForm.getServiceName(), clientServiceForm.getEphemeral(),
-                clientServiceForm.getIp(), clientServiceForm.getPort()));
+                clientServiceForm.getGroupName(), clientServiceForm.getServiceName(), clientServiceForm.getIp(),
+                clientServiceForm.getPort()));
     }
     
     /**

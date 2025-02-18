@@ -19,7 +19,6 @@ package com.alibaba.nacos.console.handler.impl.remote.naming;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
 import com.alibaba.nacos.console.handler.naming.InstanceHandler;
@@ -46,10 +45,10 @@ public class InstanceRemoteHandler implements InstanceHandler {
     }
     
     @Override
-    public ObjectNode listInstances(String namespaceId, String serviceNameWithoutGroup, String groupName, int page,
-            int pageSize) throws NacosException {
+    public ObjectNode listInstances(String namespaceId, String serviceNameWithoutGroup, String groupName,
+            String clusterName, int page, int pageSize) throws NacosException {
         List<Instance> instances = clientHolder.getNamingMaintainerService()
-                .listInstances(namespaceId, groupName, serviceNameWithoutGroup, StringUtils.EMPTY, false);
+                .listInstances(namespaceId, groupName, serviceNameWithoutGroup, clusterName, false);
         List<? extends Instance> resultInstances = PageUtil.subPageList(instances, page, pageSize);
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         result.replace("instances", JacksonUtils.transferToJsonNode(resultInstances));
@@ -59,12 +58,9 @@ public class InstanceRemoteHandler implements InstanceHandler {
     
     @Override
     public void updateInstance(InstanceForm instanceForm, Instance instance) throws NacosException {
-        // TODO use instance directly after maintain client support input instance.
         clientHolder.getNamingMaintainerService()
                 .updateInstance(instanceForm.getNamespaceId(), instanceForm.getGroupName(),
-                        instanceForm.getServiceName(), instance.getClusterName(), instance.getIp(), instance.getPort(),
-                        instance.getWeight(), instance.isHealthy(), instance.isEnabled(), instance.isEphemeral(),
-                        JacksonUtils.toJson(instance.getMetadata()));
+                        instanceForm.getServiceName(), instance);
     }
 }
 

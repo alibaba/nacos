@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.naming.controllers.v3;
 
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClientPublisherInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClientServiceInfo;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.core.ClientService;
@@ -26,8 +28,6 @@ import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,6 +44,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -97,27 +98,27 @@ class ClientControllerV3Test extends BaseTest {
     @Test
     void testGetClientDetail() throws Exception {
         when(clientManager.getClient("test1")).thenReturn(ipPortBasedClient);
-        MockHttpServletRequestBuilder mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(URL).param("clientId", "test1");
+        MockHttpServletRequestBuilder mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(URL)
+                .param("clientId", "test1");
         MockHttpServletResponse response = mockmvc.perform(mockHttpServletRequestBuilder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
     }
     
     @Test
     void testGetPublishedServiceList() throws Exception {
-        ObjectMapper objectMapper = new ObjectMapper();
-        ObjectNode objectNode = objectMapper.createObjectNode();
-        objectNode.put("serviceName", "test");
-        List<ObjectNode> serviceList = Arrays.asList(objectNode);
+        List<ClientServiceInfo> serviceList = new LinkedList<>();
+        serviceList.add(new ClientServiceInfo());
+        serviceList.get(0).setServiceName("test");
         
         when(clientManager.getClient("test1")).thenReturn(connectionBasedClient);
-        when(clientServiceV2Impl.getPublishedServiceList("test1"))
-                .thenReturn(serviceList);
+        when(clientServiceV2Impl.getPublishedServiceList("test1")).thenReturn(serviceList);
         
         Service service = Service.newService("test", "test", "test");
         connectionBasedClient.addServiceInstance(service, new InstancePublishInfo("127.0.0.1", 8848));
         MockHttpServletRequestBuilder mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(URL + "/publish/list")
                 .param("clientId", "test1");
-        mockmvc.perform(mockHttpServletRequestBuilder).andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(1));
+        mockmvc.perform(mockHttpServletRequestBuilder)
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(1));
     }
     
     @Test
@@ -126,20 +127,20 @@ class ClientControllerV3Test extends BaseTest {
         // single instance
         final Service service = Service.newService(baseTestKey, baseTestKey, baseTestKey);
         
-        ObjectMapper objectMapper = new ObjectMapper();
-        ObjectNode objectNode = objectMapper.createObjectNode();
-        objectNode.put("serviceName", "test");
-        final List<ObjectNode> serviceList = Arrays.asList(objectNode);
+        final List<ClientPublisherInfo> serviceList = new LinkedList<>();
+        serviceList.add(new ClientPublisherInfo());
+        serviceList.get(0).setClientId("test1");
         
         when(clientManager.getClient("test1")).thenReturn(connectionBasedClient);
         when(clientManager.getClient("test")).thenReturn(connectionBasedClient);
         connectionBasedClient.addServiceInstance(service, new InstancePublishInfo("127.0.0.1", 8848));
         
-        when(clientServiceV2Impl.getPublishedClientList(baseTestKey, baseTestKey, baseTestKey, true, "127.0.0.1", 8848))
-                .thenReturn(serviceList);
-        MockHttpServletRequestBuilder mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(URL + "/service/publisher/list")
-                .param("namespaceId", baseTestKey).param("groupName", baseTestKey).param("serviceName", baseTestKey)
-                .param("ip", "127.0.0.1").param("port", "8848");
-        mockmvc.perform(mockHttpServletRequestBuilder).andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(1));
+        when(clientServiceV2Impl.getPublishedClientList(baseTestKey, baseTestKey, baseTestKey, "127.0.0.1",
+                8848)).thenReturn(serviceList);
+        MockHttpServletRequestBuilder mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(
+                        URL + "/service/publisher/list").param("namespaceId", baseTestKey).param("groupName", baseTestKey)
+                .param("serviceName", baseTestKey).param("ip", "127.0.0.1").param("port", "8848");
+        mockmvc.perform(mockHttpServletRequestBuilder)
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(1));
     }
 }

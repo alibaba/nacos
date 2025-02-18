@@ -16,10 +16,13 @@
 
 package com.alibaba.nacos.api.naming.pojo.maintainer;
 
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.NacosForm;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+import com.alibaba.nacos.api.utils.StringUtils;
 
-import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
@@ -32,7 +35,7 @@ import java.util.Map;
  *
  * @author xiweng.yy
  */
-public class ClusterInfo implements Serializable {
+public class ClusterInfo implements NacosForm {
 
     private static final long serialVersionUID = 2146881454057032105L;
 
@@ -107,5 +110,12 @@ public class ClusterInfo implements Serializable {
     
     public void setUseInstancePortForCheck(boolean useInstancePortForCheck) {
         this.useInstancePortForCheck = useInstancePortForCheck;
+    }
+    
+    @Override
+    public void validate() throws NacosApiException {
+        if (StringUtils.isEmpty(clusterName)) {
+            this.clusterName = Constants.DEFAULT_CLUSTER_NAME;
+        }
     }
 }

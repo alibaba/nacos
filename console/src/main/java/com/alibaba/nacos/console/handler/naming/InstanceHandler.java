@@ -35,12 +35,13 @@ public interface InstanceHandler {
      * @param namespaceId           the namespace ID
      * @param serviceNameWithoutGroup the service name without group
      * @param groupName             the group name
+     * @param clusterName             the cluster name
      * @param page                  the page number
      * @param pageSize              the size of the page
      * @return a JSON node containing the instances information
      * @throws NacosException if the list operation fails
      */
-    ObjectNode listInstances(String namespaceId, String serviceNameWithoutGroup, String groupName,
+    ObjectNode listInstances(String namespaceId, String serviceNameWithoutGroup, String groupName, String clusterName,
             int page, int pageSize) throws NacosException;
     
     /**

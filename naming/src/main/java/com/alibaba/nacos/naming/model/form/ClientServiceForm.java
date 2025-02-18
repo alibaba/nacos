@@ -18,13 +18,12 @@ package com.alibaba.nacos.naming.model.form;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.NacosForm;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.api.model.NacosForm;
 import org.springframework.http.HttpStatus;
 
 import java.io.Serial;
-import java.util.Objects;
 
 /**
  * Client Info Service From.
@@ -46,8 +45,6 @@ public class ClientServiceForm implements NacosForm {
     
     private Integer port;
     
-    private Boolean ephemeral;
-    
     @Override
     public void validate() throws NacosApiException {
         fillDefaultValue();
@@ -66,9 +63,6 @@ public class ClientServiceForm implements NacosForm {
         }
         if (StringUtils.isBlank(groupName)) {
             groupName = Constants.DEFAULT_GROUP;
-        }
-        if (null == ephemeral) {
-            ephemeral = Boolean.TRUE;
         }
     }
     
@@ -110,32 +104,5 @@ public class ClientServiceForm implements NacosForm {
     
     public void setPort(Integer port) {
         this.port = port;
-    }
-    
-    public Boolean getEphemeral() {
-        return ephemeral;
-    }
-    
-    public void setEphemeral(Boolean ephemeral) {
-        this.ephemeral = ephemeral;
-    }
-    
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        ClientServiceForm that = (ClientServiceForm) o;
-        return Objects.equals(namespaceId, that.namespaceId) && Objects.equals(groupName, that.groupName)
-                && Objects.equals(serviceName, that.serviceName) && Objects.equals(ip, that.ip) && Objects.equals(port,
-                that.port) && Objects.equals(ephemeral, that.ephemeral);
-    }
-    
-    @Override
-    public int hashCode() {
-        return Objects.hash(namespaceId, groupName, serviceName, ip, port, ephemeral);
     }
 }
