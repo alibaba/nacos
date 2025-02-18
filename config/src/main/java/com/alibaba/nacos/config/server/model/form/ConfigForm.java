@@ -70,6 +70,8 @@ public class ConfigForm implements Serializable {
     
     private String schema;
     
+    private Boolean updateForExist = Boolean.TRUE;
+    
     public ConfigForm() {
     }
     
@@ -232,6 +234,14 @@ public class ConfigForm implements Serializable {
     
     public void setGrayPriority(int grayPriority) {
         this.grayPriority = grayPriority;
+    }
+    
+    public Boolean getUpdateForExist() {
+        return updateForExist;
+    }
+    
+    public void setUpdateForExist(Boolean updateForExist) {
+        this.updateForExist = updateForExist;
     }
     
     @Override

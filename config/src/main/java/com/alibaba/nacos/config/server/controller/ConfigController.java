@@ -29,10 +29,8 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.constant.ParametersField;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.enums.ApiVersionEnum;
-import com.alibaba.nacos.config.server.enums.ConfigImportResEnum;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
-import com.alibaba.nacos.config.server.model.ConfigImportWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
@@ -102,7 +100,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.alibaba.nacos.config.server.constant.Constants.COLON;
 import static com.alibaba.nacos.config.server.utils.RequestUtil.getRemoteIp;
 
 /**
@@ -220,7 +217,7 @@ public class ConfigController {
         configRequestInfo.setBetaIps(request.getHeader("betaIps"));
         configRequestInfo.setCasMd5(request.getHeader("casMd5"));
         
-        return configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal, null);
+        return configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal, false);
     }
     
     /**
@@ -310,6 +307,9 @@ public class ConfigController {
     @DeleteMapping(params = "delType=ids")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
     public RestResult<Boolean> deleteConfigs(HttpServletRequest request, @RequestParam(value = "ids") List<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return RestResultUtils.failed("The ids cannot be empty.");
+        }
         String clientIp = RequestUtil.getRemoteIp(request);
         String srcUser = RequestUtil.getSrcUserName(request);
         try {
@@ -672,52 +672,8 @@ public class ConfigController {
             failedData.put("succCount", 0);
             return RestResultUtils.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
         }
-        final String srcIp = RequestUtil.getRemoteIp(request);
-        String requestIpApp = RequestUtil.getAppName(request);
         
-        Map<String, Object> saveResult = new HashMap<>(16);
-        int succCount = 0;
-        int failCount = 0;
-        List<String> failDataList = new ArrayList<>();
-        int skipCount = 0;
-        List<String> skipDataList = new ArrayList<>();
-        for (ConfigAllInfo configInfo : configInfoList) {
-            ConfigForm configForm = new ConfigForm();
-            configForm.setDataId(configInfo.getDataId());
-            configForm.setGroup(configInfo.getGroup());
-            configForm.setNamespaceId(namespace);
-            configForm.setContent(configInfo.getContent());
-            configForm.setAppName(configInfo.getAppName());
-            configForm.setConfigTags(configInfo.getConfigTags());
-            configForm.setDesc(configInfo.getDesc());
-            configForm.setUse(configInfo.getUse());
-            configForm.setEffect(configInfo.getEffect());
-            configForm.setType(configInfo.getType());
-            configForm.setSchema(configInfo.getSchema());
-            configForm.setEncryptedDataKey(configInfo.getEncryptedDataKey());
-            configForm.setSrcUser(RequestUtil.getSrcUserName(request));
-            
-            ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
-            configRequestInfo.setSrcIp(srcIp);
-            configRequestInfo.setSrcType(Constants.HTTP);
-            configRequestInfo.setRequestIpApp(requestIpApp);
-            configRequestInfo.setBetaIps(request.getHeader("betaIps"));
-            
-            ConfigImportWrapper configImportWrapper = new ConfigImportWrapper(null, policy);
-            configOperationService.publishConfig(configForm, configRequestInfo, configInfo.getEncryptedDataKey(), configImportWrapper);
-            ConfigImportResEnum configImportRes = configImportWrapper.getConfigImportResEnum();
-            if (configImportRes == ConfigImportResEnum.SUCCESS) {
-                saveResult.put("succCount", ++succCount);
-            } else if (configImportRes == ConfigImportResEnum.SKIP) {
-                saveResult.put("skipCount", ++skipCount);
-                skipDataList.add(configInfo.getDataId() + COLON + configInfo.getGroup() + COLON + configInfo.getTenant());
-                saveResult.put("skipData", skipDataList);
-            } else if (configImportRes == ConfigImportResEnum.FAIL) {
-                saveResult.put("failCount", ++failCount);
-                failDataList.add(configInfo.getDataId() + COLON + configInfo.getGroup() + COLON + configInfo.getTenant());
-                saveResult.put("failData", failDataList);
-            }
-        }
+        Map<String, Object> saveResult = batchImportAndPublishConfigs(configInfoList, request, srcUser, namespace, policy);
         
         // unrecognizedCount
         if (!unrecognizedList.isEmpty()) {
@@ -938,7 +894,6 @@ public class ConfigController {
         for (ConfigAllInfo ci : queryedDataList) {
             SameNamespaceCloneConfigBean paramBean = configBeansMap.get(ci.getId());
             ConfigAllInfo ci4save = new ConfigAllInfo();
-            ci4save.setTenant(namespace);
             ci4save.setType(ci.getType());
             ci4save.setGroup((paramBean != null && StringUtils.isNotBlank(paramBean.getGroup())) ? paramBean.getGroup()
                     : ci.getGroup());
@@ -957,53 +912,89 @@ public class ConfigController {
         if (StringUtils.isBlank(srcUser)) {
             srcUser = RequestUtil.getSrcUserName(request);
         }
-        final String srcIp = RequestUtil.getRemoteIp(request);
-        String requestIpApp = RequestUtil.getAppName(request);
-        
+        Map<String, Object> saveResult = batchImportAndPublishConfigs(configInfoList4Clone, request, srcUser, namespace, policy);
+
+        return RestResultUtils.success("Clone Completed Successfully", saveResult);
+    }
+    
+    private Map<String, Object> batchImportAndPublishConfigs(List<ConfigAllInfo> configAllInfoList, HttpServletRequest request,
+            String srcUser, String targetNamespaceId, SameConfigPolicy sameConfigPolicy) throws NacosException {
         Map<String, Object> saveResult = new HashMap<>(16);
         int succCount = 0;
-        int failCount = 0;
-        List<String> failDataList = new ArrayList<>();
         int skipCount = 0;
-        List<String> skipDataList = new ArrayList<>();
-        for (ConfigAllInfo configInfo : configInfoList4Clone) {
-            ConfigForm configForm = new ConfigForm();
-            configForm.setDataId(configInfo.getDataId());
-            configForm.setGroup(configInfo.getGroup());
-            configForm.setNamespaceId(namespace);
-            configForm.setContent(configInfo.getContent());
-            configForm.setAppName(configInfo.getAppName());
-            configForm.setConfigTags(configInfo.getConfigTags());
-            configForm.setDesc(configInfo.getDesc());
-            configForm.setUse(configInfo.getUse());
-            configForm.setEffect(configInfo.getEffect());
-            configForm.setType(configInfo.getType());
-            configForm.setSchema(configInfo.getSchema());
-            configForm.setEncryptedDataKey(configInfo.getEncryptedDataKey());
-            configForm.setSrcUser(srcUser);
-            
-            ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
-            configRequestInfo.setSrcIp(srcIp);
-            configRequestInfo.setSrcType(Constants.HTTP);
-            configRequestInfo.setRequestIpApp(requestIpApp);
-            configRequestInfo.setBetaIps(request.getHeader("betaIps"));
-            
-            ConfigImportWrapper configImportWrapper = new ConfigImportWrapper(null, policy);
-            configOperationService.publishConfig(configForm, configRequestInfo, configInfo.getEncryptedDataKey(), configImportWrapper);
-            ConfigImportResEnum configImportRes = configImportWrapper.getConfigImportResEnum();
-            if (configImportRes == ConfigImportResEnum.SUCCESS) {
-                saveResult.put("succCount", ++succCount);
-            } else if (configImportRes == ConfigImportResEnum.SKIP) {
-                saveResult.put("skipCount", ++skipCount);
-                skipDataList.add(configInfo.getDataId() + COLON + configInfo.getGroup() + COLON + configInfo.getTenant());
-                saveResult.put("skipData", skipDataList);
-            } else if (configImportRes == ConfigImportResEnum.FAIL) {
-                saveResult.put("failCount", ++failCount);
-                failDataList.add(configInfo.getDataId() + COLON + configInfo.getGroup() + COLON + configInfo.getTenant());
-                saveResult.put("failData", failDataList);
+        List<Map<String, String>> failData = new ArrayList<>();
+        List<Map<String, String>> skipData = new ArrayList<>();
+        for (int i = 0; i < configAllInfoList.size(); i++) {
+            ConfigAllInfo configAllInfo = configAllInfoList.get(i);
+            ConfigForm configForm = transferToConfigForm(configAllInfo, srcUser, targetNamespaceId);
+            if (sameConfigPolicy != SameConfigPolicy.OVERWRITE) {
+                configForm.setUpdateForExist(false);
+            }
+            ConfigRequestInfo configRequestInfo = transferToConfigRequestInfo(request);
+            Boolean importRes = configOperationService.publishConfig(configForm, configRequestInfo,
+                    configAllInfo.getEncryptedDataKey(), true);
+            if (importRes) {
+                succCount++;
+            } else if (SameConfigPolicy.SKIP == sameConfigPolicy) {
+                skipCount++;
+                Map<String, String> skipItem = new HashMap<>(2);
+                skipItem.put("dataId", configAllInfo.getDataId());
+                skipItem.put("group", configAllInfo.getGroup());
+                skipData.add(skipItem);
+            } else if (SameConfigPolicy.ABORT == sameConfigPolicy) {
+                Map<String, String> failedItem = new HashMap<>(2);
+                failedItem.put("dataId", configAllInfo.getDataId());
+                failedItem.put("group", configAllInfo.getGroup());
+                failData.add(failedItem);
+                // skip remaining configs
+                for (int j = i + 1; j < configAllInfoList.size(); j++) {
+                    ConfigAllInfo skipConfigInfo = configAllInfoList.get(j);
+                    Map<String, String> skipitem = new HashMap<>(2);
+                    skipitem.put("dataId", skipConfigInfo.getDataId());
+                    skipitem.put("group", skipConfigInfo.getGroup());
+                    skipData.add(skipitem);
+                    skipCount++;
+                }
+                break;
             }
         }
         
-        return RestResultUtils.success("Clone Completed Successfully", saveResult);
+        saveResult.put("succCount", succCount);
+        saveResult.put("skipCount", skipCount);
+        if (!failData.isEmpty()) {
+            saveResult.put("failData", failData);
+        }
+        if (!skipData.isEmpty()) {
+            saveResult.put("skipData", skipData);
+        }
+        
+        return saveResult;
+    }
+    
+    private ConfigForm transferToConfigForm(ConfigAllInfo configInfo, String srcUser, String targetNamespaceId) {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId(configInfo.getDataId());
+        configForm.setGroup(configInfo.getGroup());
+        configForm.setNamespaceId(targetNamespaceId);
+        configForm.setContent(configInfo.getContent());
+        configForm.setAppName(configInfo.getAppName());
+        configForm.setConfigTags(configInfo.getConfigTags());
+        configForm.setDesc(configInfo.getDesc());
+        configForm.setUse(configInfo.getUse());
+        configForm.setEffect(configInfo.getEffect());
+        configForm.setType(configInfo.getType());
+        configForm.setSchema(configInfo.getSchema());
+        configForm.setEncryptedDataKey(configInfo.getEncryptedDataKey());
+        configForm.setSrcUser(srcUser);
+        return configForm;
+    }
+    
+    private ConfigRequestInfo transferToConfigRequestInfo(HttpServletRequest request) {
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        configRequestInfo.setSrcIp(RequestUtil.getRemoteIp(request));
+        configRequestInfo.setSrcType(Constants.HTTP);
+        configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
+        configRequestInfo.setBetaIps(request.getHeader("betaIps"));
+        return configRequestInfo;
     }
 }

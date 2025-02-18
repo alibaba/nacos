@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.config.server.aspect;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.CounterMode;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -110,11 +112,13 @@ public class CapacityManagementAspect {
             boolean hasTenant = StringUtils.isNotBlank(namespaceId);
             Capacity capacity = getCapacity(group, namespaceId, hasTenant);
             if (isSizeLimited(group, namespaceId, getCurrentSize(content), hasTenant, false, capacity)) {
-                return false;
+                throw new NacosException(ErrorCode.SERVER_ERROR.getCode(), "Size limit exceeded for dataId: " + dataId + ", group: " + group
+                        + ", namespaceId: " + namespaceId);
             }
         } catch (Exception e) {
             LOGGER.error("[CapacityManagement] Error during update operation for dataId: {}, group: {}, namespaceId: {}",
                     dataId, group, namespaceId, e);
+            throw e;
         }
         return pjp.proceed();
     }
@@ -134,7 +138,8 @@ public class CapacityManagementAspect {
             // Write or update: usage + 1
             LimitType limitType = getLimitType(counterMode, group, namespaceId, content, hasTenant);
             if (limitType != null) {
-                return false;
+                throw new NacosException(ErrorCode.SERVER_ERROR.getCode(), "Size limit exceeded for group: " + group
+                        + ", namespaceId: " + namespaceId);
             }
         } else {
             // Write or update: usage + 1

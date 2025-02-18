@@ -22,13 +22,9 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.common.utils.NumberUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.enums.ConfigImportResEnum;
-import com.alibaba.nacos.config.server.model.ConfigAllInfo;
-import com.alibaba.nacos.config.server.model.ConfigImportWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
-import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
@@ -96,7 +92,7 @@ public class ConfigOperationService {
      * @throws NacosException NacosException.
      */
     public Boolean publishConfig(ConfigForm configForm, ConfigRequestInfo configRequestInfo, String encryptedDataKey,
-            ConfigImportWrapper configImportWrapper) throws NacosException {
+            boolean isImportOperation) throws NacosException {
         Map<String, Object> configAdvanceInfo = getConfigAdvanceInfo(configForm);
         ParamUtils.checkParam(configAdvanceInfo);
         
@@ -111,11 +107,9 @@ public class ConfigOperationService {
         configInfo.setEncryptedDataKey(encryptedDataKey);
         
         // import and publish config
-        if (configImportWrapper != null) {
-            ConfigImportResEnum result = importAndPublishConfig(configInfo, configAdvanceInfo,
-                    configForm.getSrcUser(), configRequestInfo.getSrcIp(), configImportWrapper.getSameConfigPolicy());
-            configImportWrapper.setConfigImportResEnum(result);
-            return Boolean.TRUE;
+        if (isImportOperation) {
+            return importAndPublishConfig(configInfo, configAdvanceInfo, configForm.getSrcUser(),
+                    configRequestInfo.getSrcIp(), configForm.getUpdateForExist());
         }
         
         ConfigOperateResult configOperateResult;
@@ -165,8 +159,8 @@ public class ConfigOperationService {
         return true;
     }
     
-    private ConfigImportResEnum importAndPublishConfig(ConfigInfo configInfo, Map<String, Object> configAdvanceInfo,
-            String srcUser, String srcIp, SameConfigPolicy policy) throws NacosException {
+    private Boolean importAndPublishConfig(ConfigInfo configInfo, Map<String, Object> configAdvanceInfo,
+            String srcUser, String srcIp, boolean updateForExist) throws NacosException {
         try {
             ParamUtils.checkParam(configInfo.getDataId(), configInfo.getGroup(), "datumId",
                     configInfo.getContent());
@@ -186,20 +180,16 @@ public class ConfigOperationService {
         }
         
         if (success) {
-            return ConfigImportResEnum.SUCCESS;
+            return true;
         } else {
             // uniqueness constraint conflict or add config info fail.
-            if (SameConfigPolicy.ABORT.equals(policy)) {
-                return ConfigImportResEnum.FAIL;
-            } else if (SameConfigPolicy.SKIP.equals(policy)) {
-                return ConfigImportResEnum.SKIP;
-            } else if (SameConfigPolicy.OVERWRITE.equals(policy)) {
+            if (updateForExist) {
                 configInfoPersistService.updateConfigInfo(configInfo, srcIp, srcUser, configAdvanceInfo);
-                return ConfigImportResEnum.SUCCESS;
+                return true;
+            } else {
+                return false;
             }
         }
-        
-        return ConfigImportResEnum.SUCCESS;
     }
     
     private void persistTagv1(ConfigForm configForm, ConfigInfo configInfo, ConfigRequestInfo configRequestInfo)
@@ -370,36 +360,6 @@ public class ConfigOperationService {
         if (PropertyUtil.isGrayCompatibleModel()) {
             configInfoTagPersistService.removeConfigInfoTag(dataId, group, namespaceId, tag, clientIp, srcUser);
         }
-    }
-
-    /**
-     * Deletes configuration information based on the IDs list.
-     */
-    public Boolean deleteConfigs(List<Long> ids, String srcIp, String srcUser) {
-        List<ConfigAllInfo> configInfoList = configInfoPersistService.removeConfigInfoByIds(ids, srcIp, srcUser);
-        if (configInfoList == null || configInfoList.isEmpty()) {
-            return true;
-        }
-        
-        Timestamp time = TimeUtils.getCurrentTime();
-        for (ConfigAllInfo configInfo : configInfoList) {
-            ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
-                            time.getTime()));
-            ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
-                    configInfo.getTenant(), null, time.getTime(), srcIp, ConfigTraceService.PERSISTENCE_EVENT,
-                    ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
-        }
-        
-        return true;
-    }
-    
-    /**
-     * Batch insert or update configuration information.
-     */
-    public Map<String, Object> batchInsertOrUpdate(List<ConfigAllInfo> configInfoList, String srcUser, String srcIp,
-            Map<String, Object> configAdvanceInfo, SameConfigPolicy policy) throws NacosException {
-        return configInfoPersistService.batchInsertOrUpdate(configInfoList, srcUser, srcIp, configAdvanceInfo, policy);
     }
     
     public Map<String, Object> getConfigAdvanceInfo(ConfigForm configForm) {

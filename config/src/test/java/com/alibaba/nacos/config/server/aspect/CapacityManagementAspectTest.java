@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.aspect;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.constant.CounterMode;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
@@ -39,6 +40,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
@@ -140,8 +142,11 @@ class CapacityManagementAspectTest {
         when(configInfoPersistService.findConfigInfo(any(), any(), any())).thenReturn(null);
         when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean())).thenReturn(false);
         
-        Boolean localMockResult = (Boolean) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint);
-        assertEquals(false, localMockResult);
+        Exception exception = assertThrows(NacosException.class, () -> {
+            capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint);
+        });
+        
+        assertEquals("Size limit exceeded for group: mockGroup, namespaceId: mockTenant", exception.getMessage());
         Mockito.verify(proceedingJoinPoint, Mockito.times(0)).proceed();
     }
     
@@ -242,8 +247,11 @@ class CapacityManagementAspectTest {
         //  5. over tenant max size: true
         localTenantCapacity.setMaxSize(1);
         localTenantCapacity.setMaxAggrCount(1);
-        localMockResult = (Boolean) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint);
-        assertEquals(false, localMockResult);
+        
+        Exception exception = assertThrows(NacosException.class, () -> {
+            capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint);
+        });
+        assertEquals("Size limit exceeded for group: mockGroup, namespaceId: mockTenant", exception.getMessage());
         
         //  5. over tenant max size: true
         localTenantCapacity.setMaxSize(10 * 1024);
@@ -288,8 +296,10 @@ class CapacityManagementAspectTest {
         //  5. over tenant max size: true
         localGroupCapacity.setMaxSize(1);
         localGroupCapacity.setMaxAggrCount(1);
-        localMockResult = (Boolean) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint);
-        assertEquals(false, localMockResult);
+        Exception exception = assertThrows(NacosException.class, () -> {
+            capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint);
+        });
+        assertEquals("Size limit exceeded for group: mockGroup, namespaceId: null", exception.getMessage());
         
         // 5. over tenant max size: true
         localGroupCapacity.setMaxSize(10 * 1024);
