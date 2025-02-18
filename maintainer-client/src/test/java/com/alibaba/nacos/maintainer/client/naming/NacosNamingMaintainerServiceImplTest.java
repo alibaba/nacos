@@ -19,7 +19,13 @@ package com.alibaba.nacos.maintainer.client.naming;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClientPublisherInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClientServiceInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClientSubscriberInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClientSummaryInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.InstanceMetadataBatchResult;
 import com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
@@ -31,7 +37,6 @@ import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.maintainer.client.core.AbstractCoreMaintainerService;
 import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,6 +54,7 @@ import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -288,17 +294,9 @@ public class NacosNamingMaintainerServiceImplTest {
     @Test
     void testRegisterInstance() throws Exception {
         // Arrange
-        String namespaceId = "testNamespace";
-        String groupName = "testGroup";
         String serviceName = "testService";
-        String clusterName = "testCluster";
         String ip = "127.0.0.1";
         int port = 8080;
-        String weight = "1.0";
-        boolean healthy = true;
-        boolean enabled = true;
-        String ephemeral = "true";
-        String metadata = "testMetadata";
         
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>("success")));
@@ -306,8 +304,7 @@ public class NacosNamingMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        String result = nacosNamingMaintainerService.registerInstance(namespaceId, groupName, serviceName, clusterName,
-                ip, port, weight, healthy, enabled, ephemeral, metadata);
+        String result = nacosNamingMaintainerService.registerInstance(serviceName, ip, port);
         
         // Assert
         assertEquals("success", result);
@@ -317,17 +314,9 @@ public class NacosNamingMaintainerServiceImplTest {
     @Test
     void testDeregisterInstance() throws Exception {
         // Arrange
-        String namespaceId = "testNamespace";
-        String groupName = "testGroup";
         String serviceName = "testService";
-        String clusterName = "testCluster";
         String ip = "127.0.0.1";
         int port = 8080;
-        String weight = "1.0";
-        boolean healthy = true;
-        boolean enabled = true;
-        String ephemeral = "true";
-        String metadata = "testMetadata";
         
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>("success")));
@@ -335,8 +324,7 @@ public class NacosNamingMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        String result = nacosNamingMaintainerService.deregisterInstance(namespaceId, groupName, serviceName,
-                clusterName, ip, port, weight, healthy, enabled, ephemeral, metadata);
+        String result = nacosNamingMaintainerService.deregisterInstance(serviceName, ip, port);
         
         // Assert
         assertEquals("success", result);
@@ -346,17 +334,13 @@ public class NacosNamingMaintainerServiceImplTest {
     @Test
     void testUpdateInstance() throws Exception {
         // Arrange
-        String namespaceId = "testNamespace";
-        String groupName = "testGroup";
-        String serviceName = "testService";
-        String clusterName = "testCluster";
+        final String service = "testService";
         String ip = "127.0.0.1";
         int port = 8080;
-        double weight = 1.0D;
-        boolean healthy = true;
-        boolean enabled = true;
-        boolean ephemeral = true;
-        String metadata = "testMetadata";
+        Instance instance = new Instance();
+        instance.setIp(ip);
+        instance.setPort(port);
+        instance.setMetadata(Collections.singletonMap("key", "value"));
         
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>("success")));
@@ -364,8 +348,7 @@ public class NacosNamingMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        String result = nacosNamingMaintainerService.updateInstance(namespaceId, groupName, serviceName, clusterName,
-                ip, port, weight, healthy, enabled, ephemeral, metadata);
+        String result = nacosNamingMaintainerService.updateInstance(service, instance);
         
         // Assert
         assertEquals("success", result);
@@ -375,13 +358,13 @@ public class NacosNamingMaintainerServiceImplTest {
     @Test
     void testBatchUpdateInstanceMetadata() throws Exception {
         // Arrange
-        final String namespaceId = "testNamespace";
-        final String groupName = "testGroup";
-        final String serviceName = "testService";
-        final String instance = "testInstance";
+        Service service = new Service();
+        service.setName("testService");
+        Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
+        instance.setPort(8848);
         Map<String, String> metadata = new HashMap<>();
         metadata.put("key", "value");
-        String consistencyType = "testType";
         
         InstanceMetadataBatchResult expectedVo = new InstanceMetadataBatchResult();
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
@@ -391,8 +374,8 @@ public class NacosNamingMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        InstanceMetadataBatchResult result = nacosNamingMaintainerService.batchUpdateInstanceMetadata(namespaceId,
-                groupName, serviceName, instance, metadata, consistencyType);
+        InstanceMetadataBatchResult result = nacosNamingMaintainerService.batchUpdateInstanceMetadata(service,
+                Collections.singletonList(instance), metadata);
         
         // Assert
         assertNotNull(result);
@@ -402,13 +385,13 @@ public class NacosNamingMaintainerServiceImplTest {
     @Test
     void testBatchDeleteInstanceMetadata() throws Exception {
         // Arrange
-        final String namespaceId = "testNamespace";
-        final String groupName = "testGroup";
-        final String serviceName = "testService";
-        final String instance = "testInstance";
+        Service service = new Service();
+        service.setName("testService");
+        Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
+        instance.setPort(8848);
         Map<String, String> metadata = new HashMap<>();
         metadata.put("key", "value");
-        String consistencyType = "testType";
         
         InstanceMetadataBatchResult expectedVo = new InstanceMetadataBatchResult();
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
@@ -418,8 +401,8 @@ public class NacosNamingMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        InstanceMetadataBatchResult result = nacosNamingMaintainerService.batchDeleteInstanceMetadata(namespaceId,
-                groupName, serviceName, instance, metadata, consistencyType);
+        InstanceMetadataBatchResult result = nacosNamingMaintainerService.batchDeleteInstanceMetadata(service,
+                Collections.singletonList(instance), metadata);
         
         // Assert
         assertNotNull(result);
@@ -429,14 +412,14 @@ public class NacosNamingMaintainerServiceImplTest {
     @Test
     void testPartialUpdateInstance() throws Exception {
         // Arrange
-        String namespaceId = "testNamespace";
-        String serviceName = "testService";
-        String clusterName = "testCluster";
-        int ip = 127;
-        int port = 8080;
-        double weight = 1.0;
-        boolean enabled = true;
-        String metadata = "testMetadata";
+        Service service = new Service();
+        service.setName("testService");
+        Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
+        instance.setPort(8848);
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("key", "value");
+        instance.setMetadata(metadata);
         
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>("success")));
@@ -444,8 +427,7 @@ public class NacosNamingMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        String result = nacosNamingMaintainerService.partialUpdateInstance(namespaceId, serviceName, clusterName, ip,
-                port, weight, enabled, metadata);
+        String result = nacosNamingMaintainerService.partialUpdateInstance(service, instance);
         
         // Assert
         assertEquals("success", result);
@@ -466,13 +448,10 @@ public class NacosNamingMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        String namespaceId = "testNamespace";
-        String groupName = "testGroup";
         String serviceName = "testService";
         String clusterName = "testCluster";
         boolean healthyOnly = true;
-        List<Instance> result = nacosNamingMaintainerService.listInstances(namespaceId, groupName, serviceName,
-                clusterName, healthyOnly);
+        List<Instance> result = nacosNamingMaintainerService.listInstances(serviceName, clusterName, healthyOnly);
         
         // Assert
         assertNotNull(result);
@@ -485,10 +464,7 @@ public class NacosNamingMaintainerServiceImplTest {
     @Test
     void testGetInstanceDetail() throws Exception {
         // Arrange
-        String namespaceId = "testNamespace";
-        String groupName = "testGroup";
         String serviceName = "testService";
-        String clusterName = "testCluster";
         String ip = "127.0.0.1";
         int port = 8080;
         
@@ -500,8 +476,7 @@ public class NacosNamingMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        Instance result = nacosNamingMaintainerService.getInstanceDetail(namespaceId, groupName, serviceName,
-                clusterName, ip, port);
+        Instance result = nacosNamingMaintainerService.getInstanceDetail(serviceName, ip, port);
         
         // Assert
         assertNotNull(result);
@@ -511,14 +486,11 @@ public class NacosNamingMaintainerServiceImplTest {
     @Test
     void testUpdateInstanceHealthStatus() throws Exception {
         // Arrange
-        String namespaceId = "testNamespace";
-        String groupName = "testGroup";
-        String serviceName = "testService";
-        String clusterName = "testCluster";
-        String metadata = "testMetadata";
-        boolean ephemeral = true;
-        float protectThreshold = 0.5f;
-        String selector = "testSelector";
+        Service service = new Service();
+        service.setName("testService");
+        Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
+        instance.setPort(8848);
         
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>("success")));
@@ -526,8 +498,7 @@ public class NacosNamingMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        String result = nacosNamingMaintainerService.updateInstanceHealthStatus(namespaceId, groupName, serviceName,
-                clusterName, metadata, ephemeral, protectThreshold, selector);
+        String result = nacosNamingMaintainerService.updateInstanceHealthStatus(service, instance);
         
         // Assert
         assertEquals("success", result);
@@ -554,14 +525,18 @@ public class NacosNamingMaintainerServiceImplTest {
     @Test
     void testUpdateCluster() throws Exception {
         // Arrange
-        String namespaceId = "testNamespace";
-        String groupName = "testGroup";
         String serviceName = "testService";
         String clusterName = "testCluster";
-        Integer checkPort = 8080;
-        Boolean useInstancePort4Check = true;
-        String healthChecker = "testChecker";
-        Map<String, String> metadata = new HashMap<>();
+        final int checkPort = 8080;
+        final Map<String, String> metadata = new HashMap<>();
+        Service service = new Service();
+        service.setName(serviceName);
+        ClusterInfo clusterInfo = new ClusterInfo();
+        clusterInfo.setClusterName(clusterName);
+        clusterInfo.setUseInstancePortForCheck(true);
+        clusterInfo.setHealthyCheckPort(checkPort);
+        clusterInfo.setMetadata(metadata);
+        clusterInfo.setHealthChecker(new AbstractHealthChecker.None());
         
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>("success")));
@@ -569,8 +544,7 @@ public class NacosNamingMaintainerServiceImplTest {
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        String result = nacosNamingMaintainerService.updateCluster(namespaceId, groupName, serviceName, clusterName,
-                checkPort, useInstancePort4Check, healthChecker, metadata);
+        String result = nacosNamingMaintainerService.updateCluster(service, clusterInfo);
         
         // Assert
         assertEquals("success", result);
@@ -597,127 +571,146 @@ public class NacosNamingMaintainerServiceImplTest {
     @Test
     void testGetClientDetail() throws Exception {
         // Arrange
-        String clientId = "testClient";
+        String clientId = "1.1.1.1:8848#true";
+        ClientSummaryInfo clientSummaryInfo = new ClientSummaryInfo();
+        clientSummaryInfo.setClientId(clientId);
+        clientSummaryInfo.setLastUpdatedTime(1L);
+        clientSummaryInfo.setEphemeral(true);
+        clientSummaryInfo.setClientType("ipPort");
         
-        ObjectNode expectedNode = new ObjectMapper().createObjectNode();
+        Result<ClientSummaryInfo> expectedNode = Result.success(clientSummaryInfo);
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(expectedNode));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        ObjectNode result = nacosNamingMaintainerService.getClientDetail(clientId);
+        ClientSummaryInfo result = nacosNamingMaintainerService.getClientDetail(clientId);
         
         // Assert
         assertNotNull(result);
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+        assertEquals(clientId, result.getClientId());
+        assertEquals(1L, result.getLastUpdatedTime());
+        assertTrue(result.isEphemeral());
+        assertEquals("ipPort", result.getClientType());
     }
     
     @Test
     void testGetPublishedServiceList() throws Exception {
         // Arrange
-        String clientId = "testClient";
-        
-        List<ObjectNode> expectedList = new ArrayList<>();
+        List<ClientServiceInfo> expectedList = new ArrayList<>();
+        expectedList.add(new ClientServiceInfo());
+        expectedList.get(0).setNamespaceId("public");
+        expectedList.get(0).setGroupName("testGroup");
+        expectedList.get(0).setServiceName("testService");
+        expectedList.get(0).setPublisherInfo(new ClientPublisherInfo());
+        expectedList.get(0).getPublisherInfo().setIp("1.1.1.1");
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(expectedList));
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(Result.success(expectedList)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        List<ObjectNode> result = nacosNamingMaintainerService.getPublishedServiceList(clientId);
+        List<ClientServiceInfo> result = nacosNamingMaintainerService.getPublishedServiceList("testClient");
         
         // Assert
         assertNotNull(result);
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+        assertEquals("public", result.get(0).getNamespaceId());
+        assertEquals("testGroup", result.get(0).getGroupName());
+        assertEquals("testService", result.get(0).getServiceName());
+        assertEquals("1.1.1.1", result.get(0).getPublisherInfo().getIp());
+        assertEquals(0, result.get(0).getPublisherInfo().getPort());
     }
     
     @Test
     void testGetSubscribeServiceList() throws Exception {
         // Arrange
-        String clientId = "testClient";
-        
-        List<ObjectNode> expectedList = new ArrayList<>();
+        List<ClientServiceInfo> expectedList = new ArrayList<>();
+        expectedList.add(new ClientServiceInfo());
+        expectedList.get(0).setNamespaceId("public");
+        expectedList.get(0).setGroupName("testGroup");
+        expectedList.get(0).setServiceName("testService");
+        expectedList.get(0).setSubscriberInfo(new ClientSubscriberInfo());
+        expectedList.get(0).getSubscriberInfo().setAddress("1.1.1.1");
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(expectedList));
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(Result.success(expectedList)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        List<ObjectNode> result = nacosNamingMaintainerService.getSubscribeServiceList(clientId);
+        List<ClientServiceInfo> result = nacosNamingMaintainerService.getSubscribeServiceList("testClient");
         
         // Assert
         assertNotNull(result);
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+        assertEquals("public", result.get(0).getNamespaceId());
+        assertEquals("testGroup", result.get(0).getGroupName());
+        assertEquals("testService", result.get(0).getServiceName());
+        assertEquals("1.1.1.1", result.get(0).getSubscriberInfo().getAddress());
     }
     
     @Test
     void testGetPublishedClientList() throws Exception {
         // Arrange
-        String namespaceId = "testNamespace";
-        String groupName = "testGroup";
-        String serviceName = "testService";
-        boolean ephemeral = true;
         String ip = "127.0.0.1";
         Integer port = 8080;
         
-        List<ObjectNode> expectedList = new ArrayList<>();
+        List<ClientPublisherInfo> expectedList = new ArrayList<>();
+        expectedList.add(new ClientPublisherInfo());
+        expectedList.get(0).setIp(ip);
+        expectedList.get(0).setPort(port);
+        expectedList.get(0).setClientId("127.0.0.1:8080#true");
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(expectedList));
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(Result.success(expectedList)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        List<ObjectNode> result = nacosNamingMaintainerService.getPublishedClientList(namespaceId, groupName,
-                serviceName, ephemeral, ip, port);
+        String namespaceId = "testNamespace";
+        String groupName = "testGroup";
+        String serviceName = "testService";
+        List<ClientPublisherInfo> result = nacosNamingMaintainerService.getPublishedClientList(namespaceId, groupName,
+                serviceName, ip, port);
         
         // Assert
         assertNotNull(result);
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+        assertEquals(ip, result.get(0).getIp());
+        assertEquals(port, result.get(0).getPort());
+        assertEquals("127.0.0.1:8080#true", result.get(0).getClientId());
     }
     
     @Test
     void testGetSubscribeClientList() throws Exception {
         // Arrange
+        String ip = "127.0.0.1";
+        
+        List<ClientSubscriberInfo> expectedList = new ArrayList<>();
+        expectedList.add(new ClientSubscriberInfo());
+        expectedList.get(0).setAddress(ip);
+        expectedList.get(0).setAppName("unknown");
+        expectedList.get(0).setAgent("Nacos-Java-Client:v3.0.0");
+        expectedList.get(0).setClientId("127.0.0.1:8080#true");
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(Result.success(expectedList)));
+        
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+        
+        // Act
         String namespaceId = "testNamespace";
         String groupName = "testGroup";
         String serviceName = "testService";
-        boolean ephemeral = true;
-        String ip = "127.0.0.1";
-        Integer port = 8080;
-        
-        List<ObjectNode> expectedList = new ArrayList<>();
-        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(expectedList));
-        
-        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-        
-        // Act
-        List<ObjectNode> result = nacosNamingMaintainerService.getSubscribeClientList(namespaceId, groupName,
-                serviceName, ephemeral, ip, port);
+        List<ClientSubscriberInfo> result = nacosNamingMaintainerService.getSubscribeClientList(namespaceId, groupName,
+                serviceName, ip, null);
         
         // Assert
         assertNotNull(result);
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
-    }
-    
-    @Test
-    void testGetResponsibleServerForClient() throws Exception {
-        // Arrange
-        String ip = "127.0.0.1";
-        String port = "8080";
-        
-        ObjectNode expectedNode = new ObjectMapper().createObjectNode();
-        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
-        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(expectedNode));
-        
-        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
-        
-        // Act
-        ObjectNode result = nacosNamingMaintainerService.getResponsibleServerForClient(ip, port);
-        
-        // Assert
-        assertNotNull(result);
-        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+        assertEquals(ip, result.get(0).getAddress());
+        assertEquals("unknown", result.get(0).getAppName());
+        assertEquals("Nacos-Java-Client:v3.0.0", result.get(0).getAgent());
+        assertEquals("127.0.0.1:8080#true", result.get(0).getClientId());
     }
 }

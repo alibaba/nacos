@@ -114,7 +114,7 @@ class ClientInfoControllerV2Test extends BaseTest {
         List<ObjectNode> serviceList = Arrays.asList(objectNode);
         
         when(clientManager.getClient("test1")).thenReturn(connectionBasedClient);
-        when(clientServiceV2Impl.getPublishedServiceList("test1"))
+        when(clientServiceV2Impl.getPublishedServiceListAdapt("test1"))
                 .thenReturn(serviceList);
         
         Service service = Service.newService("test", "test", "test");

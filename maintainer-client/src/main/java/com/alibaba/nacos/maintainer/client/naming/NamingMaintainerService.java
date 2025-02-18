@@ -18,13 +18,12 @@ package com.alibaba.nacos.maintainer.client.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
-import com.alibaba.nacos.api.naming.pojo.maintainer.InstanceMetadataBatchResult;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo;
 import com.alibaba.nacos.maintainer.client.core.CoreMaintainerService;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -32,7 +31,8 @@ import java.util.Map;
  *
  * @author Nacos
  */
-public interface NamingMaintainerService extends CoreMaintainerService, ServiceMaintainerService {
+public interface NamingMaintainerService
+        extends CoreMaintainerService, ServiceMaintainerService, InstanceMaintainerService, NamingClientMaintainerService {
     
     /**
      * Get system metrics.
@@ -53,268 +53,53 @@ public interface NamingMaintainerService extends CoreMaintainerService, ServiceM
      */
     String setLogLevel(String logName, String logLevel) throws NacosException;
     
-    // ------------------------- Instance Operations -------------------------
-    
     /**
-     * Register a new instance.
+     * Update the health status of a persistent instance.
      *
-     * @param namespaceId the namespace ID
-     * @param groupName   the group name
-     * @param serviceName the service name
-     * @param clusterName the cluster name
-     * @param ip          the IP address of the instance
-     * @param port        the port of the instance
-     * @param weight      the weight of the instance
-     * @param healthy     whether the instance is healthy
-     * @param enabled     whether the instance is enabled
-     * @param ephemeral   whether the instance is ephemeral
-     * @param metadata    the metadata of the instance
+     * <p>
+     *     This API is designed to work with the persistent instance which don't need to auto-check and maintainer by admin
+     *     to change the health status.
+     *     So This API works at following several condition:
+     *     <ul>
+     *         <li>1. instance should be persistent instance</li>
+     *         <li>2. health checker for cluster of this instance should be `NONE` </li>
+     *     </ul>
+     * </p>
+     * <p>
+     *     How to change the health checker for cluster: see {@link #updateCluster(Service, ClusterInfo)}.
+     * </p>
+     *
+     * @param service  service need to be updated, {@link Service#getNamespaceId()}, {@link Service#getGroupName()}
+     *                 and {@link Service#getName()} are required.
+     *                 {@link Service#isEphemeral()} must be `false`.
+     * @param instance instance need to be updated, {@link Instance#getIp()}, {@link Instance#getPort()}
+     *                 and {@link Instance#getClusterName()} are required.
+     *                 {@link Instance#isEphemeral()} must be `false`.
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
-    String registerInstance(String namespaceId, String groupName, String serviceName, String clusterName, String ip,
-            int port, String weight, boolean healthy, boolean enabled, String ephemeral, String metadata)
-            throws NacosException;
+    String updateInstanceHealthStatus(Service service, Instance instance) throws NacosException;
     
     /**
-     * Deregister an instance.
-     *
-     * @param namespaceId the namespace ID
-     * @param groupName   the group name
-     * @param serviceName the service name
-     * @param clusterName the cluster name
-     * @param ip          the IP address of the instance
-     * @param port        the port of the instance
-     * @param weight      the weight of the instance
-     * @param healthy     whether the instance is healthy
-     * @param enabled     whether the instance is enabled
-     * @param ephemeral   whether the instance is ephemeral
-     * @param metadata    the metadata of the instance
-     * @return the result of the operation
-     * @throws NacosException if an error occurs
-     */
-    String deregisterInstance(String namespaceId, String groupName, String serviceName, String clusterName, String ip,
-            int port, String weight, boolean healthy, boolean enabled, String ephemeral, String metadata)
-            throws NacosException;
-    
-    /**
-     * Update an existing instance.
-     *
-     * @param namespaceId the namespace ID
-     * @param groupName   the group name
-     * @param serviceName the service name
-     * @param clusterName the cluster name
-     * @param ip          the IP address of the instance
-     * @param port        the port of the instance
-     * @param weight      the updated weight
-     * @param healthy     whether the instance is healthy
-     * @param enabled     whether the instance is enabled
-     * @param ephemeral   whether the instance is ephemeral
-     * @param metadata    the updated metadata
-     * @return the result of the operation
-     * @throws NacosException if an error occurs
-     */
-    String updateInstance(String namespaceId, String groupName, String serviceName, String clusterName, String ip,
-            int port, double weight, boolean healthy, boolean enabled, boolean ephemeral, String metadata)
-            throws NacosException;
-    
-    /**
-     * Batch update instance metadata.
-     *
-     * @param namespaceId     the namespace ID
-     * @param groupName       the group name
-     * @param serviceName     the service name
-     * @param instance        the instance information
-     * @param metadata        the metadata to update
-     * @param consistencyType the consistency type
-     * @return the result of the operation
-     * @throws NacosException if an error occurs
-     */
-    InstanceMetadataBatchResult batchUpdateInstanceMetadata(String namespaceId, String groupName, String serviceName,
-            String instance, Map<String, String> metadata, String consistencyType) throws NacosException;
-    
-    /**
-     * Batch delete instance metadata.
-     *
-     * @param namespaceId     the namespace ID
-     * @param groupName       the group name
-     * @param serviceName     the service name
-     * @param instance        the instance information
-     * @param metadata        the metadata to delete
-     * @param consistencyType the consistency type
-     * @return the result of the operation
-     * @throws NacosException if an error occurs
-     */
-    InstanceMetadataBatchResult batchDeleteInstanceMetadata(String namespaceId, String groupName, String serviceName,
-            String instance, Map<String, String> metadata, String consistencyType) throws NacosException;
-    
-    /**
-     * Partially update an instance.
-     *
-     * @param namespaceId the namespace ID
-     * @param serviceName the service name
-     * @param clusterName the cluster name
-     * @param ip          the IP address of the instance
-     * @param port        the port of the instance
-     * @param weight      the updated weight
-     * @param enabled     whether the instance is enabled
-     * @param metadata    the updated metadata
-     * @return the result of the operation
-     * @throws NacosException if an error occurs
-     */
-    String partialUpdateInstance(String namespaceId, String serviceName, String clusterName, int ip, int port,
-            double weight, boolean enabled, String metadata) throws NacosException;
-    
-    /**
-     * List instances of a service.
-     *
-     * @param namespaceId the namespace ID
-     * @param groupName   the group name
-     * @param serviceName the service name
-     * @param clusterName the cluster name
-     * @param healthyOnly whether to list only healthy instances
-     * @return the list of instances
-     * @throws NacosException if an error occurs
-     */
-    List<Instance> listInstances(String namespaceId, String groupName, String serviceName, String clusterName,
-            boolean healthyOnly) throws NacosException;
-    
-    /**
-     * Get detailed information of an instance.
-     *
-     * @param namespaceId the namespace ID
-     * @param groupName   the group name
-     * @param serviceName the service name
-     * @param clusterName the cluster name
-     * @param ip          the IP address of the instance
-     * @param port        the port of the instance
-     * @return the instance detail information
-     * @throws NacosException if an error occurs
-     */
-    Instance getInstanceDetail(String namespaceId, String groupName, String serviceName, String clusterName, String ip,
-            int port) throws NacosException;
-    
-    // ------------------------- Health Check Operations -------------------------
-    
-    /**
-     * Update the health status of an instance.
-     *
-     * @param namespaceId      the namespace ID
-     * @param groupName        the group name
-     * @param serviceName      the service name
-     * @param clusterName      the cluster name
-     * @param metadata         the metadata of the instance
-     * @param ephemeral        whether the instance is ephemeral
-     * @param protectThreshold the protect threshold
-     * @param selector         the selector for the instance
-     * @return the result of the operation
-     * @throws NacosException if an error occurs
-     */
-    String updateInstanceHealthStatus(String namespaceId, String groupName, String serviceName, String clusterName,
-            String metadata, boolean ephemeral, float protectThreshold, String selector) throws NacosException;
-    
-    /**
-     * Get all health checkers.
+     * Get all health checkers for current nacos cluster.
      *
      * @return a map of health checkers
      * @throws NacosException if an error occurs
      */
     Map<String, AbstractHealthChecker> getHealthCheckers() throws NacosException;
     
-    // ------------------------- Cluster Operations -------------------------
-    
     /**
-     * Update cluster configuration.
+     * Update cluster metadata in target service.
      *
-     * @param namespaceId           the namespace ID
-     * @param groupName             the group name
-     * @param serviceName           the service name
-     * @param clusterName           the cluster name
-     * @param checkPort             the health check port
-     * @param useInstancePort4Check whether to use the instance port for health check
-     * @param healthChecker         the health checker configuration
-     * @param metadata              the metadata of the cluster
+     * @param service   the service of updated cluster
+     * @param cluster   the new cluster metadata. {@link ClusterInfo#getClusterName()} is required and can't be changed,
+     *                  used to locate which cluster need to be updated.
+     *                  {@link ClusterInfo#getHealthChecker()} is from {@link #getHealthCheckers()}.
+     *                  {@link ClusterInfo#getMetadata()}, {@link ClusterInfo#getHealthyCheckPort()}
+     *                  and {@link ClusterInfo#isUseInstancePortForCheck()} will full replace server side.
+     *                  {@link ClusterInfo#getHosts()} will be ignored in this API.
      * @return the result of the operation
      * @throws NacosException if an error occurs
      */
-    String updateCluster(String namespaceId, String groupName, String serviceName, String clusterName,
-            Integer checkPort, Boolean useInstancePort4Check, String healthChecker, Map<String, String> metadata)
-            throws NacosException;
-    
-    // ------------------------- Client Operations -------------------------
-    
-    /**
-     * Get the list of all clients.
-     *
-     * @return the list of client IDs
-     * @throws NacosException if an error occurs
-     */
-    List<String> getClientList() throws NacosException;
-    
-    /**
-     * Get detailed information of a client.
-     *
-     * @param clientId the client ID
-     * @return the client detail information
-     * @throws NacosException if an error occurs
-     */
-    ObjectNode getClientDetail(String clientId) throws NacosException;
-    
-    /**
-     * Get the list of services published by a client.
-     *
-     * @param clientId the client ID
-     * @return the list of published services
-     * @throws NacosException if an error occurs
-     */
-    List<ObjectNode> getPublishedServiceList(String clientId) throws NacosException;
-    
-    /**
-     * Get the list of services subscribed by a client.
-     *
-     * @param clientId the client ID
-     * @return the list of subscribed services
-     * @throws NacosException if an error occurs
-     */
-    List<ObjectNode> getSubscribeServiceList(String clientId) throws NacosException;
-    
-    /**
-     * Get the list of clients that published a specific service.
-     *
-     * @param namespaceId the namespace ID
-     * @param groupName   the group name
-     * @param serviceName the service name
-     * @param ephemeral   whether the service is ephemeral
-     * @param ip          the IP address of the client
-     * @param port        the port of the client
-     * @return the list of clients
-     * @throws NacosException if an error occurs
-     */
-    List<ObjectNode> getPublishedClientList(String namespaceId, String groupName, String serviceName, boolean ephemeral,
-            String ip, Integer port) throws NacosException;
-    
-    /**
-     * Get the list of clients that subscribed to a specific service.
-     *
-     * @param namespaceId the namespace ID
-     * @param groupName   the group name
-     * @param serviceName the service name
-     * @param ephemeral   whether the service is ephemeral
-     * @param ip          the IP address of the client
-     * @param port        the port of the client
-     * @return the list of clients
-     * @throws NacosException if an error occurs
-     */
-    List<ObjectNode> getSubscribeClientList(String namespaceId, String groupName, String serviceName, boolean ephemeral,
-            String ip, Integer port) throws NacosException;
-    
-    /**
-     * Get the responsible server for a client based on its IP and port.
-     *
-     * @param ip   the IP address of the client
-     * @param port the port of the client
-     * @return the responsible server information
-     * @throws NacosException if an error occurs
-     */
-    ObjectNode getResponsibleServerForClient(String ip, String port) throws NacosException;
+    String updateCluster(Service service, ClusterInfo cluster) throws NacosException;
 }

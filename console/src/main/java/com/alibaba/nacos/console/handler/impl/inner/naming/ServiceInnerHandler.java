@@ -26,7 +26,6 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.trace.event.naming.DeregisterServiceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.RegisterServiceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.UpdateServiceTraceEvent;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
 import com.alibaba.nacos.console.handler.naming.ServiceHandler;
 import com.alibaba.nacos.naming.core.CatalogServiceV2Impl;
@@ -121,8 +120,7 @@ public class ServiceInnerHandler implements ServiceHandler {
         if (withInstances) {
             return catalogServiceV2.pageListServiceDetail(namespaceId, groupName, serviceName, pageNo, pageSize);
         }
-        return catalogServiceV2.pageListService(namespaceId, groupName, serviceName, pageNo, pageSize,
-                StringUtils.EMPTY, ignoreEmptyService);
+        return catalogServiceV2.listService(namespaceId, groupName, serviceName, pageNo, pageSize, ignoreEmptyService);
     }
     
     @Override

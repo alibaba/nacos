@@ -19,10 +19,10 @@ package com.alibaba.nacos.console.handler.impl.remote.naming;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.naming.pojo.Service;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
 import com.alibaba.nacos.console.handler.naming.ServiceHandler;
@@ -70,9 +70,8 @@ public class ServiceRemoteHandler implements ServiceHandler {
     }
     
     @Override
-    public Page<SubscriberInfo> getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName, String groupName,
-            boolean aggregation) throws Exception {
-        // TODO use an specified Object replace
+    public Page<SubscriberInfo> getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName,
+            String groupName, boolean aggregation) throws Exception {
         return clientHolder.getNamingMaintainerService()
                 .getSubscribers(namespaceId, groupName, serviceName, pageNo, pageSize, aggregation);
     }
@@ -82,10 +81,10 @@ public class ServiceRemoteHandler implements ServiceHandler {
             String serviceName, String groupName, boolean ignoreEmptyService) throws NacosException {
         if (withInstances) {
             return clientHolder.getNamingMaintainerService()
-                    .listServicesWithDetail(namespaceId, groupName, serviceName, ignoreEmptyService, pageNo, pageSize);
+                    .listServicesWithDetail(namespaceId, groupName, serviceName, pageNo, pageSize);
         }
         return clientHolder.getNamingMaintainerService()
-                .listServices(namespaceId, groupName, serviceName, pageNo, pageSize);
+                .listServices(namespaceId, groupName, serviceName, ignoreEmptyService, pageNo, pageSize);
     }
     
     @Override
@@ -99,10 +98,17 @@ public class ServiceRemoteHandler implements ServiceHandler {
             ClusterMetadata clusterMetadata) throws Exception {
         String groupName = NamingUtils.getGroupName(serviceName);
         String serviceNameWithoutGroup = NamingUtils.getServiceName(serviceName);
-        clientHolder.getNamingMaintainerService()
-                .updateCluster(namespaceId, groupName, serviceNameWithoutGroup, clusterName,
-                        clusterMetadata.getHealthyCheckPort(), clusterMetadata.isUseInstancePortForCheck(),
-                        JacksonUtils.toJson(clusterMetadata.getHealthChecker()), clusterMetadata.getExtendData());
+        Service service = new Service();
+        service.setNamespaceId(namespaceId);
+        service.setGroupName(groupName);
+        service.setName(serviceNameWithoutGroup);
+        ClusterInfo clusterInfo = new ClusterInfo();
+        clusterInfo.setClusterName(clusterName);
+        clusterInfo.setHealthChecker(clusterMetadata.getHealthChecker());
+        clusterInfo.setMetadata(clusterMetadata.getExtendData());
+        clusterInfo.setUseInstancePortForCheck(clusterMetadata.isUseInstancePortForCheck());
+        clusterInfo.setHealthyCheckPort(clusterMetadata.getHealthyCheckPort());
+        clientHolder.getNamingMaintainerService().updateCluster(service, clusterInfo);
     }
     
     private Service buildService(ServiceForm serviceForm, ServiceMetadata metadata) {

@@ -17,31 +17,41 @@
 package com.alibaba.nacos.maintainer.client.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClientPublisherInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClientServiceInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClientSubscriberInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClientSummaryInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.InstanceMetadataBatchResult;
 import com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceView;
 import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
-import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.core.AbstractCoreMaintainerService;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
-import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
 import com.alibaba.nacos.maintainer.client.utils.RequestUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 
 /**
@@ -50,6 +60,8 @@ import java.util.Properties;
  * @author Nacos
  */
 public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerService implements NamingMaintainerService {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(NacosNamingMaintainerServiceImpl.class);
     
     public NacosNamingMaintainerServiceImpl(Properties properties) throws NacosException {
         super(properties);
@@ -68,40 +80,6 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public String updateService(String serviceName, Map<String, String> newMetadata, float newProtectThreshold,
-            Selector newSelector) throws NacosException {
-        return updateService(ParamUtil.getDefaultGroupName(), serviceName, newMetadata, newProtectThreshold,
-                newSelector);
-    }
-    
-    @Override
-    public String updateService(String groupName, String serviceName, Map<String, String> newMetadata,
-            float newProtectThreshold, Selector newSelector) throws NacosException {
-        return updateService(ParamUtil.getDefaultNamespaceId(), groupName, serviceName, newMetadata,
-                newProtectThreshold, newSelector);
-    }
-    
-    @Override
-    public String updateService(String namespaceId, String groupName, String serviceName,
-            Map<String, String> newMetadata, float newProtectThreshold, Selector newSelector) throws NacosException {
-        return updateService(namespaceId, groupName, serviceName, false, newMetadata, newProtectThreshold, newSelector);
-    }
-    
-    @Override
-    public String updateService(String namespaceId, String groupName, String serviceName, boolean ephemeral,
-            Map<String, String> newMetadata, float newProtectThreshold, Selector newSelector) throws NacosException {
-        Service service = new Service();
-        service.setNamespaceId(namespaceId);
-        service.setGroupName(groupName);
-        service.setName(serviceName);
-        service.setEphemeral(ephemeral);
-        service.setProtectThreshold(newProtectThreshold);
-        service.setMetadata(newMetadata);
-        service.setSelector(newSelector);
-        return updateService(service);
-    }
-    
-    @Override
     public String updateService(Service service) throws NacosException {
         service.validate();
         Map<String, String> params = RequestUtil.toParameters(service);
@@ -111,25 +89,6 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Result<String> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {
         });
         return result.getData();
-    }
-    
-    @Override
-    public String removeService(String serviceName) throws NacosException {
-        return removeService(ParamUtil.getDefaultGroupName(), serviceName);
-    }
-    
-    @Override
-    public String removeService(String groupName, String serviceName) throws NacosException {
-        return removeService(ParamUtil.getDefaultNamespaceId(), groupName, serviceName);
-    }
-    
-    @Override
-    public String removeService(String namespaceId, String groupName, String serviceName) throws NacosException {
-        Service service = new Service();
-        service.setNamespaceId(namespaceId);
-        service.setGroupName(groupName);
-        service.setName(serviceName);
-        return removeService(service);
     }
     
     @Override
@@ -159,9 +118,9 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     
     @Override
     public List<ServiceView> listServices(String namespaceId, String groupNameParam, String serviceNameParam,
-            int pageNo, int pageSize) throws NacosException {
+            boolean ignoreEmptyService, int pageNo, int pageSize) throws NacosException {
         HttpRestResult<String> httpRestResult = doListServices(namespaceId, groupNameParam, serviceNameParam, false,
-                false, pageNo, pageSize);
+                ignoreEmptyService, pageNo, pageSize);
         Result<List<ServiceView>> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<List<ServiceView>>>() {
                 });
@@ -170,9 +129,9 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     
     @Override
     public List<ServiceDetailInfo> listServicesWithDetail(String namespaceId, String groupNameParam,
-            String serviceNameParam, boolean ignoreEmptyService, int pageNo, int pageSize) throws NacosException {
+            String serviceNameParam, int pageNo, int pageSize) throws NacosException {
         HttpRestResult<String> httpRestResult = doListServices(namespaceId, groupNameParam, serviceNameParam, true,
-                ignoreEmptyService, pageNo, pageSize);
+                false, pageNo, pageSize);
         Result<List<ServiceDetailInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<List<ServiceDetailInfo>>>() {
                 });
@@ -252,22 +211,21 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public String registerInstance(String namespaceId, String groupName, String serviceName, String clusterName,
-            String ip, int port, String weight, boolean healthy, boolean enabled, String ephemeral, String metadata)
-            throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("namespaceId", namespaceId);
-        params.put("groupName", groupName);
-        params.put("serviceName", serviceName);
-        params.put("clusterName", clusterName);
-        params.put("ip", ip);
-        params.put("port", String.valueOf(port));
-        params.put("weight", weight);
-        params.put("healthy", String.valueOf(healthy));
-        params.put("enabled", String.valueOf(enabled));
-        params.put("ephemeral", ephemeral);
-        params.put("metadata", metadata);
-        
+    public String registerInstance(Service service, Instance instance) throws NacosException {
+        service.validate();
+        instance.validate();
+        checkEphemeral(service, instance);
+        if (instance.isEphemeral()) {
+            LOGGER.warn(
+                    "Using maintainer client to register an ephemeral instance, the instance will be auto-deregister after {} milliseconds.",
+                    instance.getIpDeleteTimeout());
+            LOGGER.warn(
+                    "Strongly recommended to use the nacos-client for ephemeral instance registration to avoid auto-deregister.");
+            LOGGER.warn("If wanted to register ephemeral instance with maintainer client, "
+                            + "please set `{}` in instance metadata to delay auto-deregister time.",
+                    PreservedMetadataKeys.IP_DELETE_TIMEOUT);
+        }
+        Map<String, String> params = RequestUtil.toParameters(service, instance);
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
                 .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
@@ -277,22 +235,19 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public String deregisterInstance(String namespaceId, String groupName, String serviceName, String clusterName,
-            String ip, int port, String weight, boolean healthy, boolean enabled, String ephemeral, String metadata)
-            throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("namespaceId", namespaceId);
-        params.put("groupName", groupName);
-        params.put("serviceName", serviceName);
-        params.put("clusterName", clusterName);
-        params.put("ip", ip);
-        params.put("port", String.valueOf(port));
-        params.put("weight", weight);
-        params.put("healthy", String.valueOf(healthy));
-        params.put("enabled", String.valueOf(enabled));
-        params.put("ephemeral", ephemeral);
-        params.put("metadata", metadata);
-        
+    public String deregisterInstance(Service service, Instance instance) throws NacosException {
+        service.validate();
+        instance.validate();
+        checkEphemeral(service, instance);
+        if (instance.isEphemeral()) {
+            LOGGER.warn("De-registering an ephemeral instance from service {}@@{}.", service.getGroupName(),
+                    service.getName());
+            LOGGER.warn(
+                    "De-registering an ephemeral instance might fail due to the nacos-client registered this instance is keeping connection");
+            LOGGER.warn(
+                    "If you want to de-register this ephemeral instance, please use the nacos-client which registered this instance.");
+        }
+        Map<String, String> params = RequestUtil.toParameters(service, instance);
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.DELETE)
                 .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
@@ -302,22 +257,11 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public String updateInstance(String namespaceId, String groupName, String serviceName, String clusterName,
-            String ip, int port, double weight, boolean healthy, boolean enabled, boolean ephemeral, String metadata)
-            throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("namespaceId", namespaceId);
-        params.put("groupName", groupName);
-        params.put("serviceName", serviceName);
-        params.put("clusterName", clusterName);
-        params.put("ip", ip);
-        params.put("port", String.valueOf(port));
-        params.put("weight", String.valueOf(weight));
-        params.put("healthy", String.valueOf(healthy));
-        params.put("enabled", String.valueOf(enabled));
-        params.put("ephemeral", String.valueOf(ephemeral));
-        params.put("metadata", metadata);
-        
+    public String updateInstance(Service service, Instance instance) throws NacosException {
+        service.validate();
+        instance.validate();
+        checkEphemeral(service, instance);
+        Map<String, String> params = RequestUtil.toParameters(service, instance);
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.PUT)
                 .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
@@ -327,17 +271,21 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public InstanceMetadataBatchResult batchUpdateInstanceMetadata(String namespaceId, String groupName,
-            String serviceName, String instance, Map<String, String> metadata, String consistencyType)
-            throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("namespaceId", namespaceId);
-        params.put("groupName", groupName);
-        params.put("serviceName", serviceName);
-        params.put("instance", instance);
-        params.put("consistencyType", consistencyType);
-        params.put("metadata", JacksonUtils.toJson(metadata));
-        
+    public InstanceMetadataBatchResult batchUpdateInstanceMetadata(Service service, List<Instance> instances,
+            Map<String, String> newMetadata) throws NacosException {
+        service.validate();
+        if (Objects.isNull(newMetadata)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Parameter `newMetadata` can't be null");
+        }
+        if (instances.isEmpty()) {
+            return new InstanceMetadataBatchResult(Collections.emptyList());
+        }
+        for (Instance each : instances) {
+            each.validate();
+        }
+        checkEphemeral(service, instances.get(0));
+        Map<String, String> params = RequestUtil.toParameters(service, instances, newMetadata);
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.PUT)
                 .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH + "/metadata/batch").setParamValue(params)
                 .build();
@@ -349,17 +297,21 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public InstanceMetadataBatchResult batchDeleteInstanceMetadata(String namespaceId, String groupName,
-            String serviceName, String instance, Map<String, String> metadata, String consistencyType)
-            throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("namespaceId", namespaceId);
-        params.put("groupName", groupName);
-        params.put("serviceName", serviceName);
-        params.put("instance", instance);
-        params.put("consistencyType", consistencyType);
-        params.put("metadata", JacksonUtils.toJson(metadata));
-        
+    public InstanceMetadataBatchResult batchDeleteInstanceMetadata(Service service, List<Instance> instances,
+            Map<String, String> newMetadata) throws NacosException {
+        service.validate();
+        if (Objects.isNull(newMetadata)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Parameter `newMetadata` can't be null");
+        }
+        if (instances.isEmpty() || newMetadata.isEmpty()) {
+            return new InstanceMetadataBatchResult(Collections.emptyList());
+        }
+        for (Instance each : instances) {
+            each.validate();
+        }
+        checkEphemeral(service, instances.get(0));
+        Map<String, String> params = RequestUtil.toParameters(service, instances, newMetadata);
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.DELETE)
                 .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH + "/metadata/batch").setParamValue(params)
                 .build();
@@ -371,18 +323,11 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public String partialUpdateInstance(String namespaceId, String serviceName, String clusterName, int ip, int port,
-            double weight, boolean enabled, String metadata) throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("namespaceId", namespaceId);
-        params.put("serviceName", serviceName);
-        params.put("clusterName", clusterName);
-        params.put("ip", String.valueOf(ip));
-        params.put("port", String.valueOf(port));
-        params.put("weight", String.valueOf(weight));
-        params.put("enabled", String.valueOf(enabled));
-        params.put("metadata", metadata);
-        
+    public String partialUpdateInstance(Service service, Instance instance) throws NacosException {
+        service.validate();
+        instance.validate();
+        checkEphemeral(service, instance);
+        Map<String, String> params = RequestUtil.toParameters(service, instance);
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.PUT)
                 .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH + "/partial").setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
@@ -392,15 +337,18 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public List<Instance> listInstances(String namespaceId, String groupName, String serviceName, String clusterName,
-            boolean healthyOnly) throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("namespaceId", namespaceId);
-        params.put("groupName", groupName);
-        params.put("serviceName", serviceName);
+    public List<Instance> listInstances(Service service, String clusterName, boolean healthyOnly)
+            throws NacosException {
+        service.validate();
+        if (StringUtils.isBlank(clusterName)) {
+            clusterName = com.alibaba.nacos.api.common.Constants.DEFAULT_CLUSTER_NAME;
+        }
+        Map<String, String> params = new HashMap<>(5);
+        params.put("namespaceId", service.getNamespaceId());
+        params.put("groupName", service.getGroupName());
+        params.put("serviceName", service.getName());
         params.put("clusterName", clusterName);
         params.put("healthyOnly", String.valueOf(healthyOnly));
-        
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH + "/list").setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
@@ -411,16 +359,10 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public Instance getInstanceDetail(String namespaceId, String groupName, String serviceName, String clusterName,
-            String ip, int port) throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("namespaceId", namespaceId);
-        params.put("groupName", groupName);
-        params.put("serviceName", serviceName);
-        params.put("clusterName", clusterName);
-        params.put("ip", ip);
-        params.put("port", String.valueOf(port));
-        
+    public Instance getInstanceDetail(Service service, Instance instance) throws NacosException {
+        service.validate();
+        instance.validate();
+        Map<String, String> params = RequestUtil.toParameters(service, instance);
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.NAMING_INSTANCE_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
@@ -429,20 +371,23 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
         return result.getData();
     }
     
+    private void checkEphemeral(Service service, Instance instance) {
+        if (service.isEphemeral() != instance.isEphemeral()) {
+            LOGGER.warn(
+                    "De-registering instance ephemeral parameters conflict, service: {}, instance: {}, will use instance value.",
+                    service.isEphemeral(), instance.isEphemeral());
+        }
+    }
+    
     @Override
-    public String updateInstanceHealthStatus(String namespaceId, String groupName, String serviceName,
-            String clusterName, String metadata, boolean ephemeral, float protectThreshold, String selector)
-            throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("namespaceId", namespaceId);
-        params.put("groupName", groupName);
-        params.put("serviceName", serviceName);
-        params.put("clusterName", clusterName);
-        params.put("metadata", metadata);
-        params.put("ephemeral", String.valueOf(ephemeral));
-        params.put("protectThreshold", String.valueOf(protectThreshold));
-        params.put("selector", selector);
-        
+    public String updateInstanceHealthStatus(Service service, Instance instance) throws NacosException {
+        service.validate();
+        instance.validate();
+        Map<String, String> params = RequestUtil.toParameters(service, instance);
+        if (!service.isEphemeral() || !instance.isEphemeral()) {
+            LOGGER.warn("Only persistent instance with NONE health checker can be updated healthy statues.");
+            params.put("ephemeral", String.valueOf(Boolean.FALSE));
+        }
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.PUT)
                 .setPath(Constants.AdminApiPath.NAMING_HEALTH_ADMIN_PATH + "/instance").setParamValue(params).build();
         
@@ -462,19 +407,10 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public String updateCluster(String namespaceId, String groupName, String serviceName, String clusterName,
-            Integer checkPort, Boolean useInstancePort4Check, String healthChecker, Map<String, String> metadata)
-            throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("namespaceId", namespaceId);
-        params.put("groupName", groupName);
-        params.put("serviceName", serviceName);
-        params.put("clusterName", clusterName);
-        params.put("checkPort", String.valueOf(checkPort));
-        params.put("useInstancePort4Check", String.valueOf(useInstancePort4Check));
-        params.put("healthChecker", healthChecker);
-        params.put("metadata", JacksonUtils.toJson(metadata));
-        
+    public String updateCluster(Service service, ClusterInfo cluster) throws NacosException {
+        service.validate();
+        cluster.validate();
+        Map<String, String> params = RequestUtil.toParameters(service, cluster);
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.PUT)
                 .setPath(Constants.AdminApiPath.NAMING_CLUSTER_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
@@ -493,18 +429,20 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public ObjectNode getClientDetail(String clientId) throws NacosException {
+    public ClientSummaryInfo getClientDetail(String clientId) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("clientId", clientId);
-        
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.NAMING_CLIENT_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        return JacksonUtils.toObj(httpRestResult.getData(), ObjectNode.class);
+        Result<ClientSummaryInfo> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<ClientSummaryInfo>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public List<ObjectNode> getPublishedServiceList(String clientId) throws NacosException {
+    public List<ClientServiceInfo> getPublishedServiceList(String clientId) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("clientId", clientId);
         
@@ -512,12 +450,14 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
                 .setPath(Constants.AdminApiPath.NAMING_CLIENT_ADMIN_PATH + "/publish/list").setParamValue(params)
                 .build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        return JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<List<ObjectNode>>() {
-        });
+        Result<List<ClientServiceInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<List<ClientServiceInfo>>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public List<ObjectNode> getSubscribeServiceList(String clientId) throws NacosException {
+    public List<ClientServiceInfo> getSubscribeServiceList(String clientId) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("clientId", clientId);
         
@@ -525,18 +465,19 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
                 .setPath(Constants.AdminApiPath.NAMING_CLIENT_ADMIN_PATH + "/subscribe/list").setParamValue(params)
                 .build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        return JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<List<ObjectNode>>() {
-        });
+        Result<List<ClientServiceInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<List<ClientServiceInfo>>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public List<ObjectNode> getPublishedClientList(String namespaceId, String groupName, String serviceName,
-            boolean ephemeral, String ip, Integer port) throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
+    public List<ClientPublisherInfo> getPublishedClientList(String namespaceId, String groupName, String serviceName,
+            String ip, Integer port) throws NacosException {
+        Map<String, String> params = new HashMap<>(5);
         params.put("namespaceId", namespaceId);
         params.put("groupName", groupName);
         params.put("serviceName", serviceName);
-        params.put("ephemeral", String.valueOf(ephemeral));
         params.put("ip", ip);
         params.put("port", String.valueOf(port));
         
@@ -544,18 +485,19 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
                 .setPath(Constants.AdminApiPath.NAMING_CLIENT_ADMIN_PATH + "/service/publisher/list")
                 .setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        return JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<List<ObjectNode>>() {
-        });
+        Result<List<ClientPublisherInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<List<ClientPublisherInfo>>>() {
+                });
+        return result.getData();
     }
     
     @Override
-    public List<ObjectNode> getSubscribeClientList(String namespaceId, String groupName, String serviceName,
-            boolean ephemeral, String ip, Integer port) throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
+    public List<ClientSubscriberInfo> getSubscribeClientList(String namespaceId, String groupName, String serviceName,
+            String ip, Integer port) throws NacosException {
+        Map<String, String> params = new HashMap<>(5);
         params.put("namespaceId", namespaceId);
         params.put("groupName", groupName);
         params.put("serviceName", serviceName);
-        params.put("ephemeral", String.valueOf(ephemeral));
         params.put("ip", ip);
         params.put("port", String.valueOf(port));
         
@@ -563,19 +505,9 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
                 .setPath(Constants.AdminApiPath.NAMING_CLIENT_ADMIN_PATH + "/service/subscriber/list")
                 .setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        return JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<List<ObjectNode>>() {
-        });
-    }
-    
-    @Override
-    public ObjectNode getResponsibleServerForClient(String ip, String port) throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("ip", ip);
-        params.put("port", port);
-        
-        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.NAMING_CLIENT_ADMIN_PATH + "/distro").setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        return JacksonUtils.toObj(httpRestResult.getData(), ObjectNode.class);
+        Result<List<ClientSubscriberInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<List<ClientSubscriberInfo>>>() {
+                });
+        return result.getData();
     }
 }

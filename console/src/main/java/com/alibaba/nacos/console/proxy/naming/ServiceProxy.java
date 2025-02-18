@@ -22,10 +22,13 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceView;
 import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.console.handler.naming.ServiceHandler;
+import com.alibaba.nacos.naming.constants.FieldsConstants;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.model.form.ServiceForm;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -104,8 +107,8 @@ public class ServiceProxy {
      * @return a JSON node containing the list of subscribers
      * @throws Exception if an error occurs during fetching subscribers
      */
-    public Page<SubscriberInfo> getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName, String groupName,
-            boolean aggregation) throws Exception {
+    public Page<SubscriberInfo> getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName,
+            String groupName, boolean aggregation) throws Exception {
         return serviceHandler.getSubscribers(pageNo, pageSize, namespaceId, serviceName, groupName, aggregation);
     }
     
@@ -124,8 +127,17 @@ public class ServiceProxy {
      */
     public Object getServiceList(boolean withInstances, String namespaceId, int pageNo, int pageSize,
             String serviceName, String groupName, boolean hasIpCount) throws NacosException {
-        return serviceHandler.getServiceList(withInstances, namespaceId, pageNo, pageSize, serviceName, groupName,
-                hasIpCount);
+        if (withInstances) {
+            return serviceHandler.getServiceList(withInstances, namespaceId, pageNo, pageSize, serviceName, groupName,
+                    hasIpCount);
+        }
+        // TODO use result directly after console ui changed and return page object
+        List<ServiceView> views = (List<ServiceView>) serviceHandler.getServiceList(withInstances, namespaceId, pageNo,
+                pageSize, serviceName, groupName, hasIpCount);
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+        result.put(FieldsConstants.COUNT, views.size());
+        result.set(FieldsConstants.SERVICE_LIST, JacksonUtils.transferToJsonNode(views));
+        return result;
     }
     
     /**

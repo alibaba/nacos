@@ -57,10 +57,10 @@ public class InstanceInnerHandler implements InstanceHandler {
     }
     
     @Override
-    public ObjectNode listInstances(String namespaceId, String serviceNameWithoutGroup, String groupName, int page,
-            int pageSize) {
-        List<? extends Instance> instances = catalogServiceV2.listAllInstances(namespaceId, groupName,
-                serviceNameWithoutGroup);
+    public ObjectNode listInstances(String namespaceId, String serviceNameWithoutGroup, String groupName, String clusterName, int page,
+            int pageSize) throws NacosException {
+        List<? extends Instance> instances = catalogServiceV2.listInstances(namespaceId, groupName,
+                serviceNameWithoutGroup, clusterName);
         List<? extends Instance> resultInstances = PageUtil.subPageList(instances, page, pageSize);
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         result.replace("instances", JacksonUtils.transferToJsonNode(resultInstances));

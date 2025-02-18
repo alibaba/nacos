@@ -22,8 +22,10 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceView;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.utils.PageUtil;
 import com.alibaba.nacos.naming.constants.FieldsConstants;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
@@ -31,7 +33,6 @@ import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceView;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.stereotype.Component;
@@ -157,6 +158,30 @@ public class CatalogServiceV2Impl implements CatalogService {
         }
         result.set(FieldsConstants.SERVICE_LIST, JacksonUtils.transferToJsonNode(serviceViews));
         return result;
+    }
+    
+    @Override
+    public List<ServiceView> listService(String namespaceId, String groupName, String serviceName, int pageNo,
+            int pageSize, boolean ignoreEmptyService) throws NacosException {
+        List<ServiceView> serviceViews = new LinkedList<>();
+        Collection<Service> services = patternServices(namespaceId, groupName, serviceName);
+        if (ignoreEmptyService) {
+            services = services.stream().filter(each -> 0 != serviceStorage.getData(each).ipCount())
+                    .collect(Collectors.toList());
+        }
+        services = PageUtil.subPageList(services.stream().toList(), pageNo, pageSize);
+        for (Service each : services) {
+            ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(each).orElseGet(ServiceMetadata::new);
+            ServiceView serviceView = new ServiceView();
+            serviceView.setName(each.getName());
+            serviceView.setGroupName(each.getGroup());
+            serviceView.setClusterCount(serviceStorage.getClusters(each).size());
+            serviceView.setIpCount(serviceStorage.getData(each).ipCount());
+            serviceView.setHealthyInstanceCount(countHealthyInstance(serviceStorage.getData(each)));
+            serviceView.setTriggerFlag(isProtectThreshold(serviceView, serviceMetadata) ? "true" : "false");
+            serviceViews.add(serviceView);
+        }
+        return serviceViews;
     }
     
     private int countHealthyInstance(ServiceInfo data) {

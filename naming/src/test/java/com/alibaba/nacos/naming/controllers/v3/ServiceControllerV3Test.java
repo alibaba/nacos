@@ -21,15 +21,14 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceView;
 import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.trace.event.naming.UpdateServiceTraceEvent;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.model.form.AggregationForm;
 import com.alibaba.nacos.core.model.form.PageForm;
-import com.alibaba.nacos.naming.constants.FieldsConstants;
 import com.alibaba.nacos.naming.core.CatalogServiceV2Impl;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
@@ -37,7 +36,6 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.model.form.ServiceForm;
 import com.alibaba.nacos.naming.model.form.ServiceListForm;
 import com.alibaba.nacos.naming.selector.SelectorManager;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -158,10 +156,10 @@ class ServiceControllerV3Test {
     
     @Test
     void testList() throws Exception {
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        result.put(FieldsConstants.COUNT, 1);
-        when(catalogServiceV2.pageListService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "serviceName", 1,
-                10, "", false)).thenReturn(result);
+        List<ServiceView> result = new LinkedList<>();
+        result.add(new ServiceView());
+        when(catalogServiceV2.listService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "serviceName", 1,
+                10, false)).thenReturn(result);
         ServiceListForm serviceListForm = new ServiceListForm();
         serviceListForm.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
         serviceListForm.setGroupNameParam(Constants.DEFAULT_GROUP);

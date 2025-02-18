@@ -32,7 +32,7 @@ import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.InstanceForm;
-import com.alibaba.nacos.naming.model.form.ServiceForm;
+import com.alibaba.nacos.naming.model.form.InstanceListForm;
 import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
@@ -68,19 +68,17 @@ public class ConsoleInstanceController {
     /**
      * List instances of special service.
      *
-     * @param serviceForm service form
+     * @param instanceForm instance list form
      * @param pageForm Page form
      * @return instances information
      */
     @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)
     @RequestMapping("/list")
-    public Result<ObjectNode> getInstanceList(ServiceForm serviceForm, PageForm pageForm) throws NacosException {
-        serviceForm.validate();
-        String namespaceId = serviceForm.getNamespaceId();
-        String groupName = serviceForm.getGroupName();
-        String serviceName = serviceForm.getServiceName();
+    public Result<ObjectNode> getInstanceList(InstanceListForm instanceForm, PageForm pageForm) throws NacosException {
+        instanceForm.validate();
         // TODO use Page + List<Instance> replace with console ui
-        ObjectNode result = instanceProxy.listInstances(namespaceId, serviceName, groupName, pageForm.getPageNo(),
+        ObjectNode result = instanceProxy.listInstances(instanceForm.getNamespaceId(), instanceForm.getServiceName(),
+                instanceForm.getGroupName(), instanceForm.getClusterName(), pageForm.getPageNo(),
                 pageForm.getPageSize());
         return Result.success(result);
     }

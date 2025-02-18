@@ -49,15 +49,17 @@ public class InstanceProxy {
      * @param namespaceId             the namespace ID
      * @param serviceNameWithoutGroup the service name without group
      * @param groupName               the group name
+     * @param clusterName             the cluster name
      * @param page                    the page number
      * @param pageSize                the size of the page
      * @return a JSON node containing the instances information
      * @throws IllegalArgumentException if the deployment type is invalid
      * @throws NacosException           if the list operation fails
      */
-    public ObjectNode listInstances(String namespaceId, String serviceNameWithoutGroup, String groupName, int page,
-            int pageSize) throws NacosException {
-        return instanceHandler.listInstances(namespaceId, serviceNameWithoutGroup, groupName, page, pageSize);
+    public ObjectNode listInstances(String namespaceId, String serviceNameWithoutGroup, String groupName,
+            String clusterName, int page, int pageSize) throws NacosException {
+        return instanceHandler.listInstances(namespaceId, serviceNameWithoutGroup, groupName, clusterName, page,
+                pageSize);
     }
     
     /**
