@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
@@ -40,6 +41,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -143,9 +145,13 @@ public class CatalogController {
             @RequestParam(required = false) boolean hasIpCount) throws NacosException {
         
         if (withInstances) {
-            ServiceDetailInfo serviceDetailInfo = (ServiceDetailInfo) judgeCatalogService().pageListServiceDetail(
+            Page<ServiceDetailInfo> serviceDetailInfo = judgeCatalogService().pageListServiceDetail(
                     namespaceId, groupName, serviceName, pageNo, pageSize);
-            return com.alibaba.nacos.naming.pojo.ServiceDetailInfo.from(serviceDetailInfo);
+            List<com.alibaba.nacos.naming.pojo.ServiceDetailInfo> result = new LinkedList<>();
+            for (ServiceDetailInfo each : serviceDetailInfo.getPageItems()) {
+                result.add(com.alibaba.nacos.naming.pojo.ServiceDetailInfo.from(each));
+            }
+            return result;
         }
         return judgeCatalogService().pageListService(namespaceId, groupName, serviceName, pageNo, pageSize,
                 containedInstance, hasIpCount);

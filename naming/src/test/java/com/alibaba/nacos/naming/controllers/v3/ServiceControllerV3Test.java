@@ -156,8 +156,8 @@ class ServiceControllerV3Test {
     
     @Test
     void testList() throws Exception {
-        List<ServiceView> result = new LinkedList<>();
-        result.add(new ServiceView());
+        Page<ServiceView> result = new Page<>();
+        result.getPageItems().add(new ServiceView());
         when(catalogServiceV2.listService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "serviceName", 1,
                 10, false)).thenReturn(result);
         ServiceListForm serviceListForm = new ServiceListForm();

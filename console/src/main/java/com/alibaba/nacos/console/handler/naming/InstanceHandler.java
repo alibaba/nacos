@@ -18,9 +18,9 @@
 package com.alibaba.nacos.console.handler.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.naming.model.form.InstanceForm;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * Interface for handling instance-related operations.
@@ -38,10 +38,10 @@ public interface InstanceHandler {
      * @param clusterName             the cluster name
      * @param page                  the page number
      * @param pageSize              the size of the page
-     * @return a JSON node containing the instances information
+     * @return the page object of {@link Instance}
      * @throws NacosException if the list operation fails
      */
-    ObjectNode listInstances(String namespaceId, String serviceNameWithoutGroup, String groupName, String clusterName,
+    Page<? extends Instance> listInstances(String namespaceId, String serviceNameWithoutGroup, String groupName, String clusterName,
             int page, int pageSize) throws NacosException;
     
     /**

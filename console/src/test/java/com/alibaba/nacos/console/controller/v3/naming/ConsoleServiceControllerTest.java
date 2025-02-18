@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceView;
 import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
 import com.alibaba.nacos.console.proxy.naming.ServiceProxy;
 import com.alibaba.nacos.core.model.form.AggregationForm;
@@ -146,9 +147,9 @@ public class ConsoleServiceControllerTest {
         serviceForm.setNamespaceId("testNamespace");
         serviceForm.setGroupName("testGroup");
         Result<Object> actual = consoleServiceController.getServiceDetail(serviceForm);
-
+        
         verify(serviceProxy).getServiceDetail(any(String.class), any(String.class), any(String.class));
-
+        
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         // controller transfer ServiceDetailInfo to old console result
         assertNotEquals(serviceDetail, actual.getData());
@@ -202,8 +203,11 @@ public class ConsoleServiceControllerTest {
     
     @Test
     void testGetServiceList() throws Exception {
+        Page<ServiceView> expected = new Page<>();
+        expected.setTotalCount(1);
+        expected.getPageItems().add(new ServiceView());
         when(serviceProxy.getServiceList(anyBoolean(), anyString(), anyInt(), anyInt(), anyString(), anyString(),
-                anyBoolean())).thenReturn(Collections.singletonList(new Object()));
+                anyBoolean())).thenReturn(expected);
         PageForm pageForm = new PageForm();
         pageForm.setPageNo(1);
         pageForm.setPageSize(10);
@@ -217,8 +221,8 @@ public class ConsoleServiceControllerTest {
                 anyBoolean());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
-        assertInstanceOf(List.class, actual.getData());
-        assertEquals(1, ((List<?>) actual.getData()).size());
+        assertInstanceOf(Page.class, actual.getData());
+        assertEquals(1, ((Page<?>) actual.getData()).getPageItems().size());
     }
     
     @Test

@@ -96,7 +96,7 @@ public interface ServiceHandler {
      * @param serviceName           the service name
      * @param groupName             the group name
      * @param ignoreEmptyService    whether to filter services with empty instances
-     * @return if withInstances is {@code true}, return List of {@link ServiceDetailInfo}, otherwise return List of {@link ServiceView}
+     * @return if withInstances is {@code true}, return Page of {@link ServiceDetailInfo}, otherwise return Page of {@link ServiceView}
      * @throws NacosException if an error occurs during fetching service details
      */
     Object getServiceList(boolean withInstances, String namespaceId, int pageNo, int pageSize, String serviceName,

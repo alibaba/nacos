@@ -18,6 +18,7 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
@@ -191,10 +192,9 @@ class CatalogServiceV2ImplTest {
             serviceInfo.setHosts(instances);
             Mockito.when(serviceStorage.getData(Mockito.any())).thenReturn(serviceInfo);
             
-            List<ServiceDetailInfo> result = (List<ServiceDetailInfo>) catalogServiceV2Impl.pageListServiceDetail("A",
-                    "B", "C", 1, 10);
+            Page<ServiceDetailInfo> result = catalogServiceV2Impl.pageListServiceDetail("A", "B", "C", 1, 10);
             
-            assertEquals(1, result.size());
+            assertEquals(1, result.getPageItems().size());
         } catch (NacosException e) {
             e.printStackTrace();
             fail(e.getMessage());

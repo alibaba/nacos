@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.naming.core.CatalogServiceV2Impl;
@@ -30,7 +31,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -93,7 +93,7 @@ class CatalogControllerTest {
     void testListDetail() {
         try {
             when(catalogServiceV2.pageListServiceDetail(Constants.DEFAULT_NAMESPACE_ID, TEST_GROUP_NAME,
-                    TEST_SERVICE_NAME, 1, 10)).thenReturn(Collections.emptyList());
+                    TEST_SERVICE_NAME, 1, 10)).thenReturn(new Page<>());
             Object res = catalogController.listDetail(true, Constants.DEFAULT_NAMESPACE_ID, 1, 10, TEST_SERVICE_NAME,
                     TEST_GROUP_NAME, null, true);
             assertTrue(res instanceof List);

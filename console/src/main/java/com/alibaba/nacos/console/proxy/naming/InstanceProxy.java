@@ -18,10 +18,10 @@
 package com.alibaba.nacos.console.proxy.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.console.handler.naming.InstanceHandler;
 import com.alibaba.nacos.naming.model.form.InstanceForm;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.stereotype.Service;
 
 /**
@@ -52,11 +52,11 @@ public class InstanceProxy {
      * @param clusterName             the cluster name
      * @param page                    the page number
      * @param pageSize                the size of the page
-     * @return a JSON node containing the instances information
+     * @return the page object of {@link Instance}
      * @throws IllegalArgumentException if the deployment type is invalid
      * @throws NacosException           if the list operation fails
      */
-    public ObjectNode listInstances(String namespaceId, String serviceNameWithoutGroup, String groupName,
+    public Page<? extends Instance> listInstances(String namespaceId, String serviceNameWithoutGroup, String groupName,
             String clusterName, int page, int pageSize) throws NacosException {
         return instanceHandler.listInstances(namespaceId, serviceNameWithoutGroup, groupName, clusterName, page,
                 pageSize);

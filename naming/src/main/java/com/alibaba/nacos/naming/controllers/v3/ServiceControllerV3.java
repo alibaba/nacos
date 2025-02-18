@@ -147,7 +147,7 @@ public class ServiceControllerV3 {
      *
      * <ul>
      *     <li>
-     *         if {@link ServiceListForm#isWithInstances()} is {@code true}, will return list {@link ServiceDetailInfo }
+     *         if {@link ServiceListForm#isWithInstances()} is {@code true}, will return page {@link ServiceDetailInfo }
      *     </li>
      *     <li>
      *         if {@link ServiceListForm#isWithInstances()} is {@code false}, will return list {@link ServiceView }
