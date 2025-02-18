@@ -51,14 +51,12 @@ import com.alibaba.nacos.config.server.result.code.ResultCodeEnum;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
@@ -127,8 +125,6 @@ public class ConfigController {
     
     private ConfigInfoPersistService configInfoPersistService;
     
-    private ConfigInfoBetaPersistService configInfoBetaPersistService;
-    
     private ConfigInfoGrayPersistService configInfoGrayPersistService;
     
     private NamespacePersistService namespacePersistService;
@@ -139,14 +135,13 @@ public class ConfigController {
     
     public ConfigController(ConfigServletInner inner, ConfigOperationService configOperationService,
             ConfigSubService configSubService, ConfigInfoPersistService configInfoPersistService,
-            NamespacePersistService namespacePersistService, ConfigInfoBetaPersistService configInfoBetaPersistService,
+            NamespacePersistService namespacePersistService,
             ConfigInfoGrayPersistService configInfoGrayPersistService) {
         this.inner = inner;
         this.configOperationService = configOperationService;
         this.configSubService = configSubService;
         this.configInfoPersistService = configInfoPersistService;
         this.namespacePersistService = namespacePersistService;
-        this.configInfoBetaPersistService = configInfoBetaPersistService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
     }
     
@@ -469,7 +464,7 @@ public class ConfigController {
         String remoteIp = getRemoteIp(httpServletRequest);
         try {
             
-            configOperationService.deleteConfig(dataId,group,tenant,BetaGrayRule.TYPE_BETA,remoteIp,srcUser);
+            configOperationService.deleteConfig(dataId, group, tenant, BetaGrayRule.TYPE_BETA, remoteIp, srcUser);
         } catch (Throwable e) {
             LOGGER.error("remove beta data error", e);
             return RestResultUtils.failed(500, false, "remove beta data error");

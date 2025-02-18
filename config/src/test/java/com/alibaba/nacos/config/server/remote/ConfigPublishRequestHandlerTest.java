@@ -61,10 +61,10 @@ class ConfigPublishRequestHandlerTest {
     
     @Mock
     ConfigInfoPersistService configInfoPersistService;
-
+    
     @Mock
     ConfigInfoGrayPersistService configInfoGrayPersistService;
-
+    
     @Mock
     ConfigGrayModelMigrateService configGrayModelMigrateService;
     
@@ -76,7 +76,7 @@ class ConfigPublishRequestHandlerTest {
     void setUp() {
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
         ConfigOperationService configOperationService = new ConfigOperationService(configInfoPersistService,
-                 configInfoGrayPersistService,configGrayModelMigrateService);
+                configInfoGrayPersistService, configGrayModelMigrateService);
         configPublishRequestHandler = new ConfigPublishRequestHandler(configOperationService);
         DatasourceConfiguration.setEmbeddedStorage(false);
     }
@@ -381,7 +381,7 @@ class ConfigPublishRequestHandlerTest {
         long id = timestamp / 1000;
         configOperateResult.setId(id);
         configOperateResult.setLastModified(timestamp);
-
+        
         when(configInfoGrayPersistService.insertOrUpdateGrayCas(any(ConfigInfo.class), eq(BetaGrayRule.TYPE_BETA),
                 anyString(), eq(requestMeta.getClientIp()), eq(srcUser))).thenReturn(configOperateResult);
         ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
@@ -445,7 +445,7 @@ class ConfigPublishRequestHandlerTest {
         long id = timestamp / 1000;
         configOperateResult.setId(id);
         configOperateResult.setLastModified(timestamp);
-
+        
         when(configInfoGrayPersistService.insertOrUpdateGray(any(ConfigInfo.class), eq("tag_" + tag), anyString(),
                 eq(requestMeta.getClientIp()), eq(srcUser))).thenReturn(configOperateResult);
         ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
@@ -503,7 +503,7 @@ class ConfigPublishRequestHandlerTest {
         long id = timestamp / 1000;
         configOperateResult.setId(id);
         configOperateResult.setLastModified(timestamp);
-
+        
         when(configInfoGrayPersistService.insertOrUpdateGrayCas(any(ConfigInfo.class), eq("tag_" + tag), anyString(),
                 eq(requestMeta.getClientIp()), eq(srcUser))).thenReturn(configOperateResult);
         ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);

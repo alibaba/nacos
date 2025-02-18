@@ -49,6 +49,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static com.alibaba.nacos.config.server.model.gray.GrayRuleManager.SPLIT;
 import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 import static com.alibaba.nacos.config.server.utils.PropertyUtil.GRAY_MIGRATE_FLAG;
 
@@ -89,11 +90,19 @@ public class ConfigGrayModelMigrateService {
     public void migrate() throws Exception {
         oldTableVersion = namespacePersistService.isExistTable("config_info_beta");
         if (!PropertyUtil.isGrayCompatibleModel() || !oldTableVersion) {
-           return;
+            return;
         }
         doCheckMigrate();
     }
     
+    /**
+     * handler tag v1 config.
+     *
+     * @param configForm        configForm.
+     * @param configInfo        configInfo.
+     * @param configRequestInfo configRequestInfo.
+     * @throws NacosApiException NacosApiException.
+     */
     public void persistTagv1(ConfigForm configForm, ConfigInfo configInfo, ConfigRequestInfo configRequestInfo)
             throws NacosApiException {
         if (!PropertyUtil.isGrayCompatibleModel() || !oldTableVersion) {
@@ -116,6 +125,14 @@ public class ConfigGrayModelMigrateService {
         }
     }
     
+    /**
+     * handle old beta.
+     *
+     * @param configForm        configForm.
+     * @param configInfo        configInfo.
+     * @param configRequestInfo configRequestInfo.
+     * @throws NacosApiException NacosApiException.
+     */
     public void persistBeta(ConfigForm configForm, ConfigInfo configInfo, ConfigRequestInfo configRequestInfo)
             throws NacosApiException {
         if (!PropertyUtil.isGrayCompatibleModel() || !oldTableVersion) {
@@ -139,17 +156,27 @@ public class ConfigGrayModelMigrateService {
         }
     }
     
-    public void deleteConfigGrayV1(String dataId, String group, String namespaceId, String grayName
-            , String clientIp,
+    /**
+     * delete beta and tag.
+     *
+     * @param dataId      dataId.
+     * @param group       group.
+     * @param namespaceId namespaceId.
+     * @param grayName    grayName.
+     * @param clientIp    clientIp.
+     * @param srcUser     srcUser.
+     */
+    public void deleteConfigGrayV1(String dataId, String group, String namespaceId, String grayName, String clientIp,
             String srcUser) {
         if (!PropertyUtil.isGrayCompatibleModel() || !oldTableVersion) {
             return;
         }
-            if (BetaGrayRule.TYPE_BETA.equals(grayName)) {
-                configInfoBetaPersistService.removeConfigInfo4Beta(dataId, group, namespaceId);
-            }else if (grayName.startsWith("tag_")){
-                configInfoTagPersistService.removeConfigInfoTag(dataId, group, namespaceId, grayName.substring(4), clientIp, srcUser);
-            }
+        if (BetaGrayRule.TYPE_BETA.equals(grayName)) {
+            configInfoBetaPersistService.removeConfigInfo4Beta(dataId, group, namespaceId);
+        } else if (grayName.startsWith(TagGrayRule.TYPE_TAG + SPLIT)) {
+            configInfoTagPersistService.removeConfigInfoTag(dataId, group, namespaceId, grayName.substring(4), clientIp,
+                    srcUser);
+        }
         
     }
     

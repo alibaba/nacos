@@ -32,13 +32,10 @@ import com.alibaba.nacos.config.server.model.gray.ConfigGrayPersistInfo;
 import com.alibaba.nacos.config.server.model.gray.GrayRule;
 import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
 import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
@@ -63,15 +60,16 @@ import java.util.Map;
 public class ConfigOperationService {
     
     private ConfigInfoPersistService configInfoPersistService;
-
+    
     private ConfigInfoGrayPersistService configInfoGrayPersistService;
-
+    
     private ConfigGrayModelMigrateService configGrayModelMigrateService;
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigOperationService.class);
     
     public ConfigOperationService(ConfigInfoPersistService configInfoPersistService,
-            ConfigInfoGrayPersistService configInfoGrayPersistService,ConfigGrayModelMigrateService configGrayModelMigrateService) {
+            ConfigInfoGrayPersistService configInfoGrayPersistService,
+            ConfigGrayModelMigrateService configGrayModelMigrateService) {
         this.configInfoPersistService = configInfoPersistService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
         this.configGrayModelMigrateService = configGrayModelMigrateService;
@@ -145,7 +143,6 @@ public class ConfigOperationService {
         return true;
     }
     
-
     /**
      * publish gray config tag v2.
      *
@@ -258,7 +255,7 @@ public class ConfigOperationService {
                 new ConfigDataChangeEvent(dataId, group, namespaceId, grayName, time.getTime()));
         return true;
     }
-
+    
     public Map<String, Object> getConfigAdvanceInfo(ConfigForm configForm) {
         Map<String, Object> configAdvanceInfo = new HashMap<>(10);
         MapUtil.putIfValNoNull(configAdvanceInfo, "config_tags", configForm.getConfigTags());
