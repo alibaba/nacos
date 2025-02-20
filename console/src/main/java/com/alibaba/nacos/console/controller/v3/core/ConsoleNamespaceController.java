@@ -24,7 +24,7 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
 import com.alibaba.nacos.console.proxy.core.NamespaceProxy;
-import com.alibaba.nacos.core.namespace.model.Namespace;
+import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.core.namespace.model.form.CreateNamespaceForm;
 import com.alibaba.nacos.core.namespace.model.form.NamespaceForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;

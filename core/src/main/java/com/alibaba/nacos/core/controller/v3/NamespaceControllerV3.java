@@ -80,7 +80,7 @@ public class NamespaceControllerV3 {
     @GetMapping("/list")
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
             + "/namespace", action = ActionTypes.READ, signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
-    public Result<List<? extends Namespace>> getNamespaceList() {
+    public Result<List<Namespace>> getNamespaceList() {
         return Result.success(namespaceOperationService.getNamespaceList());
     }
     

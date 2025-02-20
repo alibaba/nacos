@@ -18,7 +18,7 @@
 package com.alibaba.nacos.console.handler.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.core.namespace.model.Namespace;
+import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.core.namespace.model.form.NamespaceForm;
 
 import java.util.List;
