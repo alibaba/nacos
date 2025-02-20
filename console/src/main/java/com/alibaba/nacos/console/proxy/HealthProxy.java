@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.console.proxy;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.console.handler.HealthHandler;
 import org.springframework.stereotype.Service;
@@ -40,7 +41,7 @@ public class HealthProxy {
      *
      * @return readiness result
      */
-    public Result<String> checkReadiness() {
+    public Result<String> checkReadiness() throws NacosException {
         return healthHandler.checkReadiness();
     }
 }

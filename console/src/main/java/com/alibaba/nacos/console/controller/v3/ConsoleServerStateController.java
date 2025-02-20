@@ -18,6 +18,7 @@
 package com.alibaba.nacos.console.controller.v3;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.model.v2.SupportedLanguage;
 import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
@@ -54,7 +55,7 @@ public class ConsoleServerStateController {
      * @return state json.
      */
     @GetMapping("/state")
-    public ResponseEntity<Map<String, String>> serverState() {
+    public ResponseEntity<Map<String, String>> serverState() throws NacosException {
         Map<String, String> serverState = serverStateProxy.getServerState();
         return ResponseEntity.ok().body(serverState);
     }

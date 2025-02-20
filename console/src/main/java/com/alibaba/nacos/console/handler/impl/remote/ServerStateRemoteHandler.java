@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.console.handler.impl.remote;
 
-import com.alibaba.nacos.common.utils.VersionUtils;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.console.handler.impl.AbstractServerStateHandler;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -24,7 +24,6 @@ import com.alibaba.nacos.sys.module.ModuleState;
 import com.alibaba.nacos.sys.module.ModuleStateHolder;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -36,13 +35,14 @@ import java.util.Map;
 @EnabledRemoteHandler
 public class ServerStateRemoteHandler extends AbstractServerStateHandler {
     
-    public Map<String, String> getServerState() {
-        Map<String, String> serverState = new HashMap<>(4);
-        // TODO get state from nacos servers
-        // Mock first
-        serverState.put(Constants.STARTUP_MODE_STATE, EnvUtil.STANDALONE_MODE_ALONE);
-        serverState.put(Constants.FUNCTION_MODE_STATE, EnvUtil.getFunctionMode());
-        serverState.put(Constants.NACOS_VERSION, VersionUtils.version);
+    private final NacosMaintainerClientHolder clientHolder;
+    
+    public ServerStateRemoteHandler(NacosMaintainerClientHolder clientHolder) {
+        this.clientHolder = clientHolder;
+    }
+    
+    public Map<String, String> getServerState() throws NacosException {
+        Map<String, String> serverState = this.clientHolder.getNamingMaintainerService().getServerState();
         serverState.put(Constants.SERVER_PORT_STATE, EnvUtil.getProperty("nacos.console.port", "8080"));
         // Add current console states
         for (ModuleState each : ModuleStateHolder.getInstance().getAllModuleStates()) {

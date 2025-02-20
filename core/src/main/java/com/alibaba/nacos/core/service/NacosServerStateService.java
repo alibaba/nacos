@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2023 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,31 +14,33 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.console.handler.impl.inner;
+package com.alibaba.nacos.core.service;
 
-import com.alibaba.nacos.console.handler.impl.AbstractServerStateHandler;
-import com.alibaba.nacos.core.service.NacosServerStateService;
+import com.alibaba.nacos.sys.module.ModuleState;
+import com.alibaba.nacos.sys.module.ModuleStateHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Implementation of ServerStateHandler that performs server state operations.
+ * Nacos server state service.
  *
- * @author zhangyukun
+ * @author xiweng.yy
  */
 @Service
-@EnabledInnerHandler
-public class ServerStateInnerHandler extends AbstractServerStateHandler {
+public class NacosServerStateService {
     
-    private final NacosServerStateService stateService;
-    
-    public ServerStateInnerHandler(NacosServerStateService stateService) {
-        this.stateService = stateService;
-    }
-    
+    /**
+     * Get current server states.
+     *
+     * @return server states key-value map.
+     */
     public Map<String, String> getServerState() {
-        return stateService.getServerState();
+        Map<String, String> serverState = new HashMap<>(4);
+        for (ModuleState each : ModuleStateHolder.getInstance().getAllModuleStates()) {
+            each.getStates().forEach((s, o) -> serverState.put(s, null == o ? null : o.toString()));
+        }
+        return serverState;
     }
 }
-

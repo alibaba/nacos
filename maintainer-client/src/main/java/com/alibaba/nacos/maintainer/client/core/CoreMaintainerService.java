@@ -36,6 +36,30 @@ import java.util.Map;
 public interface CoreMaintainerService {
     
     /**
+     * Get Nacos server states.
+     *
+     * @return the states key-value map
+     * @throws NacosException if the operation fails.
+     */
+    Map<String, String> getServerState() throws NacosException;
+    
+    /**
+     * Detect server liveness.
+     *
+     * @return {@code true} detect successfully, {@code false} otherwise.
+     * @throws NacosException if the operation fails.
+     */
+    Boolean liveness() throws NacosException;
+    
+    /**
+     * Detect server readiness.
+     *
+     * @return {@code true} detect successfully, {@code false} otherwise.
+     * @throws NacosException if the operation fails.
+     */
+    Boolean readiness() throws NacosException;
+    
+    /**
      * Execute a Raft operation with the specified command, value, and group ID.
      *
      * @param command the command to execute.
