@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.model.response.IdGeneratorInfo;
 import com.alibaba.nacos.api.model.response.NacosMember;
 import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.api.model.response.ServerLoaderMetrics;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.Collection;
 import java.util.List;
@@ -144,9 +145,21 @@ public interface CoreMaintainerService {
     Namespace getNamespace(String namespaceId) throws NacosException;
     
     /**
+     * Create a new namespace with the provided details and auto-generate UUID.
+     *
+     * @param namespaceName The name of the new namespace.
+     * @param namespaceDesc The description of the new namespace.
+     * @return {@code true} if the namespace is created successfully, {@code false} otherwise.
+     * @throws NacosException Thrown if any error occurs during the creation.
+     */
+    default Boolean createNamespace(String namespaceName, String namespaceDesc) throws NacosException {
+        return createNamespace(StringUtils.EMPTY, namespaceName, namespaceDesc);
+    }
+    
+    /**
      * Create a new namespace with the provided details.
      *
-     * @param namespaceId   The unique identifier for the new namespace.
+     * @param namespaceId   The unique identifier for the new namespace, if null or empty will use auto-generate UUID.
      * @param namespaceName The name of the new namespace.
      * @param namespaceDesc The description of the new namespace.
      * @return {@code true} if the namespace is created successfully, {@code false} otherwise.
@@ -159,7 +172,7 @@ public interface CoreMaintainerService {
      *
      * @param namespaceId   The unique identifier of the namespace to be updated.
      * @param namespaceName The new name for the namespace (can be null).
-     * @param namespaceDesc The new description for the namespace (can be null).
+     * @param namespaceDesc The new description for the namespace.
      * @return {@code true} if the namespace is updated successfully, {@code false} otherwise.
      * @throws NacosException Thrown if any error occurs during the update.
      */

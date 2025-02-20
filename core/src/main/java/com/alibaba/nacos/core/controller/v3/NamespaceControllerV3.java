@@ -19,11 +19,11 @@ package com.alibaba.nacos.core.controller.v3;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.core.namespace.model.Namespace;
 import com.alibaba.nacos.core.namespace.model.form.NamespaceForm;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
@@ -53,7 +53,7 @@ import static com.alibaba.nacos.core.utils.Commons.NACOS_ADMIN_CORE_CONTEXT_V3;
  */
 @NacosApi
 @RestController
-@RequestMapping(NACOS_ADMIN_CORE_CONTEXT_V3 + "namespace")
+@RequestMapping(NACOS_ADMIN_CORE_CONTEXT_V3 + "/namespace")
 public class NamespaceControllerV3 {
     
     private final NamespaceOperationService namespaceOperationService;
@@ -80,7 +80,7 @@ public class NamespaceControllerV3 {
     @GetMapping("/list")
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
             + "/namespace", action = ActionTypes.READ, signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
-    public Result<List<Namespace>> getNamespaceList() {
+    public Result<List<? extends Namespace>> getNamespaceList() {
         return Result.success(namespaceOperationService.getNamespaceList());
     }
     
@@ -116,6 +116,7 @@ public class NamespaceControllerV3 {
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = UUID.randomUUID().toString();
         } else {
+            // TODO check should be parameter check filter.
             namespaceId = namespaceId.trim();
             if (!namespaceIdCheckPattern.matcher(namespaceId).matches()) {
                 throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.ILLEGAL_NAMESPACE,
@@ -124,11 +125,6 @@ public class NamespaceControllerV3 {
             if (namespaceId.length() > NAMESPACE_ID_MAX_LENGTH) {
                 throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.ILLEGAL_NAMESPACE,
                         "too long namespaceId, over " + NAMESPACE_ID_MAX_LENGTH);
-            }
-            // check unique
-            if (namespacePersistService.tenantInfoCountByTenantId(namespaceId) > 0) {
-                throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.ILLEGAL_NAMESPACE,
-                        "the namespaceId is existed, namespaceId: " + namespaceForm.getNamespaceId());
             }
         }
         // contains illegal chars

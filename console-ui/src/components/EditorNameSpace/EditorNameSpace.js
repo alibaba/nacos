@@ -94,6 +94,7 @@ class EditorNameSpace extends React.Component {
   handleSubmit() {
     const { locale = {} } = this.props;
     this.field.validate((errors, values) => {
+      console.log(values);
       if (errors) {
         return;
       }
