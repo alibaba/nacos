@@ -32,13 +32,10 @@ import com.alibaba.nacos.config.server.model.gray.ConfigGrayPersistInfo;
 import com.alibaba.nacos.config.server.model.gray.GrayRule;
 import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
 import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
@@ -64,22 +61,18 @@ public class ConfigOperationService {
     
     private ConfigInfoPersistService configInfoPersistService;
     
-    private ConfigInfoTagPersistService configInfoTagPersistService;
-    
-    private ConfigInfoBetaPersistService configInfoBetaPersistService;
-    
     private ConfigInfoGrayPersistService configInfoGrayPersistService;
+    
+    private ConfigGrayModelMigrateService configGrayModelMigrateService;
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigOperationService.class);
     
     public ConfigOperationService(ConfigInfoPersistService configInfoPersistService,
-            ConfigInfoTagPersistService configInfoTagPersistService,
-            ConfigInfoBetaPersistService configInfoBetaPersistService,
-            ConfigInfoGrayPersistService configInfoGrayPersistService) {
+            ConfigInfoGrayPersistService configInfoGrayPersistService,
+            ConfigGrayModelMigrateService configGrayModelMigrateService) {
         this.configInfoPersistService = configInfoPersistService;
-        this.configInfoTagPersistService = configInfoTagPersistService;
-        this.configInfoBetaPersistService = configInfoBetaPersistService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
+        this.configGrayModelMigrateService = configGrayModelMigrateService;
     }
     
     /**
@@ -109,7 +102,7 @@ public class ConfigOperationService {
             configForm.setGrayName(BetaGrayRule.TYPE_BETA);
             configForm.setGrayRuleExp(configRequestInfo.getBetaIps());
             configForm.setGrayVersion(BetaGrayRule.VERSION);
-            persistBeta(configForm, configInfo, configRequestInfo);
+            configGrayModelMigrateService.persistBeta(configForm, configInfo, configRequestInfo);
             configForm.setGrayPriority(Integer.MAX_VALUE);
             publishConfigGray(BetaGrayRule.TYPE_BETA, configForm, configRequestInfo);
             return Boolean.TRUE;
@@ -120,7 +113,7 @@ public class ConfigOperationService {
             configForm.setGrayRuleExp(configForm.getTag());
             configForm.setGrayVersion(TagGrayRule.VERSION);
             configForm.setGrayPriority(Integer.MAX_VALUE - 1);
-            persistTagv1(configForm, configInfo, configRequestInfo);
+            configGrayModelMigrateService.persistTagv1(configForm, configInfo, configRequestInfo);
             publishConfigGray(TagGrayRule.TYPE_TAG, configForm, configRequestInfo);
             return Boolean.TRUE;
         }
@@ -148,53 +141,6 @@ public class ConfigOperationService {
                 InetUtils.getSelfIP(), ConfigTraceService.PERSISTENCE_EVENT, ConfigTraceService.PERSISTENCE_TYPE_PUB,
                 configForm.getContent());
         return true;
-    }
-    
-    private void persistTagv1(ConfigForm configForm, ConfigInfo configInfo, ConfigRequestInfo configRequestInfo)
-            throws NacosApiException {
-        if (!PropertyUtil.isGrayCompatibleModel()) {
-            return;
-        }
-        
-        ConfigOperateResult configOperateResult = null;
-        if (StringUtils.isNotBlank(configRequestInfo.getCasMd5())) {
-            configOperateResult = configInfoTagPersistService.insertOrUpdateTagCas(configInfo, configForm.getTag(),
-                    configRequestInfo.getSrcIp(), configForm.getSrcUser());
-            if (!configOperateResult.isSuccess()) {
-                LOGGER.warn(
-                        "[cas-publish-tag-config-fail] srcIp = {}, dataId= {}, casMd5 = {}, msg = server md5 may have changed.",
-                        configRequestInfo.getSrcIp(), configForm.getDataId(), configRequestInfo.getCasMd5());
-                throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.RESOURCE_CONFLICT,
-                        "Cas publish tag config fail, server md5 may have changed.");
-            }
-        } else {
-            configOperateResult = configInfoTagPersistService.insertOrUpdateTag(configInfo, configForm.getTag(),
-                    configRequestInfo.getSrcIp(), configForm.getSrcUser());
-        }
-    }
-    
-    private void persistBeta(ConfigForm configForm, ConfigInfo configInfo, ConfigRequestInfo configRequestInfo)
-            throws NacosApiException {
-        if (!PropertyUtil.isGrayCompatibleModel()) {
-            return;
-        }
-        ConfigOperateResult configOperateResult = null;
-        // beta publish
-        if (StringUtils.isNotBlank(configRequestInfo.getCasMd5())) {
-            configOperateResult = configInfoBetaPersistService.insertOrUpdateBetaCas(configInfo,
-                    configRequestInfo.getBetaIps(), configRequestInfo.getSrcIp(), configForm.getSrcUser());
-            if (!configOperateResult.isSuccess()) {
-                LOGGER.warn(
-                        "[cas-publish-beta-config-fail] srcIp = {}, dataId= {}, casMd5 = {}, msg = server md5 may have changed.",
-                        configRequestInfo.getSrcIp(), configForm.getDataId(), configRequestInfo.getCasMd5());
-                throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.RESOURCE_CONFLICT,
-                        "Cas publish beta config fail, server md5 may have changed.");
-            }
-        } else {
-            configInfoBetaPersistService.insertOrUpdateBeta(configInfo,
-                    configRequestInfo.getBetaIps(), configRequestInfo.getSrcIp(), configForm.getSrcUser());
-        }
-
     }
     
     /**
@@ -292,32 +238,22 @@ public class ConfigOperationService {
     /**
      * Synchronously delete all pre-aggregation data under a dataId.
      */
-    public Boolean deleteConfig(String dataId, String group, String namespaceId, String tag, String clientIp,
+    public Boolean deleteConfig(String dataId, String group, String namespaceId, String grayName, String clientIp,
             String srcUser) {
         String persistEvent = ConfigTraceService.PERSISTENCE_EVENT;
-        String grayName = "";
-        if (StringUtils.isBlank(tag)) {
+        if (StringUtils.isBlank(grayName)) {
             configInfoPersistService.removeConfigInfo(dataId, group, namespaceId, clientIp, srcUser);
         } else {
-            persistEvent = ConfigTraceService.PERSISTENCE_EVENT_TAG + "-" + tag;
-            grayName = TagGrayRule.TYPE_TAG + "_" + tag;
+            persistEvent = ConfigTraceService.PERSISTENCE_EVENT + "-" + grayName;
             configInfoGrayPersistService.removeConfigInfoGray(dataId, group, namespaceId, grayName, clientIp, srcUser);
-            deleteConfigTagv1(dataId, group, namespaceId, tag, clientIp, srcUser);
+            configGrayModelMigrateService.deleteConfigGrayV1(dataId, group, namespaceId, grayName, clientIp, srcUser);
         }
         final Timestamp time = TimeUtils.getCurrentTime();
         ConfigTraceService.logPersistenceEvent(dataId, group, namespaceId, null, time.getTime(), clientIp, persistEvent,
                 ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
         ConfigChangePublisher.notifyConfigChange(
                 new ConfigDataChangeEvent(dataId, group, namespaceId, grayName, time.getTime()));
-        
         return true;
-    }
-    
-    private void deleteConfigTagv1(String dataId, String group, String namespaceId, String tag, String clientIp,
-            String srcUser) {
-        if (PropertyUtil.isGrayCompatibleModel()) {
-            configInfoTagPersistService.removeConfigInfoTag(dataId, group, namespaceId, tag, clientIp, srcUser);
-        }
     }
     
     public Map<String, Object> getConfigAdvanceInfo(ConfigForm configForm) {
