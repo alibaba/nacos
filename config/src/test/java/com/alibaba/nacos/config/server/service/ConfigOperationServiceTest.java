@@ -21,8 +21,10 @@ import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,16 +56,19 @@ class ConfigOperationServiceTest {
     private ConfigInfoPersistService configInfoPersistService;
     
     @Mock
-    private ConfigInfoGrayPersistService configInfoGrayPersistService;
+    private ConfigInfoTagPersistService configInfoTagPersistService;
     
     @Mock
-    ConfigGrayModelMigrateService configGrayModelMigrateService;
+    private ConfigInfoBetaPersistService configInfoBetaPersistService;
+    
+    @Mock
+    private ConfigInfoGrayPersistService configInfoGrayPersistService;
     
     @BeforeEach
     void setUp() throws Exception {
         EnvUtil.setEnvironment(new StandardEnvironment());
-        this.configOperationService = new ConfigOperationService(configInfoPersistService, configInfoGrayPersistService,
-                configGrayModelMigrateService);
+        this.configOperationService = new ConfigOperationService(configInfoPersistService, configInfoTagPersistService,
+                configInfoBetaPersistService, configInfoGrayPersistService);
     }
     
     @Test
@@ -80,10 +85,13 @@ class ConfigOperationServiceTest {
         
         // if betaIps is not blank and casMd5 is blank
         configRequestInfo.setBetaIps("test-betaIps");
-        
+        when(configInfoBetaPersistService.insertOrUpdateBeta(any(ConfigInfo.class), eq("test-betaIps"), any(),
+                any())).thenReturn(new ConfigOperateResult());
         when(configInfoGrayPersistService.insertOrUpdateGray(any(ConfigInfo.class), eq("beta"), anyString(),
                 eq(configRequestInfo.getSrcIp()), eq(configForm.getSrcUser()))).thenReturn(new ConfigOperateResult());
         Boolean eResult = configOperationService.publishConfig(configForm, configRequestInfo, "");
+        verify(configInfoBetaPersistService).insertOrUpdateBeta(any(ConfigInfo.class), eq("test-betaIps"), any(),
+                any());
         assertTrue(eResult);
         
     }
@@ -103,10 +111,13 @@ class ConfigOperationServiceTest {
         // if betaIps is not blank and casMd5 is not blank
         configRequestInfo.setBetaIps("test-betaIps");
         configRequestInfo.setCasMd5("test casMd5");
-        
+        when(configInfoBetaPersistService.insertOrUpdateBetaCas(any(ConfigInfo.class), eq("test-betaIps"), any(),
+                any())).thenReturn(new ConfigOperateResult());
         when(configInfoGrayPersistService.insertOrUpdateGrayCas(any(ConfigInfo.class), eq("beta"), anyString(),
                 eq(configRequestInfo.getSrcIp()), eq(configForm.getSrcUser()))).thenReturn(new ConfigOperateResult());
         Boolean fResult = configOperationService.publishConfig(configForm, configRequestInfo, "");
+        verify(configInfoBetaPersistService).insertOrUpdateBetaCas(any(ConfigInfo.class), eq("test-betaIps"), any(),
+                any());
         assertTrue(fResult);
     }
     
@@ -123,9 +134,12 @@ class ConfigOperationServiceTest {
         String tag = "testTag";
         configForm.setTag(tag);
         
+        when(configInfoTagPersistService.insertOrUpdateTag(any(ConfigInfo.class), eq(tag), any(), any())).thenReturn(
+                new ConfigOperateResult());
         when(configInfoGrayPersistService.insertOrUpdateGray(any(ConfigInfo.class), eq("tag_" + tag), anyString(),
                 eq(configRequestInfo.getSrcIp()), eq(configForm.getSrcUser()))).thenReturn(new ConfigOperateResult());
         Boolean cResult = configOperationService.publishConfig(configForm, configRequestInfo, "");
+        verify(configInfoTagPersistService).insertOrUpdateTag(any(ConfigInfo.class), eq(tag), any(), any());
         assertTrue(cResult);
         
     }
@@ -142,10 +156,12 @@ class ConfigOperationServiceTest {
         configRequestInfo.setCasMd5("casMd5");
         String tag = "testTag";
         configForm.setTag(tag);
-        
+        when(configInfoTagPersistService.insertOrUpdateTagCas(any(ConfigInfo.class), eq(tag), any(), any())).thenReturn(
+                new ConfigOperateResult());
         when(configInfoGrayPersistService.insertOrUpdateGrayCas(any(ConfigInfo.class), eq("tag_" + tag), anyString(),
                 eq(configRequestInfo.getSrcIp()), eq(configForm.getSrcUser()))).thenReturn(new ConfigOperateResult());
         Boolean dResult = configOperationService.publishConfig(configForm, configRequestInfo, "");
+        verify(configInfoTagPersistService).insertOrUpdateTagCas(any(ConfigInfo.class), eq(tag), any(), any());
         assertTrue(dResult);
     }
     
@@ -182,8 +198,11 @@ class ConfigOperationServiceTest {
         Boolean aResult = configOperationService.deleteConfig("test", "test", "", "", "1.1.1.1", "test");
         verify(configInfoPersistService).removeConfigInfo(eq("test"), eq("test"), eq(""), any(), any());
         assertTrue(aResult);
+        
         // if tag is not blank
         Boolean bResult = configOperationService.deleteConfig("test", "test", "", "test", "1.1.1.1", "test");
+        verify(configInfoTagPersistService).removeConfigInfoTag(eq("test"), eq("test"), eq(""), eq("test"), any(),
+                any());
         assertTrue(bResult);
     }
 }

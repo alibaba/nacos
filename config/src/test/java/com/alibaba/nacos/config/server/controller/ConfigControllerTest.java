@@ -34,6 +34,7 @@ import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
@@ -97,6 +98,9 @@ class ConfigControllerTest {
     private ConfigInfoPersistService configInfoPersistService;
     
     @Mock
+    private ConfigInfoBetaPersistService configInfoBetaPersistService;
+    
+    @Mock
     private ConfigInfoGrayPersistService configInfoGrayPersistService;
     
     @Mock
@@ -114,6 +118,7 @@ class ConfigControllerTest {
         when(servletContext.getContextPath()).thenReturn("/nacos");
         ReflectionTestUtils.setField(configController, "configSubService", configSubService);
         ReflectionTestUtils.setField(configController, "configInfoPersistService", configInfoPersistService);
+        ReflectionTestUtils.setField(configController, "configInfoBetaPersistService", configInfoBetaPersistService);
         ReflectionTestUtils.setField(configController, "configInfoGrayPersistService", configInfoGrayPersistService);
         ReflectionTestUtils.setField(configController, "namespacePersistService", namespacePersistService);
         ReflectionTestUtils.setField(configController, "configOperationService", configOperationService);

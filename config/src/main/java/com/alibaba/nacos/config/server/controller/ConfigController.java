@@ -51,12 +51,14 @@ import com.alibaba.nacos.config.server.result.code.ResultCodeEnum;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
@@ -125,6 +127,8 @@ public class ConfigController {
     
     private ConfigInfoPersistService configInfoPersistService;
     
+    private ConfigInfoBetaPersistService configInfoBetaPersistService;
+    
     private ConfigInfoGrayPersistService configInfoGrayPersistService;
     
     private NamespacePersistService namespacePersistService;
@@ -135,13 +139,14 @@ public class ConfigController {
     
     public ConfigController(ConfigServletInner inner, ConfigOperationService configOperationService,
             ConfigSubService configSubService, ConfigInfoPersistService configInfoPersistService,
-            NamespacePersistService namespacePersistService,
+            NamespacePersistService namespacePersistService, ConfigInfoBetaPersistService configInfoBetaPersistService,
             ConfigInfoGrayPersistService configInfoGrayPersistService) {
         this.inner = inner;
         this.configOperationService = configOperationService;
         this.configSubService = configSubService;
         this.configInfoPersistService = configInfoPersistService;
         this.namespacePersistService = namespacePersistService;
+        this.configInfoBetaPersistService = configInfoBetaPersistService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
     }
     
@@ -459,16 +464,25 @@ public class ConfigController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
     public RestResult<Boolean> stopBeta(HttpServletRequest httpServletRequest,
             @RequestParam(value = "dataId") String dataId, @RequestParam(value = "group") String group,
-            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
-            @RequestParam(value = "srcUser", required = false, defaultValue = StringUtils.EMPTY) String srcUser) {
+            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
         String remoteIp = getRemoteIp(httpServletRequest);
+        String requestIpApp = RequestUtil.getAppName(httpServletRequest);
         try {
-            
-            configOperationService.deleteConfig(dataId, group, tenant, BetaGrayRule.TYPE_BETA, remoteIp, srcUser);
+            configInfoGrayPersistService.removeConfigInfoGray(dataId, group, tenant, BetaGrayRule.TYPE_BETA, remoteIp,
+                    RequestUtil.getSrcUserName(httpServletRequest));
         } catch (Throwable e) {
             LOGGER.error("remove beta data error", e);
             return RestResultUtils.failed(500, false, "remove beta data error");
         }
+        ConfigTraceService.logPersistenceEvent(dataId, group, tenant, requestIpApp, System.currentTimeMillis(),
+                remoteIp, ConfigTraceService.PERSISTENCE_EVENT_BETA, ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
+        
+        if (PropertyUtil.isGrayCompatibleModel()) {
+            configInfoBetaPersistService.removeConfigInfo4Beta(dataId, group, tenant);
+        }
+        ConfigChangePublisher.notifyConfigChange(
+                new ConfigDataChangeEvent(dataId, group, tenant, BetaGrayRule.TYPE_BETA, System.currentTimeMillis()));
+        
         return RestResultUtils.success("stop beta ok", true);
     }
     

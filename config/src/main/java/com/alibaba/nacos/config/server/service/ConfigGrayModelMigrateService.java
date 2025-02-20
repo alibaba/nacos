@@ -16,18 +16,11 @@
 
 package com.alibaba.nacos.config.server.service;
 
-import com.alibaba.nacos.api.exception.api.NacosApiException;
-import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.utils.NetUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
-import com.alibaba.nacos.config.server.model.ConfigOperateResult;
-import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
-import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.model.gray.ConfigGrayPersistInfo;
 import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
@@ -36,12 +29,8 @@ import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistS
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -49,7 +38,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static com.alibaba.nacos.config.server.model.gray.GrayRuleManager.SPLIT;
 import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 import static com.alibaba.nacos.config.server.utils.PropertyUtil.GRAY_MIGRATE_FLAG;
 
@@ -61,26 +49,18 @@ import static com.alibaba.nacos.config.server.utils.PropertyUtil.GRAY_MIGRATE_FL
 @Service
 public class ConfigGrayModelMigrateService {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigGrayModelMigrateService.class);
-    
     ConfigInfoBetaPersistService configInfoBetaPersistService;
     
     ConfigInfoTagPersistService configInfoTagPersistService;
     
     ConfigInfoGrayPersistService configInfoGrayPersistService;
     
-    NamespacePersistService namespacePersistService;
-    
-    boolean oldTableVersion = false;
-    
     public ConfigGrayModelMigrateService(ConfigInfoBetaPersistService configInfoBetaPersistService,
             ConfigInfoTagPersistService configInfoTagPersistService,
-            ConfigInfoGrayPersistService configInfoGrayPersistService,
-            NamespacePersistService namespacePersistService) {
+            ConfigInfoGrayPersistService configInfoGrayPersistService) {
         this.configInfoBetaPersistService = configInfoBetaPersistService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
         this.configInfoTagPersistService = configInfoTagPersistService;
-        this.namespacePersistService = namespacePersistService;
     }
     
     /**
@@ -88,96 +68,9 @@ public class ConfigGrayModelMigrateService {
      */
     @PostConstruct
     public void migrate() throws Exception {
-        oldTableVersion = namespacePersistService.isExistTable("config_info_beta");
-        if (!PropertyUtil.isGrayCompatibleModel() || !oldTableVersion) {
-            return;
+        if (PropertyUtil.isGrayCompatibleModel()) {
+            doCheckMigrate();
         }
-        doCheckMigrate();
-    }
-    
-    /**
-     * handler tag v1 config.
-     *
-     * @param configForm        configForm.
-     * @param configInfo        configInfo.
-     * @param configRequestInfo configRequestInfo.
-     * @throws NacosApiException NacosApiException.
-     */
-    public void persistTagv1(ConfigForm configForm, ConfigInfo configInfo, ConfigRequestInfo configRequestInfo)
-            throws NacosApiException {
-        if (!PropertyUtil.isGrayCompatibleModel() || !oldTableVersion) {
-            return;
-        }
-        
-        if (StringUtils.isNotBlank(configRequestInfo.getCasMd5())) {
-            ConfigOperateResult configOperateResult = configInfoTagPersistService.insertOrUpdateTagCas(configInfo,
-                    configForm.getTag(), configRequestInfo.getSrcIp(), configForm.getSrcUser());
-            if (!configOperateResult.isSuccess()) {
-                LOGGER.warn(
-                        "[cas-publish-tag-config-fail] srcIp = {}, dataId= {}, casMd5 = {}, msg = server md5 may have changed.",
-                        configRequestInfo.getSrcIp(), configForm.getDataId(), configRequestInfo.getCasMd5());
-                throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.RESOURCE_CONFLICT,
-                        "Cas publish tag config fail, server md5 may have changed.");
-            }
-        } else {
-            configInfoTagPersistService.insertOrUpdateTag(configInfo, configForm.getTag(), configRequestInfo.getSrcIp(),
-                    configForm.getSrcUser());
-        }
-    }
-    
-    /**
-     * handle old beta.
-     *
-     * @param configForm        configForm.
-     * @param configInfo        configInfo.
-     * @param configRequestInfo configRequestInfo.
-     * @throws NacosApiException NacosApiException.
-     */
-    public void persistBeta(ConfigForm configForm, ConfigInfo configInfo, ConfigRequestInfo configRequestInfo)
-            throws NacosApiException {
-        if (!PropertyUtil.isGrayCompatibleModel() || !oldTableVersion) {
-            return;
-        }
-        ConfigOperateResult configOperateResult = null;
-        // beta publish
-        if (StringUtils.isNotBlank(configRequestInfo.getCasMd5())) {
-            configOperateResult = configInfoBetaPersistService.insertOrUpdateBetaCas(configInfo,
-                    configRequestInfo.getBetaIps(), configRequestInfo.getSrcIp(), configForm.getSrcUser());
-            if (!configOperateResult.isSuccess()) {
-                LOGGER.warn(
-                        "[cas-publish-beta-config-fail] srcIp = {}, dataId= {}, casMd5 = {}, msg = server md5 may have changed.",
-                        configRequestInfo.getSrcIp(), configForm.getDataId(), configRequestInfo.getCasMd5());
-                throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.RESOURCE_CONFLICT,
-                        "Cas publish beta config fail, server md5 may have changed.");
-            }
-        } else {
-            configInfoBetaPersistService.insertOrUpdateBeta(configInfo, configRequestInfo.getBetaIps(),
-                    configRequestInfo.getSrcIp(), configForm.getSrcUser());
-        }
-    }
-    
-    /**
-     * delete beta and tag.
-     *
-     * @param dataId      dataId.
-     * @param group       group.
-     * @param namespaceId namespaceId.
-     * @param grayName    grayName.
-     * @param clientIp    clientIp.
-     * @param srcUser     srcUser.
-     */
-    public void deleteConfigGrayV1(String dataId, String group, String namespaceId, String grayName, String clientIp,
-            String srcUser) {
-        if (!PropertyUtil.isGrayCompatibleModel() || !oldTableVersion) {
-            return;
-        }
-        if (BetaGrayRule.TYPE_BETA.equals(grayName)) {
-            configInfoBetaPersistService.removeConfigInfo4Beta(dataId, group, namespaceId);
-        } else if (grayName.startsWith(TagGrayRule.TYPE_TAG + SPLIT)) {
-            configInfoTagPersistService.removeConfigInfoTag(dataId, group, namespaceId, grayName.substring(4), clientIp,
-                    srcUser);
-        }
-        
     }
     
     /**
