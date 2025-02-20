@@ -18,8 +18,10 @@ package com.alibaba.nacos.console.handler.impl.remote;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.cluster.RemoteServerMemberManager;
+import com.alibaba.nacos.console.config.NacosConsoleAuthConfig;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerFactory;
 import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerService;
@@ -51,7 +53,11 @@ public class NacosMaintainerClientHolder {
         String memberAddressString = StringUtils.join(memberAddress, ",");
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, memberAddressString);
-        // TODO Add admin user and pass
+        // TODO use plugin inject way to set.
+        properties.setProperty(PropertyKeyConst.USERNAME, "nacos");
+        NacosConsoleAuthConfig authConfig = (NacosConsoleAuthConfig) NacosAuthConfigHolder.getInstance()
+                .getNacosAuthConfigByScope(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE);
+        properties.setProperty(PropertyKeyConst.PASSWORD, authConfig.getAdminPassword());
         namingMaintainerService = NamingMaintainerFactory.createNamingMaintainerService(properties);
         configMaintainerService = ConfigMaintainerFactory.createConfigMaintainerService(properties);
         // TODO sub member change event to upgrade maintainer client server members.

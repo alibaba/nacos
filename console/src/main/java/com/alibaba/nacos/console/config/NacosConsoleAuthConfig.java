@@ -29,6 +29,8 @@ import com.alibaba.nacos.sys.env.EnvUtil;
  */
 public class NacosConsoleAuthConfig extends AbstractDynamicConfig implements NacosAuthConfig {
     
+    private static final String NACOS_CONSOLE_ADMIN_PASSWORD = "nacos.console.admin.password";
+    
     public static final String NACOS_CONSOLE_AUTH_SCOPE = ApiType.CONSOLE_API.name();
     
     /**
@@ -40,6 +42,11 @@ public class NacosConsoleAuthConfig extends AbstractDynamicConfig implements Nac
      * Which auth system is in use.
      */
     private String nacosAuthSystemType;
+    
+    /**
+     * Console request server admin user `nacos` password.
+     */
+    private String adminPassword;
     
     public NacosConsoleAuthConfig() {
         super("NacosConsoleAuth");
@@ -76,10 +83,15 @@ public class NacosConsoleAuthConfig extends AbstractDynamicConfig implements Nac
         return "";
     }
     
+    public String getAdminPassword() {
+        return adminPassword;
+    }
+    
     @Override
     protected void getConfigFromEnv() {
         authEnabled = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_CONSOLE_ENABLED, Boolean.class, true);
         nacosAuthSystemType = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "");
+        adminPassword = EnvUtil.getProperty(NACOS_CONSOLE_ADMIN_PASSWORD, "");
     }
     
     @Override
