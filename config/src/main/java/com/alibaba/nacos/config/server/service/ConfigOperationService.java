@@ -129,7 +129,7 @@ public class ConfigOperationService {
                         "Cas publish fail, server md5 may have changed.");
             }
         } else {
-            if (configForm.getUpdateForExist()) {
+            if (configRequestInfo.getUpdateForExist()) {
                 configOperateResult = configInfoPersistService.insertOrUpdate(configRequestInfo.getSrcIp(),
                         configForm.getSrcUser(), configInfo, configAdvanceInfo);
             } else {

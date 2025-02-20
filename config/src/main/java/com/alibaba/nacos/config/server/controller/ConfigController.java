@@ -39,7 +39,6 @@ import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.SampleResult;
-import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
@@ -48,12 +47,10 @@ import com.alibaba.nacos.config.server.paramcheck.ConfigBlurSearchHttpParamExtra
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.config.server.paramcheck.ConfigListenerHttpParamExtractor;
 import com.alibaba.nacos.config.server.result.code.ResultCodeEnum;
-import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
@@ -302,14 +299,15 @@ public class ConfigController {
     @DeleteMapping(params = "delType=ids")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
     public RestResult<Boolean> deleteConfigs(HttpServletRequest request, @RequestParam(value = "ids") List<Long> ids) {
-        if (CollectionUtils.isEmpty(ids)) {
-            return RestResultUtils.failed("The ids cannot be empty.");
-        }
         String clientIp = RequestUtil.getRemoteIp(request);
         String srcUser = RequestUtil.getSrcUserName(request);
         try {
             for (Long id : ids) {
                 ConfigInfo configInfo = configInfoPersistService.findConfigInfo(id);
+                if (configInfo == null) {
+                    LOGGER.warn("[deleteConfigs] configInfo is null, id: {}", id);
+                    continue;
+                }
                 configOperationService.deleteConfig(configInfo.getDataId(), configInfo.getGroup(),
                         configInfo.getTenant(), null, clientIp, srcUser, Constants.HTTP);
             }
@@ -455,7 +453,7 @@ public class ConfigController {
         String remoteIp = getRemoteIp(httpServletRequest);
         try {
             
-            configOperationService.deleteConfig(dataId, group, tenant, BetaGrayRule.TYPE_BETA, remoteIp, srcUser);
+            configOperationService.deleteConfig(dataId, group, tenant, BetaGrayRule.TYPE_BETA, remoteIp, srcUser, Constants.HTTP);
         } catch (Throwable e) {
             LOGGER.error("remove beta data error", e);
             return RestResultUtils.failed(500, false, "remove beta data error");
@@ -914,10 +912,10 @@ public class ConfigController {
         for (int i = 0; i < configAllInfoList.size(); i++) {
             ConfigAllInfo configAllInfo = configAllInfoList.get(i);
             ConfigForm configForm = transferToConfigForm(configAllInfo, srcUser, targetNamespaceId);
-            if (sameConfigPolicy != SameConfigPolicy.OVERWRITE) {
-                configForm.setUpdateForExist(false);
-            }
             ConfigRequestInfo configRequestInfo = transferToConfigRequestInfo(request);
+            if (sameConfigPolicy != SameConfigPolicy.OVERWRITE) {
+                configRequestInfo.setUpdateForExist(false);
+            }
             Boolean importRes = configOperationService.publishConfig(configForm, configRequestInfo, configAllInfo.getEncryptedDataKey());
             if (importRes) {
                 succCount++;

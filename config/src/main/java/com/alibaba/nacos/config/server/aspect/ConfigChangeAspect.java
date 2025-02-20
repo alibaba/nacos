@@ -20,9 +20,12 @@ import com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.common.model.RestResultUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.configuration.ConfigChangeConfigs;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
+import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
+import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.plugin.config.ConfigChangePluginManager;
@@ -102,6 +105,16 @@ public class ConfigChangeAspect {
         final String requestIpApp = configRequestInfo.getRequestIpApp();
         final String scrIp = configRequestInfo.getSrcIp();
         final String scrType = configRequestInfo.getSrcType();
+        final String betaIps = configRequestInfo.getBetaIps();
+        String grayName = null;
+        String grayRuleExp = null;
+        if (StringUtils.isNotBlank(betaIps)) {
+            grayName =  BetaGrayRule.TYPE_BETA;
+            grayRuleExp = betaIps;
+        } else if (StringUtils.isNotBlank(tag)) {
+            grayName = TagGrayRule.TYPE_TAG + "_" + configForm.getTag();
+            grayRuleExp = tag;
+        }
         
         ConfigChangePointCutTypes configChangePointCutType = null;
         if (HTTP.equals(scrType)) {
@@ -131,6 +144,8 @@ public class ConfigChangeAspect {
         configChangeRequest.setArg("use", use);
         configChangeRequest.setArg("effect", effect);
         configChangeRequest.setArg("type", type);
+        configChangeRequest.setArg("grayName", grayName);
+        configChangeRequest.setArg("grayRuleExp", grayRuleExp);
         return configChangeServiceHandle(pjp, pluginServices, configChangeRequest);
     }
     

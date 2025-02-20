@@ -425,8 +425,8 @@ class CapacityManagementAspectTest {
     @Test
     void testAroundDeleteConfigForTenant() throws Throwable {
         when(PropertyUtil.isManageCapacity()).thenReturn(true);
-        when(proceedingJoinPoint.getArgs()).thenReturn(new Object[]{mockDataId, mockGroup, mockTenant});
-        when(localMockProceedingJoinPoint.getArgs()).thenReturn(new Object[]{mockDataId, mockGroup, mockTenant});
+        when(proceedingJoinPoint.getArgs()).thenReturn(new Object[]{mockDataId, mockGroup, mockTenant, null});
+        when(localMockProceedingJoinPoint.getArgs()).thenReturn(new Object[]{mockDataId, mockGroup, mockTenant, null});
         when(proceedingJoinPoint.proceed()).thenReturn(mockProceedingJoinPointResult); 
         when(configInfoPersistService.findConfigInfo(any(), any(), any())).thenReturn(null);
         when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean())).thenReturn(true);
@@ -466,8 +466,8 @@ class CapacityManagementAspectTest {
     @Test
     void testAroundDeleteConfigForGroup() throws Throwable {
         when(PropertyUtil.isManageCapacity()).thenReturn(true);
-        when(proceedingJoinPoint.getArgs()).thenReturn(new Object[]{mockDataId, mockGroup, mockTenant});
-        when(localMockProceedingJoinPoint.getArgs()).thenReturn(new Object[]{mockDataId, mockGroup, mockTenant});
+        when(proceedingJoinPoint.getArgs()).thenReturn(new Object[]{mockDataId, mockGroup, mockTenant, null});
+        when(localMockProceedingJoinPoint.getArgs()).thenReturn(new Object[]{mockDataId, mockGroup, mockTenant, null});
         when(proceedingJoinPoint.proceed()).thenReturn(mockProceedingJoinPointResult);
         when(configInfoPersistService.findConfigInfo(any(), any(), any())).thenReturn(null);
         when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean())).thenReturn(true);

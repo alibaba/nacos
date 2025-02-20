@@ -86,7 +86,7 @@ public class CapacityManagementAspect {
         LOGGER.info("[CapacityManagement] Intercepting publishConfig operation for dataId: {}, group: {}, namespaceId: {}",
                 dataId, group, namespaceId);
 
-        if (StringUtils.isBlank(betaIps) && StringUtils.isBlank(tag)) {
+        if (StringUtils.isBlank(betaIps) && StringUtils.isBlank(tag) && StringUtils.isBlank(configForm.getGrayName())) {
             // do capacity management limitation check for writing or updating config_info table.
             if (configInfoPersistService.findConfigInfo(dataId, group, namespaceId) == null) {
                 // Write operation.
@@ -161,9 +161,14 @@ public class CapacityManagementAspect {
         String dataId = (String) args[0];
         String group = (String) args[1];
         String namespaceId = (String) args[2];
+        String grayName = (String) args[3];
         
         LOGGER.info("[CapacityManagement] Intercepting deleteConfig operation for dataId: {}, group: {}, namespaceId: {}", dataId, group,
                 namespaceId);
+        
+        if (StringUtils.isNotBlank(grayName)) {
+            return pjp.proceed();
+        }
         
         ConfigInfo configInfo = configInfoPersistService.findConfigInfo(dataId, group, namespaceId);
         if (configInfo == null) {
@@ -219,7 +224,11 @@ public class CapacityManagementAspect {
     private Object getResult(ProceedingJoinPoint pjp, String group, String namespaceId, CounterMode counterMode, boolean hasTenant) throws Throwable {
         try {
             // Execute operation actually.
-            return pjp.proceed();
+            Boolean result = (Boolean) pjp.proceed();
+            if (!result) {
+                rollbackUsage(counterMode, group, namespaceId, hasTenant);
+            }
+            return result;
         } catch (Throwable throwable) {
             LOGGER.warn("[capacityManagement] inner operation throw exception, rollback, group: {}, namespaceId: {}", group,
                     namespaceId, throwable);
