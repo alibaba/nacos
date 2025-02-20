@@ -18,6 +18,7 @@ package com.alibaba.nacos.console.controller;
 
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
+import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
 import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
 import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
@@ -46,6 +47,7 @@ import static com.alibaba.nacos.common.utils.StringUtils.WINDOWS_FOLDER_SEPARATO
 @RestController
 @RequestMapping("/v1/console/server")
 @ExtractorManager.Extractor(httpExtractor = ConsoleDefaultHttpParamExtractor.class)
+@EnabledInnerHandler
 public class ServerStateController {
     
     private static final String ANNOUNCEMENT_FILE = "announcement.conf";
