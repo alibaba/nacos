@@ -28,6 +28,8 @@ import io.grpc.netty.shaded.io.netty.handler.codec.ByteToMessageDecoder;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslHandler;
 import io.grpc.netty.shaded.io.netty.util.AsciiString;
+import io.grpc.netty.shaded.io.netty.util.Attribute;
+import io.grpc.netty.shaded.io.netty.util.AttributeKey;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -115,9 +117,12 @@ public class OptionalTlsProtocolNegotiator implements NacosGrpcProtocolNegotiato
             if (in.readableBytes() < MAGIC_VALUE) {
                 return;
             }
+            Attribute<Boolean> tlsProtected = ctx.channel().attr(AttributeKey.valueOf("TLS_PROTECTED"));
             if (isSsl(in) || !supportPlainText) {
+                tlsProtected.set(true);
                 ctx.pipeline().addAfter(ctx.name(), null, this.ssl);
             } else {
+                tlsProtected.set(false);
                 ctx.pipeline().addAfter(ctx.name(), null, this.plaintext);
             }
             ctx.fireUserEventTriggered(pne);

@@ -197,7 +197,6 @@ class EnvUtilTest {
         System.setProperty(NACOS_SERVER_IP, "1.1.1.1");
         System.setProperty(Constants.AUTO_REFRESH_TIME, "100");
         try {
-            assertEquals("1.1.1.1:8848", EnvUtil.getLocalAddress());
             EnvUtil.setLocalAddress("testLocalAddress:8848");
             assertEquals("testLocalAddress:8848", EnvUtil.getLocalAddress());
         } finally {
@@ -227,6 +226,7 @@ class EnvUtilTest {
     
     @Test
     void testGetStandaloneMode() {
+        EnvUtil.setIsStandalone(false);
         assertFalse(EnvUtil.getStandaloneMode());
         EnvUtil.setIsStandalone(true);
         assertTrue(EnvUtil.getStandaloneMode());

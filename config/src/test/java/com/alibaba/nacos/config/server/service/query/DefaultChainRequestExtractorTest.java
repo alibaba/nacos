@@ -65,7 +65,7 @@ class DefaultChainRequestExtractorTest {
     public void extractWithAllParametersShouldReturnCorrectConfigQueryChainRequest() {
         when(request.getParameter("dataId")).thenReturn("dataId");
         when(request.getParameter("group")).thenReturn("group");
-        when(request.getParameter("tenant")).thenReturn("tenant");
+        when(request.getParameter("namespaceId")).thenReturn("testNamespaceId");
         when(request.getParameter("tag")).thenReturn("tag");
         when(request.getHeader(VIPSERVER_TAG)).thenReturn("autoTag");
         requestUtilMockedStatic.when(() -> RequestUtil.getRemoteIp(request)).thenReturn("127.0.0.1");
@@ -74,7 +74,7 @@ class DefaultChainRequestExtractorTest {
         
         assertEquals("dataId", result.getDataId());
         assertEquals("group", result.getGroup());
-        assertEquals("tenant", result.getTenant());
+        assertEquals("testNamespaceId", result.getTenant());
         assertEquals("tag", result.getTag());
         assertEquals("127.0.0.1", result.getAppLabels().get(BetaGrayRule.CLIENT_IP_LABEL));
         assertEquals("tag", result.getAppLabels().get(TagGrayRule.VIP_SERVER_TAG_LABEL));
@@ -84,7 +84,7 @@ class DefaultChainRequestExtractorTest {
     public void extractWithEmptyTenantShouldReturnCorrectConfigQueryChainRequest() {
         when(request.getParameter("dataId")).thenReturn("dataId");
         when(request.getParameter("group")).thenReturn("group");
-        when(request.getParameter("tenant")).thenReturn("");
+        when(request.getParameter("namespaceId")).thenReturn("");
         when(request.getParameter("tag")).thenReturn("tag");
         when(request.getHeader(VIPSERVER_TAG)).thenReturn("autoTag");
         requestUtilMockedStatic.when(() -> RequestUtil.getRemoteIp(request)).thenReturn("127.0.0.1");
@@ -103,7 +103,7 @@ class DefaultChainRequestExtractorTest {
     public void extractWithEmptyTagAndAutoTagShouldReturnCorrectConfigQueryChainRequest() {
         when(request.getParameter("dataId")).thenReturn("dataId");
         when(request.getParameter("group")).thenReturn("group");
-        when(request.getParameter("tenant")).thenReturn("tenant");
+        when(request.getParameter("namespaceId")).thenReturn("testNamespaceId");
         when(request.getParameter("tag")).thenReturn("");
         when(request.getHeader(VIPSERVER_TAG)).thenReturn("");
         requestUtilMockedStatic.when(() -> RequestUtil.getRemoteIp(request)).thenReturn("127.0.0.1");
@@ -112,7 +112,7 @@ class DefaultChainRequestExtractorTest {
         
         assertEquals("dataId", result.getDataId());
         assertEquals("group", result.getGroup());
-        assertEquals("tenant", result.getTenant());
+        assertEquals("testNamespaceId", result.getTenant());
         assertEquals("", result.getTag());
         assertEquals("127.0.0.1", result.getAppLabels().get(BetaGrayRule.CLIENT_IP_LABEL));
         assertNull(result.getAppLabels().get(TagGrayRule.VIP_SERVER_TAG_LABEL));
@@ -122,7 +122,7 @@ class DefaultChainRequestExtractorTest {
     public void extractWithAutoTagShouldReturnCorrectConfigQueryChainRequest() {
         when(request.getParameter("dataId")).thenReturn("dataId");
         when(request.getParameter("group")).thenReturn("group");
-        when(request.getParameter("tenant")).thenReturn("tenant");
+        when(request.getParameter("namespaceId")).thenReturn("testNamespaceId");
         when(request.getParameter("tag")).thenReturn("");
         when(request.getHeader(VIPSERVER_TAG)).thenReturn("autoTag");
         when(RequestUtil.getRemoteIp(request)).thenReturn("127.0.0.1");
@@ -131,7 +131,7 @@ class DefaultChainRequestExtractorTest {
         
         assertEquals("dataId", result.getDataId());
         assertEquals("group", result.getGroup());
-        assertEquals("tenant", result.getTenant());
+        assertEquals("testNamespaceId", result.getTenant());
         assertEquals("", result.getTag());
         assertEquals("127.0.0.1", result.getAppLabels().get(BetaGrayRule.CLIENT_IP_LABEL));
         assertEquals("autoTag", result.getAppLabels().get(TagGrayRule.VIP_SERVER_TAG_LABEL));

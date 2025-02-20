@@ -250,4 +250,12 @@ class NacosClientAuthServiceImplTest {
         //when
         assertTrue(nacosClientAuthService.login(properties));
     }
+    
+    @Test
+    void testGenerateTokenWithInvalidToken() {
+        NacosClientAuthServiceImpl nacosClientAuthService = new NacosClientAuthServiceImpl();
+        long tokenTtl = 18000L;
+        long tokenRefreshWindow = nacosClientAuthService.generateTokenRefreshWindow(tokenTtl);
+        assertTrue(tokenRefreshWindow <= tokenTtl / 10);
+    }
 }

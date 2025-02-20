@@ -25,6 +25,7 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
@@ -66,7 +67,7 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
             String dataId = request.getDataId();
             String group = request.getGroup();
             String content = request.getContent();
-            final String tenant = request.getTenant();
+            final String tenant = NamespaceUtil.processNamespaceParameter(request.getTenant());
             
             final String srcIp = meta.getClientIp();
             final String tag = request.getAdditionParam("tag");

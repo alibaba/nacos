@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
@@ -68,6 +69,7 @@ public class ConfigRemoveRequestHandler extends RequestHandler<ConfigRemoveReque
             throws NacosException {
         // check tenant
         String tenant = configRemoveRequest.getTenant();
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         String dataId = configRemoveRequest.getDataId();
         String group = configRemoveRequest.getGroup();
         String tag = configRemoveRequest.getTag();

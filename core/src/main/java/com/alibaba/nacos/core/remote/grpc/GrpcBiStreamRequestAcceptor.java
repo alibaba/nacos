@@ -31,6 +31,9 @@ import com.alibaba.nacos.core.remote.ConnectionMeta;
 import com.alibaba.nacos.core.remote.RpcAckCallbackSynchronizer;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import io.grpc.netty.shaded.io.netty.channel.Channel;
+import io.grpc.netty.shaded.io.netty.util.Attribute;
+import io.grpc.netty.shaded.io.netty.util.AttributeKey;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -91,15 +94,14 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                 try {
                     parseObj = GrpcUtils.parse(payload);
                 } catch (Throwable throwable) {
-                    Loggers.REMOTE_DIGEST
-                            .warn("[{}]Grpc request bi stream,payload parse error={}", connectionId, throwable);
+                    Loggers.REMOTE_DIGEST.warn("[{}]Grpc request bi stream,payload parse error={}", connectionId,
+                            throwable);
                     return;
                 }
                 
                 if (parseObj == null) {
-                    Loggers.REMOTE_DIGEST
-                            .warn("[{}]Grpc request bi stream,payload parse null ,body={},meta={}", connectionId,
-                                    payload.getBody().getValue().toStringUtf8(), payload.getMetadata());
+                    Loggers.REMOTE_DIGEST.warn("[{}]Grpc request bi stream,payload parse null ,body={},meta={}",
+                            connectionId, payload.getBody().getValue().toStringUtf8(), payload.getMetadata());
                     return;
                 }
                 if (parseObj instanceof ConnectionSetupRequest) {
@@ -114,6 +116,10 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                             remoteIp, remotePort, localPort, ConnectionType.GRPC.getType(),
                             setUpRequest.getClientVersion(), appName, setUpRequest.getLabels());
                     metaInfo.setTenant(setUpRequest.getTenant());
+                    Channel channel = GrpcServerConstants.CONTEXT_KEY_CHANNEL.get();
+                    Attribute<Boolean> tlsProtected = channel.attr(AttributeKey.valueOf("TLS_PROTECTED"));
+                    metaInfo.setTlsProtected(
+                            tlsProtected != null && tlsProtected.get() != null && tlsProtected.get());
                     GrpcConnection connection = new GrpcConnection(metaInfo, responseObserver,
                             GrpcServerConstants.CONTEXT_KEY_CHANNEL.get());
                     // null if supported
@@ -132,8 +138,8 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                         } catch (Exception e) {
                             //Do nothing.
                             if (connectionManager.traced(clientIp)) {
-                                Loggers.REMOTE_DIGEST
-                                        .warn("[{}]Send connect reset request error,error={}", connectionId, e);
+                                Loggers.REMOTE_DIGEST.warn("[{}]Send connect reset request error,error={}",
+                                        connectionId, e);
                             }
                         }
                     } else {
@@ -156,15 +162,14 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                 } else if (parseObj instanceof Response) {
                     Response response = (Response) parseObj;
                     if (connectionManager.traced(clientIp)) {
-                        Loggers.REMOTE_DIGEST
-                                .warn("[{}]Receive response of server request  ,response={}", connectionId, response);
+                        Loggers.REMOTE_DIGEST.warn("[{}]Receive response of server request  ,response={}", connectionId,
+                                response);
                     }
                     RpcAckCallbackSynchronizer.ackNotify(connectionId, response);
                     connectionManager.refreshActiveTime(connectionId);
                 } else {
-                    Loggers.REMOTE_DIGEST
-                            .warn("[{}]Grpc request bi stream,unknown payload receive ,parseObj={}", connectionId,
-                                    parseObj);
+                    Loggers.REMOTE_DIGEST.warn("[{}]Grpc request bi stream,unknown payload receive ,parseObj={}",
+                            connectionId, parseObj);
                 }
                 
             }
