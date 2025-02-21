@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.config;
 
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.config.AbstractDynamicConfig;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
@@ -28,8 +29,6 @@ import com.alibaba.nacos.sys.env.EnvUtil;
  * @author xiweng.yy
  */
 public class NacosConsoleAuthConfig extends AbstractDynamicConfig implements NacosAuthConfig {
-    
-    private static final String NACOS_CONSOLE_ADMIN_PASSWORD = "nacos.console.admin.password";
     
     public static final String NACOS_CONSOLE_AUTH_SCOPE = ApiType.CONSOLE_API.name();
     
@@ -43,10 +42,9 @@ public class NacosConsoleAuthConfig extends AbstractDynamicConfig implements Nac
      */
     private String nacosAuthSystemType;
     
-    /**
-     * Console request server admin user `nacos` password.
-     */
-    private String adminPassword;
+    private String serverIdentityKey;
+    
+    private String serverIdentityValue;
     
     public NacosConsoleAuthConfig() {
         super("NacosConsoleAuth");
@@ -70,28 +68,25 @@ public class NacosConsoleAuthConfig extends AbstractDynamicConfig implements Nac
     
     @Override
     public boolean isSupportServerIdentity() {
-        return false;
+        return StringUtils.isNotBlank(serverIdentityKey) && StringUtils.isNotBlank(serverIdentityValue);
     }
     
     @Override
     public String getServerIdentityKey() {
-        return "";
+        return serverIdentityKey;
     }
     
     @Override
     public String getServerIdentityValue() {
-        return "";
-    }
-    
-    public String getAdminPassword() {
-        return adminPassword;
+        return serverIdentityValue;
     }
     
     @Override
     protected void getConfigFromEnv() {
         authEnabled = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_CONSOLE_ENABLED, Boolean.class, true);
         nacosAuthSystemType = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "");
-        adminPassword = EnvUtil.getProperty(NACOS_CONSOLE_ADMIN_PASSWORD, "");
+        serverIdentityKey = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "");
+        serverIdentityValue = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "");
     }
     
     @Override
