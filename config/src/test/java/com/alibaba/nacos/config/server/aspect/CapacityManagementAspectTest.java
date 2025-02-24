@@ -146,7 +146,7 @@ class CapacityManagementAspectTest {
             capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint);
         });
         
-        assertEquals("Configuration limit exceeded [group=mockGroup, namespaceId=mockTenant]. Reason: OVER_CLUSTER_QUOTA",
+        assertEquals("Configuration limit exceeded [group=mockGroup, namespaceId=mockTenant].",
                 exception.getMessage());
         Mockito.verify(proceedingJoinPoint, Mockito.times(0)).proceed();
     }
@@ -252,7 +252,7 @@ class CapacityManagementAspectTest {
         Exception exception = assertThrows(NacosException.class, () -> {
             capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint);
         });
-        assertEquals("Configuration limit exceeded [group=mockGroup, namespaceId=mockTenant]. Reason: OVER_MAX_SIZE",
+        assertEquals("Configuration limit exceeded [group=mockGroup, namespaceId=mockTenant].",
                 exception.getMessage());
         
         //  5. over tenant max size: true
@@ -301,7 +301,7 @@ class CapacityManagementAspectTest {
         Exception exception = assertThrows(NacosException.class, () -> {
             capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint);
         });
-        assertEquals("Configuration limit exceeded [group=mockGroup, namespaceId=null]. Reason: OVER_MAX_SIZE", exception.getMessage());
+        assertEquals("Configuration limit exceeded [group=mockGroup, namespaceId=null].", exception.getMessage());
         
         // 5. over tenant max size: true
         localGroupCapacity.setMaxSize(10 * 1024);

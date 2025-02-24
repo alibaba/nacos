@@ -112,8 +112,8 @@ public class CapacityManagementAspect {
             boolean hasTenant = StringUtils.isNotBlank(namespaceId);
             Capacity capacity = getCapacity(group, namespaceId, hasTenant);
             if (isSizeLimited(group, namespaceId, getCurrentSize(content), hasTenant, false, capacity)) {
-                throw new NacosException(ErrorCode.SERVER_ERROR.getCode(), "Size limit exceeded for dataId: " + dataId + ", group: " + group
-                        + ", namespaceId: " + namespaceId);
+                throw new NacosException(ErrorCode.OVER_MAX_SIZE.getCode(),
+                    String.format("Configuration content size limit exceeded [group=%s, namespaceId=%s].", group, namespaceId));
             }
         } catch (Exception e) {
             LOGGER.error("[CapacityManagement] Error during update operation for dataId: {}, group: {}, namespaceId: {}",
@@ -138,8 +138,11 @@ public class CapacityManagementAspect {
             // Write or update: usage + 1
             LimitType limitType = getLimitType(counterMode, group, namespaceId, content, hasTenant);
             if (limitType != null) {
-                throw new NacosException(ErrorCode.SERVER_ERROR.getCode(),
-                        String.format("Configuration limit exceeded [group=%s, namespaceId=%s]. Reason: %s", group, namespaceId, limitType.name()));
+                ErrorCode errorCode = ErrorCode.getErrorCode(limitType.name());
+                if (errorCode != null) {
+                    throw new NacosException(errorCode.getCode(),
+                            String.format("Configuration limit exceeded [group=%s, namespaceId=%s].", group, namespaceId));
+                }
             }
         } else {
             // Write or update: usage + 1
