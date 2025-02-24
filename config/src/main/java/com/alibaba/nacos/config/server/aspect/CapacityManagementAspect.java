@@ -138,8 +138,8 @@ public class CapacityManagementAspect {
             // Write or update: usage + 1
             LimitType limitType = getLimitType(counterMode, group, namespaceId, content, hasTenant);
             if (limitType != null) {
-                throw new NacosException(ErrorCode.SERVER_ERROR.getCode(), "Size limit exceeded for group: " + group
-                        + ", namespaceId: " + namespaceId);
+                throw new NacosException(ErrorCode.SERVER_ERROR.getCode(),
+                        String.format("Configuration limit exceeded [group=%s, namespaceId=%s]. Reason: %s", group, namespaceId, limitType.name()));
             }
         } else {
             // Write or update: usage + 1

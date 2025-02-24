@@ -158,7 +158,7 @@ public class ConfigChangeAspect {
         final String dataId = (String) args[0];
         final String group = (String) args[1];
         final String namespaceId = (String) args[2];
-        final String tag = (String) args[3];
+        final String grayName = (String) args[3];
         final String srcIp = (String) args[4];
         final String srcUser = (String) args[5];
         final String scrType = (String) args[6];
@@ -183,7 +183,7 @@ public class ConfigChangeAspect {
         configChangeRequest.setArg("namespaceId", namespaceId);
         configChangeRequest.setArg("srcIp", srcIp);
         configChangeRequest.setArg("srcUser", srcUser);
-        configChangeRequest.setArg("tag", tag);
+        configChangeRequest.setArg("grayName", grayName);
         configChangeRequest.setArg("modifyTime", TimeUtils.getCurrentTimeStr());
         return configChangeServiceHandle(pjp, pluginServices, configChangeRequest);
     }
