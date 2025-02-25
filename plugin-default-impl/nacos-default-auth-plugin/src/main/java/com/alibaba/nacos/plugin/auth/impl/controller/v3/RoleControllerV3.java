@@ -17,16 +17,16 @@
 
 package com.alibaba.nacos.plugin.auth.impl.controller.v3;
 
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
-import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
-import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -42,15 +42,15 @@ import java.util.List;
  * @author zhangyukun on:2024/8/16
  */
 @RestController
-@RequestMapping("/v3/auth/role")
+@RequestMapping(AuthConstants.ROLE_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
 public class RoleControllerV3 {
     
-    private final NacosRoleServiceImpl roleService;
+    private final NacosRoleService roleService;
     
     private static final String SEARCH_TYPE_BLUR = "blur";
     
-    public RoleControllerV3(NacosRoleServiceImpl roleService) {
+    public RoleControllerV3(NacosRoleService roleService) {
         this.roleService = roleService;
     }
     
@@ -107,9 +107,9 @@ public class RoleControllerV3 {
             @RequestParam(name = "search", required = false, defaultValue = "accurate") String search) {
         Page<RoleInfo> rolePage;
         if (SEARCH_TYPE_BLUR.equalsIgnoreCase(search)) {
-            rolePage = roleService.findRolesLike4Page(username, role, pageNo, pageSize);
+            rolePage = roleService.findRoles(username, role, pageNo, pageSize);
         } else {
-            rolePage = roleService.getRolesFromDatabase(username, role, pageNo, pageSize);
+            rolePage = roleService.getRoles(username, role, pageNo, pageSize);
         }
         return Result.success(rolePage);
     }
@@ -123,7 +123,7 @@ public class RoleControllerV3 {
     @GetMapping("/search")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.READ)
     public Result<List<String>> getRoleListByRoleName(@RequestParam String role) {
-        List<String> roles = roleService.findRolesLikeRoleName(role);
+        List<String> roles = roleService.findRoleNames(role);
         return Result.success(roles);
     }
 }

@@ -17,16 +17,16 @@
 
 package com.alibaba.nacos.plugin.auth.impl.controller.v3;
 
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
-import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionInfo;
-import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,11 +41,11 @@ import org.springframework.web.bind.annotation.RestController;
  * @author zhangyukun on:2024/8/16
  */
 @RestController
-@RequestMapping("/v3/auth/permission")
+@RequestMapping(AuthConstants.PERMISSION_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
 public class PermissionControllerV3 {
     
-    private final NacosRoleServiceImpl nacosRoleService;
+    private final NacosRoleService nacosRoleService;
     
     private static final String SEARCH_TYPE_BLUR = "blur";
     
@@ -55,7 +55,7 @@ public class PermissionControllerV3 {
      * @param nacosRoleService nacosRoleService instance
      */
     @Autowired
-    public PermissionControllerV3(NacosRoleServiceImpl nacosRoleService) {
+    public PermissionControllerV3(NacosRoleService nacosRoleService) {
         this.nacosRoleService = nacosRoleService;
     }
     
@@ -69,11 +69,11 @@ public class PermissionControllerV3 {
      */
     @PostMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.WRITE)
-    public Result<String> createPermission(@RequestParam String role, @RequestParam String resource, @RequestParam String action) {
+    public Result<String> createPermission(@RequestParam String role, @RequestParam String resource,
+            @RequestParam String action) {
         nacosRoleService.addPermission(role, resource, action);
         return Result.success("add permission ok!");
     }
-    
     
     /**
      * Delete a permission from a role.
@@ -107,9 +107,9 @@ public class PermissionControllerV3 {
             @RequestParam(name = "search", defaultValue = "accurate") String search) {
         Page<PermissionInfo> permissionPage;
         if (SEARCH_TYPE_BLUR.equalsIgnoreCase(search)) {
-            permissionPage = nacosRoleService.findPermissionsLike4Page(role, pageNo, pageSize);
+            permissionPage = nacosRoleService.findPermissions(role, pageNo, pageSize);
         } else {
-            permissionPage = nacosRoleService.getPermissionsFromDatabase(role, pageNo, pageSize);
+            permissionPage = nacosRoleService.getPermissions(role, pageNo, pageSize);
         }
         return Result.success(permissionPage);
     }
@@ -124,7 +124,8 @@ public class PermissionControllerV3 {
      */
     @GetMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.READ)
-    public Result<Boolean> isDuplicatePermission(@RequestParam String role, @RequestParam String resource, @RequestParam String action) {
+    public Result<Boolean> isDuplicatePermission(@RequestParam String role, @RequestParam String resource,
+            @RequestParam String action) {
         return nacosRoleService.isDuplicatePermission(role, resource, action);
     }
 }

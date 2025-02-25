@@ -17,10 +17,10 @@
 
 package com.alibaba.nacos.plugin.auth.impl.controller.v3;
 
-import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
-import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionInfo;
+import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,7 +49,7 @@ public class PermissionControllerV3Test {
     private PermissionControllerV3 permissionController;
     
     @Mock
-    private NacosRoleServiceImpl nacosRoleService;
+    private NacosRoleService nacosRoleService;
     
     private MockMvc mockMvc;
     
@@ -61,24 +61,23 @@ public class PermissionControllerV3Test {
     @Test
     void testGetPermissionListAccurateSearch() {
         Page<PermissionInfo> permissionInfoPage = new Page<>();
-        when(nacosRoleService.getPermissionsFromDatabase(anyString(), anyInt(), anyInt())).thenReturn(
-                permissionInfoPage);
+        when(nacosRoleService.getPermissions(anyString(), anyInt(), anyInt())).thenReturn(permissionInfoPage);
         
         Result<Page<PermissionInfo>> result = permissionController.getPermissionList(1, 10, "admin", "accurate");
         
         assertEquals(permissionInfoPage, result.getData());
-        verify(nacosRoleService, times(1)).getPermissionsFromDatabase("admin", 1, 10);
+        verify(nacosRoleService, times(1)).getPermissions("admin", 1, 10);
     }
     
     @Test
     void testGetPermissionListBlurSearch() {
         Page<PermissionInfo> permissionInfoPage = new Page<>();
-        when(nacosRoleService.findPermissionsLike4Page(anyString(), anyInt(), anyInt())).thenReturn(permissionInfoPage);
+        when(nacosRoleService.findPermissions(anyString(), anyInt(), anyInt())).thenReturn(permissionInfoPage);
         
         Result<Page<PermissionInfo>> result = permissionController.getPermissionList(1, 10, "admin", "blur");
         
         assertEquals(permissionInfoPage, result.getData());
-        verify(nacosRoleService, times(1)).findPermissionsLike4Page("admin", 1, 10);
+        verify(nacosRoleService, times(1)).findPermissions("admin", 1, 10);
     }
     
     @Test

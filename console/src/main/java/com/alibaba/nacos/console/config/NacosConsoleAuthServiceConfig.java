@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2023 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,76 +14,45 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.auth.impl.configuration;
+package com.alibaba.nacos.console.config;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
-import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
-import com.alibaba.nacos.core.auth.NacosServerAuthConfig;
-import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.DefaultAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
-import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
+import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceRemoteImpl;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManager;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.token.impl.CachedJwtTokenManager;
 import com.alibaba.nacos.plugin.auth.impl.token.impl.JwtTokenManager;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUserServiceRemoteImpl;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.authentication.configuration.GlobalAuthenticationConfigurerAdapter;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-
-import javax.annotation.PostConstruct;
+import org.springframework.context.annotation.Import;
 
 /**
- * Spring security config.
+ * Configuration of console auth service.
+ * TODO use {@link Import} to dynamic load auth plugin controller like Mybatis.
  *
- * @author Nacos
+ * @author xiweng.yy
  */
+@EnabledRemoteHandler
+@Import(AuthConfigs.class)
 @Configuration
-public class NacosAuthPluginConfig {
+public class NacosConsoleAuthServiceConfig {
     
-    private final NacosUserService userDetailsService;
-    
-    private final ControllerMethodsCache methodsCache;
-    
-    public NacosAuthPluginConfig(NacosUserService userDetailsService, ControllerMethodsCache methodsCache) {
-        this.userDetailsService = userDetailsService;
-        this.methodsCache = methodsCache;
-        
-    }
-    
-    /**
-     * Init.
-     */
-    @PostConstruct
-    public void init() {
-        methodsCache.initClassMethod("com.alibaba.nacos.plugin.auth.impl.controller");
+    @Bean
+    public NacosRoleService nacosRoleService() {
+        return new NacosRoleServiceRemoteImpl();
     }
     
     @Bean
-    @ConditionalOnMissingBean
-    public GlobalAuthenticationConfigurerAdapter authenticationConfigurer() {
-        return new GlobalAuthenticationConfigurerAdapter() {
-            @Override
-            public void init(AuthenticationManagerBuilder auth) throws Exception {
-                if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(NacosAuthConfigHolder.getInstance()
-                        .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE)
-                        .getNacosAuthSystemType())) {
-                    auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
-                }
-            }
-        };
-    }
-    
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+    public NacosUserService nacosUserService(AuthConfigs authConfigs) {
+        return new NacosUserServiceRemoteImpl(authConfigs);
     }
     
     @Bean

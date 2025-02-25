@@ -1,0 +1,92 @@
+/*
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.alibaba.nacos.plugin.auth.impl.utils;
+
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.file.FileChangeEvent;
+import com.alibaba.nacos.sys.file.FileWatcher;
+import com.alibaba.nacos.sys.file.WatchFileCenter;
+
+import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
+/**
+ * Nacos auth plugin remote nacos server util.
+ *
+ * @author xiweng.yy
+ */
+public class RemoteServerUtil {
+    
+    private static List<String> serverAddresses = new LinkedList<>();
+    
+    private static AtomicInteger index = new AtomicInteger();
+    
+    private static String remoteServerContextPath = "/nacos";
+    
+    static {
+        readRemoteServerAddress();
+        registerWatcher();
+        initRemoteServerContextPath();
+    }
+    
+    private static void initRemoteServerContextPath() {
+        remoteServerContextPath = EnvUtil.getProperty("nacos.console.remote.server.context-path", "/nacos");
+    }
+    
+    private static void registerWatcher() {
+        try {
+            WatchFileCenter.registerWatcher(EnvUtil.getClusterConfFilePath(), new FileWatcher() {
+                
+                @Override
+                public void onChange(FileChangeEvent event) {
+                    readRemoteServerAddress();
+                }
+                
+                @Override
+                public boolean interest(String context) {
+                    return true;
+                }
+            });
+        } catch (Exception ignored) {
+        }
+    }
+    
+    /**
+     * Read nacos server address from cluster.conf.
+     */
+    public static void readRemoteServerAddress() {
+        try {
+            serverAddresses = EnvUtil.readClusterConf();
+        } catch (IOException ignored) {
+        }
+    }
+    
+    public static List<String> getServerAddresses() {
+        return new LinkedList<>(serverAddresses);
+    }
+    
+    public static String getOneNacosServerAddress() {
+        int actual = index.getAndUpdate(operand -> (operand + 1) % serverAddresses.size());
+        return serverAddresses.get(actual);
+    }
+    
+    public static String getRemoteServerContextPath() {
+        return remoteServerContextPath;
+    }
+}

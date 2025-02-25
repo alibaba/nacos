@@ -19,9 +19,9 @@ package com.alibaba.nacos.plugin.auth.impl.ldap;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
-import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetails;
-import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import org.apache.commons.lang.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -67,10 +67,10 @@ class LdapAuthenticationProviderTest {
     Method ldapLogin;
     
     @Mock
-    private NacosUserDetailsServiceImpl userDetailsService;
+    private NacosUserService userDetailsService;
     
     @Mock
-    private NacosRoleServiceImpl nacosRoleService;
+    private NacosRoleService nacosRoleService;
     
     @Mock
     private LdapTemplate ldapTemplate;

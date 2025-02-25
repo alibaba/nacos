@@ -21,9 +21,9 @@ import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
-import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetails;
-import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.ldap.core.LdapTemplate;
@@ -44,9 +44,9 @@ import java.util.List;
 @Deprecated
 public class LdapAuthenticationProvider implements AuthenticationProvider {
     
-    private final NacosUserDetailsServiceImpl userDetailsService;
+    private final NacosUserService userDetailsService;
     
-    private final NacosRoleServiceImpl nacosRoleService;
+    private final NacosRoleService nacosRoleService;
     
     private final LdapTemplate ldapTemplate;
     
@@ -54,8 +54,8 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
     
     private final boolean caseSensitive;
     
-    public LdapAuthenticationProvider(LdapTemplate ldapTemplate, NacosUserDetailsServiceImpl userDetailsService,
-            NacosRoleServiceImpl nacosRoleService, String filterPrefix, boolean caseSensitive) {
+    public LdapAuthenticationProvider(LdapTemplate ldapTemplate, NacosUserService userDetailsService,
+            NacosRoleService nacosRoleService, String filterPrefix, boolean caseSensitive) {
         this.ldapTemplate = ldapTemplate;
         this.nacosRoleService = nacosRoleService;
         this.userDetailsService = userDetailsService;
@@ -94,7 +94,8 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
         try {
             userDetails = userDetailsService.loadUserByUsername(AuthConstants.LDAP_PREFIX + username);
         } catch (UsernameNotFoundException exception) {
-            userDetailsService.createUser(AuthConstants.LDAP_PREFIX + username, AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD);
+            userDetailsService.createUser(AuthConstants.LDAP_PREFIX + username,
+                    AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD, false);
             User user = new User();
             user.setUsername(AuthConstants.LDAP_PREFIX + username);
             user.setPassword(AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD);

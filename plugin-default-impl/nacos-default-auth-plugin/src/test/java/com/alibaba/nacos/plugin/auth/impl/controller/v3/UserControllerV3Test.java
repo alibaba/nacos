@@ -25,10 +25,10 @@ import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
-import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
-import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -63,10 +63,10 @@ import static org.mockito.Mockito.when;
 class UserControllerV3Test {
     
     @Mock
-    private NacosUserDetailsServiceImpl userDetailsService;
+    private NacosUserService userDetailsService;
     
     @Mock
-    private NacosRoleServiceImpl roleService;
+    private NacosRoleService roleService;
     
     @Mock
     private AuthConfigs authConfigs;
@@ -92,7 +92,7 @@ class UserControllerV3Test {
     
     @Test
     void testCreateUserSuccess() {
-        when(userDetailsService.getUserFromDatabase("test")).thenReturn(null);
+        when(userDetailsService.getUser("test")).thenReturn(null);
         
         ArgumentCaptor<String> passwordCaptor = ArgumentCaptor.forClass(String.class);
         
@@ -107,7 +107,7 @@ class UserControllerV3Test {
     
     @Test
     void testCreateUserUserAlreadyExists() {
-        when(userDetailsService.getUserFromDatabase("test")).thenReturn(new User());
+        when(userDetailsService.getUser("test")).thenReturn(new User());
         
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             userControllerV3.createUser("test", "testPass");
@@ -147,7 +147,7 @@ class UserControllerV3Test {
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
         
-        when(userDetailsService.getUserFromDatabase("nacos")).thenReturn(new User());
+        when(userDetailsService.getUser("nacos")).thenReturn(new User());
         
         ArgumentCaptor<String> passwordCaptor = ArgumentCaptor.forClass(String.class);
         

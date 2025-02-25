@@ -17,6 +17,7 @@
 package com.alibaba.nacos.plugin.auth.impl.controller;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.model.RestResultUtils;
@@ -24,7 +25,6 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.core.controller.compatibility.Compatibility;
-import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
@@ -34,13 +34,14 @@ import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
-import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
-import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
-import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordGeneratorUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -57,8 +58,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 
@@ -80,10 +79,10 @@ public class UserController {
     private AuthenticationManager authenticationManager;
     
     @Autowired
-    private NacosUserDetailsServiceImpl userDetailsService;
+    private NacosUserService userDetailsService;
     
     @Autowired
-    private NacosRoleServiceImpl roleService;
+    private NacosRoleService roleService;
     
     @Autowired
     private AuthConfigs authConfigs;
@@ -109,11 +108,11 @@ public class UserController {
                     "User `nacos` is default admin user. Please use `/nacos/v1/auth/users/admin` API to init `nacos` users. "
                             + "Detail see `https://nacos.io/docs/latest/manual/admin/auth/#31-%E8%AE%BE%E7%BD%AE%E7%AE%A1%E7%90%86%E5%91%98%E5%AF%86%E7%A0%81`");
         }
-        User user = userDetailsService.getUserFromDatabase(username);
+        User user = userDetailsService.getUser(username);
         if (user != null) {
             throw new IllegalArgumentException("user '" + username + "' already exist!");
         }
-        userDetailsService.createUser(username, PasswordEncoderUtil.encode(password));
+        userDetailsService.createUser(username, password);
         return RestResultUtils.success("create user ok!");
     }
     
@@ -132,7 +131,7 @@ public class UserController {
             }
             
             String username = AuthConstants.DEFAULT_USER;
-            userDetailsService.createUser(username, PasswordEncoderUtil.encode(password));
+            userDetailsService.createUser(username, password);
             roleService.addAdminRole(username);
             ObjectNode result = JacksonUtils.createEmptyJsonNode();
             result.put(AuthConstants.PARAM_USERNAME, username);
@@ -197,12 +196,12 @@ public class UserController {
             return null;
         }
         
-        User user = userDetailsService.getUserFromDatabase(username);
+        User user = userDetailsService.getUser(username);
         if (user == null) {
             throw new IllegalArgumentException("user " + username + " not exist!");
         }
         
-        userDetailsService.updateUserPassword(username, PasswordEncoderUtil.encode(newPassword));
+        userDetailsService.updateUserPassword(username, newPassword);
         
         return RestResultUtils.success("update user ok!");
     }
@@ -246,7 +245,7 @@ public class UserController {
     @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/auth/user/list")
     public Page<User> getUsers(@RequestParam int pageNo, @RequestParam int pageSize,
             @RequestParam(name = "username", required = false, defaultValue = "") String username) {
-        return userDetailsService.getUsersFromDatabase(pageNo, pageSize, username);
+        return userDetailsService.getUsers(pageNo, pageSize, username);
     }
     
     @GetMapping(params = "search=blur")
@@ -254,7 +253,7 @@ public class UserController {
     @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/auth/user/list")
     public Page<User> fuzzySearchUser(@RequestParam int pageNo, @RequestParam int pageSize,
             @RequestParam(name = "username", required = false, defaultValue = "") String username) {
-        return userDetailsService.findUsersLike4Page(username, pageNo, pageSize);
+        return userDetailsService.findUsers(username, pageNo, pageSize);
     }
     
     /**
@@ -318,6 +317,6 @@ public class UserController {
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
     @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/auth/user/search")
     public List<String> searchUsersLikeUsername(@RequestParam String username) {
-        return userDetailsService.findUserLikeUsername(username);
+        return userDetailsService.findUserNames(username);
     }
 }

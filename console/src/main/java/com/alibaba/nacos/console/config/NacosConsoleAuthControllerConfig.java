@@ -17,41 +17,41 @@
 package com.alibaba.nacos.console.config;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
-import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.controller.v3.PermissionControllerV3;
 import com.alibaba.nacos.plugin.auth.impl.controller.v3.RoleControllerV3;
 import com.alibaba.nacos.plugin.auth.impl.controller.v3.UserControllerV3;
-import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
-import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 
 /**
  * Configuration of console auth controller.
+ * TODO use {@link Import} to dynamic load auth plugin controller like Mybatis.
  *
  * @author xiweng.yy
  */
 @Configuration
-@EnabledInnerHandler
 public class NacosConsoleAuthControllerConfig {
     
     @Bean
-    public UserControllerV3 consoleUserControllerV3(NacosUserDetailsServiceImpl userDetailsService,
-            NacosRoleServiceImpl roleService, AuthConfigs authConfigs, IAuthenticationManager iAuthenticationManager,
+    public UserControllerV3 consoleUserControllerV3(NacosUserService userDetailsService, NacosRoleService roleService,
+            AuthConfigs authConfigs, IAuthenticationManager iAuthenticationManager,
             TokenManagerDelegate jwtTokenManager) {
         return new UserControllerV3(userDetailsService, roleService, authConfigs, iAuthenticationManager,
                 jwtTokenManager);
     }
     
     @Bean
-    public RoleControllerV3 consoleRoleControllerV3(NacosRoleServiceImpl roleService) {
+    public RoleControllerV3 consoleRoleControllerV3(NacosRoleService roleService) {
         return new RoleControllerV3(roleService);
     }
     
     @Bean
-    public PermissionControllerV3 permissionControllerV3(NacosRoleServiceImpl roleService) {
+    public PermissionControllerV3 permissionControllerV3(NacosRoleService roleService) {
         return new PermissionControllerV3(roleService);
     }
 }

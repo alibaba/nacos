@@ -16,12 +16,12 @@
 
 package com.alibaba.nacos.plugin.auth.impl.roles;
 
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
@@ -33,7 +33,7 @@ import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionPersistService;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RolePersistService;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
-import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -50,13 +50,13 @@ import java.util.regex.Pattern;
 import static com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
 
 /**
- * Nacos builtin role service.
+ * Nacos builtin role service, implemented by directly access to database.
  *
  * @author nkorange
  * @since 1.2.0
  */
 @Service
-public class NacosRoleServiceImpl {
+public class NacosRoleServiceDirectImpl implements NacosRoleService {
     
     private static final int DEFAULT_PAGE_NO = 1;
     
@@ -67,7 +67,7 @@ public class NacosRoleServiceImpl {
     private RolePersistService rolePersistService;
     
     @Autowired
-    private NacosUserDetailsServiceImpl userDetailsService;
+    private NacosUserService userDetailsService;
     
     @Autowired
     private PermissionPersistService permissionPersistService;
@@ -111,16 +111,7 @@ public class NacosRoleServiceImpl {
         }
     }
     
-    /**
-     * Determine if the user has permission of the resource.
-     *
-     * <p>Note if the user has many roles, this method returns true if any one role of the user has the desired
-     * permission.
-     *
-     * @param nacosUser  user info
-     * @param permission permission to auth
-     * @return true if granted, false otherwise
-     */
+    @Override
     public boolean hasPermission(NacosUser nacosUser, Permission permission) {
         if (isUpdatePasswordPermission(permission)) {
             return true;
@@ -170,11 +161,11 @@ public class NacosRoleServiceImpl {
         return null != properties && properties.contains(AuthConstants.UPDATE_PASSWORD_ENTRY_POINT);
     }
     
+    @Override
     public List<RoleInfo> getRoles(String username) {
         List<RoleInfo> roleInfoList = roleInfoMap.get(username);
         if (!authConfigs.isCachingEnabled() || roleInfoList == null) {
-            Page<RoleInfo> roleInfoPage = getRolesFromDatabase(username, StringUtils.EMPTY, DEFAULT_PAGE_NO,
-                    Integer.MAX_VALUE);
+            Page<RoleInfo> roleInfoPage = getRoles(username, StringUtils.EMPTY, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
             if (roleInfoPage != null) {
                 roleInfoList = roleInfoPage.getPageItems();
                 if (!CollectionUtils.isEmpty(roleInfoList)) {
@@ -185,6 +176,16 @@ public class NacosRoleServiceImpl {
         return roleInfoList;
     }
     
+    @Override
+    public Page<RoleInfo> getRoles(String username, String role, int pageNo, int pageSize) {
+        Page<RoleInfo> roles = rolePersistService.getRolesByUserNameAndRoleName(username, role, pageNo, pageSize);
+        if (roles == null) {
+            return new Page<>();
+        }
+        return roles;
+    }
+    
+    @Override
     public List<RoleInfo> getAllRoles() {
         Page<RoleInfo> roleInfoPage = rolePersistService.getRolesByUserNameAndRoleName(StringUtils.EMPTY,
                 StringUtils.EMPTY, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
@@ -194,19 +195,11 @@ public class NacosRoleServiceImpl {
         return roleInfoPage.getPageItems();
     }
     
-    public Page<RoleInfo> getRolesFromDatabase(String userName, String role, int pageNo, int pageSize) {
-        Page<RoleInfo> roles = rolePersistService.getRolesByUserNameAndRoleName(userName, role, pageNo, pageSize);
-        if (roles == null) {
-            return new Page<>();
-        }
-        return roles;
-    }
-    
+    @Override
     public List<PermissionInfo> getPermissions(String role) {
         List<PermissionInfo> permissionInfoList = permissionInfoMap.get(role);
         if (!authConfigs.isCachingEnabled() || permissionInfoList == null) {
-            Page<PermissionInfo> permissionInfoPage = getPermissionsFromDatabase(role, DEFAULT_PAGE_NO,
-                    Integer.MAX_VALUE);
+            Page<PermissionInfo> permissionInfoPage = getPermissions(role, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
             if (permissionInfoPage != null) {
                 permissionInfoList = permissionInfoPage.getPageItems();
                 if (!CollectionUtils.isEmpty(permissionInfoList)) {
@@ -217,18 +210,18 @@ public class NacosRoleServiceImpl {
         return permissionInfoList;
     }
     
-    public Page<PermissionInfo> getPermissionsByRoleFromDatabase(String role, int pageNo, int pageSize) {
-        return permissionPersistService.getPermissions(role, pageNo, pageSize);
+    @Override
+    public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {
+        Page<PermissionInfo> pageInfo = permissionPersistService.getPermissions(role, pageNo, pageSize);
+        if (pageInfo == null) {
+            return new Page<>();
+        }
+        return pageInfo;
     }
     
-    /**
-     * Add role.
-     *
-     * @param role     role name
-     * @param username user name
-     */
+    @Override
     public void addRole(String role, String username) {
-        if (userDetailsService.getUserFromDatabase(username) == null) {
+        if (userDetailsService.getUser(username) == null) {
             throw new IllegalArgumentException("user '" + username + "' not found!");
         }
         
@@ -236,23 +229,18 @@ public class NacosRoleServiceImpl {
             throw new IllegalArgumentException(
                     "role '" + AuthConstants.GLOBAL_ADMIN_ROLE + "' is not permitted to create!");
         }
-
+        
         if (isUserBoundToRole(role, username)) {
-            throw new IllegalArgumentException(
-                    "user '" + username + "' already bound to the role '" + role + "'!");
+            throw new IllegalArgumentException("user '" + username + "' already bound to the role '" + role + "'!");
         }
-
+        
         rolePersistService.addRole(role, username);
         roleSet.add(role);
     }
     
-    /**
-     * Add role.
-     *
-     * @param username user name
-     */
+    @Override
     public void addAdminRole(String username) {
-        if (userDetailsService.getUserFromDatabase(username) == null) {
+        if (userDetailsService.getUser(username) == null) {
             throw new IllegalArgumentException("user '" + username + "' not found!");
         }
         if (hasGlobalAdminRole()) {
@@ -264,41 +252,18 @@ public class NacosRoleServiceImpl {
         authConfigs.setHasGlobalAdminRole(true);
     }
     
-    /**
-     * delete user Role.
-     *
-     * @param role     role
-     * @param userName userName
-     */
+    @Override
     public void deleteRole(String role, String userName) {
         rolePersistService.deleteRole(role, userName);
     }
     
-    /**
-     * deleteRole.
-     *
-     * @param role role
-     */
+    @Override
     public void deleteRole(String role) {
         rolePersistService.deleteRole(role);
         roleSet.remove(role);
     }
     
-    public Page<PermissionInfo> getPermissionsFromDatabase(String role, int pageNo, int pageSize) {
-        Page<PermissionInfo> pageInfo = permissionPersistService.getPermissions(role, pageNo, pageSize);
-        if (pageInfo == null) {
-            return new Page<>();
-        }
-        return pageInfo;
-    }
-    
-    /**
-     * Add permission.
-     *
-     * @param role     role name
-     * @param resource resource
-     * @param action   action
-     */
+    @Override
     public void addPermission(String role, String resource, String action) {
         if (!roleSet.contains(role)) {
             throw new IllegalArgumentException("role " + role + " not found!");
@@ -306,11 +271,18 @@ public class NacosRoleServiceImpl {
         permissionPersistService.addPermission(role, resource, action);
     }
     
+    @Override
     public void deletePermission(String role, String resource, String action) {
         permissionPersistService.deletePermission(role, resource, action);
     }
     
-    public List<String> findRolesLikeRoleName(String role) {
+    @Override
+    public Page<RoleInfo> findRoles(String username, String role, int pageNo, int pageSize) {
+        return rolePersistService.findRolesLike4Page(username, role, pageNo, pageSize);
+    }
+    
+    @Override
+    public List<String> findRoleNames(String role) {
         return rolePersistService.findRolesLikeRoleName(role);
     }
     
@@ -342,31 +314,19 @@ public class NacosRoleServiceImpl {
         return result.toString();
     }
     
-    public Page<RoleInfo> findRolesLike4Page(String username, String role, int pageNo, int pageSize) {
-        return rolePersistService.findRolesLike4Page(username, role, pageNo, pageSize);
-    }
-    
-    public Page<PermissionInfo> findPermissionsLike4Page(String role, int pageNo, int pageSize) {
+    @Override
+    public Page<PermissionInfo> findPermissions(String role, int pageNo, int pageSize) {
         return permissionPersistService.findPermissionsLike4Page(role, pageNo, pageSize);
     }
     
-    /**
-     * check if user has admin role.
-     *
-     * @param userName user name
-     * @return true if user has admin role.
-     */
+    @Override
     public boolean hasGlobalAdminRole(String userName) {
         List<RoleInfo> roles = getRoles(userName);
         
         return roles.stream().anyMatch(roleInfo -> AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole()));
     }
     
-    /**
-     * check if all user has at least one admin role.
-     *
-     * @return true if all user has at least one admin role.
-     */
+    @Override
     public boolean hasGlobalAdminRole() {
         if (authConfigs.isHasGlobalAdminRole()) {
             return true;
@@ -377,15 +337,8 @@ public class NacosRoleServiceImpl {
         authConfigs.setHasGlobalAdminRole(hasGlobalAdminRole);
         return hasGlobalAdminRole;
     }
-
-    /**
-     * judge whether the permission is duplicate.
-     *
-     * @param role role name
-     * @param resource resource
-     * @param action action
-     * @return true if duplicate, false otherwise
-     */
+    
+    @Override
     public Result<Boolean> isDuplicatePermission(String role, String resource, String action) {
         List<PermissionInfo> permissionInfos = getPermissions(role);
         if (CollectionUtils.isEmpty(permissionInfos)) {
@@ -393,24 +346,19 @@ public class NacosRoleServiceImpl {
         }
         for (PermissionInfo permissionInfo : permissionInfos) {
             boolean resourceMatch = StringUtils.equals(resource, permissionInfo.getResource());
-            boolean actionMatch = StringUtils.equals(action, permissionInfo.getAction()) || "rw".equals(permissionInfo.getAction());
+            boolean actionMatch =
+                    StringUtils.equals(action, permissionInfo.getAction()) || "rw".equals(permissionInfo.getAction());
             if (resourceMatch && actionMatch) {
                 return Result.success(Boolean.TRUE);
             }
         }
         return Result.success(Boolean.FALSE);
     }
-
-    /**
-     * judge whether the user is already bound to the role.
-     *
-     * @param role     role name
-     * @param username user name
-     * @return true if the user is already bound to the role.
-     */
+    
+    @Override
     public boolean isUserBoundToRole(String role, String username) {
-        Page<RoleInfo> roleInfoPage = rolePersistService.getRolesByUserNameAndRoleName(username,
-                role, DEFAULT_PAGE_NO, 1);
+        Page<RoleInfo> roleInfoPage = rolePersistService.getRolesByUserNameAndRoleName(username, role, DEFAULT_PAGE_NO,
+                1);
         if (roleInfoPage == null) {
             return false;
         }
