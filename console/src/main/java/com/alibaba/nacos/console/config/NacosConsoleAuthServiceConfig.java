@@ -18,6 +18,7 @@ package com.alibaba.nacos.console.config;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
+import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.DefaultAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
@@ -34,6 +35,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
+import javax.annotation.PostConstruct;
+
 /**
  * Configuration of console auth service.
  * TODO use {@link Import} to dynamic load auth plugin controller like Mybatis.
@@ -45,9 +48,20 @@ import org.springframework.context.annotation.Import;
 @Configuration
 public class NacosConsoleAuthServiceConfig {
     
+    private final ControllerMethodsCache methodsCache;
+    
+    public NacosConsoleAuthServiceConfig(ControllerMethodsCache methodsCache) {
+        this.methodsCache = methodsCache;
+    }
+    
+    @PostConstruct
+    public void registerAuthPathToCache() {
+        methodsCache.initClassMethod("com.alibaba.nacos.plugin.auth.impl.controller");
+    }
+    
     @Bean
-    public NacosRoleService nacosRoleService() {
-        return new NacosRoleServiceRemoteImpl();
+    public NacosRoleService nacosRoleService(AuthConfigs authConfigs) {
+        return new NacosRoleServiceRemoteImpl(authConfigs);
     }
     
     @Bean

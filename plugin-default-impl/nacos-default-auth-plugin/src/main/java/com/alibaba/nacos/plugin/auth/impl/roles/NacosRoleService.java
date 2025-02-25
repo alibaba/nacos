@@ -101,15 +101,6 @@ public interface NacosRoleService {
     Result<Boolean> isDuplicatePermission(String role, String resource, String action);
     
     /**
-     * Judge whether the user is already bound to the role.
-     *
-     * @param role     role name
-     * @param username user name
-     * @return true if the user is already bound to the role.
-     */
-    boolean isUserBoundToRole(String role, String username);
-    
-    /**
      * Get All roles for target user.
      *
      * @param username username of target user

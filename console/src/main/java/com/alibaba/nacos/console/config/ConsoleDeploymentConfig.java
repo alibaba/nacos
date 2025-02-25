@@ -19,11 +19,6 @@ package com.alibaba.nacos.console.config;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.naming.selector.SelectorManager;
-import com.alibaba.nacos.plugin.auth.api.Permission;
-import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
-import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -44,45 +39,5 @@ public class ConsoleDeploymentConfig {
     @Bean
     public SelectorManager selectorManager() {
         return new SelectorManager();
-    }
-    
-    @Bean
-    public IAuthenticationManager authenticationManager() {
-        // TODO implement remote authentication manager.
-        return new IAuthenticationManager() {
-            @Override
-            public NacosUser authenticate(String username, String rawPassword) throws AccessException {
-                return new NacosUser("nacos");
-            }
-            
-            @Override
-            public NacosUser authenticate(String jwtToken) throws AccessException {
-                return new NacosUser("nacos");
-            }
-            
-            @Override
-            public NacosUser authenticate(HttpServletRequest httpServletRequest) throws AccessException {
-                return new NacosUser("nacos");
-            }
-            
-            @Override
-            public void authorize(Permission permission, NacosUser nacosUser) throws AccessException {
-            }
-            
-            @Override
-            public boolean hasGlobalAdminRole(String username) {
-                return true;
-            }
-            
-            @Override
-            public boolean hasGlobalAdminRole() {
-                return true;
-            }
-            
-            @Override
-            public boolean hasGlobalAdminRole(NacosUser nacosUser) {
-                return true;
-            }
-        };
     }
 }

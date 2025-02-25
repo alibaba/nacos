@@ -20,6 +20,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.ldap.LdapAutoConfiguration;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Nacos console starter.
@@ -28,6 +29,7 @@ import org.springframework.context.annotation.PropertySource;
  */
 @SpringBootApplication(exclude = LdapAutoConfiguration.class)
 @PropertySource("classpath:nacos-console.properties")
+@EnableScheduling
 public class NacosConsole {
     
     public static void main(String[] args) {

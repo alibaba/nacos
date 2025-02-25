@@ -16,6 +16,11 @@
 
 package com.alibaba.nacos.plugin.auth.impl.utils;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.common.http.HttpRestResult;
+import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.file.FileChangeEvent;
 import com.alibaba.nacos.sys.file.FileWatcher;
@@ -88,5 +93,32 @@ public class RemoteServerUtil {
     
     public static String getRemoteServerContextPath() {
         return remoteServerContextPath;
+    }
+    
+    /**
+     * Single check http result, if not success, wrapper result as Nacos exception.
+     *
+     * @param result http execute result
+     * @throws NacosException wrapper result as NacosException
+     */
+    public static void singleCheckResult(HttpRestResult<String> result) throws NacosException {
+        if (result.ok()) {
+            return;
+        }
+        throw new NacosException(result.getCode(), result.getMessage());
+    }
+    
+    /**
+     * According input {@link AuthConfigs} to build remote server identity header.
+     *
+     * @param authConfigs authConfigs
+     * @return remote server identity header
+     */
+    public static Header buildServerRemoteHeader(AuthConfigs authConfigs) {
+        Header header = Header.newInstance();
+        if (StringUtils.isNotBlank(authConfigs.getServerIdentityKey())) {
+            header.addParam(authConfigs.getServerIdentityKey(), authConfigs.getServerIdentityValue());
+        }
+        return header;
     }
 }

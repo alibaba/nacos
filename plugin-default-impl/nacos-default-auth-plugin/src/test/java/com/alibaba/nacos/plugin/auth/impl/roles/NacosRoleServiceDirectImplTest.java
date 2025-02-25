@@ -79,7 +79,7 @@ class NacosRoleServiceDirectImplTest {
     
     @BeforeEach
     void setup() throws Exception {
-        nacosRoleService = new NacosRoleServiceDirectImpl();
+        nacosRoleService = new NacosRoleServiceDirectImpl(authConfigs, rolePersistService, userDetailsService, permissionPersistService);
         nacosRoleServiceClass = NacosRoleServiceDirectImpl.class;
         Field authConfigsFile = nacosRoleServiceClass.getDeclaredField("authConfigs");
         authConfigsFile.setAccessible(true);
