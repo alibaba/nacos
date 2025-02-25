@@ -18,9 +18,9 @@ package com.alibaba.nacos.core.controller.v3;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
-import com.alibaba.nacos.core.namespace.model.Namespace;
 import com.alibaba.nacos.core.namespace.model.form.NamespaceForm;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
@@ -102,19 +102,16 @@ class NamespaceControllerV3Test {
         form.setNamespaceName(TEST_NAMESPACE_NAME);
         form.setNamespaceDesc(TEST_NAMESPACE_DESC);
         
-        when(namespaceOperationService.createNamespace(
-                TEST_NAMESPACE_ID,
-                TEST_NAMESPACE_NAME,
-                TEST_NAMESPACE_DESC
-        )).thenReturn(true);
+        when(namespaceOperationService.createNamespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME,
+                TEST_NAMESPACE_DESC)).thenReturn(true);
         
         Result<Boolean> result = namespaceControllerV3.createNamespace(form);
         
         Assertions.assertNotNull(result);
         Assertions.assertEquals(ErrorCode.SUCCESS.getCode(), (int) result.getCode());
         Assertions.assertTrue(result.getData());
-        verify(namespaceOperationService, times(1))
-                .createNamespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC);
+        verify(namespaceOperationService, times(1)).createNamespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME,
+                TEST_NAMESPACE_DESC);
     }
     
     @Test
@@ -138,19 +135,15 @@ class NamespaceControllerV3Test {
         form.setNamespaceName("updated-name");
         form.setNamespaceDesc("updated-desc");
         
-        when(namespaceOperationService.editNamespace(
-                TEST_NAMESPACE_ID,
-                "updated-name",
-                "updated-desc"
-        )).thenReturn(true);
+        when(namespaceOperationService.editNamespace(TEST_NAMESPACE_ID, "updated-name", "updated-desc")).thenReturn(
+                true);
         
         Result<Boolean> result = namespaceControllerV3.updateNamespace(form);
         
         Assertions.assertNotNull(result);
         Assertions.assertEquals(ErrorCode.SUCCESS.getCode(), (int) result.getCode());
         Assertions.assertTrue(result.getData());
-        verify(namespaceOperationService, times(1))
-                .editNamespace(TEST_NAMESPACE_ID, "updated-name", "updated-desc");
+        verify(namespaceOperationService, times(1)).editNamespace(TEST_NAMESPACE_ID, "updated-name", "updated-desc");
     }
     
     @Test

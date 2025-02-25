@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.maintainer.client.core;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.response.ConnectionInfo;
 import com.alibaba.nacos.api.model.response.IdGeneratorInfo;
 import com.alibaba.nacos.api.model.response.NacosMember;
@@ -24,6 +25,7 @@ import com.alibaba.nacos.api.model.response.ServerLoaderMetrics;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.maintainer.client.remote.ClientHttpProxy;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -299,7 +301,6 @@ class AbstractCoreMaintainerServiceTest {
     @Test
     void testCreateNamespace() throws Exception {
         // Arrange
-        String namespaceId = "test-namespace-id";
         String namespaceName = "test-namespace-name";
         String namespaceDesc = "test-namespace-desc";
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
@@ -308,7 +309,7 @@ class AbstractCoreMaintainerServiceTest {
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        Boolean result = coreMaintainerService.createNamespace(namespaceId, namespaceName, namespaceDesc);
+        Boolean result = coreMaintainerService.createNamespace(namespaceName, namespaceDesc);
         
         // Assert
         assertTrue(result);
@@ -383,5 +384,47 @@ class AbstractCoreMaintainerServiceTest {
         // Assert
         assertFalse(result);
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+    }
+    
+    @Test
+    void getServerState() throws JsonProcessingException, NacosException {
+        Map<String, String> serverState = new HashMap<>();
+        serverState.put("key", "value");
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(serverState))); // 0表示不存在
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+        
+        Map<String, String> result = coreMaintainerService.getServerState();
+        
+        assertEquals(1, result.size());
+        assertEquals("value", result.get("key"));
+    }
+    
+    @Test
+    void liveness() throws NacosException {
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setCode(200);
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+        
+        Boolean result = coreMaintainerService.liveness();
+        assertTrue(result);
+        
+        mockHttpRestResult.setCode(500);
+        result = coreMaintainerService.liveness();
+        assertFalse(result);
+    }
+    
+    @Test
+    void readiness() throws NacosException {
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setCode(200);
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+        
+        Boolean result = coreMaintainerService.readiness();
+        assertTrue(result);
+        
+        mockHttpRestResult.setCode(500);
+        result = coreMaintainerService.readiness();
+        assertFalse(result);
     }
 }

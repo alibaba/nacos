@@ -22,13 +22,12 @@ import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
-import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetails;
-import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
-
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
@@ -39,14 +38,14 @@ import jakarta.servlet.http.HttpServletRequest;
  */
 public class AbstractAuthenticationManager implements IAuthenticationManager {
     
-    protected NacosUserDetailsServiceImpl userDetailsService;
+    protected NacosUserService userDetailsService;
     
     protected TokenManagerDelegate jwtTokenManager;
     
-    protected NacosRoleServiceImpl roleService;
+    protected NacosRoleService roleService;
     
-    public AbstractAuthenticationManager(NacosUserDetailsServiceImpl userDetailsService,
-            TokenManagerDelegate jwtTokenManager, NacosRoleServiceImpl roleService) {
+    public AbstractAuthenticationManager(NacosUserService userDetailsService, TokenManagerDelegate jwtTokenManager,
+            NacosRoleService roleService) {
         this.userDetailsService = userDetailsService;
         this.jwtTokenManager = jwtTokenManager;
         this.roleService = roleService;

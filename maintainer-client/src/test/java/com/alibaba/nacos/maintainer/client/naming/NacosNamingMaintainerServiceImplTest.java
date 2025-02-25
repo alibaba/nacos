@@ -157,53 +157,55 @@ public class NacosNamingMaintainerServiceImplTest {
     
     @Test
     void testListServices() throws Exception {
-        List<ServiceView> expected = new ArrayList<>();
-        expected.add(new ServiceView());
-        expected.get(0).setName("testService");
-        expected.get(0).setGroupName("testGroup");
+        Page<ServiceView> expected = new Page<>();
+        expected.getPageItems().add(new ServiceView());
+        expected.getPageItems().get(0).setName("testService");
+        expected.getPageItems().get(0).setGroupName("testGroup");
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expected)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        List<ServiceView> result = nacosNamingMaintainerService.listServices("testNamespace");
+        Page<ServiceView> result = nacosNamingMaintainerService.listServices("testNamespace");
         
         // Assert
         assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals("testService", result.get(0).getName());
-        assertEquals("testGroup", result.get(0).getGroupName());
+        assertEquals(1, result.getPageItems().size());
+        assertEquals("testService", result.getPageItems().get(0).getName());
+        assertEquals("testGroup", result.getPageItems().get(0).getGroupName());
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
     }
     
     @Test
     void testListServicesWithDetail() throws Exception {
         // Arrange
-        String namespaceId = "testNamespace";
-        List<ServiceDetailInfo> expected = new ArrayList<>();
-        expected.add(new ServiceDetailInfo());
-        expected.get(0).setNamespaceId(namespaceId);
-        expected.get(0).setServiceName("testService");
-        expected.get(0).setGroupName("testGroup");
-        expected.get(0).setMetadata(Collections.singletonMap("key", "value"));
-        expected.get(0).setClusterMap(Collections.emptyMap());
+        Page<ServiceDetailInfo> expected = new Page<>();
+        List<ServiceDetailInfo> expectedItem = new ArrayList<>();
+        expected.setPageItems(expectedItem);
+        expected.setTotalCount(1);
+        expectedItem.add(new ServiceDetailInfo());
+        expectedItem.get(0).setNamespaceId("testNamespace");
+        expectedItem.get(0).setServiceName("testService");
+        expectedItem.get(0).setGroupName("testGroup");
+        expectedItem.get(0).setMetadata(Collections.singletonMap("key", "value"));
+        expectedItem.get(0).setClusterMap(Collections.emptyMap());
         HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
         mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>(expected)));
         
         when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
         
         // Act
-        List<ServiceDetailInfo> result = nacosNamingMaintainerService.listServicesWithDetail(namespaceId);
+        Page<ServiceDetailInfo> result = nacosNamingMaintainerService.listServicesWithDetail("testNamespace");
         
         // Assert
         assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals(namespaceId, result.get(0).getNamespaceId());
-        assertEquals("testService", result.get(0).getServiceName());
-        assertEquals("testGroup", result.get(0).getGroupName());
-        assertEquals(Collections.singletonMap("key", "value"), result.get(0).getMetadata());
-        assertEquals(Collections.emptyMap(), result.get(0).getClusterMap());
+        assertEquals(1, result.getPageItems().size());
+        assertEquals("testNamespace", result.getPageItems().get(0).getNamespaceId());
+        assertEquals("testService", result.getPageItems().get(0).getServiceName());
+        assertEquals("testGroup", result.getPageItems().get(0).getGroupName());
+        assertEquals(Collections.singletonMap("key", "value"), result.getPageItems().get(0).getMetadata());
+        assertEquals(Collections.emptyMap(), result.getPageItems().get(0).getClusterMap());
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
     }
     

@@ -17,15 +17,13 @@
 package com.alibaba.nacos.console.handler.impl.remote.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.console.handler.core.NamespaceHandler;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
-import com.alibaba.nacos.core.namespace.model.Namespace;
 import com.alibaba.nacos.core.namespace.model.form.NamespaceForm;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -45,32 +43,12 @@ public class NamespaceRemoteHandler implements NamespaceHandler {
     
     @Override
     public List<Namespace> getNamespaceList() throws NacosException {
-        return transferToNamespaceList(clientHolder.getNamingMaintainerService().getNamespaceList());
-    }
-    
-    private List<Namespace> transferToNamespaceList(List<com.alibaba.nacos.api.model.response.Namespace> namespaceList) {
-        if (null == namespaceList) {
-            return Collections.emptyList();
-        }
-        List<Namespace> result = new ArrayList<>();
-        namespaceList.forEach(namespace -> result.add(transferToNamespace(namespace)));
-        return result;
+        return clientHolder.getNamingMaintainerService().getNamespaceList();
     }
     
     @Override
     public Namespace getNamespaceDetail(String namespaceId) throws NacosException {
-        return transferToNamespace(clientHolder.getNamingMaintainerService().getNamespace(namespaceId));
-    }
-    
-    private Namespace transferToNamespace(com.alibaba.nacos.api.model.response.Namespace namespace) {
-        Namespace targetNamespace = new Namespace();
-        targetNamespace.setNamespaceShowName(namespace.getNamespaceShowName());
-        targetNamespace.setNamespaceDesc(namespace.getNamespaceDesc());
-        targetNamespace.setNamespace(namespace.getNamespace());
-        targetNamespace.setQuota(namespace.getQuota());
-        targetNamespace.setConfigCount(namespace.getConfigCount());
-        targetNamespace.setType(namespace.getType());
-        return targetNamespace;
+        return clientHolder.getNamingMaintainerService().getNamespace(namespaceId);
     }
     
     @Override
@@ -81,8 +59,9 @@ public class NamespaceRemoteHandler implements NamespaceHandler {
     
     @Override
     public Boolean updateNamespace(NamespaceForm namespaceForm) throws NacosException {
-        return clientHolder.getNamingMaintainerService().updateNamespace(namespaceForm.getNamespaceId(),
-                namespaceForm.getNamespaceName(), namespaceForm.getNamespaceDesc());
+        return clientHolder.getNamingMaintainerService()
+                .updateNamespace(namespaceForm.getNamespaceId(), namespaceForm.getNamespaceName(),
+                        namespaceForm.getNamespaceDesc());
     }
     
     @Override

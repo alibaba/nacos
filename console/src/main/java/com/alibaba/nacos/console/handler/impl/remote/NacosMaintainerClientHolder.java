@@ -51,7 +51,6 @@ public class NacosMaintainerClientHolder {
         String memberAddressString = StringUtils.join(memberAddress, ",");
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, memberAddressString);
-        // TODO Add admin user and pass
         namingMaintainerService = NamingMaintainerFactory.createNamingMaintainerService(properties);
         configMaintainerService = ConfigMaintainerFactory.createConfigMaintainerService(properties);
         // TODO sub member change event to upgrade maintainer client server members.

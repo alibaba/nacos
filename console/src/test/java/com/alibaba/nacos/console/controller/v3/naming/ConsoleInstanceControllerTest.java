@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.console.controller.v3.naming;
 
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -25,7 +26,6 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.model.form.InstanceForm;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,8 +45,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
  * ConsoleInstanceControllerTest.
@@ -74,9 +74,9 @@ public class ConsoleInstanceControllerTest {
     
     @Test
     void testGetInstanceList() throws Exception {
-        ObjectNode instances = JsonNodeFactory.instance.objectNode();
-        when(instanceProxy.listInstances(anyString(), anyString(), anyString(), anyString(), anyInt(),
-                anyInt())).thenReturn(instances);
+        Page<? extends Instance> page = new Page<>();
+        doReturn(page).when(instanceProxy)
+                .listInstances(anyString(), anyString(), anyString(), anyString(), anyInt(), anyInt());
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/ns/instance/list")
                 .param("namespaceId", "default").param("serviceName", "testService").param("pageNo", "1")

@@ -117,23 +117,23 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public List<ServiceView> listServices(String namespaceId, String groupNameParam, String serviceNameParam,
+    public Page<ServiceView> listServices(String namespaceId, String groupNameParam, String serviceNameParam,
             boolean ignoreEmptyService, int pageNo, int pageSize) throws NacosException {
         HttpRestResult<String> httpRestResult = doListServices(namespaceId, groupNameParam, serviceNameParam, false,
                 ignoreEmptyService, pageNo, pageSize);
-        Result<List<ServiceView>> result = JacksonUtils.toObj(httpRestResult.getData(),
-                new TypeReference<Result<List<ServiceView>>>() {
+        Result<Page<ServiceView>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Page<ServiceView>>>() {
                 });
         return result.getData();
     }
     
     @Override
-    public List<ServiceDetailInfo> listServicesWithDetail(String namespaceId, String groupNameParam,
+    public Page<ServiceDetailInfo> listServicesWithDetail(String namespaceId, String groupNameParam,
             String serviceNameParam, int pageNo, int pageSize) throws NacosException {
         HttpRestResult<String> httpRestResult = doListServices(namespaceId, groupNameParam, serviceNameParam, true,
                 false, pageNo, pageSize);
-        Result<List<ServiceDetailInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
-                new TypeReference<Result<List<ServiceDetailInfo>>>() {
+        Result<Page<ServiceDetailInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Page<ServiceDetailInfo>>>() {
                 });
         return result.getData();
     }

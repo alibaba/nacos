@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.console.proxy;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.console.handler.ServerStateHandler;
 import org.springframework.stereotype.Service;
 
@@ -41,7 +42,7 @@ public class ServerStateProxy {
      *
      * @return the server state as a Map
      */
-    public Map<String, String> getServerState() {
+    public Map<String, String> getServerState() throws NacosException {
         return serverStateHandler.getServerState();
     }
     

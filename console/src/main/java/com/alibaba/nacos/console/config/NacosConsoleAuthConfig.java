@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.config;
 
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.config.AbstractDynamicConfig;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
@@ -41,6 +42,10 @@ public class NacosConsoleAuthConfig extends AbstractDynamicConfig implements Nac
      */
     private String nacosAuthSystemType;
     
+    private String serverIdentityKey;
+    
+    private String serverIdentityValue;
+    
     public NacosConsoleAuthConfig() {
         super("NacosConsoleAuth");
         resetConfig();
@@ -63,23 +68,25 @@ public class NacosConsoleAuthConfig extends AbstractDynamicConfig implements Nac
     
     @Override
     public boolean isSupportServerIdentity() {
-        return false;
+        return StringUtils.isNotBlank(serverIdentityKey) && StringUtils.isNotBlank(serverIdentityValue);
     }
     
     @Override
     public String getServerIdentityKey() {
-        return "";
+        return serverIdentityKey;
     }
     
     @Override
     public String getServerIdentityValue() {
-        return "";
+        return serverIdentityValue;
     }
     
     @Override
     protected void getConfigFromEnv() {
         authEnabled = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_CONSOLE_ENABLED, Boolean.class, true);
         nacosAuthSystemType = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "");
+        serverIdentityKey = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "");
+        serverIdentityValue = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "");
     }
     
     @Override

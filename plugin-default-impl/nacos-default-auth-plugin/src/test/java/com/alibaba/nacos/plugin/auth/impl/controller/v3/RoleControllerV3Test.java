@@ -17,10 +17,10 @@
 
 package com.alibaba.nacos.plugin.auth.impl.controller.v3;
 
-import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
-import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,7 +49,7 @@ import static org.mockito.Mockito.when;
 public class RoleControllerV3Test {
     
     @Mock
-    private NacosRoleServiceImpl roleService;
+    private NacosRoleService roleService;
     
     @InjectMocks
     private RoleControllerV3 roleControllerV3;
@@ -92,7 +92,7 @@ public class RoleControllerV3Test {
     void testGetRoleListAccurateSearch() {
         Page<RoleInfo> rolesTest = new Page<RoleInfo>();
         
-        when(roleService.getRolesFromDatabase(anyString(), anyString(), anyInt(), anyInt())).thenReturn(rolesTest);
+        when(roleService.getRoles(anyString(), anyString(), anyInt(), anyInt())).thenReturn(rolesTest);
         
         Result<Page<RoleInfo>> result = roleControllerV3.getRoleList(1, 10, "nacos", "test", "accurate");
         
@@ -103,7 +103,7 @@ public class RoleControllerV3Test {
     void testGetRoleListFuzzySearch() {
         Page<RoleInfo> rolesTest = new Page<RoleInfo>();
         
-        when(roleService.findRolesLike4Page(anyString(), anyString(), anyInt(), anyInt())).thenReturn(rolesTest);
+        when(roleService.findRoles(anyString(), anyString(), anyInt(), anyInt())).thenReturn(rolesTest);
         
         Result<Page<RoleInfo>> result = roleControllerV3.getRoleList(1, 10, "nacos", "test", "blur");
         
@@ -114,7 +114,7 @@ public class RoleControllerV3Test {
     void testGetRoleListByRoleName() {
         List<String> rolesTest = new ArrayList<>();
         
-        when(roleService.findRolesLikeRoleName(anyString())).thenReturn(rolesTest);
+        when(roleService.findRoleNames(anyString())).thenReturn(rolesTest);
         
         Result<List<String>> result = roleControllerV3.getRoleListByRoleName("test");
         

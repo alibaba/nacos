@@ -18,6 +18,7 @@
 package com.alibaba.nacos.plugin.auth.impl.controller.v3;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
@@ -26,7 +27,6 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
-import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
@@ -35,11 +35,10 @@ import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
-import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
-import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
-import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordGeneratorUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.servlet.http.HttpServletRequest;
@@ -63,13 +62,13 @@ import java.util.List;
  * @author zhangyukun on:2024/8/16
  */
 @RestController
-@RequestMapping("/v3/auth/user")
+@RequestMapping(AuthConstants.USER_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
 public class UserControllerV3 {
     
-    private final NacosUserDetailsServiceImpl userDetailsService;
+    private final NacosUserService userDetailsService;
     
-    private final NacosRoleServiceImpl roleService;
+    private final NacosRoleService roleService;
     
     private final AuthConfigs authConfigs;
     
@@ -88,9 +87,8 @@ public class UserControllerV3 {
      * @param iAuthenticationManager the authentication manager interface
      * @param jwtTokenManager        the JWT token manager
      */
-    public UserControllerV3(NacosUserDetailsServiceImpl userDetailsService, NacosRoleServiceImpl roleService,
-            AuthConfigs authConfigs, IAuthenticationManager iAuthenticationManager,
-            TokenManagerDelegate jwtTokenManager) {
+    public UserControllerV3(NacosUserService userDetailsService, NacosRoleService roleService, AuthConfigs authConfigs,
+            IAuthenticationManager iAuthenticationManager, TokenManagerDelegate jwtTokenManager) {
         this.userDetailsService = userDetailsService;
         this.roleService = roleService;
         this.authConfigs = authConfigs;
@@ -110,11 +108,11 @@ public class UserControllerV3 {
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
     @PostMapping
     public Result<String> createUser(@RequestParam String username, @RequestParam String password) {
-        User user = userDetailsService.getUserFromDatabase(username);
+        User user = userDetailsService.getUser(username);
         if (user != null) {
             throw new IllegalArgumentException("user '" + username + "' already exist!");
         }
-        userDetailsService.createUser(username, PasswordEncoderUtil.encode(password));
+        userDetailsService.createUser(username, password);
         return Result.success("create user ok!");
     }
     
@@ -133,7 +131,7 @@ public class UserControllerV3 {
                 return Result.failure(HttpStatus.CONFLICT.value(), "have admin user cannot use it.", null);
             }
             String username = AuthConstants.DEFAULT_USER;
-            userDetailsService.createUser(username, PasswordEncoderUtil.encode(password));
+            userDetailsService.createUser(username, password);
             roleService.addAdminRole(username);
             User result = new User();
             result.setUsername(username);
@@ -195,12 +193,12 @@ public class UserControllerV3 {
             return null;
         }
         
-        User user = userDetailsService.getUserFromDatabase(username);
+        User user = userDetailsService.getUser(username);
         if (user == null) {
             throw new IllegalArgumentException("user " + username + " not exist!");
         }
         
-        userDetailsService.updateUserPassword(username, PasswordEncoderUtil.encode(newPassword));
+        userDetailsService.updateUserPassword(username, newPassword);
         return Result.success("update user ok!");
         
     }
@@ -249,9 +247,9 @@ public class UserControllerV3 {
             @RequestParam(name = "search", required = false, defaultValue = "accurate") String search) {
         Page<User> userPage;
         if (SEARCH_TYPE_BLUR.equalsIgnoreCase(search)) {
-            userPage = userDetailsService.findUsersLike4Page(username, pageNo, pageSize);
+            userPage = userDetailsService.findUsers(username, pageNo, pageSize);
         } else {
-            userPage = userDetailsService.getUsersFromDatabase(pageNo, pageSize, username);
+            userPage = userDetailsService.getUsers(pageNo, pageSize, username);
         }
         return Result.success(userPage);
     }
@@ -265,7 +263,7 @@ public class UserControllerV3 {
     @GetMapping("/search")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
     public Result<List<String>> getUserListByUsername(@RequestParam String username) {
-        List<String> userList = userDetailsService.findUserLikeUsername(username);
+        List<String> userList = userDetailsService.findUserNames(username);
         return Result.success(userList);
     }
     

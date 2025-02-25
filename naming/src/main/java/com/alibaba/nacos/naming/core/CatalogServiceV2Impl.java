@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo;
@@ -37,7 +38,6 @@ import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -161,15 +161,17 @@ public class CatalogServiceV2Impl implements CatalogService {
     }
     
     @Override
-    public List<ServiceView> listService(String namespaceId, String groupName, String serviceName, int pageNo,
+    public Page<ServiceView> listService(String namespaceId, String groupName, String serviceName, int pageNo,
             int pageSize, boolean ignoreEmptyService) throws NacosException {
-        List<ServiceView> serviceViews = new LinkedList<>();
+        Page<ServiceView> serviceViews = new Page<>();
         Collection<Service> services = patternServices(namespaceId, groupName, serviceName);
         if (ignoreEmptyService) {
-            services = services.stream().filter(each -> 0 != serviceStorage.getData(each).ipCount())
-                    .collect(Collectors.toList());
+            services = services.stream().filter(each -> 0 != serviceStorage.getData(each).ipCount()).toList();
         }
-        services = PageUtil.subPageList(services.stream().toList(), pageNo, pageSize);
+        Page<Service> page = PageUtil.subPage(services.stream().toList(), pageNo, pageSize);
+        serviceViews.setTotalCount(page.getTotalCount());
+        serviceViews.setPageNumber(page.getPageNumber());
+        serviceViews.setPagesAvailable(page.getPagesAvailable());
         for (Service each : services) {
             ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(each).orElseGet(ServiceMetadata::new);
             ServiceView serviceView = new ServiceView();
@@ -179,7 +181,7 @@ public class CatalogServiceV2Impl implements CatalogService {
             serviceView.setIpCount(serviceStorage.getData(each).ipCount());
             serviceView.setHealthyInstanceCount(countHealthyInstance(serviceStorage.getData(each)));
             serviceView.setTriggerFlag(isProtectThreshold(serviceView, serviceMetadata) ? "true" : "false");
-            serviceViews.add(serviceView);
+            serviceViews.getPageItems().add(serviceView);
         }
         return serviceViews;
     }
@@ -200,20 +202,25 @@ public class CatalogServiceV2Impl implements CatalogService {
     }
     
     @Override
-    public Object pageListServiceDetail(String namespaceId, String groupName, String serviceName, int pageNo,
-            int pageSize) throws NacosException {
-        List<ServiceDetailInfo> result = new ArrayList<>();
+    public Page<ServiceDetailInfo> pageListServiceDetail(String namespaceId, String groupName, String serviceName,
+            int pageNo, int pageSize) throws NacosException {
         Collection<Service> services = patternServices(namespaceId, groupName, serviceName);
-        services = doPage(services, pageNo - 1, pageSize);
-        for (Service each : services) {
+        Page<Service> servicePage = PageUtil.subPage(services.stream().toList(), pageNo, pageSize);
+        Page<ServiceDetailInfo> result = new Page<>();
+        result.setPagesAvailable(servicePage.getPagesAvailable());
+        result.setPageNumber(servicePage.getPageNumber());
+        result.setTotalCount(servicePage.getTotalCount());
+        List<ServiceDetailInfo> pagedItem = new LinkedList<>();
+        for (Service each : servicePage.getPageItems()) {
             ServiceDetailInfo serviceDetailInfo = new ServiceDetailInfo();
             serviceDetailInfo.setServiceName(each.getName());
             serviceDetailInfo.setGroupName(each.getGroup());
             ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(each).orElseGet(ServiceMetadata::new);
             serviceDetailInfo.setMetadata(serviceMetadata.getExtendData());
             serviceDetailInfo.setClusterMap(getClusterMap(each));
-            result.add(serviceDetailInfo);
+            pagedItem.add(serviceDetailInfo);
         }
+        result.setPageItems(pagedItem);
         return result;
     }
     

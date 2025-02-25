@@ -20,12 +20,14 @@ package com.alibaba.nacos.console.controller.v3.naming;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.builder.InstanceBuilder;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.console.proxy.naming.InstanceProxy;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.model.form.PageForm;
@@ -76,10 +78,13 @@ public class ConsoleInstanceController {
     @RequestMapping("/list")
     public Result<ObjectNode> getInstanceList(InstanceListForm instanceForm, PageForm pageForm) throws NacosException {
         instanceForm.validate();
-        // TODO use Page + List<Instance> replace with console ui
-        ObjectNode result = instanceProxy.listInstances(instanceForm.getNamespaceId(), instanceForm.getServiceName(),
-                instanceForm.getGroupName(), instanceForm.getClusterName(), pageForm.getPageNo(),
-                pageForm.getPageSize());
+        Page<? extends Instance> instancePage = instanceProxy.listInstances(instanceForm.getNamespaceId(),
+                instanceForm.getServiceName(), instanceForm.getGroupName(), instanceForm.getClusterName(),
+                pageForm.getPageNo(), pageForm.getPageSize());
+        // TODO use Page<? extends Instance> directly after console-ui modified
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+        result.replace("instances", JacksonUtils.transferToJsonNode(instancePage.getPageItems()));
+        result.put("count", instancePage.getTotalCount());
         return Result.success(result);
     }
     

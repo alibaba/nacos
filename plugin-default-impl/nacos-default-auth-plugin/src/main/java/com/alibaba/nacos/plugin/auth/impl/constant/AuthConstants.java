@@ -79,4 +79,13 @@ public class AuthConstants {
     public static final String LDAP_DEFAULT_ENCODED_PASSWORD = PasswordEncoderUtil.encode(System.getProperty("ldap.default.password", "nacos"));
     
     public static final String LDAP_PREFIX = "LDAP_";
+    
+    /**
+     * Path for nacos plugin controller.
+     */
+    public static final String USER_PATH = "/v3/auth/user";
+    
+    public static final String ROLE_PATH = "/v3/auth/role";
+    
+    public static final String PERMISSION_PATH = "/v3/auth/permission";
 }

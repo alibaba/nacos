@@ -128,15 +128,17 @@ public class ServiceProxy {
     public Object getServiceList(boolean withInstances, String namespaceId, int pageNo, int pageSize,
             String serviceName, String groupName, boolean hasIpCount) throws NacosException {
         if (withInstances) {
-            return serviceHandler.getServiceList(withInstances, namespaceId, pageNo, pageSize, serviceName, groupName,
-                    hasIpCount);
+            // TODO use result directly after console ui changed and return page object
+            Page<ServiceDetailInfo> serviceDetailInfoPage = (Page<ServiceDetailInfo>) serviceHandler.getServiceList(
+                    withInstances, namespaceId, pageNo, pageSize, serviceName, groupName, hasIpCount);
+            return serviceDetailInfoPage.getPageItems();
         }
         // TODO use result directly after console ui changed and return page object
-        List<ServiceView> views = (List<ServiceView>) serviceHandler.getServiceList(withInstances, namespaceId, pageNo,
+        Page<ServiceView> views = (Page<ServiceView>) serviceHandler.getServiceList(withInstances, namespaceId, pageNo,
                 pageSize, serviceName, groupName, hasIpCount);
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        result.put(FieldsConstants.COUNT, views.size());
-        result.set(FieldsConstants.SERVICE_LIST, JacksonUtils.transferToJsonNode(views));
+        result.put(FieldsConstants.COUNT, views.getTotalCount());
+        result.set(FieldsConstants.SERVICE_LIST, JacksonUtils.transferToJsonNode(views.getPageItems()));
         return result;
     }
     

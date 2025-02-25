@@ -1,5 +1,5 @@
 #
-# Copyright 1999-2018 Alibaba Group Holding Ltd.
+# Copyright 1999-2025 Alibaba Group Holding Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,8 +13,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-server.port=8848
-server.servlet.context-path=/nacos
-nacos.cmdb.dumpTaskInterval=3600
-nacos.cmdb.eventTaskInterval=10
-nacos.cmdb.loadDataAtStart=true
+
+com.alibaba.nacos.console.handler.impl.remote.ConsoleMaintainerClientAuthPlugin

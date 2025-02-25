@@ -53,6 +53,33 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
     }
     
     @Override
+    public Map<String, String> getServerState() throws NacosException {
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CORE_STATE_ADMIN_PATH).build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        Result<Map<String, String>> result = JacksonUtils.toObj(httpRestResult.getData(),
+                new TypeReference<Result<Map<String, String>>>() {
+                });
+        return result.getData();
+    }
+    
+    @Override
+    public Boolean liveness() throws NacosException {
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CORE_STATE_ADMIN_PATH + "/liveness").build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        return httpRestResult.ok();
+    }
+    
+    @Override
+    public Boolean readiness() throws NacosException {
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
+                .setPath(Constants.AdminApiPath.CORE_OPS_ADMIN_PATH + "/readiness").build();
+        HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
+        return httpRestResult.ok();
+    }
+    
+    @Override
     public String raftOps(String command, String value, String groupId) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("command", command);
@@ -201,9 +228,8 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CORE_NAMESPACE_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Namespace> result = JacksonUtils.toObj(httpRestResult.getData(),
-                new TypeReference<Result<Namespace>>() {
-                });
+        Result<Namespace> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Namespace>>() {
+        });
         return result.getData();
     }
     
@@ -218,9 +244,8 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
                 .setPath(Constants.AdminApiPath.CORE_NAMESPACE_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(),
-                new TypeReference<Result<Boolean>>() {
-                });
+        Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
+        });
         return result.getData();
     }
     
@@ -235,9 +260,8 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.PUT)
                 .setPath(Constants.AdminApiPath.CORE_NAMESPACE_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(),
-                new TypeReference<Result<Boolean>>() {
-                });
+        Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
+        });
         return result.getData();
     }
     
@@ -249,9 +273,8 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.DELETE)
                 .setPath(Constants.AdminApiPath.CORE_NAMESPACE_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(),
-                new TypeReference<Result<Boolean>>() {
-                });
+        Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
+        });
         return result.getData();
     }
     
@@ -263,9 +286,8 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CORE_NAMESPACE_ADMIN_PATH + "/check").setParamValue(params).build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<Integer> result = JacksonUtils.toObj(httpRestResult.getData(),
-                new TypeReference<Result<Integer>>() {
-                });
+        Result<Integer> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Integer>>() {
+        });
         return result.getData() > 0;
     }
     

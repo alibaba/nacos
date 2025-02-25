@@ -17,11 +17,9 @@
 package com.alibaba.nacos.console.handler.impl.inner;
 
 import com.alibaba.nacos.console.handler.impl.AbstractServerStateHandler;
-import com.alibaba.nacos.sys.module.ModuleState;
-import com.alibaba.nacos.sys.module.ModuleStateHolder;
+import com.alibaba.nacos.core.service.NacosServerStateService;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -33,12 +31,14 @@ import java.util.Map;
 @EnabledInnerHandler
 public class ServerStateInnerHandler extends AbstractServerStateHandler {
     
+    private final NacosServerStateService stateService;
+    
+    public ServerStateInnerHandler(NacosServerStateService stateService) {
+        this.stateService = stateService;
+    }
+    
     public Map<String, String> getServerState() {
-        Map<String, String> serverState = new HashMap<>(4);
-        for (ModuleState each : ModuleStateHolder.getInstance().getAllModuleStates()) {
-            each.getStates().forEach((s, o) -> serverState.put(s, null == o ? null : o.toString()));
-        }
-        return serverState;
+        return stateService.getServerState();
     }
 }
 

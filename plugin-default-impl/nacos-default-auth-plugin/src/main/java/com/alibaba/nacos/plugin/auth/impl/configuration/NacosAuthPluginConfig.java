@@ -23,12 +23,12 @@ import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.DefaultAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
-import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManager;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.token.impl.CachedJwtTokenManager;
 import com.alibaba.nacos.plugin.auth.impl.token.impl.JwtTokenManager;
-import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -48,11 +48,11 @@ import javax.annotation.PostConstruct;
 @Configuration
 public class NacosAuthPluginConfig {
     
-    private final NacosUserDetailsServiceImpl userDetailsService;
+    private final NacosUserService userDetailsService;
     
     private final ControllerMethodsCache methodsCache;
     
-    public NacosAuthPluginConfig(NacosUserDetailsServiceImpl userDetailsService, ControllerMethodsCache methodsCache) {
+    public NacosAuthPluginConfig(NacosUserService userDetailsService, ControllerMethodsCache methodsCache) {
         this.userDetailsService = userDetailsService;
         this.methodsCache = methodsCache;
         
@@ -88,8 +88,8 @@ public class NacosAuthPluginConfig {
     
     @Bean
     @ConditionalOnMissingBean
-    public IAuthenticationManager defaultAuthenticationManager(NacosUserDetailsServiceImpl userDetailsService,
-            TokenManagerDelegate jwtTokenManager, NacosRoleServiceImpl roleService) {
+    public IAuthenticationManager defaultAuthenticationManager(NacosUserService userDetailsService,
+            TokenManagerDelegate jwtTokenManager, NacosRoleService roleService) {
         return new DefaultAuthenticationManager(userDetailsService, jwtTokenManager, roleService);
     }
     

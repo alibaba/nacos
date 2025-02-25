@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.handler.impl.remote;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.console.handler.HealthHandler;
 import org.springframework.stereotype.Service;
@@ -29,10 +30,16 @@ import org.springframework.stereotype.Service;
 @EnabledRemoteHandler
 public class HealthRemoteHandler implements HealthHandler {
     
+    private final NacosMaintainerClientHolder clientHolder;
+    
+    public HealthRemoteHandler(NacosMaintainerClientHolder clientHolder) {
+        this.clientHolder = clientHolder;
+    }
+    
     @Override
-    public Result<String> checkReadiness() {
-        // TODO call nacos servers
-        return Result.success("ok");
+    public Result<String> checkReadiness() throws NacosException {
+        Boolean result = clientHolder.getNamingMaintainerService().readiness();
+        return result ? Result.success("ok") : Result.failure("Nacos server readiness failed.");
     }
 }
 

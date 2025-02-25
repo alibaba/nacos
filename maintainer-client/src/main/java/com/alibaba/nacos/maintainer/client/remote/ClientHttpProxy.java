@@ -43,7 +43,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.HttpURLConnection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
@@ -206,13 +205,8 @@ public class ClientHttpProxy {
         clientAuthPluginManager.getAuthServiceSpiImplSet().forEach(clientAuthService -> {
             LoginIdentityContext loginIdentityContext = clientAuthService.getLoginIdentityContext(
                     new RequestResource());
-            if (loginIdentityContext != null) {
-                if (loginIdentityContext.getAllKey().contains(NacosAuthLoginConstant.ACCESSTOKEN)) {
-                    Map<String, String> accessToken = new HashMap<>(4);
-                    accessToken.put(NacosAuthLoginConstant.ACCESSTOKEN,
-                            loginIdentityContext.getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
-                    header.addAll(accessToken);
-                }
+            for (String key : loginIdentityContext.getAllKey()) {
+                header.addParam(key, loginIdentityContext.getParameter(key));
             }
         });
     }

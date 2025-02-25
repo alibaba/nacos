@@ -17,6 +17,8 @@
 
 package com.alibaba.nacos.console.handler;
 
+import com.alibaba.nacos.api.exception.NacosException;
+
 import java.util.Map;
 
 /**
@@ -30,8 +32,9 @@ public interface ServerStateHandler {
      * Get the current state of the server.
      *
      * @return a map containing the server state
+     * @throws NacosException if an error occurs while retrieving the server state
      */
-    Map<String, String> getServerState();
+    Map<String, String> getServerState() throws NacosException;
     
     /**
      * Get the announcement content based on the language.

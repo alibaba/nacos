@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.plugin.auth.impl.roles;
 
-import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
@@ -27,7 +27,7 @@ import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RolePersistService;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
-import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -58,9 +58,9 @@ import static org.mockito.Mockito.when;
  * @Description: TODO
  */
 @ExtendWith(MockitoExtension.class)
-class NacosRoleServiceImplTest {
+class NacosRoleServiceDirectImplTest {
     
-    Class<NacosRoleServiceImpl> nacosRoleServiceClass;
+    Class<NacosRoleServiceDirectImpl> nacosRoleServiceClass;
     
     @Mock
     private AuthConfigs authConfigs;
@@ -69,18 +69,18 @@ class NacosRoleServiceImplTest {
     private RolePersistService rolePersistService;
     
     @Mock
-    private NacosUserDetailsServiceImpl userDetailsService;
+    private NacosUserService userDetailsService;
     
     @Mock
     private PermissionPersistService permissionPersistService;
     
     @Mock
-    private NacosRoleServiceImpl nacosRoleService;
+    private NacosRoleServiceDirectImpl nacosRoleService;
     
     @BeforeEach
     void setup() throws Exception {
-        nacosRoleService = new NacosRoleServiceImpl();
-        nacosRoleServiceClass = NacosRoleServiceImpl.class;
+        nacosRoleService = new NacosRoleServiceDirectImpl(authConfigs, rolePersistService, userDetailsService, permissionPersistService);
+        nacosRoleServiceClass = NacosRoleServiceDirectImpl.class;
         Field authConfigsFile = nacosRoleServiceClass.getDeclaredField("authConfigs");
         authConfigsFile.setAccessible(true);
         authConfigsFile.set(nacosRoleService, authConfigs);
@@ -122,7 +122,8 @@ class NacosRoleServiceImplTest {
         permission2.setResource(resource);
         boolean res2 = nacosRoleService.hasPermission(nacosUser, permission2);
         assertFalse(res2);
-        resource.getProperties().put(AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, AuthConstants.UPDATE_PASSWORD_ENTRY_POINT);
+        resource.getProperties()
+                .put(AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, AuthConstants.UPDATE_PASSWORD_ENTRY_POINT);
         boolean res3 = nacosRoleService.hasPermission(nacosUser, permission2);
         assertTrue(res3);
     }
@@ -134,9 +135,8 @@ class NacosRoleServiceImplTest {
     }
     
     @Test
-    void getRolesFromDatabase() {
-        Page<RoleInfo> roleInfoPage = nacosRoleService.getRolesFromDatabase("nacos", "ROLE_ADMIN", 1,
-                Integer.MAX_VALUE);
+    void getRolesPage() {
+        Page<RoleInfo> roleInfoPage = nacosRoleService.getRoles("nacos", "ROLE_ADMIN", 1, Integer.MAX_VALUE);
         assertEquals(0, roleInfoPage.getTotalCount());
     }
     
@@ -149,16 +149,9 @@ class NacosRoleServiceImplTest {
     }
     
     @Test
-    void getPermissionsByRoleFromDatabase() {
-        Page<PermissionInfo> permissionsByRoleFromDatabase = nacosRoleService.getPermissionsByRoleFromDatabase(
-                "role-admin", 1, Integer.MAX_VALUE);
-        assertNull(permissionsByRoleFromDatabase);
-    }
-    
-    @Test
     void addRole() {
         String username = "nacos";
-        User userFromDatabase = userDetailsService.getUserFromDatabase(username);
+        User userFromDatabase = userDetailsService.getUser(username);
         assertNull(userFromDatabase);
         try {
             nacosRoleService.addRole("role-admin", "nacos");
@@ -177,8 +170,8 @@ class NacosRoleServiceImplTest {
     }
     
     @Test
-    void getPermissionsFromDatabase() {
-        Page<PermissionInfo> permissionsFromDatabase = nacosRoleService.getPermissionsFromDatabase("role-admin", 1,
+    void getPermissionsPage() {
+        Page<PermissionInfo> permissionsFromDatabase = nacosRoleService.getPermissions("role-admin", 1,
                 Integer.MAX_VALUE);
         assertEquals(0, permissionsFromDatabase.getTotalCount());
     }
@@ -214,11 +207,11 @@ class NacosRoleServiceImplTest {
         permissionInfo.setAction("rw");
         permissionInfo.setResource("test");
         permissionInfos.add(permissionInfo);
-        NacosRoleServiceImpl spy = spy(nacosRoleService);
+        NacosRoleServiceDirectImpl spy = spy(nacosRoleService);
         when(spy.getPermissions("admin")).thenReturn(permissionInfos);
         spy.isDuplicatePermission("admin", "test", "r");
     }
-
+    
     @Test
     void isUserBoundToRole() {
         String role = "TEST";

@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.plugin.auth.impl.controller;
 
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionInfo;
-import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,7 +42,7 @@ public class PermissionControllerTest {
     private PermissionController permissionController;
     
     @Mock
-    private NacosRoleServiceImpl nacosRoleService;
+    private NacosRoleService nacosRoleService;
     
     @BeforeEach
     void setUp() throws Exception {
@@ -53,8 +53,7 @@ public class PermissionControllerTest {
     void testGetPermissions() {
         Page<PermissionInfo> permissionInfoPage = new Page<PermissionInfo>();
         
-        when(nacosRoleService.getPermissionsFromDatabase(anyString(), anyInt(), anyInt())).thenReturn(
-                permissionInfoPage);
+        when(nacosRoleService.getPermissions(anyString(), anyInt(), anyInt())).thenReturn(permissionInfoPage);
         
         Object permissions = permissionController.getPermissions(1, 10, "admin");
         assertEquals(permissionInfoPage, permissions);
@@ -64,7 +63,7 @@ public class PermissionControllerTest {
     void testFuzzySearchPermission() {
         Page<PermissionInfo> permissionInfoPage = new Page<PermissionInfo>();
         
-        when(nacosRoleService.findPermissionsLike4Page(anyString(), anyInt(), anyInt())).thenReturn(permissionInfoPage);
+        when(nacosRoleService.findPermissions(anyString(), anyInt(), anyInt())).thenReturn(permissionInfoPage);
         
         Page<PermissionInfo> permissions = permissionController.fuzzySearchPermission(1, 10, "admin");
         assertEquals(permissionInfoPage, permissions);

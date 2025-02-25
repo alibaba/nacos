@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.console.handler;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
 
 /**
@@ -30,7 +31,8 @@ public interface HealthHandler {
      * Perform readiness check to determine if Nacos is ready to handle requests.
      *
      * @return readiness result
+     * @throws NacosException if an error occurs during readiness check
      */
-    Result<String> checkReadiness();
+    Result<String> checkReadiness() throws NacosException;
 }
 

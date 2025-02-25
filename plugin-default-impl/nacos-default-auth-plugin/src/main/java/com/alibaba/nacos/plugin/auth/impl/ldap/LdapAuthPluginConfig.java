@@ -20,9 +20,9 @@ import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.LdapAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.configuration.ConditionOnLdapAuth;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
-import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
-import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.ldap.LdapAutoConfiguration;
@@ -85,15 +85,14 @@ public class LdapAuthPluginConfig {
     
     @Bean
     public LdapAuthenticationProvider ldapAuthenticationProvider(LdapTemplate ldapTemplate,
-            NacosUserDetailsServiceImpl userDetailsService, NacosRoleServiceImpl nacosRoleService) {
+            NacosUserService userDetailsService, NacosRoleService nacosRoleService) {
         return new LdapAuthenticationProvider(ldapTemplate, userDetailsService, nacosRoleService, filterPrefix,
                 caseSensitive);
     }
     
     @Bean
     public IAuthenticationManager ldapAuthenticatoinManager(LdapTemplate ldapTemplate,
-            NacosUserDetailsServiceImpl userDetailsService, TokenManagerDelegate jwtTokenManager,
-            NacosRoleServiceImpl roleService) {
+            NacosUserService userDetailsService, TokenManagerDelegate jwtTokenManager, NacosRoleService roleService) {
         return new LdapAuthenticationManager(ldapTemplate, userDetailsService, jwtTokenManager, roleService,
                 filterPrefix, caseSensitive);
     }

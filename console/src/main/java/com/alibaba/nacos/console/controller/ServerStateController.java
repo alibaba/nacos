@@ -18,13 +18,13 @@ package com.alibaba.nacos.console.controller;
 
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
+import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
 import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
 import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.core.service.NacosServerStateService;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import com.alibaba.nacos.sys.module.ModuleState;
-import com.alibaba.nacos.sys.module.ModuleStateHolder;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,7 +33,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
-import java.util.HashMap;
 import java.util.Map;
 
 import static com.alibaba.nacos.common.utils.StringUtils.FOLDER_SEPARATOR;
@@ -48,11 +47,18 @@ import static com.alibaba.nacos.common.utils.StringUtils.WINDOWS_FOLDER_SEPARATO
 @RestController
 @RequestMapping("/v1/console/server")
 @ExtractorManager.Extractor(httpExtractor = ConsoleDefaultHttpParamExtractor.class)
+@EnabledInnerHandler
 public class ServerStateController {
     
     private static final String ANNOUNCEMENT_FILE = "announcement.conf";
     
     private static final String GUIDE_FILE = "console-guide.conf";
+    
+    private final NacosServerStateService stateService;
+    
+    public ServerStateController(NacosServerStateService stateService) {
+        this.stateService = stateService;
+    }
     
     /**
      * Get server state of current server.
@@ -62,11 +68,7 @@ public class ServerStateController {
     @GetMapping("/state")
     @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/server/state")
     public ResponseEntity<Map<String, String>> serverState() {
-        Map<String, String> serverState = new HashMap<>(4);
-        for (ModuleState each : ModuleStateHolder.getInstance().getAllModuleStates()) {
-            each.getStates().forEach((s, o) -> serverState.put(s, null == o ? null : o.toString()));
-        }
-        return ResponseEntity.ok().body(serverState);
+        return ResponseEntity.ok(stateService.getServerState());
     }
     
     @GetMapping("/announcement")
