@@ -18,15 +18,12 @@ package com.alibaba.nacos.core.auth;
 
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.auth.config.AuthErrorCode;
-import com.alibaba.nacos.auth.config.AuthModuleStateBuilder;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.config.AbstractDynamicConfig;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import com.alibaba.nacos.sys.module.ModuleState;
-import com.alibaba.nacos.sys.module.ModuleStateHolder;
 import com.alibaba.nacos.sys.utils.PropertiesUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -156,11 +153,6 @@ public class NacosServerAuthConfig extends AbstractDynamicConfig implements Naco
             serverIdentityKey = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "");
             serverIdentityValue = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "");
             refreshPluginProperties();
-            ModuleStateHolder.getInstance().getModuleState(AuthModuleStateBuilder.AUTH_MODULE)
-                    .ifPresent(moduleState -> {
-                        ModuleState temp = new AuthModuleStateBuilder().build();
-                        moduleState.getStates().putAll(temp.getStates());
-                    });
         } catch (Exception e) {
             LOGGER.warn("Upgrade auth config from env failed, use old value", e);
         }
