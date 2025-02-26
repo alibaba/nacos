@@ -48,6 +48,10 @@ public class NamespaceUtil {
         return tenant.trim();
     }
     
+    public static boolean isNeedTransferNamespace(String tenant) {
+        return StringUtils.isBlank(tenant);
+    }
+    
     /**
      * Set default namespace id. Invoke settings at system startup.
      *

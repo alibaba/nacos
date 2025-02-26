@@ -61,4 +61,11 @@ class NamespaceUtilTest {
         assertEquals("Deprecated", NamespaceUtil.getNamespaceDefaultId());
         assertFalse(NamespaceUtil.isDefaultNamespaceId(Constants.DEFAULT_NAMESPACE_ID));
     }
+    
+    @Test
+    void testIsNeedTransferNamespace() {
+        assertTrue(NamespaceUtil.isNeedTransferNamespace(null));
+        assertTrue(NamespaceUtil.isNeedTransferNamespace(""));
+        assertFalse(NamespaceUtil.isNeedTransferNamespace("public"));
+    }
 }
