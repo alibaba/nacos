@@ -57,8 +57,7 @@ public class ConfigChangeListenContext {
         // 1.add groupKeyContext
         groupKeyContext.computeIfAbsent(groupKey, k -> new HashSet<>()).add(connectionId);
         // 2.add connectionIdContext
-        ConfigListenState listenState = new ConfigListenState();
-        listenState.setMd5(md5);
+        ConfigListenState listenState = new ConfigListenState(md5);
         listenState.setNamespaceTransfer(isNamespaceTransfer);
         connectionIdContext.computeIfAbsent(connectionId, k -> new HashMap<>(16)).put(groupKey, listenState);
     }

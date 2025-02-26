@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
+import com.alibaba.nacos.config.server.model.ConfigListenState;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
@@ -76,7 +77,7 @@ public class LongPollingService {
         
         for (ClientLongPolling clientLongPolling : allSubs) {
             if (clientLongPolling.clientMd5Map.containsKey(groupKey)) {
-                lisentersGroupkeyStatus.put(clientLongPolling.ip, clientLongPolling.clientMd5Map.get(groupKey));
+                lisentersGroupkeyStatus.put(clientLongPolling.ip, clientLongPolling.clientMd5Map.get(groupKey).getMd5());
             }
         }
         sampleResult.setLisentersGroupkeyStatus(lisentersGroupkeyStatus);
@@ -85,17 +86,17 @@ public class LongPollingService {
     
     public SampleResult getSubscribleInfoByIp(String clientIp) {
         SampleResult sampleResult = new SampleResult();
-        Map<String, String> lisentersGroupkeyStatus = new HashMap<>(50);
+        Map<String, String> lisenersGroupkeyStatus = new HashMap<>(50);
         
         for (ClientLongPolling clientLongPolling : allSubs) {
             if (clientLongPolling.ip.equals(clientIp)) {
                 // One ip can have multiple listener.
-                if (!lisentersGroupkeyStatus.equals(clientLongPolling.clientMd5Map)) {
-                    lisentersGroupkeyStatus.putAll(clientLongPolling.clientMd5Map);
+                for (Map.Entry<String, ConfigListenState> entry : clientLongPolling.clientMd5Map.entrySet()) {
+                    lisenersGroupkeyStatus.put(entry.getKey(), entry.getValue().getMd5());
                 }
             }
         }
-        sampleResult.setLisentersGroupkeyStatus(lisentersGroupkeyStatus);
+        sampleResult.setLisentersGroupkeyStatus(lisenersGroupkeyStatus);
         return sampleResult;
     }
     
@@ -168,13 +169,13 @@ public class LongPollingService {
      * @param clientMd5Map     clientMd5Map.
      * @param probeRequestSize probeRequestSize.
      */
-    public void addLongPollingClient(HttpServletRequest req, HttpServletResponse rsp, Map<String, String> clientMd5Map,
+    public void addLongPollingClient(HttpServletRequest req, HttpServletResponse rsp, Map<String, ConfigListenState> clientMd5Map,
             int probeRequestSize) {
         
         String noHangUpFlag = req.getHeader(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER);
         
         long start = System.currentTimeMillis();
-        List<String> changedGroups = MD5Util.compareMd5(req, rsp, clientMd5Map);
+        Map<String, ConfigListenState> changedGroups = MD5Util.compareMd5(req, rsp, clientMd5Map);
         if (changedGroups.size() > 0) {
             generateResponse(req, rsp, changedGroups);
             LogUtil.CLIENT_LOG.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start, "instant",
@@ -279,7 +280,7 @@ public class LongPollingService {
                                 "in-advance",
                                 RequestUtil.getRemoteIp((HttpServletRequest) clientSub.asyncContext.getRequest()),
                                 "polling", clientSub.clientMd5Map.size(), clientSub.probeRequestSize, groupKey);
-                        clientSub.sendResponse(Collections.singletonList(groupKey));
+                        clientSub.sendResponse(Collections.singletonMap(groupKey, clientSub.clientMd5Map.get(groupKey)));
                     }
                 }
                 
@@ -337,7 +338,7 @@ public class LongPollingService {
             allSubs.add(this);
         }
         
-        void sendResponse(List<String> changedGroups) {
+        void sendResponse(Map<String, ConfigListenState> changedGroups) {
             
             // Cancel time out task.
             if (null != asyncTimeoutFuture) {
@@ -346,7 +347,7 @@ public class LongPollingService {
             generateResponse(changedGroups);
         }
         
-        void generateResponse(List<String> changedGroups) {
+        void generateResponse(Map<String, ConfigListenState> changedGroups) {
             
             if (null == changedGroups) {
                 // Tell web container to send http response.
@@ -372,7 +373,7 @@ public class LongPollingService {
             }
         }
         
-        ClientLongPolling(AsyncContext ac, Map<String, String> clientMd5Map, String ip, int probeRequestSize,
+        ClientLongPolling(AsyncContext ac, Map<String, ConfigListenState> clientMd5Map, String ip, int probeRequestSize,
                 long timeoutTime, String appName, String tag) {
             this.asyncContext = ac;
             this.clientMd5Map = clientMd5Map;
@@ -386,7 +387,7 @@ public class LongPollingService {
         
         final AsyncContext asyncContext;
         
-        final Map<String, String> clientMd5Map;
+        final Map<String, ConfigListenState> clientMd5Map;
         
         final long createTime;
         
@@ -410,7 +411,7 @@ public class LongPollingService {
         }
     }
     
-    void generateResponse(HttpServletRequest request, HttpServletResponse response, List<String> changedGroups) {
+    void generateResponse(HttpServletRequest request, HttpServletResponse response, Map<String, ConfigListenState> changedGroups) {
         if (null == changedGroups) {
             return;
         }

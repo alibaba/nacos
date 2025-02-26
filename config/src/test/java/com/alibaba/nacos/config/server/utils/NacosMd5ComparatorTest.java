@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.config.server.model.ConfigListenState;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -28,7 +29,7 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.HashMap;
-import java.util.List;
+import java.util.Map;
 
 import static com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -78,15 +79,15 @@ class NacosMd5ComparatorTest {
         String groupKey1 = "groupKey1";
         String groupKey2 = "groupKey2";
         String clientMd5 = "clientMd5";
-        HashMap<String, String> clientMd5Map = new HashMap<>();
-        clientMd5Map.put(groupKey1, clientMd5);
-        clientMd5Map.put(groupKey2, clientMd5);
+        HashMap<String, ConfigListenState> clientMd5Map = new HashMap<>();
+        clientMd5Map.put(groupKey1, new ConfigListenState(clientMd5));
+        clientMd5Map.put(groupKey2, new ConfigListenState(clientMd5));
         
         NacosMd5Comparator nacosMd5Comparator = new NacosMd5Comparator();
         configCacheServiceMockedStatic.when(
                 () -> ConfigCacheService.isUptodate(anyString(), eq(clientMd5), eq(ip), eq(tag))).thenReturn(true);
         
-        List<String> changedGroupKeys = nacosMd5Comparator.compareMd5(request, response, clientMd5Map);
+        Map<String, ConfigListenState> changedGroupKeys = nacosMd5Comparator.compareMd5(request, response, clientMd5Map);
         assertEquals(0, changedGroupKeys.size());
     }
     
@@ -100,15 +101,15 @@ class NacosMd5ComparatorTest {
         String groupKey1 = "groupKey1";
         String groupKey2 = "groupKey2";
         String clientMd5 = "clientMd5";
-        HashMap<String, String> clientMd5Map = new HashMap<>();
-        clientMd5Map.put(groupKey1, clientMd5);
-        clientMd5Map.put(groupKey2, clientMd5);
+        HashMap<String, ConfigListenState> clientMd5Map = new HashMap<>();
+        clientMd5Map.put(groupKey1, new ConfigListenState(clientMd5));
+        clientMd5Map.put(groupKey2, new ConfigListenState(clientMd5));
         
         NacosMd5Comparator nacosMd5Comparator = new NacosMd5Comparator();
         configCacheServiceMockedStatic.when(
                 () -> ConfigCacheService.isUptodate(anyString(), eq(clientMd5), eq(ip), eq(tag))).thenReturn(false);
         
-        List<String> changedGroupKeys = nacosMd5Comparator.compareMd5(request, response, clientMd5Map);
+        Map<String, ConfigListenState> changedGroupKeys = nacosMd5Comparator.compareMd5(request, response, clientMd5Map);
         assertEquals(2, changedGroupKeys.size());
     }
 }

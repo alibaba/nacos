@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.config.server.model.ConfigListenState;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -44,6 +44,6 @@ public interface Md5Comparator {
      * @param clientMd5Map the client md 5 map
      * @return the list
      */
-    public List<String> compareMd5(HttpServletRequest request, HttpServletResponse response,
-            Map<String, String> clientMd5Map);
+    public Map<String, ConfigListenState> compareMd5(HttpServletRequest request, HttpServletResponse response,
+            Map<String, ConfigListenState> clientMd5Map);
 }

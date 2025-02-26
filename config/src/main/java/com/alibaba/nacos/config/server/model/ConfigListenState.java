@@ -27,6 +27,10 @@ public class ConfigListenState {
     
     private boolean namespaceTransfer;
     
+    public ConfigListenState(String md5) {
+        this.md5 = md5;
+    }
+    
     /**
      * Is namespace transfer boolean.
      *

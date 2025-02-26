@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.config.server.model.ConfigListenState;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -74,7 +75,7 @@ class Md5ComparatorDelegateTest {
                 .thenReturn(Collections.singletonList(nacosMd5Comparator));
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
-        HashMap<String, String> clientMd5Map = new HashMap<>();
+        HashMap<String, ConfigListenState> clientMd5Map = new HashMap<>();
         nacosMd5ComparatorMockedConstruction = mockConstruction(NacosMd5Comparator.class, (mock, context) -> {
             when(mock.compareMd5(request, response, clientMd5Map)).thenReturn(null);
         });
@@ -97,7 +98,7 @@ class Md5ComparatorDelegateTest {
         setStaticFinalField(field, delegate);
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
-        HashMap<String, String> clientMd5Map = new HashMap<>();
+        HashMap<String, ConfigListenState> clientMd5Map = new HashMap<>();
         Md5ComparatorDelegate.getInstance().compareMd5(request, response, clientMd5Map);
         verify(nacosMd5Comparator, times(1)).compareMd5(request, response, clientMd5Map);
     }

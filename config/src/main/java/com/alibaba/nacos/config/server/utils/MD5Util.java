@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.model.ConfigListenState;
 import com.alibaba.nacos.core.utils.StringPool;
 import com.alibaba.nacos.common.utils.StringUtils;
 
@@ -48,17 +50,18 @@ public class MD5Util {
     /**
      * Compare Md5.
      */
-    public static List<String> compareMd5(HttpServletRequest request, HttpServletResponse response,
-            Map<String, String> clientMd5Map) {
+    public static Map<String, ConfigListenState> compareMd5(HttpServletRequest request, HttpServletResponse response,
+            Map<String, ConfigListenState> clientMd5Map) {
         return Md5ComparatorDelegate.getInstance().compareMd5(request, response, clientMd5Map);
     }
     
     /**
      * Compare old Md5.
      */
-    public static String compareMd5OldResult(List<String> changedGroupKeys) {
+    public static String compareMd5OldResult(Map<String, ConfigListenState> changedGroupKeys) {
         StringBuilder sb = new StringBuilder();
-        for (String groupKey : changedGroupKeys) {
+        for (Map.Entry<String, ConfigListenState> entry : changedGroupKeys.entrySet()) {
+            String groupKey = entry.getKey();
             String[] dataIdGroupId = GroupKey2.parseKey(groupKey);
             sb.append(dataIdGroupId[0]);
             sb.append(':');
@@ -71,21 +74,21 @@ public class MD5Util {
     /**
      * Join and encode changedGroupKeys string.
      */
-    public static String compareMd5ResultString(List<String> changedGroupKeys) throws IOException {
+    public static String compareMd5ResultString(Map<String, ConfigListenState> changedGroupKeys) throws IOException {
         if (null == changedGroupKeys) {
             return "";
         }
         
         StringBuilder sb = new StringBuilder();
         
-        for (String groupKey : changedGroupKeys) {
+        for (Map.Entry<String, ConfigListenState> entry : changedGroupKeys.entrySet()) {
+            String groupKey = entry.getKey();
             String[] dataIdGroupId = GroupKey2.parseKey(groupKey);
             sb.append(dataIdGroupId[0]);
             sb.append(WORD_SEPARATOR);
             sb.append(dataIdGroupId[1]);
-            // if have tenant, then set it
             if (dataIdGroupId.length == 3) {
-                if (StringUtils.isNotBlank(dataIdGroupId[2])) {
+                if (StringUtils.isNotBlank(dataIdGroupId[2]) && !entry.getValue().isNamespaceTransfer()) {
                     sb.append(WORD_SEPARATOR);
                     sb.append(dataIdGroupId[2]);
                 }
@@ -104,9 +107,9 @@ public class MD5Util {
      * @param configKeysString protocol
      * @return protocol message
      */
-    public static Map<String, String> getClientMd5Map(String configKeysString) {
+    public static Map<String, ConfigListenState> getClientMd5Map(String configKeysString) {
         
-        Map<String, String> md5Map = new HashMap<>(5);
+        Map<String, ConfigListenState> md5Map = new HashMap<>(5);
         
         if (null == configKeysString || "".equals(configKeysString)) {
             return md5Map;
@@ -129,16 +132,27 @@ public class MD5Util {
                 }
                 start = i + 1;
                 
+                String tenant;
+                String md5;
+                boolean ifNamespaceTransfer;
                 // If it is the old message, the last digit is MD5. The post-multi-tenant message is tenant
                 if (tmpList.size() == 2) {
-                    String groupKey = GroupKey2.getKey(tmpList.get(0), tmpList.get(1));
-                    groupKey = StringPool.get(groupKey);
-                    md5Map.put(groupKey, endValue);
+                    tenant = "";
+                    md5 = endValue;
+                    ifNamespaceTransfer = NamespaceUtil.isNeedTransferNamespace(tenant);
+                    tenant = NamespaceUtil.processNamespaceParameter(tenant);
                 } else {
-                    String groupKey = GroupKey2.getKey(tmpList.get(0), tmpList.get(1), endValue);
-                    groupKey = StringPool.get(groupKey);
-                    md5Map.put(groupKey, tmpList.get(2));
+                    tenant = endValue;
+                    md5 = tmpList.get(2);
+                    ifNamespaceTransfer = false;
                 }
+                ConfigListenState configListenState = new ConfigListenState(md5);
+                configListenState.setNamespaceTransfer(ifNamespaceTransfer);
+                
+                String groupKey = GroupKey2.getKey(tmpList.get(0), tmpList.get(1), tenant);
+                groupKey = StringPool.get(groupKey);
+                md5Map.put(groupKey, configListenState);
+                
                 tmpList.clear();
                 
                 // Protect malformed messages

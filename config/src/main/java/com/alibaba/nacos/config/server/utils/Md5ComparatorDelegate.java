@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.model.ConfigListenState;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -25,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -71,8 +71,8 @@ public class Md5ComparatorDelegate {
         return INSTANCE;
     }
     
-    public List<String> compareMd5(HttpServletRequest request, HttpServletResponse response,
-            Map<String, String> clientMd5Map) {
+    public Map<String, ConfigListenState> compareMd5(HttpServletRequest request, HttpServletResponse response,
+            Map<String, ConfigListenState> clientMd5Map) {
         return md5Comparator.compareMd5(request, response, clientMd5Map);
     }
 }

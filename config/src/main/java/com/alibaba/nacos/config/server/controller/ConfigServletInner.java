@@ -28,6 +28,7 @@ import com.alibaba.nacos.config.server.enums.ApiVersionEnum;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.exception.NacosConfigException;
 import com.alibaba.nacos.config.server.model.ConfigCacheGray;
+import com.alibaba.nacos.config.server.model.ConfigListenState;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
 import com.alibaba.nacos.config.server.service.LongPollingService;
@@ -51,7 +52,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Map;
 
 import static com.alibaba.nacos.api.common.Constants.CONFIG_TYPE;
@@ -85,7 +85,7 @@ public class ConfigServletInner {
      * long polling the config.
      */
     public String doPollingConfig(HttpServletRequest request, HttpServletResponse response,
-            Map<String, String> clientMd5Map, int probeRequestSize) throws IOException {
+            Map<String, ConfigListenState> clientMd5Map, int probeRequestSize) throws IOException {
         
         // Long polling.
         if (LongPollingService.isSupportLongPolling(request)) {
@@ -94,7 +94,7 @@ public class ConfigServletInner {
         }
         
         // Compatible with short polling logic.
-        List<String> changedGroups = MD5Util.compareMd5(request, response, clientMd5Map);
+        Map<String, ConfigListenState> changedGroups = MD5Util.compareMd5(request, response, clientMd5Map);
         
         // Compatible with short polling result.
         String oldResult = MD5Util.compareMd5OldResult(changedGroups);
