@@ -988,7 +988,7 @@ class NacosNamingServiceTest {
     @Test
     void testSubscribeDuplicate() throws NacosException {
         String serviceName = "service1";
-        when(changeNotifier.isSubscribed(Constants.DEFAULT_GROUP, serviceName)).thenReturn(true);
+        when(proxy.isSubscribed(serviceName, Constants.DEFAULT_GROUP, StringUtils.EMPTY)).thenReturn(true);
         ServiceInfo serviceInfo = new ServiceInfo(Constants.DEFAULT_GROUP + "@@" + serviceName);
         serviceInfo.addHost(new Instance());
         when(serviceInfoHolder.getServiceInfo(serviceName, Constants.DEFAULT_GROUP, "")).thenReturn(serviceInfo);
