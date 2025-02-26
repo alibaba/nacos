@@ -352,7 +352,7 @@ public class NacosNamingService implements NamingService {
             NamingSelector selector, boolean subscribe) throws NacosException {
         ServiceInfo serviceInfo;
         if (subscribe) {
-            serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, StringUtils.EMPTY);
+            serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName);
             serviceInfo = tryToSubscribe(serviceName, groupName, serviceInfo);
             serviceInfo = doSelectInstance(serviceInfo, selector);
         } else {
@@ -588,7 +588,7 @@ public class NacosNamingService implements NamingService {
             NAMING_LOGGER.warn(
                     "Duplicate subscribe for groupName: {}, serviceName: {}; directly use current cached to notify.",
                     groupName, serviceName);
-            ServiceInfo serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, Constants.NULL);
+            ServiceInfo serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName);
             InstancesChangeEvent event = transferToEvent(serviceInfo);
             wrapper.notifyListener(event);
         }
