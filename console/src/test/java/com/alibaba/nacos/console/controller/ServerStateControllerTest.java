@@ -44,11 +44,6 @@ import static org.mockito.Mockito.when;
 
 /**
  * ServerStateController unit test.
- *
- * @ClassName: ServerStateControllerTest
- * @Author: ChenHao26
- * @Date: 2022/8/13 10:54
- * @Description: TODO
  */
 @ExtendWith(MockitoExtension.class)
 class ServerStateControllerTest {
