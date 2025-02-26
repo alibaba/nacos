@@ -164,8 +164,7 @@ class ServiceInfoHolderTest {
         ServiceInfo expect = holder.processServiceInfo(info);
         String serviceName = "b";
         String groupName = "a";
-        String clusters = "c";
-        ServiceInfo actual = holder.getServiceInfo(serviceName, groupName, clusters);
+        ServiceInfo actual = holder.getServiceInfo(serviceName, groupName);
         assertEquals(expect.getKey(), actual.getKey());
         assertEquals(expect.getHosts().size(), actual.getHosts().size());
         assertEquals(expect.getHosts().get(0), actual.getHosts().get(0));
