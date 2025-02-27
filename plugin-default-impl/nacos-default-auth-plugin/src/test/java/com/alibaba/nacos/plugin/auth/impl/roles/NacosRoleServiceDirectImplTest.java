@@ -51,11 +51,6 @@ import static org.mockito.Mockito.when;
 
 /**
  * NacosRoleServiceImpl Test.
- *
- * @ClassName: NacosRoleServiceImplTest
- * @Author: ChenHao26
- * @Date: 2022/8/16 17:31
- * @Description: TODO
  */
 @ExtendWith(MockitoExtension.class)
 class NacosRoleServiceDirectImplTest {

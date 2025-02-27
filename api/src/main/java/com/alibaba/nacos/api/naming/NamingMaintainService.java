@@ -28,7 +28,9 @@ import java.util.Map;
  *
  * @author liaochuntao
  * @since 1.0.1
+ * @deprecated Use {@link com.alibaba.nacos.maintainer.client.naming.NamingMaintainerService} in nacos-maintainer-client artifact tp replaced.
  */
+@Deprecated
 public interface NamingMaintainService {
     
     /**

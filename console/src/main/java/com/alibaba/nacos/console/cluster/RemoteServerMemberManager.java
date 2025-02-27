@@ -17,9 +17,12 @@
 package com.alibaba.nacos.console.cluster;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberLookup;
+import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.NacosMemberManager;
 import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -72,6 +75,8 @@ public class RemoteServerMemberManager implements NacosMemberManager {
         }
         Loggers.CLUSTER.info("[serverlist] nacos remote server members changed to : {}", newServerList);
         this.serverList = newServerList;
+        Event event = MembersChangeEvent.builder().members(members).build();
+        NotifyCenter.publishEvent(event);
         return true;
     }
     

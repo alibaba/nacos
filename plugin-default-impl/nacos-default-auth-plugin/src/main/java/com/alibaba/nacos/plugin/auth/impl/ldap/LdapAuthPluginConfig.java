@@ -18,7 +18,7 @@ package com.alibaba.nacos.plugin.auth.impl.ldap;
 
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.LdapAuthenticationManager;
-import com.alibaba.nacos.plugin.auth.impl.configuration.ConditionOnLdapAuth;
+import com.alibaba.nacos.plugin.auth.impl.condition.ConditionOnLdapAuth;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;

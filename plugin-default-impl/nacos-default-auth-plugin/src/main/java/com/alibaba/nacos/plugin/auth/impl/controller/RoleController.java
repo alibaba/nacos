@@ -26,7 +26,6 @@ import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -46,8 +45,11 @@ import java.util.List;
 @RequestMapping("/v1/auth/roles")
 public class RoleController {
     
-    @Autowired
-    private NacosRoleService roleService;
+    private final NacosRoleService roleService;
+    
+    public RoleController(NacosRoleService roleService) {
+        this.roleService = roleService;
+    }
     
     /**
      * Get roles list.

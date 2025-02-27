@@ -42,7 +42,6 @@ import com.alibaba.nacos.plugin.auth.impl.utils.PasswordGeneratorUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -67,28 +66,33 @@ import java.util.List;
  * @author wfnuser
  * @author nkorange
  */
-@RestController("user")
+@RestController
 @RequestMapping({"/v1/auth", "/v1/auth/users"})
 public class UserController {
     
-    @Autowired
-    private TokenManagerDelegate jwtTokenManager;
+    private final TokenManagerDelegate jwtTokenManager;
     
-    @Autowired
+    private final NacosUserService userDetailsService;
+    
+    private final NacosRoleService roleService;
+    
+    private final AuthConfigs authConfigs;
+    
+    private final IAuthenticationManager iAuthenticationManager;
+    
     @Deprecated
-    private AuthenticationManager authenticationManager;
+    private final AuthenticationManager authenticationManager;
     
-    @Autowired
-    private NacosUserService userDetailsService;
-    
-    @Autowired
-    private NacosRoleService roleService;
-    
-    @Autowired
-    private AuthConfigs authConfigs;
-    
-    @Autowired
-    private IAuthenticationManager iAuthenticationManager;
+    public UserController(TokenManagerDelegate jwtTokenManager, NacosUserService userDetailsService,
+            NacosRoleService roleService, AuthConfigs authConfigs, IAuthenticationManager iAuthenticationManager,
+            AuthenticationManager authenticationManager) {
+        this.jwtTokenManager = jwtTokenManager;
+        this.userDetailsService = userDetailsService;
+        this.roleService = roleService;
+        this.authConfigs = authConfigs;
+        this.iAuthenticationManager = iAuthenticationManager;
+        this.authenticationManager = authenticationManager;
+    }
     
     /**
      * Create a new user.

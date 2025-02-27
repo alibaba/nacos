@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.model.response.IdGeneratorInfo;
 import com.alibaba.nacos.api.model.response.NacosMember;
 import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.api.model.response.ServerLoaderMetrics;
+import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.Collection;
@@ -33,7 +34,7 @@ import java.util.Map;
  *
  * @author Nacos
  */
-public interface CoreMaintainerService {
+public interface CoreMaintainerService extends Closeable {
     
     /**
      * Get Nacos server states.

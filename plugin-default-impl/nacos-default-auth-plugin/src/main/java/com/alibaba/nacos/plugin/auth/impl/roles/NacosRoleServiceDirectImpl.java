@@ -26,7 +26,6 @@ import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionPersistService;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RolePersistService;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 
@@ -36,7 +35,6 @@ import java.util.List;
  * @author nkorange
  * @since 1.2.0
  */
-@Service
 public class NacosRoleServiceDirectImpl extends AbstractCheckedRoleService implements NacosRoleService {
     
     private static final int DEFAULT_PAGE_NO = 1;

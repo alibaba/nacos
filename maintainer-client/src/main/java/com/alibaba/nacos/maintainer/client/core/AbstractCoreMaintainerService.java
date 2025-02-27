@@ -294,4 +294,9 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
     protected ClientHttpProxy getClientHttpProxy() {
         return this.clientHttpProxy;
     }
+    
+    @Override
+    public void shutdown() throws NacosException {
+        clientHttpProxy.shutdown();
+    }
 }

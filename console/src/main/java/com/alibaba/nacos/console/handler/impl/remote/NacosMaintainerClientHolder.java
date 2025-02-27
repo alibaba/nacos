@@ -21,10 +21,14 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.cluster.RemoteServerMemberManager;
 import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MemberChangeListener;
+import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerFactory;
 import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerService;
 import com.alibaba.nacos.maintainer.client.naming.NamingMaintainerFactory;
 import com.alibaba.nacos.maintainer.client.naming.NamingMaintainerService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -37,23 +41,28 @@ import java.util.Properties;
  */
 @Component
 @EnabledRemoteHandler
-public class NacosMaintainerClientHolder {
+public class NacosMaintainerClientHolder extends MemberChangeListener {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(NacosMaintainerClientHolder.class);
     
     private final RemoteServerMemberManager memberManager;
     
-    private final NamingMaintainerService namingMaintainerService;
+    private volatile NamingMaintainerService namingMaintainerService;
     
-    private final ConfigMaintainerService configMaintainerService;
+    private volatile ConfigMaintainerService configMaintainerService;
     
     public NacosMaintainerClientHolder(RemoteServerMemberManager memberManager) throws NacosException {
         this.memberManager = memberManager;
+        buildMaintainerService();
+    }
+    
+    private void buildMaintainerService() throws NacosException {
         List<String> memberAddress = memberManager.allMembers().stream().map(Member::getAddress).toList();
         String memberAddressString = StringUtils.join(memberAddress, ",");
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, memberAddressString);
         namingMaintainerService = NamingMaintainerFactory.createNamingMaintainerService(properties);
         configMaintainerService = ConfigMaintainerFactory.createConfigMaintainerService(properties);
-        // TODO sub member change event to upgrade maintainer client server members.
     }
     
     public NamingMaintainerService getNamingMaintainerService() {
@@ -62,5 +71,14 @@ public class NacosMaintainerClientHolder {
     
     public ConfigMaintainerService getConfigMaintainerService() {
         return configMaintainerService;
+    }
+    
+    @Override
+    public void onEvent(MembersChangeEvent event) {
+        try {
+            buildMaintainerService();
+        } catch (NacosException e) {
+            LOGGER.warn("Nacos Server members changed, but build new maintain client failed with: ", e);
+        }
     }
 }

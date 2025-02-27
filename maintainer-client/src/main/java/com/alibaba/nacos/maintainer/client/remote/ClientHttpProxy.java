@@ -27,6 +27,7 @@ import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.tls.TlsSystemConfig;
 import com.alibaba.nacos.common.utils.HttpMethod;
@@ -54,7 +55,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Nacos
  */
-public class ClientHttpProxy {
+public class ClientHttpProxy implements Closeable {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientHttpProxy.class);
     
@@ -259,14 +260,18 @@ public class ClientHttpProxy {
         }
     }
     
-    /**
-     * shutdown.
-     */
+    @Override
     public void shutdown() throws NacosException {
         String className = this.getClass().getName();
         LOGGER.info("{} do shutdown begin", className);
         HttpClientManager.getInstance().shutdown();
         serverListManager.shutdown();
+        if (null != clientAuthPluginManager) {
+            clientAuthPluginManager.shutdown();
+        }
+        if (null != executor) {
+            executor.shutdown();
+        }
         LOGGER.info("{} do shutdown stop", className);
     }
 }
