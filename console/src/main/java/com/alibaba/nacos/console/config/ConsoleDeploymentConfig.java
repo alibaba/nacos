@@ -19,8 +19,11 @@ package com.alibaba.nacos.console.config;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.naming.selector.SelectorManager;
+import com.alibaba.nacos.plugin.auth.impl.configuration.NacosAuthPluginConfig;
+import com.alibaba.nacos.plugin.auth.impl.configuration.NacosAuthPluginRemoteConfig;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 
 /**
  * Load Beans for {@link com.alibaba.nacos.sys.env.DeploymentType#CONSOLE} type.
@@ -29,6 +32,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @EnabledRemoteHandler
+@Import({NacosAuthPluginRemoteConfig.class, NacosAuthPluginConfig.class})
 public class ConsoleDeploymentConfig {
     
     @Bean

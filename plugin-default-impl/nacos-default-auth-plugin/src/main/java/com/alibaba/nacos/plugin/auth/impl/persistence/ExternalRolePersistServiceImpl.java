@@ -16,13 +16,14 @@
 
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
-import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.plugin.auth.impl.persistence.extrnal.AuthExternalPaginationHelperImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -46,6 +47,8 @@ import static com.alibaba.nacos.plugin.auth.impl.persistence.AuthRowMapperManage
 @Component
 public class ExternalRolePersistServiceImpl implements RolePersistService {
     
+    private static final Logger LOGGER = LoggerFactory.getLogger("com.alibaba.nacos.persistence");
+    
     private JdbcTemplate jt;
     
     private String dataSourceType = "";
@@ -61,7 +64,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     
     @Override
     public Page<RoleInfo> getRoles(int pageNo, int pageSize) {
-    
+        
         AuthPaginationHelper<RoleInfo> helper = createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM (SELECT DISTINCT role FROM roles) roles WHERE ";
@@ -80,14 +83,14 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
             }
             return pageInfo;
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            LOGGER.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
     
     @Override
     public Page<RoleInfo> getRolesByUserNameAndRoleName(String username, String role, int pageNo, int pageSize) {
-    
+        
         AuthPaginationHelper<RoleInfo> helper = createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM roles ";
@@ -109,7 +112,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
             return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
                     ROLE_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            LOGGER.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -128,7 +131,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
         try {
             jt.update(sql, role, userName);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            LOGGER.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -144,7 +147,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
         try {
             jt.update(sql, role);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            LOGGER.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -161,7 +164,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
         try {
             jt.update(sql, role, username);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            LOGGER.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -203,13 +206,13 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
             where.append(" AND role LIKE ? ");
             params.add(generateLikeArgument(role));
         }
-    
+        
         AuthPaginationHelper<RoleInfo> helper = createPaginationHelper();
         try {
             return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
                     ROLE_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            LOGGER.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }

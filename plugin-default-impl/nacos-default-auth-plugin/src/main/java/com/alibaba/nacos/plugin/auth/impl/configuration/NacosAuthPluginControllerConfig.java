@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2023 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.console.config;
+package com.alibaba.nacos.plugin.auth.impl.configuration;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
@@ -25,17 +25,13 @@ import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 
 /**
- * Configuration of console auth controller.
- * TODO use {@link Import} to dynamic load auth plugin controller like Mybatis.
+ * Nacos auth plugin controller config.
  *
  * @author xiweng.yy
  */
-@Configuration
-public class NacosConsoleAuthControllerConfig {
+public class NacosAuthPluginControllerConfig {
     
     @Bean
     public UserControllerV3 consoleUserControllerV3(NacosUserService userDetailsService, NacosRoleService roleService,

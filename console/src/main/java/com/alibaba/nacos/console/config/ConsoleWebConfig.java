@@ -22,10 +22,11 @@ import com.alibaba.nacos.console.filter.XssFilter;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.controller.compatibility.ApiCompatibilityFilter;
 import com.alibaba.nacos.core.paramcheck.ParamCheckerFilter;
-import org.springframework.beans.factory.annotation.Value;
+import com.alibaba.nacos.plugin.auth.impl.configuration.NacosAuthPluginControllerConfig;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
@@ -45,15 +46,10 @@ import java.time.ZoneId;
  * @since 1.2.0
  */
 @Component
+@Import(NacosAuthPluginControllerConfig.class)
 public class ConsoleWebConfig {
     
     private final ControllerMethodsCache methodsCache;
-    
-    @Value("${nacos.console.ui.enabled:true}")
-    private boolean consoleUiEnabled;
-    
-    @Value("${nacos.deployment.type:merged}")
-    private String type;
     
     public ConsoleWebConfig(ControllerMethodsCache methodsCache) {
         this.methodsCache = methodsCache;
@@ -145,11 +141,4 @@ public class ConsoleWebConfig {
         return http.build();
     }
     
-    public boolean isConsoleUiEnabled() {
-        return consoleUiEnabled;
-    }
-    
-    public String getType() {
-        return type;
-    }
 }

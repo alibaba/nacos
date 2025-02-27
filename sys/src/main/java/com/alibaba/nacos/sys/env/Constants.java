@@ -79,9 +79,6 @@ public interface Constants {
     
     String AVAILABLE_PROCESSORS_BASIC = "nacos.core.sys.basic.processors";
     
-    @Deprecated
-    String SUPPORT_UPGRADE_FROM_1X = "nacos.core.support.upgrade.from.1x";
-    
     String NACOS_DEPLOYMENT_TYPE = "nacos.deployment.type";
     
     String NACOS_DEPLOYMENT_TYPE_MERGED = "merged";

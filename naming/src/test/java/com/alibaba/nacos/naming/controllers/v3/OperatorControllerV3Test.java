@@ -24,7 +24,6 @@ import com.alibaba.nacos.naming.core.Operator;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.model.form.UpdateSwitchForm;
 import com.alibaba.nacos.naming.model.vo.MetricsInfoVo;
-import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,7 +55,6 @@ class OperatorControllerV3Test {
     void setUp() {
         this.operatorControllerV3 = new OperatorControllerV3(operatorV2Impl);
         MockEnvironment environment = new MockEnvironment();
-        environment.setProperty(Constants.SUPPORT_UPGRADE_FROM_1X, "true");
         EnvUtil.setEnvironment(environment);
     }
     
