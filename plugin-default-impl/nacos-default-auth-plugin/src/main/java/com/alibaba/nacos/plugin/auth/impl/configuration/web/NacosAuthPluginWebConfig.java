@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2023 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.auth.impl.configuration;
+package com.alibaba.nacos.plugin.auth.impl.configuration.web;
 
 import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -24,7 +24,7 @@ import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.BeanIds;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -38,9 +38,9 @@ import org.springframework.security.web.SecurityFilterChain;
  *
  * @author xiweng.yy
  */
-@Configuration
 @NacosWebBean
 @EnableWebSecurity
+@Import(NacosAuthPluginControllerConfig.class)
 public class NacosAuthPluginWebConfig {
     
     private static final String SECURITY_IGNORE_URLS_SPILT_CHAR = ",";

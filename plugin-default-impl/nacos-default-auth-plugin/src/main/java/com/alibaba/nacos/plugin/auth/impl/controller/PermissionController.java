@@ -27,7 +27,6 @@ import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionInfo;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -45,8 +44,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/v1/auth/permissions")
 public class PermissionController {
     
-    @Autowired
-    private NacosRoleService nacosRoleService;
+    private final NacosRoleService nacosRoleService;
+    
+    public PermissionController(NacosRoleService nacosRoleService) {
+        this.nacosRoleService = nacosRoleService;
+    }
     
     /**
      * Query permissions of a role.

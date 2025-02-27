@@ -22,15 +22,14 @@ import com.alibaba.nacos.console.filter.XssFilter;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.controller.compatibility.ApiCompatibilityFilter;
 import com.alibaba.nacos.core.paramcheck.ParamCheckerFilter;
-import com.alibaba.nacos.plugin.auth.impl.configuration.NacosAuthPluginControllerConfig;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.stereotype.Component;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
@@ -45,8 +44,7 @@ import java.time.ZoneId;
  * @author nkorange
  * @since 1.2.0
  */
-@Component
-@Import(NacosAuthPluginControllerConfig.class)
+@Configuration
 public class ConsoleWebConfig {
     
     private final ControllerMethodsCache methodsCache;
@@ -135,6 +133,7 @@ public class ConsoleWebConfig {
     }
     
     @Bean
+    @ConditionalOnMissingBean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests((authorizeHttpRequests) -> authorizeHttpRequests.requestMatchers("/**").permitAll());
         http.csrf(AbstractHttpConfigurer::disable);

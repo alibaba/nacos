@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.auth.impl.configuration;
+package com.alibaba.nacos.plugin.auth.impl.configuration.web;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
@@ -34,7 +34,7 @@ import org.springframework.context.annotation.Bean;
 public class NacosAuthPluginControllerConfig {
     
     @Bean
-    public UserControllerV3 consoleUserControllerV3(NacosUserService userDetailsService, NacosRoleService roleService,
+    public UserControllerV3 userControllerV3(NacosUserService userDetailsService, NacosRoleService roleService,
             AuthConfigs authConfigs, IAuthenticationManager iAuthenticationManager,
             TokenManagerDelegate jwtTokenManager) {
         return new UserControllerV3(userDetailsService, roleService, authConfigs, iAuthenticationManager,
@@ -42,7 +42,7 @@ public class NacosAuthPluginControllerConfig {
     }
     
     @Bean
-    public RoleControllerV3 consoleRoleControllerV3(NacosRoleService roleService) {
+    public RoleControllerV3 roleControllerV3(NacosRoleService roleService) {
         return new RoleControllerV3(roleService);
     }
     

@@ -21,7 +21,6 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,7 +30,6 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author xiweng.yy
  */
-@Service
 public abstract class AbstractCachedUserService implements NacosUserService {
     
     private Map<String, User> userMap = new ConcurrentHashMap<>();

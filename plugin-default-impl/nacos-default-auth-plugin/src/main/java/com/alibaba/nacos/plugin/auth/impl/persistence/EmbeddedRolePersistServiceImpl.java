@@ -16,16 +16,12 @@
 
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
-import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.plugin.auth.impl.persistence.embedded.AuthEmbeddedPaginationHelperImpl;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Conditional;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,20 +33,21 @@ import static com.alibaba.nacos.plugin.auth.impl.persistence.AuthRowMapperManage
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@Conditional(value = ConditionOnEmbeddedStorage.class)
-@Component
 public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     
-    @Autowired
-    private DatabaseOperate databaseOperate;
+    private final DatabaseOperate databaseOperate;
     
     private static final String PATTERN_STR = "*";
     
     private static final String SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE = " ESCAPE '\\' ";
     
+    public EmbeddedRolePersistServiceImpl(DatabaseOperate databaseOperate) {
+        this.databaseOperate = databaseOperate;
+    }
+    
     @Override
     public Page<RoleInfo> getRoles(int pageNo, int pageSize) {
-    
+        
         AuthPaginationHelper<RoleInfo> helper = createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM (SELECT DISTINCT role FROM roles) roles WHERE ";
@@ -72,7 +69,7 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     
     @Override
     public Page<RoleInfo> getRolesByUserNameAndRoleName(String username, String role, int pageNo, int pageSize) {
-    
+        
         AuthPaginationHelper<RoleInfo> helper = createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM roles ";
@@ -186,7 +183,7 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
         }
         String sqlCountRows = "SELECT count(*) FROM roles";
         String sqlFetchRows = "SELECT role, username FROM roles";
-    
+        
         AuthPaginationHelper<RoleInfo> helper = createPaginationHelper();
         return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
                 ROLE_INFO_ROW_MAPPER);

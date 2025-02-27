@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.auth.impl.configuration;
+package com.alibaba.nacos.plugin.auth.impl.configuration.core;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.plugin.auth.impl.condition.ConditionOnRemoteDatasource;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceRemoteImpl;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserServiceRemoteImpl;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Import;
 
 /**
@@ -29,8 +31,9 @@ import org.springframework.context.annotation.Import;
  *
  * @author xiweng.yy
  */
-@Import(AuthConfigs.class)
-public class NacosAuthPluginRemoteConfig {
+@Import({AuthConfigs.class})
+@Conditional(ConditionOnRemoteDatasource.class)
+public class NacosAuthPluginRemoteServiceConfig {
     
     @Bean
     public NacosRoleService nacosRoleService(AuthConfigs authConfigs) {

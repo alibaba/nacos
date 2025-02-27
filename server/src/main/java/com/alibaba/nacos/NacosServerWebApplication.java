@@ -33,6 +33,7 @@ import org.springframework.context.annotation.PropertySource;
 @SpringBootApplication(exclude = LdapAutoConfiguration.class)
 @ComponentScan(basePackages = "com.alibaba.nacos", excludeFilters = {
         @Filter(type = FilterType.REGEX, pattern = "com\\.alibaba\\.nacos\\.console.*"),
+        @Filter(type = FilterType.REGEX, pattern = "com\\.alibaba\\.nacos\\.plugin\\.auth\\.impl.*"),
         @Filter(type = FilterType.CUSTOM, classes = {NacosNormalBeanTypeFilter.class})})
 @PropertySource("classpath:nacos-server.properties")
 public class NacosServerWebApplication {

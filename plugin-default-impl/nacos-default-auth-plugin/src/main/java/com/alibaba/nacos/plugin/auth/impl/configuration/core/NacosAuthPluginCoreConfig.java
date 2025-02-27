@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2023 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.auth.impl.configuration;
+package com.alibaba.nacos.plugin.auth.impl.configuration.core;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
@@ -22,6 +22,7 @@ import com.alibaba.nacos.core.auth.NacosServerAuthConfig;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.DefaultAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
+import com.alibaba.nacos.plugin.auth.impl.condition.ConditionOnInnerDatasource;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManager;
@@ -32,7 +33,7 @@ import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.GlobalAuthenticationConfigurerAdapter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -45,17 +46,15 @@ import javax.annotation.PostConstruct;
  *
  * @author Nacos
  */
-@Configuration
-public class NacosAuthPluginConfig {
+public class NacosAuthPluginCoreConfig {
     
     private final NacosUserService userDetailsService;
     
     private final ControllerMethodsCache methodsCache;
     
-    public NacosAuthPluginConfig(NacosUserService userDetailsService, ControllerMethodsCache methodsCache) {
+    public NacosAuthPluginCoreConfig(NacosUserService userDetailsService, ControllerMethodsCache methodsCache) {
         this.userDetailsService = userDetailsService;
         this.methodsCache = methodsCache;
-        
     }
     
     /**
@@ -68,6 +67,7 @@ public class NacosAuthPluginConfig {
     
     @Bean
     @ConditionalOnMissingBean
+    @Conditional(value = ConditionOnInnerDatasource.class)
     public GlobalAuthenticationConfigurerAdapter authenticationConfigurer() {
         return new GlobalAuthenticationConfigurerAdapter() {
             @Override

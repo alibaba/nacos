@@ -28,7 +28,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-import java.lang.reflect.Field;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -50,11 +49,7 @@ class EmbeddedRolePersistServiceImplTest {
     @BeforeEach
     void setUp() throws Exception {
         when(databaseOperate.queryOne(any(String.class), any(Object[].class), eq(Integer.class))).thenReturn(0);
-        embeddedRolePersistService = new EmbeddedRolePersistServiceImpl();
-        Class<EmbeddedRolePersistServiceImpl> embeddedRolePersistServiceClass = EmbeddedRolePersistServiceImpl.class;
-        Field databaseOperateFields = embeddedRolePersistServiceClass.getDeclaredField("databaseOperate");
-        databaseOperateFields.setAccessible(true);
-        databaseOperateFields.set(embeddedRolePersistService, databaseOperate);
+        embeddedRolePersistService = new EmbeddedRolePersistServiceImpl(databaseOperate);
     }
     
     @Test

@@ -28,7 +28,6 @@ import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Properties;
@@ -41,7 +40,6 @@ import static com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
  *
  * @author xiweng.yy
  */
-@Service
 public abstract class AbstractCheckedRoleService extends AbstractCachedRoleService implements NacosRoleService {
     
     private final AuthConfigs authConfigs;

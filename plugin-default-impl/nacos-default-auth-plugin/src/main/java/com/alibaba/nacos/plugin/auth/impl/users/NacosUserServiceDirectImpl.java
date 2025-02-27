@@ -23,7 +23,6 @@ import com.alibaba.nacos.plugin.auth.impl.persistence.UserPersistService;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 
@@ -33,7 +32,6 @@ import java.util.List;
  * @author wfnuser
  * @author nkorange
  */
-@Service
 public class NacosUserServiceDirectImpl extends AbstractCachedUserService implements NacosUserService {
     
     private final UserPersistService userPersistService;

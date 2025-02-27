@@ -22,7 +22,6 @@ import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -36,7 +35,6 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author xiweng.yy
  */
-@Service
 public abstract class AbstractCachedRoleService implements NacosRoleService {
     
     protected static final int DEFAULT_PAGE_NO = 1;
