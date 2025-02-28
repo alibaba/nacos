@@ -33,7 +33,6 @@ import com.alibaba.nacos.naming.model.form.ServiceListForm;
 import com.alibaba.nacos.naming.model.form.UpdateClusterForm;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.SelectorManager;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -190,15 +189,17 @@ public class ConsoleServiceControllerTest {
         serviceForm.setGroupName("testGroup");
         AggregationForm aggregationForm = new AggregationForm();
         
-        Result<ObjectNode> actual = consoleServiceController.subscribers(serviceForm, pageForm, aggregationForm);
+        Result<Page<SubscriberInfo>> actual = consoleServiceController.subscribers(serviceForm, pageForm,
+                aggregationForm);
         
         verify(serviceProxy).getSubscribers(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyBoolean());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
-        assertEquals(1, actual.getData().get("count").asInt());
-        assertEquals(1, actual.getData().get("subscribers").size());
-        assertEquals("testGroup@@testService", actual.getData().get("subscribers").get(0).get("serviceName").asText());
-        assertEquals("testNamespace", actual.getData().get("subscribers").get(0).get("namespaceId").asText());
+        assertEquals(1, actual.getData().getTotalCount());
+        assertEquals(1, actual.getData().getPageItems().size());
+        assertEquals("testGroup", actual.getData().getPageItems().get(0).getGroupName());
+        assertEquals("testService", actual.getData().getPageItems().get(0).getServiceName());
+        assertEquals("testNamespace", actual.getData().getPageItems().get(0).getNamespaceId());
     }
     
     @Test
