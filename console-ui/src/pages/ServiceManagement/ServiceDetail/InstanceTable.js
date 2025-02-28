@@ -80,8 +80,8 @@ class InstanceTable extends React.Component {
       beforeSend: () => this.openLoading(),
       success: ({ data }) => {
         const instance = {
-          list: data.instances || [],
-          count: data.count || 0,
+          list: data.pageItems || [],
+          count: data.totalCount || 0,
         };
         this.setState({ instance });
       },
