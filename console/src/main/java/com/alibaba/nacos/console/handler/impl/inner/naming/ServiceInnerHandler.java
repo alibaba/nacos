@@ -130,9 +130,9 @@ public class ServiceInnerHandler implements ServiceHandler {
     }
     
     @Override
-    public void updateClusterMetadata(String namespaceId, String serviceName, String clusterName,
+    public void updateClusterMetadata(String namespaceId, String groupName, String serviceName, String clusterName,
             ClusterMetadata clusterMetadata) throws Exception {
-        clusterOperatorV2.updateClusterMetadata(namespaceId, serviceName, clusterName, clusterMetadata);
+        clusterOperatorV2.updateClusterMetadata(namespaceId, groupName, serviceName, clusterName, clusterMetadata);
     }
     
 }

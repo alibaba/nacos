@@ -45,7 +45,6 @@ import com.alibaba.nacos.naming.model.form.UpdateClusterForm;
 import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.SelectorManager;
-import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -197,12 +196,11 @@ public class ConsoleServiceController {
      */
     @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)
     @GetMapping()
-    public Result<Object> getServiceDetail(ServiceForm serviceForm) throws NacosException {
+    public Result<ServiceDetailInfo> getServiceDetail(ServiceForm serviceForm) throws NacosException {
         serviceForm.validate();
         ServiceDetailInfo result = serviceProxy.getServiceDetail(serviceForm.getNamespaceId(),
                 serviceForm.getServiceName(), serviceForm.getGroupName());
-        // TODO use ServiceDetailInfo directly after console-ui after modified
-        return Result.success(ServiceUtil.transferToConsoleResult(result));
+        return Result.success(result);
     }
     
     /**
@@ -219,6 +217,7 @@ public class ConsoleServiceController {
         final String namespaceId = updateClusterForm.getNamespaceId();
         final String clusterName = updateClusterForm.getClusterName();
         final String serviceName = updateClusterForm.getServiceName();
+        final String groupName = updateClusterForm.getGroupName();
         ClusterMetadata clusterMetadata = new ClusterMetadata();
         clusterMetadata.setHealthyCheckPort(updateClusterForm.getCheckPort());
         clusterMetadata.setUseInstancePortForCheck(updateClusterForm.isUseInstancePort4Check());
@@ -226,8 +225,7 @@ public class ConsoleServiceController {
         clusterMetadata.setHealthChecker(healthChecker);
         clusterMetadata.setHealthyCheckType(healthChecker.getType());
         clusterMetadata.setExtendData(UtilsAndCommons.parseMetadata(updateClusterForm.getMetadata()));
-        
-        serviceProxy.updateClusterMetadata(namespaceId, serviceName, clusterName, clusterMetadata);
+        serviceProxy.updateClusterMetadata(namespaceId, groupName, serviceName, clusterName, clusterMetadata);
         return Result.success("ok");
     }
     

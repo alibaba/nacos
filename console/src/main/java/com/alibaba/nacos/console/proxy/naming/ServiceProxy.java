@@ -160,15 +160,16 @@ public class ServiceProxy {
      * Updates the metadata of a cluster.
      *
      * @param namespaceId     the namespace ID
+     * @param groupName       the group name
      * @param serviceName     the service name
      * @param clusterName     the cluster name
      * @param clusterMetadata the metadata for the cluster
      * @throws Exception                if the update operation fails
      * @throws IllegalArgumentException if the deployment type is invalid
      */
-    public void updateClusterMetadata(String namespaceId, String serviceName, String clusterName,
+    public void updateClusterMetadata(String namespaceId, String groupName, String serviceName, String clusterName,
             ClusterMetadata clusterMetadata) throws Exception {
-        serviceHandler.updateClusterMetadata(namespaceId, serviceName, clusterName, clusterMetadata);
+        serviceHandler.updateClusterMetadata(namespaceId, groupName, serviceName, clusterName, clusterMetadata);
     }
 }
 

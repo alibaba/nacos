@@ -22,7 +22,6 @@ import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
-import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
 import com.alibaba.nacos.console.handler.naming.ServiceHandler;
@@ -94,14 +93,12 @@ public class ServiceRemoteHandler implements ServiceHandler {
     }
     
     @Override
-    public void updateClusterMetadata(String namespaceId, String serviceName, String clusterName,
+    public void updateClusterMetadata(String namespaceId, String groupName, String serviceName, String clusterName,
             ClusterMetadata clusterMetadata) throws Exception {
-        String groupName = NamingUtils.getGroupName(serviceName);
-        String serviceNameWithoutGroup = NamingUtils.getServiceName(serviceName);
         Service service = new Service();
         service.setNamespaceId(namespaceId);
         service.setGroupName(groupName);
-        service.setName(serviceNameWithoutGroup);
+        service.setName(serviceName);
         ClusterInfo clusterInfo = new ClusterInfo();
         clusterInfo.setClusterName(clusterName);
         clusterInfo.setHealthChecker(clusterMetadata.getHealthChecker());

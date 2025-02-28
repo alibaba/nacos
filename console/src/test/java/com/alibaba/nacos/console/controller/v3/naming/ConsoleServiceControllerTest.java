@@ -45,7 +45,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -145,13 +144,12 @@ public class ConsoleServiceControllerTest {
         serviceForm.setServiceName("testService");
         serviceForm.setNamespaceId("testNamespace");
         serviceForm.setGroupName("testGroup");
-        Result<Object> actual = consoleServiceController.getServiceDetail(serviceForm);
+        Result<ServiceDetailInfo> actual = consoleServiceController.getServiceDetail(serviceForm);
         
         verify(serviceProxy).getServiceDetail(any(String.class), any(String.class), any(String.class));
         
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
-        // controller transfer ServiceDetailInfo to old console result
-        assertNotEquals(serviceDetail, actual.getData());
+        assertEquals(serviceDetail, actual.getData());
     }
     
     @Test
@@ -232,7 +230,8 @@ public class ConsoleServiceControllerTest {
         
         Result<String> actual = consoleServiceController.updateCluster(updateClusterForm);
         
-        verify(serviceProxy).updateClusterMetadata(anyString(), anyString(), anyString(), any(ClusterMetadata.class));
+        verify(serviceProxy).updateClusterMetadata(anyString(), anyString(), anyString(), anyString(),
+                any(ClusterMetadata.class));
         
         assertEquals("ok", actual.getData());
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());

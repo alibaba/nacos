@@ -77,8 +77,12 @@ class ServiceDetail extends React.Component {
       success: res => {
         if (res.code === 0) {
           // 确保 res.data 存在并且 clusters 是数组
-          const { clusters = [], service = {} } = res.data || { clusters: [], service: {} };
-          this.setState({ service, clusters: Array.isArray(clusters) ? clusters : [] });
+          const serviceFullData = res.data || {};
+          const clusters = Object.values(serviceFullData.clusterMap || {});
+          this.setState({
+            service: serviceFullData,
+            clusters: Array.isArray(clusters) ? clusters : [],
+          });
         } else {
           Message.error(res.message || '请求失败');
         }
@@ -101,7 +105,9 @@ class ServiceDetail extends React.Component {
   }
 
   openClusterDialog(cluster) {
-    this.editClusterDialog.current.getInstance().show(cluster);
+    this.editClusterDialog.current
+      .getInstance()
+      .show(cluster, this.state.groupName, this.state.serviceName);
   }
 
   setFilters = clusterName => filters => {
@@ -156,7 +162,7 @@ class ServiceDetail extends React.Component {
 
           <Form {...pageFormLayout}>
             <FormItem label={`${locale.serviceName}`}>
-              <Input value={service.name} readOnly />
+              <Input value={service.serviceName} readOnly />
             </FormItem>
             <FormItem label={`${locale.groupName}`}>
               <Input value={service.groupName} readOnly />
@@ -184,10 +190,10 @@ class ServiceDetail extends React.Component {
           </Form>
           {clusters.map(cluster => (
             <Card
-              key={cluster.name}
+              key={cluster.clusterName}
               className="cluster-card"
               title={`${locale.cluster}`}
-              subTitle={cluster.name}
+              subTitle={cluster.clusterName}
               contentHeight="auto"
               extra={
                 <Button type="normal" onClick={() => this.openClusterDialog(cluster)}>
@@ -196,14 +202,14 @@ class ServiceDetail extends React.Component {
               }
             >
               <InstanceFilter
-                setFilters={this.setFilters(cluster.name)}
+                setFilters={this.setFilters(cluster.clusterName)}
                 locale={locale.InstanceFilter}
               />
               <InstanceTable
-                clusterName={cluster.name}
+                clusterName={cluster.clusterName}
                 serviceName={serviceName}
                 groupName={groupName}
-                filters={instanceFilters.get(cluster.name)}
+                filters={instanceFilters.get(cluster.clusterName)}
               />
             </Card>
           ))}
