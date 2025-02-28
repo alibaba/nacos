@@ -104,10 +104,10 @@ class ServiceList extends React.Component {
     this.openLoading();
     request({
       url: `v3/console/ns/service/list?${parameter.join('&')}`,
-      success: ({ data: { count = 0, serviceList = [] } = {} }) => {
+      success: ({ data: { totalCount = 0, pageItems = [] } = {} }) => {
         this.setState({
-          dataSource: serviceList,
-          total: count,
+          dataSource: pageItems,
+          total: totalCount,
           loading: false,
         });
       },
