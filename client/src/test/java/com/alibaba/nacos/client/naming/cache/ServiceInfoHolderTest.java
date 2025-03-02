@@ -204,8 +204,8 @@ class ServiceInfoHolderTest {
     void testGetFailoverServiceInfo() throws IllegalAccessException, NoSuchFieldException, NacosException {
         FailoverReactor mock = injectMockFailoverReactor();
         ServiceInfo serviceInfo = new ServiceInfo("a@@b@@c");
-        when(mock.getService("a@@b@@c")).thenReturn(serviceInfo);
-        assertEquals(serviceInfo, holder.getFailoverServiceInfo("b", "a", "c"));
+        when(mock.getService("a@@b")).thenReturn(serviceInfo);
+        assertEquals(serviceInfo, holder.getFailoverServiceInfo("b", "a"));
     }
     
     private FailoverReactor injectMockFailoverReactor()

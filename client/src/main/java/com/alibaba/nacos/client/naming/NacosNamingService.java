@@ -344,7 +344,7 @@ public class NacosNamingService implements NamingService {
     }
     
     private ServiceInfo getServiceInfoByFailover(String serviceName, String groupName, NamingSelector clusterSelector) {
-        ServiceInfo result = serviceInfoHolder.getFailoverServiceInfo(serviceName, groupName, StringUtils.EMPTY);
+        ServiceInfo result = serviceInfoHolder.getFailoverServiceInfo(serviceName, groupName);
         return doSelectInstance(result, clusterSelector);
     }
     

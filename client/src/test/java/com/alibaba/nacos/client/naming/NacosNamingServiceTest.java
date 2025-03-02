@@ -527,7 +527,7 @@ class NacosNamingServiceTest {
         when(serviceInfoHolder.isFailoverSwitch()).thenReturn(true);
         ServiceInfo serviceInfo = new ServiceInfo("group1@@service1");
         serviceInfo.setHosts(Collections.singletonList(new Instance()));
-        when(serviceInfoHolder.getFailoverServiceInfo("service1", "group1", "")).thenReturn(serviceInfo);
+        when(serviceInfoHolder.getFailoverServiceInfo("service1", "group1")).thenReturn(serviceInfo);
         List<Instance> actual = client.getAllInstances("service1", "group1", false);
         verify(proxy, never()).queryInstancesOfService(anyString(), anyString(), anyString(), anyBoolean());
         assertEquals(1, actual.size());
@@ -538,7 +538,7 @@ class NacosNamingServiceTest {
     void testGetAllInstanceFromFailoverEmpty() throws NacosException {
         when(serviceInfoHolder.isFailoverSwitch()).thenReturn(true);
         ServiceInfo serviceInfo = new ServiceInfo("group1@@service1");
-        when(serviceInfoHolder.getFailoverServiceInfo("service1", "group1", "")).thenReturn(serviceInfo);
+        when(serviceInfoHolder.getFailoverServiceInfo("service1", "group1")).thenReturn(serviceInfo);
         List<Instance> actual = client.getAllInstances("service1", "group1", false);
         verify(proxy).queryInstancesOfService(anyString(), anyString(), anyString(), anyBoolean());
         assertEquals(0, actual.size());
