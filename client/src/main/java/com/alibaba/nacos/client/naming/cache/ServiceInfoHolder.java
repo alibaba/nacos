@@ -167,9 +167,8 @@ public class ServiceInfoHolder implements Closeable {
         return failoverReactor.isFailoverSwitch();
     }
     
-    public ServiceInfo getFailoverServiceInfo(final String serviceName, final String groupName, final String clusters) {
-        String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
-        String key = ServiceInfo.getKey(groupedServiceName, clusters);
+    public ServiceInfo getFailoverServiceInfo(final String serviceName, final String groupName) {
+        String key = NamingUtils.getGroupedName(serviceName, groupName);
         return failoverReactor.getService(key);
     }
     
