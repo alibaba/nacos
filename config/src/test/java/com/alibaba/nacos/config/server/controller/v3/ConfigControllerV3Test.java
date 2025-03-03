@@ -360,9 +360,8 @@ class ConfigControllerV3Test {
                 .param("dataId", dataId).param("groupName", groupName).param("namespaceId", namespaceId)
                 .param("appName", appname).param("ids", "1,2");
         
-        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
-        String code = JacksonUtils.toObj(actualValue).get("code").toString();
-        assertEquals("0", code);
+        int actualValue = mockmvc.perform(builder).andReturn().getResponse().getStatus();
+        assertEquals(200, actualValue);
     }
     
     @Test

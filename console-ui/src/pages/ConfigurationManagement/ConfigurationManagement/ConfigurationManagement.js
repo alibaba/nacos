@@ -614,20 +614,6 @@ class ConfigurationManagement extends React.Component {
   exportData() {
     const { group, appName, dataId, openUri } = this;
     const { accessToken = '', username = '' } = JSON.parse(localStorage.token || '{}');
-    openUri('v3/console/cs/config/export', {
-      namespaceId: getParams('namespace'),
-      groupName: group,
-      appName,
-      dataId,
-      ids: '',
-      accessToken,
-      username,
-    });
-  }
-
-  exportDataNew() {
-    const { group, appName, dataId, openUri } = this;
-    const { accessToken = '', username = '' } = JSON.parse(localStorage.token || '{}');
     openUri('v3/console/cs/config/export2', {
       namespaceId: getParams('namespace'),
       groupName: group,
@@ -639,7 +625,7 @@ class ConfigurationManagement extends React.Component {
     });
   }
 
-  exportSelectedData(newVersion) {
+  exportSelectedData() {
     const ids = [];
     const { locale = {} } = this.props;
     const { accessToken = '', username = '' } = JSON.parse(localStorage.token || '{}');
@@ -651,25 +637,14 @@ class ConfigurationManagement extends React.Component {
       return;
     }
     configsTableSelected.forEach((value, key, map) => ids.push(key));
-    if (newVersion) {
-      this.openUri('v3/console/cs/config/export2', {
-        namespaceId: getParams('namespace'),
-        groupName: '',
-        appName: '',
-        ids: ids.join(','),
-        accessToken,
-        username,
-      });
-    } else {
-      this.openUri('v3/console/cs/config/export', {
-        namespaceId: getParams('namespace'),
-        groupName: '',
-        appName: '',
-        ids: ids.join(','),
-        accessToken,
-        username,
-      });
-    }
+    this.openUri('v3/console/cs/config/export2', {
+      namespaceId: getParams('namespace'),
+      groupName: '',
+      appName: '',
+      ids: ids.join(','),
+      accessToken,
+      username,
+    });
   }
 
   multipleSelectionDeletion() {
@@ -1488,23 +1463,13 @@ class ConfigurationManagement extends React.Component {
                     {[
                       {
                         text: locale.export,
-                        locaid: 'exportData',
-                        onClick: () => this.exportData(this),
-                      },
-                      {
-                        text: locale.newExport,
                         locaid: 'exportDataNew',
-                        onClick: () => this.exportDataNew(this),
+                        onClick: () => this.exportData(this),
                       },
                       {
                         text: locale.exportSelected,
                         locaid: 'configsExport',
-                        onClick: () => this.exportSelectedData(false),
-                      },
-                      {
-                        text: locale.newExportSelected,
-                        locaid: 'configsExport',
-                        onClick: () => this.exportSelectedData(true),
+                        onClick: () => this.exportSelectedData(),
                       },
                     ].map((item, index) => (
                       <Item key={item.text} style={{ minWidth: 150 }} onClick={item.onClick}>

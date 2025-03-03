@@ -54,9 +54,9 @@ public class WebUtils {
     
     private static final String TMP_SUFFIX = ".tmp";
     
-    private static final String X_REAL_IP = "X-Real-IP";
+    public static final String X_REAL_IP = "X-Real-IP";
     
-    private static final String X_FORWARDED_FOR = "X-Forwarded-For";
+    public static final String X_FORWARDED_FOR = "X-Forwarded-For";
     
     private static final String X_FORWARDED_FOR_SPLIT_SYMBOL = ",";
     
