@@ -22,11 +22,9 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.console.proxy.naming.InstanceProxy;
-import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.model.form.InstanceForm;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -59,9 +57,6 @@ public class ConsoleInstanceControllerTest {
     @Mock
     private InstanceProxy instanceProxy;
     
-    @Mock
-    private SwitchDomain switchDomain;
-    
     @InjectMocks
     private ConsoleInstanceController consoleInstanceController;
     
@@ -85,7 +80,7 @@ public class ConsoleInstanceControllerTest {
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         
-        Result<ObjectNode> result = new ObjectMapper().readValue(actualValue, new TypeReference<Result<ObjectNode>>() {
+        Result<Page<? extends Instance>> result = new ObjectMapper().readValue(actualValue, new TypeReference<>() {
         });
         
         assertNotNull(result.getData());

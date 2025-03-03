@@ -246,45 +246,6 @@ public class ConfigInnerHandler implements ConfigHandler {
         List<ConfigAllInfo> dataList = configInfoPersistService.findAllConfigInfo4Export(dataId, group, namespaceId,
                 appName, ids);
         List<ZipUtils.ZipItem> zipItemList = new ArrayList<>();
-        StringBuilder metaData = null;
-        for (ConfigInfo ci : dataList) {
-            if (StringUtils.isNotBlank(ci.getAppName())) {
-                // Handle appName
-                if (metaData == null) {
-                    metaData = new StringBuilder();
-                }
-                String metaDataId = ci.getDataId();
-                if (metaDataId.contains(".")) {
-                    metaDataId = metaDataId.substring(0, metaDataId.lastIndexOf(".")) + "~" + metaDataId.substring(
-                            metaDataId.lastIndexOf(".") + 1);
-                }
-                metaData.append(ci.getGroup()).append('.').append(metaDataId).append(".app=")
-                        // Fixed use of "\r\n" here
-                        .append(ci.getAppName()).append("\r\n");
-            }
-            Pair<String, String> pair = EncryptionHandler.decryptHandler(ci.getDataId(), ci.getEncryptedDataKey(),
-                    ci.getContent());
-            String itemName = ci.getGroup() + Constants.CONFIG_EXPORT_ITEM_FILE_SEPARATOR + ci.getDataId();
-            zipItemList.add(new ZipUtils.ZipItem(itemName, pair.getSecond()));
-        }
-        if (metaData != null) {
-            zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA, metaData.toString()));
-        }
-        
-        HttpHeaders headers = new HttpHeaders();
-        String fileName =
-                EXPORT_CONFIG_FILE_NAME + DateFormatUtils.format(new Date(), EXPORT_CONFIG_FILE_NAME_DATE_FORMAT)
-                        + EXPORT_CONFIG_FILE_NAME_EXT;
-        headers.add("Content-Disposition", "attachment;filename=" + fileName);
-        return new ResponseEntity<>(ZipUtils.zip(zipItemList), headers, HttpStatus.OK);
-    }
-    
-    @Override
-    public ResponseEntity<byte[]> exportConfigV2(String dataId, String group, String namespaceId, String appName,
-            List<Long> ids) throws Exception {
-        List<ConfigAllInfo> dataList = configInfoPersistService.findAllConfigInfo4Export(dataId, group, namespaceId,
-                appName, ids);
-        List<ZipUtils.ZipItem> zipItemList = new ArrayList<>();
         List<ConfigMetadata.ConfigExportItem> configMetadataItems = new ArrayList<>();
         for (ConfigAllInfo ci : dataList) {
             ConfigMetadata.ConfigExportItem configMetadataItem = new ConfigMetadata.ConfigExportItem();

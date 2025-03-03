@@ -108,22 +108,6 @@ public interface ConfigHandler {
     Boolean batchDeleteConfigs(List<Long> ids, String clientIp, String srcUser) throws NacosException;
     
     /**
-     * Exports the configuration based on the specified parameters.
-     *
-     * @param dataId      The identifier of the configuration data.
-     * @param group       The group to which the configuration belongs.
-     * @param namespaceId The namespace identifier.
-     * @param appName     The application name associated with the configuration.
-     * @param ids         A list of IDs of the configurations to export.
-     * @return A ResponseEntity containing the exported configuration as a byte array.
-     * @throws Exception If an unexpected error occurs during the export process.
-     * @deprecated nacos 3.0 not support export 1.x config dump data
-     */
-    @Deprecated
-    ResponseEntity<byte[]> exportConfig(String dataId, String group, String namespaceId, String appName, List<Long> ids)
-            throws Exception;
-    
-    /**
      * Exports the configuration with metadata based on the specified parameters.
      *
      * @param dataId      The identifier of the configuration data.
@@ -134,7 +118,7 @@ public interface ConfigHandler {
      * @return A ResponseEntity containing the exported configuration as a byte array.
      * @throws Exception If an unexpected error occurs during the export process.
      */
-    ResponseEntity<byte[]> exportConfigV2(String dataId, String group, String namespaceId, String appName,
+    ResponseEntity<byte[]> exportConfig(String dataId, String group, String namespaceId, String appName,
             List<Long> ids) throws Exception;
     
     /**

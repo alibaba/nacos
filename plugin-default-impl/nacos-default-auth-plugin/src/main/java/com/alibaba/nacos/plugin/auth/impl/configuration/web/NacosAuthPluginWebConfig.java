@@ -40,7 +40,7 @@ import org.springframework.security.web.SecurityFilterChain;
  */
 @NacosWebBean
 @EnableWebSecurity
-@Import(NacosAuthPluginControllerConfig.class)
+@Import({NacosAuthPluginControllerConfig.class, NacosAuthPluginOldControllerConfig.class})
 public class NacosAuthPluginWebConfig {
     
     private static final String SECURITY_IGNORE_URLS_SPILT_CHAR = ",";

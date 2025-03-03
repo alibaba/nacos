@@ -409,14 +409,8 @@ public class ConfigControllerV3 {
         List<Map<String, String>> unrecognizedList = new ArrayList<>();
         try {
             ZipUtils.UnZipResult unziped = ZipUtils.unzip(file.getBytes());
-            ZipUtils.ZipItem metaDataZipItem = unziped.getMetaDataItem();
-            Result<Map<String, Object>> errorResult;
-            if (metaDataZipItem != null && Constants.CONFIG_EXPORT_METADATA_NEW.equals(metaDataZipItem.getItemName())) {
-                // new export
-                errorResult = parseImportDataV2(srcUser, unziped, configInfoList, unrecognizedList, namespaceId);
-            } else {
-                errorResult = parseImportData(srcUser, unziped, configInfoList, unrecognizedList, namespaceId);
-            }
+            Result<Map<String, Object>> errorResult = parseImportDataV2(srcUser, unziped, configInfoList,
+                    unrecognizedList, namespaceId);
             if (errorResult != null) {
                 return errorResult;
             }
@@ -451,70 +445,6 @@ public class ConfigControllerV3 {
         }
         
         return Result.success(saveResult);
-    }
-    
-    /**
-     * old import config.
-     */
-    private Result<Map<String, Object>> parseImportData(String srcUser, ZipUtils.UnZipResult unziped,
-            List<ConfigAllInfo> configInfoList, List<Map<String, String>> unrecognizedList, String namespaceId) {
-        ZipUtils.ZipItem metaDataZipItem = unziped.getMetaDataItem();
-        
-        Map<String, String> metaDataMap = new HashMap<>(16);
-        if (metaDataZipItem != null) {
-            // compatible all file separator
-            String metaDataStr = metaDataZipItem.getItemData().replaceAll("[\r\n]+", "|");
-            String[] metaDataArr = metaDataStr.split("\\|");
-            Map<String, Object> failedData = new HashMap<>(4);
-            for (String metaDataItem : metaDataArr) {
-                String[] metaDataItemArr = metaDataItem.split("=");
-                if (metaDataItemArr.length != 2) {
-                    failedData.put("succCount", 0);
-                    return Result.failure(ErrorCode.METADATA_ILLEGAL, failedData);
-                }
-                metaDataMap.put(metaDataItemArr[0], metaDataItemArr[1]);
-            }
-        }
-        
-        List<ZipUtils.ZipItem> itemList = unziped.getZipItemList();
-        if (itemList != null && !itemList.isEmpty()) {
-            for (ZipUtils.ZipItem item : itemList) {
-                String[] groupAdnDataId = item.getItemName().split(Constants.CONFIG_EXPORT_ITEM_FILE_SEPARATOR);
-                if (groupAdnDataId.length != 2) {
-                    Map<String, String> unrecognizedItem = new HashMap<>(2);
-                    unrecognizedItem.put("itemName", item.getItemName());
-                    unrecognizedList.add(unrecognizedItem);
-                    continue;
-                }
-                String group = groupAdnDataId[0];
-                String dataId = groupAdnDataId[1];
-                String tempDataId = dataId;
-                if (tempDataId.contains(".")) {
-                    tempDataId = tempDataId.substring(0, tempDataId.lastIndexOf(".")) + "~" + tempDataId.substring(
-                            tempDataId.lastIndexOf(".") + 1);
-                }
-                final String metaDataId = group + "." + tempDataId + ".app";
-                
-                //encrypted
-                String content = item.getItemData();
-                Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
-                content = pair.getSecond();
-                
-                ConfigAllInfo ci = new ConfigAllInfo();
-                ci.setGroup(group);
-                ci.setDataId(dataId);
-                ci.setContent(content);
-                if (metaDataMap.get(metaDataId) != null) {
-                    ci.setAppName(metaDataMap.get(metaDataId));
-                }
-                ci.setTenant(namespaceId);
-                ci.setEncryptedDataKey(pair.getFirst());
-                ci.setCreateUser(srcUser);
-                configInfoList.add(ci);
-            }
-        }
-        
-        return null;
     }
     
     /**
@@ -608,7 +538,7 @@ public class ConfigControllerV3 {
      */
     @GetMapping("/export")
     @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
-    public Result<ResponseEntity<byte[]>> exportConfig(ConfigFormV3 configForm,
+    public ResponseEntity<byte[]> exportConfig(ConfigFormV3 configForm,
             @RequestParam(value = "ids", required = false) List<Long> ids) throws NacosApiException {
         configForm.blurSearchValidate();
         ids.removeAll(Collections.singleton(null));
@@ -640,7 +570,7 @@ public class ConfigControllerV3 {
                         + EXPORT_CONFIG_FILE_NAME_EXT;
         headers.add("Content-Disposition", "attachment;filename=" + fileName);
         
-        return Result.success(new ResponseEntity<>(ZipUtils.zip(zipItemList), headers, HttpStatus.OK));
+        return new ResponseEntity<>(ZipUtils.zip(zipItemList), headers, HttpStatus.OK);
     }
     
     /**

@@ -33,7 +33,6 @@ import com.alibaba.nacos.naming.model.form.ServiceListForm;
 import com.alibaba.nacos.naming.model.form.UpdateClusterForm;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.SelectorManager;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,7 +45,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -146,13 +144,12 @@ public class ConsoleServiceControllerTest {
         serviceForm.setServiceName("testService");
         serviceForm.setNamespaceId("testNamespace");
         serviceForm.setGroupName("testGroup");
-        Result<Object> actual = consoleServiceController.getServiceDetail(serviceForm);
+        Result<ServiceDetailInfo> actual = consoleServiceController.getServiceDetail(serviceForm);
         
         verify(serviceProxy).getServiceDetail(any(String.class), any(String.class), any(String.class));
         
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
-        // controller transfer ServiceDetailInfo to old console result
-        assertNotEquals(serviceDetail, actual.getData());
+        assertEquals(serviceDetail, actual.getData());
     }
     
     @Test
@@ -190,15 +187,17 @@ public class ConsoleServiceControllerTest {
         serviceForm.setGroupName("testGroup");
         AggregationForm aggregationForm = new AggregationForm();
         
-        Result<ObjectNode> actual = consoleServiceController.subscribers(serviceForm, pageForm, aggregationForm);
+        Result<Page<SubscriberInfo>> actual = consoleServiceController.subscribers(serviceForm, pageForm,
+                aggregationForm);
         
         verify(serviceProxy).getSubscribers(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyBoolean());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
-        assertEquals(1, actual.getData().get("count").asInt());
-        assertEquals(1, actual.getData().get("subscribers").size());
-        assertEquals("testGroup@@testService", actual.getData().get("subscribers").get(0).get("serviceName").asText());
-        assertEquals("testNamespace", actual.getData().get("subscribers").get(0).get("namespaceId").asText());
+        assertEquals(1, actual.getData().getTotalCount());
+        assertEquals(1, actual.getData().getPageItems().size());
+        assertEquals("testGroup", actual.getData().getPageItems().get(0).getGroupName());
+        assertEquals("testService", actual.getData().getPageItems().get(0).getServiceName());
+        assertEquals("testNamespace", actual.getData().getPageItems().get(0).getNamespaceId());
     }
     
     @Test
@@ -231,7 +230,8 @@ public class ConsoleServiceControllerTest {
         
         Result<String> actual = consoleServiceController.updateCluster(updateClusterForm);
         
-        verify(serviceProxy).updateClusterMetadata(anyString(), anyString(), anyString(), any(ClusterMetadata.class));
+        verify(serviceProxy).updateClusterMetadata(anyString(), anyString(), anyString(), anyString(),
+                any(ClusterMetadata.class));
         
         assertEquals("ok", actual.getData());
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());

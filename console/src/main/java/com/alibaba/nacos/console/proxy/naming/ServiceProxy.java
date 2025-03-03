@@ -22,13 +22,10 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceView;
 import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.console.handler.naming.ServiceHandler;
-import com.alibaba.nacos.naming.constants.FieldsConstants;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.model.form.ServiceForm;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -128,18 +125,11 @@ public class ServiceProxy {
     public Object getServiceList(boolean withInstances, String namespaceId, int pageNo, int pageSize,
             String serviceName, String groupName, boolean hasIpCount) throws NacosException {
         if (withInstances) {
-            // TODO use result directly after console ui changed and return page object
-            Page<ServiceDetailInfo> serviceDetailInfoPage = (Page<ServiceDetailInfo>) serviceHandler.getServiceList(
-                    withInstances, namespaceId, pageNo, pageSize, serviceName, groupName, hasIpCount);
-            return serviceDetailInfoPage.getPageItems();
+            return serviceHandler.getServiceList(withInstances, namespaceId, pageNo, pageSize, serviceName, groupName,
+                    hasIpCount);
         }
-        // TODO use result directly after console ui changed and return page object
-        Page<ServiceView> views = (Page<ServiceView>) serviceHandler.getServiceList(withInstances, namespaceId, pageNo,
-                pageSize, serviceName, groupName, hasIpCount);
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        result.put(FieldsConstants.COUNT, views.getTotalCount());
-        result.set(FieldsConstants.SERVICE_LIST, JacksonUtils.transferToJsonNode(views.getPageItems()));
-        return result;
+        return serviceHandler.getServiceList(withInstances, namespaceId, pageNo, pageSize, serviceName, groupName,
+                hasIpCount);
     }
     
     /**
@@ -160,15 +150,16 @@ public class ServiceProxy {
      * Updates the metadata of a cluster.
      *
      * @param namespaceId     the namespace ID
+     * @param groupName       the group name
      * @param serviceName     the service name
      * @param clusterName     the cluster name
      * @param clusterMetadata the metadata for the cluster
      * @throws Exception                if the update operation fails
      * @throws IllegalArgumentException if the deployment type is invalid
      */
-    public void updateClusterMetadata(String namespaceId, String serviceName, String clusterName,
+    public void updateClusterMetadata(String namespaceId, String groupName, String serviceName, String clusterName,
             ClusterMetadata clusterMetadata) throws Exception {
-        serviceHandler.updateClusterMetadata(namespaceId, serviceName, clusterName, clusterMetadata);
+        serviceHandler.updateClusterMetadata(namespaceId, groupName, serviceName, clusterName, clusterMetadata);
     }
 }
 

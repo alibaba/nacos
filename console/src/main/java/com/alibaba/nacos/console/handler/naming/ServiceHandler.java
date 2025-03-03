@@ -114,15 +114,16 @@ public interface ServiceHandler {
     ServiceDetailInfo getServiceDetail(String namespaceId, String serviceName, String groupName) throws NacosException;
     
     /**
-     * Update the metadata of a cluster. TODO use split group and service name directly
+     * Update the metadata of a cluster.
      *
      * @param namespaceId     the namespace ID
+     * @param groupName       the group name
      * @param serviceName     the service name
      * @param clusterName     the cluster name
      * @param clusterMetadata the metadata for the cluster
      * @throws Exception if the update operation fails
      */
-    void updateClusterMetadata(String namespaceId, String serviceName, String clusterName,
+    void updateClusterMetadata(String namespaceId, String groupName, String serviceName, String clusterName,
             ClusterMetadata clusterMetadata) throws Exception;
 }
 

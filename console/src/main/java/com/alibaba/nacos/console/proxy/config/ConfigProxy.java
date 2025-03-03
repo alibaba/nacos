@@ -117,19 +117,11 @@ public class ConfigProxy {
     }
     
     /**
-     * Export configuration.
-     */
-    public ResponseEntity<byte[]> exportConfig(String dataId, String group, String namespaceId, String appName,
-            List<Long> ids) throws Exception {
-        return configHandler.exportConfig(dataId, group, namespaceId, appName, ids);
-    }
-    
-    /**
      * New version export config adds metadata.yml file to record config metadata.
      */
     public ResponseEntity<byte[]> exportConfigV2(String dataId, String group, String namespaceId, String appName,
             List<Long> ids) throws Exception {
-        return configHandler.exportConfigV2(dataId, group, namespaceId, appName, ids);
+        return configHandler.exportConfig(dataId, group, namespaceId, appName, ids);
     }
     
     /**

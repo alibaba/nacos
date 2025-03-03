@@ -27,7 +27,6 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.builder.InstanceBuilder;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.console.proxy.naming.InstanceProxy;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.model.form.PageForm;
@@ -39,7 +38,6 @@ import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -76,16 +74,13 @@ public class ConsoleInstanceController {
      */
     @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)
     @RequestMapping("/list")
-    public Result<ObjectNode> getInstanceList(InstanceListForm instanceForm, PageForm pageForm) throws NacosException {
+    public Result<Page<? extends Instance>> getInstanceList(InstanceListForm instanceForm, PageForm pageForm)
+            throws NacosException {
         instanceForm.validate();
         Page<? extends Instance> instancePage = instanceProxy.listInstances(instanceForm.getNamespaceId(),
                 instanceForm.getServiceName(), instanceForm.getGroupName(), instanceForm.getClusterName(),
                 pageForm.getPageNo(), pageForm.getPageSize());
-        // TODO use Page<? extends Instance> directly after console-ui modified
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        result.replace("instances", JacksonUtils.transferToJsonNode(instancePage.getPageItems()));
-        result.put("count", instancePage.getTotalCount());
-        return Result.success(result);
+        return Result.success(instancePage);
     }
     
     /**

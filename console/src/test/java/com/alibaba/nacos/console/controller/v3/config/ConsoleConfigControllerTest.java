@@ -289,37 +289,6 @@ public class ConsoleConfigControllerTest {
     }
     
     @Test
-    void testExportConfig() throws Exception {
-        
-        String dataId = "dataId1.json";
-        String group = "group2";
-        String tenant = "tenant234";
-        String appname = "appname2";
-        ConfigAllInfo configAllInfo = new ConfigAllInfo();
-        configAllInfo.setDataId(dataId);
-        configAllInfo.setGroup(group);
-        configAllInfo.setTenant(tenant);
-        configAllInfo.setContent("content45678");
-        configAllInfo.setAppName(appname);
-        List<ConfigAllInfo> dataList = new ArrayList<>();
-        dataList.add(configAllInfo);
-        
-        byte[] serializedData = new ObjectMapper().writeValueAsBytes(dataList);
-        ResponseEntity<byte[]> responseEntity = new ResponseEntity<>(serializedData, HttpStatus.OK);
-        
-        Mockito.when(
-                        configProxy.exportConfig(eq(dataId), eq(group), eq(tenant), eq(appname), eq(Arrays.asList(1L, 2L))))
-                .thenReturn(responseEntity);
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/config/export")
-                .param("dataId", dataId).param("groupName", group).param("tenant", tenant).param("appName", appname)
-                .param("ids", "1,2");
-        
-        int actualValue = mockmvc.perform(builder).andReturn().getResponse().getStatus();
-        assertEquals(200, actualValue);
-        
-    }
-    
-    @Test
     void testExportConfigV2() throws Exception {
         String dataId = "dataId2.json";
         String group = "group2";

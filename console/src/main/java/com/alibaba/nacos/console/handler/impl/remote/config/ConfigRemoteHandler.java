@@ -39,7 +39,6 @@ import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
 import com.alibaba.nacos.console.handler.config.ConfigHandler;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -61,8 +60,12 @@ public class ConfigRemoteHandler implements ConfigHandler {
     
     private final NacosMaintainerClientHolder clientHolder;
     
-    public ConfigRemoteHandler(NacosMaintainerClientHolder clientHolder) {
+    private final ConfigImportAndExportService importAndExportService;
+    
+    public ConfigRemoteHandler(NacosMaintainerClientHolder clientHolder,
+            ConfigImportAndExportService importAndExportService) {
         this.clientHolder = clientHolder;
+        this.importAndExportService = importAndExportService;
     }
     
     @Override
@@ -139,22 +142,13 @@ public class ConfigRemoteHandler implements ConfigHandler {
     @Override
     public ResponseEntity<byte[]> exportConfig(String dataId, String group, String namespaceId, String appName,
             List<Long> ids) throws Exception {
-        // TODO get from nacos servers
-        return new ResponseEntity<>(null, null, HttpStatus.OK);
-    }
-    
-    @Override
-    public ResponseEntity<byte[]> exportConfigV2(String dataId, String group, String namespaceId, String appName,
-            List<Long> ids) throws Exception {
-        // TODO get from nacos servers
-        return new ResponseEntity<>(null, null, HttpStatus.OK);
+        return importAndExportService.exportConfig(dataId, group, namespaceId, appName, ids);
     }
     
     @Override
     public Result<Map<String, Object>> importAndPublishConfig(String srcUser, String namespaceId,
             SameConfigPolicy policy, MultipartFile file, String srcIp, String requestIpApp) throws NacosException {
-        // TODO get from nacos servers
-        return Result.success();
+        return importAndExportService.importConfig(srcUser, namespaceId, policy, file, srcIp, requestIpApp);
     }
     
     @Override

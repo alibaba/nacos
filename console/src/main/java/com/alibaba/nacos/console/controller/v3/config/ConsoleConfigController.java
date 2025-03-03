@@ -19,7 +19,9 @@ package com.alibaba.nacos.console.controller.v3.config;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.config.ConfigType;
+import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
@@ -32,7 +34,6 @@ import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
-import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.form.ConfigFormV3;
 import com.alibaba.nacos.config.server.paramcheck.ConfigBlurSearchHttpParamExtractor;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
@@ -41,7 +42,6 @@ import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.console.proxy.config.ConfigProxy;
 import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
-import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
@@ -290,27 +290,6 @@ public class ConsoleConfigController {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         GroupkeyListenserStatus result = configProxy.getAllSubClientConfigByIp(ip, all, namespaceId, sampleTime);
         return Result.success(result);
-    }
-    
-    /**
-     * Export configuration.
-     *
-     * @param configForm  config form
-     * @param ids         List of config IDs.
-     * @return ResponseEntity containing the exported configuration.
-     * @throws Exception If an error occurs during the export.
-     */
-    @GetMapping("/export")
-    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
-    public ResponseEntity<byte[]> exportConfig(ConfigFormV3 configForm,
-            @RequestParam(value = "ids", required = false) List<Long> ids) throws Exception {
-        configForm.blurSearchValidate();
-        ids.removeAll(Collections.singleton(null));
-        String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
-        String dataId = configForm.getDataId();
-        String groupName = configForm.getGroupName();
-        String appName = configForm.getAppName();
-        return configProxy.exportConfig(dataId, groupName, namespaceId, appName, ids);
     }
     
     /**

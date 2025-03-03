@@ -18,7 +18,6 @@ package com.alibaba.nacos.api.selector;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 
@@ -39,7 +38,6 @@ public abstract class AbstractSelector implements Serializable, Selector<List<In
     /**
      * The type of this selector, each child class should announce its own unique type.
      */
-    @JsonIgnore
     private final String type;
     
     protected AbstractSelector(String type) {
