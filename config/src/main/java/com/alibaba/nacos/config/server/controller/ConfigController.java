@@ -29,6 +29,7 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.constant.ParametersField;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.enums.ApiVersionEnum;
+import com.alibaba.nacos.config.server.exception.ConfigAlreadyExistsException;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -916,30 +917,32 @@ public class ConfigController {
             if (sameConfigPolicy != SameConfigPolicy.OVERWRITE) {
                 configRequestInfo.setUpdateForExist(false);
             }
-            Boolean importRes = configOperationService.publishConfig(configForm, configRequestInfo, configAllInfo.getEncryptedDataKey());
-            if (importRes) {
+            try {
+                configOperationService.publishConfig(configForm, configRequestInfo, configAllInfo.getEncryptedDataKey());
                 succCount++;
-            } else if (SameConfigPolicy.SKIP == sameConfigPolicy) {
-                skipCount++;
-                Map<String, String> skipItem = new HashMap<>(2);
-                skipItem.put("dataId", configAllInfo.getDataId());
-                skipItem.put("group", configAllInfo.getGroup());
-                skipData.add(skipItem);
-            } else if (SameConfigPolicy.ABORT == sameConfigPolicy) {
-                Map<String, String> failedItem = new HashMap<>(2);
-                failedItem.put("dataId", configAllInfo.getDataId());
-                failedItem.put("group", configAllInfo.getGroup());
-                failData.add(failedItem);
-                // skip remaining configs
-                for (int j = i + 1; j < configAllInfoList.size(); j++) {
-                    ConfigAllInfo skipConfigInfo = configAllInfoList.get(j);
-                    Map<String, String> skipitem = new HashMap<>(2);
-                    skipitem.put("dataId", skipConfigInfo.getDataId());
-                    skipitem.put("group", skipConfigInfo.getGroup());
-                    skipData.add(skipitem);
+            } catch (ConfigAlreadyExistsException ex) {
+                if (SameConfigPolicy.SKIP == sameConfigPolicy) {
                     skipCount++;
+                    Map<String, String> skipItem = new HashMap<>(2);
+                    skipItem.put("dataId", configAllInfo.getDataId());
+                    skipItem.put("group", configAllInfo.getGroup());
+                    skipData.add(skipItem);
+                } else if (SameConfigPolicy.ABORT == sameConfigPolicy) {
+                    Map<String, String> failedItem = new HashMap<>(2);
+                    failedItem.put("dataId", configAllInfo.getDataId());
+                    failedItem.put("group", configAllInfo.getGroup());
+                    failData.add(failedItem);
+                    // skip remaining configs
+                    for (int j = i + 1; j < configAllInfoList.size(); j++) {
+                        ConfigAllInfo skipConfigInfo = configAllInfoList.get(j);
+                        Map<String, String> skipitem = new HashMap<>(2);
+                        skipitem.put("dataId", skipConfigInfo.getDataId());
+                        skipitem.put("group", skipConfigInfo.getGroup());
+                        skipData.add(skipitem);
+                        skipCount++;
+                    }
+                    break;
                 }
-                break;
             }
         }
         

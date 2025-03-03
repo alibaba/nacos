@@ -30,11 +30,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.StandardEnvironment;
+import org.springframework.dao.DataIntegrityViolationException;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -173,6 +179,75 @@ class ConfigOperationServiceTest {
         verify(configInfoPersistService).insertOrUpdateCas(any(), any(), any(ConfigInfo.class), any());
         assertTrue(bResult);
         configRequestInfo.setCasMd5("");
+    }
+    
+    @Test
+    void testUpdateForExistTrue() throws Exception {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId("testDataId");
+        configForm.setGroup("testGroup");
+        configForm.setNamespaceId("testNamespaceId");
+        
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        configRequestInfo.setSrcType("http");
+        configRequestInfo.setSrcIp("1.1.1.1");
+        
+        when(configInfoPersistService.insertOrUpdate(anyString(), isNull(), any(ConfigInfo.class), anyMap()))
+                .thenReturn(new ConfigOperateResult(true));
+
+        Boolean result = configOperationService.publishConfig(configForm, configRequestInfo, "encryptedKey");
+        assertTrue(result);
+        verify(configInfoPersistService, times(1)).insertOrUpdate(anyString(), isNull(), any(ConfigInfo.class), anyMap());
+    }
+    
+    @Test
+    void testAddConfigInfoSuccess() throws Exception {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId("testDataId");
+        configForm.setGroup("testGroup");
+        configForm.setNamespaceId("testNamespaceId");
+        
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        configRequestInfo.setSrcType("http");
+        configRequestInfo.setSrcIp("1.1.1.1");
+        configRequestInfo.setUpdateForExist(false);
+        
+        when(configInfoPersistService.addConfigInfo(anyString(), isNull(), any(ConfigInfo.class), anyMap()))
+                .thenReturn(new ConfigOperateResult(true));
+        
+        Boolean result = configOperationService.publishConfig(configForm, configRequestInfo, "encryptedKey");
+        
+        assertTrue(result);
+        verify(configInfoPersistService, times(1)).addConfigInfo(anyString(), isNull(), any(ConfigInfo.class), anyMap());
+    }
+    
+    @Test
+    void testAddConfigInfoThrowsException() {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId("testDataId");
+        configForm.setGroup("testGroup");
+        configForm.setNamespaceId("testNamespaceId");
+        
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        configRequestInfo.setSrcType("http");
+        configRequestInfo.setSrcIp("1.1.1.1");
+        configRequestInfo.setUpdateForExist(false);
+        
+        ConfigInfo configInfo = new ConfigInfo();
+        configInfo.setDataId("testDataId");
+        configInfo.setGroup("testGroup");
+        configInfo.setTenant("testNamespaceId");
+        
+        when(configInfoPersistService.addConfigInfo(eq("1.1.1.1"), isNull(), eq(configInfo), anyMap()))
+                .thenThrow(new DataIntegrityViolationException("Duplicate entry"));
+        
+        NacosException exception = assertThrows(NacosException.class, () -> {
+            configOperationService.publishConfig(configForm, configRequestInfo, "encryptedKey");
+        });
+        
+        String expectedMessage = "config already exist, dataId: testDataId, group: testGroup, namespaceId: testNamespaceId";
+        assertEquals(expectedMessage, exception.getMessage());
+        verify(configInfoPersistService, times(1)).addConfigInfo(anyString(), isNull(), eq(configInfo), anyMap());
     }
     
     @Test

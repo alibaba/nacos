@@ -68,7 +68,7 @@ public class CapacityManagementAspect {
      * Intercept publish config operations to perform capacity management checks.
      */
     @Around(PUBLISH_CONFIG)
-    public Object aroundSyncUpdateConfigAll(ProceedingJoinPoint pjp) throws Throwable {
+    public Object aroundPublishConfig(ProceedingJoinPoint pjp) throws Throwable {
         if (!PropertyUtil.isManageCapacity()) {
             return pjp.proceed();
         }

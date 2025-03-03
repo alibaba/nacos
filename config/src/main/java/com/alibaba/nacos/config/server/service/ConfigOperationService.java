@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.common.utils.NumberUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.exception.ConfigAlreadyExistsException;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
@@ -137,7 +138,11 @@ public class ConfigOperationService {
                     configOperateResult = configInfoPersistService.addConfigInfo(configRequestInfo.getSrcIp(),
                             configForm.getSrcUser(), configInfo, configAdvanceInfo);
                 } catch (DataIntegrityViolationException ive) {
-                    return false;
+                    LOGGER.warn("[publish-config-failed] config already exists. dataId: {}, group: {}, namespaceId: {}",
+                            configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId());
+                    throw new ConfigAlreadyExistsException(
+                            String.format("config already exist, dataId: %s, group: %s, namespaceId: %s",
+                                    configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId()));
                 }
             }
         }

@@ -110,7 +110,7 @@ class CapacityManagementAspectTest {
     }
     
     @Test
-    void testAroundSyncUpdateConfigAllForInsertAspect() throws Throwable {
+    void testAroundPublishConfigForInsertAspect() throws Throwable {
         //test with insert
         //condition:
         //  1. has tenant: true
@@ -118,14 +118,14 @@ class CapacityManagementAspectTest {
         when(PropertyUtil.isManageCapacity()).thenReturn(false);
         when(proceedingJoinPoint.proceed()).thenReturn(mockProceedingJoinPointResult); 
         
-        Boolean localMockResult = (Boolean) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint);
+        Boolean localMockResult = (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
         Mockito.verify(proceedingJoinPoint, Mockito.times(1)).proceed();
         Mockito.verify(configInfoPersistService, Mockito.times(0)).findConfigInfo(any(), any(), any());
         assert localMockResult.equals(mockProceedingJoinPointResult);
     }
     
     @Test
-    void testAroundSyncUpdateConfigAllForInsertAspect1() throws Throwable {
+    void testAroundPublishConfigForInsertAspect1() throws Throwable {
         //test with insert
         //condition:
         //  1. has tenant: true
@@ -143,7 +143,7 @@ class CapacityManagementAspectTest {
         when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean())).thenReturn(false);
         
         Exception exception = assertThrows(NacosException.class, () -> {
-            capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint);
+            capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
         });
         
         assertEquals("Configuration limit exceeded [group=mockGroup, namespaceId=mockTenant].",
@@ -152,7 +152,7 @@ class CapacityManagementAspectTest {
     }
     
     @Test
-    void testAroundSyncUpdateConfigAllForInsertAspect2Tenant() throws Throwable {
+    void testAroundPublishConfigForInsertAspect2Tenant() throws Throwable {
         //test with insert
         //condition:
         //  1. has tenant: true
@@ -174,7 +174,7 @@ class CapacityManagementAspectTest {
         when(capacityService.getTenantCapacity(eq(mockTenant))).thenReturn(null);
         when(capacityService.updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant))).thenReturn(true);
         
-        Boolean localMockResult = (Boolean) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint);
+        Boolean localMockResult = (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
         assertEquals(mockProceedingJoinPointResult, localMockResult);
         Mockito.verify(capacityService, Mockito.times(1)).initTenantCapacity(eq(mockTenant));
         Mockito.verify(capacityService, Mockito.times(1)).updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant));
@@ -182,7 +182,7 @@ class CapacityManagementAspectTest {
     }
     
     @Test
-    void testAroundSyncUpdateConfigAllForInsertAspect2Group() throws Throwable {
+    void testAroundPublishConfigForInsertAspect2Group() throws Throwable {
         //test with insert
         //condition:
         //  1. has tenant: false
@@ -204,7 +204,7 @@ class CapacityManagementAspectTest {
         when(configRequestInfo.getSrcType()).thenReturn("http");
         when(proceedingJoinPoint.proceed()).thenReturn(mockProceedingJoinPointResult); 
         
-        Boolean localMockResult = (Boolean) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint);
+        Boolean localMockResult = (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
         assertEquals(mockProceedingJoinPointResult, localMockResult);
         Mockito.verify(capacityService, Mockito.times(1)).initGroupCapacity(eq(mockGroup));
         Mockito.verify(capacityService, Mockito.times(1)).updateGroupUsage(eq(CounterMode.INCREMENT), eq(mockGroup));
@@ -212,7 +212,7 @@ class CapacityManagementAspectTest {
     }
     
     @Test
-    void testAroundSyncUpdateConfigAllForInsertAspect3Tenant() throws Throwable {
+    void testAroundPublishConfigForInsertAspect3Tenant() throws Throwable {
         //test with insert
         //condition:
         //  1. has tenant: true
@@ -239,7 +239,7 @@ class CapacityManagementAspectTest {
         localTenantCapacity.setMaxAggrCount(0);
         when(capacityService.getTenantCapacity(eq(mockTenant))).thenReturn(localTenantCapacity);
         
-        Boolean localMockResult = (Boolean) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint);
+        Boolean localMockResult = (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
         assertEquals(mockProceedingJoinPointResult, localMockResult);
         Mockito.verify(capacityService, Mockito.times(0)).initTenantCapacity(eq(mockTenant));
         Mockito.verify(capacityService, Mockito.times(1)).updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant));
@@ -250,7 +250,7 @@ class CapacityManagementAspectTest {
         localTenantCapacity.setMaxAggrCount(1);
         
         Exception exception = assertThrows(NacosException.class, () -> {
-            capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint);
+            capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
         });
         assertEquals("Configuration limit exceeded [group=mockGroup, namespaceId=mockTenant].",
                 exception.getMessage());
@@ -258,12 +258,12 @@ class CapacityManagementAspectTest {
         //  5. over tenant max size: true
         localTenantCapacity.setMaxSize(10 * 1024);
         localTenantCapacity.setMaxAggrCount(1024);
-        localMockResult = (Boolean) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint);
+        localMockResult = (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
         assertEquals(mockProceedingJoinPointResult, localMockResult);
     }
     
     @Test
-    void testAroundSyncUpdateConfigAllForInsertAspect3Group() throws Throwable {
+    void testAroundPublishConfigForInsertAspect3Group() throws Throwable {
         //test with insert
         //condition:
         //  1. has tenant: true
@@ -289,7 +289,7 @@ class CapacityManagementAspectTest {
         localGroupCapacity.setMaxAggrCount(0);
         when(capacityService.getGroupCapacity(eq(mockGroup))).thenReturn(localGroupCapacity);
         
-        Boolean localMockResult = (Boolean) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint);
+        Boolean localMockResult = (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
         assertEquals(true, localMockResult);
         Mockito.verify(capacityService, Mockito.times(0)).initGroupCapacity(eq(mockGroup));
         Mockito.verify(capacityService, Mockito.times(1)).updateGroupUsage(eq(CounterMode.INCREMENT), eq(mockGroup));
@@ -299,19 +299,19 @@ class CapacityManagementAspectTest {
         localGroupCapacity.setMaxSize(1);
         localGroupCapacity.setMaxAggrCount(1);
         Exception exception = assertThrows(NacosException.class, () -> {
-            capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint);
+            capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
         });
         assertEquals("Configuration limit exceeded [group=mockGroup, namespaceId=null].", exception.getMessage());
         
         // 5. over tenant max size: true
         localGroupCapacity.setMaxSize(10 * 1024);
         localGroupCapacity.setMaxAggrCount(1024);
-        localMockResult = (Boolean) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint);
+        localMockResult = (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
         assertEquals(mockProceedingJoinPointResult, localMockResult);
     }
     
     @Test
-    void testAroundSyncUpdateConfigAllForUpdateAspectTenant() throws Throwable {
+    void testAroundPublishAspectTenant() throws Throwable {
         //condition:
         //  1. has tenant: true
         //  2. capacity limit check: true
@@ -337,7 +337,7 @@ class CapacityManagementAspectTest {
         localTenantCapacity.setMaxAggrCount(1024);
         when(capacityService.getTenantCapacity(eq(mockTenant))).thenReturn(localTenantCapacity);
         
-        Boolean localMockResult = (Boolean) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint);
+        Boolean localMockResult = (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
         assertEquals(mockProceedingJoinPointResult, localMockResult);
         Mockito.verify(capacityService, Mockito.times(0)).initTenantCapacity(eq(mockTenant));
         Mockito.verify(capacityService, Mockito.times(0)).updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant));
@@ -346,7 +346,7 @@ class CapacityManagementAspectTest {
     }
     
     @Test
-    void testAroundSyncUpdateConfigAllForUpdateAspectGroup() throws Throwable {
+    void testAroundPublishAspectGroup() throws Throwable {
         //condition:
         //  1. has tenant: false
         //  2. capacity limit check: true
@@ -372,7 +372,7 @@ class CapacityManagementAspectTest {
         localGroupCapacity.setMaxAggrCount(1024);
         when(capacityService.getGroupCapacity(eq(mockGroup))).thenReturn(localGroupCapacity);
         
-        Boolean localMockResult = (Boolean) capacityManagementAspect.aroundSyncUpdateConfigAll(proceedingJoinPoint);
+        Boolean localMockResult = (Boolean) capacityManagementAspect.aroundPublishConfig(proceedingJoinPoint);
         assertEquals(mockProceedingJoinPointResult, localMockResult);
         Mockito.verify(capacityService, Mockito.times(0)).initGroupCapacity(eq(mockGroup));
         Mockito.verify(capacityService, Mockito.times(1)).getGroupCapacity(eq(mockGroup));
@@ -381,7 +381,7 @@ class CapacityManagementAspectTest {
     }
     
     @Test
-    void testAroundSyncUpdateConfigAllForInsertRollbackAspect() throws Throwable {
+    void testAroundPublishConfigForInsertRollbackAspect() throws Throwable {
         //test with insert
         //condition:
         //  1. has tenant: true
@@ -410,7 +410,7 @@ class CapacityManagementAspectTest {
         
         Boolean localMockResult = null;
         try {
-            localMockResult = (Boolean) capacityManagementAspect.aroundSyncUpdateConfigAll(localMockProceedingJoinPoint);
+            localMockResult = (Boolean) capacityManagementAspect.aroundPublishConfig(localMockProceedingJoinPoint);
         } catch (Throwable e) {
             assertEquals(mockException.getMessage(), e.getMessage());
         }

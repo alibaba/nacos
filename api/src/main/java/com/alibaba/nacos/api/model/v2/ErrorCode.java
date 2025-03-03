@@ -111,24 +111,24 @@ public enum ErrorCode {
     CONFIG_GRAY_NAME_UNRECOGNIZED_ERROR(20013, "config gray name not recognized"),
     
     /**
-     * over cluster quota.
+     * reach cluster quota.
      */
-    OVER_CLUSTER_QUOTA(20014, "Exceeded the maximum number of configurations in the cluster"),
+    OVER_CLUSTER_QUOTA(5031, "cluster capacity reach quota"),
     
     /**
-     * over group quota.
+     * reach group quota.
      */
-    OVER_GROUP_QUOTA(20015, "Exceeded the maximum number of configurations in this group"),
+    OVER_GROUP_QUOTA(5032, "group capacity reach quota"),
     
     /**
-     * over tenant quota.
+     * reach tenant quota.
      */
-    OVER_TENANT_QUOTA(20016, "Exceeded the maximum number of configurations for this namespaceId"),
+    OVER_TENANT_QUOTA(5033, "tenant capacity reach quota"),
     
     /**
      * over max content size.
      */
-    OVER_MAX_SIZE(20017, "Exceeded the maximum size limit of the configuration content"),
+    OVER_MAX_SIZE(5034, "config content size is over limit"),
     
     /**
      *  service name error.

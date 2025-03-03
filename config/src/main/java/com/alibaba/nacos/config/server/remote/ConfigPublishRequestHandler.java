@@ -28,6 +28,7 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.exception.ConfigAlreadyExistsException;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
@@ -120,9 +121,9 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
             try {
                 configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal);
                 return ConfigPublishResponse.buildSuccessResponse();
-            } catch (NacosApiException nacosApiException) {
+            } catch (NacosApiException | ConfigAlreadyExistsException ex) {
                 return ConfigPublishResponse.buildFailResponse(ResponseCode.FAIL.getCode(),
-                        nacosApiException.getErrMsg());
+                        ex.getErrMsg());
             }
             
         } catch (Exception e) {
