@@ -33,7 +33,6 @@ import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
-import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
 import com.alibaba.nacos.console.handler.config.ConfigHandler;
@@ -116,27 +115,16 @@ public class ConfigRemoteHandler implements ConfigHandler {
     }
     
     @Override
-    public GroupkeyListenserStatus getListeners(String dataId, String group, String namespaceId, int sampleTime)
+    public ConfigListenerInfo getListeners(String dataId, String group, String namespaceId, int sampleTime)
             throws Exception {
-        ConfigListenerInfo listenerInfo = clientHolder.getConfigMaintainerService()
-                .getListeners(dataId, group, namespaceId, sampleTime);
-        // TODO use ConfigListenerInfo after console ui modified
-        GroupkeyListenserStatus result = new GroupkeyListenserStatus();
-        result.setCollectStatus(200);
-        result.setLisentersGroupkeyStatus(listenerInfo.getListenersStatus());
-        return result;
+        return clientHolder.getConfigMaintainerService().getListeners(dataId, group, namespaceId, sampleTime);
     }
     
     @Override
-    public GroupkeyListenserStatus getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime)
+    public ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime)
             throws NacosException {
-        ConfigListenerInfo listenerInfo = clientHolder.getConfigMaintainerService()
+        return clientHolder.getConfigMaintainerService()
                 .getAllSubClientConfigByIp(ip, all, namespaceId, sampleTime);
-        // TODO use ConfigListenerInfo after console ui modified
-        GroupkeyListenserStatus result = new GroupkeyListenserStatus();
-        result.setCollectStatus(200);
-        result.setLisentersGroupkeyStatus(listenerInfo.getListenersStatus());
-        return result;
     }
     
     @Override

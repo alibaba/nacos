@@ -110,30 +110,28 @@ class ListeningToQuery extends React.Component {
       },
       success(data) {
         const res = data.data;
-        if (res.collectStatus === 200) {
-          const dataSoureTmp = [];
-          const status = res.lisentersGroupkeyStatus;
-          for (const key in status) {
-            if (type === 1) {
-              const obj = {};
-              let [dataId, group] = key.split('+');
-              obj.dataId = dataId;
-              obj.group = group;
-              obj.md5 = status[key];
-              dataSoureTmp.push(obj);
-            } else {
-              const obj = {};
-              obj.ip = key;
-              obj.md5 = status[key];
-              dataSoureTmp.push(obj);
-            }
+        const dataSoureTmp = [];
+        const status = res.listenersStatus;
+        for (const key in status) {
+          if (type === 1) {
+            const obj = {};
+            let [dataId, group] = key.split('+');
+            obj.dataId = dataId;
+            obj.group = group;
+            obj.md5 = status[key];
+            dataSoureTmp.push(obj);
+          } else {
+            const obj = {};
+            obj.ip = key;
+            obj.md5 = status[key];
+            dataSoureTmp.push(obj);
           }
-          self.setState({
-            totalDataSource: dataSoureTmp || [],
-            total: dataSoureTmp.length || 0,
-            dataSource: dataSoureTmp.slice(0, self.state.pageSize),
-          });
         }
+        self.setState({
+          totalDataSource: dataSoureTmp || [],
+          total: dataSoureTmp.length || 0,
+          dataSource: dataSoureTmp.slice(0, self.state.pageSize),
+        });
       },
       complete() {
         self.closeLoading();

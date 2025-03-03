@@ -16,7 +16,10 @@
 
 package com.alibaba.nacos.console.handler.impl.inner.config;
 
+import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
+import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.DateFormatUtils;
@@ -30,8 +33,6 @@ import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigMetadata;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
-import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
-import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
@@ -53,7 +54,6 @@ import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.console.handler.config.ConfigHandler;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
-import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import jakarta.servlet.ServletException;
@@ -197,28 +197,28 @@ public class ConfigInnerHandler implements ConfigHandler {
     }
     
     @Override
-    public GroupkeyListenserStatus getListeners(String dataId, String group, String namespaceId, int sampleTime)
+    public ConfigListenerInfo getListeners(String dataId, String group, String namespaceId, int sampleTime)
             throws Exception {
         SampleResult collectSampleResult = configSubService.getCollectSampleResult(dataId, group, namespaceId,
                 sampleTime);
-        GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
-        gls.setCollectStatus(200);
+        ConfigListenerInfo result = new ConfigListenerInfo();
+        result.setQueryType(ConfigListenerInfo.QUERY_TYPE_CONFIG);
         if (collectSampleResult.getLisentersGroupkeyStatus() != null) {
-            gls.setLisentersGroupkeyStatus(collectSampleResult.getLisentersGroupkeyStatus());
+            result.setListenersStatus(collectSampleResult.getLisentersGroupkeyStatus());
         }
-        return gls;
+        return result;
     }
     
     @Override
-    public GroupkeyListenserStatus getAllSubClientConfigByIp(String ip, boolean all, String namespaceId,
+    public ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId,
             int sampleTime) {
         SampleResult collectSampleResult = configSubService.getCollectSampleResultByIp(ip, sampleTime);
-        GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
-        gls.setCollectStatus(200);
+        ConfigListenerInfo result = new ConfigListenerInfo();
+        result.setQueryType(ConfigListenerInfo.QUERY_TYPE_IP);
         Map<String, String> configMd5Status = new HashMap<>(100);
         
         if (collectSampleResult.getLisentersGroupkeyStatus() == null) {
-            return gls;
+            return result;
         }
         
         Map<String, String> status = collectSampleResult.getLisentersGroupkeyStatus();
@@ -236,8 +236,8 @@ public class ConfigInnerHandler implements ConfigHandler {
                 }
             }
         }
-        gls.setLisentersGroupkeyStatus(configMd5Status);
-        return gls;
+        result.setListenersStatus(configMd5Status);
+        return result;
     }
     
     @Override

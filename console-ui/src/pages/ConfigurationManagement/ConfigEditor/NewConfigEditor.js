@@ -425,7 +425,7 @@ class ConfigEditor extends React.Component {
     // get subscribes of the namespace
     return request.get('v3/console/cs/config/listener', { params }).then(res => {
       const { subscriberDataSource } = this.state;
-      const lisentersGroupkeyIpMap = res.data.lisentersGroupkeyStatus;
+      const lisentersGroupkeyIpMap = res.data.listenersStatus;
       if (lisentersGroupkeyIpMap) {
         this.setState({
           subscriberDataSource: subscriberDataSource.concat(Object.keys(lisentersGroupkeyIpMap)),
