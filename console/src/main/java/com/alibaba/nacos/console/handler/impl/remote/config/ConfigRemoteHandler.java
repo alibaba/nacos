@@ -29,12 +29,8 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.constant.ParametersField;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
-import com.alibaba.nacos.config.server.model.ConfigAllInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
-import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
 import com.alibaba.nacos.console.handler.config.ConfigHandler;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
@@ -195,61 +191,4 @@ public class ConfigRemoteHandler implements ConfigHandler {
         return configAdvanceInfo.containsKey(key) ? (String) configAdvanceInfo.get(key) : StringUtils.EMPTY;
     }
     
-    /**
-     * TODO removed after console-ui changed.
-     */
-    private Page<ConfigInfo> transferToConfigInfoPage(Page<ConfigBasicInfo> configBasicInfoPage) {
-        Page<ConfigInfo> result = new Page<>();
-        result.setTotalCount(configBasicInfoPage.getTotalCount());
-        result.setPagesAvailable(configBasicInfoPage.getPagesAvailable());
-        result.setPageNumber(configBasicInfoPage.getPageNumber());
-        List<ConfigInfo> configInfos = new ArrayList<>(configBasicInfoPage.getPageItems().size());
-        for (ConfigBasicInfo each : configBasicInfoPage.getPageItems()) {
-            ConfigInfo configInfo = new ConfigInfo();
-            transferToConfigInfo(configInfo, each);
-            configInfos.add(configInfo);
-        }
-        result.setPageItems(configInfos);
-        return result;
-    }
-    
-    /**
-     * TODO removed after console-ui changed.
-     */
-    private void transferToConfigInfo(ConfigInfo configInfo, ConfigBasicInfo basicInfo) {
-        configInfo.setId(basicInfo.getId());
-        configInfo.setDataId(basicInfo.getDataId());
-        configInfo.setGroup(basicInfo.getGroupName());
-        configInfo.setMd5(basicInfo.getMd5());
-        configInfo.setType(basicInfo.getType());
-        configInfo.setAppName(basicInfo.getAppName());
-        configInfo.setTenant(basicInfo.getNamespaceId());
-    }
-    
-    /**
-     * TODO removed after console-ui changed.
-     */
-    private ConfigAllInfo transferToConfigAllInfo(ConfigDetailInfo configDetailInfo) {
-        ConfigAllInfo configAllInfo = new ConfigAllInfo();
-        transferToConfigInfo(configAllInfo, configDetailInfo);
-        configAllInfo.setCreateTime(configDetailInfo.getCreateTime());
-        configAllInfo.setModifyTime(configDetailInfo.getModifyTime());
-        configAllInfo.setContent(configDetailInfo.getContent());
-        configAllInfo.setDesc(configDetailInfo.getDesc());
-        configAllInfo.setEncryptedDataKey(configDetailInfo.getEncryptedDataKey());
-        configAllInfo.setCreateUser(configDetailInfo.getCreateUser());
-        configAllInfo.setCreateIp(configDetailInfo.getCreateIp());
-        configAllInfo.setConfigTags(configDetailInfo.getConfigTags());
-        return configAllInfo;
-    }
-    
-    /**
-     * TODO removed after console-ui changed.
-     */
-    private ConfigInfo4Beta transferToConfigInfo4Beta(ConfigGrayInfo configGrayInfo) {
-        ConfigInfo4Beta result = new ConfigInfo4Beta();
-        transferToConfigInfo(result, configGrayInfo);
-        result.setBetaIps(GrayRuleManager.deserializeConfigGrayPersistInfo(configGrayInfo.getGrayRule()).getExpr());
-        return result;
-    }
 }
