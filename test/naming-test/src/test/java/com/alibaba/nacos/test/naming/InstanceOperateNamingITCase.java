@@ -27,6 +27,6 @@ import org.springframework.boot.test.context.SpringBootTest;
  */
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-public class InstanceOperate_ITCase extends AbstractInstanceOperate_ITCase {
+public class InstanceOperateNamingITCase extends AbstractInstanceOperateNamingITCase {
     
 }
