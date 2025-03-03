@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.console.handler.config;
 
+import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
 import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
 import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
@@ -25,7 +26,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import jakarta.servlet.ServletException;
@@ -57,7 +57,7 @@ public interface ConfigHandler {
      * @throws ServletException If a servlet-specific exception occurs.
      * @throws NacosException   If an error related to Nacos configuration occurs.
      */
-    Page<ConfigInfo> getConfigList(int pageNo, int pageSize, String dataId, String group, String namespaceId,
+    Page<ConfigBasicInfo> getConfigList(int pageNo, int pageSize, String dataId, String group, String namespaceId,
             Map<String, Object> configAdvanceInfo) throws IOException, ServletException, NacosException;
     
     /**
@@ -134,7 +134,7 @@ public interface ConfigHandler {
      * @return A Page object containing a list of ConfigInfo that matches the search criteria.
      * @throws NacosException If an error related to Nacos configuration occurs.
      */
-    Page<ConfigInfo> getConfigListByContent(String search, int pageNo, int pageSize, String dataId, String group,
+    Page<ConfigBasicInfo> getConfigListByContent(String search, int pageNo, int pageSize, String dataId, String group,
             String namespaceId, Map<String, Object> configAdvanceInfo) throws NacosException;
     
     /**

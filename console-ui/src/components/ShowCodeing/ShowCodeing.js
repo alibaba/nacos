@@ -111,7 +111,7 @@ public class ConfigController {
   getData() {
     const namespace = getParams('namespace'); // 获取ak,sk
     const obj = {
-      group: this.record.group || '',
+      group: this.record.groupName || '',
       dataId: this.record.dataId || '',
       namespace,
       inEdas: window.globalConfig.isParentEdas(),

@@ -69,8 +69,8 @@ public class ConfigRemoteHandler implements ConfigHandler {
     }
     
     @Override
-    public Page<ConfigInfo> getConfigList(int pageNo, int pageSize, String dataId, String group, String namespaceId,
-            Map<String, Object> configAdvanceInfo) throws NacosException {
+    public Page<ConfigBasicInfo> getConfigList(int pageNo, int pageSize, String dataId, String group,
+            String namespaceId, Map<String, Object> configAdvanceInfo) throws NacosException {
         String search = dataId.contains(ALL_PATTERN) ? Constants.CONFIG_SEARCH_BLUR : Constants.CONFIG_SEARCH_ACCURATE;
         return listConfigInfo(search, pageNo, pageSize, dataId, group, namespaceId, configAdvanceInfo);
     }
@@ -115,8 +115,8 @@ public class ConfigRemoteHandler implements ConfigHandler {
     }
     
     @Override
-    public Page<ConfigInfo> getConfigListByContent(String search, int pageNo, int pageSize, String dataId, String group,
-            String namespaceId, Map<String, Object> configAdvanceInfo) throws NacosException {
+    public Page<ConfigBasicInfo> getConfigListByContent(String search, int pageNo, int pageSize, String dataId,
+            String group, String namespaceId, Map<String, Object> configAdvanceInfo) throws NacosException {
         return listConfigInfo(search, pageNo, pageSize, dataId, group, namespaceId, configAdvanceInfo);
     }
     
@@ -180,17 +180,15 @@ public class ConfigRemoteHandler implements ConfigHandler {
         }
     }
     
-    private Page<ConfigInfo> listConfigInfo(String search, int pageNo, int pageSize, String dataId, String groupName,
-            String namespaceId, Map<String, Object> configAdvanceInfo) throws NacosException {
+    private Page<ConfigBasicInfo> listConfigInfo(String search, int pageNo, int pageSize, String dataId,
+            String groupName, String namespaceId, Map<String, Object> configAdvanceInfo) throws NacosException {
         String type = getInfoFromAdvanceInfo(configAdvanceInfo, ParametersField.TYPES);
         String appName = getInfoFromAdvanceInfo(configAdvanceInfo, "appName");
         String configTags = getInfoFromAdvanceInfo(configAdvanceInfo, "config_tags");
         String configDetail = getInfoFromAdvanceInfo(configAdvanceInfo, "content");
-        Page<ConfigBasicInfo> configBasicInfoPage = clientHolder.getConfigMaintainerService()
+        return clientHolder.getConfigMaintainerService()
                 .searchConfigByDetails(dataId, groupName, namespaceId, search, configDetail, type, configTags, appName,
                         pageNo, pageSize);
-        // TODO use ConfigBasicInfo after console-ui modified.
-        return transferToConfigInfoPage(configBasicInfoPage);
     }
     
     private String getInfoFromAdvanceInfo(Map<String, Object> configAdvanceInfo, String key) {

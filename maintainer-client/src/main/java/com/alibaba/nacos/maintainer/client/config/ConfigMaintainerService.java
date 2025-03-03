@@ -192,6 +192,7 @@ public interface ConfigMaintainerService extends CoreMaintainerService {
     
     /**
      * Search configurations by details.
+     * TODO change api name to list
      *
      * @param dataId       Configuration data ID (optional, defaults to "").
      * @param groupName    Configuration group name (optional, defaults to "").

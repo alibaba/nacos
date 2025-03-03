@@ -285,6 +285,7 @@ public class ConfigControllerV3 {
     
     /**
      * Search config by config detail.
+     * TODO, change api path to /list
      */
     @GetMapping("/searchDetail")
     @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)

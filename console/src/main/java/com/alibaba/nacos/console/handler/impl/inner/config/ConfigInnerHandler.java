@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.handler.impl.inner.config;
 
+import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
 import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
 import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
@@ -129,15 +130,19 @@ public class ConfigInnerHandler implements ConfigHandler {
     }
     
     @Override
-    public Page<ConfigInfo> getConfigList(int pageNo, int pageSize, String dataId, String group, String namespaceId,
+    public Page<ConfigBasicInfo> getConfigList(int pageNo, int pageSize, String dataId, String group, String namespaceId,
             Map<String, Object> configAdvanceInfo) throws IOException, ServletException, NacosException {
-        return configInfoPersistService.findConfigInfoLike4Page(pageNo, pageSize, dataId, group, namespaceId,
+        Page<ConfigInfo> result = configInfoPersistService.findConfigInfoLike4Page(pageNo, pageSize, dataId, group, namespaceId,
                 configAdvanceInfo);
+        return transferToConfigBasicInfo(result);
     }
     
     @Override
     public ConfigDetailInfo getConfigDetail(String dataId, String group, String namespaceId) throws NacosException {
         ConfigAllInfo configAllInfo = configInfoPersistService.findConfigAllInfo(dataId, group, namespaceId);
+        if (null == configAllInfo) {
+            return null;
+        }
         return ResponseUtil.transferToConfigDetailInfo(configAllInfo);
     }
     
@@ -180,11 +185,12 @@ public class ConfigInnerHandler implements ConfigHandler {
     }
     
     @Override
-    public Page<ConfigInfo> getConfigListByContent(String search, int pageNo, int pageSize, String dataId, String group,
+    public Page<ConfigBasicInfo> getConfigListByContent(String search, int pageNo, int pageSize, String dataId, String group,
             String namespaceId, Map<String, Object> configAdvanceInfo) throws NacosException {
         try {
-            return configDetailService.findConfigInfoPage(search, pageNo, pageSize, dataId, group, namespaceId,
+            Page<ConfigInfo> result =  configDetailService.findConfigInfoPage(search, pageNo, pageSize, dataId, group, namespaceId,
                     configAdvanceInfo);
+            return transferToConfigBasicInfo(result);
         } catch (Exception e) {
             String errorMsg = "serialize page error, dataId=" + dataId + ", group=" + group;
             LOGGER.error(errorMsg, e);
@@ -586,6 +592,16 @@ public class ConfigInnerHandler implements ConfigHandler {
             return ResponseUtil.transferToConfigGrayInfo(beta4Gray);
         }
         return null;
+    }
+    
+    private Page<ConfigBasicInfo> transferToConfigBasicInfo(Page<ConfigInfo> configInfoPage) {
+        Page<ConfigBasicInfo> result = new Page<>();
+        result.setTotalCount(configInfoPage.getTotalCount());
+        result.setPagesAvailable(configInfoPage.getPagesAvailable());
+        result.setPageNumber(configInfoPage.getPageNumber());
+        result.setPageItems(configInfoPage.getPageItems().stream().map(ResponseUtil::transferToConfigBasicInfo)
+                .collect(Collectors.toList()));
+        return result;
     }
     
 }
