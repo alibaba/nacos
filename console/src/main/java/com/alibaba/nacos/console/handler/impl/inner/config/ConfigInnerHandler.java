@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.handler.impl.inner.config;
 
+import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
 import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
 import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -48,6 +49,7 @@ import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.config.server.utils.ResponseUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
@@ -133,16 +135,9 @@ public class ConfigInnerHandler implements ConfigHandler {
     }
     
     @Override
-    public ConfigAllInfo getConfigDetail(String dataId, String group, String namespaceId) throws NacosException {
+    public ConfigDetailInfo getConfigDetail(String dataId, String group, String namespaceId) throws NacosException {
         ConfigAllInfo configAllInfo = configInfoPersistService.findConfigAllInfo(dataId, group, namespaceId);
-        // decrypted
-        if (Objects.nonNull(configAllInfo)) {
-            String encryptedDataKey = configAllInfo.getEncryptedDataKey();
-            Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey,
-                    configAllInfo.getContent());
-            configAllInfo.setContent(pair.getSecond());
-        }
-        return configAllInfo;
+        return ResponseUtil.transferToConfigDetailInfo(configAllInfo);
     }
     
     @Override

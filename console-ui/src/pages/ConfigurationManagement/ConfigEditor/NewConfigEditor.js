@@ -394,7 +394,6 @@ class ConfigEditor extends React.Component {
       dataId,
       groupName: group,
       namespaceId: namespace,
-      tenant: namespace,
     };
     const url = beta ? 'v3/console/cs/config/beta' : 'v3/console/cs/config';
     return request.get(url, { params }).then(res => {

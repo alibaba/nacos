@@ -17,13 +17,13 @@
 
 package com.alibaba.nacos.console.handler.config;
 
+import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
 import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
 import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
-import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
@@ -69,7 +69,7 @@ public interface ConfigHandler {
      * @return A ConfigAllInfo object containing all details of the specified configuration.
      * @throws NacosException If an error related to Nacos configuration occurs.
      */
-    ConfigAllInfo getConfigDetail(String dataId, String group, String namespaceId) throws NacosException;
+    ConfigDetailInfo getConfigDetail(String dataId, String group, String namespaceId) throws NacosException;
     
     /**
      * Publishes a new configuration or updates an existing configuration.

@@ -75,11 +75,9 @@ public class ConfigRemoteHandler implements ConfigHandler {
     }
     
     @Override
-    public ConfigAllInfo getConfigDetail(String dataId, String group, String namespaceId) throws NacosException {
+    public ConfigDetailInfo getConfigDetail(String dataId, String group, String namespaceId) throws NacosException {
         try {
-            ConfigDetailInfo configDetailInfo = clientHolder.getConfigMaintainerService()
-                    .getConfig(dataId, group, namespaceId);
-            return transferToConfigAllInfo(configDetailInfo);
+            return clientHolder.getConfigMaintainerService().getConfig(dataId, group, namespaceId);
         } catch (NacosException e) {
             if (NacosException.NOT_FOUND == e.getErrCode()) {
                 return null;
@@ -123,8 +121,7 @@ public class ConfigRemoteHandler implements ConfigHandler {
     @Override
     public ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime)
             throws NacosException {
-        return clientHolder.getConfigMaintainerService()
-                .getAllSubClientConfigByIp(ip, all, namespaceId, sampleTime);
+        return clientHolder.getConfigMaintainerService().getAllSubClientConfigByIp(ip, all, namespaceId, sampleTime);
     }
     
     @Override
