@@ -36,6 +36,7 @@ import com.alibaba.nacos.maintainer.client.model.HttpRequest;
 import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -106,6 +107,30 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
                 .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH).setParamValue(params).build();
+        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
+        Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
+        });
+        return result.getData();
+    }
+    
+    @Override
+    public boolean publishConfigWithBeta(String dataId, String groupName, String namespaceId, String content,
+            String tag, String appName, String srcUser, String configTags, String desc, String type, String betaIps)
+            throws NacosException {
+        Map<String, String> params = new HashMap<>(8);
+        params.put("dataId", dataId);
+        params.put("groupName", groupName);
+        params.put("namespaceId", namespaceId);
+        params.put("content", content);
+        params.put("tag", tag);
+        params.put("appName", appName);
+        params.put("srcUser", srcUser);
+        params.put("configTags", configTags);
+        params.put("desc", desc);
+        params.put("type", type);
+        Map<String, String> headers = Collections.singletonMap("betaIps", betaIps);
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH).setParamValue(params).addHeader(headers).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
         });

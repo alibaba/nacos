@@ -106,6 +106,26 @@ public interface ConfigMaintainerService extends CoreMaintainerService {
             String schema) throws NacosException;
     
     /**
+     * Publish a configuration with additional metadata.
+     *
+     * @param dataId      Configuration data ID (required).
+     * @param groupName   Configuration group name (required).
+     * @param namespaceId Namespace ID (optional, defaults to "public").
+     * @param content     Configuration content (required).
+     * @param tag         Configuration tag (optional).
+     * @param appName     Application name (optional).
+     * @param srcUser     Source user (optional).
+     * @param configTags  Configuration tags, multiple tags separated by commas (optional).
+     * @param desc        Configuration description (optional).
+     * @param type        Configuration type (optional).
+     * @param betaIps     Configuration beta IPs, multiple IPs separated by commas ',' (required).
+     * @return Whether the configuration was published successfully.
+     * @throws NacosException If publishing fails.
+     */
+    boolean publishConfigWithBeta(String dataId, String groupName, String namespaceId, String content, String tag,
+            String appName, String srcUser, String configTags, String desc, String type, String betaIps) throws NacosException;
+    
+    /**
      * Delete a configuration by dataId and groupName.
      *
      * @param dataId    Configuration data ID (required).

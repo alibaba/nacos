@@ -38,6 +38,7 @@ import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
 import com.alibaba.nacos.console.handler.config.ConfigHandler;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
+import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -88,11 +89,18 @@ public class ConfigRemoteHandler implements ConfigHandler {
     
     @Override
     public Boolean publishConfig(ConfigForm configForm, ConfigRequestInfo configRequestInfo) throws NacosException {
-        return clientHolder.getConfigMaintainerService()
-                .publishConfig(configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId(),
-                        configForm.getContent(), configForm.getTag(), configForm.getAppName(), configForm.getSrcUser(),
-                        configForm.getConfigTags(), configForm.getDesc(), configForm.getUse(), configForm.getEffect(),
-                        configForm.getType(), configForm.getSchema());
+        ConfigMaintainerService configMaintainerService = clientHolder.getConfigMaintainerService();
+        if (StringUtils.isBlank(configRequestInfo.getBetaIps())) {
+            return configMaintainerService.publishConfig(configForm.getDataId(), configForm.getGroup(),
+                    configForm.getNamespaceId(), configForm.getContent(), configForm.getTag(), configForm.getAppName(),
+                    configForm.getSrcUser(), configForm.getConfigTags(), configForm.getDesc(), configForm.getUse(),
+                    configForm.getEffect(), configForm.getType(), configForm.getSchema());
+        } else {
+            return configMaintainerService.publishConfigWithBeta(configForm.getDataId(), configForm.getGroup(),
+                    configForm.getNamespaceId(), configForm.getContent(), configForm.getTag(), configForm.getAppName(),
+                    configForm.getSrcUser(), configForm.getConfigTags(), configForm.getDesc(), configForm.getType(),
+                    configRequestInfo.getBetaIps());
+        }
     }
     
     @Override
@@ -159,16 +167,13 @@ public class ConfigRemoteHandler implements ConfigHandler {
     }
     
     @Override
-    public Result<ConfigInfo4Beta> queryBetaConfig(String dataId, String group, String namespaceId)
-            throws NacosException {
+    public ConfigGrayInfo queryBetaConfig(String dataId, String group, String namespaceId) throws NacosException {
         try {
-            ConfigGrayInfo configGrayInfo = clientHolder.getConfigMaintainerService()
-                    .queryBeta(dataId, group, namespaceId);
-            return Result.success(transferToConfigInfo4Beta(configGrayInfo));
+            return clientHolder.getConfigMaintainerService().queryBeta(dataId, group, namespaceId);
         } catch (NacosException e) {
             if (NacosException.NOT_FOUND == e.getErrCode()) {
                 // admin api return 404, means the config is not in beta.
-                return Result.success(null);
+                return null;
             }
             // other exception throw it.
             throw e;

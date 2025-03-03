@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.handler.impl.inner.config;
 
 import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
+import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
 import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
 import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -31,7 +32,7 @@ import com.alibaba.nacos.config.server.controller.ConfigServletInner;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
+import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigMetadata;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.SampleResult;
@@ -205,8 +206,7 @@ public class ConfigInnerHandler implements ConfigHandler {
     }
     
     @Override
-    public ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId,
-            int sampleTime) {
+    public ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime) {
         SampleResult collectSampleResult = configSubService.getCollectSampleResultByIp(ip, sampleTime);
         ConfigListenerInfo result = new ConfigListenerInfo();
         result.setQueryType(ConfigListenerInfo.QUERY_TYPE_IP);
@@ -575,21 +575,17 @@ public class ConfigInnerHandler implements ConfigHandler {
     }
     
     @Override
-    public Result<ConfigInfo4Beta> queryBetaConfig(String dataId, String group, String namespaceId) {
-        try {
-            ConfigInfo4Beta ci = configInfoBetaPersistService.findConfigInfo4Beta(dataId, group, namespaceId);
-            
-            if (Objects.nonNull(ci)) {
-                String encryptedDataKey = ci.getEncryptedDataKey();
-                Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey, ci.getContent());
-                ci.setContent(pair.getSecond());
-            }
-            return Result.success(ci);
-        } catch (Throwable e) {
-            LOGGER.error("query beta data error", e);
-            return Result.failure(HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                    HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(), null);
+    public ConfigGrayInfo queryBetaConfig(String dataId, String group, String namespaceId) throws NacosException {
+        ConfigInfoGrayWrapper beta4Gray = configInfoGrayPersistService.findConfigInfo4Gray(dataId, group, namespaceId,
+                "beta");
+        if (Objects.nonNull(beta4Gray)) {
+            String encryptedDataKey = beta4Gray.getEncryptedDataKey();
+            Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey,
+                    beta4Gray.getContent());
+            beta4Gray.setContent(pair.getSecond());
+            return ResponseUtil.transferToConfigGrayInfo(beta4Gray);
         }
+        return null;
     }
     
 }

@@ -19,6 +19,7 @@ package com.alibaba.nacos.console.controller.v3.config;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
+import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
 import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -428,11 +429,10 @@ public class ConsoleConfigControllerTest {
         String dataId = "testDataId";
         String group = "testGroup";
         
-        ConfigInfo4Beta mockConfigInfo = new ConfigInfo4Beta();
+        ConfigGrayInfo mockConfigInfo = new ConfigGrayInfo();
         mockConfigInfo.setDataId(dataId);
-        mockConfigInfo.setGroup(group);
-        Result<ConfigInfo4Beta> mockResult = new Result<>();
-        when(configProxy.queryBetaConfig(anyString(), anyString(), anyString())).thenReturn(mockResult);
+        mockConfigInfo.setGroupName(group);
+        when(configProxy.queryBetaConfig(anyString(), anyString(), anyString())).thenReturn(mockConfigInfo);
         String namespaceId = "testNamespaceId";
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/config/beta")
                 .param("dataId", dataId).param("groupName", group).param("namespaceId", namespaceId);
@@ -441,9 +441,8 @@ public class ConsoleConfigControllerTest {
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         
-        Result<ConfigInfo4Beta> result = new ObjectMapper().readValue(actualValue,
-                new TypeReference<Result<ConfigInfo4Beta>>() {
-                });
+        Result<ConfigInfo4Beta> result = new ObjectMapper().readValue(actualValue, new TypeReference<>() {
+        });
         
         assertEquals(200, response.getStatus());
     }

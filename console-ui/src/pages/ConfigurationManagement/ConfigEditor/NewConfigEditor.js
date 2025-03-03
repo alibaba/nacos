@@ -399,8 +399,11 @@ class ConfigEditor extends React.Component {
     return request.get(url, { params }).then(res => {
       const form = res.data;
       if (!form) return false;
-      const { type, content, configTags, betaIps, md5 } = form;
-      this.setState({ betaIps });
+      const { type, content, configTags, grayRule, md5 } = form;
+      if (grayRule) {
+        const parsedRule = JSON.parse(grayRule.replace(/\\"/g, '"'));
+        this.setState({ betaIps: parsedRule.expr });
+      }
       this.changeForm({ ...form, config_tags: configTags ? configTags.split(',') : [] });
       this.initMoacoEditor(type, content);
       this.codeVal = content;

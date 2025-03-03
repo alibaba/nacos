@@ -18,6 +18,7 @@
 package com.alibaba.nacos.console.proxy.config;
 
 import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
+import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
 import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
 import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -25,7 +26,6 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.console.handler.config.ConfigHandler;
@@ -152,7 +152,7 @@ public class ConfigProxy {
     /**
      * Query beta configuration based on dataId, group, and namespaceId.
      */
-    public Result<ConfigInfo4Beta> queryBetaConfig(String dataId, String group, String namespaceId)
+    public ConfigGrayInfo queryBetaConfig(String dataId, String group, String namespaceId)
             throws NacosException {
         return configHandler.queryBetaConfig(dataId, group, namespaceId);
     }

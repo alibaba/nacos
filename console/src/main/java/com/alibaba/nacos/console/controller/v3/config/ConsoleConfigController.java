@@ -20,6 +20,7 @@ package com.alibaba.nacos.console.controller.v3.config;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
+import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
 import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
 import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -32,7 +33,6 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.constant.ParametersField;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigFormV3;
 import com.alibaba.nacos.config.server.paramcheck.ConfigBlurSearchHttpParamExtractor;
@@ -406,12 +406,12 @@ public class ConsoleConfigController {
      */
     @GetMapping("/beta")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    public Result<ConfigInfo4Beta> queryBeta(ConfigFormV3 configForm) throws NacosException {
+    public Result<ConfigGrayInfo> queryBeta(ConfigFormV3 configForm) throws NacosException {
         configForm.validate();
         String dataId = configForm.getDataId();
         String groupName = configForm.getGroupName();
         String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
-        return configProxy.queryBetaConfig(dataId, groupName, namespaceId);
+        return Result.success(configProxy.queryBetaConfig(dataId, groupName, namespaceId));
     }
     
 }
