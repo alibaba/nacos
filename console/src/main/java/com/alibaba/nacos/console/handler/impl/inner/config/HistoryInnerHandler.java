@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.handler.impl.inner.config;
 
 import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
+import com.alibaba.nacos.api.config.model.ConfigHistoryBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -34,6 +35,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * .
@@ -66,9 +68,18 @@ public class HistoryInnerHandler implements HistoryHandler {
     }
     
     @Override
-    public Page<ConfigHistoryInfo> listConfigHistory(String dataId, String group, String namespaceId, Integer pageNo,
-            Integer pageSize) throws NacosException {
-        return historyService.listConfigHistory(dataId, group, namespaceId, pageNo, pageSize);
+    public Page<ConfigHistoryBasicInfo> listConfigHistory(String dataId, String group, String namespaceId,
+            Integer pageNo, Integer pageSize) throws NacosException {
+        Page<ConfigHistoryInfo> configHistoryInfoPage = historyService.listConfigHistory(dataId, group, namespaceId,
+                pageNo, pageSize);
+        Page<ConfigHistoryBasicInfo> result = new Page<>();
+        result.setPagesAvailable(configHistoryInfoPage.getPagesAvailable());
+        result.setPageNumber(configHistoryInfoPage.getPageNumber());
+        result.setTotalCount(configHistoryInfoPage.getTotalCount());
+        result.setPageItems(
+                configHistoryInfoPage.getPageItems().stream().map(ResponseUtil::transferToConfigHistoryBasicInfo)
+                        .collect(Collectors.toList()));
+        return result;
     }
     
     @Override

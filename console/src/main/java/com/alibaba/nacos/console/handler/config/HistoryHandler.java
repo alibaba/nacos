@@ -18,10 +18,10 @@
 package com.alibaba.nacos.console.handler.config;
 
 import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
+import com.alibaba.nacos.api.config.model.ConfigHistoryBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
-import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 
 import java.util.List;
 
@@ -56,7 +56,7 @@ public interface HistoryHandler {
      * @return the paginated list of configuration history
      * @throws NacosException if any error occurs during the operation
      */
-    Page<ConfigHistoryInfo> listConfigHistory(String dataId, String group, String namespaceId, Integer pageNo,
+    Page<ConfigHistoryBasicInfo> listConfigHistory(String dataId, String group, String namespaceId, Integer pageNo,
             Integer pageSize) throws NacosException;
     
     /**

@@ -54,11 +54,10 @@ public class HistoryRemoteHandler implements HistoryHandler {
     }
     
     @Override
-    public Page<ConfigHistoryInfo> listConfigHistory(String dataId, String group, String namespaceId, Integer pageNo,
-            Integer pageSize) throws NacosException {
-        Page<ConfigHistoryBasicInfo> historyDetailInfos = clientHolder.getConfigMaintainerService()
+    public Page<ConfigHistoryBasicInfo> listConfigHistory(String dataId, String group, String namespaceId,
+            Integer pageNo, Integer pageSize) throws NacosException {
+        return clientHolder.getConfigMaintainerService()
                 .listConfigHistory(dataId, group, namespaceId, pageNo, pageSize);
-        return transferToConfigHistoryInfoPage(historyDetailInfos);
     }
     
     @Override
