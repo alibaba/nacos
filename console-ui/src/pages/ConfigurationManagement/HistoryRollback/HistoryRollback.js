@@ -317,8 +317,8 @@ class HistoryRollback extends React.Component {
               label: result[i].dataId,
             });
             groupList.push({
-              value: result[i].group,
-              label: result[i].group,
+              value: result[i].groupName,
+              label: result[i].groupName,
             });
           }
           self.setState({

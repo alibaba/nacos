@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.handler.impl.inner.config;
 
+import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -86,7 +87,8 @@ public class HistoryInnerHandler implements HistoryHandler {
     }
     
     @Override
-    public List<ConfigInfoWrapper> getConfigsByTenant(String namespaceId) {
-        return historyService.getConfigListByNamespace(namespaceId);
+    public List<ConfigBasicInfo> getConfigsByTenant(String namespaceId) {
+        List<ConfigInfoWrapper> configListByNamespace = historyService.getConfigListByNamespace(namespaceId);
+        return configListByNamespace.stream().map(ResponseUtil::transferToConfigBasicInfo).toList();
     }
 }

@@ -17,11 +17,11 @@
 
 package com.alibaba.nacos.console.proxy.config;
 
+import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.console.handler.config.HistoryHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -101,7 +101,7 @@ public class HistoryProxy {
      * @return the list of configurations
      * @throws NacosException if any error occurs during the operation
      */
-    public List<ConfigInfoWrapper> getConfigsByTenant(String namespaceId) throws NacosException {
+    public List<ConfigBasicInfo> getConfigsByTenant(String namespaceId) throws NacosException {
         return historyHandler.getConfigsByTenant(namespaceId);
     }
 }

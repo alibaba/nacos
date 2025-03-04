@@ -68,10 +68,8 @@ public class HistoryRemoteHandler implements HistoryHandler {
     }
     
     @Override
-    public List<ConfigInfoWrapper> getConfigsByTenant(String namespaceId) throws NacosException {
-        List<ConfigBasicInfo> configInfos = clientHolder.getConfigMaintainerService()
-                .getConfigListByNamespace(namespaceId);
-        return transferToConfigInfoWrapperList(configInfos);
+    public List<ConfigBasicInfo> getConfigsByTenant(String namespaceId) throws NacosException {
+        return clientHolder.getConfigMaintainerService().getConfigListByNamespace(namespaceId);
     }
     
     /**
