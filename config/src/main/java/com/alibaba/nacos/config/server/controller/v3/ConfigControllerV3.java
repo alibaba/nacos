@@ -284,13 +284,20 @@ public class ConfigControllerV3 {
     }
     
     /**
-     * Search config by config detail.
-     * TODO, change api path to /list
+     * List or Search config by config condition.
+     *
+     * <p>
+     *     This API will entry the request into an queue to cache and do query limit.
+     *     If API called with frequently or datasource is high performance and slow RT,
+     *     The API will return {@code 503}.
+     *     Can use `nacos.config.search.max_capacity` and `nacos.config.search.max_thread` to upper the limit of query.
+     *     And use `nacos.config.search.wait_timeout` to control the waiting time of query.
+     * </p>
      */
-    @GetMapping("/searchDetail")
+    @GetMapping("/list")
     @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     @ExtractorManager.Extractor(httpExtractor = ConfigBlurSearchHttpParamExtractor.class)
-    public Result<Page<ConfigBasicInfo>> searchConfigByDetails(ConfigFormV3 configForm, PageForm pageForm,
+    public Result<Page<ConfigBasicInfo>> list(ConfigFormV3 configForm, PageForm pageForm,
             String configDetail, @RequestParam(defaultValue = "blur") String search) throws NacosApiException {
         configForm.blurSearchValidate();
         pageForm.validate();

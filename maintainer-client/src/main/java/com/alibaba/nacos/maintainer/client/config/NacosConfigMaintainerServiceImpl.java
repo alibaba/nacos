@@ -200,7 +200,7 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
         params.put("pageSize", String.valueOf(pageSize));
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH + "/searchDetail").setParamValue(params).build();
+                .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH + "/list").setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<Page<ConfigBasicInfo>> result = JacksonUtils.toObj(httpRestResult.getData(),
                 new TypeReference<Result<Page<ConfigBasicInfo>>>() {
