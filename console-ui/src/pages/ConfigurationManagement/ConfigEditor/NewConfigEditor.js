@@ -394,14 +394,16 @@ class ConfigEditor extends React.Component {
       dataId,
       groupName: group,
       namespaceId: namespace,
-      tenant: namespace,
     };
     const url = beta ? 'v3/console/cs/config/beta' : 'v3/console/cs/config';
     return request.get(url, { params }).then(res => {
       const form = res.data;
       if (!form) return false;
-      const { type, content, configTags, betaIps, md5 } = form;
-      this.setState({ betaIps });
+      const { type, content, configTags, grayRule, md5 } = form;
+      if (grayRule) {
+        const parsedRule = JSON.parse(grayRule.replace(/\\"/g, '"'));
+        this.setState({ betaIps: parsedRule.expr });
+      }
       this.changeForm({ ...form, config_tags: configTags ? configTags.split(',') : [] });
       this.initMoacoEditor(type, content);
       this.codeVal = content;
@@ -425,7 +427,7 @@ class ConfigEditor extends React.Component {
     // get subscribes of the namespace
     return request.get('v3/console/cs/config/listener', { params }).then(res => {
       const { subscriberDataSource } = this.state;
-      const lisentersGroupkeyIpMap = res.data.lisentersGroupkeyStatus;
+      const lisentersGroupkeyIpMap = res.data.listenersStatus;
       if (lisentersGroupkeyIpMap) {
         this.setState({
           subscriberDataSource: subscriberDataSource.concat(Object.keys(lisentersGroupkeyIpMap)),

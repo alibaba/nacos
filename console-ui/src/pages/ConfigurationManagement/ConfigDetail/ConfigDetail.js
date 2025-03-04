@@ -164,7 +164,7 @@ class ConfigDetail extends React.Component {
           self.field.setValue('content', data.content);
           self.field.setValue('appName', self.inApp ? self.edasAppName : data.appName);
           self.field.setValue('envs', self.serverId);
-          self.field.setValue('group', data.group);
+          self.field.setValue('group', data.groupName);
           self.field.setValue('config_tags', data.configTags);
           self.field.setValue('desc', data.desc);
           self.field.setValue('md5', data.md5);

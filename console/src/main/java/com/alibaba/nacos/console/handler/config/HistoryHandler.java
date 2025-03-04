@@ -17,10 +17,11 @@
 
 package com.alibaba.nacos.console.handler.config;
 
+import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
+import com.alibaba.nacos.api.config.model.ConfigHistoryBasicInfo;
+import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
-import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 
 import java.util.List;
 
@@ -41,7 +42,7 @@ public interface HistoryHandler {
      * @return the detailed configuration history information
      * @throws NacosException if any error occurs during the operation
      */
-    ConfigHistoryInfo getConfigHistoryInfo(String dataId, String group, String namespaceId, Long nid)
+    ConfigHistoryDetailInfo getConfigHistoryInfo(String dataId, String group, String namespaceId, Long nid)
             throws NacosException;
     
     /**
@@ -55,7 +56,7 @@ public interface HistoryHandler {
      * @return the paginated list of configuration history
      * @throws NacosException if any error occurs during the operation
      */
-    Page<ConfigHistoryInfo> listConfigHistory(String dataId, String group, String namespaceId, Integer pageNo,
+    Page<ConfigHistoryBasicInfo> listConfigHistory(String dataId, String group, String namespaceId, Integer pageNo,
             Integer pageSize) throws NacosException;
     
     /**
@@ -68,7 +69,7 @@ public interface HistoryHandler {
      * @return the previous configuration history information
      * @throws NacosException if any error occurs during the operation
      */
-    ConfigHistoryInfo getPreviousConfigHistoryInfo(String dataId, String group, String namespaceId, Long id)
+    ConfigHistoryDetailInfo getPreviousConfigHistoryInfo(String dataId, String group, String namespaceId, Long id)
             throws NacosException;
     
     /**
@@ -78,5 +79,5 @@ public interface HistoryHandler {
      * @return the list of configurations
      * @throws NacosException if any error occurs during the operation
      */
-    List<ConfigInfoWrapper> getConfigsByTenant(String namespaceId) throws NacosException;
+    List<ConfigBasicInfo> getConfigsByTenant(String namespaceId) throws NacosException;
 }

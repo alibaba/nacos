@@ -76,7 +76,7 @@ class HistoryDetail extends React.Component {
           self.field.setValue('srcUser', data.srcUser);
           self.field.setValue('srcIp', data.srcIp);
           self.field.setValue('opType', data.opType.trim());
-          self.field.setValue('group', data.group);
+          self.field.setValue('group', data.groupName);
           self.field.setValue('md5', data.md5);
           self.setState({
             currentPublishType: data.publishType,

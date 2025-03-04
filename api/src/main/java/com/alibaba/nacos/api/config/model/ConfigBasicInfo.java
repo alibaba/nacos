@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.api.config.model;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+
 import java.io.Serializable;
 
 /**
@@ -33,7 +36,12 @@ public class ConfigBasicInfo implements Serializable {
      * <p>
      *     Different storage datasource will have different id. Such as Relational Database the id is auto-generated table ids.
      * </p>
+     * <p>
+     *     Why to string serialize? The ui(JavaScript) handle id will lose the accuracy when large long, If directly return long type,
+     *     such as 862926428394491904, ui will replace it as 862926428394491900, so that can't found the configuration in later operation.
+     * </p>
      */
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long id;
     
     private String namespaceId;

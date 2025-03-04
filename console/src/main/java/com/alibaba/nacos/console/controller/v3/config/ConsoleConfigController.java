@@ -19,6 +19,10 @@ package com.alibaba.nacos.console.controller.v3.config;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.config.ConfigType;
+import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
+import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
+import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
+import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
 import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
@@ -29,11 +33,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.constant.ParametersField;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
-import com.alibaba.nacos.config.server.model.ConfigAllInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
-import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.model.form.ConfigFormV3;
 import com.alibaba.nacos.config.server.paramcheck.ConfigBlurSearchHttpParamExtractor;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
@@ -93,7 +93,7 @@ public class ConsoleConfigController {
      */
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
-    public Result<ConfigAllInfo> getConfigDetail(ConfigFormV3 configForm) throws NacosException {
+    public Result<ConfigDetailInfo> getConfigDetail(ConfigFormV3 configForm) throws NacosException {
         configForm.validate();
         String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
         String dataId = configForm.getDataId();
@@ -192,7 +192,7 @@ public class ConsoleConfigController {
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
     @ExtractorManager.Extractor(httpExtractor = ConfigBlurSearchHttpParamExtractor.class)
-    public Result<Page<ConfigInfo>> getConfigList(ConfigFormV3 configForm, PageForm pageForm)
+    public Result<Page<ConfigBasicInfo>> getConfigList(ConfigFormV3 configForm, PageForm pageForm)
             throws IOException, ServletException, NacosException {
         configForm.blurSearchValidate();
         pageForm.validate();
@@ -229,7 +229,7 @@ public class ConsoleConfigController {
     @GetMapping("/searchDetail")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
     @ExtractorManager.Extractor(httpExtractor = ConfigBlurSearchHttpParamExtractor.class)
-    public Result<Page<ConfigInfo>> getConfigListByContent(ConfigFormV3 configForm, PageForm pageForm,
+    public Result<Page<ConfigBasicInfo>> getConfigListByContent(ConfigFormV3 configForm, PageForm pageForm,
             String configDetail, @RequestParam(defaultValue = "blur") String search) throws NacosException {
         configForm.blurSearchValidate();
         pageForm.validate();
@@ -267,11 +267,10 @@ public class ConsoleConfigController {
      */
     @GetMapping("/listener")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
-    public Result<GroupkeyListenserStatus> getListeners(ConfigFormV3 configForm,
+    public Result<ConfigListenerInfo> getListeners(ConfigFormV3 configForm,
             @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime) throws Exception {
         configForm.validate();
         String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
-        
         String groupName = configForm.getGroupName();
         String dataId = configForm.getDataId();
         return Result.success(configProxy.getListeners(dataId, groupName, namespaceId, sampleTime));
@@ -282,14 +281,13 @@ public class ConsoleConfigController {
      */
     @GetMapping("/listener/ip")
     @Secured(resource = Constants.LISTENER_CONTROLLER_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
-    public Result<GroupkeyListenserStatus> getAllSubClientConfigByIp(@RequestParam("ip") String ip,
+    public Result<ConfigListenerInfo> getAllSubClientConfigByIp(@RequestParam("ip") String ip,
             @RequestParam(value = "all", required = false) boolean all,
             @RequestParam(value = "namespaceId", required = false) String namespaceId,
             @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime, ModelMap modelMap)
             throws NacosException {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
-        GroupkeyListenserStatus result = configProxy.getAllSubClientConfigByIp(ip, all, namespaceId, sampleTime);
-        return Result.success(result);
+        return Result.success(configProxy.getAllSubClientConfigByIp(ip, all, namespaceId, sampleTime));
     }
     
     /**
@@ -408,12 +406,12 @@ public class ConsoleConfigController {
      */
     @GetMapping("/beta")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    public Result<ConfigInfo4Beta> queryBeta(ConfigFormV3 configForm) throws NacosException {
+    public Result<ConfigGrayInfo> queryBeta(ConfigFormV3 configForm) throws NacosException {
         configForm.validate();
         String dataId = configForm.getDataId();
         String groupName = configForm.getGroupName();
         String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
-        return configProxy.queryBetaConfig(dataId, groupName, namespaceId);
+        return Result.success(configProxy.queryBetaConfig(dataId, groupName, namespaceId));
     }
     
 }

@@ -206,16 +206,16 @@ class ConfigurationManagement extends React.Component {
       case '/historyRollback':
         url = `${url}?historyServerId=${this.serverId || ''}&historyDataId=${
           record.dataId
-        }&historyGroup=${record.group}&namespace=${this.tenant}`;
+        }&historyGroup=${record.groupName}&namespace=${this.tenant}`;
         break;
       case '/listeningToQuery':
         url = `${url}?listeningServerId=${this.serverId || ''}&listeningDataId=${
           record.dataId
-        }&listeningGroup=${record.group}&namespace=${this.tenant}`;
+        }&listeningGroup=${record.groupName}&namespace=${this.tenant}`;
         break;
       case '/pushTrajectory':
         url = `${url}?serverId=${this.serverId || ''}&dataId=${record.dataId}&group=${
-          record.group
+          record.groupName
         }&namespace=${this.tenant}`;
         break;
       default:
@@ -364,7 +364,7 @@ class ConfigurationManagement extends React.Component {
           </p>
           <p>
             <span style={{ color: '#999', marginRight: 5 }}>Group</span>
-            <span style={{ color: '#c7254e' }}>{record.group}</span>
+            <span style={{ color: '#c7254e' }}>{record.groupName}</span>
           </p>
           <p>
             <span
@@ -380,7 +380,7 @@ class ConfigurationManagement extends React.Component {
         </div>
       ),
       onOk: () => {
-        const url = `v3/console/cs/config?dataId=${record.dataId}&groupName=${record.group}`;
+        const url = `v3/console/cs/config?dataId=${record.dataId}&groupName=${record.groupName}`;
         request({
           url,
           type: 'delete',
@@ -390,7 +390,7 @@ class ConfigurationManagement extends React.Component {
             _payload.title = locale.configurationManagement;
             _payload.content = '';
             _payload.dataId = record.dataId;
-            _payload.group = record.group;
+            _payload.group = record.groupName;
             if (res.data === true) {
               _payload.isok = true;
             } else {
@@ -546,7 +546,7 @@ class ConfigurationManagement extends React.Component {
     // 点击详情到另一个页面, 返回时候要保留原来的搜索条件 比如: record.dataId为详情的, this.dataId为搜索条件的.
     this.props.history.push(
       `/configdetail?serverId=${this.serverId || ''}&dataId=${record.dataId}&group=${
-        record.group
+        record.groupName
       }&namespace=${this.tenant}&edasAppName=${this.edasAppName}&searchDataId=${
         this.dataId
       }&searchGroup=${this.group}&pageSize=${this.pageSize}&pageNo=${this.pageNo}`
@@ -558,7 +558,7 @@ class ConfigurationManagement extends React.Component {
     this.tenant = getParams('namespace') || 'public'; // 为当前实例保存tenant参数
     this.props.history.push(
       `/configeditor?serverId=${this.serverId || ''}&dataId=${record.dataId}&group=${
-        record.group
+        record.groupName
       }&namespace=${this.tenant}&edasAppName=${this.edasAppName}&edasAppId=${
         this.edasAppId
       }&searchDataId=${this.dataId}&searchGroup=${this.group}&pageSize=${this.pageSize}&pageNo=${
@@ -660,7 +660,7 @@ class ConfigurationManagement extends React.Component {
       configsTableSelected.forEach((value, key, map) => {
         let item = {};
         item.dataId = value.dataId;
-        item.group = value.group;
+        item.groupName = value.groupName;
         toShowDatas.push(item);
       });
       Dialog.confirm({
@@ -670,7 +670,7 @@ class ConfigurationManagement extends React.Component {
             <h3>{locale.sureDelete}</h3>
             <Table dataSource={toShowDatas}>
               <Table.Column title="Data Id" dataIndex="dataId" />
-              <Table.Column title="Group" dataIndex="group" />
+              <Table.Column title="Group" dataIndex="groupName" />
             </Table>
           </div>
         ),
@@ -757,7 +757,7 @@ class ConfigurationManagement extends React.Component {
           let dataItem = {};
           dataItem.id = key;
           dataItem.dataId = value.dataId;
-          dataItem.group = value.group;
+          dataItem.groupName = value.groupName;
           editableTableData.push(dataItem);
           configsTableSelectedDeepCopyed.set(key, JSON.parse(JSON.stringify(value)));
         });
@@ -765,7 +765,7 @@ class ConfigurationManagement extends React.Component {
           if (type === 1) {
             configsTableSelectedDeepCopyed.get(record.id).dataId = e.target.value;
           } else {
-            configsTableSelectedDeepCopyed.get(record.id).group = e.target.value;
+            configsTableSelectedDeepCopyed.get(record.id).groupName = e.target.value;
           }
         };
 
@@ -900,7 +900,7 @@ class ConfigurationManagement extends React.Component {
                       let postDataItem = {};
                       postDataItem.cfgId = key;
                       postDataItem.dataId = value.dataId;
-                      postDataItem.group = value.group;
+                      postDataItem.group = value.groupName;
                       clonePostData.push(postDataItem);
                     });
                     let cloneTargetSpace = self.field.getValue('cloneTargetSpace');
@@ -946,7 +946,11 @@ class ConfigurationManagement extends React.Component {
                   dataIndex="dataId"
                   cell={renderEditableTableCellDataId}
                 />
-                <Table.Column title="Group" dataIndex="group" cell={renderEditableTableCellGroup} />
+                <Table.Column
+                  title="Group"
+                  dataIndex="groupName"
+                  cell={renderEditableTableCellGroup}
+                />
               </Table>
             </>
           ),
@@ -1413,7 +1417,7 @@ class ConfigurationManagement extends React.Component {
               onSort={this.onChangeSort.bind(this)}
             >
               <Table.Column sortable={true} title={'Data Id'} dataIndex={'dataId'} />
-              <Table.Column sortable={true} title={'Group'} dataIndex={'group'} />
+              <Table.Column sortable={true} title={'Group'} dataIndex={'groupName'} />
               <Table.Column
                 sortable={true}
                 title={locale.types}

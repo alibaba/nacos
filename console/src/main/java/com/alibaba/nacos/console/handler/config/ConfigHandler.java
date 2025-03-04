@@ -17,17 +17,17 @@
 
 package com.alibaba.nacos.console.handler.config;
 
+import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
+import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
+import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
+import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
+import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
-import com.alibaba.nacos.config.server.model.ConfigAllInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
-import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
-import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
-import com.alibaba.nacos.api.model.Page;
 import jakarta.servlet.ServletException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
@@ -57,7 +57,7 @@ public interface ConfigHandler {
      * @throws ServletException If a servlet-specific exception occurs.
      * @throws NacosException   If an error related to Nacos configuration occurs.
      */
-    Page<ConfigInfo> getConfigList(int pageNo, int pageSize, String dataId, String group, String namespaceId,
+    Page<ConfigBasicInfo> getConfigList(int pageNo, int pageSize, String dataId, String group, String namespaceId,
             Map<String, Object> configAdvanceInfo) throws IOException, ServletException, NacosException;
     
     /**
@@ -69,7 +69,7 @@ public interface ConfigHandler {
      * @return A ConfigAllInfo object containing all details of the specified configuration.
      * @throws NacosException If an error related to Nacos configuration occurs.
      */
-    ConfigAllInfo getConfigDetail(String dataId, String group, String namespaceId) throws NacosException;
+    ConfigDetailInfo getConfigDetail(String dataId, String group, String namespaceId) throws NacosException;
     
     /**
      * Publishes a new configuration or updates an existing configuration.
@@ -134,7 +134,7 @@ public interface ConfigHandler {
      * @return A Page object containing a list of ConfigInfo that matches the search criteria.
      * @throws NacosException If an error related to Nacos configuration occurs.
      */
-    Page<ConfigInfo> getConfigListByContent(String search, int pageNo, int pageSize, String dataId, String group,
+    Page<ConfigBasicInfo> getConfigListByContent(String search, int pageNo, int pageSize, String dataId, String group,
             String namespaceId, Map<String, Object> configAdvanceInfo) throws NacosException;
     
     /**
@@ -147,7 +147,7 @@ public interface ConfigHandler {
      * @return A GroupkeyListenserStatus object containing the status of the listeners.
      * @throws Exception If an unexpected error occurs.
      */
-    GroupkeyListenserStatus getListeners(String dataId, String group, String namespaceId, int sampleTime)
+    ConfigListenerInfo getListeners(String dataId, String group, String namespaceId, int sampleTime)
             throws Exception;
     
     /**
@@ -160,7 +160,7 @@ public interface ConfigHandler {
      * @return GroupkeyListenserStatus object containing subscription information
      * @throws NacosException If an error occurs while retrieving the subscription information.
      */
-    GroupkeyListenserStatus getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime)
+    ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime)
             throws NacosException;
 
     /**
@@ -219,5 +219,5 @@ public interface ConfigHandler {
      * @return ConfigInfo4Beta containing the beta configuration details
      * @throws NacosException if an error occurs while querying the beta configuration
      */
-    Result<ConfigInfo4Beta> queryBetaConfig(String dataId, String group, String namespaceId) throws NacosException;
+    ConfigGrayInfo queryBetaConfig(String dataId, String group, String namespaceId) throws NacosException;
 }

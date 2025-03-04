@@ -16,21 +16,26 @@
 
 package com.alibaba.nacos.console.handler.impl.inner.config;
 
+import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
+import com.alibaba.nacos.api.config.model.ConfigHistoryBasicInfo;
+import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.HistoryService;
+import com.alibaba.nacos.config.server.utils.ResponseUtil;
 import com.alibaba.nacos.console.handler.config.HistoryHandler;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
-import com.alibaba.nacos.api.model.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * .
@@ -49,39 +54,52 @@ public class HistoryInnerHandler implements HistoryHandler {
     }
     
     @Override
-    public ConfigHistoryInfo getConfigHistoryInfo(String dataId, String group, String namespaceId, Long nid)
+    public ConfigHistoryDetailInfo getConfigHistoryInfo(String dataId, String group, String namespaceId, Long nid)
             throws NacosException {
-        ConfigHistoryInfo configHistoryInfo;
+        ConfigHistoryDetailInfo result;
         try {
-            configHistoryInfo = historyService.getConfigHistoryInfo(dataId, group, namespaceId, nid);
+            ConfigHistoryInfo configHistoryInfo = historyService.getConfigHistoryInfo(dataId, group, namespaceId, nid);
+            result = ResponseUtil.transferToConfigHistoryDetailInfo(configHistoryInfo);
         } catch (DataAccessException e) {
             throw new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.RESOURCE_NOT_FOUND,
                     "certain config history for nid = " + nid + " not exist");
         }
-        return configHistoryInfo;
+        return result;
     }
     
     @Override
-    public Page<ConfigHistoryInfo> listConfigHistory(String dataId, String group, String namespaceId, Integer pageNo,
-            Integer pageSize) throws NacosException {
-        return historyService.listConfigHistory(dataId, group, namespaceId, pageNo, pageSize);
+    public Page<ConfigHistoryBasicInfo> listConfigHistory(String dataId, String group, String namespaceId,
+            Integer pageNo, Integer pageSize) throws NacosException {
+        Page<ConfigHistoryInfo> configHistoryInfoPage = historyService.listConfigHistory(dataId, group, namespaceId,
+                pageNo, pageSize);
+        Page<ConfigHistoryBasicInfo> result = new Page<>();
+        result.setPagesAvailable(configHistoryInfoPage.getPagesAvailable());
+        result.setPageNumber(configHistoryInfoPage.getPageNumber());
+        result.setTotalCount(configHistoryInfoPage.getTotalCount());
+        result.setPageItems(
+                configHistoryInfoPage.getPageItems().stream().map(ResponseUtil::transferToConfigHistoryBasicInfo)
+                        .collect(Collectors.toList()));
+        return result;
     }
     
     @Override
-    public ConfigHistoryInfo getPreviousConfigHistoryInfo(String dataId, String group, String namespaceId, Long id)
-            throws NacosException {
-        ConfigHistoryInfo configHistoryInfo;
+    public ConfigHistoryDetailInfo getPreviousConfigHistoryInfo(String dataId, String group, String namespaceId,
+            Long id) throws NacosException {
+        ConfigHistoryDetailInfo result;
         try {
-            configHistoryInfo = historyService.getPreviousConfigHistoryInfo(dataId, group, namespaceId, id);
+            ConfigHistoryInfo configHistoryInfo = historyService.getPreviousConfigHistoryInfo(dataId, group,
+                    namespaceId, id);
+            result = ResponseUtil.transferToConfigHistoryDetailInfo(configHistoryInfo);
         } catch (DataAccessException e) {
             throw new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.RESOURCE_NOT_FOUND,
                     "previous config history for id = " + id + " not exist");
         }
-        return configHistoryInfo;
+        return result;
     }
     
     @Override
-    public List<ConfigInfoWrapper> getConfigsByTenant(String namespaceId) {
-        return historyService.getConfigListByNamespace(namespaceId);
+    public List<ConfigBasicInfo> getConfigsByTenant(String namespaceId) {
+        List<ConfigInfoWrapper> configListByNamespace = historyService.getConfigListByNamespace(namespaceId);
+        return configListByNamespace.stream().map(ResponseUtil::transferToConfigBasicInfo).toList();
     }
 }

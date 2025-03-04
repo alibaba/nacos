@@ -220,7 +220,7 @@ class HistoryRollback extends React.Component {
     this.tenant = getParams('namespace') || 'public'; // 为当前实例保存tenant参数
     this.props.history.push(
       `/historyDetail?serverId=${this.serverId || ''}&dataId=${record.dataId}&group=${
-        record.group
+        record.groupName
       }&nid=${record.id}&namespace=${this.tenant}`
     );
   }
@@ -228,8 +228,8 @@ class HistoryRollback extends React.Component {
   goCompare(record) {
     let tenant = getParams('namespace') || 'public';
     let serverId = getParams('serverId') || 'center';
-    this.getConfig(-1, tenant, serverId, record.dataId, record.group).then(lasted => {
-      this.getHistoryConfig(record.id, record.dataId, record.group).then(selected => {
+    this.getConfig(-1, tenant, serverId, record.dataId, record.groupName).then(lasted => {
+      this.getHistoryConfig(record.id, record.dataId, record.groupName).then(selected => {
         this.diffEditorDialog.current.getInstance().openDialog(selected.content, lasted.content);
       });
     });
@@ -295,7 +295,7 @@ class HistoryRollback extends React.Component {
     this.tenant = getParams('namespace') || 'public'; // 为当前实例保存tenant参数
     this.props.history.push(
       `/configRollback?serverId=${this.serverId || ''}&dataId=${record.dataId}&group=${
-        record.group
+        record.groupName
       }&nid=${record.id}&namespace=${this.tenant}&nid=${record.id}`
     );
   }
@@ -317,8 +317,8 @@ class HistoryRollback extends React.Component {
               label: result[i].dataId,
             });
             groupList.push({
-              value: result[i].group,
-              label: result[i].group,
+              value: result[i].groupName,
+              label: result[i].groupName,
             });
           }
           self.setState({
@@ -445,7 +445,7 @@ class HistoryRollback extends React.Component {
           <div>
             <Table dataSource={this.state.dataSource} locale={{ empty: locale.pubNoData }}>
               <Table.Column title="Data ID" dataIndex="dataId" />
-              <Table.Column title="Group" dataIndex="group" />
+              <Table.Column title="Group" dataIndex="groupName" />
               <Table.Column
                 title={locale.publishType}
                 dataIndex="publishType"
@@ -466,7 +466,7 @@ class HistoryRollback extends React.Component {
               <Table.Column title={locale.operator} dataIndex="srcUser" />
               <Table.Column
                 title={locale.lastUpdateTime}
-                dataIndex="lastModifiedTime"
+                dataIndex="modifyTime"
                 cell={val => {
                   if (!val) {
                     return '';

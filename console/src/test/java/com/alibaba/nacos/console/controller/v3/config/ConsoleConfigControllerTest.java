@@ -18,6 +18,11 @@
 package com.alibaba.nacos.console.controller.v3.config;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
+import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
+import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
+import com.alibaba.nacos.api.config.model.SameConfigPolicy;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
@@ -25,16 +30,13 @@ import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
-import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.model.form.ConfigFormV3;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.console.proxy.config.ConfigProxy;
 import com.alibaba.nacos.core.auth.AuthFilter;
-import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -117,9 +119,9 @@ public class ConsoleConfigControllerTest {
     
     @Test
     void testGetConfigDetail() throws Exception {
-        ConfigAllInfo configAllInfo = new ConfigAllInfo();
+        ConfigDetailInfo configAllInfo = new ConfigDetailInfo();
         configAllInfo.setDataId("testDataId");
-        configAllInfo.setGroup("testGroup");
+        configAllInfo.setGroupName("testGroup");
         configAllInfo.setContent("testContent");
         
         when(configProxy.getConfigDetail("testDataId", "testGroup", "testNamespace")).thenReturn(configAllInfo);
@@ -130,12 +132,13 @@ public class ConsoleConfigControllerTest {
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         
-        Result<ConfigAllInfo> result = JacksonUtils.toObj(actualValue, new TypeReference<Result<ConfigAllInfo>>() {
-        });
-        ConfigAllInfo resultConfigAllInfo = result.getData();
+        Result<ConfigDetailInfo> result = JacksonUtils.toObj(actualValue,
+                new TypeReference<Result<ConfigDetailInfo>>() {
+                });
+        ConfigDetailInfo resultConfigAllInfo = result.getData();
         
         assertEquals("testDataId", resultConfigAllInfo.getDataId());
-        assertEquals("testGroup", resultConfigAllInfo.getGroup());
+        assertEquals("testGroup", resultConfigAllInfo.getGroupName());
         assertEquals("testContent", resultConfigAllInfo.getContent());
     }
     
@@ -213,11 +216,13 @@ public class ConsoleConfigControllerTest {
     @Test
     void testGetConfigList() throws Exception {
         
-        List<ConfigInfo> configInfoList = new ArrayList<>();
-        ConfigInfo configInfo = new ConfigInfo("testDataId", "testGroup", "testContent");
+        List<ConfigBasicInfo> configInfoList = new ArrayList<>();
+        ConfigBasicInfo configInfo = new ConfigBasicInfo();
+        configInfo.setDataId("testDataId");
+        configInfo.setGroupName("testGroup");
         configInfoList.add(configInfo);
         
-        Page<ConfigInfo> page = new Page<>();
+        Page<ConfigBasicInfo> page = new Page<>();
         page.setTotalCount(15);
         page.setPageNumber(1);
         page.setPagesAvailable(2);
@@ -235,27 +240,27 @@ public class ConsoleConfigControllerTest {
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         
-        Result<Page<ConfigInfo>> result = JacksonUtils.toObj(actualValue,
-                new TypeReference<Result<Page<ConfigInfo>>>() {
-                });
+        Result<Page<ConfigBasicInfo>> result = JacksonUtils.toObj(actualValue, new TypeReference<>() {
+        });
         
-        Page<ConfigInfo> pageResult = result.getData();
-        List<ConfigInfo> resultList = pageResult.getPageItems();
-        ConfigInfo resConfigInfo = resultList.get(0);
+        Page<ConfigBasicInfo> pageResult = result.getData();
+        List<ConfigBasicInfo> resultList = pageResult.getPageItems();
+        ConfigBasicInfo resConfigInfo = resultList.get(0);
         
         assertEquals(configInfoList.size(), resultList.size());
         assertEquals(configInfo.getDataId(), resConfigInfo.getDataId());
-        assertEquals(configInfo.getGroup(), resConfigInfo.getGroup());
-        assertEquals(configInfo.getContent(), resConfigInfo.getContent());
+        assertEquals(configInfo.getGroupName(), resConfigInfo.getGroupName());
     }
     
     @Test
     void testGetConfigListByContent() throws Exception {
-        List<ConfigInfo> configInfoList = new ArrayList<>();
-        ConfigInfo configInfo = new ConfigInfo("test", "test", "test");
+        List<ConfigBasicInfo> configInfoList = new ArrayList<>();
+        ConfigBasicInfo configInfo = new ConfigBasicInfo();
+        configInfo.setDataId("test");
+        configInfo.setGroupName("test");
         configInfoList.add(configInfo);
         
-        Page<ConfigInfo> page = new Page<>();
+        Page<ConfigBasicInfo> page = new Page<>();
         page.setTotalCount(15);
         page.setPageNumber(1);
         page.setPagesAvailable(2);
@@ -274,18 +279,16 @@ public class ConsoleConfigControllerTest {
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         
-        Result<Page<ConfigInfo>> result = JacksonUtils.toObj(actualValue,
-                new TypeReference<Result<Page<ConfigInfo>>>() {
-                });
+        Result<Page<ConfigBasicInfo>> result = JacksonUtils.toObj(actualValue, new TypeReference<>() {
+        });
         
-        Page<ConfigInfo> pageResult = result.getData();
-        List<ConfigInfo> resultList = pageResult.getPageItems();
-        ConfigInfo resConfigInfo = resultList.get(0);
+        Page<ConfigBasicInfo> pageResult = result.getData();
+        List<ConfigBasicInfo> resultList = pageResult.getPageItems();
+        ConfigBasicInfo resConfigInfo = resultList.get(0);
         
         assertEquals(configInfoList.size(), resultList.size());
         assertEquals(configInfo.getDataId(), resConfigInfo.getDataId());
-        assertEquals(configInfo.getGroup(), resConfigInfo.getGroup());
-        assertEquals(configInfo.getContent(), resConfigInfo.getContent());
+        assertEquals(configInfo.getGroupName(), resConfigInfo.getGroupName());
     }
     
     @Test
@@ -426,11 +429,10 @@ public class ConsoleConfigControllerTest {
         String dataId = "testDataId";
         String group = "testGroup";
         
-        ConfigInfo4Beta mockConfigInfo = new ConfigInfo4Beta();
+        ConfigGrayInfo mockConfigInfo = new ConfigGrayInfo();
         mockConfigInfo.setDataId(dataId);
-        mockConfigInfo.setGroup(group);
-        Result<ConfigInfo4Beta> mockResult = new Result<>();
-        when(configProxy.queryBetaConfig(anyString(), anyString(), anyString())).thenReturn(mockResult);
+        mockConfigInfo.setGroupName(group);
+        when(configProxy.queryBetaConfig(anyString(), anyString(), anyString())).thenReturn(mockConfigInfo);
         String namespaceId = "testNamespaceId";
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/config/beta")
                 .param("dataId", dataId).param("groupName", group).param("namespaceId", namespaceId);
@@ -439,9 +441,8 @@ public class ConsoleConfigControllerTest {
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         
-        Result<ConfigInfo4Beta> result = new ObjectMapper().readValue(actualValue,
-                new TypeReference<Result<ConfigInfo4Beta>>() {
-                });
+        Result<ConfigInfo4Beta> result = new ObjectMapper().readValue(actualValue, new TypeReference<>() {
+        });
         
         assertEquals(200, response.getStatus());
     }
