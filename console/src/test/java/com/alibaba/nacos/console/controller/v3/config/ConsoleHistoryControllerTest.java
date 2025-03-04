@@ -18,12 +18,13 @@
 package com.alibaba.nacos.console.controller.v3.config;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.console.proxy.config.HistoryProxy;
-import com.alibaba.nacos.api.model.Page;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -70,13 +71,14 @@ public class ConsoleHistoryControllerTest {
     
     @Test
     void testGetConfigHistoryInfo() throws Exception {
-        ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
+        ConfigHistoryDetailInfo configHistoryInfo = new ConfigHistoryDetailInfo();
         configHistoryInfo.setDataId("testDataId");
-        configHistoryInfo.setGroup("testGroup");
-        configHistoryInfo.setCreatedTime(new Timestamp(System.currentTimeMillis()));
-        configHistoryInfo.setLastModifiedTime(new Timestamp(System.currentTimeMillis()));
+        configHistoryInfo.setGroupName("testGroup");
+        configHistoryInfo.setCreateTime(System.currentTimeMillis());
+        configHistoryInfo.setModifyTime(System.currentTimeMillis());
         
-        when(historyProxy.getConfigHistoryInfo("testDataId", "testGroup", Constants.DEFAULT_NAMESPACE_ID, 1L)).thenReturn(configHistoryInfo);
+        when(historyProxy.getConfigHistoryInfo("testDataId", "testGroup", Constants.DEFAULT_NAMESPACE_ID,
+                1L)).thenReturn(configHistoryInfo);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/history")
                 .param("dataId", "testDataId").param("groupName", "testGroup").param("nid", "1");
@@ -84,13 +86,12 @@ public class ConsoleHistoryControllerTest {
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         
-        Result<ConfigHistoryInfo> result = JacksonUtils.toObj(actualValue,
-                new TypeReference<Result<ConfigHistoryInfo>>() {
-                });
-        ConfigHistoryInfo resultConfigHistoryInfo = result.getData();
+        Result<ConfigHistoryDetailInfo> result = JacksonUtils.toObj(actualValue, new TypeReference<>() {
+        });
+        ConfigHistoryDetailInfo resultConfigHistoryInfo = result.getData();
         
         assertEquals("testDataId", resultConfigHistoryInfo.getDataId());
-        assertEquals("testGroup", resultConfigHistoryInfo.getGroup());
+        assertEquals("testGroup", resultConfigHistoryInfo.getGroupName());
     }
     
     @Test
@@ -106,7 +107,8 @@ public class ConsoleHistoryControllerTest {
         configHistoryInfo.setLastModifiedTime(new Timestamp(System.currentTimeMillis()));
         page.setPageItems(Collections.singletonList(configHistoryInfo));
         
-        when(historyProxy.listConfigHistory("testDataId", "testGroup", Constants.DEFAULT_NAMESPACE_ID, 1, 100)).thenReturn(page);
+        when(historyProxy.listConfigHistory("testDataId", "testGroup", Constants.DEFAULT_NAMESPACE_ID, 1,
+                100)).thenReturn(page);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/history/list")
                 .param("dataId", "testDataId").param("groupName", "testGroup").param("pageNo", "1")
@@ -127,14 +129,14 @@ public class ConsoleHistoryControllerTest {
     
     @Test
     void testGetPreviousConfigHistoryInfo() throws Exception {
-        ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
+        ConfigHistoryDetailInfo configHistoryInfo = new ConfigHistoryDetailInfo();
         configHistoryInfo.setDataId("testDataId");
-        configHistoryInfo.setGroup("testGroup");
-        configHistoryInfo.setCreatedTime(new Timestamp(System.currentTimeMillis()));
-        configHistoryInfo.setLastModifiedTime(new Timestamp(System.currentTimeMillis()));
+        configHistoryInfo.setGroupName("testGroup");
+        configHistoryInfo.setCreateTime(System.currentTimeMillis());
+        configHistoryInfo.setModifyTime(System.currentTimeMillis());
         
-        when(historyProxy.getPreviousConfigHistoryInfo("testDataId", "testGroup", Constants.DEFAULT_NAMESPACE_ID, 1L)).thenReturn(
-                configHistoryInfo);
+        when(historyProxy.getPreviousConfigHistoryInfo("testDataId", "testGroup", Constants.DEFAULT_NAMESPACE_ID,
+                1L)).thenReturn(configHistoryInfo);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/history/previous")
                 .param("dataId", "testDataId").param("groupName", "testGroup").param("id", "1");
@@ -142,13 +144,12 @@ public class ConsoleHistoryControllerTest {
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         
-        Result<ConfigHistoryInfo> result = JacksonUtils.toObj(actualValue,
-                new TypeReference<Result<ConfigHistoryInfo>>() {
-                });
-        ConfigHistoryInfo resultConfigHistoryInfo = result.getData();
+        Result<ConfigHistoryDetailInfo> result = JacksonUtils.toObj(actualValue, new TypeReference<>() {
+        });
+        ConfigHistoryDetailInfo resultConfigHistoryInfo = result.getData();
         
         assertEquals("testDataId", resultConfigHistoryInfo.getDataId());
-        assertEquals("testGroup", resultConfigHistoryInfo.getGroup());
+        assertEquals("testGroup", resultConfigHistoryInfo.getGroupName());
     }
     
     @Test

@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.console.proxy.config;
 
+import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
@@ -57,7 +58,7 @@ public class HistoryProxy {
      * @return the detailed configuration history information
      * @throws NacosException if any error occurs during the operation
      */
-    public ConfigHistoryInfo getConfigHistoryInfo(String dataId, String group, String namespaceId, Long nid)
+    public ConfigHistoryDetailInfo getConfigHistoryInfo(String dataId, String group, String namespaceId, Long nid)
             throws NacosException {
         return historyHandler.getConfigHistoryInfo(dataId, group, namespaceId, nid);
     }
@@ -88,7 +89,7 @@ public class HistoryProxy {
      * @return the previous configuration history information
      * @throws NacosException if any error occurs during the operation
      */
-    public ConfigHistoryInfo getPreviousConfigHistoryInfo(String dataId, String group, String namespaceId, Long id)
+    public ConfigHistoryDetailInfo getPreviousConfigHistoryInfo(String dataId, String group, String namespaceId, Long id)
             throws NacosException {
         return historyHandler.getPreviousConfigHistoryInfo(dataId, group, namespaceId, id);
     }

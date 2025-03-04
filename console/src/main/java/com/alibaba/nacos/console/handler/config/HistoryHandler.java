@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.console.handler.config;
 
+import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
@@ -41,7 +42,7 @@ public interface HistoryHandler {
      * @return the detailed configuration history information
      * @throws NacosException if any error occurs during the operation
      */
-    ConfigHistoryInfo getConfigHistoryInfo(String dataId, String group, String namespaceId, Long nid)
+    ConfigHistoryDetailInfo getConfigHistoryInfo(String dataId, String group, String namespaceId, Long nid)
             throws NacosException;
     
     /**
@@ -68,7 +69,7 @@ public interface HistoryHandler {
      * @return the previous configuration history information
      * @throws NacosException if any error occurs during the operation
      */
-    ConfigHistoryInfo getPreviousConfigHistoryInfo(String dataId, String group, String namespaceId, Long id)
+    ConfigHistoryDetailInfo getPreviousConfigHistoryInfo(String dataId, String group, String namespaceId, Long id)
             throws NacosException;
     
     /**

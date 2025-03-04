@@ -89,7 +89,7 @@ class ConfigRollback extends React.Component {
           self.field.setValue('appName', data.appName);
           self.field.setValue('opType', data.opType.trim());
           self.opType = data.opType; // 当前回滚类型I:插入,D:删除,U:'更新'
-          self.field.setValue('group', data.group);
+          self.field.setValue('group', data.groupName);
           self.field.setValue('md5', data.md5);
           self.field.setValue('envName', envName);
           self.setState({

@@ -18,6 +18,7 @@
 package com.alibaba.nacos.console.controller.v3.config;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
@@ -68,7 +69,7 @@ public class ConsoleHistoryController {
      */
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
-    public Result<ConfigHistoryInfo> getConfigHistoryInfo(ConfigFormV3 configForm, @RequestParam("nid") Long nid)
+    public Result<ConfigHistoryDetailInfo> getConfigHistoryInfo(ConfigFormV3 configForm, @RequestParam("nid") Long nid)
             throws NacosException {
         configForm.validate();
         String dataId = configForm.getDataId();
@@ -109,7 +110,7 @@ public class ConsoleHistoryController {
      */
     @GetMapping(value = "/previous")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
-    public Result<ConfigHistoryInfo> getPreviousConfigHistoryInfo(ConfigFormV3 configForm, @RequestParam("id") Long id)
+    public Result<ConfigHistoryDetailInfo> getPreviousConfigHistoryInfo(ConfigFormV3 configForm, @RequestParam("id") Long id)
             throws NacosException {
         configForm.validate();
         String dataId = configForm.getDataId();
