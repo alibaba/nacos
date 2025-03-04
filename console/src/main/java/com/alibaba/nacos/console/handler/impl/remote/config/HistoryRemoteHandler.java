@@ -21,15 +21,11 @@ import com.alibaba.nacos.api.config.model.ConfigHistoryBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
-import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.console.handler.config.HistoryHandler;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
 import org.springframework.stereotype.Service;
 
-import java.sql.Timestamp;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -71,73 +67,4 @@ public class HistoryRemoteHandler implements HistoryHandler {
         return clientHolder.getConfigMaintainerService().getConfigListByNamespace(namespaceId);
     }
     
-    /**
-     * TODO removed after console-ui changed.
-     */
-    private ConfigHistoryInfo transferToConfigHistoryInfo(ConfigHistoryDetailInfo historyDetailInfo) {
-        ConfigHistoryInfo result = new ConfigHistoryInfo();
-        injectConfigHistoryBasicInfoToConfigHistoryInfo(historyDetailInfo, result);
-        result.setContent(historyDetailInfo.getContent());
-        result.setGrayName(historyDetailInfo.getGrayName());
-        result.setExtInfo(historyDetailInfo.getExtInfo());
-        result.setEncryptedDataKey(historyDetailInfo.getEncryptedDataKey());
-        return result;
-    }
-    
-    /**
-     * TODO removed after console-ui changed.
-     */
-    private Page<ConfigHistoryInfo> transferToConfigHistoryInfoPage(Page<ConfigHistoryBasicInfo> historyDetailInfos) {
-        Page<ConfigHistoryInfo> result = new Page<>();
-        result.setPageNumber(historyDetailInfos.getPageNumber());
-        result.setPagesAvailable(historyDetailInfos.getPagesAvailable());
-        result.setTotalCount(historyDetailInfos.getTotalCount());
-        List<ConfigHistoryInfo> infos = new LinkedList<>();
-        historyDetailInfos.getPageItems().forEach(configHistoryBasicInfo -> {
-            ConfigHistoryInfo info = new ConfigHistoryInfo();
-            injectConfigHistoryBasicInfoToConfigHistoryInfo(configHistoryBasicInfo, info);
-            infos.add(info);
-        });
-        result.setPageItems(infos);
-        return result;
-    }
-    
-    /**
-     * TODO removed after console-ui changed.
-     */
-    private void injectConfigHistoryBasicInfoToConfigHistoryInfo(ConfigHistoryBasicInfo basicInfo,
-            ConfigHistoryInfo result) {
-        result.setId(basicInfo.getId());
-        result.setDataId(basicInfo.getDataId());
-        result.setGroup(basicInfo.getGroupName());
-        result.setTenant(basicInfo.getNamespaceId());
-        result.setAppName(basicInfo.getAppName());
-        result.setMd5(basicInfo.getMd5());
-        result.setSrcIp(basicInfo.getSrcIp());
-        result.setSrcUser(basicInfo.getSrcUser());
-        result.setOpType(basicInfo.getOpType());
-        result.setPublishType(basicInfo.getPublishType());
-        result.setCreatedTime(new Timestamp(basicInfo.getCreateTime()));
-        result.setLastModifiedTime(new Timestamp(basicInfo.getModifyTime()));
-    }
-    
-    /**
-     * TODO removed after console-ui changed.
-     */
-    private List<ConfigInfoWrapper> transferToConfigInfoWrapperList(List<ConfigBasicInfo> configInfos) {
-        List<ConfigInfoWrapper> result = new LinkedList<>();
-        configInfos.forEach(configInfo -> {
-            ConfigInfoWrapper configInfoWrapper = new ConfigInfoWrapper();
-            configInfoWrapper.setId(configInfo.getId());
-            configInfoWrapper.setDataId(configInfo.getDataId());
-            configInfoWrapper.setGroup(configInfo.getGroupName());
-            configInfoWrapper.setTenant(configInfo.getNamespaceId());
-            configInfoWrapper.setMd5(configInfo.getMd5());
-            configInfo.setType(configInfo.getType());
-            configInfoWrapper.setAppName(configInfo.getAppName());
-            configInfoWrapper.setLastModified(configInfo.getModifyTime());
-            result.add(configInfoWrapper);
-        });
-        return result;
-    }
 }
