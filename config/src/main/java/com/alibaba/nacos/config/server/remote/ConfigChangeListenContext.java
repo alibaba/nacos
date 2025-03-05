@@ -154,7 +154,7 @@ public class ConfigChangeListenContext {
     public synchronized Map<String, String> getListenKeys(String connectionId) {
         HashMap<String, ConfigListenState> stringStringHashMap = connectionIdContext.get(connectionId);
         if (stringStringHashMap != null) {
-            HashMap<String, String> md5Map = new HashMap<>();
+            HashMap<String, String> md5Map = new HashMap<>(stringStringHashMap.size());
             for (Map.Entry<String, ConfigListenState> entry : stringStringHashMap.entrySet()) {
                 md5Map.put(entry.getKey(), entry.getValue().getMd5());
             }
