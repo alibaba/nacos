@@ -149,6 +149,11 @@ public class NacosException extends Exception {
     public static final int SERVER_ERROR = 500;
     
     /**
+     * server not implemented（server不支持该请求，可能该版本未实现功能，或请求了错误的API）.
+     */
+    public static final int SERVER_NOT_IMPLEMENTED = 501;
+    
+    /**
      * client error（client异常，返回给服务端）.
      */
     public static final int CLIENT_ERROR = -500;

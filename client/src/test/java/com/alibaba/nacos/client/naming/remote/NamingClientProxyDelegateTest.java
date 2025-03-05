@@ -148,7 +148,7 @@ class NamingClientProxyDelegateTest {
         instance.setEphemeral(false);
         // when server support register persistent instance by grpc, will use grpc to register
         when(mockGrpcClient.isAbilitySupportedByServer(
-                AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC)).thenReturn(true);
+                AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC)).thenReturn(true);
         delegate.registerService(serviceName, groupName, instance);
         verify(mockGrpcClient, times(1)).registerService(serviceName, groupName, instance);
     }
@@ -202,7 +202,7 @@ class NamingClientProxyDelegateTest {
         instance.setEphemeral(false);
         // when server support deregister persistent instance by grpc, will use grpc to deregister
         when(mockGrpcClient.isAbilitySupportedByServer(
-                AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC)).thenReturn(true);
+                AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC)).thenReturn(true);
         delegate.deregisterService(serviceName, groupName, instance);
         verify(mockGrpcClient, times(1)).deregisterService(serviceName, groupName, instance);
     }

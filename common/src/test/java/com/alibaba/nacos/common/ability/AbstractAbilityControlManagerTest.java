@@ -54,10 +54,10 @@ class AbstractAbilityControlManagerTest {
             public void onEvent(AbstractAbilityControlManager.AbilityUpdateEvent event) {
                 notified = true;
                 try {
-                    assertEquals(AbilityKey.SERVER_TEST_1, event.getAbilityKey());
+                    assertEquals(AbilityKey.SERVER_FUZZY_WATCH, event.getAbilityKey());
                     assertEquals(isOn, event.isOn());
                     assertEquals(2, event.getAbilityTable().size());
-                    assertEquals(isOn, event.getAbilityTable().get(AbilityKey.SERVER_TEST_1.getName()));
+                    assertEquals(isOn, event.getAbilityTable().get(AbilityKey.SERVER_FUZZY_WATCH.getName()));
                 } catch (AssertionError error) {
                     assertionError = error;
                 }
@@ -82,7 +82,7 @@ class AbstractAbilityControlManagerTest {
     @Test
     void testEnableCurrentNodeAbility() throws InterruptedException {
         isOn = true;
-        abilityControlManager.enableCurrentNodeAbility(AbilityKey.SERVER_TEST_1);
+        abilityControlManager.enableCurrentNodeAbility(AbilityKey.SERVER_FUZZY_WATCH);
         TimeUnit.MILLISECONDS.sleep(1100);
         assertTrue(notified);
         if (null != assertionError) {
@@ -93,7 +93,7 @@ class AbstractAbilityControlManagerTest {
     @Test
     void testDisableCurrentNodeAbility() throws InterruptedException {
         isOn = false;
-        abilityControlManager.disableCurrentNodeAbility(AbilityKey.SERVER_TEST_1);
+        abilityControlManager.disableCurrentNodeAbility(AbilityKey.SERVER_FUZZY_WATCH);
         TimeUnit.MILLISECONDS.sleep(1100);
         assertTrue(notified);
         if (null != assertionError) {
@@ -103,16 +103,16 @@ class AbstractAbilityControlManagerTest {
     
     @Test
     void testIsCurrentNodeAbilityRunning() {
-        assertEquals(AbilityStatus.SUPPORTED, abilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
+        assertEquals(AbilityStatus.SUPPORTED, abilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_FUZZY_WATCH));
         assertEquals(AbilityStatus.NOT_SUPPORTED, abilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2));
-        assertEquals(AbilityStatus.UNKNOWN, abilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SDK_CLIENT_TEST_1));
+        assertEquals(AbilityStatus.UNKNOWN, abilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SDK_CLIENT_FUZZY_WATCH));
     }
     
     @Test
     void testGetCurrentNodeAbilities() {
         Map<String, Boolean> actual = abilityControlManager.getCurrentNodeAbilities(AbilityMode.SERVER);
         assertEquals(2, actual.size());
-        assertTrue(actual.containsKey(AbilityKey.SERVER_TEST_1.getName()));
+        assertTrue(actual.containsKey(AbilityKey.SERVER_FUZZY_WATCH.getName()));
         assertTrue(actual.containsKey(AbilityKey.SERVER_TEST_2.getName()));
         actual = abilityControlManager.getCurrentNodeAbilities(AbilityMode.SDK_CLIENT);
         assertTrue(actual.isEmpty());
@@ -129,7 +129,7 @@ class AbstractAbilityControlManagerTest {
             abilityControlManager = new AbstractAbilityControlManager() {
                 @Override
                 protected Map<AbilityMode, Map<AbilityKey, Boolean>> initCurrentNodeAbilities() {
-                    Map<AbilityKey, Boolean> abilities = Collections.singletonMap(AbilityKey.SDK_CLIENT_TEST_1, true);
+                    Map<AbilityKey, Boolean> abilities = Collections.singletonMap(AbilityKey.SDK_CLIENT_FUZZY_WATCH, true);
                     return Collections.singletonMap(AbilityMode.SERVER, abilities);
                 }
                 
@@ -146,7 +146,7 @@ class AbstractAbilityControlManagerTest {
         @Override
         protected Map<AbilityMode, Map<AbilityKey, Boolean>> initCurrentNodeAbilities() {
             Map<AbilityKey, Boolean> abilities = new HashMap<>(2);
-            abilities.put(AbilityKey.SERVER_TEST_1, true);
+            abilities.put(AbilityKey.SERVER_FUZZY_WATCH, true);
             abilities.put(AbilityKey.SERVER_TEST_2, false);
             return Collections.singletonMap(AbilityMode.SERVER, abilities);
         }

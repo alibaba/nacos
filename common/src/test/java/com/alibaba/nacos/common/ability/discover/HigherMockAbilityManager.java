@@ -28,7 +28,7 @@ public class HigherMockAbilityManager extends AbstractAbilityControlManager {
     @Override
     protected Map<AbilityMode, Map<AbilityKey, Boolean>> initCurrentNodeAbilities() {
         Map<AbilityKey, Boolean> abilities = new HashMap<>();
-        abilities.put(AbilityKey.SERVER_TEST_1, true);
+        abilities.put(AbilityKey.SERVER_FUZZY_WATCH, true);
         Map<AbilityMode, Map<AbilityKey, Boolean>> result = new HashMap<>();
         result.put(AbilityMode.SERVER, abilities);
         return result;

@@ -45,7 +45,7 @@ public class ServerAbilities extends AbstractAbilityRegistry {
          *
          */
         // put ability here, which you want current server supports
-        supportedAbilities.put(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC, true);
+        supportedAbilities.put(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC, true);
     }
     
     /**.

@@ -57,14 +57,14 @@ public class AbilityConfigsTest {
         EnvUtil.setEnvironment(environment);
         abilityConfigs = new TestAbilityConfig();
         inject(abilityConfigs);
-        serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.SERVER_TEST_1);
+        serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.SERVER_FUZZY_WATCH);
         serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.SERVER_TEST_2);
     }
     
     void inject(AbilityConfigs abilityConfigs) {
         TestServerAbilityControlManager serverAbilityControlManager = new TestServerAbilityControlManager();
         Map<String, Boolean> newTable = new HashMap<>();
-        newTable.put(AbilityKey.SERVER_TEST_1.getName(), true);
+        newTable.put(AbilityKey.SERVER_FUZZY_WATCH.getName(), true);
         newTable.put(AbilityKey.SERVER_TEST_2.getName(), true);
         serverAbilityControlManager.setCurrentSupportingAbility(newTable);
         abilityConfigs.setAbilityHandlerRegistry(serverAbilityControlManager);
@@ -83,19 +83,19 @@ public class AbilityConfigsTest {
         instanceField.setAccessible(true);
         ServerAbilities serverAbilities = (ServerAbilities) instanceField.get(ServerAbilities.class);
         currentAbilities = (Map<AbilityKey, Boolean>) abilitiesField.get(serverAbilities);
-        currentAbilities.put(AbilityKey.SERVER_TEST_1, true);
+        currentAbilities.put(AbilityKey.SERVER_FUZZY_WATCH, true);
         currentAbilities.put(AbilityKey.SERVER_TEST_2, true);
     }
     
     @Test
     void testLoadAbilities() throws Exception {
-        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_1.getName(), Boolean.TRUE.toString());
+        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_FUZZY_WATCH.getName(), Boolean.TRUE.toString());
         environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_2.getName(), Boolean.FALSE.toString());
         // test load
         fill();
         ServerAbilityControlManager manager = new ServerAbilityControlManager();
         // config has higher priority
-        assertEquals(AbilityStatus.SUPPORTED, manager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
+        assertEquals(AbilityStatus.SUPPORTED, manager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_FUZZY_WATCH));
         assertNotEquals(AbilityStatus.SUPPORTED, manager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2));
         // clear
         currentAbilities.clear();
@@ -103,33 +103,33 @@ public class AbilityConfigsTest {
     
     @Test
     void testInit() {
-        assertEquals(AbilityStatus.SUPPORTED, serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
+        assertEquals(AbilityStatus.SUPPORTED, serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_FUZZY_WATCH));
         assertEquals(AbilityStatus.SUPPORTED, serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2));
     }
     
     @Test
     void testConfigChange() throws InterruptedException {
         // test no change
-        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_1.getName(), Boolean.TRUE.toString());
+        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_FUZZY_WATCH.getName(), Boolean.TRUE.toString());
         environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_2.getName(), Boolean.TRUE.toString());
         abilityConfigs.onEvent(new ServerConfigChangeEvent());
-        assertEquals(AbilityStatus.SUPPORTED, serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
+        assertEquals(AbilityStatus.SUPPORTED, serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_FUZZY_WATCH));
         assertEquals(AbilityStatus.SUPPORTED, serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2));
         
         // test change
-        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_1.getName(), Boolean.FALSE.toString());
+        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_FUZZY_WATCH.getName(), Boolean.FALSE.toString());
         abilityConfigs.onEvent(new ServerConfigChangeEvent());
-        assertNotEquals(AbilityStatus.SUPPORTED, serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
+        assertNotEquals(AbilityStatus.SUPPORTED, serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_FUZZY_WATCH));
         assertEquals(AbilityStatus.SUPPORTED, serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2));
         
-        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_1.getName(), Boolean.TRUE.toString());
+        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_FUZZY_WATCH.getName(), Boolean.TRUE.toString());
         abilityConfigs.onEvent(new ServerConfigChangeEvent());
-        assertEquals(AbilityStatus.SUPPORTED, serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
+        assertEquals(AbilityStatus.SUPPORTED, serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_FUZZY_WATCH));
         
-        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_1.getName(), Boolean.FALSE.toString());
+        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_FUZZY_WATCH.getName(), Boolean.FALSE.toString());
         environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_2.getName(), Boolean.FALSE.toString());
         abilityConfigs.onEvent(new ServerConfigChangeEvent());
-        assertNotEquals(AbilityStatus.SUPPORTED, serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
+        assertNotEquals(AbilityStatus.SUPPORTED, serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_FUZZY_WATCH));
         assertNotEquals(AbilityStatus.SUPPORTED, serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2));
     }
     

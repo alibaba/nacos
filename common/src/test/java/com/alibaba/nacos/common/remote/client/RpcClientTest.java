@@ -1154,15 +1154,15 @@ class RpcClientTest {
     
     @Test
     void testGetConnectionAbilityWithNullConnection() {
-        AbilityStatus abilityStatus = rpcClient.getConnectionAbility(AbilityKey.SERVER_TEST_1);
+        AbilityStatus abilityStatus = rpcClient.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH);
         assertNull(abilityStatus);
     }
     
     @Test
     void testGetConnectionAbilityWithReadyConnection() {
-        when(connection.getConnectionAbility(AbilityKey.SERVER_TEST_1)).thenReturn(AbilityStatus.SUPPORTED);
+        when(connection.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH)).thenReturn(AbilityStatus.SUPPORTED);
         rpcClient.currentConnection = connection;
-        AbilityStatus abilityStatus = rpcClient.getConnectionAbility(AbilityKey.SERVER_TEST_1);
+        AbilityStatus abilityStatus = rpcClient.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH);
         assertNotNull(abilityStatus);
         assertEquals(AbilityStatus.SUPPORTED, abilityStatus);
     }

@@ -185,7 +185,7 @@ class AbilityDiscovery {
     @Test
     void testClientDiscovery() throws NacosException {
         // client judge ability
-        assertEquals(AbilityStatus.SUPPORTED, client.getConnectionAbility(AbilityKey.SERVER_TEST_1));
+        assertEquals(AbilityStatus.SUPPORTED, client.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
         assertEquals(AbilityStatus.NOT_SUPPORTED, client.getConnectionAbility(AbilityKey.SERVER_TEST_2));
     }
     
@@ -213,7 +213,7 @@ class AbilityDiscovery {
         client.registerServerRequestHandler(new ServerRequestHandler() {
             @Override
             public Response requestReply(Request request, Connection connection) {
-                if (connection.getConnectionAbility(AbilityKey.SERVER_TEST_1).equals(AbilityStatus.SUPPORTED)
+                if (connection.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH).equals(AbilityStatus.SUPPORTED)
                         && connection.getConnectionAbility(AbilityKey.SERVER_TEST_2).equals(AbilityStatus.NOT_SUPPORTED)) {
                     clientSuccess = true;
                 }
@@ -284,7 +284,7 @@ class AbilityDiscovery {
         
         @Override
         public ConfigQueryResponse handle(ConfigQueryRequest request, RequestMeta meta) throws NacosException {
-            if (meta.getConnectionAbility(AbilityKey.SDK_CLIENT_TEST_1).equals(AbilityStatus.SUPPORTED)) {
+            if (meta.getConnectionAbility(AbilityKey.SDK_CLIENT_FUZZY_WATCH).equals(AbilityStatus.SUPPORTED)) {
                 serverSuccess = true;
             }
             return new ConfigQueryResponse();

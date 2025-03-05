@@ -44,22 +44,22 @@ class AbilityKeyTest {
         Map<String, Boolean> stringBooleanMap = AbilityKey.mapStr(enumMap);
         assertEquals(0, stringBooleanMap.size());
         
-        enumMap.put(AbilityKey.SERVER_TEST_1, true);
+        enumMap.put(AbilityKey.SERVER_FUZZY_WATCH, true);
         enumMap.put(AbilityKey.SERVER_TEST_2, false);
-        enumMap.put(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC, false);
+        enumMap.put(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC, false);
         stringBooleanMap = AbilityKey.mapStr(enumMap);
         assertEquals(3, stringBooleanMap.size());
-        assertTrue(stringBooleanMap.get(AbilityKey.SERVER_TEST_1.getName()));
+        assertTrue(stringBooleanMap.get(AbilityKey.SERVER_FUZZY_WATCH.getName()));
         assertFalse(stringBooleanMap.get(AbilityKey.SERVER_TEST_2.getName()));
-        assertFalse(stringBooleanMap.get(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC.getName()));
+        assertFalse(stringBooleanMap.get(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC.getName()));
         
         enumMap.put(AbilityKey.SERVER_TEST_2, true);
-        enumMap.put(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC, true);
+        enumMap.put(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC, true);
         stringBooleanMap = AbilityKey.mapStr(enumMap);
         assertEquals(3, stringBooleanMap.size());
-        assertTrue(stringBooleanMap.get(AbilityKey.SERVER_TEST_1.getName()));
+        assertTrue(stringBooleanMap.get(AbilityKey.SERVER_FUZZY_WATCH.getName()));
         assertTrue(stringBooleanMap.get(AbilityKey.SERVER_TEST_2.getName()));
-        assertTrue(stringBooleanMap.get(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC.getName()));
+        assertTrue(stringBooleanMap.get(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC.getName()));
     }
     
     @Test
@@ -76,21 +76,21 @@ class AbilityKeyTest {
         assertEquals(0, enumMap.size());
         
         mapStr.put(AbilityKey.SERVER_TEST_2.getName(), false);
-        mapStr.put(AbilityKey.SERVER_TEST_1.getName(), true);
-        mapStr.put(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC.getName(), true);
+        mapStr.put(AbilityKey.SERVER_FUZZY_WATCH.getName(), true);
+        mapStr.put(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC.getName(), true);
         enumMap = AbilityKey.mapEnum(AbilityMode.SERVER, mapStr);
         assertFalse(enumMap.get(AbilityKey.SERVER_TEST_2));
-        assertTrue(enumMap.get(AbilityKey.SERVER_TEST_1));
-        assertTrue(enumMap.get(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC));
+        assertTrue(enumMap.get(AbilityKey.SERVER_FUZZY_WATCH));
+        assertTrue(enumMap.get(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC));
         
         mapStr.clear();
         mapStr.put(AbilityKey.SERVER_TEST_2.getName(), true);
-        mapStr.put(AbilityKey.SERVER_TEST_1.getName(), true);
-        mapStr.put(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC.getName(), true);
+        mapStr.put(AbilityKey.SERVER_FUZZY_WATCH.getName(), true);
+        mapStr.put(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC.getName(), true);
         enumMap = AbilityKey.mapEnum(AbilityMode.SERVER, mapStr);
         assertTrue(enumMap.get(AbilityKey.SERVER_TEST_2));
-        assertTrue(enumMap.get(AbilityKey.SERVER_TEST_1));
-        assertTrue(enumMap.get(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC));
+        assertTrue(enumMap.get(AbilityKey.SERVER_FUZZY_WATCH));
+        assertTrue(enumMap.get(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC));
         
     }
     
@@ -116,6 +116,6 @@ class AbilityKeyTest {
     
     @Test
     void testGetDescription() {
-        assertEquals("just for junit test", AbilityKey.SERVER_TEST_1.getDescription());
+        assertEquals("just for junit test", AbilityKey.SERVER_FUZZY_WATCH.getDescription());
     }
 }

@@ -17,6 +17,8 @@
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.FuzzyWatchEventWatcher;
@@ -34,6 +36,7 @@ import com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
@@ -1342,6 +1345,20 @@ public class ClientWorker implements Closeable {
             } catch (NacosException e) {
                 LOGGER.warn("check server status failed.", e);
                 return false;
+            }
+        }
+        
+        /**
+         * Determine whether nacos-server supports the capability.
+         *
+         * @param abilityKey ability key
+         * @return true if supported, otherwise false
+         */
+        public boolean isAbilitySupportedByServer(AbilityKey abilityKey) {
+            try {
+                return getOneRunningClient().getConnectionAbility(abilityKey) == AbilityStatus.SUPPORTED;
+            } catch (NacosException e) {
+                throw new NacosRuntimeException(e.getErrCode(), "Get Running Client failed: ", e);
             }
         }
     }

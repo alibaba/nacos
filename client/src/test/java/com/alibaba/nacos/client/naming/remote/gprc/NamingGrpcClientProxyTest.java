@@ -529,34 +529,34 @@ class NamingGrpcClientProxyTest {
     
     @Test
     void testIsAbilitySupportedByServer1() {
-        when(this.rpcClient.getConnectionAbility(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC)).thenReturn(
+        when(this.rpcClient.getConnectionAbility(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC)).thenReturn(
                 AbilityStatus.SUPPORTED);
-        assertTrue(client.isAbilitySupportedByServer(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC));
-        verify(this.rpcClient, times(1)).getConnectionAbility(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC);
+        assertTrue(client.isAbilitySupportedByServer(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC));
+        verify(this.rpcClient, times(1)).getConnectionAbility(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC);
     }
     
     @Test
     void testIsAbilitySupportedByServer2() {
-        when(this.rpcClient.getConnectionAbility(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC)).thenReturn(
+        when(this.rpcClient.getConnectionAbility(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC)).thenReturn(
                 AbilityStatus.NOT_SUPPORTED);
-        assertFalse(client.isAbilitySupportedByServer(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC));
-        verify(this.rpcClient, times(1)).getConnectionAbility(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC);
+        assertFalse(client.isAbilitySupportedByServer(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC));
+        verify(this.rpcClient, times(1)).getConnectionAbility(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC);
     }
     
     @Test
     void testIsAbilitySupportedByServer3() {
-        when(this.rpcClient.getConnectionAbility(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC)).thenReturn(
+        when(this.rpcClient.getConnectionAbility(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC)).thenReturn(
                 AbilityStatus.UNKNOWN);
-        assertFalse(client.isAbilitySupportedByServer(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC));
-        verify(this.rpcClient, times(1)).getConnectionAbility(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC);
+        assertFalse(client.isAbilitySupportedByServer(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC));
+        verify(this.rpcClient, times(1)).getConnectionAbility(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC);
     }
     
     @Test
     void testIsAbilitySupportedByServer4() {
-        when(this.rpcClient.getConnectionAbility(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC)).thenReturn(
+        when(this.rpcClient.getConnectionAbility(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC)).thenReturn(
                 null);
-        assertFalse(client.isAbilitySupportedByServer(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC));
-        verify(this.rpcClient, times(1)).getConnectionAbility(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC);
+        assertFalse(client.isAbilitySupportedByServer(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC));
+        verify(this.rpcClient, times(1)).getConnectionAbility(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC);
     }
     
     @Test

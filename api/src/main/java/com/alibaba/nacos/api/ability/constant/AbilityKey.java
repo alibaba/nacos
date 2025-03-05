@@ -34,13 +34,13 @@ public enum AbilityKey {
     /**
      * Server support register or deregister persistent instance by grpc.
      */
-    SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC("supportPersistentInstanceByGrpc",
+    SERVER_PERSISTENT_INSTANCE_BY_GRPC("supportPersistentInstanceByGrpc",
             "support persistent instance by grpc", AbilityMode.SERVER),
     
     /**
-     * For Test temporarily.
+     * For fuzzy watch naming or config.
      */
-    SERVER_TEST_1("test_1", "just for junit test", AbilityMode.SERVER),
+    SERVER_FUZZY_WATCH("fuzzyWatch", "Server whether support fuzzy watch service or config", AbilityMode.SERVER),
     
     /**
      * For Test temporarily.
@@ -50,7 +50,7 @@ public enum AbilityKey {
     /**
      * For Test temporarily.
      */
-    SDK_CLIENT_TEST_1("test_1", "just for junit test", AbilityMode.SDK_CLIENT),
+    SDK_CLIENT_FUZZY_WATCH("fuzzyWatch", "Client whether support fuzzy watch service or config", AbilityMode.SDK_CLIENT),
     
     /**
      * For Test temporarily.
