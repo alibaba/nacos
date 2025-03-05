@@ -107,8 +107,12 @@ public class ConfigOpsControllerV3 {
     }
     
     /**
-     * // TODO In a future release, the front page should appear operable The interface to the Derby operations query
-     * can only run select statements and is a direct query to the native Derby database without any additional logic.
+     * Can only run select statements and is a direct query to the native Derby database without any additional logic.
+     *
+     * <p>
+     *     This API is used for maintainer of Nacos to do datasource management when using derby datasource.
+     *     So This API required ADMIN permission and need open switch `nacos.config.derby.ops.enabled=true`.
+     * </p>
      *
      * @param sql The query
      * @return {@link RestResult}
@@ -147,10 +151,15 @@ public class ConfigOpsControllerV3 {
     }
     
     /**
-     * // TODO the front page should appear operable The external data source is imported into derby.
+     * Import Derby data from other Derby database.
      *
      * <p>mysqldump --defaults-file="XXX" --host=0.0.0.0 --protocol=tcp --user=XXX --extended-insert=FALSE \
      * --complete-insert=TRUE \ --skip-triggers --no-create-info --skip-column-statistics "{SCHEMA}" "{TABLE_NAME}"
+     *
+     * <p>
+     *     This API is used for maintainer of Nacos to do datasource management when using derby datasource.
+     *     So This API required ADMIN permission and need open switch `nacos.config.derby.ops.enabled=true`.
+     * </p>
      *
      * @param multipartFile {@link MultipartFile}
      * @return {@link DeferredResult}

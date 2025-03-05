@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo;
+import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.maintainer.client.core.CoreMaintainerService;
 
 import java.util.Map;
@@ -32,7 +33,7 @@ import java.util.Map;
  * @author Nacos
  */
 public interface NamingMaintainerService
-        extends CoreMaintainerService, ServiceMaintainerService, InstanceMaintainerService, NamingClientMaintainerService {
+        extends CoreMaintainerService, ServiceMaintainerService, InstanceMaintainerService, NamingClientMaintainerService, Closeable {
     
     /**
      * Get system metrics.
