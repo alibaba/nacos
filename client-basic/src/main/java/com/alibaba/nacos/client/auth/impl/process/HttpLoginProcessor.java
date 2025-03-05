@@ -49,7 +49,7 @@ public class HttpLoginProcessor implements LoginProcessor {
     
     private static final Logger SECURITY_LOGGER = LoggerFactory.getLogger(HttpLoginProcessor.class);
     
-    private static final String LOGIN_URL = "/v1/auth/users/login";
+    private static final String LOGIN_URL = "/v3/auth/user/login";
     
     public static final String DEFAULT_NACOS_WEB_CONTEXT = "/nacos";
     
