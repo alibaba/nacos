@@ -141,7 +141,7 @@ class TenantCapacityMapperByMySqlTest {
         MapperResult mapperResult = tenantCapacityMapperByMySql.insertTenantCapacity(context);
         assertEquals(mapperResult.getSql(),
                 "INSERT INTO tenant_capacity (tenant_id, quota, `usage`, max_size, max_aggr_count, max_aggr_size, "
-                        + "gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE tenant_id=?;");
+                        + "gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE tenant_id=?");
         assertArrayEquals(new Object[] {tenantId, quota, maxSize, maxAggrCount, maxAggrSize, createTime, modified, tenantId},
                 mapperResult.getParamList().toArray());
     }
