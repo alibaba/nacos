@@ -88,12 +88,11 @@ public class ConfigRemoteHandler implements ConfigHandler {
         ConfigMaintainerService configMaintainerService = clientHolder.getConfigMaintainerService();
         if (StringUtils.isBlank(configRequestInfo.getBetaIps())) {
             return configMaintainerService.publishConfig(configForm.getDataId(), configForm.getGroup(),
-                    configForm.getNamespaceId(), configForm.getContent(), configForm.getTag(), configForm.getAppName(),
-                    configForm.getSrcUser(), configForm.getConfigTags(), configForm.getDesc(), configForm.getUse(),
-                    configForm.getEffect(), configForm.getType(), configForm.getSchema());
+                    configForm.getNamespaceId(), configForm.getContent(), configForm.getAppName(),
+                    configForm.getSrcUser(), configForm.getConfigTags(), configForm.getDesc(), configForm.getType());
         } else {
-            return configMaintainerService.publishConfigWithBeta(configForm.getDataId(), configForm.getGroup(),
-                    configForm.getNamespaceId(), configForm.getContent(), configForm.getTag(), configForm.getAppName(),
+            return configMaintainerService.publishBetaConfig(configForm.getDataId(), configForm.getGroup(),
+                    configForm.getNamespaceId(), configForm.getContent(), configForm.getAppName(),
                     configForm.getSrcUser(), configForm.getConfigTags(), configForm.getDesc(), configForm.getType(),
                     configRequestInfo.getBetaIps());
         }
@@ -102,7 +101,7 @@ public class ConfigRemoteHandler implements ConfigHandler {
     @Override
     public Boolean deleteConfig(String dataId, String group, String namespaceId, String tag, String clientIp,
             String srcUser) throws NacosException {
-        return clientHolder.getConfigMaintainerService().deleteConfig(dataId, group, namespaceId, tag);
+        return clientHolder.getConfigMaintainerService().deleteConfig(dataId, group, namespaceId);
     }
     
     @Override

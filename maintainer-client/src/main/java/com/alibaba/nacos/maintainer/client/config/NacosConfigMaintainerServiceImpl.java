@@ -30,10 +30,10 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.maintainer.client.constants.Constants;
 import com.alibaba.nacos.maintainer.client.core.AbstractCoreMaintainerService;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
-import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.util.Collections;
@@ -54,17 +54,11 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public ConfigDetailInfo getConfig(String dataId, String groupName) throws NacosException {
-        return getConfig(dataId, groupName, ParamUtil.getDefaultNamespaceId());
-    }
-    
-    @Override
     public ConfigDetailInfo getConfig(String dataId, String groupName, String namespaceId) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("dataId", dataId);
         params.put("groupName", groupName);
         params.put("namespaceId", namespaceId);
-        
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
@@ -75,86 +69,54 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public boolean publishConfig(String dataId, String groupName, String content) throws NacosException {
-        return publishConfig(dataId, groupName, ParamUtil.getDefaultNamespaceId(), content);
+    public boolean publishConfig(String dataId, String groupName, String namespaceId, String content, String appName,
+            String srcUser, String configTags, String desc, String type) throws NacosException {
+        return doPublishConfig(dataId, groupName, namespaceId, content, appName, srcUser, configTags, desc, type, null);
     }
     
     @Override
-    public boolean publishConfig(String dataId, String groupName, String namespaceId, String content)
+    public boolean publishBetaConfig(String dataId, String groupName, String namespaceId, String content,
+            String appName, String srcUser, String configTags, String desc, String type, String betaIps)
             throws NacosException {
-        return publishConfig(dataId, groupName, namespaceId, content, null, null, null, null, null, null, null, null,
-                null);
+        if (StringUtils.isBlank(betaIps)) {
+            throw new NacosException(NacosException.INVALID_PARAM,
+                    "betaIps is empty, not publish beta configuration, please use `publishConfig` directly");
+        }
+        return doPublishConfig(dataId, groupName, namespaceId, content, appName, srcUser, configTags, desc, type,
+                betaIps);
     }
     
-    @Override
-    public boolean publishConfig(String dataId, String groupName, String namespaceId, String content, String tag,
-            String appName, String srcUser, String configTags, String desc, String use, String effect, String type,
-            String schema) throws NacosException {
+    private boolean doPublishConfig(String dataId, String groupName, String namespaceId, String content, String appName,
+            String srcUser, String configTags, String desc, String type, String betaIps) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("dataId", dataId);
         params.put("groupName", groupName);
         params.put("namespaceId", namespaceId);
         params.put("content", content);
-        params.put("tag", tag);
-        params.put("appName", appName);
-        params.put("srcUser", srcUser);
-        params.put("configTags", configTags);
-        params.put("desc", desc);
-        params.put("use", use);
-        params.put("effect", effect);
-        params.put("type", type);
-        params.put("schema", schema);
-        
-        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
-                .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH).setParamValue(params).build();
-        HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
-        Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
-        });
-        return result.getData();
-    }
-    
-    @Override
-    public boolean publishConfigWithBeta(String dataId, String groupName, String namespaceId, String content,
-            String tag, String appName, String srcUser, String configTags, String desc, String type, String betaIps)
-            throws NacosException {
-        Map<String, String> params = new HashMap<>(8);
-        params.put("dataId", dataId);
-        params.put("groupName", groupName);
-        params.put("namespaceId", namespaceId);
-        params.put("content", content);
-        params.put("tag", tag);
         params.put("appName", appName);
         params.put("srcUser", srcUser);
         params.put("configTags", configTags);
         params.put("desc", desc);
         params.put("type", type);
-        Map<String, String> headers = Collections.singletonMap("betaIps", betaIps);
-        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
-                .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH).setParamValue(params).addHeader(headers).build();
+        HttpRequest.Builder builder = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
+                .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH).setParamValue(params);
+        if (StringUtils.isNotBlank(betaIps)) {
+            Map<String, String> headers = Collections.singletonMap("betaIps", betaIps);
+            builder.addHeader(headers);
+        }
+        HttpRequest httpRequest = builder.build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
         Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
         });
         return result.getData();
-    }
-    
-    @Override
-    public boolean deleteConfig(String dataId, String groupName) throws NacosException {
-        return deleteConfig(dataId, groupName, ParamUtil.getDefaultNamespaceId(), null);
     }
     
     @Override
     public boolean deleteConfig(String dataId, String groupName, String namespaceId) throws NacosException {
-        return deleteConfig(dataId, groupName, namespaceId, null);
-    }
-    
-    @Override
-    public boolean deleteConfig(String dataId, String groupName, String namespaceId, String tag) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("dataId", dataId);
         params.put("groupName", groupName);
         params.put("namespaceId", namespaceId);
-        params.put("tag", tag);
-        
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.DELETE)
                 .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
@@ -209,11 +171,6 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public ConfigListenerInfo getListeners(String dataId, String groupName) throws NacosException {
-        return getListeners(dataId, groupName, ParamUtil.getDefaultNamespaceId(), 1);
-    }
-    
-    @Override
     public ConfigListenerInfo getListeners(String dataId, String groupName, String namespaceId, int sampleTime)
             throws NacosException {
         Map<String, String> params = new HashMap<>(8);
@@ -232,11 +189,6 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public boolean stopBeta(String dataId, String groupName) throws NacosException {
-        return stopBeta(dataId, groupName, ParamUtil.getDefaultNamespaceId());
-    }
-    
-    @Override
     public boolean stopBeta(String dataId, String groupName, String namespaceId) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("dataId", dataId);
@@ -249,11 +201,6 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
         Result<Boolean> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<Boolean>>() {
         });
         return result.getData();
-    }
-    
-    @Override
-    public ConfigGrayInfo queryBeta(String dataId, String groupName) throws NacosException {
-        return queryBeta(dataId, groupName, ParamUtil.getDefaultNamespaceId());
     }
     
     @Override
