@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.config.server.model.ConfigListenState;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.io.IOUtils;
@@ -35,9 +36,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -74,14 +73,14 @@ class MD5UtilTest {
         
         when(ConfigCacheService.isUptodate(anyString(), anyString(), anyString(), anyString())).thenReturn(false);
         
-        Map<String, String> clientMd5Map = new HashMap<>();
-        clientMd5Map.put("test", "test");
+        HashMap<String, ConfigListenState> clientMd5Map = new HashMap<>();
+        clientMd5Map.put("test", new ConfigListenState("test"));
         
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("Vipserver-Tag", "test");
         MockHttpServletResponse response = new MockHttpServletResponse();
         
-        when(md5ComparatorDelegate.compareMd5(request, response, clientMd5Map)).thenReturn(new ArrayList<>());
+        when(md5ComparatorDelegate.compareMd5(request, response, clientMd5Map)).thenReturn(new HashMap<>());
         MD5Util.compareMd5(request, response, clientMd5Map);
         
         verify(md5ComparatorDelegate, times(1)).compareMd5(request, response, clientMd5Map);
@@ -93,8 +92,8 @@ class MD5UtilTest {
         
         final MockedStatic<GroupKey2> groupKey2MockedStatic = Mockito.mockStatic(GroupKey2.class);
         
-        List<String> changedGroupKeys = new ArrayList<>();
-        changedGroupKeys.add("test");
+        HashMap<String, ConfigListenState> changedGroupKeys = new HashMap<>();
+        changedGroupKeys.put("test", new ConfigListenState("testMd5"));
         
         String[] arr = new String[3];
         arr[0] = "test0";
@@ -114,8 +113,8 @@ class MD5UtilTest {
         
         final MockedStatic<GroupKey2> groupKey2MockedStatic = Mockito.mockStatic(GroupKey2.class);
         
-        List<String> changedGroupKeys = new ArrayList<>();
-        changedGroupKeys.add("test");
+        HashMap<String, ConfigListenState> changedGroupKeys = new HashMap<>();
+        changedGroupKeys.put("test", new ConfigListenState("testMd5"));
         
         String[] arr = new String[3];
         arr[0] = "test0";
@@ -140,9 +139,8 @@ class MD5UtilTest {
                 "test0" + MD5Util.WORD_SEPARATOR_CHAR + "test1" + MD5Util.WORD_SEPARATOR_CHAR + "test2"
                         + MD5Util.LINE_SEPARATOR_CHAR;
         
-        Map<String, String> actualValueMap = MD5Util.getClientMd5Map(configKeysString);
-        
-        assertEquals("test2", actualValueMap.get("test0+test1"));
+        Map<String, ConfigListenState> actualValueMap = MD5Util.getClientMd5Map(configKeysString);
+        assertEquals("test2", actualValueMap.get("test0+test1+public").getMd5());
         
     }
     
@@ -152,9 +150,9 @@ class MD5UtilTest {
                 "test0" + MD5Util.WORD_SEPARATOR_CHAR + "test1" + MD5Util.WORD_SEPARATOR_CHAR + "test2"
                         + MD5Util.WORD_SEPARATOR_CHAR + "test3" + MD5Util.LINE_SEPARATOR_CHAR;
         
-        Map<String, String> actualValueMap = MD5Util.getClientMd5Map(configKeysString);
+        Map<String, ConfigListenState> actualValueMap = MD5Util.getClientMd5Map(configKeysString);
         
-        assertEquals("test2", actualValueMap.get("test0+test1+test3"));
+        assertEquals("test2", actualValueMap.get("test0+test1+test3").getMd5());
     }
     
     @Test

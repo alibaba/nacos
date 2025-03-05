@@ -42,10 +42,14 @@ public class NamespaceUtil {
      * @return java.lang.String A namespace(tenant) string processed
      */
     public static String processNamespaceParameter(String tenant) {
-        if (StringUtils.isBlank(tenant)) {
+        if (isNeedTransferNamespace(tenant)) {
             return getNamespaceDefaultId();
         }
         return tenant.trim();
+    }
+    
+    public static boolean isNeedTransferNamespace(String tenant) {
+        return StringUtils.isBlank(tenant);
     }
     
     /**

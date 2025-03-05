@@ -34,6 +34,7 @@ import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
+import com.alibaba.nacos.config.server.model.ConfigListenState;
 import com.alibaba.nacos.config.server.model.ConfigMetadata;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
@@ -374,7 +375,7 @@ public class ConfigController {
         
         probeModify = URLDecoder.decode(probeModify, Constants.ENCODE);
         
-        Map<String, String> clientMd5Map;
+        Map<String, ConfigListenState> clientMd5Map;
         try {
             clientMd5Map = MD5Util.getClientMd5Map(probeModify);
         } catch (Throwable e) {

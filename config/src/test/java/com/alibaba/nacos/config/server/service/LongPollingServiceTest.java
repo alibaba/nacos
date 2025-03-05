@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.config.server.model.ConfigListenState;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
@@ -26,6 +27,7 @@ import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.plugin.control.ControlManagerCenter;
 import com.alibaba.nacos.plugin.control.connection.ConnectionControlManager;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,7 +44,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -75,6 +77,8 @@ class LongPollingServiceTest {
     
     MockedStatic<SwitchService> switchServiceMockedStatic;
     
+    MockedStatic<EnvUtil> envUtilMockedStatic;
+    
     @BeforeEach
     void before() {
         longPollingService = new LongPollingService();
@@ -83,6 +87,8 @@ class LongPollingServiceTest {
         configExecutorMocked = Mockito.mockStatic(ConfigExecutor.class);
         connectionControlManagerMockedStatic = Mockito.mockStatic(ControlManagerCenter.class);
         connectionControlManagerMockedStatic.when(() -> ControlManagerCenter.getInstance()).thenReturn(controlManagerCenter);
+        envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
+        envUtilMockedStatic.when(() -> EnvUtil.getProperty("nacos.config.cache.type", "nacos")).thenReturn("nacos");
         Mockito.when(controlManagerCenter.getConnectionControlManager()).thenReturn(connectionControlManager);
     }
     
@@ -94,25 +100,28 @@ class LongPollingServiceTest {
         }
         connectionControlManagerMockedStatic.close();
         switchServiceMockedStatic.close();
+        envUtilMockedStatic.close();
     }
     
     @Test
     void testAddLongPollingClientHasNotEqualsMd5() throws IOException {
         
-        Map<String, String> clientMd5Map = new HashMap<>();
+        Map<String, ConfigListenState> clientMd5Map = new HashMap<>();
         String group = "group";
         String tenant = "tenat";
         String dataIdEquals = "dataIdEquals0";
-        String dataIdNotEquals = "dataIdNotEquals0";
         String groupKeyEquals = GroupKey.getKeyTenant(dataIdEquals, group, tenant);
-        String groupKeyNotEquals = GroupKey.getKeyTenant(dataIdNotEquals, group, tenant);
         String md5Equals0 = MD5Utils.md5Hex("countEquals0", "UTF-8");
-        clientMd5Map.put(groupKeyEquals, md5Equals0);
+        ConfigListenState configListenState1 = new ConfigListenState(md5Equals0);
+        clientMd5Map.put(groupKeyEquals, configListenState1);
         String md5NotEquals1 = MD5Utils.md5Hex("countNotEquals", "UTF-8");
-        clientMd5Map.put(groupKeyNotEquals, md5NotEquals1);
+        ConfigListenState configListenState2 = new ConfigListenState(md5NotEquals1);
+        String dataIdNotEquals = "dataIdNotEquals0";
+        String groupKeyNotEquals = GroupKey.getKeyTenant(dataIdNotEquals, group, tenant);
+        clientMd5Map.put(groupKeyNotEquals, configListenState2);
         MockedStatic<MD5Util> md5UtilMockedStatic = Mockito.mockStatic(MD5Util.class);
         md5UtilMockedStatic.when(() -> MD5Util.compareMd5(any(), any(), any()))
-                .thenReturn(Arrays.asList(groupKeyNotEquals));
+                .thenReturn(Collections.singletonMap(groupKeyNotEquals, configListenState2));
         
         HttpServletRequest httpServletRequest = Mockito.mock(HttpServletRequest.class);
         Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER))).thenReturn(null);
@@ -129,7 +138,7 @@ class LongPollingServiceTest {
         int propSize = 3;
         longPollingService.addLongPollingClient(httpServletRequest, httpServletResponse, clientMd5Map, propSize);
         
-        String responseString = MD5Util.compareMd5ResultString(Arrays.asList(groupKeyNotEquals));
+        String responseString = MD5Util.compareMd5ResultString(Collections.singletonMap(groupKeyNotEquals, configListenState2));
         //expect print not equals group
         Mockito.verify(printWriter, times(1)).println(eq(responseString));
         Mockito.verify(httpServletResponse, times(1)).setStatus(eq(HttpServletResponse.SC_OK));
@@ -152,7 +161,7 @@ class LongPollingServiceTest {
         Mockito.when(httpServletRequest.getHeader(eq("X-Forwarded-For"))).thenReturn(clientIp);
         Mockito.when(httpServletRequest.startAsync()).thenReturn(Mockito.mock(AsyncContext.class));
         int propSize = 3;
-        Map<String, String> clientMd5Map = new HashMap<>();
+        Map<String, ConfigListenState> clientMd5Map = new HashMap<>();
         longPollingService.addLongPollingClient(httpServletRequest, httpServletResponse, clientMd5Map, propSize);
         Thread.sleep(3000L);
         //expect response not returned
@@ -167,17 +176,20 @@ class LongPollingServiceTest {
         connectionCheckResponse.setSuccess(true);
         Mockito.when(connectionControlManager.check(any())).thenReturn(connectionCheckResponse);
         
-        Map<String, String> clientMd5Map = new HashMap<>();
+        Map<String, ConfigListenState> clientMd5Map = new HashMap<>();
         String group = "group";
         String tenant = "tenat";
         String dataIdEquals = "dataIdEquals01";
-        String dataIdNotEquals = "dataIdNotEquals01";
         String groupKeyEquals = GroupKey.getKeyTenant(dataIdEquals, group, tenant);
-        String groupKeyNotEquals = GroupKey.getKeyTenant(dataIdNotEquals, group, tenant);
+        
         String md5Equals0 = MD5Utils.md5Hex("countEquals01", "UTF-8");
-        clientMd5Map.put(groupKeyEquals, md5Equals0);
+        ConfigListenState configListenState1 = new ConfigListenState(md5Equals0);
+        clientMd5Map.put(groupKeyEquals, configListenState1);
         String md5NotEquals1 = MD5Utils.md5Hex("countNotEquals1", "UTF-8");
-        clientMd5Map.put(groupKeyNotEquals, md5NotEquals1);
+        ConfigListenState configListenState2 = new ConfigListenState(md5NotEquals1);
+        String dataIdNotEquals = "dataIdNotEquals01";
+        String groupKeyNotEquals = GroupKey.getKeyTenant(dataIdNotEquals, group, tenant);
+        clientMd5Map.put(groupKeyNotEquals, configListenState2);
         HttpServletRequest httpServletRequest = Mockito.mock(HttpServletRequest.class);
         
         Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_HEADER))).thenReturn("5000");
@@ -213,8 +225,9 @@ class LongPollingServiceTest {
         String group = "group";
         String tenant = "tenant";
         String groupKeyChanged = GroupKey.getKeyTenant(dataIdChanged, group, tenant);
-        Map<String, String> clientMd5Map = new HashMap<>();
-        clientMd5Map.put(groupKeyChanged, "mockMd5");
+        Map<String, ConfigListenState> clientMd5Map = new HashMap<>();
+        ConfigListenState configListenState = new ConfigListenState("mockMd5");
+        clientMd5Map.put(groupKeyChanged, configListenState);
         HttpServletRequest httpServletRequest = Mockito.mock(HttpServletRequest.class);
         HttpServletResponse httpServletResponse = Mockito.mock(HttpServletResponse.class);
         PrintWriter printWriter = Mockito.mock(PrintWriter.class);
@@ -249,7 +262,7 @@ class LongPollingServiceTest {
         
         NotifyCenter.publishEvent(localDataChangeEvent);
         Thread.sleep(1100L);
-        String responseString = MD5Util.compareMd5ResultString(Arrays.asList(groupKeyChanged));
+        String responseString = MD5Util.compareMd5ResultString(Collections.singletonMap(groupKeyChanged, configListenState));
         //expect print not equals group
         Mockito.verify(printWriter, times(1)).println(eq(responseString));
         Mockito.verify(asyncContext, times(1)).complete();
@@ -269,8 +282,9 @@ class LongPollingServiceTest {
         connectionCheckResponse.setSuccess(true);
         Mockito.when(connectionControlManager.check(any())).thenReturn(connectionCheckResponse);
         
-        Map<String, String> clientMd5Map = new HashMap<>();
-        clientMd5Map.put(groupKeyChanged, "md5");
+        Map<String, ConfigListenState> clientMd5Map = new HashMap<>();
+        ConfigListenState configListenState = new ConfigListenState("md5");
+        clientMd5Map.put(groupKeyChanged, configListenState);
         switchServiceMockedStatic.when(() -> SwitchService.getSwitchInteger(eq("MIN_LONG_POOLING_TIMEOUT"), eq(10000))).thenReturn(1000);
         HttpServletRequest httpServletRequest = Mockito.mock(HttpServletRequest.class);
         

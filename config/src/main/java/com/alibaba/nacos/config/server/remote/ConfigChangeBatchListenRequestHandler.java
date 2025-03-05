@@ -60,6 +60,7 @@ public class ConfigChangeBatchListenRequestHandler
         ParamUtils.checkParam(tag);
         ConfigChangeBatchListenResponse configChangeBatchListenResponse = new ConfigChangeBatchListenResponse();
         for (ConfigBatchListenRequest.ConfigListenContext listenContext : configChangeListenRequest.getConfigListenContexts()) {
+            boolean isNeedTransferNamespace = NamespaceUtil.isNeedTransferNamespace(listenContext.getTenant());
             String namespaceId = NamespaceUtil.processNamespaceParameter(listenContext.getTenant());
             String groupKey = GroupKey2.getKey(listenContext.getDataId(), listenContext.getGroup(), namespaceId);
             groupKey = StringPool.get(groupKey);
@@ -67,7 +68,7 @@ public class ConfigChangeBatchListenRequestHandler
             String md5 = StringPool.get(listenContext.getMd5());
             
             if (configChangeListenRequest.isListen()) {
-                configChangeListenContext.addListen(groupKey, md5, connectionId);
+                configChangeListenContext.addListen(groupKey, md5, connectionId, isNeedTransferNamespace);
                 boolean isUptoDate = ConfigCacheService.isUptodate(groupKey, md5, meta.getClientIp(), tag,
                         meta.getAppLabels());
                 if (!isUptoDate) {
