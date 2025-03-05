@@ -16,8 +16,11 @@
 
 package com.alibaba.nacos.client.lock.remote.grpc;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.lock.constant.PropertyConstants;
 import com.alibaba.nacos.api.lock.model.LockInstance;
 import com.alibaba.nacos.api.lock.remote.AbstractLockRequest;
@@ -77,6 +80,10 @@ public class LockGrpcClient extends AbstractLockClient {
     
     @Override
     public Boolean lock(LockInstance instance) throws NacosException {
+        if (!isAbilitySupportedByServer()) {
+            throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
+                    "Request Nacos server version is too low, not support lock feature.");
+        }
         LockOperationRequest request = new LockOperationRequest();
         request.setLockInstance(instance);
         request.setLockOperationEnum(LockOperationEnum.ACQUIRE);
@@ -86,6 +93,10 @@ public class LockGrpcClient extends AbstractLockClient {
     
     @Override
     public Boolean unLock(LockInstance instance) throws NacosException {
+        if (!isAbilitySupportedByServer()) {
+            throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
+                    "Request Nacos server version is too low, not support lock feature.");
+        }
         LockOperationRequest request = new LockOperationRequest();
         request.setLockInstance(instance);
         request.setLockOperationEnum(LockOperationEnum.RELEASE);
@@ -95,7 +106,7 @@ public class LockGrpcClient extends AbstractLockClient {
     
     @Override
     public void shutdown() throws NacosException {
-    
+        rpcClient.shutdown();
     }
     
     private <T extends Response> T requestToServer(AbstractLockRequest request, Class<T> responseClass)
@@ -116,5 +127,9 @@ public class LockGrpcClient extends AbstractLockClient {
             throw new NacosException(NacosException.SERVER_ERROR, "Request nacos server failed: ", e);
         }
         throw new NacosException(NacosException.SERVER_ERROR, "Server return invalid response");
+    }
+    
+    private boolean isAbilitySupportedByServer() {
+        return rpcClient.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK) == AbilityStatus.SUPPORTED;
     }
 }

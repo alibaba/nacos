@@ -186,7 +186,7 @@ class AbilityDiscovery {
     void testClientDiscovery() throws NacosException {
         // client judge ability
         assertEquals(AbilityStatus.SUPPORTED, client.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
-        assertEquals(AbilityStatus.NOT_SUPPORTED, client.getConnectionAbility(AbilityKey.SERVER_TEST_2));
+        assertEquals(AbilityStatus.NOT_SUPPORTED, client.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK));
     }
     
     @Test
@@ -214,7 +214,7 @@ class AbilityDiscovery {
             @Override
             public Response requestReply(Request request, Connection connection) {
                 if (connection.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH).equals(AbilityStatus.SUPPORTED)
-                        && connection.getConnectionAbility(AbilityKey.SERVER_TEST_2).equals(AbilityStatus.NOT_SUPPORTED)) {
+                        && connection.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK).equals(AbilityStatus.NOT_SUPPORTED)) {
                     clientSuccess = true;
                 }
                 return new Response() {

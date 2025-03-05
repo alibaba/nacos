@@ -45,20 +45,20 @@ class AbilityKeyTest {
         assertEquals(0, stringBooleanMap.size());
         
         enumMap.put(AbilityKey.SERVER_FUZZY_WATCH, true);
-        enumMap.put(AbilityKey.SERVER_TEST_2, false);
+        enumMap.put(AbilityKey.SERVER_DISTRIBUTED_LOCK, false);
         enumMap.put(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC, false);
         stringBooleanMap = AbilityKey.mapStr(enumMap);
         assertEquals(3, stringBooleanMap.size());
         assertTrue(stringBooleanMap.get(AbilityKey.SERVER_FUZZY_WATCH.getName()));
-        assertFalse(stringBooleanMap.get(AbilityKey.SERVER_TEST_2.getName()));
+        assertFalse(stringBooleanMap.get(AbilityKey.SERVER_DISTRIBUTED_LOCK.getName()));
         assertFalse(stringBooleanMap.get(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC.getName()));
         
-        enumMap.put(AbilityKey.SERVER_TEST_2, true);
+        enumMap.put(AbilityKey.SERVER_DISTRIBUTED_LOCK, true);
         enumMap.put(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC, true);
         stringBooleanMap = AbilityKey.mapStr(enumMap);
         assertEquals(3, stringBooleanMap.size());
         assertTrue(stringBooleanMap.get(AbilityKey.SERVER_FUZZY_WATCH.getName()));
-        assertTrue(stringBooleanMap.get(AbilityKey.SERVER_TEST_2.getName()));
+        assertTrue(stringBooleanMap.get(AbilityKey.SERVER_DISTRIBUTED_LOCK.getName()));
         assertTrue(stringBooleanMap.get(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC.getName()));
     }
     
@@ -75,20 +75,20 @@ class AbilityKeyTest {
         Map<AbilityKey, Boolean> enumMap = AbilityKey.mapEnum(AbilityMode.SERVER, mapStr);
         assertEquals(0, enumMap.size());
         
-        mapStr.put(AbilityKey.SERVER_TEST_2.getName(), false);
+        mapStr.put(AbilityKey.SERVER_DISTRIBUTED_LOCK.getName(), false);
         mapStr.put(AbilityKey.SERVER_FUZZY_WATCH.getName(), true);
         mapStr.put(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC.getName(), true);
         enumMap = AbilityKey.mapEnum(AbilityMode.SERVER, mapStr);
-        assertFalse(enumMap.get(AbilityKey.SERVER_TEST_2));
+        assertFalse(enumMap.get(AbilityKey.SERVER_DISTRIBUTED_LOCK));
         assertTrue(enumMap.get(AbilityKey.SERVER_FUZZY_WATCH));
         assertTrue(enumMap.get(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC));
         
         mapStr.clear();
-        mapStr.put(AbilityKey.SERVER_TEST_2.getName(), true);
+        mapStr.put(AbilityKey.SERVER_DISTRIBUTED_LOCK.getName(), true);
         mapStr.put(AbilityKey.SERVER_FUZZY_WATCH.getName(), true);
         mapStr.put(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC.getName(), true);
         enumMap = AbilityKey.mapEnum(AbilityMode.SERVER, mapStr);
-        assertTrue(enumMap.get(AbilityKey.SERVER_TEST_2));
+        assertTrue(enumMap.get(AbilityKey.SERVER_DISTRIBUTED_LOCK));
         assertTrue(enumMap.get(AbilityKey.SERVER_FUZZY_WATCH));
         assertTrue(enumMap.get(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC));
         

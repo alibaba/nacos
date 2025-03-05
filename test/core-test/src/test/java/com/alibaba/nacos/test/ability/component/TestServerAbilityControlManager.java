@@ -29,7 +29,7 @@ public class TestServerAbilityControlManager extends ServerAbilityControlManager
     protected Map<AbilityMode, Map<AbilityKey, Boolean>> initCurrentNodeAbilities() {
         Map<AbilityKey, Boolean> map = new HashMap<>();
         map.put(AbilityKey.SERVER_FUZZY_WATCH, true);
-        map.put(AbilityKey.SERVER_TEST_2, false);
+        map.put(AbilityKey.SERVER_DISTRIBUTED_LOCK, false);
         HashMap<AbilityMode, Map<AbilityKey, Boolean>> res = new HashMap<>();
         res.put(AbilityMode.SERVER, map);
         

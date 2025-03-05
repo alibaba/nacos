@@ -102,7 +102,7 @@ class AbilityTest {
                     {
                         super.abilityTable = new HashMap<>();
                         super.abilityTable.put(AbilityKey.SERVER_FUZZY_WATCH.getName(), true);
-                        super.abilityTable.put(AbilityKey.SERVER_TEST_2.getName(), false);
+                        super.abilityTable.put(AbilityKey.SERVER_DISTRIBUTED_LOCK.getName(), false);
                     }
                     
                     @Override
@@ -154,7 +154,7 @@ class AbilityTest {
         rpcClient.start();
         // if connect successfully
         assertEquals(AbilityStatus.SUPPORTED, rpcClient.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
-        assertEquals(AbilityStatus.NOT_SUPPORTED, rpcClient.getConnectionAbility(AbilityKey.SERVER_TEST_2));
+        assertEquals(AbilityStatus.NOT_SUPPORTED, rpcClient.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK));
     }
     
     @AfterEach
@@ -162,7 +162,7 @@ class AbilityTest {
         //test support
         ServerRequestHandler serverRequestHandler = (request, connection) -> {
             assertEquals(AbilityStatus.SUPPORTED, connection.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
-            assertEquals(AbilityStatus.NOT_SUPPORTED, connection.getConnectionAbility(AbilityKey.SERVER_TEST_2));
+            assertEquals(AbilityStatus.NOT_SUPPORTED, connection.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK));
             return new Response() {
             };
         };

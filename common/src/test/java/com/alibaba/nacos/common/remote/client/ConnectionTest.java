@@ -77,12 +77,12 @@ class ConnectionTest {
     void testGetConnectionAbility() {
         assertFalse(connection.isAbilitiesSet());
         assertEquals(AbilityStatus.UNKNOWN, connection.getConnectionAbility(AbilityKey.SDK_CLIENT_FUZZY_WATCH));
-        connection.setAbilityTable(Collections.singletonMap(AbilityKey.SERVER_TEST_2.getName(), true));
+        connection.setAbilityTable(Collections.singletonMap(AbilityKey.SERVER_DISTRIBUTED_LOCK.getName(), true));
         assertTrue(connection.isAbilitiesSet());
         assertEquals(AbilityStatus.UNKNOWN, connection.getConnectionAbility(AbilityKey.SDK_CLIENT_FUZZY_WATCH));
-        assertEquals(AbilityStatus.SUPPORTED, connection.getConnectionAbility(AbilityKey.SERVER_TEST_2));
-        connection.setAbilityTable(Collections.singletonMap(AbilityKey.SERVER_TEST_2.getName(), false));
-        assertEquals(AbilityStatus.NOT_SUPPORTED, connection.getConnectionAbility(AbilityKey.SERVER_TEST_2));
+        assertEquals(AbilityStatus.SUPPORTED, connection.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK));
+        connection.setAbilityTable(Collections.singletonMap(AbilityKey.SERVER_DISTRIBUTED_LOCK.getName(), false));
+        assertEquals(AbilityStatus.NOT_SUPPORTED, connection.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK));
     }
     
     @Test

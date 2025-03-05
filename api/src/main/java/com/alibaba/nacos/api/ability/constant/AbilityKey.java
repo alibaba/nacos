@@ -43,14 +43,19 @@ public enum AbilityKey {
     SERVER_FUZZY_WATCH("fuzzyWatch", "Server whether support fuzzy watch service or config", AbilityMode.SERVER),
     
     /**
-     * For Test temporarily.
+     * For Distributed Lock.
      */
-    SERVER_TEST_2("test_2", "just for junit test", AbilityMode.SERVER),
+    SERVER_DISTRIBUTED_LOCK("lock", "Server whether support distributed lock", AbilityMode.SERVER),
     
     /**
      * For Test temporarily.
      */
     SDK_CLIENT_FUZZY_WATCH("fuzzyWatch", "Client whether support fuzzy watch service or config", AbilityMode.SDK_CLIENT),
+    
+    /**
+     * For Test temporarily.
+     */
+    SDK_CLIENT_DISTRIBUTED_LOCK("lock", "Client whether support distributed lock", AbilityMode.SDK_CLIENT),
     
     /**
      * For Test temporarily.
