@@ -41,7 +41,7 @@ public class NacosMd5Comparator implements Md5Comparator {
     @Override
     public Map<String, ConfigListenState> compareMd5(HttpServletRequest request, HttpServletResponse response,
             Map<String, ConfigListenState> clientMd5Map) {
-        HashMap<String, ConfigListenState> changedGroupKeys = new HashMap<>();
+        HashMap<String, ConfigListenState> changedGroupKeys = new HashMap<>(clientMd5Map.size());
         String tag = request.getHeader(VIPSERVER_TAG);
         for (Map.Entry<String, ConfigListenState> entry : clientMd5Map.entrySet()) {
             String groupKey = entry.getKey();

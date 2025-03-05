@@ -28,7 +28,7 @@ public class LowerMockAbilityManager extends AbstractAbilityControlManager {
     @Override
     protected Map<AbilityMode, Map<AbilityKey, Boolean>> initCurrentNodeAbilities() {
         Map<AbilityKey, Boolean> abilities = new HashMap<>();
-        abilities.put(AbilityKey.SDK_CLIENT_TEST_1, true);
+        abilities.put(AbilityKey.SDK_CLIENT_FUZZY_WATCH, true);
         Map<AbilityMode, Map<AbilityKey, Boolean>> result = new HashMap<>();
         result.put(AbilityMode.SDK_CLIENT, abilities);
         return result;

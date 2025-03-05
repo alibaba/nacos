@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.config.impl;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.listener.FuzzyWatchEventWatcher;
 import com.alibaba.nacos.api.config.remote.request.ConfigFuzzyWatchChangeNotifyRequest;
@@ -25,6 +26,7 @@ import com.alibaba.nacos.api.config.remote.response.ConfigFuzzyWatchChangeNotify
 import com.alibaba.nacos.api.config.remote.response.ConfigFuzzyWatchResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigFuzzyWatchSyncResponse;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.notify.Event;
@@ -149,6 +151,10 @@ public class ConfigFuzzyWatchGroupKeyHolder extends SmartSubscriber {
      */
     public ConfigFuzzyWatchContext registerFuzzyWatcher(String dataIdPattern, String groupPattern,
             FuzzyWatchEventWatcher fuzzyWatchEventWatcher) {
+        if (!agent.isAbilitySupportedByServer(AbilityKey.SERVER_FUZZY_WATCH)) {
+            throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
+                    "Request Nacos server version is too low, not support fuzzy watch feature.");
+        }
         ConfigFuzzyWatchContext configFuzzyWatchContext = initFuzzyWatchContextIfAbsent(dataIdPattern, groupPattern);
         ConfigFuzzyWatcherWrapper configFuzzyWatcherWrapper = new ConfigFuzzyWatcherWrapper(fuzzyWatchEventWatcher);
         if (configFuzzyWatchContext.addWatcher(configFuzzyWatcherWrapper)) {

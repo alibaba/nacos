@@ -30,7 +30,7 @@ class SetupAckRequestTest extends BasicRequestTest {
     @Test
     void testSerialize() throws Exception {
         SetupAckRequest request = new SetupAckRequest(
-                Collections.singletonMap(AbilityKey.SERVER_TEST_1.getName(), Boolean.TRUE));
+                Collections.singletonMap(AbilityKey.SERVER_FUZZY_WATCH.getName(), Boolean.TRUE));
         request.setRequestId("1");
         String json = mapper.writeValueAsString(request);
         System.out.println(json);

@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.client.naming.cache;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.naming.listener.FuzzyWatchEventWatcher;
 import com.alibaba.nacos.api.naming.remote.request.NamingFuzzyWatchRequest;
 import com.alibaba.nacos.api.naming.remote.response.NamingFuzzyWatchResponse;
@@ -139,6 +141,10 @@ public class NamingFuzzyWatchServiceListHolder extends SmartSubscriber {
      * @param watcher watcher to be added
      */
     public NamingFuzzyWatchContext registerFuzzyWatcher(String groupKeyPattern, FuzzyWatchEventWatcher watcher) {
+        if (!namingGrpcClientProxy.isAbilitySupportedByServer(AbilityKey.SERVER_FUZZY_WATCH)) {
+            throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
+                    "Request Nacos server version is too low, not support fuzzy watch feature.");
+        }
         NamingFuzzyWatchContext namingFuzzyWatchContext = initFuzzyWatchContextIfNeed(groupKeyPattern);
         namingFuzzyWatchContext.setDiscard(false);
         synchronized (namingFuzzyWatchContext) {
@@ -148,7 +154,7 @@ public class NamingFuzzyWatchServiceListHolder extends SmartSubscriber {
                         fuzzyWatchEventWatcherWrapper.getUuid());
                 Set<String> receivedServiceKeys = namingFuzzyWatchContext.getReceivedServiceKeys();
                 if (CollectionUtils.isNotEmpty(receivedServiceKeys)) {
-                    for (String serviceKey :receivedServiceKeys) {
+                    for (String serviceKey : receivedServiceKeys) {
                         NamingFuzzyWatchNotifyEvent namingFuzzyWatchNotifyEvent = NamingFuzzyWatchNotifyEvent.build(
                                 notifierEventScope, groupKeyPattern, serviceKey, ADD_SERVICE, FUZZY_WATCH_INIT_NOTIFY,
                                 fuzzyWatchEventWatcherWrapper.getUuid());

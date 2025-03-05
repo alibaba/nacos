@@ -19,8 +19,6 @@ package com.alibaba.nacos.api.lock;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.lock.model.LockInstance;
 
-import java.util.Properties;
-
 /**
  * Nacos Lock Process.
  *
@@ -72,9 +70,9 @@ public interface LockService {
     Boolean remoteReleaseLock(LockInstance instance) throws NacosException;
     
     /**
-     * get properties.
+     * Shutdown the Resources, such as Thread Pool.
      *
-     * @return Properties
+     * @throws NacosException exception.
      */
-    Properties getProperties();
+    void shutdown() throws NacosException;
 }

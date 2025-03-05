@@ -42,8 +42,6 @@ import static com.alibaba.nacos.client.constant.Constants.Security.SECURITY_INFO
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosLockService implements LockService {
     
-    private final Properties properties;
-    
     private final LockGrpcClient lockGrpcClient;
     
     private final SecurityProxy securityProxy;
@@ -51,9 +49,9 @@ public class NacosLockService implements LockService {
     private ScheduledExecutorService executorService;
     
     public NacosLockService(Properties properties) throws NacosException {
-        this.properties = properties;
         NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
-        AbstractServerListManager serverListManager =  new NamingServerListManager(properties);
+        AbstractServerListManager serverListManager = new NamingServerListManager(properties);
+        serverListManager.start();
         this.securityProxy = new SecurityProxy(serverListManager,
                 NamingHttpClientManager.getInstance().getNacosRestTemplate());
         initSecurityProxy(nacosClientProperties);
@@ -93,7 +91,11 @@ public class NacosLockService implements LockService {
         return lockGrpcClient.unLock(instance);
     }
     
-    public Properties getProperties() {
-        return properties;
+    @Override
+    public void shutdown() throws NacosException {
+        lockGrpcClient.shutdown();
+        if (null != executorService) {
+            executorService.shutdown();
+        }
     }
 }
