@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.controller.compatibility;
 
+import com.alibaba.nacos.core.auth.InnerApiAuthEnabled;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -56,6 +57,9 @@ class ApiCompatibilityFilterTest {
     HttpServletResponse servletResponse;
     
     @Mock
+    InnerApiAuthEnabled innerApiAuthEnabled;
+    
+    @Mock
     FilterChain filterChain;
     
     ApiCompatibilityFilter filter;
@@ -63,7 +67,7 @@ class ApiCompatibilityFilterTest {
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new MockEnvironment());
-        filter = new ApiCompatibilityFilter(methodsCache);
+        filter = new ApiCompatibilityFilter(methodsCache, innerApiAuthEnabled);
     }
     
     @AfterEach

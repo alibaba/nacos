@@ -94,7 +94,7 @@ public class ServerMemberManager implements NacosMemberManager {
     
     private static final int DEFAULT_SERVER_PORT = 8848;
     
-    private static final String SERVER_PORT_PROPERTY = "server.port";
+    private static final String SERVER_PORT_PROPERTY = "nacos.server.main.port";
     
     private static final String MEMBER_CHANGE_EVENT_QUEUE_SIZE_PROPERTY = "nacos.member-change-event.queue.size";
     

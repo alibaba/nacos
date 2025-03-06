@@ -68,6 +68,9 @@ class AuthFilterTest {
     private ControllerMethodsCache methodsCache;
     
     @Mock
+    private InnerApiAuthEnabled innerApiAuthEnabled;
+    
+    @Mock
     FilterChain filterChain;
     
     @Mock
@@ -78,7 +81,7 @@ class AuthFilterTest {
     
     @BeforeEach
     void setUp() {
-        authFilter = new AuthFilter(authConfig, methodsCache);
+        authFilter = new AuthFilter(authConfig, methodsCache, innerApiAuthEnabled);
     }
     
     @AfterEach

@@ -65,6 +65,9 @@ class RemoteRequestAuthFilterTest {
     private NacosAuthConfig authConfig;
     
     @Mock
+    private InnerApiAuthEnabled innerApiAuthEnabled;
+    
+    @Mock
     Request request;
     
     @Mock
@@ -72,7 +75,7 @@ class RemoteRequestAuthFilterTest {
     
     @BeforeEach
     void setUp() {
-        authFilter = new RemoteRequestAuthFilter();
+        authFilter = new RemoteRequestAuthFilter(innerApiAuthEnabled);
         GrpcProtocolAuthService protocolAuthService = new GrpcProtocolAuthService(authConfig);
         protocolAuthService.initialize();
         ReflectionTestUtils.setField(authFilter, "protocolAuthService", protocolAuthService);

@@ -53,9 +53,10 @@ public class AuthConfig {
     }
     
     @Bean
-    public AuthFilter authFilter(ControllerMethodsCache methodsCache) {
+    public AuthFilter authFilter(ControllerMethodsCache methodsCache, InnerApiAuthEnabled innerApiAuthEnabled) {
         return new AuthFilter(NacosAuthConfigHolder.getInstance()
-                .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE), methodsCache);
+                .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE), methodsCache,
+                innerApiAuthEnabled);
     }
     
     @Bean

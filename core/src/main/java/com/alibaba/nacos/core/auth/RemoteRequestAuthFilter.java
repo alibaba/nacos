@@ -53,7 +53,10 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
     
     private final GrpcProtocolAuthService protocolAuthService;
     
-    public RemoteRequestAuthFilter() {
+    private final InnerApiAuthEnabled innerApiAuthEnabled;
+    
+    public RemoteRequestAuthFilter(InnerApiAuthEnabled innerApiAuthEnabled) {
+        this.innerApiAuthEnabled = innerApiAuthEnabled;
         this.authConfig = NacosAuthConfigHolder.getInstance()
                 .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE);
         this.protocolAuthService = new GrpcProtocolAuthService(authConfig);
@@ -68,6 +71,10 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
             Method method = getHandleMethod(handlerClazz);
             if (method.isAnnotationPresent(Secured.class)) {
                 Secured secured = method.getAnnotation(Secured.class);
+                // During Upgrading, Old Nacos server might not with server identity for some Inner API, follow old version logic.
+                if (ApiType.INNER_API.equals(secured.apiType()) && !innerApiAuthEnabled.isEnabled()) {
+                    return null;
+                }
                 // Inner API must do check server identity. So judge api type not inner api and whether auth is enabled.
                 if (ApiType.INNER_API != secured.apiType() && !authConfig.isAuthEnabled()) {
                     return null;

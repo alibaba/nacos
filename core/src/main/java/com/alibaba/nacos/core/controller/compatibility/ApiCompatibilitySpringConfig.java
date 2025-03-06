@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.controller.compatibility;
 
+import com.alibaba.nacos.core.auth.InnerApiAuthEnabled;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.web.NacosWebBean;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -32,8 +33,9 @@ import org.springframework.context.annotation.Configuration;
 public class ApiCompatibilitySpringConfig {
     
     @Bean
-    public ApiCompatibilityFilter apiCompatibilityFilter(ControllerMethodsCache methodsCache) {
-        return new ApiCompatibilityFilter(methodsCache);
+    public ApiCompatibilityFilter apiCompatibilityFilter(ControllerMethodsCache methodsCache,
+            InnerApiAuthEnabled innerApiAuthEnabled) {
+        return new ApiCompatibilityFilter(methodsCache, innerApiAuthEnabled);
     }
     
     @Bean

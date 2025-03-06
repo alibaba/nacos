@@ -18,8 +18,10 @@ package com.alibaba.nacos.core.auth;
 
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
+import com.alibaba.nacos.auth.serveridentity.ServerIdentityResult;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Unified filter to handle authentication and authorization.
@@ -31,9 +33,13 @@ public class AuthFilter extends AbstractWebAuthFilter {
     
     private final NacosAuthConfig authConfig;
     
-    public AuthFilter(NacosAuthConfig authConfig, ControllerMethodsCache methodsCache) {
+    private final InnerApiAuthEnabled innerApiAuthEnabled;
+    
+    public AuthFilter(NacosAuthConfig authConfig, ControllerMethodsCache methodsCache,
+            InnerApiAuthEnabled innerApiAuthEnabled) {
         super(authConfig, methodsCache);
         this.authConfig = authConfig;
+        this.innerApiAuthEnabled = innerApiAuthEnabled;
     }
     
     @Override
@@ -45,5 +51,14 @@ public class AuthFilter extends AbstractWebAuthFilter {
     protected boolean isMatchFilter(Secured secured) {
         // ADMIN API use {@link AuthAdminFilter} to handle
         return !ApiType.ADMIN_API.equals(secured.apiType());
+    }
+    
+    @Override
+    protected ServerIdentityResult checkServerIdentity(HttpServletRequest request, Secured secured) {
+        // During Upgrading, Old Nacos server might not with server identity for some Inner API, follow old version logic.
+        if (ApiType.INNER_API.equals(secured.apiType()) && !innerApiAuthEnabled.isEnabled()) {
+            return ServerIdentityResult.success();
+        }
+        return super.checkServerIdentity(request, secured);
     }
 }

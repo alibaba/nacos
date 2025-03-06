@@ -81,7 +81,7 @@ public class EnvUtil {
     
     private static final String FILE_PREFIX = "file:";
     
-    private static final String SERVER_PORT_PROPERTY = "server.port";
+    private static final String SERVER_PORT_PROPERTY = "nacos.server.main.port";
     
     private static final int DEFAULT_SERVER_PORT = 8848;
     
