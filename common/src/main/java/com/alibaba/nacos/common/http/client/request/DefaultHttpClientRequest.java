@@ -25,10 +25,12 @@ import com.alibaba.nacos.common.http.client.response.HttpClientResponse;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
+import com.alibaba.nacos.common.utils.IoUtils;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
@@ -57,11 +59,18 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
             throws Exception {
         HttpUriRequestBase request = build(uri, httpMethod, requestHttpEntity, defaultConfig);
         // copy http response to simple type
-        SimpleHttpResponse response = client.execute(request, SimpleHttpResponse::copy);
+        SimpleHttpResponse response = client.execute(request, httpResponse -> {
+            SimpleHttpResponse simpleHttpResponse = SimpleHttpResponse.copy(httpResponse);
+            ContentType contentType = ContentType.parse(httpResponse.getEntity().getContentType());
+            String body = IoUtils.toString(httpResponse.getEntity().getContent(), null);
+            simpleHttpResponse.setBody(body, contentType);
+            return simpleHttpResponse;
+        });
         return new DefaultClientHttpResponse(response);
     }
     
-    static HttpUriRequestBase build(URI uri, String method, RequestHttpEntity requestHttpEntity, RequestConfig defaultConfig) throws Exception {
+    static HttpUriRequestBase build(URI uri, String method, RequestHttpEntity requestHttpEntity,
+            RequestConfig defaultConfig) throws Exception {
         final Header headers = requestHttpEntity.getHeaders();
         final BaseHttpMethod httpMethod = BaseHttpMethod.sourceOf(method);
         final HttpUriRequestBase httpRequestBase = httpMethod.init(uri.toString());
@@ -69,7 +78,8 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
         HttpUtils.initRequestHeader(httpRequestBase, headers);
         if (MediaType.APPLICATION_FORM_URLENCODED.equals(headers.getValue(HttpHeaderConsts.CONTENT_TYPE))
                 && requestHttpEntity.getBody() instanceof Map) {
-            HttpUtils.initRequestFromEntity(httpRequestBase, (Map<String, String>) requestHttpEntity.getBody(), headers.getCharset());
+            HttpUtils.initRequestFromEntity(httpRequestBase, (Map<String, String>) requestHttpEntity.getBody(),
+                    headers.getCharset());
         } else {
             HttpUtils.initRequestEntity(httpRequestBase, requestHttpEntity.getBody(), headers);
         }
@@ -84,14 +94,14 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
      * @param requestBase      requestBase
      * @param httpClientConfig http config
      */
-    private static void mergeDefaultConfig(HttpUriRequestBase requestBase, HttpClientConfig httpClientConfig, RequestConfig defaultConfig) {
+    private static void mergeDefaultConfig(HttpUriRequestBase requestBase, HttpClientConfig httpClientConfig,
+            RequestConfig defaultConfig) {
         if (httpClientConfig == null) {
             return;
         }
         requestBase.setConfig(RequestConfig.copy(defaultConfig)
                 .setConnectionRequestTimeout(Timeout.ofMilliseconds(httpClientConfig.getConTimeOutMillis()))
-                .setResponseTimeout(Timeout.ofMilliseconds(httpClientConfig.getReadTimeOutMillis()))
-                .build());
+                .setResponseTimeout(Timeout.ofMilliseconds(httpClientConfig.getReadTimeOutMillis())).build());
     }
     
     @Override
