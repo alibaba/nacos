@@ -25,6 +25,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  * Proxy class for handling cluster-related operations.
@@ -54,8 +56,8 @@ public class ClusterProxy {
      */
     public Collection<NacosMember> getNodeList(String ipKeyWord) throws NacosException {
         Collection<? extends NacosMember> members = clusterHandler.getNodeList(ipKeyWord);
-        Collection<NacosMember> result = new ArrayList<>();
-        members.stream().sorted().forEach(member -> {
+        List<NacosMember> result = new ArrayList<>();
+        members.forEach(member -> {
             if (StringUtils.isBlank(ipKeyWord)) {
                 result.add(member);
                 return;
@@ -65,6 +67,7 @@ public class ClusterProxy {
                 result.add(member);
             }
         });
+        result.sort(Comparator.comparing(NacosMember::getAddress));
         return result;
     }
 }
