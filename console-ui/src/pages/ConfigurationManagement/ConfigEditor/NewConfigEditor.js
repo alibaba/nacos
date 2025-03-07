@@ -257,7 +257,6 @@ class ConfigEditor extends React.Component {
     Object.keys(form).forEach(key => {
       payload[key] = form[key];
     });
-    payload.namespaceId = form.tenant;
     payload.groupName = form.group;
     let configTags = this.state.form.config_tags;
     if (configTags.length > 0) {
