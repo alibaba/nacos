@@ -31,11 +31,10 @@ import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigMetadata;
-import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
-import com.alibaba.nacos.config.server.service.ConfigSubService;
+import com.alibaba.nacos.config.server.service.listener.ConfigListenerStateDelegate;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
@@ -108,7 +107,7 @@ class ConfigControllerV3Test {
     private ConfigOperationService configOperationService;
     
     @Mock
-    private ConfigSubService configSubService;
+    private ConfigListenerStateDelegate configListenerStateDelegate;
     
     @Mock
     private ConfigDetailService configDetailService;
@@ -117,7 +116,7 @@ class ConfigControllerV3Test {
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
         when(servletContext.getContextPath()).thenReturn("/nacos");
-        ReflectionTestUtils.setField(configControllerV3, "configSubService", configSubService);
+        ReflectionTestUtils.setField(configControllerV3, "configListenerStateDelegate", configListenerStateDelegate);
         ReflectionTestUtils.setField(configControllerV3, "configInfoPersistService", configInfoPersistService);
         ReflectionTestUtils.setField(configControllerV3, "configInfoBetaPersistService", configInfoBetaPersistService);
         ReflectionTestUtils.setField(configControllerV3, "configInfoGrayPersistService", configInfoGrayPersistService);
@@ -212,10 +211,10 @@ class ConfigControllerV3Test {
     void testGetListeners() throws Exception {
         Map<String, String> listenersGroupkeyStatus = new HashMap<>();
         listenersGroupkeyStatus.put("test", "test");
-        SampleResult sampleResult = new SampleResult();
-        sampleResult.setLisentersGroupkeyStatus(listenersGroupkeyStatus);
+        ConfigListenerInfo sampleResult = new ConfigListenerInfo();
+        sampleResult.setListenersStatus(listenersGroupkeyStatus);
         
-        when(configSubService.getCollectSampleResult("test", "test", "public", 1)).thenReturn(sampleResult);
+        when(configListenerStateDelegate.getListenerState("test", "test", "public", true)).thenReturn(sampleResult);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CONFIG_ADMIN_V3_PATH + "/listener")
                 .param("dataId", "test").param("groupName", "test").param("namespaceId", "").param("sampleTime", "1");

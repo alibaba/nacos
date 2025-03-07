@@ -116,15 +116,15 @@ public class ConfigRemoteHandler implements ConfigHandler {
     }
     
     @Override
-    public ConfigListenerInfo getListeners(String dataId, String group, String namespaceId, int sampleTime)
+    public ConfigListenerInfo getListeners(String dataId, String group, String namespaceId, boolean aggregation)
             throws Exception {
-        return clientHolder.getConfigMaintainerService().getListeners(dataId, group, namespaceId, sampleTime);
+        return clientHolder.getConfigMaintainerService().getListeners(dataId, group, namespaceId, aggregation);
     }
     
     @Override
-    public ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime)
+    public ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, boolean aggregation)
             throws NacosException {
-        return clientHolder.getConfigMaintainerService().getAllSubClientConfigByIp(ip, all, namespaceId, sampleTime);
+        return clientHolder.getConfigMaintainerService().getAllSubClientConfigByIp(ip, all, namespaceId, aggregation);
     }
     
     @Override

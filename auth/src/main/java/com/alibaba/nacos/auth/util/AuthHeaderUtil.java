@@ -17,6 +17,7 @@
 package com.alibaba.nacos.auth.util;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
@@ -37,6 +38,21 @@ public class AuthHeaderUtil {
         AuthConfigs authConfigs = ApplicationUtils.getBean(AuthConfigs.class);
         if (StringUtils.isNotBlank(authConfigs.getServerIdentityKey())) {
             header.addParam(authConfigs.getServerIdentityKey(), authConfigs.getServerIdentityValue());
+        }
+    }
+    
+    /**
+     * Add identity info to Http header.
+     *
+     * @param header            http header
+     * @param authConfig   nacos auth config
+     */
+    public static void addIdentityToHeader(Header header, NacosAuthConfig authConfig) {
+        if (!authConfig.isSupportServerIdentity()) {
+            return;
+        }
+        if (StringUtils.isNotBlank(authConfig.getServerIdentityKey())) {
+            header.addParam(authConfig.getServerIdentityKey(), authConfig.getServerIdentityValue());
         }
     }
     

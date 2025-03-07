@@ -454,11 +454,10 @@ class NacosConfigMaintainerServiceImplTest {
         String ip = "127.0.0.1";
         boolean all = true;
         String namespaceId = "testNamespace";
-        int sampleTime = 1;
         
         // Act
         ConfigListenerInfo result = nacosConfigMaintainerServiceImpl.getAllSubClientConfigByIp(ip, all, namespaceId,
-                sampleTime);
+                true);
         
         // Assert
         assertNotNull(result);

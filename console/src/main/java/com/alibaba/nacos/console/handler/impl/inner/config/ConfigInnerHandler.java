@@ -29,21 +29,19 @@ import com.alibaba.nacos.common.utils.DateFormatUtils;
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.controller.ConfigServletInner;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigMetadata;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
-import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
-import com.alibaba.nacos.config.server.service.ConfigSubService;
+import com.alibaba.nacos.config.server.service.listener.ConfigListenerStateDelegate;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
@@ -100,13 +98,11 @@ public class ConfigInnerHandler implements ConfigHandler {
     
     private final ConfigInfoPersistService configInfoPersistService;
     
-    private final ConfigServletInner inner;
-    
     private final ConfigOperationService configOperationService;
     
     private final ConfigDetailService configDetailService;
     
-    private final ConfigSubService configSubService;
+    private final ConfigListenerStateDelegate configListenerStateDelegate;
     
     private NamespacePersistService namespacePersistService;
     
@@ -114,26 +110,26 @@ public class ConfigInnerHandler implements ConfigHandler {
     
     private ConfigInfoGrayPersistService configInfoGrayPersistService;
     
-    public ConfigInnerHandler(ConfigServletInner inner, ConfigOperationService configOperationService,
+    public ConfigInnerHandler(ConfigOperationService configOperationService,
             ConfigInfoPersistService configInfoPersistService, ConfigDetailService configDetailService,
-            ConfigSubService configSubService, NamespacePersistService namespacePersistService,
-            ConfigInfoBetaPersistService configInfoBetaPersistService,
-            ConfigInfoGrayPersistService configInfoGrayPersistService) {
-        this.inner = inner;
+            NamespacePersistService namespacePersistService, ConfigInfoBetaPersistService configInfoBetaPersistService,
+            ConfigInfoGrayPersistService configInfoGrayPersistService,
+            ConfigListenerStateDelegate configListenerStateDelegate) {
         this.configOperationService = configOperationService;
         this.configInfoPersistService = configInfoPersistService;
         this.configDetailService = configDetailService;
-        this.configSubService = configSubService;
         this.namespacePersistService = namespacePersistService;
         this.configInfoBetaPersistService = configInfoBetaPersistService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
+        this.configListenerStateDelegate = configListenerStateDelegate;
     }
     
     @Override
-    public Page<ConfigBasicInfo> getConfigList(int pageNo, int pageSize, String dataId, String group, String namespaceId,
-            Map<String, Object> configAdvanceInfo) throws IOException, ServletException, NacosException {
-        Page<ConfigInfo> result = configInfoPersistService.findConfigInfoLike4Page(pageNo, pageSize, dataId, group, namespaceId,
-                configAdvanceInfo);
+    public Page<ConfigBasicInfo> getConfigList(int pageNo, int pageSize, String dataId, String group,
+            String namespaceId, Map<String, Object> configAdvanceInfo)
+            throws IOException, ServletException, NacosException {
+        Page<ConfigInfo> result = configInfoPersistService.findConfigInfoLike4Page(pageNo, pageSize, dataId, group,
+                namespaceId, configAdvanceInfo);
         return transferToConfigBasicInfo(result);
     }
     
@@ -185,11 +181,11 @@ public class ConfigInnerHandler implements ConfigHandler {
     }
     
     @Override
-    public Page<ConfigBasicInfo> getConfigListByContent(String search, int pageNo, int pageSize, String dataId, String group,
-            String namespaceId, Map<String, Object> configAdvanceInfo) throws NacosException {
+    public Page<ConfigBasicInfo> getConfigListByContent(String search, int pageNo, int pageSize, String dataId,
+            String group, String namespaceId, Map<String, Object> configAdvanceInfo) throws NacosException {
         try {
-            Page<ConfigInfo> result =  configDetailService.findConfigInfoPage(search, pageNo, pageSize, dataId, group, namespaceId,
-                    configAdvanceInfo);
+            Page<ConfigInfo> result = configDetailService.findConfigInfoPage(search, pageNo, pageSize, dataId, group,
+                    namespaceId, configAdvanceInfo);
             return transferToConfigBasicInfo(result);
         } catch (Exception e) {
             String errorMsg = "serialize page error, dataId=" + dataId + ", group=" + group;
@@ -199,30 +195,21 @@ public class ConfigInnerHandler implements ConfigHandler {
     }
     
     @Override
-    public ConfigListenerInfo getListeners(String dataId, String group, String namespaceId, int sampleTime)
+    public ConfigListenerInfo getListeners(String dataId, String group, String namespaceId, boolean aggregation)
             throws Exception {
-        SampleResult collectSampleResult = configSubService.getCollectSampleResult(dataId, group, namespaceId,
-                sampleTime);
-        ConfigListenerInfo result = new ConfigListenerInfo();
-        result.setQueryType(ConfigListenerInfo.QUERY_TYPE_CONFIG);
-        if (collectSampleResult.getLisentersGroupkeyStatus() != null) {
-            result.setListenersStatus(collectSampleResult.getLisentersGroupkeyStatus());
-        }
-        return result;
+        return configListenerStateDelegate.getListenerState(dataId, group, namespaceId, aggregation);
     }
     
     @Override
-    public ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime) {
-        SampleResult collectSampleResult = configSubService.getCollectSampleResultByIp(ip, sampleTime);
-        ConfigListenerInfo result = new ConfigListenerInfo();
+    public ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId,
+            boolean aggregation) {
+        ConfigListenerInfo result = configListenerStateDelegate.getListenerStateByIp(ip, aggregation);
         result.setQueryType(ConfigListenerInfo.QUERY_TYPE_IP);
         Map<String, String> configMd5Status = new HashMap<>(100);
-        
-        if (collectSampleResult.getLisentersGroupkeyStatus() == null) {
+        if (result.getListenersStatus() == null || result.getListenersStatus().isEmpty()) {
             return result;
         }
-        
-        Map<String, String> status = collectSampleResult.getLisentersGroupkeyStatus();
+        Map<String, String> status = result.getListenersStatus();
         for (Map.Entry<String, String> config : status.entrySet()) {
             if (!StringUtils.isBlank(namespaceId) && config.getKey().contains(namespaceId)) {
                 configMd5Status.put(config.getKey(), config.getValue());

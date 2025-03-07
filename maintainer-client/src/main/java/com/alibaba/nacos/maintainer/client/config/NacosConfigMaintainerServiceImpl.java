@@ -171,13 +171,13 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public ConfigListenerInfo getListeners(String dataId, String groupName, String namespaceId, int sampleTime)
+    public ConfigListenerInfo getListeners(String dataId, String groupName, String namespaceId, boolean aggregation)
             throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("dataId", dataId);
         params.put("groupName", groupName);
         params.put("namespaceId", namespaceId);
-        params.put("sampleTime", String.valueOf(sampleTime));
+        params.put("aggregation", String.valueOf(aggregation));
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH + "/listener").setParamValue(params).build();
@@ -331,13 +331,13 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     @Override
-    public ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime)
+    public ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, boolean aggregation)
             throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("ip", ip);
         params.put("all", String.valueOf(all));
         params.put("namespaceId", namespaceId);
-        params.put("sampleTime", String.valueOf(sampleTime));
+        params.put("aggregation", String.valueOf(aggregation));
         
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CONFIG_LISTENER_ADMIN_PATH).setParamValue(params).build();

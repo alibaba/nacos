@@ -143,11 +143,11 @@ public interface ConfigHandler {
      * @param dataId      The identifier of the configuration data.
      * @param group       The group to which the configuration belongs.
      * @param namespaceId The namespace identifier.
-     * @param sampleTime  The sampling time for listener status.
-     * @return A GroupkeyListenserStatus object containing the status of the listeners.
+     * @param aggregation whether aggregation from other servers
+     * @return A ConfigListenerInfo object containing the status of the listeners.
      * @throws Exception If an unexpected error occurs.
      */
-    ConfigListenerInfo getListeners(String dataId, String group, String namespaceId, int sampleTime)
+    ConfigListenerInfo getListeners(String dataId, String group, String namespaceId, boolean aggregation)
             throws Exception;
     
     /**
@@ -156,11 +156,11 @@ public interface ConfigHandler {
      * @param ip IP address of the client
      * @param all Whether to retrieve all configurations
      * @param namespaceId Tenant information
-     * @param sampleTime Sample time for the subscription
-     * @return GroupkeyListenserStatus object containing subscription information
+     * @param aggregation whether aggregation from other servers
+     * @return ConfigListenerInfo object containing subscription information
      * @throws NacosException If an error occurs while retrieving the subscription information.
      */
-    ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime)
+    ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, boolean aggregation)
             throws NacosException;
 
     /**

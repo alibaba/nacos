@@ -448,7 +448,7 @@ public interface ConfigMaintainerService
      * @throws NacosException If retrieval fails.
      */
     default ConfigListenerInfo getListeners(String dataId, String groupName) throws NacosException {
-        return getListeners(dataId, groupName, Constants.DEFAULT_NAMESPACE_ID, 1);
+        return getListeners(dataId, groupName, Constants.DEFAULT_NAMESPACE_ID, true);
     }
     
     /**
@@ -457,11 +457,11 @@ public interface ConfigMaintainerService
      * @param dataId      Configuration data ID (required).
      * @param groupName   Configuration group name (required).
      * @param namespaceId Namespace ID (optional, defaults to "public").
-     * @param sampleTime  Sample time (optional).
+     * @param aggregation Whether aggregation from other servers (optional).
      * @return List of listeners for the configuration.
      * @throws NacosException If retrieval fails.
      */
-    ConfigListenerInfo getListeners(String dataId, String groupName, String namespaceId, int sampleTime)
+    ConfigListenerInfo getListeners(String dataId, String groupName, String namespaceId, boolean aggregation)
             throws NacosException;
     
     /**
@@ -470,11 +470,11 @@ public interface ConfigMaintainerService
      * @param ip          Client IP address (required).
      * @param all         Whether to include all subscriptions (optional, defaults to false).
      * @param namespaceId Namespace ID (optional).
-     * @param sampleTime  Sample time (optional, defaults to 0).
+     * @param aggregation Whether aggregation from other servers (optional, defaults to 0).
      * @return the subscription status.
      * @throws NacosException if the operation fails.
      */
-    ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime)
+    ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, boolean aggregation)
             throws NacosException;
     
     /**

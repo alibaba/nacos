@@ -41,7 +41,6 @@ import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigMetadata;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
-import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.model.form.ConfigFormV3;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
@@ -50,7 +49,7 @@ import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtracto
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
-import com.alibaba.nacos.config.server.service.ConfigSubService;
+import com.alibaba.nacos.config.server.service.listener.ConfigListenerStateDelegate;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
@@ -64,6 +63,7 @@ import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.model.form.AggregationForm;
 import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
@@ -123,8 +123,6 @@ public class ConfigControllerV3 {
     
     private final ConfigOperationService configOperationService;
     
-    private final ConfigSubService configSubService;
-    
     private final ConfigInfoPersistService configInfoPersistService;
     
     private final ConfigDetailService configDetailService;
@@ -135,18 +133,20 @@ public class ConfigControllerV3 {
     
     private final NamespacePersistService namespacePersistService;
     
-    public ConfigControllerV3(ConfigOperationService configOperationService, ConfigSubService configSubService,
+    private final ConfigListenerStateDelegate configListenerStateDelegate;
+    
+    public ConfigControllerV3(ConfigOperationService configOperationService,
             ConfigInfoPersistService configInfoPersistService, ConfigDetailService configDetailService,
             ConfigInfoGrayPersistService configInfoGrayPersistService,
-            ConfigInfoBetaPersistService configInfoBetaPersistService,
-            NamespacePersistService namespacePersistService) {
+            ConfigInfoBetaPersistService configInfoBetaPersistService, NamespacePersistService namespacePersistService,
+            ConfigListenerStateDelegate configListenerStateDelegate) {
         this.configOperationService = configOperationService;
-        this.configSubService = configSubService;
         this.configInfoPersistService = configInfoPersistService;
         this.configDetailService = configDetailService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
         this.configInfoBetaPersistService = configInfoBetaPersistService;
         this.namespacePersistService = namespacePersistService;
+        this.configListenerStateDelegate = configListenerStateDelegate;
     }
     
     /**
@@ -269,18 +269,14 @@ public class ConfigControllerV3 {
      */
     @GetMapping("/listener")
     @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
-    public Result<ConfigListenerInfo> getListeners(ConfigFormV3 configForm,
-            @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime) throws Exception {
+    public Result<ConfigListenerInfo> getListeners(ConfigFormV3 configForm, AggregationForm aggregationForm)
+            throws Exception {
+        configForm.validate();
+        aggregationForm.validate();
         String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
-        SampleResult collectSampleResult = configSubService.getCollectSampleResult(configForm.getDataId(),
-                configForm.getGroupName(), namespaceId, sampleTime);
-        ConfigListenerInfo result = new ConfigListenerInfo();
-        result.setQueryType(ConfigListenerInfo.QUERY_TYPE_CONFIG);
-        if (collectSampleResult.getLisentersGroupkeyStatus() != null) {
-            result.setListenersStatus(collectSampleResult.getLisentersGroupkeyStatus());
-        }
-        
-        return Result.success(result);
+        return Result.success(
+                configListenerStateDelegate.getListenerState(configForm.getDataId(), configForm.getGroupName(),
+                        namespaceId, aggregationForm.isAggregation()));
     }
     
     /**
@@ -297,8 +293,8 @@ public class ConfigControllerV3 {
     @GetMapping("/list")
     @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     @ExtractorManager.Extractor(httpExtractor = ConfigBlurSearchHttpParamExtractor.class)
-    public Result<Page<ConfigBasicInfo>> list(ConfigFormV3 configForm, PageForm pageForm,
-            String configDetail, @RequestParam(defaultValue = "blur") String search) throws NacosApiException {
+    public Result<Page<ConfigBasicInfo>> list(ConfigFormV3 configForm, PageForm pageForm, String configDetail,
+            @RequestParam(defaultValue = "blur") String search) throws NacosApiException {
         configForm.blurSearchValidate();
         pageForm.validate();
         Map<String, Object> configAdvanceInfo = new HashMap<>(100);
