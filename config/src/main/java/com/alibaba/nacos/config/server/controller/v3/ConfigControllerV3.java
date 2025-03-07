@@ -401,7 +401,7 @@ public class ConfigControllerV3 {
         }
         
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
-        if (StringUtils.isNotBlank(namespaceId)
+        if (StringUtils.isNotBlank(namespaceId) && !NamespaceUtil.isDefaultNamespaceId(namespaceId)
                 && namespacePersistService.tenantInfoCountByTenantId(namespaceId) <= 0) {
             failedData.put("succCount", 0);
             return Result.failure(ErrorCode.NAMESPACE_NOT_EXIST, failedData);
@@ -594,10 +594,10 @@ public class ConfigControllerV3 {
         cloneInfos.removeAll(Collections.singleton(null));
         
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
-        if (StringUtils.isNotBlank(namespaceId)
+        if (StringUtils.isNotBlank(namespaceId) && !NamespaceUtil.isDefaultNamespaceId(namespaceId)
                 && namespacePersistService.tenantInfoCountByTenantId(namespaceId) <= 0) {
             failedData.put("succCount", 0);
-            return Result.failure(ErrorCode.NAMESPACE_ALREADY_EXIST, failedData);
+            return Result.failure(ErrorCode.NAMESPACE_NOT_EXIST, failedData);
         }
         
         List<Long> idList = new ArrayList<>(cloneInfos.size());
