@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.auth.InnerApiAuthEnabled;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
@@ -50,8 +51,11 @@ public class ApiCompatibilityFilter implements Filter {
     
     private final ControllerMethodsCache methodsCache;
     
-    public ApiCompatibilityFilter(ControllerMethodsCache methodsCache) {
+    private final InnerApiAuthEnabled innerApiAuthEnabled;
+    
+    public ApiCompatibilityFilter(ControllerMethodsCache methodsCache, InnerApiAuthEnabled innerApiAuthEnabled) {
         this.methodsCache = methodsCache;
+        this.innerApiAuthEnabled = innerApiAuthEnabled;
     }
     
     @Override
@@ -91,7 +95,13 @@ public class ApiCompatibilityFilter implements Filter {
                     }
                     break;
                 case INNER_API:
-                    // TODO add inner api compatibility when upgrading and disabled when upgraded.
+                    if (innerApiAuthEnabled.isEnabled()) {
+                        Result<String> result = Result.failure(ErrorCode.API_DEPRECATED.getCode(),
+                                String.format("Old Inner API %s is deprecated", request.getRequestURI()), null);
+                        response.sendError(HttpServletResponse.SC_GONE, JacksonUtils.toJson(result));
+                        return;
+                    }
+                    break;
                 default:
                     filterChain.doFilter(servletRequest, servletResponse);
                     return;

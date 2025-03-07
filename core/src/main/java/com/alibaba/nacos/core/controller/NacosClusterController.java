@@ -118,7 +118,7 @@ public class NacosClusterController {
     @Deprecated
     @PostMapping(value = {"/report"})
     @Secured(resource = Commons.NACOS_CORE_CONTEXT
-            + "/cluster", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
+            + "/cluster", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.INNER_API)
     @Compatibility(apiType = ApiType.INNER_API)
     public RestResult<String> report(@RequestBody Member node) {
         if (!node.check()) {

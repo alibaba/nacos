@@ -113,7 +113,7 @@ public class ConsoleWebConfig {
     
     @Bean
     public ApiCompatibilityFilter consoleApiCompatibilityFilter(ControllerMethodsCache methodsCache) {
-        return new ApiCompatibilityFilter(methodsCache);
+        return new ApiCompatibilityFilter(methodsCache, null);
     }
     
     @Bean

@@ -141,7 +141,7 @@ public class LongPollingService {
     
     public SampleResult getCollectSubscribleInfoByIp(String ip) {
         SampleResult sampleResult = new SampleResult();
-        sampleResult.setLisentersGroupkeyStatus(new HashMap<String, String>(50));
+        sampleResult.setLisentersGroupkeyStatus(new HashMap<>(50));
         for (int i = 0; i < SAMPLE_TIMES; i++) {
             SampleResult sampleTmp = getSubscribleInfoByIp(ip);
             if (sampleTmp != null) {

@@ -30,6 +30,7 @@ public interface NamingSubscriberService {
     
     /**
      * Get all push target subscribers for specified service.
+     * TODO use {@link com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo} replaced return
      *
      * @param namespaceId namespace id
      * @param serviceName service name
@@ -39,6 +40,7 @@ public interface NamingSubscriberService {
     
     /**
      * Get all push target subscribers for specified service.
+     * TODO use {@link com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo} replaced return
      *
      * @param service {@link Service}
      * @return list of subscribers
@@ -49,6 +51,7 @@ public interface NamingSubscriberService {
      * Fuzzy get subscribers. Only support fuzzy serviceName.
      *
      * <p>Warning: This method cost much performance, use less.
+     * TODO use {@link com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo} replaced return
      *
      * @param namespaceId namespace id
      * @param serviceName fuzzy serviceName
@@ -60,6 +63,7 @@ public interface NamingSubscriberService {
      * Fuzzy get subscribers. Only support fuzzy serviceName.
      *
      * <p>Warning: This method cost much performance, use less.
+     * TODO use {@link com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo} replaced return
      *
      * @param service {@link Service}
      * @return list of subscribers

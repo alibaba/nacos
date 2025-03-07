@@ -103,17 +103,17 @@ public class ConfigProxy {
     /**
      * Subscribe to configured client information.
      */
-    public ConfigListenerInfo getListeners(String dataId, String group, String namespaceId, int sampleTime)
+    public ConfigListenerInfo getListeners(String dataId, String group, String namespaceId, boolean aggregation)
             throws Exception {
-        return configHandler.getListeners(dataId, group, namespaceId, sampleTime);
+        return configHandler.getListeners(dataId, group, namespaceId, aggregation);
     }
     
     /**
      * Get subscription information based on IP, tenant, and other parameters.
      */
-    public ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, int sampleTime)
+    public ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId, boolean aggregation)
             throws NacosException {
-        return configHandler.getAllSubClientConfigByIp(ip, all, namespaceId, sampleTime);
+        return configHandler.getAllSubClientConfigByIp(ip, all, namespaceId, aggregation);
     }
     
     /**

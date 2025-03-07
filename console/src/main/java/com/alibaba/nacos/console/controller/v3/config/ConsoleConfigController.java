@@ -40,6 +40,7 @@ import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtracto
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.console.proxy.config.ConfigProxy;
+import com.alibaba.nacos.core.model.form.AggregationForm;
 import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
@@ -49,7 +50,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -260,20 +260,22 @@ public class ConsoleConfigController {
     /**
      * Subscribe to configured client information.
      *
-     * @param configForm  config form
-     * @param sampleTime  Sample time value.
+     * @param configForm        config form
+     * @param aggregationForm   aggregation form
      * @return Result containing listener status.
      * @throws Exception If an error occurs during the operation.
      */
     @GetMapping("/listener")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
-    public Result<ConfigListenerInfo> getListeners(ConfigFormV3 configForm,
-            @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime) throws Exception {
+    public Result<ConfigListenerInfo> getListeners(ConfigFormV3 configForm, AggregationForm aggregationForm)
+            throws Exception {
         configForm.validate();
+        aggregationForm.validate();
         String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
         String groupName = configForm.getGroupName();
         String dataId = configForm.getDataId();
-        return Result.success(configProxy.getListeners(dataId, groupName, namespaceId, sampleTime));
+        return Result.success(
+                configProxy.getListeners(dataId, groupName, namespaceId, aggregationForm.isAggregation()));
     }
     
     /**
@@ -283,11 +285,11 @@ public class ConsoleConfigController {
     @Secured(resource = Constants.LISTENER_CONTROLLER_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
     public Result<ConfigListenerInfo> getAllSubClientConfigByIp(@RequestParam("ip") String ip,
             @RequestParam(value = "all", required = false) boolean all,
-            @RequestParam(value = "namespaceId", required = false) String namespaceId,
-            @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime, ModelMap modelMap)
+            @RequestParam(value = "namespaceId", required = false) String namespaceId, AggregationForm aggregationForm)
             throws NacosException {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
-        return Result.success(configProxy.getAllSubClientConfigByIp(ip, all, namespaceId, sampleTime));
+        return Result.success(
+                configProxy.getAllSubClientConfigByIp(ip, all, namespaceId, aggregationForm.isAggregation()));
     }
     
     /**

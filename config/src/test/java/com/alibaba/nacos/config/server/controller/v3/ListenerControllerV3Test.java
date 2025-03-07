@@ -19,8 +19,7 @@ package com.alibaba.nacos.config.server.controller.v3;
 import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.model.SampleResult;
-import com.alibaba.nacos.config.server.service.ConfigSubService;
+import com.alibaba.nacos.config.server.service.listener.ConfigListenerStateDelegate;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import jakarta.servlet.ServletContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,27 +58,27 @@ class ListenerControllerV3Test {
     private ServletContext servletContext;
     
     @Mock
-    private ConfigSubService configSubService;
+    private ConfigListenerStateDelegate configListenerStateDelegate;
     
     @BeforeEach
     void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
         when(servletContext.getContextPath()).thenReturn("/nacos");
-        ReflectionTestUtils.setField(listenerControllerV3, "configSubService", configSubService);
+        ReflectionTestUtils.setField(listenerControllerV3, "configListenerStateDelegate", configListenerStateDelegate);
         mockmvc = MockMvcBuilders.standaloneSetup(listenerControllerV3).build();
     }
     
     @Test
     void testGetAllSubClientConfigByIp() throws Exception {
         
-        SampleResult sampleResult = new SampleResult();
+        ConfigListenerInfo sampleResult = new ConfigListenerInfo();
         Map<String, String> map = new HashMap<>();
         map.put("test", "test");
-        sampleResult.setLisentersGroupkeyStatus(map);
-        when(configSubService.getCollectSampleResultByIp("localhost", 1)).thenReturn(sampleResult);
+        sampleResult.setListenersStatus(map);
+        when(configListenerStateDelegate.getListenerStateByIp("localhost", true)).thenReturn(sampleResult);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH).param("ip", "localhost")
-                .param("all", "true").param("namespaceId", "test").param("sampleTime", "1");
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH)
+                .param("ip", "localhost").param("all", "true").param("namespaceId", "test").param("sampleTime", "1");
         
         String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         assertEquals("0", JacksonUtils.toObj(actualValue).get("code").toString());

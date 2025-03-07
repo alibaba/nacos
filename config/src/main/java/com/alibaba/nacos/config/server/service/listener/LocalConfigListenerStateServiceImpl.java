@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,31 +14,17 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.controller;
+package com.alibaba.nacos.config.server.service.listener;
 
-import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
 import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.common.utils.NamespaceUtil;
-import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.SampleResult;
-import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.config.server.remote.ConfigChangeListenContext;
 import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
-import com.alibaba.nacos.core.controller.compatibility.Compatibility;
-import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
-import com.alibaba.nacos.plugin.auth.constant.ApiType;
-import com.alibaba.nacos.plugin.auth.constant.SignType;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.ui.ModelMap;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.List;
@@ -46,15 +32,12 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Controller for other node notification.
+ * Local implementation for Config listener state service.
  *
- * @author boyan
- * @date 2010-5-7
+ * @author xiweng.yy
  */
-@RestController
-@RequestMapping(Constants.COMMUNICATION_CONTROLLER_PATH)
-@ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
-public class CommunicationController {
+@Service
+public class LocalConfigListenerStateServiceImpl implements ConfigListenerStateService {
     
     private final LongPollingService longPollingService;
     
@@ -62,30 +45,22 @@ public class CommunicationController {
     
     private final ConnectionManager connectionManager;
     
-    public CommunicationController(LongPollingService longPollingService,
+    public LocalConfigListenerStateServiceImpl(LongPollingService longPollingService,
             ConfigChangeListenContext configChangeListenContext, ConnectionManager connectionManager) {
         this.longPollingService = longPollingService;
         this.configChangeListenContext = configChangeListenContext;
         this.connectionManager = connectionManager;
     }
     
-    /**
-     * Get client config information of subscriber in local machine.
-     */
-    @GetMapping("/configWatchers")
-    @Compatibility(apiType = ApiType.INNER_API)
-    @Secured(signType = SignType.CONFIG, apiType = ApiType.INNER_API)
-    public SampleResult getSubClientConfig(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
-            @RequestParam(value = "tenant", required = false) String tenant, ModelMap modelMap) {
-        group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group;
-        tenant = NamespaceUtil.processNamespaceParameter(tenant);
-        // long polling listeners.
-        SampleResult result = longPollingService.getCollectSubscribleInfo(dataId, group, tenant);
-        // rpc listeners.
-        String groupKey = GroupKey2.getKey(dataId, group, tenant);
+    @Override
+    public ConfigListenerInfo getListenerState(String dataId, String groupName, String namespaceId) {
+        // long polling listeners for 1.x client TODO removed after 3.x not support 1.x client.
+        SampleResult result = longPollingService.getCollectSubscribleInfo(dataId, groupName, namespaceId);
+        // rpc listeners for upper 2.x client.
+        String groupKey = GroupKey2.getKey(dataId, groupName, namespaceId);
         Set<String> listenersClients = configChangeListenContext.getListeners(groupKey);
         if (CollectionUtils.isEmpty(listenersClients)) {
-            return result;
+            return buildActualResult(result, ConfigListenerInfo.QUERY_TYPE_CONFIG);
         }
         Map<String, String> listenersGroupkeyStatus = new HashMap<>(listenersClients.size(), 1);
         for (String connectionId : listenersClients) {
@@ -98,19 +73,14 @@ public class CommunicationController {
             }
         }
         result.getLisentersGroupkeyStatus().putAll(listenersGroupkeyStatus);
-        return result;
+        return buildActualResult(result, ConfigListenerInfo.QUERY_TYPE_CONFIG);
     }
     
-    /**
-     * Get client config listener lists of subscriber in local machine.
-     */
-    @GetMapping("/watcherConfigs")
-    @Compatibility(apiType = ApiType.INNER_API)
-    @Secured(signType = SignType.CONFIG, apiType = ApiType.INNER_API)
-    public SampleResult getSubClientConfigByIp(HttpServletRequest request, HttpServletResponse response,
-            @RequestParam("ip") String ip, ModelMap modelMap) {
-        
+    @Override
+    public ConfigListenerInfo getListenerStateByIp(String ip) {
+        // long polling listeners for 1.x client TODO removed after 3.x not support 1.x client.
         SampleResult result = longPollingService.getCollectSubscribleInfoByIp(ip);
+        // rpc listeners for upper 2.x client.
         List<Connection> connectionsByIp = connectionManager.getConnectionByIp(ip);
         for (Connection connectionByIp : connectionsByIp) {
             Map<String, String> listenKeys = configChangeListenContext.getListenKeys(
@@ -119,8 +89,13 @@ public class CommunicationController {
                 result.getLisentersGroupkeyStatus().putAll(listenKeys);
             }
         }
-        return result;
-        
+        return buildActualResult(result, ConfigListenerInfo.QUERY_TYPE_IP);
     }
     
+    private ConfigListenerInfo buildActualResult(SampleResult sampleResult, String type) {
+        ConfigListenerInfo result = new ConfigListenerInfo();
+        result.setQueryType(type);
+        result.setListenersStatus(sampleResult.getLisentersGroupkeyStatus());
+        return result;
+    }
 }

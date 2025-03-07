@@ -77,12 +77,14 @@ public abstract class AbstractWebAuthFilter implements Filter {
         }
 
         try {
+            Secured secured = method.getAnnotation(Secured.class);
+            if (!isMatchFilter(secured)) {
+                chain.doFilter(request, response);
+                return;
+            }
             if (Loggers.AUTH.isDebugEnabled()) {
                 Loggers.AUTH.debug("auth start, request: {} {}", req.getMethod(), req.getRequestURI());
             }
-            
-            Secured secured = method.getAnnotation(Secured.class);
-            
             ServerIdentityResult serverIdentityResult = checkServerIdentity(req, secured);
             switch (serverIdentityResult.getStatus()) {
                 case FAIL:
@@ -93,10 +95,6 @@ public abstract class AbstractWebAuthFilter implements Filter {
                     return;
                 default:
                     break;
-            }
-            if (!isMatchFilter(secured)) {
-                chain.doFilter(request, response);
-                return;
             }
             if (!protocolAuthService.enableAuth(secured)) {
                 chain.doFilter(request, response);
