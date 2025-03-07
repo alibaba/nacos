@@ -54,6 +54,10 @@ for %%a in (%*) do (
     set /a i+=1
 )
 
+call :Process_required_config "nacos.core.auth.plugin.nacos.token.secret.key" %BASE_DIR%\conf\application.properties
+call :Process_required_config "nacos.core.auth.server.identity.key" %BASE_DIR%\conf\application.properties
+call :Process_required_config "nacos.core.auth.server.identity.value" %BASE_DIR%\conf\application.properties
+
 rem if nacos startup mode is standalone
 if %MODE% == "standalone" (
     echo "nacos is starting with standalone"
@@ -98,3 +102,38 @@ set COMMAND="%JAVA%" %NACOS_JVM_OPTS% %NACOS_OPTS% %NACOS_CONFIG_OPTS% %NACOS_LO
 
 rem start nacos command
 %COMMAND%
+
+pause
+
+goto :EOF
+
+:Process_required_config
+    setlocal
+    set "key_pattern=%~1"
+    set "target_file=%~2"
+    set "target_file=!target_file:"=!"
+    set "escaped_key=%key_pattern:.=\.%"
+
+    findstr /R "^%escaped_key%=[ \t]*" "%target_file%" > nul
+    if %errorlevel% == 0 (
+        set /p "input_val=%key_pattern% is missing, please input: "
+
+        set "temp_file=%TEMP%\temp_%RANDOM%.tmp"
+        set "key_pattern_with_equal=!key_pattern!="
+
+        for /f "usebackq delims=" %%a in ("!target_file!") do (
+            set "line=%%a"
+            set "line=!line: =!"
+            if "!line!"=="!key_pattern_with_equal!" (
+                echo %%a!input_val!>>"!temp_file!"
+            ) else (
+                echo %%a>>"!temp_file!"
+            )
+        )
+
+        move /Y "!temp_file!" "!target_file!" >nul
+        echo %key_pattern% Updated:
+        findstr /R "^%escaped_key%" "!target_file!"
+        echo ----------------------------------
+    )
+    endlocal
