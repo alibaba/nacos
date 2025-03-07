@@ -49,7 +49,9 @@ public class HttpLoginProcessor implements LoginProcessor {
     
     private static final Logger SECURITY_LOGGER = LoggerFactory.getLogger(HttpLoginProcessor.class);
     
-    private static final String LOGIN_URL = "/v3/auth/user/login";
+    private static final String LOGIN_V1_URL = "/v1/auth/users/login";
+    
+    private static final String LOGIN_V3_URL = "/v3/auth/user/login";
     
     public static final String DEFAULT_NACOS_WEB_CONTEXT = "/nacos";
     
@@ -73,7 +75,7 @@ public class HttpLoginProcessor implements LoginProcessor {
             server = HTTP_PREFIX + server;
         }
         
-        String url = server + contextPath + LOGIN_URL;
+        String url = server + contextPath + LOGIN_V3_URL;
         
         Map<String, String> params = new HashMap<>(2);
         Map<String, String> bodyMap = new HashMap<>(2);
@@ -82,6 +84,11 @@ public class HttpLoginProcessor implements LoginProcessor {
         try {
             HttpRestResult<String> restResult = nacosRestTemplate.postForm(url, Header.EMPTY,
                     Query.newInstance().initParams(params), bodyMap, String.class);
+            if (restResult.getCode() == 404) {
+                url = server + contextPath + LOGIN_V1_URL;
+                restResult = nacosRestTemplate.postForm(url, Header.EMPTY, Query.newInstance().initParams(params),
+                        bodyMap, String.class);
+            }
             if (!restResult.ok()) {
                 SECURITY_LOGGER.error("login failed: {}", JacksonUtils.toJson(restResult));
                 return null;
