@@ -84,7 +84,8 @@ public class HttpLoginProcessor implements LoginProcessor {
         try {
             HttpRestResult<String> restResult = nacosRestTemplate.postForm(url, Header.EMPTY,
                     Query.newInstance().initParams(params), bodyMap, String.class);
-            if (restResult.getCode() == 404) {
+            int code = restResult.getCode();
+            if (code == 404 || code == 501) {
                 url = server + contextPath + LOGIN_V1_URL;
                 restResult = nacosRestTemplate.postForm(url, Header.EMPTY, Query.newInstance().initParams(params),
                         bodyMap, String.class);
