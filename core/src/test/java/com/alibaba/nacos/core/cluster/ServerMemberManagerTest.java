@@ -81,7 +81,7 @@ class ServerMemberManagerTest {
     
     @BeforeEach
     void setUp() throws Exception {
-        when(environment.getProperty("server.port", Integer.class, 8848)).thenReturn(8848);
+        when(environment.getProperty("nacos.server.main.port", Integer.class, 8848)).thenReturn(8848);
         when(environment.getProperty("nacos.member-change-event.queue.size", Integer.class, 128)).thenReturn(128);
         when(context.getBean(AuthConfigs.class)).thenReturn(authConfigs);
         ApplicationUtils.injectContext(context);

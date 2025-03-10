@@ -19,11 +19,11 @@ package com.alibaba.nacos.core.config;
 
 import com.alibaba.nacos.core.distributed.distro.DistroConstants;
 import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
+import com.alibaba.nacos.sys.env.DeploymentType;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.module.ModuleStateHolder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.lang.reflect.Constructor;
@@ -39,15 +39,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class ModuleStateClusterTest {
     
-    private ConfigurableEnvironment environment;
+    private MockEnvironment environment;
     
     private ModuleStateHolder moduleStateHolder;
     
     @BeforeEach
-    void setUp() throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    void setUp()
+            throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         EnvUtil.setIsStandalone(false);
+        EnvUtil.setDeploymentType(DeploymentType.MERGED);
         Constructor<ModuleStateHolder> constructor = ModuleStateHolder.class.getDeclaredConstructor();
         constructor.setAccessible(true);
         moduleStateHolder = constructor.newInstance();

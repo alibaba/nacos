@@ -122,6 +122,7 @@ class NacosClusterOperationServiceTest {
         Member member2 = new Member();
         member2.setIp("2.2.2.2");
         member2.setPort(8848);
+        member2.setAddress(null);
         List<Member> members = Arrays.asList(member1, member2);
         
         when(serverMemberManager.update(any())).thenReturn(true);

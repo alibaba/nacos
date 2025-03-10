@@ -33,12 +33,15 @@ import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -73,8 +76,13 @@ class RemoteRequestAuthFilterTest {
     @Mock
     RequestMeta requestMeta;
     
+    MockEnvironment environment;
+    
     @BeforeEach
     void setUp() {
+        environment = new MockEnvironment();
+        EnvUtil.setEnvironment(environment);
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_ADMIN_ENABLED, "false");
         authFilter = new RemoteRequestAuthFilter(innerApiAuthEnabled);
         GrpcProtocolAuthService protocolAuthService = new GrpcProtocolAuthService(authConfig);
         protocolAuthService.initialize();
@@ -85,6 +93,7 @@ class RemoteRequestAuthFilterTest {
     @AfterEach
     void tearDown() {
         RequestContextHolder.removeContext();
+        EnvUtil.setEnvironment(null);
     }
     
     @Test
@@ -102,6 +111,7 @@ class RemoteRequestAuthFilterTest {
     
     @Test
     void testFilterWithoutServerIdentity() throws NacosException {
+        when(innerApiAuthEnabled.isEnabled()).thenReturn(true);
         Response actual = authFilter.filter(request, requestMeta, MockInnerRequestHandler.class);
         assertNotNull(actual);
         assertEquals(ResponseCode.FAIL.getCode(), actual.getResultCode());
@@ -113,6 +123,7 @@ class RemoteRequestAuthFilterTest {
     
     @Test
     void testFilterDisabledAuthWithInnerApi() throws NacosException {
+        when(innerApiAuthEnabled.isEnabled()).thenReturn(true);
         when(authConfig.getServerIdentityKey()).thenReturn("1");
         when(authConfig.getServerIdentityValue()).thenReturn("2");
         Response actual = authFilter.filter(request, requestMeta, MockInnerRequestHandler.class);
@@ -120,7 +131,15 @@ class RemoteRequestAuthFilterTest {
     }
     
     @Test
+    void testFilterWithoutServerIdentityForInnerApiAuthDisabled() throws NacosException {
+        when(innerApiAuthEnabled.isEnabled()).thenReturn(false);
+        Response actual = authFilter.filter(request, requestMeta, MockInnerRequestHandler.class);
+        assertNull(actual);
+    }
+    
+    @Test
     void testFilterWithServerIdentity() throws NacosException {
+        when(innerApiAuthEnabled.isEnabled()).thenReturn(true);
         when(authConfig.getServerIdentityKey()).thenReturn("1");
         when(authConfig.getServerIdentityValue()).thenReturn("2");
         when(request.getHeader("1")).thenReturn("2");
