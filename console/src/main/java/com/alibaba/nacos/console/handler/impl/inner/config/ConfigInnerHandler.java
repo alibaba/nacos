@@ -26,6 +26,7 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.DateFormatUtils;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -267,7 +268,7 @@ public class ConfigInnerHandler implements ConfigHandler {
         if (Objects.isNull(file)) {
             return Result.failure(ErrorCode.DATA_EMPTY, failedData);
         }
-        if (StringUtils.isNotBlank(namespaceId)
+        if (StringUtils.isNotBlank(namespaceId) && !NamespaceUtil.isDefaultNamespaceId(namespaceId)
                 && namespacePersistService.tenantInfoCountByTenantId(namespaceId) <= 0) {
             failedData.put("succCount", 0);
             return Result.failure(ErrorCode.NAMESPACE_NOT_EXIST, failedData);
@@ -487,7 +488,7 @@ public class ConfigInnerHandler implements ConfigHandler {
             failedData.put("succCount", 0);
             return Result.failure(ErrorCode.NO_SELECTED_CONFIG, failedData);
         }
-        if (StringUtils.isNotBlank(namespaceId)
+        if (StringUtils.isNotBlank(namespaceId) && !NamespaceUtil.isDefaultNamespaceId(namespaceId)
                 && namespacePersistService.tenantInfoCountByTenantId(namespaceId) <= 0) {
             failedData.put("succCount", 0);
             return Result.failure(ErrorCode.NAMESPACE_NOT_EXIST, failedData);
