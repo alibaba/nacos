@@ -35,8 +35,6 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.stereotype.Component;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -49,14 +47,11 @@ import java.util.concurrent.atomic.AtomicLong;
 @Component
 public class RequestLogAspect {
     
-    private static final String PUBLISH_CONFIG =
-            "execution(* com.alibaba.nacos.config.server.service.ConfigOperationService.publishConfig(..))";
+    private static final String PUBLISH_CONFIG = "execution(* com.alibaba.nacos.config.server.service.ConfigOperationService.publishConfig(..))";
     
-    private static final String GET_CONFIG =
-            "execution(* com.alibaba.nacos.config.server.service.query.ConfigQueryChainService.handle(..))";
+    private static final String GET_CONFIG = "execution(* com.alibaba.nacos.config.server.service.query.ConfigQueryChainService.handle(..))";
     
-    private static final String DELETE_CONFIG =
-            "execution(* com.alibaba.nacos.config.server.service.ConfigOperationService.deleteConfig(..))";
+    private static final String DELETE_CONFIG = "execution(* com.alibaba.nacos.config.server.service.ConfigOperationService.deleteConfig(..))";
     
     private static final String CONFIG_CHANGE_LISTEN_RPC =
             "execution(* com.alibaba.nacos.core.remote.RequestHandler.handleRequest(..)) "
@@ -145,7 +140,8 @@ public class RequestLogAspect {
                 rtHolder.set(rt);
             }
             
-            LogUtil.CLIENT_LOG.info("opType: {} | rt: {}ms | status: success | requestIp: {} | dataId: {} | group: {} | tenant: {} | md5: {}",
+            LogUtil.CLIENT_LOG.info(
+                    "opType: {} | rt: {}ms | status: success | requestIp: {} | dataId: {} | group: {} | tenant: {} | md5: {}",
                     requestType, rt, requestIp, dataId, group, tenant, md5);
             
             return retVal;
@@ -156,7 +152,8 @@ public class RequestLogAspect {
                 rtHolder.set(rt);
             }
             
-            LogUtil.CLIENT_LOG.error("opType: {} | rt: {}ms | status: failure | requestIp: {} | dataId: {} | group: {} | tenant: {} | md5: {}",
+            LogUtil.CLIENT_LOG.error(
+                    "opType: {} | rt: {}ms | status: failure | requestIp: {} | dataId: {} | group: {} | tenant: {} | md5: {}",
                     requestType, rt, requestIp, dataId, group, tenant, md5);
             
             throw e;
@@ -167,17 +164,18 @@ public class RequestLogAspect {
      * Handles configuration change listening requests.
      */
     @Around(CONFIG_CHANGE_LISTEN_RPC)
-    public Object interfaceListenConfigRpc(ProceedingJoinPoint pjp, ConfigBatchListenRequest request,
-            RequestMeta meta) throws Throwable {
+    public Object interfaceListenConfigRpc(ProceedingJoinPoint pjp, ConfigBatchListenRequest request, RequestMeta meta)
+            throws Throwable {
         MetricsMonitor.getConfigMonitor().incrementAndGet();
         final String requestIp = meta.getClientIp();
         String appName = request.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
         final long st = System.currentTimeMillis();
         Response retVal = (Response) pjp.proceed();
         final long rt = System.currentTimeMillis() - st;
-        LogUtil.CLIENT_LOG.info("opType: {} | rt: {}ms | status: {} | requestIp: {} | listenSize: {} | listenOrCancel: {} | appName: {}", "listen",
-                rt, retVal.isSuccess() ? retVal.getResultCode() : retVal.getErrorCode(), requestIp, request.getConfigListenContexts().size(),
-                request.isListen(), appName);
+        LogUtil.CLIENT_LOG.info(
+                "opType: {} | rt: {}ms | status: {} | requestIp: {} | listenSize: {} | listenOrCancel: {} | appName: {}",
+                "listen", rt, retVal.isSuccess() ? retVal.getResultCode() : retVal.getErrorCode(), requestIp,
+                request.getConfigListenContexts().size(), request.isListen(), appName);
         return retVal;
     }
 }

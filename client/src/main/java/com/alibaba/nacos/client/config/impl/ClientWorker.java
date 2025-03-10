@@ -398,7 +398,7 @@ public class ClientWorker implements Closeable {
             cacheMap.set(copy);
         }
         
-        LOGGER.info("[{}] [subscribe] {}", this.agent.getName(), key);
+        LOGGER.info("[{}] [subscribe] {}", agent.getName(), key);
         
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
         
@@ -501,7 +501,7 @@ public class ClientWorker implements Closeable {
         if (StringUtils.isBlank(group)) {
             group = Constants.DEFAULT_GROUP;
         }
-        return this.agent.queryConfig(dataId, group, tenant, readTimeout, notify);
+        return agent.queryConfig(dataId, group, tenant, readTimeout, notify);
     }
     
     private String blank2defaultGroup(String group) {
@@ -580,7 +580,7 @@ public class ClientWorker implements Closeable {
             }
             if (ClientConfigMetricRequest.MetricsKey.SNAPSHOT_DATA.equals(metricsKey.getType())) {
                 String[] configStr = GroupKey.parseKey(metricsKey.getKey());
-                String snapshot = LocalConfigInfoProcessor.getSnapshot(this.agent.getName(), configStr[0], configStr[1],
+                String snapshot = LocalConfigInfoProcessor.getSnapshot(agent.getName(), configStr[0], configStr[1],
                         configStr[2]);
                 values.putIfAbsent(metricsKey,
                         snapshot == null ? null : snapshot + ":" + MD5Utils.md5Hex(snapshot, ENCODE));
@@ -1132,13 +1132,14 @@ public class ClientWorker implements Closeable {
                 newLabels.put("taskId", taskId);
                 GrpcClientConfig grpcClientConfig = RpcClientConfigFactory.getInstance()
                         .createGrpcClientConfig(properties, newLabels);
-                RpcClient rpcClient = RpcClientFactory.createClient(uuid + "_config-" + taskId, getConnectionType(), grpcClientConfig);
+                RpcClient rpcClient = RpcClientFactory.createClient(uuid + "_config-" + taskId, getConnectionType(),
+                        grpcClientConfig);
                 if (rpcClient.isWaitInitiated()) {
                     initRpcClientHandler(rpcClient);
                     rpcClient.setTenant(getTenant());
                     rpcClient.start();
                 }
-    
+                
                 return rpcClient;
             }
             
@@ -1363,11 +1364,11 @@ public class ClientWorker implements Closeable {
     }
     
     public String getAgentName() {
-        return this.agent.getName();
+        return agent.getName();
     }
     
     public ConfigTransportClient getAgent() {
-        return this.agent;
+        return agent;
     }
     
 }

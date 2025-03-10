@@ -159,7 +159,7 @@ public class ConfigInnerHandler implements ConfigHandler {
     @Override
     public Boolean deleteConfig(String dataId, String group, String namespaceId, String tag, String clientIp,
             String srcUser) throws NacosException {
-        return configOperationService.deleteConfig(dataId, group, namespaceId, tag, clientIp, srcUser);
+        return configOperationService.deleteConfig(dataId, group, namespaceId, tag, clientIp, srcUser, Constants.HTTP);
     }
     
     @Override

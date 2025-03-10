@@ -235,7 +235,7 @@ public class ConfigControllerV3 {
         
         return Result.success(
                 configOperationService.deleteConfig(configForm.getDataId(), configForm.getGroupName(), namespaceId, tag,
-                        clientIp, srcUser));
+                        clientIp, srcUser, Constants.HTTP));
     }
     
     /**

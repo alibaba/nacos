@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.controller.v2;
 
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
@@ -31,9 +32,11 @@ import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.core.auth.AuthFilter;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
-import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -51,9 +54,6 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -144,8 +144,7 @@ class ConfigControllerV2Test {
         configControllerV2.getConfig(request, response, TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, TEST_TAG);
         
         verify(inner).doGetConfig(eq(request), eq(response), eq(TEST_DATA_ID), eq(TEST_GROUP),
-                eq(TEST_NAMESPACE_ID_PUBLIC),
-                eq(TEST_TAG), eq(null), anyString(), eq(ApiVersionEnum.V2));
+                eq(TEST_NAMESPACE_ID_PUBLIC), eq(TEST_TAG), eq(null), anyString(), eq(ApiVersionEnum.V2));
         JsonNode resNode = JacksonUtils.toObj(response.getContentAsString());
         Integer errCode = JacksonUtils.toObj(resNode.get("code").toString(), Integer.class);
         String actContent = JacksonUtils.toObj(resNode.get("data").toString(), String.class);
@@ -229,7 +228,7 @@ class ConfigControllerV2Test {
         MockHttpServletRequest request = new MockHttpServletRequest();
         
         when(configOperationService.deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID_PUBLIC),
-                eq(TEST_TAG), any(), any())).thenReturn(true);
+                eq(TEST_TAG), any(), any(), any())).thenReturn(true);
         Result<Boolean> booleanResult = configControllerV2.deleteConfig(request, TEST_DATA_ID, TEST_GROUP,
                 TEST_NAMESPACE_ID, TEST_TAG);
         
@@ -246,7 +245,7 @@ class ConfigControllerV2Test {
         MockHttpServletRequest request = new MockHttpServletRequest();
         
         when(configOperationService.deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID_PUBLIC),
-                eq(TEST_TAG),  any(), any(), eq("http"))).thenReturn(true);
+                eq(TEST_TAG), any(), any(), eq("http"))).thenReturn(true);
         
         Result<Boolean> booleanResult = configControllerV2.deleteConfig(request, TEST_DATA_ID, TEST_GROUP,
                 TEST_NAMESPACE_ID, TEST_TAG);
@@ -273,8 +272,7 @@ class ConfigControllerV2Test {
         configAdvanceInfo.put("content", "server.port");
         
         when(configInfoPersistService.findConfigInfo4Page(1, 10, "test", "test", "public",
-                configAdvanceInfo)).thenReturn(
-                page);
+                configAdvanceInfo)).thenReturn(page);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(
                         Constants.CONFIG_CONTROLLER_V2_PATH + "/searchDetail").param("search", "accurate")
@@ -309,8 +307,7 @@ class ConfigControllerV2Test {
         configAdvanceInfo.put("content", "server.port");
         
         when(configInfoPersistService.findConfigInfoLike4Page(1, 10, "test", "test", "public",
-                configAdvanceInfo)).thenReturn(
-                page);
+                configAdvanceInfo)).thenReturn(page);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(
                         Constants.CONFIG_CONTROLLER_V2_PATH + "/searchDetail").param("search", "blur").param("dataId", "test")
