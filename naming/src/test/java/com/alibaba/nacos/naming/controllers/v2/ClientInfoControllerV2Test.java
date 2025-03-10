@@ -19,7 +19,8 @@ package com.alibaba.nacos.naming.controllers.v2;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.naming.BaseTest;
-import com.alibaba.nacos.naming.core.ClientService;
+import com.alibaba.nacos.naming.core.ClientServiceImpl;
+import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
@@ -29,8 +30,6 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,7 +46,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Arrays;
-import java.util.List;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -55,13 +54,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-// todo remove this
 @MockitoSettings(strictness = Strictness.LENIENT)
 class ClientInfoControllerV2Test extends BaseTest {
     
-    private static final String URL = UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_CLIENT_CONTEXT;
+    private static final String URL =
+            UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_CLIENT_CONTEXT;
     
-    @InjectMocks
     ClientInfoControllerV2 clientInfoControllerV2;
     
     @Mock
@@ -70,11 +68,14 @@ class ClientInfoControllerV2Test extends BaseTest {
     @Mock
     private ConnectionManager connectionManager;
     
-    @Mock
-    private ClientService clientServiceV2Impl;
+    @InjectMocks
+    private ClientServiceImpl clientServiceV2Impl;
     
     @Mock
     private ClientServiceIndexesManager clientServiceIndexesManager;
+    
+    @Mock
+    private DistroMapper distroMapper;
     
     private MockMvc mockmvc;
     
@@ -86,6 +87,7 @@ class ClientInfoControllerV2Test extends BaseTest {
     public void before() {
         when(clientManager.allClientId()).thenReturn(Arrays.asList("127.0.0.1:8080#test1", "test2#test2"));
         when(clientManager.contains(anyString())).thenReturn(true);
+        clientInfoControllerV2 = new ClientInfoControllerV2(clientManager, clientServiceV2Impl);
         mockmvc = MockMvcBuilders.standaloneSetup(clientInfoControllerV2).build();
         ipPortBasedClient = new IpPortBasedClient("127.0.0.1:8080#test1", false);
         connectionBasedClient = new ConnectionBasedClient("test2", true, 1L);
@@ -97,33 +99,27 @@ class ClientInfoControllerV2Test extends BaseTest {
         MockHttpServletResponse response = mockmvc.perform(mockHttpServletRequestBuilder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
         JsonNode jsonNode = JacksonUtils.toObj(response.getContentAsString()).get("data");
-        assertEquals(0, jsonNode.size());
+        assertEquals(2, jsonNode.size());
     }
     
     @Test
     void testGetClientDetail() throws Exception {
         when(clientManager.getClient("test1")).thenReturn(ipPortBasedClient);
-        MockHttpServletRequestBuilder mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(URL).param("clientId", "test1");
+        MockHttpServletRequestBuilder mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(URL)
+                .param("clientId", "test1");
         MockHttpServletResponse response = mockmvc.perform(mockHttpServletRequestBuilder).andReturn().getResponse();
         assertEquals(200, response.getStatus());
     }
     
     @Test
     void testGetPublishedServiceList() throws Exception {
-        ObjectMapper objectMapper = new ObjectMapper();
-        ObjectNode objectNode = objectMapper.createObjectNode();
-        objectNode.put("serviceName", "test");
-        List<ObjectNode> serviceList = Arrays.asList(objectNode);
-        
-        when(clientManager.getClient("test1")).thenReturn(connectionBasedClient);
-        when(clientServiceV2Impl.getPublishedServiceListAdapt("test1"))
-                .thenReturn(serviceList);
-        
         Service service = Service.newService("test", "test", "test");
+        when(clientManager.getClient("test2")).thenReturn(connectionBasedClient);
         connectionBasedClient.addServiceInstance(service, new InstancePublishInfo("127.0.0.1", 8848));
         MockHttpServletRequestBuilder mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(URL + "/publish/list")
-                .param("clientId", "test1");
-        mockmvc.perform(mockHttpServletRequestBuilder).andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(1));
+                .param("clientId", "test2");
+        mockmvc.perform(mockHttpServletRequestBuilder)
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(1));
     }
     
     @Test
@@ -132,21 +128,16 @@ class ClientInfoControllerV2Test extends BaseTest {
         // single instance
         final Service service = Service.newService(baseTestKey, baseTestKey, baseTestKey);
         
-        ObjectMapper objectMapper = new ObjectMapper();
-        ObjectNode objectNode = objectMapper.createObjectNode();
-        objectNode.put("serviceName", "test");
-        final List<ObjectNode> serviceList = Arrays.asList(objectNode);
-        
         when(clientManager.getClient("test1")).thenReturn(connectionBasedClient);
         when(clientManager.getClient("test")).thenReturn(connectionBasedClient);
         connectionBasedClient.addServiceInstance(service, new InstancePublishInfo("127.0.0.1", 8848));
-        
-        when(clientServiceV2Impl.getPublishedClientList(baseTestKey, baseTestKey, baseTestKey, true, "127.0.0.1", 8848))
-                .thenReturn(serviceList);
-        MockHttpServletRequestBuilder mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(URL + "/service/publisher/list")
-                .param("namespaceId", baseTestKey).param("groupName", baseTestKey).param("serviceName", baseTestKey)
-                .param("ip", "127.0.0.1").param("port", "8848");
-        mockmvc.perform(mockHttpServletRequestBuilder).andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(1));
+        when(clientServiceIndexesManager.getAllClientsRegisteredService(service)).thenReturn(
+                Collections.singletonList("test"));
+        MockHttpServletRequestBuilder mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(
+                        URL + "/service/publisher/list").param("namespaceId", baseTestKey).param("groupName", baseTestKey)
+                .param("serviceName", baseTestKey).param("ip", "127.0.0.1").param("port", "8848");
+        mockmvc.perform(mockHttpServletRequestBuilder)
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(1));
     }
     
     @Test
@@ -160,18 +151,21 @@ class ClientInfoControllerV2Test extends BaseTest {
         when(subscriber.getIp()).thenReturn("127.0.0.1");
         when(subscriber.getPort()).thenReturn(8848);
         ipPortBasedClient.addServiceSubscriber(service, subscriber);
-        MockHttpServletRequestBuilder mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(URL + "/service/subscriber/list")
-                .param("namespaceId", baseTestKey).param("groupName", baseTestKey).param("serviceName", baseTestKey)
-                .param("ip", "127.0.0.1").param("port", "8848");
-        mockmvc.perform(mockHttpServletRequestBuilder).andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(1));
+        MockHttpServletRequestBuilder mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(
+                        URL + "/service/subscriber/list").param("namespaceId", baseTestKey).param("groupName", baseTestKey)
+                .param("serviceName", baseTestKey).param("ip", "127.0.0.1").param("port", "8848");
+        mockmvc.perform(mockHttpServletRequestBuilder)
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(1));
         // ip port not match
         mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(URL + "/service/subscriber/list")
                 .param("namespaceId", baseTestKey).param("groupName", baseTestKey).param("serviceName", baseTestKey)
                 .param("ip", "127.0.0.1").param("port", "8849");
-        mockmvc.perform(mockHttpServletRequestBuilder).andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(0));
+        mockmvc.perform(mockHttpServletRequestBuilder)
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(0));
         // ip port is null
         mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(URL + "/service/subscriber/list")
                 .param("namespaceId", baseTestKey).param("groupName", baseTestKey).param("serviceName", baseTestKey);
-        mockmvc.perform(mockHttpServletRequestBuilder).andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(1));
+        mockmvc.perform(mockHttpServletRequestBuilder)
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(1));
     }
 }

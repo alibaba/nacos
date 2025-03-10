@@ -158,8 +158,8 @@ class ServiceControllerV3Test {
     void testList() throws Exception {
         Page<ServiceView> result = new Page<>();
         result.getPageItems().add(new ServiceView());
-        when(catalogServiceV2.listService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "serviceName", 1,
-                10, false)).thenReturn(result);
+        when(catalogServiceV2.listService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "serviceName", 1, 10,
+                false)).thenReturn(result);
         ServiceListForm serviceListForm = new ServiceListForm();
         serviceListForm.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
         serviceListForm.setGroupNameParam(Constants.DEFAULT_GROUP);
@@ -201,7 +201,7 @@ class ServiceControllerV3Test {
         subscribers.getPageItems().get(0).setNamespaceId("testNamespace");
         subscribers.getPageItems().get(0).setServiceName("testService");
         subscribers.getPageItems().get(0).setGroupName("testGroup");
-        Mockito.when(serviceOperatorV2.getSubscribers("nameSpaceId", "serviceName", "groupName", true, 1, 10))
+        Mockito.when(serviceOperatorV2.getSubscribers("testNamespace", "testService", "testGroup", true, 1, 10))
                 .thenReturn(subscribers);
         
         ServiceForm serviceForm = new ServiceForm();
