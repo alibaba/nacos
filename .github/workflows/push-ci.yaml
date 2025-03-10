@@ -168,7 +168,7 @@ jobs:
                 branch: main
               repoType: git
               retries: 3
-              url: https://ghproxy.com/https://github.com/nacos-group/nacos-e2e.git
+              url: https://github.com/nacos-group/nacos-e2e.git
               values:
                 namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
                 global:
@@ -238,7 +238,7 @@ jobs:
                 cpu: 2
                 memory: 2Gi
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         name: Upload test log
         with:
@@ -290,7 +290,7 @@ jobs:
               RESOURCE_REQUIRE:
                 cpu: 2
                 memory: 2Gi
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         name: Upload test log
         with:
@@ -345,7 +345,7 @@ jobs:
               RESOURCE_REQUIRE:
                 cpu: 2
                 memory: 2Gi
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         name: Upload test log
         with:
@@ -398,7 +398,7 @@ jobs:
               RESOURCE_REQUIRE:
                 cpu: 2
                 memory: 2Gi
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         name: Upload test log
         with:
@@ -449,7 +449,7 @@ jobs:
               RESOURCE_REQUIRE:
                 cpu: 2
                 memory: 2Gi
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         name: Upload test log
         with:
@@ -500,7 +500,7 @@ jobs:
               RESOURCE_REQUIRE:
                 cpu: 2
                 memory: 2Gi
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         name: Upload test log
         with:

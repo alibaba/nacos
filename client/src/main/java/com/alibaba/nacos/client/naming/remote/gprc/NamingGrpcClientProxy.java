@@ -61,9 +61,10 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
+import com.alibaba.nacos.common.remote.client.RpcClientConfigFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
-import com.alibaba.nacos.common.remote.client.RpcClientTlsConfigFactory;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 
@@ -109,8 +110,9 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_NAMING);
         labels.put(Constants.APPNAME, AppNameUtils.getAppName());
         namingFuzzyWatchServiceListHolder.registerNamingGrpcClientProxy(this);
-        this.rpcClient = RpcClientFactory.createClient(uuid, ConnectionType.GRPC, labels,
-                RpcClientTlsConfigFactory.getInstance().createSdkConfig(properties.asProperties()));
+        GrpcClientConfig grpcClientConfig = RpcClientConfigFactory.getInstance()
+                .createGrpcClientConfig(properties.asProperties(), labels);
+        this.rpcClient = RpcClientFactory.createClient(uuid, ConnectionType.GRPC, grpcClientConfig);
         this.redoService = new NamingGrpcRedoService(this, namingFuzzyWatchServiceListHolder, properties);
         NAMING_LOGGER.info("Create naming rpc client for uuid->{}", uuid);
         start(serverListFactory, serviceInfoHolder, namingFuzzyWatchServiceListHolder);

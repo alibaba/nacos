@@ -527,7 +527,7 @@ class NacosNamingServiceTest {
         when(serviceInfoHolder.isFailoverSwitch()).thenReturn(true);
         ServiceInfo serviceInfo = new ServiceInfo("group1@@service1");
         serviceInfo.setHosts(Collections.singletonList(new Instance()));
-        when(serviceInfoHolder.getFailoverServiceInfo("service1", "group1", "")).thenReturn(serviceInfo);
+        when(serviceInfoHolder.getFailoverServiceInfo("service1", "group1")).thenReturn(serviceInfo);
         List<Instance> actual = client.getAllInstances("service1", "group1", false);
         verify(proxy, never()).queryInstancesOfService(anyString(), anyString(), anyString(), anyBoolean());
         assertEquals(1, actual.size());
@@ -538,7 +538,7 @@ class NacosNamingServiceTest {
     void testGetAllInstanceFromFailoverEmpty() throws NacosException {
         when(serviceInfoHolder.isFailoverSwitch()).thenReturn(true);
         ServiceInfo serviceInfo = new ServiceInfo("group1@@service1");
-        when(serviceInfoHolder.getFailoverServiceInfo("service1", "group1", "")).thenReturn(serviceInfo);
+        when(serviceInfoHolder.getFailoverServiceInfo("service1", "group1")).thenReturn(serviceInfo);
         List<Instance> actual = client.getAllInstances("service1", "group1", false);
         verify(proxy).queryInstancesOfService(anyString(), anyString(), anyString(), anyBoolean());
         assertEquals(0, actual.size());
@@ -550,7 +550,7 @@ class NacosNamingServiceTest {
         ServiceInfo serviceInfo = new ServiceInfo();
         serviceInfo.setName(serviceName);
         serviceInfo.addHost(new Instance());
-        when(serviceInfoHolder.getServiceInfo(serviceName, Constants.DEFAULT_GROUP, "")).thenReturn(serviceInfo);
+        when(serviceInfoHolder.getServiceInfo(serviceName, Constants.DEFAULT_GROUP)).thenReturn(serviceInfo);
         when(proxy.subscribe(serviceName, Constants.DEFAULT_GROUP, "")).thenThrow(new NacosException(500, "test"));
         List<Instance> result = client.getAllInstances(serviceName);
         assertEquals(serviceInfo.getHosts().get(0), result.get(0));
@@ -569,7 +569,7 @@ class NacosNamingServiceTest {
         ServiceInfo serviceInfo = new ServiceInfo();
         serviceInfo.setName(serviceName);
         serviceInfo.addHost(new Instance());
-        when(serviceInfoHolder.getServiceInfo(serviceName, Constants.DEFAULT_GROUP, "")).thenReturn(serviceInfo);
+        when(serviceInfoHolder.getServiceInfo(serviceName, Constants.DEFAULT_GROUP)).thenReturn(serviceInfo);
         when(proxy.isSubscribed(serviceName, Constants.DEFAULT_GROUP, "")).thenReturn(true);
         List<Instance> result = client.getAllInstances(serviceName);
         assertEquals(serviceInfo.getHosts().get(0), result.get(0));
@@ -988,10 +988,10 @@ class NacosNamingServiceTest {
     @Test
     void testSubscribeDuplicate() throws NacosException {
         String serviceName = "service1";
-        when(changeNotifier.isSubscribed(Constants.DEFAULT_GROUP, serviceName)).thenReturn(true);
+        when(proxy.isSubscribed(serviceName, Constants.DEFAULT_GROUP, StringUtils.EMPTY)).thenReturn(true);
         ServiceInfo serviceInfo = new ServiceInfo(Constants.DEFAULT_GROUP + "@@" + serviceName);
         serviceInfo.addHost(new Instance());
-        when(serviceInfoHolder.getServiceInfo(serviceName, Constants.DEFAULT_GROUP, "")).thenReturn(serviceInfo);
+        when(serviceInfoHolder.getServiceInfo(serviceName, Constants.DEFAULT_GROUP)).thenReturn(serviceInfo);
         final AtomicBoolean flag = new AtomicBoolean(false);
         client.subscribe(serviceName, event -> flag.set(true));
         assertTrue(flag.get());

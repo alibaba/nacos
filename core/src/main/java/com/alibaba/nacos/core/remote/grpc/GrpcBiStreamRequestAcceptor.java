@@ -31,6 +31,9 @@ import com.alibaba.nacos.core.remote.ConnectionMeta;
 import com.alibaba.nacos.core.remote.RpcAckCallbackSynchronizer;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import io.grpc.netty.shaded.io.netty.channel.Channel;
+import io.grpc.netty.shaded.io.netty.util.Attribute;
+import io.grpc.netty.shaded.io.netty.util.AttributeKey;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -152,6 +155,10 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     remoteIp, remotePort, localPort, ConnectionType.GRPC.getType(),
                     setUpRequest.getClientVersion(), appName, setUpRequest.getLabels());
             metaInfo.setNamespaceId(setUpRequest.getTenant());
+                    Channel channel = GrpcServerConstants.CONTEXT_KEY_CHANNEL.get();
+                    Attribute<Boolean> tlsProtected = channel.attr(AttributeKey.valueOf("TLS_PROTECTED"));
+                    metaInfo.setTlsProtected(
+                            tlsProtected != null && tlsProtected.get() != null && tlsProtected.get());
             GrpcConnection connection = new GrpcConnection(metaInfo, responseObserver,
                     GrpcServerConstants.CONTEXT_KEY_CHANNEL.get());
             // null if supported

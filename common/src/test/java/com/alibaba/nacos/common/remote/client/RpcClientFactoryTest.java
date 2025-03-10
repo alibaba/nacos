@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.remote.client;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -34,6 +35,7 @@ import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -208,5 +210,20 @@ class RpcClientFactoryTest {
         assertEquals(labesMap, client.rpcClientConfig.labels());
         assertEquals(ConnectionType.GRPC, client.getConnectionType());
         assertEquals("testClient", CollectionUtils.getOnlyElement(RpcClientFactory.getAllClientEntries()).getKey());
+    }
+    
+    @Test
+    void testCreateClientWithProperties() {
+        Mockito.when(rpcClientTlsConfig.getEnableTls()).thenReturn(true);
+        Properties properties = new Properties();
+        Map<String, String> labels = new HashMap<>();
+        labels.put("tls.enable", "false");
+        labels.put("labelKey", "labelValue");
+        GrpcClientConfig grpcClientConfig = RpcClientConfigFactory.getInstance()
+                .createGrpcClientConfig(properties, labels);
+        RpcClient testClient = RpcClientFactory.createClient("testClient", ConnectionType.GRPC, grpcClientConfig);
+        assertEquals(testClient.getLabels(), labels);
+        assertEquals(testClient.getConnectionType(), ConnectionType.GRPC);
+        assertEquals(testClient.getName(), "testClient");
     }
 }

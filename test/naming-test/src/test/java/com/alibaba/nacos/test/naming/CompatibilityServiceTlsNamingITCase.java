@@ -53,7 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         RpcConstants.NACOS_SERVER_RPC + ".enableTls=true", RpcConstants.NACOS_SERVER_RPC + ".compatibility=true",
         RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem",
         RpcConstants.NACOS_SERVER_RPC + ".certPrivateKey=test-server-key.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-class NamingCompatibilityServiceTls_ITCase {
+class CompatibilityServiceTlsNamingITCase {
     
     private NamingMaintainService namingMaintainService;
     
