@@ -30,7 +30,6 @@ import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.model.form.ConfigFormV3;
@@ -441,9 +440,11 @@ public class ConsoleConfigControllerTest {
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         
-        Result<ConfigInfo4Beta> result = new ObjectMapper().readValue(actualValue, new TypeReference<>() {
+        Result<ConfigGrayInfo> result = new ObjectMapper().readValue(actualValue, new TypeReference<>() {
         });
         
         assertEquals(200, response.getStatus());
+        assertEquals(dataId, result.getData().getDataId());
+        assertEquals(group, result.getData().getGroupName());
     }
 }
