@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.controller.compatibility;
 
+import com.alibaba.nacos.core.auth.InnerApiAuthEnabled;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,9 @@ class ApiCompatibilitySpringConfigTest {
     @Mock
     ControllerMethodsCache controllerMethodsCache;
     
+    @Mock
+    InnerApiAuthEnabled innerApiAuthEnabled;
+    
     ApiCompatibilitySpringConfig apiCompatibilitySpringConfig;
     
     @BeforeEach
@@ -43,7 +47,7 @@ class ApiCompatibilitySpringConfigTest {
     @Test
     public void testApiCompatibilityFilterRegistration() {
         ApiCompatibilityFilter apiCompatibilityFilter = apiCompatibilitySpringConfig.apiCompatibilityFilter(
-                controllerMethodsCache);
+                controllerMethodsCache, innerApiAuthEnabled);
         FilterRegistrationBean<ApiCompatibilityFilter> registrationBean = apiCompatibilitySpringConfig.apiCompatibilityFilterRegistration(
                 apiCompatibilityFilter);
         assertEquals(5, registrationBean.getOrder());
