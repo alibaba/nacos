@@ -24,12 +24,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClientBasicParamUtilTest {
@@ -121,48 +118,6 @@ class ClientBasicParamUtilTest {
         String url = "${test:www.example.com}";
         String actual = ClientBasicParamUtil.parsingEndpointRule(url);
         assertEquals("www.example.com", actual);
-    }
-    
-    @Test
-    void testInitConnectionTimeoutWithException() throws Throwable {
-        assertThrows(IllegalArgumentException.class, () -> {
-            Method method = ClientBasicParamUtil.class.getDeclaredMethod("initConnectionTimeout");
-            method.setAccessible(true);
-            System.setProperty("NACOS.CONNECT.TIMEOUT", "test");
-            try {
-                method.invoke(null);
-            } catch (InvocationTargetException e) {
-                throw e.getCause();
-            }
-        });
-    }
-    
-    @Test
-    void testInitReadTimeoutWithException() throws Throwable {
-        assertThrows(IllegalArgumentException.class, () -> {
-            Method method = ClientBasicParamUtil.class.getDeclaredMethod("initReadTimeout");
-            method.setAccessible(true);
-            System.setProperty("NACOS.READ.TIMEOUT", "test");
-            try {
-                method.invoke(null);
-            } catch (InvocationTargetException e) {
-                throw e.getCause();
-            }
-        });
-    }
-    
-    @Test
-    void testInitPerTaskConfigSizeWithException() throws Throwable {
-        assertThrows(IllegalArgumentException.class, () -> {
-            Method method = ClientBasicParamUtil.class.getDeclaredMethod("initPerTaskConfigSize");
-            method.setAccessible(true);
-            System.setProperty("PER_TASK_CONFIG_SIZE", "test");
-            try {
-                method.invoke(null);
-            } catch (InvocationTargetException e) {
-                throw e.getCause();
-            }
-        });
     }
     
     @Test

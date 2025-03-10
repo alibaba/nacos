@@ -73,7 +73,7 @@ class ResponseUtilTest {
         configAllInfo.setEffect("testEffect");
         configAllInfo.setSchema("testSchema");
         ConfigDetailInfo configDetailInfo = ResponseUtil.transferToConfigDetailInfo(configAllInfo);
-        assertEquals(String.valueOf(configAllInfo.getId()), configDetailInfo.getId());
+        assertEquals(configAllInfo.getId(), configDetailInfo.getId());
         assertEquals(configAllInfo.getTenant(), configDetailInfo.getNamespaceId());
         assertEquals(configAllInfo.getGroup(), configDetailInfo.getGroupName());
         assertEquals(configAllInfo.getDataId(), configDetailInfo.getDataId());
@@ -103,7 +103,7 @@ class ResponseUtilTest {
         configInfo.setType("text");
         configInfo.setAppName("testAppName");
         ConfigBasicInfo configBasicInfo = ResponseUtil.transferToConfigBasicInfo(configInfo);
-        assertEquals(String.valueOf(configInfo.getId()), configBasicInfo.getId());
+        assertEquals(configInfo.getId(), configBasicInfo.getId());
         assertEquals(configInfo.getTenant(), configBasicInfo.getNamespaceId());
         assertEquals(configInfo.getGroup(), configBasicInfo.getGroupName());
         assertEquals(configInfo.getDataId(), configBasicInfo.getDataId());
@@ -128,7 +128,7 @@ class ResponseUtilTest {
         configInfo.setAppName("testAppName");
         configInfo.setLastModified(System.currentTimeMillis());
         ConfigBasicInfo configBasicInfo = ResponseUtil.transferToConfigBasicInfo(configInfo);
-        assertEquals(String.valueOf(configInfo.getId()), configBasicInfo.getId());
+        assertEquals(configInfo.getId(), configBasicInfo.getId());
         assertEquals(configInfo.getTenant(), configBasicInfo.getNamespaceId());
         assertEquals(configInfo.getGroup(), configBasicInfo.getGroupName());
         assertEquals(configInfo.getDataId(), configBasicInfo.getDataId());
@@ -156,7 +156,7 @@ class ResponseUtilTest {
         configInfoGray.setSrcUser("testSrcUser");
         configInfoGray.setLastModified(System.currentTimeMillis());
         ConfigGrayInfo configGrayInfo = ResponseUtil.transferToConfigGrayInfo(configInfoGray);
-        assertEquals(String.valueOf(configInfoGray.getId()), configGrayInfo.getId());
+        assertEquals(configInfoGray.getId(), configGrayInfo.getId());
         assertEquals(configInfoGray.getTenant(), configGrayInfo.getNamespaceId());
         assertEquals(configInfoGray.getGroup(), configGrayInfo.getGroupName());
         assertEquals(configInfoGray.getDataId(), configGrayInfo.getDataId());
@@ -214,7 +214,7 @@ class ResponseUtilTest {
     
     private void assertConfigHistoryBasicInfo(ConfigHistoryInfo configHistoryInfo,
             ConfigHistoryBasicInfo configHistoryBasicInfo) {
-        assertEquals(String.valueOf(configHistoryInfo.getId()), configHistoryBasicInfo.getId());
+        assertEquals(configHistoryInfo.getId(), configHistoryBasicInfo.getId());
         assertEquals(configHistoryInfo.getTenant(), configHistoryBasicInfo.getNamespaceId());
         assertEquals(configHistoryInfo.getGroup(), configHistoryBasicInfo.getGroupName());
         assertEquals(configHistoryInfo.getDataId(), configHistoryBasicInfo.getDataId());

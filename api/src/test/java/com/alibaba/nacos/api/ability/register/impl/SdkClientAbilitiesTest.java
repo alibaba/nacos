@@ -16,15 +16,18 @@
 
 package com.alibaba.nacos.api.ability.register.impl;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SdkClientAbilitiesTest {
     
     @Test
     void testGetStaticAbilities() {
-        // TODO add the sdk client abilities.
-        assertTrue(SdkClientAbilities.getStaticAbilities().isEmpty());
+        assertFalse(SdkClientAbilities.getStaticAbilities().isEmpty());
+        assertTrue(SdkClientAbilities.getStaticAbilities().get(AbilityKey.SDK_CLIENT_FUZZY_WATCH));
+        assertTrue(SdkClientAbilities.getStaticAbilities().get(AbilityKey.SDK_CLIENT_DISTRIBUTED_LOCK));
     }
 }

@@ -87,7 +87,7 @@ class ConfigInfoTest {
     
     @Test
     public void testBasicInfoDeserialize() throws JsonProcessingException {
-        String json = "{\"id\":1,\"namespaceId\":\"testNs\",\"groupName\":\"testGroup\",\"dataId\":\"testDataId\","
+        String json = "{\"id\":\"1\",\"namespaceId\":\"testNs\",\"groupName\":\"testGroup\",\"dataId\":\"testDataId\","
                 + "\"md5\":\"testMd5\",\"type\":\"text\",\"appName\":\"testApp\",\"createTime\":%s,\"modifyTime\":%s}";
         json = String.format(json, createTime, modifyTime);
         assertBasicInfo(mapper.readValue(json, ConfigBasicInfo.class));
@@ -102,7 +102,7 @@ class ConfigInfoTest {
     
     @Test
     public void testDetailInfoDeserialize() throws JsonProcessingException {
-        String json = "{\"id\":1,\"namespaceId\":\"testNs\",\"groupName\":\"testGroup\",\"dataId\":\"testDataId\","
+        String json = "{\"id\":\"1\",\"namespaceId\":\"testNs\",\"groupName\":\"testGroup\",\"dataId\":\"testDataId\","
                 + "\"md5\":\"testMd5\",\"type\":\"text\",\"appName\":\"testApp\",\"createTime\":%s,"
                 + "\"modifyTime\":%s,\"content\":\"testContent\",\"desc\":\"testDesc\","
                 + "\"encryptedDataKey\":\"testEncryptedDataKey\",\"createUser\":\"testCreateUser\","
@@ -128,7 +128,7 @@ class ConfigInfoTest {
     
     @Test
     public void testGrayInfoDeserialize() throws JsonProcessingException {
-        String json = "{\"id\":1,\"namespaceId\":\"testNs\",\"groupName\":\"testGroup\",\"dataId\":\"testDataId\","
+        String json = "{\"id\":\"1\",\"namespaceId\":\"testNs\",\"groupName\":\"testGroup\",\"dataId\":\"testDataId\","
                 + "\"md5\":\"testMd5\",\"type\":\"text\",\"appName\":\"testApp\",\"createTime\":%s,\"modifyTime\":%s,"
                 + "\"content\":\"testContent\",\"desc\":\"testDesc\",\"encryptedDataKey\":\"testEncryptedDataKey\","
                 + "\"createUser\":\"testCreateUser\",\"createIp\":\"1.1.1.1\",\"configTags\":\"testConfigTag1,testConfigTag2\","
@@ -143,7 +143,7 @@ class ConfigInfoTest {
     }
     
     private void assertJsonContainBasicInfos(String json) {
-        assertTrue(json.contains("\"id\":1"));
+        assertTrue(json.contains("\"id\":\"1\""));
         assertTrue(json.contains("\"namespaceId\":\"testNs\""));
         assertTrue(json.contains("\"groupName\":\"testGroup\""));
         assertTrue(json.contains("\"dataId\":\"testDataId\""));

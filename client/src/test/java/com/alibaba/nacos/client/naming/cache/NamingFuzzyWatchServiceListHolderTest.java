@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.client.naming.cache;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.naming.listener.AbstractFuzzyWatchEventWatcher;
 import com.alibaba.nacos.api.naming.listener.FuzzyWatchChangeEvent;
 import com.alibaba.nacos.api.naming.pojo.ListView;
@@ -77,6 +79,7 @@ public class NamingFuzzyWatchServiceListHolderTest {
         namingFuzzyWatchServiceListHolder.registerNamingGrpcClientProxy(namingGrpcClientProxy);
         namingFuzzyWatchNotifyRequestHandler = new NamingFuzzyWatchNotifyRequestHandler(
                 namingFuzzyWatchServiceListHolder);
+        when(namingGrpcClientProxy.isAbilitySupportedByServer(AbilityKey.SERVER_FUZZY_WATCH)).thenReturn(true);
     }
     
     @AfterEach
@@ -350,5 +353,18 @@ public class NamingFuzzyWatchServiceListHolderTest {
         namingFuzzyWatchContext.syncFuzzyWatchers();
         //expect  2 times notified
         Assertions.assertEquals(2, watcherFlag.get());
+    }
+    
+    @Test
+    void testFuzzyWatchNotSupport() {
+        when(namingGrpcClientProxy.isAbilitySupportedByServer(AbilityKey.SERVER_FUZZY_WATCH)).thenReturn(false);
+        Assertions.assertThrows(NacosRuntimeException.class, () -> {
+            namingFuzzyWatchServiceListHolder.registerFuzzyWatcher("*", new AbstractFuzzyWatchEventWatcher() {
+                @Override
+                public void onEvent(FuzzyWatchChangeEvent event) {
+                
+                }
+            });
+        });
     }
 }

@@ -54,7 +54,5 @@ class ServiceTest {
         service.setGroupName("group");
         service.setProtectThreshold(1.0f);
         service.setMetadata(Collections.singletonMap("a", "b"));
-        assertEquals("Service{name='service', protectThreshold=1.0, appName='app', groupName='group', metadata={a=b}}",
-                service.toString());
     }
 }

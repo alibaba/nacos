@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.config.impl;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.config.listener.AbstractFuzzyWatchEventWatcher;
 import com.alibaba.nacos.api.config.listener.ConfigFuzzyWatchChangeEvent;
 import com.alibaba.nacos.api.config.remote.request.ConfigFuzzyWatchChangeNotifyRequest;
@@ -23,6 +24,7 @@ import com.alibaba.nacos.api.config.remote.request.ConfigFuzzyWatchRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigFuzzyWatchSyncRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigFuzzyWatchResponse;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.utils.CollectionUtils;
@@ -54,6 +56,8 @@ import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_MATCH
 import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_OVER_LIMIT;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -73,11 +77,11 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
     @BeforeEach
     void before() {
         configFuzzyWatchGroupKeyHolder = new ConfigFuzzyWatchGroupKeyHolder(rpcTransportClient, clientId);
+        doReturn(true).when(rpcTransportClient).isAbilitySupportedByServer(AbilityKey.SERVER_FUZZY_WATCH);
     }
     
     @AfterEach
     void after() {
-    
     }
     
     @Test
@@ -248,6 +252,7 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
     
     @Test
     void testExecuteFuzzyWatchRequestNormal() throws NacosException {
+        reset(rpcTransportClient);
         String envName = "name";
         String groupKeyPattern = "pattern";
         ConfigFuzzyWatchContext configFuzzyWatchContext = new ConfigFuzzyWatchContext(envName, groupKeyPattern);
@@ -379,5 +384,19 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
         configFuzzyWatchContext.syncFuzzyWatchers();
         //expect  2 times notified
         Assertions.assertEquals(2, watcherFlag.get());
+    }
+    
+    @Test
+    void testFuzzyWatchNotSupport() {
+        when(rpcTransportClient.isAbilitySupportedByServer(AbilityKey.SERVER_FUZZY_WATCH)).thenReturn(false);
+        Assertions.assertThrows(NacosRuntimeException.class, () -> {
+            configFuzzyWatchGroupKeyHolder.registerFuzzyWatcher("dataIdName*", "group",
+                    new AbstractFuzzyWatchEventWatcher() {
+                        
+                        @Override
+                        public void onEvent(ConfigFuzzyWatchChangeEvent event) {
+                        }
+                    });
+        });
     }
 }

@@ -123,6 +123,9 @@ class ServiceControllerV2Test {
     @Test
     void testDetail() throws Exception {
         ServiceDetailInfo expected = new ServiceDetailInfo();
+        expected.setEphemeral(true);
+        expected.setMetadata(Collections.emptyMap());
+        expected.setClusterMap(Collections.emptyMap());
         when(serviceOperatorV2.queryService(
                 Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service"))).thenReturn(
                 expected);

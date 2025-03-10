@@ -31,6 +31,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -61,6 +62,12 @@ class CatalogControllerTest {
     @Test
     void testServiceDetail() throws Exception {
         ServiceDetailInfo expected = new ServiceDetailInfo();
+        expected.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
+        expected.setGroupName(TEST_GROUP_NAME);
+        expected.setServiceName(TEST_SERVICE_NAME);
+        expected.setEphemeral(true);
+        expected.setClusterMap(Collections.emptyMap());
+        expected.setMetadata(Collections.emptyMap());
         when(catalogServiceV2.getServiceDetail(Constants.DEFAULT_NAMESPACE_ID, TEST_GROUP_NAME,
                 TEST_SERVICE_NAME)).thenReturn(expected);
         Object actual = catalogController.serviceDetail(Constants.DEFAULT_NAMESPACE_ID,

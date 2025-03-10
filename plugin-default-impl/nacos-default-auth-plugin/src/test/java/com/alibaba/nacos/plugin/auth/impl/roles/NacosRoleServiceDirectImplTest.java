@@ -34,7 +34,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -55,8 +54,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class NacosRoleServiceDirectImplTest {
     
-    Class<NacosRoleServiceDirectImpl> nacosRoleServiceClass;
-    
     @Mock
     private AuthConfigs authConfigs;
     
@@ -74,28 +71,13 @@ class NacosRoleServiceDirectImplTest {
     
     @BeforeEach
     void setup() throws Exception {
-        nacosRoleService = new NacosRoleServiceDirectImpl(authConfigs, rolePersistService, userDetailsService, permissionPersistService);
-        nacosRoleServiceClass = NacosRoleServiceDirectImpl.class;
-        Field authConfigsFile = nacosRoleServiceClass.getDeclaredField("authConfigs");
-        authConfigsFile.setAccessible(true);
-        authConfigsFile.set(nacosRoleService, authConfigs);
-        
-        Field rolePersistServiceFile = nacosRoleServiceClass.getDeclaredField("rolePersistService");
-        rolePersistServiceFile.setAccessible(true);
-        rolePersistServiceFile.set(nacosRoleService, rolePersistService);
-        
-        Field userDetailsServiceField = nacosRoleServiceClass.getDeclaredField("userDetailsService");
-        userDetailsServiceField.setAccessible(true);
-        userDetailsServiceField.set(nacosRoleService, userDetailsService);
-        
-        Field permissionPersistServiceField = nacosRoleServiceClass.getDeclaredField("permissionPersistService");
-        permissionPersistServiceField.setAccessible(true);
-        permissionPersistServiceField.set(nacosRoleService, permissionPersistService);
+        nacosRoleService = new NacosRoleServiceDirectImpl(authConfigs, rolePersistService, userDetailsService,
+                permissionPersistService);
     }
     
     @Test
     void reload() throws Exception {
-        Method reload = nacosRoleServiceClass.getDeclaredMethod("reload");
+        Method reload = AbstractCachedRoleService.class.getDeclaredMethod("reload");
         reload.setAccessible(true);
         reload.invoke(nacosRoleService);
     }
@@ -188,7 +170,7 @@ class NacosRoleServiceDirectImplTest {
     
     @Test
     void joinResource() throws Exception {
-        Method method = nacosRoleServiceClass.getDeclaredMethod("joinResource", Resource.class);
+        Method method = AbstractCheckedRoleService.class.getDeclaredMethod("joinResource", Resource.class);
         method.setAccessible(true);
         Resource resource = new Resource("public", "group", AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, "rw", null);
         Object invoke = method.invoke(nacosRoleService, new Resource[] {resource});

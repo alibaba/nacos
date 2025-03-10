@@ -100,7 +100,7 @@ class UserControllerV3Test {
         
         verify(userDetailsService, times(1)).createUser(eq("test"), passwordCaptor.capture());
         
-        assertTrue(passwordCaptor.getValue().startsWith("$2a$10$"), "Password hash should start with '$2a$10$'");
+        assertEquals("testPass", passwordCaptor.getValue(), "Password hash should be 'testPass'");
         
         assertEquals("create user ok!", result.getData());
     }
@@ -151,11 +151,11 @@ class UserControllerV3Test {
         
         ArgumentCaptor<String> passwordCaptor = ArgumentCaptor.forClass(String.class);
         
-        Result<String> result = (Result<String>) userControllerV3.updateUser("nacos", "newPass", response, request);
+        Result<String> result = userControllerV3.updateUser("nacos", "newPass", response, request);
         
         verify(userDetailsService, times(1)).updateUserPassword(eq("nacos"), passwordCaptor.capture());
         
-        assertTrue(passwordCaptor.getValue().startsWith("$2a$10$"));
+        assertEquals("newPass", passwordCaptor.getValue());
         assertEquals("update user ok!", result.getData());
     }
     
@@ -202,7 +202,7 @@ class UserControllerV3Test {
         assertEquals(AuthConstants.DEFAULT_USER, data.getUsername());
         assertEquals("testAdminPass", data.getPassword());
         
-        assertTrue(passwordCaptor.getValue().startsWith("$2a$10$"));
+        assertEquals("testAdminPass", passwordCaptor.getValue());
     }
     
     @Test

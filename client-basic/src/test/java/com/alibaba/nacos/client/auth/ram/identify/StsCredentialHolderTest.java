@@ -58,8 +58,8 @@ class StsCredentialHolderTest {
         restMapField.setAccessible(true);
         Map<String, NacosRestTemplate> restMap = (Map<String, NacosRestTemplate>) restMapField.get(null);
         cachedNacosRestTemplate = restMap.get(
-                "com.alibaba.nacos.client.config.impl.ConfigHttpClientManager$ConfigHttpClientFactory");
-        restMap.put("com.alibaba.nacos.client.config.impl.ConfigHttpClientManager$ConfigHttpClientFactory", nacosRestTemplate);
+                "com.alibaba.nacos.client.remote.HttpClientManager$HttpClientFactory");
+        restMap.put("com.alibaba.nacos.client.remote.HttpClientManager$HttpClientFactory", nacosRestTemplate);
     }
     
     @AfterEach
@@ -70,7 +70,7 @@ class StsCredentialHolderTest {
             Field restMapField = HttpClientBeanHolder.class.getDeclaredField("SINGLETON_REST");
             restMapField.setAccessible(true);
             Map<String, NacosRestTemplate> restMap = (Map<String, NacosRestTemplate>) restMapField.get(null);
-            restMap.put("com.alibaba.nacos.client.config.impl.ConfigHttpClientManager$ConfigHttpClientFactory",
+            restMap.put("com.alibaba.nacos.client.remote.HttpClientManager$HttpClientFactory",
                     cachedNacosRestTemplate);
         }
         clearForSts();

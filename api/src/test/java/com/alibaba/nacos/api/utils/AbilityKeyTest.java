@@ -99,7 +99,7 @@ class AbilityKeyTest {
         Collection<AbilityKey> actual = AbilityKey.getAllValues(AbilityMode.SERVER);
         assertEquals(3, actual.size());
         actual = AbilityKey.getAllValues(AbilityMode.SDK_CLIENT);
-        assertEquals(1, actual.size());
+        assertEquals(2, actual.size());
         actual = AbilityKey.getAllValues(AbilityMode.CLUSTER_CLIENT);
         assertEquals(1, actual.size());
     }
@@ -109,13 +109,14 @@ class AbilityKeyTest {
         Collection<String> actual = AbilityKey.getAllNames(AbilityMode.SERVER);
         assertEquals(3, actual.size());
         actual = AbilityKey.getAllNames(AbilityMode.SDK_CLIENT);
-        assertEquals(1, actual.size());
+        assertEquals(2, actual.size());
         actual = AbilityKey.getAllNames(AbilityMode.CLUSTER_CLIENT);
         assertEquals(1, actual.size());
     }
     
     @Test
     void testGetDescription() {
-        assertEquals("just for junit test", AbilityKey.SERVER_FUZZY_WATCH.getDescription());
+        assertEquals("Server whether support fuzzy watch service or config",
+                AbilityKey.SERVER_FUZZY_WATCH.getDescription());
     }
 }
