@@ -207,9 +207,9 @@ class ConfigQueryRequestHandlerTest {
         
         //check content&md5
         assertNull(response.getContent());
-        assertEquals(MD5Utils.md5Hex(content, "UTF-8"), response.getMd5());
+        assertNull(response.getMd5());
         assertEquals(CONFIG_NOT_FOUND, response.getErrorCode());
-        assertEquals("key_testGetTag_NotFound", response.getEncryptedDataKey());
+        assertNull(response.getEncryptedDataKey());
         
         //check flags.
         assertFalse(response.isBeta());

@@ -147,7 +147,7 @@ public class ConfigFuzzyWatchGroupKeyHolder extends SmartSubscriber {
      * @param dataIdPattern          dataIdPattern.
      * @param groupPattern           groupPattern.
      * @param fuzzyWatchEventWatcher fuzzyWatchEventWatcher.
-     * @return
+     * @return ConfigFuzzyWatchContext
      */
     public ConfigFuzzyWatchContext registerFuzzyWatcher(String dataIdPattern, String groupPattern,
             FuzzyWatchEventWatcher fuzzyWatchEventWatcher) {

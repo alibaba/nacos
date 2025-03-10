@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.auth.impl.process;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.auth.impl.NacosAuthLoginConstant;
 import com.alibaba.nacos.client.utils.ClientBasicParamUtil;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
@@ -85,7 +86,7 @@ public class HttpLoginProcessor implements LoginProcessor {
             HttpRestResult<String> restResult = nacosRestTemplate.postForm(url, Header.EMPTY,
                     Query.newInstance().initParams(params), bodyMap, String.class);
             int code = restResult.getCode();
-            if (code == 404 || code == 501) {
+            if (code == NacosException.NOT_FOUND || code == NacosException.SERVER_NOT_IMPLEMENTED) {
                 url = server + contextPath + LOGIN_V1_URL;
                 restResult = nacosRestTemplate.postForm(url, Header.EMPTY, Query.newInstance().initParams(params),
                         bodyMap, String.class);

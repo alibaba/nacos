@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.controller.v2;
 
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
@@ -31,9 +32,11 @@ import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.core.auth.AuthFilter;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
-import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -51,9 +54,6 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -228,12 +228,12 @@ class ConfigControllerV2Test {
         MockHttpServletRequest request = new MockHttpServletRequest();
         
         when(configOperationService.deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID_PUBLIC),
-                eq(TEST_TAG), any(), any())).thenReturn(true);
+                eq(TEST_TAG), any(), any(), any())).thenReturn(true);
         Result<Boolean> booleanResult = configControllerV2.deleteConfig(request, TEST_DATA_ID, TEST_GROUP,
                 TEST_NAMESPACE_ID, TEST_TAG);
         
         verify(configOperationService).deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID_PUBLIC),
-                eq(TEST_TAG), any(), any());
+                eq(TEST_TAG), any(), any(), eq("http"));
         
         assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
         assertTrue(booleanResult.getData());
@@ -245,13 +245,13 @@ class ConfigControllerV2Test {
         MockHttpServletRequest request = new MockHttpServletRequest();
         
         when(configOperationService.deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID_PUBLIC),
-                eq(TEST_TAG), any(), any())).thenReturn(true);
+                eq(TEST_TAG), any(), any(), eq("http"))).thenReturn(true);
         
         Result<Boolean> booleanResult = configControllerV2.deleteConfig(request, TEST_DATA_ID, TEST_GROUP,
                 TEST_NAMESPACE_ID, TEST_TAG);
         
         verify(configOperationService).deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID_PUBLIC),
-                eq(TEST_TAG), any(), any());
+                eq(TEST_TAG), any(), any(), eq("http"));
         
         assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
         assertTrue(booleanResult.getData());

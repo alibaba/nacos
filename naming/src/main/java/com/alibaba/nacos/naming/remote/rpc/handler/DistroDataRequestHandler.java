@@ -69,6 +69,7 @@ public class DistroDataRequestHandler extends RequestHandler<DistroDataRequest, 
         } catch (Exception e) {
             Loggers.DISTRO.error("[DISTRO-FAILED] distro handle with exception", e);
             DistroDataResponse result = new DistroDataResponse();
+            result.setResultCode(ResponseCode.FAIL.getCode());
             result.setErrorCode(ResponseCode.FAIL.getCode());
             result.setMessage("handle distro request with exception");
             return result;

@@ -31,6 +31,9 @@ import com.alibaba.nacos.core.remote.ConnectionMeta;
 import com.alibaba.nacos.core.remote.RpcAckCallbackSynchronizer;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import io.grpc.netty.shaded.io.netty.channel.Channel;
+import io.grpc.netty.shaded.io.netty.util.Attribute;
+import io.grpc.netty.shaded.io.netty.util.AttributeKey;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,9 +73,13 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
     public StreamObserver<Payload> requestBiStream(StreamObserver<Payload> responseObserver) {
         StreamObserver<Payload> streamObserver = new StreamObserver<>() {
             final String connectionId = GrpcServerConstants.CONTEXT_KEY_CONN_ID.get();
+            
             final Integer localPort = GrpcServerConstants.CONTEXT_KEY_CONN_LOCAL_PORT.get();
+            
             final int remotePort = GrpcServerConstants.CONTEXT_KEY_CONN_REMOTE_PORT.get();
+            
             String remoteIp = GrpcServerConstants.CONTEXT_KEY_CONN_REMOTE_IP.get();
+            
             String clientIp = "";
             
             @Override
@@ -124,21 +131,20 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
         return streamObserver;
     }
     
-    private void streamObserverOnNext(Payload payload, String connectionId, Integer localPort,
-            int remotePort, String remoteIp, StreamObserver<Payload> responseObserver) {
+    private void streamObserverOnNext(Payload payload, String connectionId, Integer localPort, int remotePort,
+            String remoteIp, StreamObserver<Payload> responseObserver) {
         String clientIp = payload.getMetadata().getClientIp();
         traceDetailIfNecessary(payload);
         Object parseObj;
         try {
             parseObj = GrpcUtils.parse(payload);
         } catch (Throwable throwable) {
-            Loggers.REMOTE_DIGEST.warn("[{}]Grpc request bi stream,payload parse error={}", connectionId,
-                    throwable);
+            Loggers.REMOTE_DIGEST.warn("[{}]Grpc request bi stream,payload parse error={}", connectionId, throwable);
             return;
         }
         if (parseObj == null) {
-            Loggers.REMOTE_DIGEST.warn("[{}]Grpc request bi stream,payload parse null ,body={},meta={}",
-                    connectionId, payload.getBody().getValue().toStringUtf8(), payload.getMetadata());
+            Loggers.REMOTE_DIGEST.warn("[{}]Grpc request bi stream,payload parse null ,body={},meta={}", connectionId,
+                    payload.getBody().getValue().toStringUtf8(), payload.getMetadata());
             return;
         }
         if (parseObj instanceof ConnectionSetupRequest) {
@@ -148,10 +154,13 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
             if (labels != null && labels.containsKey(Constants.APPNAME)) {
                 appName = labels.get(Constants.APPNAME);
             }
-            ConnectionMeta metaInfo = new ConnectionMeta(connectionId, payload.getMetadata().getClientIp(),
-                    remoteIp, remotePort, localPort, ConnectionType.GRPC.getType(),
-                    setUpRequest.getClientVersion(), appName, setUpRequest.getLabels());
+            ConnectionMeta metaInfo = new ConnectionMeta(connectionId, payload.getMetadata().getClientIp(), remoteIp,
+                    remotePort, localPort, ConnectionType.GRPC.getType(), setUpRequest.getClientVersion(), appName,
+                    setUpRequest.getLabels());
             metaInfo.setNamespaceId(setUpRequest.getTenant());
+            Channel channel = GrpcServerConstants.CONTEXT_KEY_CHANNEL.get();
+            Attribute<Boolean> tlsProtected = channel.attr(AttributeKey.valueOf("TLS_PROTECTED"));
+            metaInfo.setTlsProtected(tlsProtected != null && tlsProtected.get() != null && tlsProtected.get());
             GrpcConnection connection = new GrpcConnection(metaInfo, responseObserver,
                     GrpcServerConstants.CONTEXT_KEY_CHANNEL.get());
             // null if supported
@@ -180,8 +189,8 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     if (setUpRequest.getAbilityTable() != null) {
                         // finish register, tell client has set up successfully
                         // async response without client ack
-                        connection.sendRequestNoAck(new SetupAckRequest(NacosAbilityManagerHolder.getInstance()
-                                .getCurrentNodeAbilities(AbilityMode.SERVER)));
+                        connection.sendRequestNoAck(new SetupAckRequest(
+                                NacosAbilityManagerHolder.getInstance().getCurrentNodeAbilities(AbilityMode.SERVER)));
                     }
                 } catch (Exception e) {
                     // nothing to do
@@ -196,8 +205,8 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
             RpcAckCallbackSynchronizer.ackNotify(connectionId, response);
             connectionManager.refreshActiveTime(connectionId);
         } else {
-            Loggers.REMOTE_DIGEST.warn("[{}]Grpc request bi stream,unknown payload receive ,parseObj={}",
-                    connectionId, parseObj);
+            Loggers.REMOTE_DIGEST.warn("[{}]Grpc request bi stream,unknown payload receive ,parseObj={}", connectionId,
+                    parseObj);
         }
     }
     

@@ -331,6 +331,18 @@ public class Constants {
     
     public static final String GRAY = "gray";
     
+    /**
+     * request source type.
+     */
+    public static final String HTTP = "http";
+    
+    public static final String RPC = "rpc";
+    
+    /**
+     * Separator.
+     */
+    public static final String COLON =  ":";
+    
     static String getPersistEncode() {
         String persistEncode = System.getenv(NACOS_PERSIST_ENCODE_KEY);
         if (StringUtils.isBlank(persistEncode)) {

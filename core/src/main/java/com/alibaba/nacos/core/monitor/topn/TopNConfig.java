@@ -55,6 +55,7 @@ public class TopNConfig extends AbstractDynamicConfig {
     
     private TopNConfig() {
         super(TOP_N);
+        resetConfig();
     }
     
     @Override

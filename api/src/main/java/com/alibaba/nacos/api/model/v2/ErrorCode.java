@@ -111,6 +111,26 @@ public enum ErrorCode {
     CONFIG_GRAY_NAME_UNRECOGNIZED_ERROR(20013, "config gray name not recognized"),
     
     /**
+     * reach cluster quota.
+     */
+    OVER_CLUSTER_QUOTA(5031, "cluster capacity reach quota"),
+    
+    /**
+     * reach group quota.
+     */
+    OVER_GROUP_QUOTA(5032, "group capacity reach quota"),
+    
+    /**
+     * reach tenant quota.
+     */
+    OVER_TENANT_QUOTA(5033, "tenant capacity reach quota"),
+    
+    /**
+     * over max content size.
+     */
+    OVER_MAX_SIZE(5034, "config content size is over limit"),
+    
+    /**
      * service name error.
      */
     SERVICE_NAME_ERROR(21000, "service name error"),
@@ -237,6 +257,15 @@ public enum ErrorCode {
     
     public String getMsg() {
         return msg;
+    }
+    
+    public static ErrorCode getErrorCode(String name) {
+        for (ErrorCode errorCode : ErrorCode.values()) {
+            if (errorCode.name().equals(name)) {
+                return errorCode;
+            }
+        }
+        return null;
     }
     
     ErrorCode(Integer code, String msg) {

@@ -229,6 +229,7 @@ class EnvUtilTest {
     
     @Test
     void testGetStandaloneMode() {
+        EnvUtil.setIsStandalone(false);
         assertFalse(EnvUtil.getStandaloneMode());
         EnvUtil.setIsStandalone(true);
         assertTrue(EnvUtil.getStandaloneMode());
