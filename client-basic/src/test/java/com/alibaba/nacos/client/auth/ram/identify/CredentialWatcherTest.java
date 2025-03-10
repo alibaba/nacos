@@ -109,7 +109,7 @@ class CredentialWatcherTest {
     
     @Test
     void testLoadCredentialByIdentityFile() throws InvocationTargetException, IllegalAccessException {
-        URL url = CredentialWatcherTest.class.getResource("/spas.identity");
+        URL url = CredentialWatcherTest.class.getClassLoader().getResource("spas.identity");
         System.setProperty("spas.identity", url.getPath());
         final AtomicReference<String> readAk = new AtomicReference<>("");
         final AtomicReference<String> readSK = new AtomicReference<>("");
@@ -129,7 +129,7 @@ class CredentialWatcherTest {
     
     @Test
     void testLoadCredentialByInvalidIdentityFile() throws InvocationTargetException, IllegalAccessException {
-        URL url = CredentialWatcherTest.class.getResource("/spas_invalid.identity");
+        URL url = CredentialWatcherTest.class.getClassLoader().getResource("spas_invalid.identity");
         System.setProperty("spas.identity", url.getPath());
         final AtomicReference<String> readAk = new AtomicReference<>("");
         final AtomicReference<String> readSK = new AtomicReference<>("");
@@ -153,7 +153,7 @@ class CredentialWatcherTest {
     @Test
     void testLoadCredentialByDockerFile()
             throws FileNotFoundException, InvocationTargetException, IllegalAccessException, NoSuchFieldException {
-        URL url = CredentialWatcherTest.class.getResource("/spas_docker.identity");
+        URL url = CredentialWatcherTest.class.getClassLoader().getResource("spas_docker.identity");
         InputStream propertiesIS = new FileInputStream(url.getPath());
         Credentials actual = new Credentials();
         Field propertyPathField = CredentialWatcher.class.getDeclaredField("propertyPath");
@@ -180,7 +180,7 @@ class CredentialWatcherTest {
     
     @Test
     void testReLoadCredential() throws InvocationTargetException, IllegalAccessException, InterruptedException {
-        URL url = CredentialWatcherTest.class.getResource("/spas_modified.identity");
+        URL url = CredentialWatcherTest.class.getClassLoader().getResource("spas_modified.identity");
         modifiedFile(url, true);
         System.setProperty("spas.identity", url.getPath());
         final AtomicReference<String> readAk = new AtomicReference<>("");

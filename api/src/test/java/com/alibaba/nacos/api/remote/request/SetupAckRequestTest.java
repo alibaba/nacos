@@ -35,7 +35,7 @@ class SetupAckRequestTest extends BasicRequestTest {
         String json = mapper.writeValueAsString(request);
         System.out.println(json);
         assertNotNull(json);
-        assertTrue(json.contains("\"abilityTable\":{\"test_1\":true}"));
+        assertTrue(json.contains("\"abilityTable\":{\"fuzzyWatch\":true}"));
         assertTrue(json.contains("\"module\":\"internal\""));
         assertTrue(json.contains("\"requestId\":\"1\""));
     }
@@ -43,10 +43,10 @@ class SetupAckRequestTest extends BasicRequestTest {
     @Test
     void testDeserialize() throws Exception {
         String json =
-                "{\"headers\":{},\"requestId\":\"1\",\"abilityTable\":{\"test_1\":true}," + "\"module\":\"internal\"}";
+                "{\"headers\":{},\"requestId\":\"1\",\"abilityTable\":{\"fuzzyWatch\":true},\"module\":\"internal\"}";
         SetupAckRequest result = mapper.readValue(json, SetupAckRequest.class);
         assertNotNull(result);
-        assertTrue(result.getAbilityTable().get("test_1"));
+        assertTrue(result.getAbilityTable().get(AbilityKey.SDK_CLIENT_FUZZY_WATCH.getName()));
         assertEquals("1", result.getRequestId());
         assertEquals("internal", result.getModule());
     }
