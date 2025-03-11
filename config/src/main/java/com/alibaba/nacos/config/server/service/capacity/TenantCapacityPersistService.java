@@ -18,9 +18,9 @@ package com.alibaba.nacos.config.server.service.capacity;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.config.server.model.capacity.TenantCapacity;
+import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
-import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
@@ -41,7 +41,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -95,14 +94,16 @@ public class TenantCapacityPersistService {
     public TenantCapacity getTenantCapacity(String tenantId) {
         TenantCapacityMapper tenantCapacityMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.TENANT_CAPACITY);
-        String sql = tenantCapacityMapper.select(
-                Arrays.asList("id", "quota", "`usage`", "`max_size`", "max_aggr_count", "max_aggr_size", "tenant_id"),
-                Collections.singletonList("tenant_id"));
-        List<TenantCapacity> list = jdbcTemplate.query(sql, new Object[] {tenantId}, TENANT_CAPACITY_ROW_MAPPER);
-        if (list.isEmpty()) {
+        MapperContext context = new MapperContext();
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
+        
+        MapperResult mapperResult = tenantCapacityMapper.select(context);
+        List<TenantCapacity> capacityList = jdbcTemplate.query(mapperResult.getSql(), TENANT_CAPACITY_ROW_MAPPER,
+                mapperResult.getParamList().toArray());
+        if (capacityList.isEmpty()) {
             return null;
         }
-        return list.get(0);
+        return capacityList.get(0);
     }
     
     /**

@@ -29,6 +29,7 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.constant.ParametersField;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.enums.ApiVersionEnum;
+import com.alibaba.nacos.config.server.exception.ConfigAlreadyExistsException;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -39,7 +40,6 @@ import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.SampleResult;
-import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
@@ -48,19 +48,14 @@ import com.alibaba.nacos.config.server.paramcheck.ConfigBlurSearchHttpParamExtra
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.config.server.paramcheck.ConfigListenerHttpParamExtractor;
 import com.alibaba.nacos.config.server.result.code.ResultCodeEnum;
-import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
-import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.core.control.TpsControl;
@@ -70,7 +65,6 @@ import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
-import com.alibaba.nacos.sys.utils.InetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -92,7 +86,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLDecoder;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -127,8 +120,6 @@ public class ConfigController {
     
     private ConfigInfoPersistService configInfoPersistService;
     
-    private ConfigInfoBetaPersistService configInfoBetaPersistService;
-    
     private ConfigInfoGrayPersistService configInfoGrayPersistService;
     
     private NamespacePersistService namespacePersistService;
@@ -139,14 +130,13 @@ public class ConfigController {
     
     public ConfigController(ConfigServletInner inner, ConfigOperationService configOperationService,
             ConfigSubService configSubService, ConfigInfoPersistService configInfoPersistService,
-            NamespacePersistService namespacePersistService, ConfigInfoBetaPersistService configInfoBetaPersistService,
+            NamespacePersistService namespacePersistService,
             ConfigInfoGrayPersistService configInfoGrayPersistService) {
         this.inner = inner;
         this.configOperationService = configOperationService;
         this.configSubService = configSubService;
         this.configInfoPersistService = configInfoPersistService;
         this.namespacePersistService = namespacePersistService;
-        this.configInfoBetaPersistService = configInfoBetaPersistService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
     }
     
@@ -187,6 +177,7 @@ public class ConfigController {
         }
         
         // check tenant
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         ParamUtils.checkTenant(tenant);
         ParamUtils.checkParam(dataId, group, "datumId", content);
         ParamUtils.checkParam(tag);
@@ -214,6 +205,7 @@ public class ConfigController {
         
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
         configRequestInfo.setSrcIp(RequestUtil.getRemoteIp(request));
+        configRequestInfo.setSrcType(Constants.HTTP);
         configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
         configRequestInfo.setBetaIps(request.getHeader("betaIps"));
         configRequestInfo.setCasMd5(request.getHeader("casMd5"));
@@ -299,38 +291,32 @@ public class ConfigController {
         String clientIp = RequestUtil.getRemoteIp(request);
         String srcUser = RequestUtil.getSrcUserName(request);
         
-        return configOperationService.deleteConfig(dataId, group, tenant, tag, clientIp, srcUser);
+        return configOperationService.deleteConfig(dataId, group, tenant, tag, clientIp, srcUser, Constants.HTTP);
     }
     
     /**
-     * Execute delete config operation.
-     *
-     * @return java.lang.Boolean
-     * @author klw
-     * @Description: delete configuration based on multiple config ids
-     * @Date 2019/7/5 10:26
-     * @Param [request, response, dataId, group, tenant, tag]
+     * delete configs based on the IDs list.
      */
     @DeleteMapping(params = "delType=ids")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
     public RestResult<Boolean> deleteConfigs(HttpServletRequest request, @RequestParam(value = "ids") List<Long> ids) {
         String clientIp = RequestUtil.getRemoteIp(request);
         String srcUser = RequestUtil.getSrcUserName(request);
-        final Timestamp time = TimeUtils.getCurrentTime();
-        List<ConfigAllInfo> configInfoList = configInfoPersistService.removeConfigInfoByIds(ids, clientIp, srcUser);
-        if (CollectionUtils.isEmpty(configInfoList)) {
+        try {
+            for (Long id : ids) {
+                ConfigInfo configInfo = configInfoPersistService.findConfigInfo(id);
+                if (configInfo == null) {
+                    LOGGER.warn("[deleteConfigs] configInfo is null, id: {}", id);
+                    continue;
+                }
+                configOperationService.deleteConfig(configInfo.getDataId(), configInfo.getGroup(),
+                        configInfo.getTenant(), null, clientIp, srcUser, Constants.HTTP);
+            }
             return RestResultUtils.success(true);
+        } catch (Exception e) {
+            LOGGER.error("delete configs based on the IDs list error, IDs: {}", ids, e);
+            return RestResultUtils.failed(e.getMessage());
         }
-        for (ConfigAllInfo configInfo : configInfoList) {
-            ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
-                            time.getTime()));
-            
-            ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
-                    configInfo.getTenant(), null, time.getTime(), clientIp, ConfigTraceService.PERSISTENCE_EVENT,
-                    ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
-        }
-        return RestResultUtils.success(true);
     }
     
     @GetMapping("/catalog")
@@ -463,25 +449,16 @@ public class ConfigController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
     public RestResult<Boolean> stopBeta(HttpServletRequest httpServletRequest,
             @RequestParam(value = "dataId") String dataId, @RequestParam(value = "group") String group,
-            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
+            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
+            @RequestParam(value = "srcUser", required = false, defaultValue = StringUtils.EMPTY) String srcUser) {
         String remoteIp = getRemoteIp(httpServletRequest);
-        String requestIpApp = RequestUtil.getAppName(httpServletRequest);
         try {
-            configInfoGrayPersistService.removeConfigInfoGray(dataId, group, tenant, BetaGrayRule.TYPE_BETA, remoteIp,
-                    RequestUtil.getSrcUserName(httpServletRequest));
+            
+            configOperationService.deleteConfig(dataId, group, tenant, BetaGrayRule.TYPE_BETA, remoteIp, srcUser, Constants.HTTP);
         } catch (Throwable e) {
             LOGGER.error("remove beta data error", e);
             return RestResultUtils.failed(500, false, "remove beta data error");
         }
-        ConfigTraceService.logPersistenceEvent(dataId, group, tenant, requestIpApp, System.currentTimeMillis(),
-                remoteIp, ConfigTraceService.PERSISTENCE_EVENT_BETA, ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
-        
-        if (PropertyUtil.isGrayCompatibleModel()) {
-            configInfoBetaPersistService.removeConfigInfo4Beta(dataId, group, tenant);
-        }
-        ConfigChangePublisher.notifyConfigChange(
-                new ConfigDataChangeEvent(dataId, group, tenant, BetaGrayRule.TYPE_BETA, System.currentTimeMillis()));
-        
         return RestResultUtils.success("stop beta ok", true);
     }
     
@@ -680,26 +657,15 @@ public class ConfigController {
             failedData.put("succCount", 0);
             return RestResultUtils.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
         }
-        final String srcIp = RequestUtil.getRemoteIp(request);
-        String requestIpApp = RequestUtil.getAppName(request);
-        final Timestamp time = TimeUtils.getCurrentTime();
-        Map<String, Object> saveResult = configInfoPersistService.batchInsertOrUpdate(configInfoList, srcUser, srcIp,
-                null, policy);
-        for (ConfigInfo configInfo : configInfoList) {
-            ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
-                            time.getTime()));
-            ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
-                    configInfo.getTenant(), requestIpApp, time.getTime(), InetUtils.getSelfIP(),
-                    ConfigTraceService.PERSISTENCE_EVENT, ConfigTraceService.PERSISTENCE_TYPE_PUB,
-                    configInfo.getContent());
-        }
+        
+        Map<String, Object> saveResult = batchImportAndPublishConfigs(configInfoList, request, srcUser, namespace, policy);
+        
         // unrecognizedCount
         if (!unrecognizedList.isEmpty()) {
             saveResult.put("unrecognizedCount", unrecognizedList.size());
             saveResult.put("unrecognizedData", unrecognizedList);
         }
-        return RestResultUtils.success("导入成功", saveResult);
+        return RestResultUtils.success("import success", saveResult);
     }
     
     /**
@@ -913,7 +879,6 @@ public class ConfigController {
         for (ConfigAllInfo ci : queryedDataList) {
             SameNamespaceCloneConfigBean paramBean = configBeansMap.get(ci.getId());
             ConfigAllInfo ci4save = new ConfigAllInfo();
-            ci4save.setTenant(namespace);
             ci4save.setType(ci.getType());
             ci4save.setGroup((paramBean != null && StringUtils.isNotBlank(paramBean.getGroup())) ? paramBean.getGroup()
                     : ci.getGroup());
@@ -927,26 +892,95 @@ public class ConfigController {
             ci4save.setDesc(ci.getDesc());
             ci4save.setEncryptedDataKey(
                     ci.getEncryptedDataKey() == null ? StringUtils.EMPTY : ci.getEncryptedDataKey());
+            ParamUtils.checkParam(ci4save.getDataId(), ci4save.getGroup(), "datumId", ci4save.getContent());
             configInfoList4Clone.add(ci4save);
         }
         if (StringUtils.isBlank(srcUser)) {
             srcUser = RequestUtil.getSrcUserName(request);
         }
-        final String srcIp = RequestUtil.getRemoteIp(request);
-        String requestIpApp = RequestUtil.getAppName(request);
-        final Timestamp time = TimeUtils.getCurrentTime();
-        Map<String, Object> saveResult = configInfoPersistService.batchInsertOrUpdate(configInfoList4Clone, srcUser,
-                srcIp, null, policy);
-        for (ConfigInfo configInfo : configInfoList4Clone) {
-            ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
-                            time.getTime()));
-            ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
-                    configInfo.getTenant(), requestIpApp, time.getTime(), InetUtils.getSelfIP(),
-                    ConfigTraceService.PERSISTENCE_EVENT, ConfigTraceService.PERSISTENCE_TYPE_PUB,
-                    configInfo.getContent());
-        }
+        Map<String, Object> saveResult = batchImportAndPublishConfigs(configInfoList4Clone, request, srcUser, namespace, policy);
+
         return RestResultUtils.success("Clone Completed Successfully", saveResult);
     }
     
+    private Map<String, Object> batchImportAndPublishConfigs(List<ConfigAllInfo> configAllInfoList, HttpServletRequest request,
+            String srcUser, String targetNamespaceId, SameConfigPolicy sameConfigPolicy) throws NacosException {
+        Map<String, Object> saveResult = new HashMap<>(16);
+        int succCount = 0;
+        int skipCount = 0;
+        List<Map<String, String>> failData = new ArrayList<>();
+        List<Map<String, String>> skipData = new ArrayList<>();
+        for (int i = 0; i < configAllInfoList.size(); i++) {
+            ConfigAllInfo configAllInfo = configAllInfoList.get(i);
+            ConfigForm configForm = transferToConfigForm(configAllInfo, srcUser, targetNamespaceId);
+            ConfigRequestInfo configRequestInfo = transferToConfigRequestInfo(request);
+            if (sameConfigPolicy != SameConfigPolicy.OVERWRITE) {
+                configRequestInfo.setUpdateForExist(false);
+            }
+            try {
+                configOperationService.publishConfig(configForm, configRequestInfo, configAllInfo.getEncryptedDataKey());
+                succCount++;
+            } catch (ConfigAlreadyExistsException ex) {
+                if (SameConfigPolicy.SKIP == sameConfigPolicy) {
+                    skipCount++;
+                    Map<String, String> skipItem = new HashMap<>(2);
+                    skipItem.put("dataId", configAllInfo.getDataId());
+                    skipItem.put("group", configAllInfo.getGroup());
+                    skipData.add(skipItem);
+                } else if (SameConfigPolicy.ABORT == sameConfigPolicy) {
+                    Map<String, String> failedItem = new HashMap<>(2);
+                    failedItem.put("dataId", configAllInfo.getDataId());
+                    failedItem.put("group", configAllInfo.getGroup());
+                    failData.add(failedItem);
+                    // skip remaining configs
+                    for (int j = i + 1; j < configAllInfoList.size(); j++) {
+                        ConfigAllInfo skipConfigInfo = configAllInfoList.get(j);
+                        Map<String, String> skipitem = new HashMap<>(2);
+                        skipitem.put("dataId", skipConfigInfo.getDataId());
+                        skipitem.put("group", skipConfigInfo.getGroup());
+                        skipData.add(skipitem);
+                        skipCount++;
+                    }
+                    break;
+                }
+            }
+        }
+        
+        saveResult.put("succCount", succCount);
+        saveResult.put("skipCount", skipCount);
+        if (!failData.isEmpty()) {
+            saveResult.put("failData", failData);
+        }
+        if (!skipData.isEmpty()) {
+            saveResult.put("skipData", skipData);
+        }
+        
+        return saveResult;
+    }
+    
+    private ConfigForm transferToConfigForm(ConfigAllInfo configInfo, String srcUser, String targetNamespaceId) {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId(configInfo.getDataId());
+        configForm.setGroup(configInfo.getGroup());
+        configForm.setNamespaceId(targetNamespaceId);
+        configForm.setContent(configInfo.getContent());
+        configForm.setAppName(configInfo.getAppName());
+        configForm.setConfigTags(configInfo.getConfigTags());
+        configForm.setDesc(configInfo.getDesc());
+        configForm.setUse(configInfo.getUse());
+        configForm.setEffect(configInfo.getEffect());
+        configForm.setType(configInfo.getType());
+        configForm.setSchema(configInfo.getSchema());
+        configForm.setEncryptedDataKey(configInfo.getEncryptedDataKey());
+        configForm.setSrcUser(srcUser);
+        return configForm;
+    }
+    
+    private ConfigRequestInfo transferToConfigRequestInfo(HttpServletRequest request) {
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        configRequestInfo.setSrcIp(RequestUtil.getRemoteIp(request));
+        configRequestInfo.setSrcType(Constants.HTTP);
+        configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
+        return configRequestInfo;
+    }
 }
