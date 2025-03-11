@@ -121,6 +121,7 @@ public abstract class DumpService {
         this.dumpAllTaskMgr.setDefaultTaskProcessor(dumpAllProcessor);
         
         this.dumpAllTaskMgr.addProcessor(DumpAllTask.TASK_ID, dumpAllProcessor);
+        this.dumpAllTaskMgr.addProcessor(DumpAllGrayTask.TASK_ID, dumpAllGrayProcessor);
         DynamicDataSource.getInstance().getDataSource();
         
         NotifyCenter.registerSubscriber(new Subscriber() {
@@ -215,11 +216,7 @@ public abstract class DumpService {
             
             try {
                 dumpAllConfigInfoOnStartup(dumpAllProcessor);
-                
-                LogUtil.DEFAULT_LOG.info("start clear all config-info-gray.");
-                ConfigDiskServiceFactory.getInstance().clearAllGray();
-                dumpAllGrayProcessor.process(new DumpAllGrayTask());
-                
+                dumpAllGrayConfigOnStartup(dumpAllGrayProcessor);
             } catch (Exception e) {
                 LogUtil.FATAL_LOG.error(
                         "Nacos Server did not start because dumpservice bean construction failure :\n" + e);
@@ -266,6 +263,17 @@ public abstract class DumpService {
             dumpAllProcessor.process(new DumpAllTask(true));
         } catch (Exception e) {
             LogUtil.FATAL_LOG.error("dump config fail" + e.getMessage());
+            throw e;
+        }
+    }
+    
+    private void dumpAllGrayConfigOnStartup(DumpAllGrayProcessor dumpAllGrayProcessor) {
+        try {
+            LogUtil.DEFAULT_LOG.info("start to clear all gray-config-info on startup.");
+            ConfigDiskServiceFactory.getInstance().clearAllGray();
+            dumpAllGrayProcessor.process(new DumpAllGrayTask());
+        } catch (Exception e) {
+            LogUtil.FATAL_LOG.error("failed to dump all gray-config-info on startup." + e.getMessage());
             throw e;
         }
     }
