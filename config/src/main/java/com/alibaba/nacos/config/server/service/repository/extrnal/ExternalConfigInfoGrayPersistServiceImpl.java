@@ -210,12 +210,13 @@ public class ExternalConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
                     jt.update(
                             configInfoGrayMapper.delete(Arrays.asList("data_id", "group_id", "tenant_id", "gray_name")),
                             dataId, group, tenantTmp, grayNameTmp);
-                    
-                    Timestamp now = new Timestamp(System.currentTimeMillis());
-                    historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo4Gray.getId(),
-                            oldConfigAllInfo4Gray, srcIp, srcUser, now, "D", Constants.GRAY, grayNameTmp,
-                            ConfigExtInfoUtil.getExtInfoFromGrayInfo(oldConfigAllInfo4Gray.getGrayName(),
-                                    oldConfigAllInfo4Gray.getGrayRule(), oldConfigAllInfo4Gray.getSrcUser()));
+                    if (!GRAY_MIGRATE_FLAG.get()) {
+                        Timestamp now = new Timestamp(System.currentTimeMillis());
+                        historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo4Gray.getId(),
+                                oldConfigAllInfo4Gray, srcIp, srcUser, now, "D", Constants.GRAY, grayNameTmp,
+                                ConfigExtInfoUtil.getExtInfoFromGrayInfo(oldConfigAllInfo4Gray.getGrayName(),
+                                        oldConfigAllInfo4Gray.getGrayRule(), oldConfigAllInfo4Gray.getSrcUser()));
+                    }
                 } catch (CannotGetJdbcConnectionException e) {
                     LogUtil.FATAL_LOG.error("[db-error] " + e, e);
                     throw e;
@@ -305,11 +306,13 @@ public class ExternalConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
                     }
                 }
                 
-                Timestamp now = new Timestamp(System.currentTimeMillis());
-                historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo4Gray.getId(),
-                        oldConfigAllInfo4Gray, srcIp, srcUser, now, "U", Constants.GRAY, grayNameTmp,
-                        ConfigExtInfoUtil.getExtInfoFromGrayInfo(oldConfigAllInfo4Gray.getGrayName(),
-                                oldConfigAllInfo4Gray.getGrayRule(), oldConfigAllInfo4Gray.getSrcUser()));
+                if (!GRAY_MIGRATE_FLAG.get()) {
+                    Timestamp now = new Timestamp(System.currentTimeMillis());
+                    historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigAllInfo4Gray.getId(),
+                            oldConfigAllInfo4Gray, srcIp, srcUser, now, "U", Constants.GRAY, grayNameTmp,
+                            ConfigExtInfoUtil.getExtInfoFromGrayInfo(oldConfigAllInfo4Gray.getGrayName(),
+                                    oldConfigAllInfo4Gray.getGrayRule(), oldConfigAllInfo4Gray.getSrcUser()));
+                }
                 
                 if (success) {
                     return getGrayOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp, grayNameTmp);

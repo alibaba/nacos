@@ -28,7 +28,7 @@ import org.springframework.http.HttpStatus;
  * @author dongyafei
  * @author xiweng.yy
  */
-public class ConfigForm implements NacosForm {
+public class ConfigForm implements NacosForm, Cloneable {
     
     private static final long serialVersionUID = 4124932564086863921L;
     
@@ -90,6 +90,30 @@ public class ConfigForm implements NacosForm {
         this.effect = effect;
         this.type = type;
         this.schema = schema;
+    }
+    
+    @Override
+    public ConfigForm clone() {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId(this.dataId);
+        configForm.setGroup(this.group);
+        configForm.setNamespaceId(this.namespaceId);
+        configForm.setContent(this.content);
+        configForm.setTag(this.tag);
+        configForm.setAppName(this.appName);
+        configForm.setSrcUser(this.srcUser);
+        configForm.setConfigTags(this.configTags);
+        configForm.setDesc(this.desc);
+        configForm.setUse(this.use);
+        configForm.setEffect(this.effect);
+        configForm.setType(this.type);
+        configForm.setSchema(this.schema);
+        configForm.setEncryptedDataKey(this.encryptedDataKey);
+        configForm.setGrayName(this.grayName);
+        configForm.setGrayRuleExp(this.grayRuleExp);
+        configForm.setGrayVersion(this.grayVersion);
+        configForm.setGrayPriority(this.grayPriority);
+        return configForm;
     }
     
     public String getDataId() {

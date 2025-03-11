@@ -21,6 +21,7 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
+import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
@@ -44,12 +45,17 @@ public class DumpChangeConfigWorker implements Runnable {
     
     private HistoryConfigInfoPersistService historyConfigInfoPersistService;
     
+    private ConfigMigrateService configMigrateService;
+    
     Timestamp startTime;
     
     public DumpChangeConfigWorker(ConfigInfoPersistService configInfoPersistService,
-            HistoryConfigInfoPersistService historyConfigInfoPersistService, Timestamp startTime) {
+            HistoryConfigInfoPersistService historyConfigInfoPersistService,
+            ConfigMigrateService configMigrateService,
+            Timestamp startTime) {
         this.configInfoPersistService = configInfoPersistService;
         this.historyConfigInfoPersistService = historyConfigInfoPersistService;
+        this.configMigrateService = configMigrateService;
         this.startTime = startTime;
     }
     
@@ -84,6 +90,7 @@ public class DumpChangeConfigWorker implements Runnable {
                                 configInfo.getTenant());
                         LogUtil.DEFAULT_LOG.info("[dump-delete-ok], groupKey: {}, tenant: {}",
                                 new Object[] {GroupKey2.getKey(configInfo.getDataId(), configInfo.getGroup())}, configInfo.getTenant());
+                        configMigrateService.checkDeletedConfigMigrateState(configInfo);
                     }
                 }
                 if (configDeleted.size() < pageSize) {
@@ -122,6 +129,7 @@ public class DumpChangeConfigWorker implements Runnable {
                         LogUtil.DEFAULT_LOG.info("[dump-change-ok] {}, {}, length={}, md5={},md5UTF8={}", groupKey,
                                 configInfoWrapper.getLastModified(), content.length(), md5, md5Utf8);
                     }
+                    configMigrateService.checkChangedConfigMigrateState(cf);
                 }
                 if (changeConfigs.size() < pageSize) {
                     break;

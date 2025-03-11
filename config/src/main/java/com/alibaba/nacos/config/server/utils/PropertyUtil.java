@@ -60,7 +60,11 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
      */
     private static boolean grayCompatibleModel = true;
     
+    private static boolean namespaceCompatibleMode = true;
+    
     public static final ThreadLocal<Boolean> GRAY_MIGRATE_FLAG = ThreadLocal.withInitial(() -> false);
+    
+    public static final ThreadLocal<Boolean> CONFIG_MIGRATE_FLAG = ThreadLocal.withInitial(() -> false);
     
     /**
      * Whether to enable the limit check function of capacity management, including the upper limit of configuration
@@ -249,8 +253,16 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
         return grayCompatibleModel;
     }
     
+    public static boolean isNamespaceCompatibleMode() {
+        return namespaceCompatibleMode;
+    }
+    
     public static void setGrayCompatibleModel(boolean grayCompatibleModel) {
         PropertyUtil.grayCompatibleModel = grayCompatibleModel;
+    }
+    
+    public static void setNamespaceCompatibleMode(boolean namespaceCompatibleMode) {
+        PropertyUtil.namespaceCompatibleMode = namespaceCompatibleMode;
     }
     
     public static int getDefaultMaxAggrSize() {
@@ -326,6 +338,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
             setDumpChangeWorkerInterval(
                     getLong(PropertiesConstant.DUMP_CHANGE_WORKER_INTERVAL, dumpChangeWorkerInterval));
             setGrayCompatibleModel(getBoolean(PropertiesConstant.GRAY_CAPATIBEL_MODEL, grayCompatibleModel));
+            setNamespaceCompatibleMode(getBoolean(PropertiesConstant.NAMESPACE_COMPATIBLE_MODE, namespaceCompatibleMode));
             
         } catch (Exception e) {
             LOGGER.error("read application.properties failed", e);

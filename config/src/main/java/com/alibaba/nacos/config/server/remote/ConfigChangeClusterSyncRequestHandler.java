@@ -23,9 +23,10 @@ import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
-import com.alibaba.nacos.config.server.service.ConfigGrayModelMigrateService;
+import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.dump.DumpRequest;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
@@ -35,6 +36,7 @@ import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.ConfigRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.remote.grpc.InvokeSource;
+import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.stereotype.Component;
@@ -52,12 +54,12 @@ public class ConfigChangeClusterSyncRequestHandler
     
     private final DumpService dumpService;
     
-    private ConfigGrayModelMigrateService configGrayModelMigrateService;
+    private ConfigMigrateService configMigrateService;
     
     public ConfigChangeClusterSyncRequestHandler(DumpService dumpService,
-            ConfigGrayModelMigrateService configGrayModelMigrateService) {
+            ConfigMigrateService configMigrateService) {
         this.dumpService = dumpService;
-        this.configGrayModelMigrateService = configGrayModelMigrateService;
+        this.configMigrateService = configMigrateService;
     }
     
     @TpsControl(pointName = "ClusterConfigChangeNotify")
@@ -67,7 +69,7 @@ public class ConfigChangeClusterSyncRequestHandler
     public ConfigChangeClusterSyncResponse handle(ConfigChangeClusterSyncRequest configChangeSyncRequest,
             RequestMeta meta) throws NacosException {
         
-        checkCompatity(configChangeSyncRequest);
+        checkCompatity(configChangeSyncRequest, meta);
         
         ParamUtils.checkParam(configChangeSyncRequest.getTag());
         DumpRequest dumpRequest = DumpRequest.create(configChangeSyncRequest.getDataId(),
@@ -85,18 +87,18 @@ public class ConfigChangeClusterSyncRequestHandler
      * @param configChangeSyncRequest request.
      * @return
      */
-    private void checkCompatity(ConfigChangeClusterSyncRequest configChangeSyncRequest) {
+    private void checkCompatity(ConfigChangeClusterSyncRequest configChangeSyncRequest, RequestMeta meta) {
         if (PropertyUtil.isGrayCompatibleModel() && StringUtils.isBlank(configChangeSyncRequest.getGrayName())) {
             if (configChangeSyncRequest.isBeta() || StringUtils.isNotBlank(configChangeSyncRequest.getTag())) {
                 
                 String grayName = null;
                 //from old server ,beta or tag persist into old model,try migrate and transfer gray model.
                 if (configChangeSyncRequest.isBeta()) {
-                    configGrayModelMigrateService.checkMigrateBeta(configChangeSyncRequest.getDataId(),
+                    configMigrateService.checkMigrateBeta(configChangeSyncRequest.getDataId(),
                             configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant());
                     grayName = BetaGrayRule.TYPE_BETA;
                 } else {
-                    configGrayModelMigrateService.checkMigrateTag(configChangeSyncRequest.getDataId(),
+                    configMigrateService.checkMigrateTag(configChangeSyncRequest.getDataId(),
                             configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant(),
                             configChangeSyncRequest.getTag());
                     grayName = TagGrayRule.TYPE_TAG + "_" + configChangeSyncRequest.getTag();
@@ -105,6 +107,44 @@ public class ConfigChangeClusterSyncRequestHandler
                 
             }
         }
+        
+        if (!checkNamespaceCompatible(configChangeSyncRequest, meta)) {
+            return;
+        }
+        
+        if (StringUtils.isNotBlank(configChangeSyncRequest.getGrayName())) {
+            configMigrateService.namespaceMigrateGray(configChangeSyncRequest.getDataId(),
+                    configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant(),
+                    configChangeSyncRequest.getGrayName());
+        } else {
+            configMigrateService.namespaceMigrate(configChangeSyncRequest.getDataId(),
+                    configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant());
+        }
+        
+        configChangeSyncRequest.setTenant("public");
+    }
+    
+    /**
+     * Check namespace compatible boolean.
+     *
+     * @param configSyncRequest the config sync request
+     * @param meta              the meta
+     * @return the boolean
+     */
+    public boolean checkNamespaceCompatible(ConfigChangeClusterSyncRequest configSyncRequest, RequestMeta meta) {
+        if (!PropertyUtil.isNamespaceCompatibleMode()) {
+            return false;
+        }
+        try {
+            String version = meta.getClientVersion().split("Nacos-Java-Client:v")[1];
+            if (VersionUtils.compareVersion(version, "3.0.0") >= 0) {
+                return false;
+            }
+        } catch (Exception e) {
+            Loggers.REMOTE_DIGEST.error("checkCompatity error", e);
+        }
+        return StringUtils.equals(configSyncRequest.getTenant(), "public") || StringUtils.isBlank(
+                configSyncRequest.getTenant());
     }
     
 }
