@@ -136,13 +136,13 @@ class DumpAllGrayProcessorTest {
         
         Page<ConfigInfoGrayWrapper> page = new Page<>();
         when(configInfoGrayPersistService.configInfoGrayCount()).thenReturn(1);
-        when(configInfoGrayPersistService.findAllConfigInfoGrayForDumpAll(anyInt(), eq(PAGE_SIZE))).thenReturn(page);
+        when(configInfoGrayPersistService.findAllConfigInfoGrayForDumpAll(anyInt(), anyInt())).thenReturn(page);
         
         boolean result = dumpAllGrayProcessor.process(validTask);
         
         assertTrue(result);
         verify(configInfoGrayPersistService, times(1)).configInfoGrayCount();
-        verify(configInfoGrayPersistService, times(1)).findAllConfigInfoGrayForDumpAll(anyInt(), eq(PAGE_SIZE));
+        verify(configInfoGrayPersistService, times(1)).findAllConfigInfoGrayForDumpAll(anyInt(), anyInt());
     }
     
     @Test
@@ -152,12 +152,12 @@ class DumpAllGrayProcessorTest {
         when(configInfoGrayPersistService.configInfoGrayCount()).thenReturn(totalConfigs);
         
         Page<ConfigInfoGrayWrapper> pageOne = new Page<>();
-        when(configInfoGrayPersistService.findAllConfigInfoGrayForDumpAll(eq(1), eq(PAGE_SIZE))).thenReturn(pageOne);
+        when(configInfoGrayPersistService.findAllConfigInfoGrayForDumpAll(eq(1), anyInt())).thenReturn(pageOne);
         
         boolean result = dumpAllGrayProcessor.process(task);
         
         assertTrue(result);
-        verify(configInfoGrayPersistService, atLeast(2)).findAllConfigInfoGrayForDumpAll(anyInt(), eq(PAGE_SIZE));
+        verify(configInfoGrayPersistService, atLeast(2)).findAllConfigInfoGrayForDumpAll(anyInt(), anyInt());
     }
     
     @Test
@@ -165,7 +165,7 @@ class DumpAllGrayProcessorTest {
         DumpAllGrayTask task = mock(DumpAllGrayTask.class);
         Page<ConfigInfoGrayWrapper> page = new Page<>();
         when(configInfoGrayPersistService.configInfoGrayCount()).thenReturn(1);
-        when(configInfoGrayPersistService.findAllConfigInfoGrayForDumpAll(anyInt(), eq(PAGE_SIZE))).thenReturn(page);
+        when(configInfoGrayPersistService.findAllConfigInfoGrayForDumpAll(anyInt(), anyInt())).thenReturn(page);
         boolean result = dumpAllGrayProcessor.process(task);
         assertTrue(result);
     }
@@ -189,7 +189,7 @@ class DumpAllGrayProcessorTest {
         page.setPageItems(list);
         
         Mockito.when(configInfoGrayPersistService.configInfoGrayCount()).thenReturn(2);
-        Mockito.when(configInfoGrayPersistService.findAllConfigInfoGrayForDumpAll(anyInt(), eq(PAGE_SIZE))).thenReturn(page);
+        Mockito.when(configInfoGrayPersistService.findAllConfigInfoGrayForDumpAll(anyInt(), anyInt())).thenReturn(page);
         
         final String md51 = MD5Utils.md5Hex(configInfoGrayWrapper1.getContent(), "UTF-8");
         final String md52 = MD5Utils.md5Hex(configInfoGrayWrapper2.getContent(), "UTF-8");

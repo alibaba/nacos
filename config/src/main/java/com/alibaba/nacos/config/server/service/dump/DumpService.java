@@ -216,7 +216,7 @@ public abstract class DumpService {
             
             try {
                 dumpAllConfigInfoOnStartup(dumpAllProcessor);
-                dumpAllGrayConfigOnStartup(dumpAllGrayProcessor);
+                dumpAllGrayConfigInfoOnStartup(dumpAllGrayProcessor);
             } catch (Exception e) {
                 LogUtil.FATAL_LOG.error(
                         "Nacos Server did not start because dumpservice bean construction failure :\n" + e);
@@ -267,7 +267,7 @@ public abstract class DumpService {
         }
     }
     
-    private void dumpAllGrayConfigOnStartup(DumpAllGrayProcessor dumpAllGrayProcessor) {
+    private void dumpAllGrayConfigInfoOnStartup(DumpAllGrayProcessor dumpAllGrayProcessor) {
         try {
             LogUtil.DEFAULT_LOG.info("start to clear all gray-config-info on startup.");
             ConfigDiskServiceFactory.getInstance().clearAllGray();
