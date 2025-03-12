@@ -18,6 +18,7 @@ package com.alibaba.nacos.console.handler.impl.remote;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.cluster.RemoteServerMemberManager;
 import com.alibaba.nacos.core.cluster.Member;
@@ -54,6 +55,7 @@ public class NacosMaintainerClientHolder extends MemberChangeListener {
     public NacosMaintainerClientHolder(RemoteServerMemberManager memberManager) throws NacosException {
         this.memberManager = memberManager;
         buildMaintainerService();
+        NotifyCenter.registerSubscriber(this);
     }
     
     private void buildMaintainerService() throws NacosException {
