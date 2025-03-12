@@ -22,6 +22,8 @@ import com.alibaba.nacos.api.config.remote.response.ClientConfigMetricResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
+import com.alibaba.nacos.auth.util.AuthHeaderUtil;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpUtils;
@@ -35,6 +37,7 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
+import com.alibaba.nacos.core.auth.NacosServerAuthConfig;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
@@ -85,8 +88,7 @@ public class MetricsControllerV3 {
      * get client metric.
      */
     @GetMapping("/cluster")
-    @Secured(resource = Constants.METRICS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
-            signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(resource = Constants.METRICS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Map<String, Object>> metric(@RequestParam("ip") String ip,
             @RequestParam(value = "dataId", required = false) String dataId,
             @RequestParam(value = "groupName", required = false) String groupName,
@@ -96,8 +98,8 @@ public class MetricsControllerV3 {
         namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         ParamUtils.checkParam(dataId, groupName, "default", "default");
         
-        Loggers.CORE.info("Get cluster config metrics received, ip={},dataId={},groupName={},namespaceId={}", ip, dataId, groupName,
-                namespaceId);
+        Loggers.CORE.info("Get cluster config metrics received, ip={},dataId={},groupName={},namespaceId={}", ip,
+                dataId, groupName, namespaceId);
         Map<String, Object> responseMap = new HashMap<>(3);
         Collection<Member> members = serverMemberManager.allMembers();
         final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientBeanHolder.getNacosAsyncRestTemplate(
@@ -106,9 +108,12 @@ public class MetricsControllerV3 {
         for (Member member : members) {
             String url = HttpUtils.buildUrl(false, member.getAddress(), EnvUtil.getContextPath(),
                     Constants.METRICS_CONTROLLER_V3_ADMIN_PATH, "ip");
-            Query query = Query.newInstance().addParam("ip", ip).addParam("dataId", dataId).addParam("groupName", groupName)
-                    .addParam("namespaceId", namespaceId);
-            nacosAsyncRestTemplate.get(url, Header.EMPTY, query, new GenericType<Map>() {
+            Query query = Query.newInstance().addParam("ip", ip).addParam("dataId", dataId)
+                    .addParam("groupName", groupName).addParam("namespaceId", namespaceId);
+            Header header = Header.newInstance();
+            AuthHeaderUtil.addIdentityToHeader(header, NacosAuthConfigHolder.getInstance()
+                    .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE));
+            nacosAsyncRestTemplate.get(url, header, query, new GenericType<Map>() {
             }.getType(), new ClusterMetricsCallBack(responseMap, latch, dataId, groupName, namespaceId, ip, member));
         }
         try {
@@ -173,8 +178,7 @@ public class MetricsControllerV3 {
      * Get client config listener lists of subscriber in local machine.
      */
     @GetMapping("/ip")
-    @Secured(resource = Constants.METRICS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
-            signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(resource = Constants.METRICS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Map<String, Object>> getClientMetrics(@RequestParam("ip") String ip,
             @RequestParam(value = "dataId", required = false) String dataId,
             @RequestParam(value = "groupName", required = false) String groupName,
@@ -200,8 +204,9 @@ public class MetricsControllerV3 {
                         1000L);
                 metrics.putAll(request1.getMetrics());
             } catch (Exception e) {
-                Loggers.CORE.error("Get config metrics error from client ip={},dataId={},groupName={},namespaceId={},error={}",
-                        ip, dataId, groupName, namespaceId, e);
+                Loggers.CORE.error(
+                        "Get config metrics error from client ip={},dataId={},groupName={},namespaceId={},error={}", ip,
+                        dataId, groupName, namespaceId, e);
                 throw new NacosException(NacosException.SERVER_ERROR, e);
             }
         }

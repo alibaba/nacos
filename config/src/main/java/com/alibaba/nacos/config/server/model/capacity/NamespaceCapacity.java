@@ -17,22 +17,22 @@
 package com.alibaba.nacos.config.server.model.capacity;
 
 /**
- * Tenant Capacity.
+ * Namespace Capacity.
  *
  * @author hexu.hxy
  * @date 2018/3/13
  */
-public class TenantCapacity extends Capacity {
+public class NamespaceCapacity extends Capacity {
     
     private static final long serialVersionUID = -1238179608935781384L;
     
-    private String tenant;
+    private String namespaceId;
     
-    public String getTenant() {
-        return tenant;
+    public String getNamespaceId() {
+        return namespaceId;
     }
     
-    public void setTenant(String tenant) {
-        this.tenant = tenant;
+    public void setNamespaceId(String namespaceId) {
+        this.namespaceId = namespaceId;
     }
 }

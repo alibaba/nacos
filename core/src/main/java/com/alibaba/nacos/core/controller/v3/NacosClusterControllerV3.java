@@ -131,7 +131,7 @@ public class NacosClusterControllerV3 {
     @PutMapping(value = "/lookup")
     @Secured(action = ActionTypes.WRITE, resource = NACOS_ADMIN_CORE_CONTEXT_V3
             + "/cluster", signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
-    public Result<Boolean> updateLookup(@RequestBody LookupUpdateRequest request) throws NacosException {
+    public Result<Boolean> updateLookup(LookupUpdateRequest request) throws NacosException {
         if (request == null || request.getType() == null) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
                     "required parameter 'type' is missing");
