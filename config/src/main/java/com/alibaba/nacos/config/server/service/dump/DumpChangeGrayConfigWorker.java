@@ -111,6 +111,10 @@ public class DumpChangeGrayConfigWorker implements Runnable {
                 List<ConfigInfoGrayWrapper> changeConfigs = configInfoGrayPersistService.findChangeConfig(startTime,
                         changeCursorId, pageSize);
                 for (ConfigInfoGrayWrapper cf : changeConfigs) {
+                    configMigrateService.checkChangedConfigGrayMigrateState(cf);
+                    if (StringUtils.isBlank(cf.getTenant())) {
+                        continue;
+                    }
                     final String groupKey = GroupKey2.getKey(cf.getDataId(), cf.getGroup(), cf.getTenant());
                     //check md5 & localtimestamp update local disk cache.
                     boolean newLastModified = cf.getLastModified() > ConfigCacheService.getLastModifiedTs(groupKey);
@@ -131,7 +135,6 @@ public class DumpChangeGrayConfigWorker implements Runnable {
                         LogUtil.DEFAULT_LOG.info("[dump-change-gray-ok] {}, {}, length={}, md5={},md5UTF8={}",
                                 new Object[] {groupKey, cf.getLastModified(), content.length(), md5, md5Utf8});
                     }
-                    configMigrateService.checkChangedConfigGrayMigrateState(cf);
                 }
                 if (changeConfigs.size() < pageSize) {
                     break;

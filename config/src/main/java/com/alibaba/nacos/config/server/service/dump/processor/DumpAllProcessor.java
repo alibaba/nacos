@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.service.dump.processor;
 import com.alibaba.nacos.common.task.NacosTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ClientIpWhiteList;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
@@ -88,6 +89,9 @@ public class DumpAllProcessor implements NacosTaskProcessor {
             }
             
             for (ConfigInfoWrapper cf : page.getPageItems()) {
+                if (StringUtils.isBlank(cf.getTenant())) {
+                    continue;
+                }
                 lastMaxId = Math.max(cf.getId(), lastMaxId);
                 //if not start up, page query will not return content, check md5 and lastModified first ,if changed ,get single content info to dump.
                 if (!dumpAllTask.isStartUp()) {

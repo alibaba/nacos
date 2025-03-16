@@ -16,12 +16,16 @@
 
 package com.alibaba.nacos.config.server.service.repository;
 
+import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
 
 import java.util.List;
 
 /**
  * The interface Config migrate persist service.
+ *
+ * @author Sunrisea
  */
 public interface ConfigMigratePersistService {
     
@@ -68,6 +72,32 @@ public interface ConfigMigratePersistService {
     List<Long> getMigrateConfigGrayInsertIdList(long startId, int pageSize);
     
     /**
+     * Gets migrate config update list.
+     *
+     * @param startId      the start id
+     * @param pageSize     the page size
+     * @param srcTenant    the src tenant
+     * @param targetTenant the target tenant
+     * @param srcUser      the src user
+     * @return the migrate config update list
+     */
+    List<ConfigInfo> getMigrateConfigUpdateList(long startId, int pageSize, String srcTenant, String targetTenant,
+            String srcUser);
+    
+    /**
+     * Gets migrate config gray update list.
+     *
+     * @param startId      the start id
+     * @param pageSize     the page size
+     * @param srcTenant    the src tenant
+     * @param targetTenant the target tenant
+     * @param srcUser      the src user
+     * @return the migrate config gray update list
+     */
+    List<ConfigInfoGrayWrapper> getMigrateConfigGrayUpdateList(long startId, int pageSize, String srcTenant,
+            String targetTenant, String srcUser);
+    
+    /**
      * Migrate config by ids.
      *
      * @param ids     the ids
@@ -83,7 +113,27 @@ public interface ConfigMigratePersistService {
      */
     void migrateConfigGrayInsertByIds(List<Long> ids, String srcUser);
     
-    void syncConfigGray(String dataId, String group, String tenant, String grayName, String targetTenant, String srcUser);
+    /**
+     * Sync config gray.
+     *
+     * @param dataId       the data id
+     * @param group        the group
+     * @param tenant       the tenant
+     * @param grayName     the gray name
+     * @param targetTenant the target tenant
+     * @param srcUser      the src user
+     */
+    void syncConfigGray(String dataId, String group, String tenant, String grayName, String targetTenant,
+            String srcUser);
     
+    /**
+     * Sync config.
+     *
+     * @param dataId       the data id
+     * @param group        the group
+     * @param tenant       the tenant
+     * @param targetTenant the target tenant
+     * @param srcUser      the src user
+     */
     void syncConfig(String dataId, String group, String tenant, String targetTenant, String srcUser);
 }

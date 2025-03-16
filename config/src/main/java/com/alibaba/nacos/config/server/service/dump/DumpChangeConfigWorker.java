@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
@@ -107,6 +108,10 @@ public class DumpChangeConfigWorker implements Runnable {
                 List<ConfigInfoStateWrapper> changeConfigs = configInfoPersistService.findChangeConfig(startTime,
                         changeCursorId, pageSize);
                 for (ConfigInfoStateWrapper cf : changeConfigs) {
+                    configMigrateService.checkChangedConfigMigrateState(cf);
+                    if (StringUtils.isBlank(cf.getTenant())) {
+                        continue;
+                    }
                     final String groupKey = GroupKey2.getKey(cf.getDataId(), cf.getGroup(), cf.getTenant());
                     //check md5 & localtimestamp update local disk cache.
                     boolean newLastModified = cf.getLastModified() > ConfigCacheService.getLastModifiedTs(groupKey);
@@ -129,7 +134,6 @@ public class DumpChangeConfigWorker implements Runnable {
                         LogUtil.DEFAULT_LOG.info("[dump-change-ok] {}, {}, length={}, md5={},md5UTF8={}", groupKey,
                                 configInfoWrapper.getLastModified(), content.length(), md5, md5Utf8);
                     }
-                    configMigrateService.checkChangedConfigMigrateState(cf);
                 }
                 if (changeConfigs.size() < pageSize) {
                     break;

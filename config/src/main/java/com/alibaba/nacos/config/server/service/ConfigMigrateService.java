@@ -515,17 +515,83 @@ public class ConfigMigrateService {
                     migrateSuccess = true;
                     break;
                 } catch (Exception e) {
-                    LOGGER.error("[migrate] namespace migrate failed, retry times={}, error={}", retryTimes,
+                    LOGGER.error("[migrate] config_info namespace migrate insert failed, retry times={}, error={}", retryTimes,
                             e.getMessage());
                 }
                 retryTimes++;
                 Thread.sleep(1000L);
             }
             if (!migrateSuccess) {
-                LOGGER.error("[migrate] config_info namespace migrate failed");
-                throw new Exception("[migrate] config_info namespace migrate failed");
+                LOGGER.error("[migrate] config_info namespace migrate insert failed");
+                throw new Exception("[migrate] config_info namespace migrate insert failed");
             }
         } while (batchIds.size() == batchSize);
+        
+        long startEmptyId = -1;
+        List<ConfigInfo> batchConfigInfosFromEmpty = new ArrayList<>();
+        do {
+            int retryTimes = 0;
+            boolean migrateSuccess = false;
+            while (retryTimes <= maxNamespaceMigrateRetryTimes) {
+                try {
+                    batchConfigInfosFromEmpty = configMigratePersistService
+                            .getMigrateConfigUpdateList(startEmptyId, batchSize, StringUtils.EMPTY,
+                                    "public", NAMESPACE_MIGRATE_SRC_USER);
+                    if (!batchConfigInfosFromEmpty.isEmpty()) {
+                        for (ConfigInfo configInfo : batchConfigInfosFromEmpty) {
+                            configMigratePersistService.syncConfig(configInfo.getDataId(), configInfo.getGroup(),
+                                    StringUtils.EMPTY, "public", NAMESPACE_MIGRATE_SRC_USER);
+                        }
+                        startEmptyId = batchConfigInfosFromEmpty.get(batchConfigInfosFromEmpty.size() - 1)
+                                .getId();
+                    }
+                    migrateSuccess = true;
+                    break;
+                } catch (Exception e) {
+                    LOGGER.error("[migrate] config_info namespace migrate update from empty failed, retry times={}, error={}", retryTimes,
+                            e.getMessage());
+                }
+                retryTimes++;
+                Thread.sleep(1000L);
+            }
+            if (!migrateSuccess) {
+                LOGGER.error("[migrate] config_info namespace migrate update from empty failed, skipped");
+                startEmptyId = batchConfigInfosFromEmpty.get(batchConfigInfosFromEmpty.size() - 1).getId();
+            }
+        } while (batchConfigInfosFromEmpty.size() == batchSize);
+        
+        long startPublicId = -1;
+        List<ConfigInfo> batchConfigInfosFromPublic = new ArrayList<>();
+        do {
+            int retryTimes = 0;
+            boolean migrateSuccess = false;
+            while (retryTimes <= maxNamespaceMigrateRetryTimes) {
+                try {
+                    batchConfigInfosFromPublic = configMigratePersistService
+                            .getMigrateConfigUpdateList(startPublicId, batchSize, "public", StringUtils.EMPTY,
+                                    NAMESPACE_MIGRATE_SRC_USER);
+                    if (!batchConfigInfosFromPublic.isEmpty()) {
+                        for (ConfigInfo configInfo : batchConfigInfosFromPublic) {
+                            configMigratePersistService.syncConfig(configInfo.getDataId(), configInfo.getGroup(),
+                                    "public", StringUtils.EMPTY, NAMESPACE_MIGRATE_SRC_USER);
+                        }
+                        startPublicId = batchConfigInfosFromPublic.get(batchConfigInfosFromPublic.size() - 1)
+                                .getId();
+                    }
+                    migrateSuccess = true;
+                    break;
+                } catch (Exception e) {
+                    LOGGER.error("[migrate] config_info namespace migrate update from public failed, retry times={}, error={}", retryTimes,
+                            e.getMessage());
+                }
+                retryTimes++;
+                Thread.sleep(1000L);
+            }
+            if (!migrateSuccess) {
+                LOGGER.error("[migrate] config_info namespace migrate update from public failed, skipped");
+                startPublicId = batchConfigInfosFromPublic.get(batchConfigInfosFromPublic.size() - 1).getId();
+            }
+        } while (batchConfigInfosFromPublic.size() == batchSize);
         
         long startGrayId = -1;
         do {
@@ -541,18 +607,89 @@ public class ConfigMigrateService {
                     migrateSuccess = true;
                     break;
                 } catch (Exception e) {
-                    LOGGER.error("[migrate] namespace migrate failed, retry times={}, error={}", retryTimes,
+                    LOGGER.error("[migrate] config_info gray namespace migrate insert failed, retry times={}, error={}", retryTimes,
                             e.getMessage());
                 }
                 retryTimes++;
                 Thread.sleep(1000L);
             }
             if (!migrateSuccess) {
-                LOGGER.error("[migrate] config_info_gray namespace migrate failed");
-                throw new Exception("[migrate] config_info_gray namespace migrate failed");
+                LOGGER.error("[migrate] config_info_gray namespace migrate insert failed");
+                throw new Exception("[migrate] config_info_gray namespace migrate insert failed");
             }
         } while (batchIds.size() == batchSize);
+        
+        long startGrayEmptyId = -1;
+        List<ConfigInfoGrayWrapper> batchConfigInfoGraysFromEmpty = new ArrayList<>();
+        do {
+            int retryTimes = 0;
+            boolean migrateSuccess = false;
+            while (retryTimes <= maxNamespaceMigrateRetryTimes) {
+                try {
+                    batchConfigInfoGraysFromEmpty = configMigratePersistService
+                            .getMigrateConfigGrayUpdateList(startGrayEmptyId, batchSize, StringUtils.EMPTY,
+                                    "public", NAMESPACE_MIGRATE_SRC_USER);
+                    if (!batchConfigInfoGraysFromEmpty.isEmpty()) {
+                        for (ConfigInfoGrayWrapper configInfoGrayWrapper : batchConfigInfoGraysFromEmpty) {
+                            configMigratePersistService.syncConfigGray(configInfoGrayWrapper.getDataId(),
+                                    configInfoGrayWrapper.getGroup(), StringUtils.EMPTY,
+                                    configInfoGrayWrapper.getGrayName(), "public", NAMESPACE_MIGRATE_SRC_USER);
+                        }
+                        startGrayEmptyId = batchConfigInfoGraysFromEmpty.get(batchConfigInfoGraysFromEmpty.size()-1)
+                                .getId();
+                    }
+                    migrateSuccess = true;
+                    break;
+                } catch (Exception e) {
+                    LOGGER.error("[migrate] config_info_gray namespace migrate update from empty failed, retry times={}, error={}",
+                            retryTimes, e.getMessage());
+                }
+                retryTimes++;
+                Thread.sleep(1000L);
+            }
+            if (!migrateSuccess) {
+                LOGGER.error("[migrate] config_info_gray namespace migrate update from empty failed, skipped");
+                startGrayEmptyId = batchConfigInfoGraysFromEmpty.get(batchConfigInfoGraysFromEmpty.size() - 1)
+                        .getId();
+            }
+        } while (batchConfigInfoGraysFromEmpty.size() == batchSize);
+        
+        long startGrayPublicId = -1;
+        List<ConfigInfoGrayWrapper> batchConfigInfoGraysFromPublic = new ArrayList<>();
+        do {
+            int retryTimes = 0;
+            boolean migrateSuccess = false;
+            while (retryTimes <= maxNamespaceMigrateRetryTimes) {
+                try {
+                    batchConfigInfoGraysFromPublic = configMigratePersistService
+                            .getMigrateConfigGrayUpdateList(startGrayPublicId, batchSize, "public",
+                                    StringUtils.EMPTY, NAMESPACE_MIGRATE_SRC_USER);
+                    if (!batchConfigInfoGraysFromPublic.isEmpty()) {
+                        for (ConfigInfoGrayWrapper configInfoGrayWrapper : batchConfigInfoGraysFromPublic) {
+                            configMigratePersistService.syncConfigGray(configInfoGrayWrapper.getDataId(),
+                                    configInfoGrayWrapper.getGroup(), "public",
+                                    configInfoGrayWrapper.getGrayName(), StringUtils.EMPTY, NAMESPACE_MIGRATE_SRC_USER);
+                        }
+                        startGrayPublicId = batchConfigInfoGraysFromPublic.get(batchConfigInfoGraysFromPublic.size() - 1)
+                                .getId();
+                    }
+                    migrateSuccess = true;
+                    break;
+                } catch (Exception e) {
+                    LOGGER.error("[migrate] config_info_gray namespace migrate update from public failed, retry times={}, error={}",
+                            retryTimes, e.getMessage());
+                }
+                retryTimes++;
+                Thread.sleep(1000L);
+            }
+            if (!migrateSuccess) {
+                LOGGER.error("[migrate] config_info_gray namespace migrate update from public failed, skipped");
+                startGrayPublicId = batchConfigInfoGraysFromPublic.get(batchConfigInfoGraysFromPublic.size() - 1)
+                        .getId();
+            }
+        } while (batchConfigInfoGraysFromPublic.size() == batchSize);
     }
+    
     
     private void namespaceMigratePreCheck(int maxRetryTimes) throws Exception {
         int retryTimes = 0;
