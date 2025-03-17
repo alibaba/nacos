@@ -30,6 +30,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.MapSchema;
 import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.responses.ApiResponse;
@@ -160,6 +161,9 @@ public class DocConfig {
                 apiResponse.getContent();
                 apiResponse.getContent().forEach((key, value) -> {
                     Schema<?> schema = value.getSchema();
+                    if (null == schema) {
+                        return;
+                    }
                     Object example = schema.getExample();
                     if (!(example instanceof String)) {
                         return;
@@ -188,8 +192,8 @@ public class DocConfig {
             if (!method.getMethod().getReturnType().equals(Result.class)) {
                 return operation;
             }
-            Map<String, Schema> fieldsSchema = getResultFieldsSchema();
-            Type actualTypeArgument = getGenericType((ParameterizedType) method.getMethod().getGenericReturnType());
+            Map<String, Schema> fieldsSchema = getResultFieldsSchema(Result.class);
+            Type actualTypeArgument = getGenericType((ParameterizedType) method.getMethod().getGenericReturnType(), 0);
             Schema newSchema = null;
             if (actualTypeArgument instanceof Class<?>) {
                 newSchema = buildDirectGenericSchema((Class<?>) actualTypeArgument, fieldsSchema);
@@ -213,16 +217,16 @@ public class DocConfig {
             return operation;
         }
         
-        private Map<String, Schema> getResultFieldsSchema() {
+        private Map<String, Schema> getResultFieldsSchema(Class<?> clazz) {
             Map<String, Schema> result = new LinkedHashMap<>();
             ResolvedSchema baseRespSchema = ModelConverters.getInstance()
-                    .resolveAsResolvedSchema(new AnnotatedType(Result.class));
+                    .resolveAsResolvedSchema(new AnnotatedType(clazz));
             result.putAll(baseRespSchema.schema.getProperties());
             return result;
         }
         
-        private Type getGenericType(ParameterizedType parameterizedType) {
-            return parameterizedType.getActualTypeArguments()[0];
+        private Type getGenericType(ParameterizedType parameterizedType, int index) {
+            return parameterizedType.getActualTypeArguments()[index];
         }
         
         private Schema buildDirectGenericSchema(Class<?> actualTypeArgument, Map<String, Schema> fieldsSchema) {
@@ -249,7 +253,7 @@ public class DocConfig {
             String resultSchemaName = "";
             Schema dataSchema = null;
             if (Collection.class.isAssignableFrom(rawType)) {
-                Type actualTypeArgument = getGenericType(parameterizedType);
+                Type actualTypeArgument = getGenericType(parameterizedType, 0);
                 if (!(actualTypeArgument instanceof Class)) {
                     throw new UnsupportedOperationException(
                             "Not supported generate Result Schema with multiple Generic");
@@ -268,10 +272,50 @@ public class DocConfig {
                 } else {
                     resultSchemaName = buildResultObjectSchema(fieldsSchema);
                 }
-            } else if (rawType.isAssignableFrom(Map.class)) {
-                throw new UnsupportedOperationException("TODO support generate Result Schema with Map.");
-            } else if (rawType.isAssignableFrom(Page.class)) {
-                throw new UnsupportedOperationException("TODO support generate Result Schema with Page.");
+            } else if (Map.class.isAssignableFrom(rawType)) {
+                Type keyActualTypeArgument = getGenericType(parameterizedType, 0);
+                Type valueActualTypeArgument = getGenericType(parameterizedType, 1);
+                if (!(keyActualTypeArgument instanceof Class) || !(valueActualTypeArgument instanceof Class)) {
+                    throw new UnsupportedOperationException(
+                            "Not supported generate Result Schema with multiple Generic");
+                }
+                Class<?> keyActualClass = (Class<?>) keyActualTypeArgument;
+                Class<?> valueActualClass = (Class<?>) valueActualTypeArgument;
+                dataSchema = new MapSchema();
+                ResolvedSchema valueResolvedSchema = ModelConverters.getInstance()
+                        .resolveAsResolvedSchema(new AnnotatedType(valueActualTypeArgument));
+                dataSchema.setName(rawType.getSimpleName() + "<" + keyActualClass.getSimpleName() + ", "
+                        + valueActualClass.getSimpleName() + ">");
+                if (null != valueResolvedSchema.schema) {
+                    dataSchema.setAdditionalProperties(valueResolvedSchema.schema);
+                    if (!valueResolvedSchema.referencedSchemas.isEmpty()) {
+                        respSchemas.putAll(valueResolvedSchema.referencedSchemas);
+                    }
+                    resultSchemaName = "Result<" + dataSchema.getName() + ">";
+                } else {
+                    resultSchemaName = buildResultObjectSchema(fieldsSchema);
+                }
+            } else if (Page.class.isAssignableFrom(rawType)) {
+                Type actualTypeArgument = getGenericType(parameterizedType, 0);
+                if (!(actualTypeArgument instanceof Class)) {
+                    throw new UnsupportedOperationException(
+                            "Not supported generate Result Schema with multiple Generic");
+                }
+                dataSchema = ModelConverters.getInstance()
+                        .resolveAsResolvedSchema(new AnnotatedType(Page.class)).schema;
+                Class<?> actualClass = (Class<?>) actualTypeArgument;
+                ResolvedSchema resolvedSchema = ModelConverters.getInstance()
+                        .resolveAsResolvedSchema(new AnnotatedType(actualTypeArgument));
+                dataSchema.setName("Page<" + actualClass.getSimpleName() + ">");
+                if (resolvedSchema.schema != null) {
+                    ((ArraySchema) dataSchema.getProperties().get("pageItems")).setItems(resolvedSchema.schema);
+                    if (!resolvedSchema.referencedSchemas.isEmpty()) {
+                        respSchemas.putAll(resolvedSchema.referencedSchemas);
+                    }
+                    resultSchemaName = "Result<" + dataSchema.getName() + ">";
+                } else {
+                    resultSchemaName = buildResultObjectSchema(fieldsSchema);
+                }
             } else {
                 throw new UnsupportedOperationException(
                         String.format("Not supported generate Result Schema with %s.", rawType.getCanonicalName()));
