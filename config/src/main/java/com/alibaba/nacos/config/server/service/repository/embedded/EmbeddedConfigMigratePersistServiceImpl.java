@@ -59,6 +59,8 @@ import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapper
 
 /**
  * The type Embedded config migrate persist service.
+ *
+ * @author Sunrisea
  */
 @Conditional(value = ConditionOnEmbeddedStorage.class)
 @Service("embeddedConfigMigratePersistServiceImpl")
@@ -180,7 +182,8 @@ public class EmbeddedConfigMigratePersistServiceImpl implements ConfigMigratePer
     }
     
     @Override
-    public List<ConfigInfoGrayWrapper> getMigrateConfigGrayUpdateList(long startId, int pageSize, String srcTenant, String targetTenant, String srcUser) {
+    public List<ConfigInfoGrayWrapper> getMigrateConfigGrayUpdateList(long startId, int pageSize, String srcTenant,
+            String targetTenant, String srcUser) {
         ConfigMigrateMapper configMigrateMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.MIGRATE_CONFIG);
         MapperContext context = new MapperContext();

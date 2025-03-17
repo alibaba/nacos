@@ -81,6 +81,8 @@ public class ConfigMigrateService {
     
     private static final String NAMESPACE_MIGRATE_SRC_USER = "nacos_namespace_migrate";
     
+    private final String namespacePublic = "public";
+    
     /**
      * The Config info beta persist service.
      */
@@ -317,20 +319,22 @@ public class ConfigMigrateService {
      */
     public void checkChangedConfigGrayMigrateState(ConfigInfoGrayWrapper changedConfigInfoGrayWrapper) {
         String tenant = changedConfigInfoGrayWrapper.getTenant();
-        if (!PropertyUtil.isNamespaceCompatibleMode() || (!StringUtils.equals(tenant, "public")
-                && StringUtils.isNotBlank(tenant))) {
+        if (!PropertyUtil.isNamespaceCompatibleMode()) {
+            return;
+        }
+        if (!StringUtils.equals(tenant, namespacePublic) && StringUtils.isNotBlank(tenant)) {
             return;
         }
         String targetTenant = StringUtils.EMPTY;
         if (StringUtils.isBlank(tenant)) {
-            targetTenant = "public";
+            targetTenant = namespacePublic;
         }
         ConfigInfoGrayWrapper targetConfigInfoGrayWrapper = configInfoGrayPersistService.findConfigInfo4Gray(
                 changedConfigInfoGrayWrapper.getDataId(), changedConfigInfoGrayWrapper.getGroup(), targetTenant,
                 changedConfigInfoGrayWrapper.getGrayName());
         try {
             GRAY_MIGRATE_FLAG.set(true);
-            if (changedConfigInfoGrayWrapper.getSrcUser().equals(NAMESPACE_MIGRATE_SRC_USER)) {
+            if (StringUtils.equals(targetConfigInfoGrayWrapper.getSrcUser(), NAMESPACE_MIGRATE_SRC_USER)) {
                 if (targetConfigInfoGrayWrapper == null) {
                     configInfoGrayPersistService.removeConfigInfoGray(changedConfigInfoGrayWrapper.getDataId(),
                             changedConfigInfoGrayWrapper.getGroup(), tenant, changedConfigInfoGrayWrapper.getGrayName(),
@@ -378,13 +382,15 @@ public class ConfigMigrateService {
      */
     public void checkChangedConfigMigrateState(ConfigInfoStateWrapper changedConfigInfoStateWrapper) {
         String tenant = changedConfigInfoStateWrapper.getTenant();
-        if (!PropertyUtil.isNamespaceCompatibleMode() || (!StringUtils.equals(tenant, "public")
-                && StringUtils.isNotBlank(tenant))) {
+        if (!PropertyUtil.isNamespaceCompatibleMode()) {
+            return;
+        }
+        if (!StringUtils.equals(tenant, namespacePublic) && StringUtils.isNotBlank(tenant)) {
             return;
         }
         String targetTenant = StringUtils.EMPTY;
         if (StringUtils.isBlank(tenant)) {
-            targetTenant = "public";
+            targetTenant = namespacePublic;
         }
         ConfigAllInfo changedConfigAllInfo = configInfoPersistService.findConfigAllInfo(
                 changedConfigInfoStateWrapper.getDataId(), changedConfigInfoStateWrapper.getGroup(), tenant);
@@ -435,13 +441,15 @@ public class ConfigMigrateService {
      */
     public void checkDeletedConfigGrayMigrateState(ConfigInfoStateWrapper deletedConfigInfoGrayStateWrapper) {
         String tenant = deletedConfigInfoGrayStateWrapper.getTenant();
-        if (!PropertyUtil.isNamespaceCompatibleMode() || (!StringUtils.equals(tenant, "public")
-                && StringUtils.isNotBlank(tenant))) {
+        if (!PropertyUtil.isNamespaceCompatibleMode()) {
+            return;
+        }
+        if (!StringUtils.equals(tenant, namespacePublic) && StringUtils.isNotBlank(tenant)) {
             return;
         }
         String targetTenant = StringUtils.EMPTY;
         if (StringUtils.isBlank(tenant)) {
-            targetTenant = "public";
+            targetTenant = namespacePublic;
         }
         ConfigInfoStateWrapper targetConfigInfoGrayStateWrapper = configInfoGrayPersistService.findConfigInfo4GrayState(
                 deletedConfigInfoGrayStateWrapper.getDataId(), deletedConfigInfoGrayStateWrapper.getGroup(),
@@ -470,13 +478,15 @@ public class ConfigMigrateService {
      */
     public void checkDeletedConfigMigrateState(ConfigInfoStateWrapper deletedConfigInfoStateWrapper) {
         String tenant = deletedConfigInfoStateWrapper.getTenant();
-        if (!PropertyUtil.isNamespaceCompatibleMode() || (!StringUtils.equals(tenant, "public")
-                && StringUtils.isNotBlank(tenant))) {
+        if (!PropertyUtil.isNamespaceCompatibleMode()) {
+            return;
+        }
+        if (!StringUtils.equals(tenant, namespacePublic) && StringUtils.isNotBlank(tenant)) {
             return;
         }
         String targetTenant = StringUtils.EMPTY;
         if (StringUtils.isBlank(tenant)) {
-            targetTenant = "public";
+            targetTenant = namespacePublic;
         }
         ConfigInfoStateWrapper targetConfigInfoStateWrapper = configInfoPersistService.findConfigInfoState(
                 deletedConfigInfoStateWrapper.getDataId(), deletedConfigInfoStateWrapper.getGroup(), targetTenant);
@@ -495,6 +505,7 @@ public class ConfigMigrateService {
         
     }
     
+    @SuppressWarnings("PMD.MethodTooLongRule")
     private void doCheckNamespaceMigrate() throws Exception {
         int maxNamespaceMigrateRetryTimes = EnvUtil.getProperty("nacos.namespace.migrate.retry.times", Integer.class,
                 3);
@@ -535,12 +546,11 @@ public class ConfigMigrateService {
             while (retryTimes <= maxNamespaceMigrateRetryTimes) {
                 try {
                     batchConfigInfosFromEmpty = configMigratePersistService
-                            .getMigrateConfigUpdateList(startEmptyId, batchSize, StringUtils.EMPTY,
-                                    "public", NAMESPACE_MIGRATE_SRC_USER);
+                            .getMigrateConfigUpdateList(startEmptyId, batchSize, StringUtils.EMPTY, namespacePublic, NAMESPACE_MIGRATE_SRC_USER);
                     if (!batchConfigInfosFromEmpty.isEmpty()) {
                         for (ConfigInfo configInfo : batchConfigInfosFromEmpty) {
                             configMigratePersistService.syncConfig(configInfo.getDataId(), configInfo.getGroup(),
-                                    StringUtils.EMPTY, "public", NAMESPACE_MIGRATE_SRC_USER);
+                                    StringUtils.EMPTY, namespacePublic, NAMESPACE_MIGRATE_SRC_USER);
                             startEmptyId = batchConfigInfosFromEmpty.get(batchConfigInfosFromEmpty.size() - 1)
                                     .getId();
                         }
@@ -570,12 +580,12 @@ public class ConfigMigrateService {
             while (retryTimes <= maxNamespaceMigrateRetryTimes) {
                 try {
                     batchConfigInfosFromPublic = configMigratePersistService
-                            .getMigrateConfigUpdateList(startPublicId, batchSize, "public", StringUtils.EMPTY,
+                            .getMigrateConfigUpdateList(startPublicId, batchSize, namespacePublic, StringUtils.EMPTY,
                                     NAMESPACE_MIGRATE_SRC_USER);
                     if (!batchConfigInfosFromPublic.isEmpty()) {
                         for (ConfigInfo configInfo : batchConfigInfosFromPublic) {
                             configMigratePersistService.syncConfig(configInfo.getDataId(), configInfo.getGroup(),
-                                    "public", StringUtils.EMPTY, NAMESPACE_MIGRATE_SRC_USER);
+                                    namespacePublic, StringUtils.EMPTY, NAMESPACE_MIGRATE_SRC_USER);
                             startPublicId = batchConfigInfosFromPublic.get(batchConfigInfosFromPublic.size() - 1)
                                     .getId();
                         }
@@ -632,13 +642,13 @@ public class ConfigMigrateService {
                 try {
                     batchConfigInfoGraysFromEmpty = configMigratePersistService
                             .getMigrateConfigGrayUpdateList(startGrayEmptyId, batchSize, StringUtils.EMPTY,
-                                    "public", NAMESPACE_MIGRATE_SRC_USER);
+                                    namespacePublic, NAMESPACE_MIGRATE_SRC_USER);
                     if (!batchConfigInfoGraysFromEmpty.isEmpty()) {
                         for (ConfigInfoGrayWrapper configInfoGrayWrapper : batchConfigInfoGraysFromEmpty) {
                             configMigratePersistService.syncConfigGray(configInfoGrayWrapper.getDataId(),
                                     configInfoGrayWrapper.getGroup(), StringUtils.EMPTY,
-                                    configInfoGrayWrapper.getGrayName(), "public", NAMESPACE_MIGRATE_SRC_USER);
-                            startGrayEmptyId = batchConfigInfoGraysFromEmpty.get(batchConfigInfoGraysFromEmpty.size()- 1)
+                                    configInfoGrayWrapper.getGrayName(), namespacePublic, NAMESPACE_MIGRATE_SRC_USER);
+                            startGrayEmptyId = batchConfigInfoGraysFromEmpty.get(batchConfigInfoGraysFromEmpty.size() - 1)
                                     .getId();
                         }
                     }
@@ -668,12 +678,12 @@ public class ConfigMigrateService {
             while (retryTimes <= maxNamespaceMigrateRetryTimes) {
                 try {
                     batchConfigInfoGraysFromPublic = configMigratePersistService
-                            .getMigrateConfigGrayUpdateList(startGrayPublicId, batchSize, "public",
+                            .getMigrateConfigGrayUpdateList(startGrayPublicId, batchSize, namespacePublic,
                                     StringUtils.EMPTY, NAMESPACE_MIGRATE_SRC_USER);
                     if (!batchConfigInfoGraysFromPublic.isEmpty()) {
                         for (ConfigInfoGrayWrapper configInfoGrayWrapper : batchConfigInfoGraysFromPublic) {
                             configMigratePersistService.syncConfigGray(configInfoGrayWrapper.getDataId(),
-                                    configInfoGrayWrapper.getGroup(), "public",
+                                    configInfoGrayWrapper.getGroup(), namespacePublic,
                                     configInfoGrayWrapper.getGrayName(), StringUtils.EMPTY, NAMESPACE_MIGRATE_SRC_USER);
                             startGrayPublicId = batchConfigInfoGraysFromPublic.get(batchConfigInfoGraysFromPublic.size() - 1)
                                     .getId();
@@ -756,9 +766,9 @@ public class ConfigMigrateService {
         try {
             GRAY_MIGRATE_FLAG.set(true);
             if (StringUtils.isBlank(tenant)) {
-                configMigratePersistService.syncConfigGray(dataId, group, tenant, grayName, "public",
+                configMigratePersistService.syncConfigGray(dataId, group, tenant, grayName, namespacePublic,
                         NAMESPACE_MIGRATE_SRC_USER);
-            } else if (StringUtils.equals(tenant, "public")) {
+            } else if (StringUtils.equals(tenant, namespacePublic)) {
                 configMigratePersistService.syncConfigGray(dataId, group, tenant, grayName, "",
                         NAMESPACE_MIGRATE_SRC_USER);
             }
@@ -780,8 +790,8 @@ public class ConfigMigrateService {
         try {
             CONFIG_MIGRATE_FLAG.set(true);
             if (StringUtils.isBlank(tenant)) {
-                configMigratePersistService.syncConfig(dataId, group, tenant, "public", NAMESPACE_MIGRATE_SRC_USER);
-            } else if (StringUtils.equals(tenant, "public")) {
+                configMigratePersistService.syncConfig(dataId, group, tenant, namespacePublic, NAMESPACE_MIGRATE_SRC_USER);
+            } else if (StringUtils.equals(tenant, namespacePublic)) {
                 configMigratePersistService.syncConfig(dataId, group, tenant, "", NAMESPACE_MIGRATE_SRC_USER);
             }
         } catch (Exception e) {
@@ -802,7 +812,7 @@ public class ConfigMigrateService {
     public void publishConfigMigrate(ConfigForm configFormOrigin, ConfigRequestInfo configRequestInfo,
             String encryptedDataKey) throws NacosException {
         ConfigForm configForm = configFormOrigin.clone();
-        if (!StringUtils.equals(configForm.getNamespaceId(), "public") || !PropertyUtil.isNamespaceCompatibleMode()) {
+        if (!StringUtils.equals(configForm.getNamespaceId(), namespacePublic) || !PropertyUtil.isNamespaceCompatibleMode()) {
             return;
         }
         ConfigInfoWrapper targetConfigInfoWrapper = configInfoPersistService.findConfigInfo(configForm.getDataId(),
@@ -872,7 +882,7 @@ public class ConfigMigrateService {
     public void publishConfigGrayMigrate(String grayType, ConfigForm configFormOrigin,
             ConfigRequestInfo configRequestInfo) throws NacosException {
         ConfigForm configForm = configFormOrigin.clone();
-        if (!StringUtils.equals(configForm.getNamespaceId(), "public") || !PropertyUtil.isNamespaceCompatibleMode()) {
+        if (!StringUtils.equals(configForm.getNamespaceId(), namespacePublic) || !PropertyUtil.isNamespaceCompatibleMode()) {
             return;
         }
         ConfigInfoGrayWrapper targetConfigInfoGrayWrapper = configInfoGrayPersistService.findConfigInfo4Gray(
@@ -947,7 +957,7 @@ public class ConfigMigrateService {
      * @param srcUser the src user
      */
     public void removeConfigInfoMigrate(String dataId, String group, String tenant, String srcIp, String srcUser) {
-        if (!StringUtils.equals(tenant, "public") || !PropertyUtil.isNamespaceCompatibleMode()) {
+        if (!StringUtils.equals(tenant, namespacePublic) || !PropertyUtil.isNamespaceCompatibleMode()) {
             return;
         }
         try {
@@ -970,7 +980,7 @@ public class ConfigMigrateService {
      */
     public void removeConfigInfoGrayMigrate(String dataId, String group, String tenant, String grayName, String srcIp,
             String srcUser) {
-        if (!StringUtils.equals(tenant, "public") || !PropertyUtil.isNamespaceCompatibleMode()) {
+        if (!StringUtils.equals(tenant, namespacePublic) || !PropertyUtil.isNamespaceCompatibleMode()) {
             return;
         }
         try {

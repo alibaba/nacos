@@ -25,6 +25,11 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
 import java.util.ArrayList;
 
+/**
+ * The type Config migrate mapper by derby.
+ *
+ * @author Sunrisea
+ */
 public class ConfigMigrateMapperByDerby extends AbstractMapperByDerby implements ConfigMigrateMapper {
     
     @Override

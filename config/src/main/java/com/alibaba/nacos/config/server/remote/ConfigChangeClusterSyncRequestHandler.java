@@ -135,9 +135,10 @@ public class ConfigChangeClusterSyncRequestHandler
         if (!PropertyUtil.isNamespaceCompatibleMode()) {
             return false;
         }
+        final String ignoreCheckVersion = "3.0.0";
         try {
             String version = meta.getClientVersion().split("Nacos-Java-Client:v")[1];
-            if (VersionUtils.compareVersion(version, "3.0.0") >= 0) {
+            if (VersionUtils.compareVersion(version, ignoreCheckVersion) >= 0) {
                 return false;
             }
         } catch (Exception e) {

@@ -191,6 +191,11 @@ public interface ConfigMigrateMapper extends Mapper {
         return new MapperResult(sql.toString(), paramList);
     }
     
+    /**
+     * Get table name ,the migrate_config actually not exist, just for implements mapper method.
+     *
+     * @return the mapper result
+     */
     @Override
     default String getTableName() {
         return TableConstant.MIGRATE_CONFIG;
