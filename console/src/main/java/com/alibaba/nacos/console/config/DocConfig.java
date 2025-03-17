@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.config;
 
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
@@ -24,6 +25,8 @@ import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.core.converter.ResolvedSchema;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.responses.ApiResponse;
@@ -37,9 +40,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.http.MediaType;
+import org.springframework.web.method.HandlerMethod;
 
 import javax.annotation.PostConstruct;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -98,55 +104,7 @@ public class DocConfig {
     
     @Bean
     public OperationCustomizer genericSchemaOperationCustomize() {
-        return (operation, method) -> {
-            ApiResponses responses = operation.getResponses();
-            if (method.getMethod().getReturnType().equals(Result.class)) {
-                
-                ResolvedSchema baseRespSchema = ModelConverters.getInstance()
-                        .resolveAsResolvedSchema(new AnnotatedType(Result.class));
-                
-                Map<String, Schema> fieldsSchema = new LinkedHashMap<>();
-                fieldsSchema.putAll(baseRespSchema.schema.getProperties());
-                
-                Class actualTypeArgument = (Class) ((ParameterizedType) method.getMethod()
-                        .getGenericReturnType()).getActualTypeArguments()[0];
-                ResolvedSchema resolvedSchema = ModelConverters.getInstance()
-                        .resolveAsResolvedSchema(new AnnotatedType(actualTypeArgument));
-                String respSchemaName;
-                if (resolvedSchema.schema != null) {
-                    // override data field schema
-                    if (resolvedSchema.referencedSchemas.isEmpty()) {
-                        fieldsSchema.put("data", resolvedSchema.schema);
-                    } else {
-                        fieldsSchema.put("data", new ObjectSchema().$ref(actualTypeArgument.getSimpleName()));
-                    }
-                    respSchemas.putAll(resolvedSchema.referencedSchemas);
-                    respSchemaName = "Result<" + actualTypeArgument.getSimpleName() + ">";
-                } else {
-                    // override data field schema
-                    fieldsSchema.compute("data",
-                            (k, originDataSchema) -> new ObjectSchema().description(originDataSchema.getDescription())
-                                    .nullable(originDataSchema.getNullable()));
-                    respSchemaName = "Result<Object>";
-                }
-                Schema schema = new ObjectSchema().type("object").properties(fieldsSchema).name(respSchemaName);
-                
-                // // replace ref '#/components/schemas/RespXxx' to '#/components/schemas/Resp<Xxx>'
-                for (ApiResponse apiResponse : responses.values()) {
-                    for (io.swagger.v3.oas.models.media.MediaType mediaType : apiResponse.getContent().values()) {
-                        Schema originApiResponseSchema = mediaType.getSchema();
-                        if (originApiResponseSchema.get$ref() != null && originApiResponseSchema.get$ref()
-                                .startsWith("#/components/schemas/Result")) {
-                            originApiResponseSchema.$ref(schema.getName());
-                        }
-                    }
-                }
-                
-                respSchemas.put(respSchemaName, schema);
-            }
-            
-            return operation;
-        };
+        return new NacosGenericSchemaOperationCustomize();
     }
     
     @Bean
@@ -170,6 +128,114 @@ public class DocConfig {
             });
             return operation;
         };
+        
+    }
+    
+    private class NacosGenericSchemaOperationCustomize implements OperationCustomizer {
+        
+        @Override
+        public Operation customize(Operation operation, HandlerMethod method) {
+            if (!method.getMethod().getReturnType().equals(Result.class)) {
+                return operation;
+            }
+            Map<String, Schema> fieldsSchema = getResultFieldsSchema();
+            Type actualTypeArgument = getGenericType((ParameterizedType) method.getMethod().getGenericReturnType());
+            Schema newSchema = null;
+            if (actualTypeArgument instanceof Class<?>) {
+                newSchema = buildDirectGenericSchema((Class<?>) actualTypeArgument, fieldsSchema);
+            } else if (actualTypeArgument instanceof ParameterizedType) {
+                newSchema = buildGenericSchema((ParameterizedType) actualTypeArgument, fieldsSchema);
+            } else {
+                return operation;
+            }
+            ApiResponses responses = operation.getResponses();
+            // // replace ref '#/components/schemas/ResultXxx' to '#/components/schemas/Result<Xxx>'
+            for (ApiResponse apiResponse : responses.values()) {
+                for (io.swagger.v3.oas.models.media.MediaType mediaType : apiResponse.getContent().values()) {
+                    Schema originApiResponseSchema = mediaType.getSchema();
+                    if (originApiResponseSchema.get$ref() != null && originApiResponseSchema.get$ref()
+                            .startsWith("#/components/schemas/Result")) {
+                        originApiResponseSchema.$ref(newSchema.getName());
+                    }
+                }
+            }
+            respSchemas.put(newSchema.getName(), newSchema);
+            return operation;
+        }
+        
+        private Map<String, Schema> getResultFieldsSchema() {
+            Map<String, Schema> result = new LinkedHashMap<>();
+            ResolvedSchema baseRespSchema = ModelConverters.getInstance()
+                    .resolveAsResolvedSchema(new AnnotatedType(Result.class));
+            result.putAll(baseRespSchema.schema.getProperties());
+            return result;
+        }
+        
+        private Type getGenericType(ParameterizedType parameterizedType) {
+            return parameterizedType.getActualTypeArguments()[0];
+        }
+        
+        private Schema buildDirectGenericSchema(Class<?> actualTypeArgument, Map<String, Schema> fieldsSchema) {
+            ResolvedSchema resolvedSchema = ModelConverters.getInstance()
+                    .resolveAsResolvedSchema(new AnnotatedType(actualTypeArgument));
+            String respSchemaName;
+            if (resolvedSchema.schema != null) {
+                // override data field schema
+                if (resolvedSchema.referencedSchemas.isEmpty()) {
+                    fieldsSchema.put("data", resolvedSchema.schema);
+                } else {
+                    fieldsSchema.put("data", new ObjectSchema().$ref(actualTypeArgument.getSimpleName()));
+                }
+                respSchemas.putAll(resolvedSchema.referencedSchemas);
+                respSchemaName = "Result<" + actualTypeArgument.getSimpleName() + ">";
+            } else {
+                respSchemaName = buildResultObjectSchema(fieldsSchema);
+            }
+            return new ObjectSchema().type("object").properties(fieldsSchema).name(respSchemaName);
+        }
+        
+        private Schema buildGenericSchema(ParameterizedType parameterizedType, Map<String, Schema> fieldsSchema) {
+            Class<?> rawType = (Class<?>) parameterizedType.getRawType();
+            String resultSchemaName = "";
+            Schema dataSchema = null;
+            if (rawType.isAssignableFrom(Collection.class)) {
+                Type actualTypeArgument = getGenericType(parameterizedType);
+                if (!(actualTypeArgument instanceof Class)) {
+                    throw new UnsupportedOperationException(
+                            "Not supported generate Result Schema with multiple Generic");
+                }
+                dataSchema = new ArraySchema();
+                Class<?> actualClass = (Class<?>) actualTypeArgument;
+                ResolvedSchema resolvedSchema = ModelConverters.getInstance()
+                        .resolveAsResolvedSchema(new AnnotatedType(actualTypeArgument));
+                dataSchema.setName(rawType.getSimpleName() + "<" + actualClass.getSimpleName() + ">");
+                if (resolvedSchema.schema != null) {
+                    dataSchema.setItems(resolvedSchema.schema);
+                    if (!resolvedSchema.referencedSchemas.isEmpty()) {
+                        respSchemas.putAll(resolvedSchema.referencedSchemas);
+                    }
+                    resultSchemaName = "Result<" + dataSchema.getName() + ">";
+                } else {
+                    resultSchemaName = buildResultObjectSchema(fieldsSchema);
+                }
+            } else if (rawType.isAssignableFrom(Map.class)) {
+                throw new UnsupportedOperationException("TODO support generate Result Schema with Map.");
+            } else if (rawType.isAssignableFrom(Page.class)) {
+                throw new UnsupportedOperationException("TODO support generate Result Schema with Page.");
+            } else {
+                throw new UnsupportedOperationException(
+                        String.format("Not supported generate Result Schema with %s.", rawType.getCanonicalName()));
+            }
+            fieldsSchema.put("data", dataSchema);
+            return new ObjectSchema().type("object").properties(fieldsSchema).name(resultSchemaName);
+        }
+        
+        private String buildResultObjectSchema(Map<String, Schema> fieldsSchema) {
+            fieldsSchema.compute("data",
+                    (k, originDataSchema) -> new ObjectSchema().description(originDataSchema.getDescription())
+                            .nullable(originDataSchema.getNullable()));
+            return "Result<Object>";
+        }
         
     }
 }
