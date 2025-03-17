@@ -24,6 +24,7 @@ import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
+import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.service.dump.processor.DumpAllGrayProcessor;
 import com.alibaba.nacos.config.server.service.dump.processor.DumpAllProcessor;
@@ -76,6 +77,8 @@ public abstract class DumpService {
     
     protected ConfigInfoGrayPersistService configInfoGrayPersistService;
     
+    protected ConfigMigrateService configMigrateService;
+    
     protected final ServerMemberManager memberManager;
     
     /**
@@ -105,12 +108,15 @@ public abstract class DumpService {
     public DumpService(ConfigInfoPersistService configInfoPersistService,
             NamespacePersistService namespacePersistService,
             HistoryConfigInfoPersistService historyConfigInfoPersistService,
-            ConfigInfoGrayPersistService configInfoGrayPersistService, ServerMemberManager memberManager) {
+            ConfigInfoGrayPersistService configInfoGrayPersistService,
+            ServerMemberManager memberManager,
+            ConfigMigrateService configMigrateService) {
         this.configInfoPersistService = configInfoPersistService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
         this.namespacePersistService = namespacePersistService;
         this.historyConfigInfoPersistService = historyConfigInfoPersistService;
         this.memberManager = memberManager;
+        this.configMigrateService = configMigrateService;
         this.processor = new DumpProcessor(this.configInfoPersistService, this.configInfoGrayPersistService);
         this.dumpAllProcessor = new DumpAllProcessor(this.configInfoPersistService);
         this.dumpAllGrayProcessor = new DumpAllGrayProcessor(this.configInfoGrayPersistService);
@@ -240,11 +246,12 @@ public abstract class DumpService {
                 
                 ConfigExecutor.scheduleConfigChangeTask(
                         new DumpChangeConfigWorker(this.configInfoPersistService, this.historyConfigInfoPersistService,
+                                this.configMigrateService,
                                 currentTime), random.nextInt((int) PropertyUtil.getDumpChangeWorkerInterval()),
                         TimeUnit.MILLISECONDS);
                 ConfigExecutor.scheduleConfigChangeTask(
                         new DumpChangeGrayConfigWorker(this.configInfoGrayPersistService, currentTime,
-                                this.historyConfigInfoPersistService),
+                                this.historyConfigInfoPersistService, this.configMigrateService),
                         random.nextInt((int) PropertyUtil.getDumpChangeWorkerInterval()), TimeUnit.MILLISECONDS);
             }
             

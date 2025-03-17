@@ -172,6 +172,7 @@ public interface ConfigInfoPersistService {
      * @return {@link ConfigAllInfo} list
      * @author klw
      */
+    @Deprecated
     List<ConfigAllInfo> removeConfigInfoByIds(final List<Long> ids, final String srcIp, final String srcUser);
     
     /**

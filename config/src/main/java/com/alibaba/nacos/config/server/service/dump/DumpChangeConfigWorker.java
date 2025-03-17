@@ -17,10 +17,12 @@
 package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
+import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
@@ -44,12 +46,17 @@ public class DumpChangeConfigWorker implements Runnable {
     
     private HistoryConfigInfoPersistService historyConfigInfoPersistService;
     
+    private ConfigMigrateService configMigrateService;
+    
     Timestamp startTime;
     
     public DumpChangeConfigWorker(ConfigInfoPersistService configInfoPersistService,
-            HistoryConfigInfoPersistService historyConfigInfoPersistService, Timestamp startTime) {
+            HistoryConfigInfoPersistService historyConfigInfoPersistService,
+            ConfigMigrateService configMigrateService,
+            Timestamp startTime) {
         this.configInfoPersistService = configInfoPersistService;
         this.historyConfigInfoPersistService = historyConfigInfoPersistService;
+        this.configMigrateService = configMigrateService;
         this.startTime = startTime;
     }
     
@@ -62,6 +69,8 @@ public class DumpChangeConfigWorker implements Runnable {
     /**
      * do check change.
      */
+    @Override
+    @SuppressWarnings("PMD.MethodTooLongRule")
     public void run() {
         try {
             if (!PropertyUtil.isDumpChangeOn()) {
@@ -84,6 +93,7 @@ public class DumpChangeConfigWorker implements Runnable {
                                 configInfo.getTenant());
                         LogUtil.DEFAULT_LOG.info("[dump-delete-ok], groupKey: {}, tenant: {}",
                                 new Object[] {GroupKey2.getKey(configInfo.getDataId(), configInfo.getGroup())}, configInfo.getTenant());
+                        configMigrateService.checkDeletedConfigMigrateState(configInfo);
                     }
                 }
                 if (configDeleted.size() < pageSize) {
@@ -100,6 +110,10 @@ public class DumpChangeConfigWorker implements Runnable {
                 List<ConfigInfoStateWrapper> changeConfigs = configInfoPersistService.findChangeConfig(startTime,
                         changeCursorId, pageSize);
                 for (ConfigInfoStateWrapper cf : changeConfigs) {
+                    configMigrateService.checkChangedConfigMigrateState(cf);
+                    if (StringUtils.isBlank(cf.getTenant())) {
+                        continue;
+                    }
                     final String groupKey = GroupKey2.getKey(cf.getDataId(), cf.getGroup(), cf.getTenant());
                     //check md5 & localtimestamp update local disk cache.
                     boolean newLastModified = cf.getLastModified() > ConfigCacheService.getLastModifiedTs(groupKey);

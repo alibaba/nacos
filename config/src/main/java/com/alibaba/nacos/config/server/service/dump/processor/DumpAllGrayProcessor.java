@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.service.dump.processor;
 
 import com.alibaba.nacos.common.task.NacosTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
@@ -50,6 +51,9 @@ public class DumpAllGrayProcessor implements NacosTaskProcessor {
             Page<ConfigInfoGrayWrapper> page = configInfoGrayPersistService.findAllConfigInfoGrayForDumpAll(pageNo, PAGE_SIZE);
             if (page != null) {
                 for (ConfigInfoGrayWrapper cf : page.getPageItems()) {
+                    if (StringUtils.isBlank(cf.getTenant())) {
+                        continue;
+                    }
                     boolean result = ConfigCacheService
                             .dumpGray(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getGrayName(), cf.getGrayRule(), cf.getContent(),
                                     cf.getLastModified(), cf.getEncryptedDataKey());

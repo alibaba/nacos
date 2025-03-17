@@ -41,6 +41,7 @@ import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
+import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.listener.ConfigListenerStateDelegate;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
@@ -105,6 +106,8 @@ public class ConfigInnerHandler implements ConfigHandler {
     
     private final ConfigListenerStateDelegate configListenerStateDelegate;
     
+    private final ConfigMigrateService configMigrateService;
+    
     private NamespacePersistService namespacePersistService;
     
     private ConfigInfoBetaPersistService configInfoBetaPersistService;
@@ -115,7 +118,7 @@ public class ConfigInnerHandler implements ConfigHandler {
             ConfigInfoPersistService configInfoPersistService, ConfigDetailService configDetailService,
             NamespacePersistService namespacePersistService, ConfigInfoBetaPersistService configInfoBetaPersistService,
             ConfigInfoGrayPersistService configInfoGrayPersistService,
-            ConfigListenerStateDelegate configListenerStateDelegate) {
+            ConfigListenerStateDelegate configListenerStateDelegate, ConfigMigrateService configMigrateService) {
         this.configOperationService = configOperationService;
         this.configInfoPersistService = configInfoPersistService;
         this.configDetailService = configDetailService;
@@ -123,6 +126,7 @@ public class ConfigInnerHandler implements ConfigHandler {
         this.configInfoBetaPersistService = configInfoBetaPersistService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
         this.configListenerStateDelegate = configListenerStateDelegate;
+        this.configMigrateService = configMigrateService;
     }
     
     @Override
@@ -164,19 +168,14 @@ public class ConfigInnerHandler implements ConfigHandler {
     
     @Override
     public Boolean batchDeleteConfigs(List<Long> ids, String clientIp, String srcUser) {
-        final Timestamp time = TimeUtils.getCurrentTime();
-        List<ConfigAllInfo> configInfoList = configInfoPersistService.removeConfigInfoByIds(ids, clientIp, srcUser);
-        if (CollectionUtils.isEmpty(configInfoList)) {
-            return true;
-        }
-        for (ConfigInfo configInfo : configInfoList) {
-            ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
-                            time.getTime()));
-            
-            ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
-                    configInfo.getTenant(), null, time.getTime(), clientIp, ConfigTraceService.PERSISTENCE_EVENT,
-                    ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
+        for (Long id : ids) {
+            ConfigInfo configInfo = configInfoPersistService.findConfigInfo(id);
+            if (configInfo == null) {
+                LOGGER.warn("[deleteConfigs] configInfo is null, id: {}", id);
+                continue;
+            }
+            configOperationService.deleteConfig(configInfo.getDataId(), configInfo.getGroup(),
+                    configInfo.getTenant(), null, clientIp, srcUser, Constants.HTTP);
         }
         return true;
     }
@@ -551,6 +550,8 @@ public class ConfigInnerHandler implements ConfigHandler {
             String requestIpApp, String srcUser) {
         try {
             configInfoGrayPersistService.removeConfigInfoGray(dataId, group, namespaceId, BetaGrayRule.TYPE_BETA,
+                    remoteIp, srcUser);
+            configMigrateService.removeConfigInfoGrayMigrate(dataId, group, namespaceId, BetaGrayRule.TYPE_BETA,
                     remoteIp, srcUser);
         } catch (Throwable e) {
             LOGGER.error("remove beta data error", e);

@@ -182,6 +182,7 @@ public class ConfigController {
         }
         
         // check tenant
+        final boolean namespaceTransferred = NamespaceUtil.isNeedTransferNamespace(tenant);
         tenant = NamespaceUtil.processNamespaceParameter(tenant);
         ParamUtils.checkTenant(tenant);
         ParamUtils.checkParam(dataId, group, "datumId", content);
@@ -214,6 +215,7 @@ public class ConfigController {
         configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
         configRequestInfo.setBetaIps(request.getHeader("betaIps"));
         configRequestInfo.setCasMd5(request.getHeader("casMd5"));
+        configRequestInfo.setNamespaceTransferred(namespaceTransferred);
         
         return configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal);
     }
@@ -651,6 +653,7 @@ public class ConfigController {
             return RestResultUtils.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
         }
         
+        final boolean namespaceTransferred = NamespaceUtil.isNeedTransferNamespace(namespace);
         namespace = NamespaceUtil.processNamespaceParameter(namespace);
         if (StringUtils.isNotBlank(namespace) && namespacePersistService.tenantInfoCountByTenantId(namespace) <= 0) {
             failedData.put("succCount", 0);
@@ -685,7 +688,8 @@ public class ConfigController {
             return RestResultUtils.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
         }
         
-        Map<String, Object> saveResult = batchImportAndPublishConfigs(configInfoList, request, srcUser, namespace, policy);
+        Map<String, Object> saveResult = batchImportAndPublishConfigs(configInfoList, request, srcUser, namespace,
+                namespaceTransferred, policy);
         
         // unrecognizedCount
         if (!unrecognizedList.isEmpty()) {
@@ -881,6 +885,7 @@ public class ConfigController {
         }
         configBeansList.removeAll(Collections.singleton(null));
         
+        final boolean namespaceTransferred = NamespaceUtil.isNeedTransferNamespace(namespace);
         namespace = NamespaceUtil.processNamespaceParameter(namespace);
         if (StringUtils.isNotBlank(namespace) && namespacePersistService.tenantInfoCountByTenantId(namespace) <= 0) {
             failedData.put("succCount", 0);
@@ -926,13 +931,14 @@ public class ConfigController {
         if (StringUtils.isBlank(srcUser)) {
             srcUser = RequestUtil.getSrcUserName(request);
         }
-        Map<String, Object> saveResult = batchImportAndPublishConfigs(configInfoList4Clone, request, srcUser, namespace, policy);
+        Map<String, Object> saveResult = batchImportAndPublishConfigs(configInfoList4Clone, request, srcUser, namespace,
+                namespaceTransferred, policy);
 
         return RestResultUtils.success("Clone Completed Successfully", saveResult);
     }
     
     private Map<String, Object> batchImportAndPublishConfigs(List<ConfigAllInfo> configAllInfoList, HttpServletRequest request,
-            String srcUser, String targetNamespaceId, SameConfigPolicy sameConfigPolicy) throws NacosException {
+            String srcUser, String targetNamespaceId, boolean namespaceTransferred, SameConfigPolicy sameConfigPolicy) throws NacosException {
         Map<String, Object> saveResult = new HashMap<>(16);
         int succCount = 0;
         int skipCount = 0;
@@ -942,6 +948,7 @@ public class ConfigController {
             ConfigAllInfo configAllInfo = configAllInfoList.get(i);
             ConfigForm configForm = transferToConfigForm(configAllInfo, srcUser, targetNamespaceId);
             ConfigRequestInfo configRequestInfo = transferToConfigRequestInfo(request);
+            configRequestInfo.setNamespaceTransferred(namespaceTransferred);
             if (sameConfigPolicy != SameConfigPolicy.OVERWRITE) {
                 configRequestInfo.setUpdateForExist(false);
             }

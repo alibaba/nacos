@@ -131,6 +131,7 @@ public class ConfigControllerV2 {
             encryptedDataKeyFinal = pair.getFirst();
         }
         //fix issue #9783
+        final boolean namespaceTransferred = NamespaceUtil.isNeedTransferNamespace(configForm.getNamespaceId());
         configForm.setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
         // check param
         ParamUtils.checkTenantV2(configForm.getNamespaceId());
@@ -150,6 +151,7 @@ public class ConfigControllerV2 {
         configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
         configRequestInfo.setBetaIps(request.getHeader("betaIps"));
         configRequestInfo.setCasMd5(request.getHeader("casMd5"));
+        configRequestInfo.setNamespaceTransferred(namespaceTransferred);
         
         return Result.success(configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal));
     }

@@ -48,6 +48,7 @@ import com.alibaba.nacos.config.server.paramcheck.ConfigBlurSearchHttpParamExtra
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
+import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.listener.ConfigListenerStateDelegate;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
@@ -135,11 +136,13 @@ public class ConfigControllerV3 {
     
     private final ConfigListenerStateDelegate configListenerStateDelegate;
     
+    private final ConfigMigrateService configMigrateService;
+    
     public ConfigControllerV3(ConfigOperationService configOperationService,
             ConfigInfoPersistService configInfoPersistService, ConfigDetailService configDetailService,
             ConfigInfoGrayPersistService configInfoGrayPersistService,
             ConfigInfoBetaPersistService configInfoBetaPersistService, NamespacePersistService namespacePersistService,
-            ConfigListenerStateDelegate configListenerStateDelegate) {
+            ConfigListenerStateDelegate configListenerStateDelegate, ConfigMigrateService configMigrateService) {
         this.configOperationService = configOperationService;
         this.configInfoPersistService = configInfoPersistService;
         this.configDetailService = configDetailService;
@@ -147,6 +150,7 @@ public class ConfigControllerV3 {
         this.configInfoBetaPersistService = configInfoBetaPersistService;
         this.namespacePersistService = namespacePersistService;
         this.configListenerStateDelegate = configListenerStateDelegate;
+        this.configMigrateService = configMigrateService;
     }
     
     /**
@@ -185,6 +189,7 @@ public class ConfigControllerV3 {
     public Result<Boolean> publishConfig(HttpServletRequest request, ConfigFormV3 configForm) throws NacosException {
         // check required field
         configForm.validateWithContent();
+        final boolean namespaceTransferred = NamespaceUtil.isNeedTransferNamespace(configForm.getNamespaceId());
         configForm.setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
         
         // check param
@@ -213,6 +218,7 @@ public class ConfigControllerV3 {
         configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
         configRequestInfo.setBetaIps(request.getHeader("betaIps"));
         configRequestInfo.setCasMd5(request.getHeader("casMd5"));
+        configRequestInfo.setNamespaceTransferred(namespaceTransferred);
         
         return Result.success(
                 configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal));
@@ -246,22 +252,21 @@ public class ConfigControllerV3 {
     public Result<Boolean> deleteConfigs(HttpServletRequest request, @RequestParam(value = "ids") List<Long> ids) {
         String clientIp = getRemoteIp(request);
         String srcUser = RequestUtil.getSrcUserName(request);
-        final Timestamp time = TimeUtils.getCurrentTime();
-        
-        List<ConfigAllInfo> configInfoList = configInfoPersistService.removeConfigInfoByIds(ids, clientIp, srcUser);
-        if (CollectionUtils.isEmpty(configInfoList)) {
+        try {
+            for (Long id : ids) {
+                ConfigInfo configInfo = configInfoPersistService.findConfigInfo(id);
+                if (configInfo == null) {
+                    LOGGER.warn("[deleteConfigs] configInfo is null, id: {}", id);
+                    continue;
+                }
+                configOperationService.deleteConfig(configInfo.getDataId(), configInfo.getGroup(),
+                        configInfo.getTenant(), null, clientIp, srcUser, Constants.HTTP);
+            }
             return Result.success(true);
+        } catch (Exception e) {
+            LOGGER.error("delete configs based on the IDs list error, IDs: {}", ids, e);
+            return Result.failure(ErrorCode.SERVER_ERROR);
         }
-        for (ConfigAllInfo configInfo : configInfoList) {
-            ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
-                            time.getTime()));
-            ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
-                    configInfo.getTenant(), null, time.getTime(), clientIp, ConfigTraceService.PERSISTENCE_EVENT,
-                    ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
-        }
-        
-        return Result.success(true);
     }
     
     /**
@@ -283,11 +288,10 @@ public class ConfigControllerV3 {
      * List or Search config by config condition.
      *
      * <p>
-     *     This API will entry the request into an queue to cache and do query limit.
-     *     If API called with frequently or datasource is high performance and slow RT,
-     *     The API will return {@code 503}.
-     *     Can use `nacos.config.search.max_capacity` and `nacos.config.search.max_thread` to upper the limit of query.
-     *     And use `nacos.config.search.wait_timeout` to control the waiting time of query.
+     * This API will entry the request into an queue to cache and do query limit. If API called with frequently or
+     * datasource is high performance and slow RT, The API will return {@code 503}. Can use
+     * `nacos.config.search.max_capacity` and `nacos.config.search.max_thread` to upper the limit of query. And use
+     * `nacos.config.search.wait_timeout` to control the waiting time of query.
      * </p>
      */
     @GetMapping("/list")
@@ -342,6 +346,8 @@ public class ConfigControllerV3 {
         String groupName = configForm.getGroupName();
         try {
             configInfoGrayPersistService.removeConfigInfoGray(dataId, groupName, namespaceId, BetaGrayRule.TYPE_BETA,
+                    remoteIp, RequestUtil.getSrcUserName(httpServletRequest));
+            configMigrateService.removeConfigInfoGrayMigrate(dataId, groupName, namespaceId, BetaGrayRule.TYPE_BETA,
                     remoteIp, RequestUtil.getSrcUserName(httpServletRequest));
         } catch (Throwable e) {
             LOGGER.error("remove beta data error", e);
