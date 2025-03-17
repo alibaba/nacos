@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
+import com.alibaba.nacos.config.server.configuration.ConfigCompatibleConfig;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
 import com.alibaba.nacos.config.server.service.ConfigMigrateService;
@@ -132,7 +133,7 @@ public class ConfigChangeClusterSyncRequestHandler
      * @return the boolean
      */
     public boolean checkNamespaceCompatible(ConfigChangeClusterSyncRequest configSyncRequest, RequestMeta meta) {
-        if (!PropertyUtil.isNamespaceCompatibleMode()) {
+        if (!ConfigCompatibleConfig.getInstance().isNamespaceCompatibleMode()) {
             return false;
         }
         final String ignoreCheckVersion = "3.0.0";
