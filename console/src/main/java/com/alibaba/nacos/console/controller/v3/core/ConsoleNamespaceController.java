@@ -92,7 +92,7 @@ public class ConsoleNamespaceController {
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
             + "namespaces", action = ActionTypes.READ, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
     @Operation(summary = "nacos.console.core.namespace.api.get.summary", description = "nacos.console.core.namespace.api.get.description",
-            security = @SecurityRequirement(name = "nacos"))
+            security = @SecurityRequirement(name = "nacos", scopes = "ADMIN:READ"))
     @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
             schema = @Schema(implementation = Result.class, example = "nacos.console.core.namespace.api.get.example")))
     @Parameters(value = @Parameter(name = "namespaceId", required = true, example = "public"))

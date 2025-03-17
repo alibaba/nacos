@@ -27,6 +27,7 @@ import io.swagger.v3.core.converter.ResolvedSchema;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.ObjectSchema;
@@ -37,7 +38,11 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springdoc.core.customizers.OpenApiBuilderCustomizer;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springdoc.core.customizers.OperationCustomizer;
+import org.springdoc.core.customizers.ServerBaseUrlCustomizer;
 import org.springdoc.core.properties.SpringDocConfigProperties;
+import org.springdoc.core.providers.JavadocProvider;
+import org.springdoc.core.service.OpenAPIService;
+import org.springdoc.core.service.SecurityService;
 import org.springdoc.core.utils.PropertyResolverUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -50,7 +55,10 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -61,16 +69,14 @@ import java.util.stream.Collectors;
  * @author xiweng.yy
  */
 @Configuration
-@OpenAPIDefinition(info = @io.swagger.v3.oas.annotations.info.Info(title = "nacos.console.api.title",
-        description = "nacos.console.api.description",
-        license = @io.swagger.v3.oas.annotations.info.License(
-                name = "Apache 2.0",
-                url = "https://github.com/alibaba/nacos/blob/develop/LICENSE")
-                )
-        )
+@OpenAPIDefinition(info = @io.swagger.v3.oas.annotations.info.Info(title = "nacos.console.api.title", description = "nacos.console.api.description", license = @io.swagger.v3.oas.annotations.info.License(name = "Apache 2.0", url = "https://github.com/alibaba/nacos/blob/develop/LICENSE")))
 public class DocConfig {
     
+    private static final ThreadLocal<Locale> LANGUAGE_LOCALE = ThreadLocal.withInitial(Locale::getDefault);
+    
     private final SpringDocConfigProperties springDocConfigProperties;
+    
+    private Map<String, Schema> respSchemas = new ConcurrentHashMap<>();
     
     public DocConfig(SpringDocConfigProperties springDocConfigProperties) {
         this.springDocConfigProperties = springDocConfigProperties;
@@ -80,11 +86,6 @@ public class DocConfig {
     public void initSpringDocProperties() {
         springDocConfigProperties.setDefaultProducesMediaType(MediaType.APPLICATION_JSON_VALUE);
         springDocConfigProperties.setDefaultConsumesMediaType(MediaType.APPLICATION_FORM_URLENCODED_VALUE);
-    }
-    
-    @Bean
-    public OpenApiCustomizer nacosConsoleOpenApiCustomizer() {
-        return openApi -> openApi.getInfo().version(VersionUtils.version);
     }
     
     @Bean
@@ -99,7 +100,20 @@ public class DocConfig {
         };
     }
     
-    private Map<String, Schema> respSchemas = new ConcurrentHashMap<>();
+    @Bean
+    public OpenAPIService nacosOpenApiService(Optional<OpenAPI> openApi, SecurityService securityParser,
+            SpringDocConfigProperties springDocConfigProperties, PropertyResolverUtils propertyResolverUtils,
+            Optional<List<OpenApiBuilderCustomizer>> openApiBuilderCustomisers,
+            Optional<List<ServerBaseUrlCustomizer>> serverBaseUrlCustomisers,
+            Optional<JavadocProvider> javadocProvider) {
+        return new NacosLocaleCachedOpenApiService(openApi, securityParser, springDocConfigProperties,
+                propertyResolverUtils, openApiBuilderCustomisers, serverBaseUrlCustomisers, javadocProvider);
+    }
+    
+    @Bean
+    public OpenApiCustomizer nacosConsoleOpenApiCustomizer() {
+        return openApi -> openApi.getInfo().version(VersionUtils.version);
+    }
     
     @Bean
     public OpenApiCustomizer genericSchemaOpenApiCustomizer() {
@@ -113,11 +127,14 @@ public class DocConfig {
     }
     
     @Bean
-    public OpenApiCustomizer nacosAuthSecurityRequirementOpenApiCustomizer(PropertyResolverUtils propertyResolverUtils) {
+    public OpenApiCustomizer nacosAuthSecurityRequirementOpenApiCustomizer(
+            PropertyResolverUtils propertyResolverUtils) {
         return openApi -> {
+            String accessTokenDesc = propertyResolverUtils.resolve("nacos.core.auth.token.access.header",
+                    LANGUAGE_LOCALE.get());
             openApi.getComponents().addSecuritySchemes("nacos",
                     new SecurityScheme().type(SecurityScheme.Type.APIKEY).name("accessToken")
-                            .in(SecurityScheme.In.HEADER).description("传入通过login接口获得的`accessToken`"));
+                            .in(SecurityScheme.In.HEADER).description(accessTokenDesc));
         };
     }
     
@@ -147,7 +164,7 @@ public class DocConfig {
                     if (!(example instanceof String)) {
                         return;
                     }
-                    String i18nExample = propertyResolverUtils.resolve((String) example, null);
+                    String i18nExample = propertyResolverUtils.resolve((String) example, LANGUAGE_LOCALE.get());
                     if (key.equals(MediaType.APPLICATION_JSON_VALUE)) {
                         try {
                             schema.setExample(JacksonUtils.toObj(i18nExample));
@@ -270,5 +287,23 @@ public class DocConfig {
             return "Result<Object>";
         }
         
+    }
+    
+    private class NacosLocaleCachedOpenApiService extends OpenAPIService {
+        
+        public NacosLocaleCachedOpenApiService(Optional<OpenAPI> openApi, SecurityService securityParser,
+                SpringDocConfigProperties springDocConfigProperties, PropertyResolverUtils propertyResolverUtils,
+                Optional<List<OpenApiBuilderCustomizer>> openApiBuilderCustomizers,
+                Optional<List<ServerBaseUrlCustomizer>> serverBaseUrlCustomizers,
+                Optional<JavadocProvider> javadocProvider) {
+            super(openApi, securityParser, springDocConfigProperties, propertyResolverUtils, openApiBuilderCustomizers,
+                    serverBaseUrlCustomizers, javadocProvider);
+        }
+        
+        @Override
+        public OpenAPI build(Locale locale) {
+            LANGUAGE_LOCALE.set(locale);
+            return super.build(locale);
+        }
     }
 }
