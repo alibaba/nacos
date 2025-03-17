@@ -541,9 +541,9 @@ public class ConfigMigrateService {
                         for (ConfigInfo configInfo : batchConfigInfosFromEmpty) {
                             configMigratePersistService.syncConfig(configInfo.getDataId(), configInfo.getGroup(),
                                     StringUtils.EMPTY, "public", NAMESPACE_MIGRATE_SRC_USER);
+                            startEmptyId = batchConfigInfosFromEmpty.get(batchConfigInfosFromEmpty.size() - 1)
+                                    .getId();
                         }
-                        startEmptyId = batchConfigInfosFromEmpty.get(batchConfigInfosFromEmpty.size() - 1)
-                                .getId();
                     }
                     migrateSuccess = true;
                     break;
@@ -556,7 +556,9 @@ public class ConfigMigrateService {
             }
             if (!migrateSuccess) {
                 LOGGER.error("[migrate] config_info namespace migrate update from empty failed, skipped");
-                startEmptyId = batchConfigInfosFromEmpty.get(batchConfigInfosFromEmpty.size() - 1).getId();
+                if (!batchConfigInfosFromEmpty.isEmpty()) {
+                    startEmptyId = batchConfigInfosFromEmpty.get(batchConfigInfosFromEmpty.size() - 1).getId();
+                }
             }
         } while (batchConfigInfosFromEmpty.size() == batchSize);
         
@@ -574,9 +576,9 @@ public class ConfigMigrateService {
                         for (ConfigInfo configInfo : batchConfigInfosFromPublic) {
                             configMigratePersistService.syncConfig(configInfo.getDataId(), configInfo.getGroup(),
                                     "public", StringUtils.EMPTY, NAMESPACE_MIGRATE_SRC_USER);
+                            startPublicId = batchConfigInfosFromPublic.get(batchConfigInfosFromPublic.size() - 1)
+                                    .getId();
                         }
-                        startPublicId = batchConfigInfosFromPublic.get(batchConfigInfosFromPublic.size() - 1)
-                                .getId();
                     }
                     migrateSuccess = true;
                     break;
@@ -589,7 +591,9 @@ public class ConfigMigrateService {
             }
             if (!migrateSuccess) {
                 LOGGER.error("[migrate] config_info namespace migrate update from public failed, skipped");
-                startPublicId = batchConfigInfosFromPublic.get(batchConfigInfosFromPublic.size() - 1).getId();
+                if (!batchConfigInfosFromPublic.isEmpty()) {
+                    startPublicId = batchConfigInfosFromPublic.get(batchConfigInfosFromPublic.size() - 1).getId();
+                }
             }
         } while (batchConfigInfosFromPublic.size() == batchSize);
         
@@ -634,9 +638,9 @@ public class ConfigMigrateService {
                             configMigratePersistService.syncConfigGray(configInfoGrayWrapper.getDataId(),
                                     configInfoGrayWrapper.getGroup(), StringUtils.EMPTY,
                                     configInfoGrayWrapper.getGrayName(), "public", NAMESPACE_MIGRATE_SRC_USER);
+                            startGrayEmptyId = batchConfigInfoGraysFromEmpty.get(batchConfigInfoGraysFromEmpty.size()- 1)
+                                    .getId();
                         }
-                        startGrayEmptyId = batchConfigInfoGraysFromEmpty.get(batchConfigInfoGraysFromEmpty.size()-1)
-                                .getId();
                     }
                     migrateSuccess = true;
                     break;
@@ -649,8 +653,10 @@ public class ConfigMigrateService {
             }
             if (!migrateSuccess) {
                 LOGGER.error("[migrate] config_info_gray namespace migrate update from empty failed, skipped");
-                startGrayEmptyId = batchConfigInfoGraysFromEmpty.get(batchConfigInfoGraysFromEmpty.size() - 1)
-                        .getId();
+                if (!batchConfigInfoGraysFromEmpty.isEmpty()) {
+                    startGrayEmptyId = batchConfigInfoGraysFromEmpty.get(batchConfigInfoGraysFromEmpty.size() - 1)
+                            .getId();
+                }
             }
         } while (batchConfigInfoGraysFromEmpty.size() == batchSize);
         
@@ -669,9 +675,9 @@ public class ConfigMigrateService {
                             configMigratePersistService.syncConfigGray(configInfoGrayWrapper.getDataId(),
                                     configInfoGrayWrapper.getGroup(), "public",
                                     configInfoGrayWrapper.getGrayName(), StringUtils.EMPTY, NAMESPACE_MIGRATE_SRC_USER);
+                            startGrayPublicId = batchConfigInfoGraysFromPublic.get(batchConfigInfoGraysFromPublic.size() - 1)
+                                    .getId();
                         }
-                        startGrayPublicId = batchConfigInfoGraysFromPublic.get(batchConfigInfoGraysFromPublic.size() - 1)
-                                .getId();
                     }
                     migrateSuccess = true;
                     break;
@@ -684,12 +690,13 @@ public class ConfigMigrateService {
             }
             if (!migrateSuccess) {
                 LOGGER.error("[migrate] config_info_gray namespace migrate update from public failed, skipped");
-                startGrayPublicId = batchConfigInfoGraysFromPublic.get(batchConfigInfoGraysFromPublic.size() - 1)
-                        .getId();
+                if (!batchConfigInfoGraysFromPublic.isEmpty()) {
+                    startGrayPublicId = batchConfigInfoGraysFromPublic.get(batchConfigInfoGraysFromPublic.size() - 1)
+                            .getId();
+                }
             }
         } while (batchConfigInfoGraysFromPublic.size() == batchSize);
     }
-    
     
     private void namespaceMigratePreCheck(int maxRetryTimes) throws Exception {
         int retryTimes = 0;

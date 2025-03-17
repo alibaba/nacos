@@ -70,7 +70,7 @@ public interface ConfigMigrateMapper extends Mapper {
     default MapperResult findConfigNeedUpdateMigrate(MapperContext context) {
         String sql = "SELECT ci.id, ci.data_id, ci.group_id, ci.tenant_id"
                 + " FROM config_info ci WHERE ci.tenant_id = ? AND "
-                + " (ci.src_user <> ? OR ci1.src_user IS NULL) AND EXISTS "
+                + " (ci.src_user <> ? OR ci.src_user IS NULL) AND EXISTS "
                 + " ( SELECT 1 FROM config_info ci2 WHERE ci2.data_id = ci.data_id AND ci2.group_id = ci.group_id "
                 + " AND ci2.tenant_id = ? AND ci2.src_user = ? AND ci2.md5 <> ci.md5 "
                 + " AND ci2.gmt_modified < ci.gmt_modified )"
@@ -92,7 +92,7 @@ public interface ConfigMigrateMapper extends Mapper {
     default MapperResult findConfigGrayNeedUpdateMigrate(MapperContext context) {
         String sql = "SELECT ci.id, ci.data_id, ci.group_id, ci.tenant_id, ci.gray_name "
                 + " FROM config_info_gray ci WHERE ci.tenant_id = ? AND "
-                + " (ci.src_user <> ? OR ci1.src_user IS NULL) AND EXISTS "
+                + " (ci.src_user <> ? OR ci.src_user IS NULL) AND EXISTS "
                 + " ( SELECT 1 FROM config_info_gray ci2 WHERE ci2.data_id = ci.data_id AND ci2.group_id = ci.group_id "
                 + " AND ci2.gray_name = ci.gray_name AND ci2.tenant_id = ? AND ci2.src_user = ? AND ci2.md5 <> ci.md5 "
                 + " AND ci2.gmt_modified < ci.gmt_modified )"

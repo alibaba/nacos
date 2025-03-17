@@ -55,6 +55,7 @@ import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapper
 
 /**
  * The type External config migrate persist service.
+ * @author Sunrisea
  */
 @Conditional(value = ConditionOnExternalStorage.class)
 @Service("externalConfigMigratePersistServiceImpl")
@@ -164,7 +165,7 @@ public class ExternalConfigMigratePersistServiceImpl implements ConfigMigratePer
         context.putWhereParameter(FieldConstant.TARGET_TENANT, targetTenant);
         context.setPageSize(pageSize);
         MapperResult mapperResult = configMigrateMapper.findConfigNeedUpdateMigrate(context);
-        return jt.query(mapperResult.getSql(), new Object[] {mapperResult.getParamList().toArray()},
+        return jt.query(mapperResult.getSql(), mapperResult.getParamList().toArray(),
                 CONFIG_INFO_ROW_MAPPER);
     }
     
