@@ -55,7 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-class MultiTenant_InstanceAPI_ITCase {
+class MultiTenantInstanceAPINamingITCase {
     
     private final List<Instance> instances = Collections.emptyList();
     
@@ -108,7 +108,7 @@ class MultiTenant_InstanceAPI_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_listInstance() throws Exception {
+    void multipleTenantListInstance() throws Exception {
         String serviceName = randomDomainName();
         
         naming1.registerInstance(serviceName, "11.11.11.11", 80);
@@ -140,7 +140,7 @@ class MultiTenant_InstanceAPI_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_group_listInstance() throws Exception {
+    void multipleTenantGroupListInstance() throws Exception {
         String serviceName = randomDomainName();
         
         naming1.registerInstance(serviceName, TEST_GROUP_1, "11.11.11.11", 80);
@@ -176,7 +176,7 @@ class MultiTenant_InstanceAPI_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_getInstance() throws Exception {
+    void multipleTenantGetInstance() throws Exception {
         String serviceName = randomDomainName();
         
         naming1.registerInstance(serviceName, "11.11.11.11", 80);
@@ -207,7 +207,7 @@ class MultiTenant_InstanceAPI_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_group_getInstance() throws Exception {
+    void multipleTenantGroupGetInstance() throws Exception {
         String serviceName = randomDomainName();
         
         naming1.registerInstance(serviceName, "11.11.11.11", 80);
@@ -240,7 +240,7 @@ class MultiTenant_InstanceAPI_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_putInstance() throws Exception {
+    void multipleTenantPutInstance() throws Exception {
         String serviceName = randomDomainName();
         
         naming1.registerInstance(serviceName, "11.11.11.11", 80);
@@ -278,7 +278,7 @@ class MultiTenant_InstanceAPI_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_group_putInstance() throws Exception {
+    void multipleTenantGroupPutInstance() throws Exception {
         String serviceName = randomDomainName();
         
         naming1.registerInstance(serviceName, "11.11.11.11", 80);
@@ -305,7 +305,7 @@ class MultiTenant_InstanceAPI_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_group_patchInstance() throws Exception {
+    void multipleTenantGroupPatchInstance() throws Exception {
         String serviceName = randomDomainName();
         
         naming1.registerInstance(serviceName, "11.11.11.11", 80);
@@ -341,7 +341,7 @@ class MultiTenant_InstanceAPI_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_updateInstance_notExsitInstance() throws Exception {
+    void multipleTenantUpdateInstanceNotExistInstance() throws Exception {
         String serviceName = randomDomainName();
         
         naming1.registerInstance(serviceName, "11.11.11.11", 80);
@@ -378,7 +378,7 @@ class MultiTenant_InstanceAPI_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_group_updateInstance_notExsitInstance() throws Exception {
+    void multipleTenantGroupUpdateInstanceNotExistInstance() throws Exception {
         String serviceName = randomDomainName();
         
         naming1.registerInstance(serviceName, "11.11.11.11", 80);
@@ -406,7 +406,7 @@ class MultiTenant_InstanceAPI_ITCase {
      * @ExpectResult :
      */
     @Test
-    void multipleTenant_updateInstance() throws Exception {
+    void multipleTenantUpdateInstance() throws Exception {
         String serviceName = randomDomainName();
         
         naming2.registerInstance(serviceName, "22.22.22.22", 80);

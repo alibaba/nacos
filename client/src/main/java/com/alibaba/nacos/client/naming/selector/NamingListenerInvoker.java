@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.client.selector.ListenerInvoker;
 
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
@@ -34,12 +35,15 @@ public class NamingListenerInvoker implements ListenerInvoker<NamingEvent> {
     
     private final EventListener listener;
     
+    private final AtomicBoolean invoked = new AtomicBoolean(false);
+    
     public NamingListenerInvoker(EventListener listener) {
         this.listener = listener;
     }
     
     @Override
     public void invoke(NamingEvent event) {
+        invoked.set(true);
         logInvoke(event);
         if (listener instanceof AbstractEventListener && ((AbstractEventListener) listener).getExecutor() != null) {
             ((AbstractEventListener) listener).getExecutor().execute(() -> listener.onEvent(event));
@@ -51,6 +55,11 @@ public class NamingListenerInvoker implements ListenerInvoker<NamingEvent> {
     private void logInvoke(NamingEvent event) {
         NAMING_LOGGER.info("Invoke event groupName: {}, serviceName: {} to Listener: {}", event.getGroupName(),
                 event.getServiceName(), listener.toString());
+    }
+    
+    @Override
+    public boolean isInvoked() {
+        return invoked.get();
     }
     
     @Override

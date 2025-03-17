@@ -344,7 +344,7 @@ public class NacosNamingService implements NamingService {
     }
     
     private ServiceInfo getServiceInfoByFailover(String serviceName, String groupName, NamingSelector clusterSelector) {
-        ServiceInfo result = serviceInfoHolder.getFailoverServiceInfo(serviceName, groupName, StringUtils.EMPTY);
+        ServiceInfo result = serviceInfoHolder.getFailoverServiceInfo(serviceName, groupName);
         return doSelectInstance(result, clusterSelector);
     }
     
@@ -352,7 +352,7 @@ public class NacosNamingService implements NamingService {
             NamingSelector selector, boolean subscribe) throws NacosException {
         ServiceInfo serviceInfo;
         if (subscribe) {
-            serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, StringUtils.EMPTY);
+            serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName);
             serviceInfo = tryToSubscribe(serviceName, groupName, serviceInfo);
             serviceInfo = doSelectInstance(serviceInfo, selector);
         } else {
@@ -362,7 +362,8 @@ public class NacosNamingService implements NamingService {
         return serviceInfo;
     }
     
-    private ServiceInfo tryToSubscribe(String serviceName, String groupName, ServiceInfo cachedServiceInfo) throws NacosException {
+    private ServiceInfo tryToSubscribe(String serviceName, String groupName, ServiceInfo cachedServiceInfo)
+            throws NacosException {
         // not found in cache, service never subscribed.
         if (null == cachedServiceInfo) {
             return clientProxy.subscribe(serviceName, groupName, StringUtils.EMPTY);
@@ -475,8 +476,8 @@ public class NacosNamingService implements NamingService {
             return;
         }
         NamingSelectorWrapper wrapper = new NamingSelectorWrapper(serviceName, groupName, clusters, selector, listener);
-        notifyIfSubscribed(serviceName, groupName, wrapper);
         changeNotifier.registerListener(groupName, serviceName, wrapper);
+        notifyIfSubscribed(serviceName, groupName, wrapper);
         clientProxy.subscribe(serviceName, groupName, Constants.NULL);
     }
     
@@ -583,12 +584,13 @@ public class NacosNamingService implements NamingService {
         }
     }
     
-    private void notifyIfSubscribed(String serviceName, String groupName, NamingSelectorWrapper wrapper) {
-        if (changeNotifier.isSubscribed(groupName, serviceName)) {
+    private void notifyIfSubscribed(String serviceName, String groupName, NamingSelectorWrapper wrapper)
+            throws NacosException {
+        if (clientProxy.isSubscribed(serviceName, groupName, StringUtils.EMPTY)) {
             NAMING_LOGGER.warn(
                     "Duplicate subscribe for groupName: {}, serviceName: {}; directly use current cached to notify.",
                     groupName, serviceName);
-            ServiceInfo serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, Constants.NULL);
+            ServiceInfo serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName);
             InstancesChangeEvent event = transferToEvent(serviceInfo);
             wrapper.notifyListener(event);
         }

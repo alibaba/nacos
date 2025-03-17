@@ -175,19 +175,9 @@ public class MetricsMonitor {
                 .timer(METER_REGISTRY, "nacos_timer", "module", "config", "name", "readConfigRt");
     }
     
-    public static Timer getReadConfigRpcRtTimer() {
-        return NacosMeterRegistryCenter
-                .timer(METER_REGISTRY, "nacos_timer", "module", "config", "name", "readConfigRpcRt");
-    }
-    
     public static Timer getWriteConfigRtTimer() {
         return NacosMeterRegistryCenter
                 .timer(METER_REGISTRY, "nacos_timer", "module", "config", "name", "writeConfigRt");
-    }
-    
-    public static Timer getWriteConfigRpcRtTimer() {
-        return NacosMeterRegistryCenter
-                .timer(METER_REGISTRY, "nacos_timer", "module", "config", "name", "writeConfigRpcRt");
     }
     
     public static Timer getNotifyRtTimer() {

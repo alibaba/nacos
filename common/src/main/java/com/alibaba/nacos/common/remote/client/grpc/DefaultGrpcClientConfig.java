@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class DefaultGrpcClientConfig implements GrpcClientConfig {
     
-    private final String name;
+    private String name;
     
     private final int retryTimes;
     
@@ -75,27 +75,20 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
      */
     private DefaultGrpcClientConfig(Builder builder) {
         this.name = builder.name;
-        this.retryTimes = loadIntegerConfig(GrpcConstants.GRPC_RETRY_TIMES, builder.retryTimes);
-        this.timeOutMills = loadLongConfig(GrpcConstants.GRPC_TIMEOUT_MILLS, builder.timeOutMills);
-        this.connectionKeepAlive = loadLongConfig(GrpcConstants.GRPC_CONNECT_KEEP_ALIVE_TIME,
-                builder.connectionKeepAlive);
-        this.threadPoolKeepAlive = loadLongConfig(GrpcConstants.GRPC_THREADPOOL_KEEPALIVETIME,
-                builder.threadPoolKeepAlive);
-        this.threadPoolCoreSize = loadIntegerConfig(GrpcConstants.GRPC_THREADPOOL_CORE_SIZE,
-                builder.threadPoolCoreSize);
-        this.threadPoolMaxSize = loadIntegerConfig(GrpcConstants.GRPC_THREADPOOL_MAX_SIZE, builder.threadPoolMaxSize);
-        this.serverCheckTimeOut = loadLongConfig(GrpcConstants.GRPC_SERVER_CHECK_TIMEOUT, builder.serverCheckTimeOut);
-        this.threadPoolQueueSize = loadIntegerConfig(GrpcConstants.GRPC_QUEUESIZE, builder.threadPoolQueueSize);
-        this.maxInboundMessageSize = loadIntegerConfig(GrpcConstants.GRPC_MAX_INBOUND_MESSAGE_SIZE,
-                builder.maxInboundMessageSize);
-        this.channelKeepAlive = loadIntegerConfig(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIME, builder.channelKeepAlive);
-        this.healthCheckRetryTimes = loadIntegerConfig(GrpcConstants.GRPC_HEALTHCHECK_RETRY_TIMES,
-                builder.healthCheckRetryTimes);
-        this.healthCheckTimeOut = loadLongConfig(GrpcConstants.GRPC_HEALTHCHECK_TIMEOUT, builder.healthCheckTimeOut);
-        this.channelKeepAliveTimeout = loadLongConfig(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIMEOUT,
-                builder.channelKeepAliveTimeout);
-        this.capabilityNegotiationTimeout = loadLongConfig(GrpcConstants.GRPC_CHANNEL_CAPABILITY_NEGOTIATION_TIMEOUT,
-                builder.capabilityNegotiationTimeout);
+        this.retryTimes = builder.retryTimes;
+        this.timeOutMills = builder.timeOutMills;
+        this.connectionKeepAlive = builder.connectionKeepAlive;
+        this.threadPoolKeepAlive = builder.threadPoolKeepAlive;
+        this.threadPoolCoreSize = builder.threadPoolCoreSize;
+        this.threadPoolMaxSize = builder.threadPoolMaxSize;
+        this.serverCheckTimeOut = builder.serverCheckTimeOut;
+        this.threadPoolQueueSize = builder.threadPoolQueueSize;
+        this.maxInboundMessageSize = builder.maxInboundMessageSize;
+        this.channelKeepAlive = builder.channelKeepAlive;
+        this.healthCheckRetryTimes = builder.healthCheckRetryTimes;
+        this.healthCheckTimeOut = builder.healthCheckTimeOut;
+        this.channelKeepAliveTimeout = builder.channelKeepAliveTimeout;
+        this.capabilityNegotiationTimeout = builder.capabilityNegotiationTimeout;
         this.labels = builder.labels;
         this.labels.put("tls.enable", "false");
         if (Objects.nonNull(builder.tlsConfig)) {
@@ -104,14 +97,6 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
                 this.labels.put("tls.enable", "true");
             }
         }
-    }
-    
-    private int loadIntegerConfig(String key, int builderValue) {
-        return Integer.getInteger(key, builderValue);
-    }
-    
-    private long loadLongConfig(String key, long builderValue) {
-        return Long.getLong(key, builderValue);
     }
     
     @Override
@@ -181,6 +166,10 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
     
     public void setTlsConfig(RpcClientTlsConfig tlsConfig) {
         this.tlsConfig = tlsConfig;
+    }
+    
+    public void setName(String name) {
+        this.name = name;
     }
     
     @Override

@@ -16,9 +16,17 @@
 
 package com.alibaba.nacos.test.naming;
 
-/**
- * @author nkorange
- */
-public class Starter_ITCase {
+import com.alibaba.nacos.Nacos;
+import org.springframework.boot.test.context.SpringBootTest;
 
+/**
+ * Created by wangtong.wt on 2018/6/20.
+ *
+ * @author wangtong.wt
+ * @date 2018/6/20
+ */
+@SpringBootTest(classes = Nacos.class, properties = {
+        "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+public class InstanceOperateNamingITCase extends AbstractInstanceOperateNamingITCase {
+    
 }

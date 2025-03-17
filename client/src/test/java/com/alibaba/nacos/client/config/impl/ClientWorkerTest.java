@@ -39,7 +39,7 @@ import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
-import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -100,11 +100,9 @@ class ClientWorkerTest {
         rpcClientFactoryMockedStatic = Mockito.mockStatic(RpcClientFactory.class);
         
         rpcClientFactoryMockedStatic.when(
-                () -> RpcClientFactory.createClient(anyString(), any(ConnectionType.class), any(Map.class),
-                        any(RpcClientTlsConfig.class))).thenReturn(rpcClient);
+                () -> RpcClientFactory.createClient(anyString(), any(ConnectionType.class), any(GrpcClientConfig.class))).thenReturn(rpcClient);
         rpcClientFactoryMockedStatic.when(
-                () -> RpcClientFactory.createClient(anyString(), any(ConnectionType.class), any(Map.class),
-                        any(RpcClientTlsConfig.class))).thenReturn(rpcClient);
+                () -> RpcClientFactory.createClient(anyString(), any(ConnectionType.class), any(GrpcClientConfig.class))).thenReturn(rpcClient);
         localConfigInfoProcessorMockedStatic = Mockito.mockStatic(LocalConfigInfoProcessor.class);
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.NAMESPACE, TEST_NAMESPACE);
@@ -238,7 +236,6 @@ class ClientWorkerTest {
         boolean b = clientWorker.publishConfig(dataId, group, tenant, appName, tag, betaIps, content, null, casMd5,
                 type);
         assertTrue(b);
-        
     }
     
     @Test
@@ -560,8 +557,7 @@ class ClientWorkerTest {
         RpcClient rpcClientInner = Mockito.mock(RpcClient.class);
         Mockito.when(rpcClientInner.isWaitInitiated()).thenReturn(true, false);
         rpcClientFactoryMockedStatic.when(
-                () -> RpcClientFactory.createClient(anyString(), any(ConnectionType.class), any(Map.class),
-                        any(RpcClientTlsConfig.class))).thenReturn(rpcClientInner);
+                () -> RpcClientFactory.createClient(anyString(), any(ConnectionType.class), any(GrpcClientConfig.class))).thenReturn(rpcClientInner);
         // mock listen and remove listen request
         Mockito.when(rpcClientInner.request(any(ConfigBatchListenRequest.class)))
                 .thenReturn(response, response);

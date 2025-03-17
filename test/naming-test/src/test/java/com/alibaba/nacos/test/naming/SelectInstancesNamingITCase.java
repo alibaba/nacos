@@ -50,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-class SelectInstances_ITCase {
+class SelectInstancesNamingITCase {
     
     private static NamingService naming;
     

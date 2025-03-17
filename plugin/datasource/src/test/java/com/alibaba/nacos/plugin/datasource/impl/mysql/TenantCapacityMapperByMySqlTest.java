@@ -70,7 +70,7 @@ class TenantCapacityMapperByMySqlTest {
     void testIncrementUsageWithDefaultQuotaLimit() {
         MapperResult mapperResult = tenantCapacityMapperByMySql.incrementUsageWithDefaultQuotaLimit(context);
         assertEquals(mapperResult.getSql(),
-                "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ? AND usage <" + " ? AND quota = 0");
+                "UPDATE tenant_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE tenant_id = ? AND `usage` <" + " ? AND quota = 0");
         assertArrayEquals(new Object[] {modified, tenantId, usage}, mapperResult.getParamList().toArray());
     }
     
@@ -78,21 +78,21 @@ class TenantCapacityMapperByMySqlTest {
     void testIncrementUsageWithQuotaLimit() {
         MapperResult mapperResult = tenantCapacityMapperByMySql.incrementUsageWithQuotaLimit(context);
         assertEquals(mapperResult.getSql(),
-                "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ? AND usage < " + "quota AND quota != 0");
+                "UPDATE tenant_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE tenant_id = ? AND `usage` < " + "quota AND quota != 0");
         assertArrayEquals(new Object[] {modified, tenantId}, mapperResult.getParamList().toArray());
     }
     
     @Test
     void testIncrementUsage() {
         MapperResult mapperResult = tenantCapacityMapperByMySql.incrementUsage(context);
-        assertEquals("UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ?", mapperResult.getSql());
+        assertEquals("UPDATE tenant_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE tenant_id = ?", mapperResult.getSql());
         assertArrayEquals(new Object[] {modified, tenantId}, mapperResult.getParamList().toArray());
     }
     
     @Test
     void testDecrementUsage() {
         MapperResult mapperResult = tenantCapacityMapperByMySql.decrementUsage(context);
-        assertEquals("UPDATE tenant_capacity SET usage = usage - 1, gmt_modified = ? WHERE tenant_id = ? AND usage > 0",
+        assertEquals("UPDATE tenant_capacity SET `usage` = `usage` - 1, gmt_modified = ? WHERE tenant_id = ? AND `usage` > 0",
                 mapperResult.getSql());
         assertArrayEquals(new Object[] {modified, tenantId}, mapperResult.getParamList().toArray());
     }
@@ -100,7 +100,7 @@ class TenantCapacityMapperByMySqlTest {
     @Test
     void testCorrectUsage() {
         MapperResult mapperResult = tenantCapacityMapperByMySql.correctUsage(context);
-        assertEquals(mapperResult.getSql(), "UPDATE tenant_capacity SET usage = (SELECT count(*) FROM config_info WHERE tenant_id = ?), "
+        assertEquals(mapperResult.getSql(), "UPDATE tenant_capacity SET `usage` = (SELECT count(*) FROM config_info WHERE tenant_id = ?), "
                 + "gmt_modified = ? WHERE tenant_id = ?");
         assertArrayEquals(new Object[] {tenantId, modified, tenantId}, mapperResult.getParamList().toArray());
         
@@ -140,8 +140,8 @@ class TenantCapacityMapperByMySqlTest {
         
         MapperResult mapperResult = tenantCapacityMapperByMySql.insertTenantCapacity(context);
         assertEquals(mapperResult.getSql(),
-                "INSERT INTO tenant_capacity (tenant_id, quota, usage, max_size, max_aggr_count, max_aggr_size, "
-                        + "gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE tenant_id=?;");
+                "INSERT INTO tenant_capacity (tenant_id, quota, `usage`, max_size, max_aggr_count, max_aggr_size, "
+                        + "gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE tenant_id=?");
         assertArrayEquals(new Object[] {tenantId, quota, maxSize, maxAggrCount, maxAggrSize, createTime, modified, tenantId},
                 mapperResult.getParamList().toArray());
     }

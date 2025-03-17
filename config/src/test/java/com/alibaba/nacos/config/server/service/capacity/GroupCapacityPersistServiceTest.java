@@ -100,7 +100,7 @@ class GroupCapacityPersistServiceTest {
         list.add(groupCapacity);
         
         String groupId = "testId";
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {groupId}), any(RowMapper.class))).thenReturn(list);
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(new Object[] {groupId}))).thenReturn(list);
         GroupCapacity ret = service.getGroupCapacity(groupId);
         
         assertEquals(groupCapacity.getGroup(), ret.getGroup());
@@ -115,7 +115,7 @@ class GroupCapacityPersistServiceTest {
         list.add(groupCapacity);
         
         String groupId = GroupCapacityPersistService.CLUSTER;
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {groupId}), any(RowMapper.class))).thenReturn(list);
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(new Object[] {groupId}))).thenReturn(list);
         Capacity ret = service.getClusterCapacity();
         
         assertEquals(groupCapacity.getId(), ret.getId());
@@ -149,10 +149,10 @@ class GroupCapacityPersistServiceTest {
         list.add(groupCapacity);
         
         String groupId = GroupCapacityPersistService.CLUSTER;
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {groupId}), any(RowMapper.class))).thenReturn(list);
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class),  eq(new Object[] {groupId}))).thenReturn(list);
         assertEquals(groupCapacity.getUsage().intValue(), service.getClusterUsage());
         
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {groupId}), any(RowMapper.class))).thenReturn(new ArrayList<>());
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(new Object[] {groupId}))).thenReturn(new ArrayList<>());
         when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class))).thenReturn(20);
         assertEquals(20, service.getClusterUsage());
     }

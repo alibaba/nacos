@@ -16,109 +16,67 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
-import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * The tenant capacity info mapper.
  *
- * @author hyx
+ * @author KiteSoar
  **/
-
 public interface TenantCapacityMapper extends Mapper {
     
     /**
+     * Select tenant_capacity table by tenant id.
+     *
+     * @param context sql paramMap
+     * @return The sql of select.
+     */
+    MapperResult select(MapperContext context);
+    
+    /**
      * Increment UsageWithDefaultQuotaLimit.
-     * The default sql:
-     * UPDATE tenant_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE tenant_id = ? AND `usage` < ? AND quota
-     * = 0
      *
      * @param context sql paramMap
      * @return The sql of increment UsageWithDefaultQuotaLimit.
      */
-    default MapperResult incrementUsageWithDefaultQuotaLimit(MapperContext context) {
-        return new MapperResult(
-                "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ? AND usage <"
-                        + " ? AND quota = 0",
-                CollectionUtils.list(context.getUpdateParameter(FieldConstant.GMT_MODIFIED),
-                        context.getWhereParameter(FieldConstant.TENANT_ID),
-                        context.getWhereParameter(FieldConstant.USAGE)));
-    }
+    MapperResult incrementUsageWithDefaultQuotaLimit(MapperContext context);
     
     /**
      * Increment UsageWithQuotaLimit.
-     * The default sql:
-     * UPDATE tenant_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE tenant_id = ? AND `usage` < quota AND
-     * quota != 0
      *
      * @param context sql paramMap
      * @return The sql of Increment UsageWithQuotaLimit.
      */
-    default MapperResult incrementUsageWithQuotaLimit(MapperContext context) {
-        return new MapperResult(
-                "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ? AND usage < "
-                        + "quota AND quota != 0",
-                CollectionUtils.list(context.getUpdateParameter(FieldConstant.GMT_MODIFIED),
-                        context.getWhereParameter(FieldConstant.TENANT_ID)));
-    }
+    MapperResult incrementUsageWithQuotaLimit(MapperContext context);
     
     /**
      * Increment Usage.
-     * The default sql:
-     * UPDATE tenant_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE tenant_id = ?
      *
      * @param context sql paramMap
      * @return The sql of increment UsageWithQuotaLimit.
      */
-    default MapperResult incrementUsage(MapperContext context) {
-        return new MapperResult("UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ?",
-                CollectionUtils.list(context.getUpdateParameter(FieldConstant.GMT_MODIFIED),
-                        context.getWhereParameter(FieldConstant.TENANT_ID)));
-    }
+    MapperResult incrementUsage(MapperContext context);
     
     /**
-     * DecrementUsage.
-     * The default sql:
-     * UPDATE tenant_capacity SET `usage` = `usage` - 1, gmt_modified = ? WHERE tenant_id = ? AND `usage` > 0
+     * Decrement Usage.
      *
      * @param context sql paramMap
      * @return The sql of decrementUsage.
      */
-    default MapperResult decrementUsage(MapperContext context) {
-        return new MapperResult(
-                "UPDATE tenant_capacity SET usage = usage - 1, gmt_modified = ? WHERE tenant_id = ? AND usage > 0",
-                CollectionUtils.list(context.getUpdateParameter(FieldConstant.GMT_MODIFIED),
-                        context.getWhereParameter(FieldConstant.TENANT_ID)));
-    }
+    MapperResult decrementUsage(MapperContext context);
     
     /**
      * Correct Usage.
-     * The default sql:
-     * UPDATE tenant_capacity SET `usage` = (SELECT count(*) FROM config_info WHERE tenant_id = ?), gmt_modified = ?
-     * WHERE tenant_id = ?
-     * `     * @param context sql paramMap`
      *
+     * @param context sql paramMap`
      * @return The sql of correcting Usage.
      */
-    default MapperResult correctUsage(MapperContext context) {
-        return new MapperResult(
-                "UPDATE tenant_capacity SET usage = (SELECT count(*) FROM config_info WHERE tenant_id = ?), "
-                        + "gmt_modified = ? WHERE tenant_id = ?",
-                CollectionUtils.list(context.getWhereParameter(FieldConstant.TENANT_ID),
-                        context.getUpdateParameter(FieldConstant.GMT_MODIFIED),
-                        context.getWhereParameter(FieldConstant.TENANT_ID)));
-    }
+    MapperResult correctUsage(MapperContext context);
     
     /**
      * Get TenantCapacity List, only including id and tenantId value.
-     * The default sql:
-     * SELECT id, tenant_id FROM tenant_capacity WHERE id>? LIMIT ?
      *
      * @param context sql paramMap
      * @return The sql of getting TenantCapacity List, only including id and tenantId value.
@@ -127,34 +85,16 @@ public interface TenantCapacityMapper extends Mapper {
     
     /**
      * Insert TenantCapacity.
-     * The default sql:
-     * INSERT INTO tenant_capacity (tenant_id, quota, `usage`, `max_size`, max_aggr_count, max_aggr_size,
-     * gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE tenant_id=?;
      *
      * @param context sql paramMap
      * @return The sql of inserting TenantCapacity.
      */
-    default MapperResult insertTenantCapacity(MapperContext context) {
-        List<Object> paramList = new ArrayList<>();
-        paramList.add(context.getUpdateParameter(FieldConstant.TENANT_ID));
-        paramList.add(context.getUpdateParameter(FieldConstant.QUOTA));
-        paramList.add(context.getUpdateParameter(FieldConstant.MAX_SIZE));
-        paramList.add(context.getUpdateParameter(FieldConstant.MAX_AGGR_COUNT));
-        paramList.add(context.getUpdateParameter(FieldConstant.MAX_AGGR_SIZE));
-        paramList.add(context.getUpdateParameter(FieldConstant.GMT_CREATE));
-        paramList.add(context.getUpdateParameter(FieldConstant.GMT_MODIFIED));
-        paramList.add(context.getWhereParameter(FieldConstant.TENANT_ID));
-        
-        return new MapperResult(
-                "INSERT INTO tenant_capacity (tenant_id, quota, usage, max_size, max_aggr_count, max_aggr_size, "
-                        + "gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE tenant_id=?;",
-                paramList);
-    }
+    MapperResult insertTenantCapacity(MapperContext context);
     
     /**
-     * 获取返回表名.
+     * Get Table Name.
      *
-     * @return 表名
+     * @return table name.
      */
     default String getTableName() {
         return TableConstant.TENANT_CAPACITY;

@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.encryption.EncryptionPluginManager;
 import com.alibaba.nacos.plugin.encryption.spi.EncryptionPluginService;
-import org.apache.commons.codec.binary.Base64;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,6 +34,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.Base64;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -80,12 +80,13 @@ class ConfigEncryptionFilterTest1 {
                 keyGenerator.init(128, secureRandom);
                 SecretKey secretKey = keyGenerator.generateKey();
                 byte[] keyBytes = secretKey.getEncoded();
-                return Base64.encodeBase64String(keyBytes);
+                
+                return Base64.getEncoder().encodeToString(keyBytes);
             }
             
             @Override
             public String encrypt(String secretKey, String content) {
-                return Base64.encodeBase64String(aes(Cipher.ENCRYPT_MODE, content, secretKey));
+                return Base64.getEncoder().encodeToString(aes(Cipher.ENCRYPT_MODE, content, secretKey));
             }
             
             @Override
@@ -108,7 +109,7 @@ class ConfigEncryptionFilterTest1 {
             
             @Override
             public String encryptSecretKey(String secretKey) {
-                return Base64.encodeBase64String(aes(Cipher.ENCRYPT_MODE, generateSecretKey(), theKeyOfContentKey));
+                return Base64.getEncoder().encodeToString(aes(Cipher.ENCRYPT_MODE, generateSecretKey(), theKeyOfContentKey));
             }
             
             @Override
@@ -140,7 +141,7 @@ class ConfigEncryptionFilterTest1 {
             }
             
             private String aesDecrypt(String content, String key) {
-                byte[] bytes = aesBytes(Cipher.DECRYPT_MODE, Base64.decodeBase64(content), key);
+                byte[] bytes = aesBytes(Cipher.DECRYPT_MODE, Base64.getDecoder().decode(content), key);
                 return new String(bytes, StandardCharsets.UTF_8);
             }
         };

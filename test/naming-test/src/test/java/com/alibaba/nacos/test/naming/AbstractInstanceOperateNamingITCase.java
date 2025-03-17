@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public abstract class AbstractInstanceOperate_ITCase {
+public abstract class AbstractInstanceOperateNamingITCase {
     
     private NamingService naming;
     

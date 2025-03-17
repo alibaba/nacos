@@ -88,7 +88,7 @@ class TenantCapacityPersistServiceTest {
         list.add(tenantCapacity);
         
         String tenantId = "testId";
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {tenantId}), any(RowMapper.class))).thenReturn(list);
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(new Object[] {tenantId}))).thenReturn(list);
         TenantCapacity ret = service.getTenantCapacity(tenantId);
         
         assertEquals(tenantCapacity.getTenant(), ret.getTenant());

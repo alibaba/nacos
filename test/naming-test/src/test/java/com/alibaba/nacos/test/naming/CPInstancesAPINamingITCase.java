@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-class CPInstancesAPI_ITCase extends NamingBase {
+class CPInstancesAPINamingITCase extends NamingBase {
     
     private NamingService naming;
     
@@ -87,7 +87,7 @@ class CPInstancesAPI_ITCase extends NamingBase {
      * @ExpectResult :
      */
     @Test
-    void registerInstance_ephemeral_true() throws Exception {
+    void registerInstanceEphemeralTrue() throws Exception {
         String serviceName = NamingBase.randomDomainName();
         
         Instance instance = new Instance();
@@ -107,7 +107,7 @@ class CPInstancesAPI_ITCase extends NamingBase {
      * @ExpectResult :
      */
     @Test
-    void registerInstance_ephemeral_false() throws Exception {
+    void registerInstanceEphemeralFalse() throws Exception {
         String serviceName = NamingBase.randomDomainName();
         namingServiceCreate(serviceName, TEST_NAMESPACE_1, TEST_GROUP_1);
         
@@ -128,7 +128,7 @@ class CPInstancesAPI_ITCase extends NamingBase {
      * @ExpectResult :
      */
     @Test
-    void registerInstance_ephemeral_false_deregisterInstance() throws Exception {
+    void registerInstanceEphemeralFalseDeregisterInstance() throws Exception {
         String serviceName = NamingBase.randomDomainName();
         namingServiceCreate(serviceName, TEST_NAMESPACE_1, TEST_GROUP_1);
         
@@ -163,7 +163,7 @@ class CPInstancesAPI_ITCase extends NamingBase {
      * @ExpectResult :
      */
     @Test
-    void deleteService_hasInstace() {
+    void deleteServiceHasInstance() {
         String serviceName = NamingBase.randomDomainName();
         
         ResponseEntity<String> registerResponse = request(NamingBase.NAMING_CONTROLLER_PATH + "/instance",
@@ -214,7 +214,7 @@ class CPInstancesAPI_ITCase extends NamingBase {
      * @ExpectResult :
      */
     @Test
-    void getService_1() throws Exception {
+    void getService1() throws Exception {
         String serviceName = NamingBase.randomDomainName();
         ListView<String> listView = naming1.getServicesOfServer(1, 50);
         
@@ -258,7 +258,7 @@ class CPInstancesAPI_ITCase extends NamingBase {
      * @ExpectResult :
      */
     @Test
-    void registerInstance_api() throws Exception {
+    void registerInstanceApi() throws Exception {
         String serviceName = NamingBase.randomDomainName();
         namingServiceCreate(serviceName, Constants.DEFAULT_NAMESPACE_ID);
         
@@ -282,7 +282,7 @@ class CPInstancesAPI_ITCase extends NamingBase {
      * @ExpectResult :
      */
     @Test
-    void registerInstance_query() throws Exception {
+    void registerInstanceQuery() throws Exception {
         String serviceName = NamingBase.randomDomainName();
         namingServiceCreate(serviceName, Constants.DEFAULT_NAMESPACE_ID);
         
@@ -307,7 +307,7 @@ class CPInstancesAPI_ITCase extends NamingBase {
      * @ExpectResult :
      */
     @Test
-    void registerInstance_2() throws Exception {
+    void registerInstance2() throws Exception {
         String serviceName = NamingBase.randomDomainName();
         namingServiceCreate(serviceName, Constants.DEFAULT_NAMESPACE_ID);
         namingServiceCreate(serviceName, Constants.DEFAULT_NAMESPACE_ID, TEST_GROUP_1);

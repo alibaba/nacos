@@ -51,14 +51,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
         RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem",
         RpcConstants.NACOS_SERVER_RPC + ".certPrivateKey=test-server-key.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @Disabled("TODO, Fix cert expired problem")
-class NamingTlsServiceTls_ITCase {
+class TlsServiceTlsNamingITCase {
     
     
     @LocalServerPort
     private int port;
     
     @Test
-    void Tls_a_ServerAndPlainClient() throws NacosException {
+    void TlsServerAndPlainClient() throws NacosException {
         assertThrows(NacosException.class, () -> {
             
             Instance instance = new Instance();
@@ -78,7 +78,7 @@ class NamingTlsServiceTls_ITCase {
     }
     
     @Test
-    void Tls_b_ServerAndTlsClientTrustCa() throws NacosException {
+    void TlsServerAndTlsClientTrustCa() throws NacosException {
         String serviceName = randomDomainName();
         System.setProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
         System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH, "test-ca-cert.pem");
@@ -107,7 +107,7 @@ class NamingTlsServiceTls_ITCase {
     }
     
     @Test
-    void Tls_c_ServerAndTlsClientAll() throws NacosException {
+    void TlsServerAndTlsClientAll() throws NacosException {
         String serviceName = randomDomainName();
         System.setProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
         System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_ALL, "true");

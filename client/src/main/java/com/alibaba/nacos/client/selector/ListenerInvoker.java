@@ -30,4 +30,11 @@ public interface ListenerInvoker<E> {
      * @param event event
      */
     void invoke(E event);
+    
+    /**
+     * Mark the listener whether invoked once. It should return {@code true} after {@link #invoke(E)} called at lease once.
+     *
+     * @return {@code true} if this listener has invoked at least once, {@code false} otherwise
+     */
+    boolean isInvoked();
 }

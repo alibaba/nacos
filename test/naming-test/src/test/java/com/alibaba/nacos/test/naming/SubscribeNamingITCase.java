@@ -56,7 +56,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-class Subscribe_ITCase extends NamingBase {
+class SubscribeNamingITCase extends NamingBase {
     
     private NamingService naming;
     

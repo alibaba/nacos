@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-$toady.year Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,26 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.test.naming;
+package com.alibaba.nacos.common.remote.client;
 
-import com.alibaba.nacos.Nacos;
-import org.springframework.boot.test.context.SpringBootTest;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
+
+import java.util.Map;
+import java.util.Properties;
 
 /**
- * Created by wangtong.wt on 2018/6/20.
+ * RpcConfigFactory.
  *
- * @author wangtong.wt
- * @date 2018/6/20
+ * @author Nacos
  */
-@SpringBootTest(classes = Nacos.class, properties = {
-        "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-public class InstanceOperate_ITCase extends AbstractInstanceOperate_ITCase {
+public interface RpcConfigFactory {
     
+    /**
+     * createGrpcClientConfig.
+     *
+     * @param properties properties
+     * @param labels     labels
+     * @return GrpcClientConfig
+     */
+    GrpcClientConfig createGrpcClientConfig(Properties properties, Map<String, String> labels);
 }

@@ -34,10 +34,10 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @Disabled
 @TestMethodOrder(MethodName.class)
-class NamingRaft_DITCase extends BaseClusterTest {
+class RaftNamingITCase extends BaseClusterTest {
     
     @Test
-    void test_register_instance() throws Exception {
+    void testRegisterInstance() throws Exception {
         String serviceName = NamingBase.randomDomainName();
         Instance instance = new Instance();
         instance.setEphemeral(true);  //是否临时实例
