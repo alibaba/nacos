@@ -19,12 +19,12 @@ package com.alibaba.nacos.console.controller.v3.core;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
 import com.alibaba.nacos.console.proxy.core.NamespaceProxy;
-import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.core.namespace.model.form.CreateNamespaceForm;
 import com.alibaba.nacos.core.namespace.model.form.NamespaceForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
@@ -32,6 +32,15 @@ import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -51,6 +60,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/v3/console/core/namespace")
 @ExtractorManager.Extractor(httpExtractor = ConsoleDefaultHttpParamExtractor.class)
+@Tag(name = "nacos.console.core.namespace.api.controller.name", description = "nacos.console.core.namespace.api.controller.description")
 public class ConsoleNamespaceController {
     
     private final NamespaceProxy namespaceProxy;
@@ -65,6 +75,9 @@ public class ConsoleNamespaceController {
      * @return namespace list
      */
     @GetMapping("/list")
+    @Operation(summary = "nacos.console.core.namespace.api.list.summary", description = "nacos.console.core.namespace.api.list.description")
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.console.core.namespace.api.list.example")))
     public Result<List<Namespace>> getNamespaceList() throws NacosException {
         return Result.success(namespaceProxy.getNamespaceList());
     }
@@ -78,6 +91,11 @@ public class ConsoleNamespaceController {
     @GetMapping()
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
             + "namespaces", action = ActionTypes.READ, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
+    @Operation(summary = "nacos.console.core.namespace.api.get.summary", description = "nacos.console.core.namespace.api.get.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.console.core.namespace.api.get.example")))
+    @Parameters(value = @Parameter(name = "namespaceId", required = true, example = "public"))
     public Result<Namespace> getNamespaceDetail(@RequestParam("namespaceId") String namespaceId) throws NacosException {
         return Result.success(namespaceProxy.getNamespaceDetail(namespaceId));
     }
@@ -91,6 +109,13 @@ public class ConsoleNamespaceController {
     @PostMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
             + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
+    @Operation(summary = "nacos.console.core.namespace.api.create.summary", description = "nacos.console.core.namespace.api.create.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.console.core.namespace.api.create.example")))
+    @Parameters(value = {@Parameter(name = "customNamespaceId"),
+            @Parameter(name = "namespaceName", required = true, example = "test"),
+            @Parameter(name = "namespaceDesc", example = "test"), @Parameter(name = "namespaceForm", hidden = true)})
     public Result<Boolean> createNamespace(CreateNamespaceForm namespaceForm) throws NacosException {
         namespaceForm.validate();
         String namespaceId = namespaceForm.getCustomNamespaceId();
@@ -108,6 +133,13 @@ public class ConsoleNamespaceController {
     @PutMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
             + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
+    @Operation(summary = "nacos.console.core.namespace.api.update.summary", description = "nacos.console.core.namespace.api.update.description",
+             security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.console.core.namespace.api.update.example")))
+    @Parameters(value = {@Parameter(name = "namespaceId", required = true, example = "test"),
+            @Parameter(name = "namespaceName", required = true, example = "test"),
+            @Parameter(name = "namespaceDesc", example = "test"), @Parameter(name = "namespaceForm", hidden = true)})
     public Result<Boolean> updateNamespace(NamespaceForm namespaceForm) throws NacosException {
         namespaceForm.validate();
         return Result.success(namespaceProxy.updateNamespace(namespaceForm));
@@ -122,6 +154,11 @@ public class ConsoleNamespaceController {
     @DeleteMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
             + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
+    @Operation(summary = "nacos.console.core.namespace.api.delete.summary", description = "nacos.console.core.namespace.api.delete.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.console.core.namespace.api.delete.example")))
+    @Parameters(value = @Parameter(name = "namespaceId", required = true, example = "test"))
     public Result<Boolean> deleteNamespace(@RequestParam("namespaceId") String namespaceId) throws NacosException {
         return Result.success(namespaceProxy.deleteNamespace(namespaceId));
     }
@@ -133,6 +170,10 @@ public class ConsoleNamespaceController {
      * @return true if exist, otherwise false
      */
     @GetMapping("/exist")
+    @Operation(summary = "nacos.console.core.namespace.api.check.summary", description = "nacos.console.core.namespace.api.check.description")
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.console.core.namespace.api.check.example")))
+    @Parameters(value = @Parameter(name = "customNamespaceId", required = true, example = "public"))
     public Result<Boolean> checkNamespaceIdExist(@RequestParam("customNamespaceId") String namespaceId)
             throws NacosException {
         // customNamespaceId if blank means create new namespace with uuid.

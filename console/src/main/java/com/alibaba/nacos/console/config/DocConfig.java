@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.config;
 
+import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -24,6 +25,7 @@ import io.swagger.v3.core.converter.AnnotatedType;
 import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.core.converter.ResolvedSchema;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.media.ArraySchema;
@@ -31,6 +33,7 @@ import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springdoc.core.customizers.OpenApiBuilderCustomizer;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springdoc.core.customizers.OperationCustomizer;
@@ -58,7 +61,13 @@ import java.util.stream.Collectors;
  * @author xiweng.yy
  */
 @Configuration
-@OpenAPIDefinition(info = @io.swagger.v3.oas.annotations.info.Info(title = "nacos.console.api.title", description = "nacos.console.api.description", license = @io.swagger.v3.oas.annotations.info.License(name = "Apache 2.0", url = "https://github.com/alibaba/nacos/blob/develop/LICENSE")))
+@OpenAPIDefinition(info = @io.swagger.v3.oas.annotations.info.Info(title = "nacos.console.api.title",
+        description = "nacos.console.api.description",
+        license = @io.swagger.v3.oas.annotations.info.License(
+                name = "Apache 2.0",
+                url = "https://github.com/alibaba/nacos/blob/develop/LICENSE")
+                )
+        )
 public class DocConfig {
     
     private final SpringDocConfigProperties springDocConfigProperties;
@@ -70,6 +79,7 @@ public class DocConfig {
     @PostConstruct
     public void initSpringDocProperties() {
         springDocConfigProperties.setDefaultProducesMediaType(MediaType.APPLICATION_JSON_VALUE);
+        springDocConfigProperties.setDefaultConsumesMediaType(MediaType.APPLICATION_FORM_URLENCODED_VALUE);
     }
     
     @Bean
@@ -103,8 +113,27 @@ public class DocConfig {
     }
     
     @Bean
+    public OpenApiCustomizer nacosAuthSecurityRequirementOpenApiCustomizer(PropertyResolverUtils propertyResolverUtils) {
+        return openApi -> {
+            openApi.getComponents().addSecuritySchemes("nacos",
+                    new SecurityScheme().type(SecurityScheme.Type.APIKEY).name("accessToken")
+                            .in(SecurityScheme.In.HEADER).description("传入通过login接口获得的`accessToken`"));
+        };
+    }
+    
+    @Bean
     public OperationCustomizer genericSchemaOperationCustomize() {
         return new NacosGenericSchemaOperationCustomize();
+    }
+    
+    @Bean
+    public OperationCustomizer requestBodyHiddenOperationCustomize() {
+        return (operation, handlerMethod) -> {
+            if (!handlerMethod.getMethod().isAnnotationPresent(RequestBody.class)) {
+                operation.setRequestBody(null);
+            }
+            return operation;
+        };
     }
     
     @Bean
@@ -120,7 +149,11 @@ public class DocConfig {
                     }
                     String i18nExample = propertyResolverUtils.resolve((String) example, null);
                     if (key.equals(MediaType.APPLICATION_JSON_VALUE)) {
-                        schema.setExample(JacksonUtils.toObj(i18nExample));
+                        try {
+                            schema.setExample(JacksonUtils.toObj(i18nExample));
+                        } catch (NacosDeserializationException e) {
+                            schema.setExample(i18nExample);
+                        }
                     } else {
                         schema.setExample(i18nExample);
                     }
@@ -198,7 +231,7 @@ public class DocConfig {
             Class<?> rawType = (Class<?>) parameterizedType.getRawType();
             String resultSchemaName = "";
             Schema dataSchema = null;
-            if (rawType.isAssignableFrom(Collection.class)) {
+            if (Collection.class.isAssignableFrom(rawType)) {
                 Type actualTypeArgument = getGenericType(parameterizedType);
                 if (!(actualTypeArgument instanceof Class)) {
                     throw new UnsupportedOperationException(
