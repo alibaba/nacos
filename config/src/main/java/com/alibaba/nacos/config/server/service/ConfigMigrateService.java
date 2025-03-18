@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.alibaba.nacos.config.server.configuration.ConfigCompatibleConfig;
 import com.alibaba.nacos.config.server.exception.ConfigAlreadyExistsException;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -153,7 +154,7 @@ public class ConfigMigrateService {
         if (PropertyUtil.isGrayCompatibleModel() && oldTableVersion) {
             doCheckMigrate();
         }
-        if (PropertyUtil.isNamespaceCompatibleMode()) {
+        if (ConfigCompatibleConfig.getInstance().isNamespaceCompatibleMode()) {
             doCheckNamespaceMigrate();
         }
     }
@@ -319,7 +320,7 @@ public class ConfigMigrateService {
      */
     public void checkChangedConfigGrayMigrateState(ConfigInfoGrayWrapper changedConfigInfoGrayWrapper) {
         String tenant = changedConfigInfoGrayWrapper.getTenant();
-        if (!PropertyUtil.isNamespaceCompatibleMode()) {
+        if (!ConfigCompatibleConfig.getInstance().isNamespaceCompatibleMode()) {
             return;
         }
         if (!StringUtils.equals(tenant, namespacePublic) && StringUtils.isNotBlank(tenant)) {
@@ -382,7 +383,7 @@ public class ConfigMigrateService {
      */
     public void checkChangedConfigMigrateState(ConfigInfoStateWrapper changedConfigInfoStateWrapper) {
         String tenant = changedConfigInfoStateWrapper.getTenant();
-        if (!PropertyUtil.isNamespaceCompatibleMode()) {
+        if (!ConfigCompatibleConfig.getInstance().isNamespaceCompatibleMode()) {
             return;
         }
         if (!StringUtils.equals(tenant, namespacePublic) && StringUtils.isNotBlank(tenant)) {
@@ -441,7 +442,7 @@ public class ConfigMigrateService {
      */
     public void checkDeletedConfigGrayMigrateState(ConfigInfoStateWrapper deletedConfigInfoGrayStateWrapper) {
         String tenant = deletedConfigInfoGrayStateWrapper.getTenant();
-        if (!PropertyUtil.isNamespaceCompatibleMode()) {
+        if (!ConfigCompatibleConfig.getInstance().isNamespaceCompatibleMode()) {
             return;
         }
         if (!StringUtils.equals(tenant, namespacePublic) && StringUtils.isNotBlank(tenant)) {
@@ -478,7 +479,7 @@ public class ConfigMigrateService {
      */
     public void checkDeletedConfigMigrateState(ConfigInfoStateWrapper deletedConfigInfoStateWrapper) {
         String tenant = deletedConfigInfoStateWrapper.getTenant();
-        if (!PropertyUtil.isNamespaceCompatibleMode()) {
+        if (!ConfigCompatibleConfig.getInstance().isNamespaceCompatibleMode()) {
             return;
         }
         if (!StringUtils.equals(tenant, namespacePublic) && StringUtils.isNotBlank(tenant)) {
@@ -812,7 +813,8 @@ public class ConfigMigrateService {
     public void publishConfigMigrate(ConfigForm configFormOrigin, ConfigRequestInfo configRequestInfo,
             String encryptedDataKey) throws NacosException {
         ConfigForm configForm = configFormOrigin.clone();
-        if (!StringUtils.equals(configForm.getNamespaceId(), namespacePublic) || !PropertyUtil.isNamespaceCompatibleMode()) {
+        if (!StringUtils.equals(configForm.getNamespaceId(), namespacePublic) || !ConfigCompatibleConfig.getInstance()
+                .isNamespaceCompatibleMode()) {
             return;
         }
         ConfigInfoWrapper targetConfigInfoWrapper = configInfoPersistService.findConfigInfo(configForm.getDataId(),
@@ -882,7 +884,8 @@ public class ConfigMigrateService {
     public void publishConfigGrayMigrate(String grayType, ConfigForm configFormOrigin,
             ConfigRequestInfo configRequestInfo) throws NacosException {
         ConfigForm configForm = configFormOrigin.clone();
-        if (!StringUtils.equals(configForm.getNamespaceId(), namespacePublic) || !PropertyUtil.isNamespaceCompatibleMode()) {
+        if (!StringUtils.equals(configForm.getNamespaceId(), namespacePublic) || !ConfigCompatibleConfig.getInstance()
+                .isNamespaceCompatibleMode()) {
             return;
         }
         ConfigInfoGrayWrapper targetConfigInfoGrayWrapper = configInfoGrayPersistService.findConfigInfo4Gray(
@@ -957,7 +960,8 @@ public class ConfigMigrateService {
      * @param srcUser the src user
      */
     public void removeConfigInfoMigrate(String dataId, String group, String tenant, String srcIp, String srcUser) {
-        if (!StringUtils.equals(tenant, namespacePublic) || !PropertyUtil.isNamespaceCompatibleMode()) {
+        if (!StringUtils.equals(tenant, namespacePublic) || !ConfigCompatibleConfig.getInstance()
+                .isNamespaceCompatibleMode()) {
             return;
         }
         try {
@@ -980,7 +984,8 @@ public class ConfigMigrateService {
      */
     public void removeConfigInfoGrayMigrate(String dataId, String group, String tenant, String grayName, String srcIp,
             String srcUser) {
-        if (!StringUtils.equals(tenant, namespacePublic) || !PropertyUtil.isNamespaceCompatibleMode()) {
+        if (!StringUtils.equals(tenant, namespacePublic) || !ConfigCompatibleConfig.getInstance()
+                .isNamespaceCompatibleMode()) {
             return;
         }
         try {
