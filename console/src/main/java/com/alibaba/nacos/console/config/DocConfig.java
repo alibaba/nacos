@@ -54,6 +54,7 @@ import org.springframework.web.method.HandlerMethod;
 import javax.annotation.PostConstruct;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.WildcardType;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -131,7 +132,7 @@ public class DocConfig {
     public OpenApiCustomizer nacosAuthSecurityRequirementOpenApiCustomizer(
             PropertyResolverUtils propertyResolverUtils) {
         return openApi -> {
-            String accessTokenDesc = propertyResolverUtils.resolve("nacos.core.auth.token.access.header",
+            String accessTokenDesc = propertyResolverUtils.resolve("nacos.console.api.auth.description",
                     LANGUAGE_LOCALE.get());
             openApi.getComponents().addSecuritySchemes("nacos",
                     new SecurityScheme().type(SecurityScheme.Type.APIKEY).name("accessToken")
@@ -254,12 +255,12 @@ public class DocConfig {
             Schema dataSchema = null;
             if (Collection.class.isAssignableFrom(rawType)) {
                 Type actualTypeArgument = getGenericType(parameterizedType, 0);
-                if (!(actualTypeArgument instanceof Class)) {
+                if (isSupportType(actualTypeArgument)) {
                     throw new UnsupportedOperationException(
                             "Not supported generate Result Schema with multiple Generic");
                 }
                 dataSchema = new ArraySchema();
-                Class<?> actualClass = (Class<?>) actualTypeArgument;
+                Class<?> actualClass = getActualClass(actualTypeArgument);
                 ResolvedSchema resolvedSchema = ModelConverters.getInstance()
                         .resolveAsResolvedSchema(new AnnotatedType(actualTypeArgument));
                 dataSchema.setName(rawType.getSimpleName() + "<" + actualClass.getSimpleName() + ">");
@@ -275,12 +276,12 @@ public class DocConfig {
             } else if (Map.class.isAssignableFrom(rawType)) {
                 Type keyActualTypeArgument = getGenericType(parameterizedType, 0);
                 Type valueActualTypeArgument = getGenericType(parameterizedType, 1);
-                if (!(keyActualTypeArgument instanceof Class) || !(valueActualTypeArgument instanceof Class)) {
+                if (isSupportType(keyActualTypeArgument) || isSupportType(valueActualTypeArgument)) {
                     throw new UnsupportedOperationException(
                             "Not supported generate Result Schema with multiple Generic");
                 }
-                Class<?> keyActualClass = (Class<?>) keyActualTypeArgument;
-                Class<?> valueActualClass = (Class<?>) valueActualTypeArgument;
+                Class<?> keyActualClass = getActualClass(keyActualTypeArgument);
+                Class<?> valueActualClass = getActualClass(valueActualTypeArgument);
                 dataSchema = new MapSchema();
                 ResolvedSchema valueResolvedSchema = ModelConverters.getInstance()
                         .resolveAsResolvedSchema(new AnnotatedType(valueActualTypeArgument));
@@ -297,13 +298,13 @@ public class DocConfig {
                 }
             } else if (Page.class.isAssignableFrom(rawType)) {
                 Type actualTypeArgument = getGenericType(parameterizedType, 0);
-                if (!(actualTypeArgument instanceof Class)) {
+                if (isSupportType(actualTypeArgument)) {
                     throw new UnsupportedOperationException(
                             "Not supported generate Result Schema with multiple Generic");
                 }
                 dataSchema = ModelConverters.getInstance()
                         .resolveAsResolvedSchema(new AnnotatedType(Page.class)).schema;
-                Class<?> actualClass = (Class<?>) actualTypeArgument;
+                Class<?> actualClass = getActualClass(actualTypeArgument);
                 ResolvedSchema resolvedSchema = ModelConverters.getInstance()
                         .resolveAsResolvedSchema(new AnnotatedType(actualTypeArgument));
                 dataSchema.setName("Page<" + actualClass.getSimpleName() + ">");
@@ -331,6 +332,20 @@ public class DocConfig {
             return "Result<Object>";
         }
         
+        private boolean isSupportType(Type type) {
+            return !(type instanceof Class) && !(type instanceof WildcardType);
+        }
+        
+        private Class<?> getActualClass(Type type) {
+            if (type instanceof Class) {
+                return (Class<?>) type;
+            }
+            if (type instanceof WildcardType) {
+                return getActualClass(((WildcardType) type).getUpperBounds()[0]);
+            }
+            throw new UnsupportedOperationException(
+                    String.format("Not supported generate Result Schema with %s.", type.getTypeName()));
+        }
     }
     
     private class NacosLocaleCachedOpenApiService extends OpenAPIService {

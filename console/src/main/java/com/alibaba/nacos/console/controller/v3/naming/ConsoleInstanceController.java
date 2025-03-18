@@ -38,7 +38,17 @@ import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -52,6 +62,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/v3/console/ns/instance")
 @ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)
+@Tag(name = "nacos.console.naming.instance.api.controller.name", description = "nacos.console.naming.instance.api.controller.description")
 public class ConsoleInstanceController {
     
     private final InstanceProxy instanceProxy;
@@ -73,7 +84,18 @@ public class ConsoleInstanceController {
      * @return instances information
      */
     @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)
-    @RequestMapping("/list")
+    @GetMapping("/list")
+    @Operation(summary = "nacos.console.naming.instance.api.list.summary", description = "nacos.console.naming.instance.api.list.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.console.naming.instance.api.list.example")))
+    @Parameters(value = {@Parameter(name = "pageNo", required = true, example = "1"),
+            @Parameter(name = "pageSize", required = true, example = "100"),
+            @Parameter(name = "namespaceId", example = "public"),
+            @Parameter(name = "groupName", example = "DEFAULT_GROUP"),
+            @Parameter(name = "serviceName", required = true, example = "test"),
+            @Parameter(name = "clusterName", example = "DEFAULT"), @Parameter(name = "instanceForm", hidden = true),
+            @Parameter(name = "pageForm", hidden = true)})
     public Result<Page<? extends Instance>> getInstanceList(InstanceListForm instanceForm, PageForm pageForm)
             throws NacosException {
         instanceForm.validate();
@@ -90,6 +112,18 @@ public class ConsoleInstanceController {
     @PutMapping
     @TpsControl(pointName = "NamingInstanceUpdate", name = "HttpNamingInstanceUpdate")
     @Secured(action = ActionTypes.WRITE, apiType = ApiType.CONSOLE_API)
+    @Operation(summary = "nacos.console.naming.instance.api.update.summary", description = "nacos.console.naming.instance.api.update.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.console.naming.instance.api.update.example")))
+    @Parameters(value = {@Parameter(name = "namespaceId", example = "public"),
+            @Parameter(name = "groupName", example = "DEFAULT_GROUP"),
+            @Parameter(name = "serviceName", required = true, example = "test"),
+            @Parameter(name = "clusterName", example = "DEFAULT"), @Parameter(name = "ip", required = true, example = "127.0.0.1"),
+            @Parameter(name = "port", required = true, example = "8080"), @Parameter(name = "weight", example = "1.0"),
+            @Parameter(name = "healthy", example = "true"), @Parameter(name = "ephemeral", example = "true"),
+            @Parameter(name = "enabled", example = "true"), @Parameter(name = "metadata", example = "{\"zone\":\"a\"}"),
+            @Parameter(name = "instanceForm", hidden = true)})
     public Result<String> updateInstance(InstanceForm instanceForm) throws NacosException {
         // check param
         instanceForm.validate();
