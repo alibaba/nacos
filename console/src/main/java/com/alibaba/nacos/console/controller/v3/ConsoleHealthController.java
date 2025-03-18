@@ -23,6 +23,12 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
 import com.alibaba.nacos.console.proxy.HealthProxy;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -36,6 +42,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController()
 @RequestMapping("/v3/console/health")
 @ExtractorManager.Extractor(httpExtractor = ConsoleDefaultHttpParamExtractor.class)
+@Tag(name = "nacos.console.health.api.controller.name", description = "nacos.console.health.api.controller.description")
 public class ConsoleHealthController {
     
     private final HealthProxy healthProxy;
@@ -51,6 +58,9 @@ public class ConsoleHealthController {
      * Nacos is in broken states.
      */
     @GetMapping("/liveness")
+    @Operation(summary = "nacos.console.health.api.liveness.summary", description = "nacos.console.health.api.liveness.description")
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.console.health.api.liveness.example")))
     public Result<String> liveness() {
         return Result.success("ok");
     }
@@ -62,6 +72,9 @@ public class ConsoleHealthController {
      * ready.
      */
     @GetMapping("/readiness")
+    @Operation(summary = "nacos.console.health.api.readiness.summary", description = "nacos.console.health.api.readiness.description")
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.console.health.api.readiness.example")))
     public Result<String> readiness() throws NacosException {
         return healthProxy.checkReadiness();
     }

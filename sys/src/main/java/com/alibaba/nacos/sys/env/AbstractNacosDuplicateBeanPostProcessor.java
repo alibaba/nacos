@@ -20,6 +20,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.InstantiationAwareBeanPostProcessor;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.support.AbstractApplicationContext;
 
 /**
  * Abstract Nacos Duplicate Bean Post Processor of {@link InstantiationAwareBeanPostProcessor} to reduce duplicate rebuild bean for spring beans.
@@ -36,7 +37,7 @@ public abstract class AbstractNacosDuplicateBeanPostProcessor implements Instant
     
     @Override
     public Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName) throws BeansException {
-        if (!coreContext.containsBean(beanName)) {
+        if (!coreContext.containsBean(beanName) || AbstractApplicationContext.MESSAGE_SOURCE_BEAN_NAME.equals(beanName)) {
             return null;
         }
         BeanDefinition beanDefinition = coreContext.getBeanFactory().getBeanDefinition(beanName);

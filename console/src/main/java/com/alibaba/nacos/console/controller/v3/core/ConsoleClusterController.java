@@ -27,6 +27,13 @@ import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -42,6 +49,7 @@ import java.util.Collection;
 @NacosApi
 @RestController
 @RequestMapping("/v3/console/core/cluster")
+@Tag(name = "nacos.console.core.cluster.api.controller.name", description = "nacos.console.core.cluster.api.controller.description")
 public class ConsoleClusterController {
     
     private final ClusterProxy clusterProxy;
@@ -64,8 +72,12 @@ public class ConsoleClusterController {
     @GetMapping(value = "/nodes")
     @Secured(resource = Commons.NACOS_CORE_CONTEXT
             + "/cluster", action = ActionTypes.READ, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API)
-    public Result<Collection<NacosMember>> getNodeList(@RequestParam(value = "keyword", required = false) String ipKeyWord)
-            throws NacosException {
+    @Operation(summary = "nacos.console.core.cluster.api.nodes.summary", description = "nacos.console.core.cluster.api.nodes.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.console.core.cluster.api.nodes.example")))
+    public Result<Collection<NacosMember>> getNodeList(
+            @RequestParam(value = "keyword", required = false) String ipKeyWord) throws NacosException {
         Collection<NacosMember> result = clusterProxy.getNodeList(ipKeyWord);
         return Result.success(result);
     }

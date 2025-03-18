@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
+import io.swagger.v3.oas.annotations.Hidden;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
@@ -51,6 +52,7 @@ import java.io.IOException;
 @Order(-1)
 @ControllerAdvice(annotations = {NacosApi.class})
 @ResponseBody
+@Hidden
 public class NacosApiExceptionHandler {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosApiExceptionHandler.class);

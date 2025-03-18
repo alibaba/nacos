@@ -85,6 +85,10 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-test-autoconfigure</artifactId>
             <scope>test</scope>
@@ -119,6 +123,7 @@
                     <include>nacos-console-banner.txt</include>
                     <include>org/apache/derby/modules.properties</include>
                     <include>librocksdbjni-${hints.os.rocksdb}</include>
+                    <include>i18n/**</include>
                 </includes>
                 <excludes>
                     <exclude>static/console-ui/.vscode/**</exclude>

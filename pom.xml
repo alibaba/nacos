@@ -151,6 +151,7 @@
         <SnakeYaml.version>2.0</SnakeYaml.version>
         <kubernetes.client.version>22.0.0</kubernetes.client.version>
         <junit5.version>5.10.2</junit5.version>
+        <springdoc.version>2.8.5</springdoc.version>
         
         <!-- override dependency version -->
         <micrometer.version>1.12.8</micrometer.version>
@@ -694,6 +695,11 @@
                 <version>${spring-boot-dependencies.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.version}</version>
             </dependency>
             
             <!-- Internal libs -->
