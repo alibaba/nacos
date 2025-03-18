@@ -78,7 +78,6 @@ public class DumpAllProcessor implements NacosTaskProcessor {
         DEFAULT_LOG.info("start dump all config-info...");
         
         while (lastMaxId < currentMaxId) {
-            
             long start = System.currentTimeMillis();
             
             Page<ConfigInfoWrapper> page = configInfoPersistService.findAllConfigInfoFragment(lastMaxId,
@@ -89,10 +88,10 @@ public class DumpAllProcessor implements NacosTaskProcessor {
             }
             
             for (ConfigInfoWrapper cf : page.getPageItems()) {
+                lastMaxId = Math.max(cf.getId(), lastMaxId);
                 if (StringUtils.isBlank(cf.getTenant())) {
                     continue;
                 }
-                lastMaxId = Math.max(cf.getId(), lastMaxId);
                 //if not start up, page query will not return content, check md5 and lastModified first ,if changed ,get single content info to dump.
                 if (!dumpAllTask.isStartUp()) {
                     final String groupKey = GroupKey2.getKey(cf.getDataId(), cf.getGroup(), cf.getTenant());

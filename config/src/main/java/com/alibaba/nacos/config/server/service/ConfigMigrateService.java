@@ -508,12 +508,15 @@ public class ConfigMigrateService {
     
     @SuppressWarnings("PMD.MethodTooLongRule")
     private void doCheckNamespaceMigrate() throws Exception {
+        long startTime = System.currentTimeMillis();
         int maxNamespaceMigrateRetryTimes = EnvUtil.getProperty("nacos.namespace.migrate.retry.times", Integer.class,
                 3);
         namespaceMigratePreCheck(maxNamespaceMigrateRetryTimes);
         int batchSize = EnvUtil.getProperty("nacos.namespace.migrate.batch.size", Integer.class, 100);
         long startId = -1;
         List<Long> batchIds = new ArrayList<>();
+        int totalInsertNums = 0;
+        LOGGER.info("[migrate] start migrate config namespace");
         do {
             int retryTimes = 0;
             boolean migrateSuccess = false;
@@ -536,10 +539,14 @@ public class ConfigMigrateService {
             if (!migrateSuccess) {
                 LOGGER.error("[migrate] config_info namespace migrate insert failed");
                 throw new Exception("[migrate] config_info namespace migrate insert failed");
+            } else {
+                totalInsertNums += batchIds.size();
             }
+            LOGGER.info("[migrate] migrating config namespace from empty to public, finished:" + totalInsertNums);
         } while (batchIds.size() == batchSize);
         
         long startEmptyId = -1;
+        int totalUpdateFromEmptyNums = 0;
         List<ConfigInfo> batchConfigInfosFromEmpty = new ArrayList<>();
         do {
             int retryTimes = 0;
@@ -570,10 +577,14 @@ public class ConfigMigrateService {
                 if (!batchConfigInfosFromEmpty.isEmpty()) {
                     startEmptyId = batchConfigInfosFromEmpty.get(batchConfigInfosFromEmpty.size() - 1).getId();
                 }
+            } else {
+                totalUpdateFromEmptyNums += batchConfigInfosFromEmpty.size();
             }
+            LOGGER.info("[migrate] syncing config namespace from empty to public, finished:" + totalUpdateFromEmptyNums);
         } while (batchConfigInfosFromEmpty.size() == batchSize);
         
         long startPublicId = -1;
+        int totalUpdateFromPublicNums = 0;
         List<ConfigInfo> batchConfigInfosFromPublic = new ArrayList<>();
         do {
             int retryTimes = 0;
@@ -605,10 +616,14 @@ public class ConfigMigrateService {
                 if (!batchConfigInfosFromPublic.isEmpty()) {
                     startPublicId = batchConfigInfosFromPublic.get(batchConfigInfosFromPublic.size() - 1).getId();
                 }
+            } else {
+                totalUpdateFromPublicNums += batchConfigInfosFromPublic.size();
             }
+            LOGGER.info("[migrate] syncing config namespace from public to empty, finished:" + totalUpdateFromPublicNums);
         } while (batchConfigInfosFromPublic.size() == batchSize);
         
         long startGrayId = -1;
+        int totalInsertGrayNum = 0;
         do {
             int retryTimes = 0;
             boolean migrateSuccess = false;
@@ -631,10 +646,14 @@ public class ConfigMigrateService {
             if (!migrateSuccess) {
                 LOGGER.error("[migrate] config_info_gray namespace migrate insert failed");
                 throw new Exception("[migrate] config_info_gray namespace migrate insert failed");
+            } else {
+                totalInsertGrayNum += batchIds.size();
             }
+            LOGGER.info("[migrate] migrating config gray namespace from empty to public, finished:" + totalInsertGrayNum);
         } while (batchIds.size() == batchSize);
         
         long startGrayEmptyId = -1;
+        int totalUpdateGrayFromEmptyNum = 0;
         List<ConfigInfoGrayWrapper> batchConfigInfoGraysFromEmpty = new ArrayList<>();
         do {
             int retryTimes = 0;
@@ -668,10 +687,14 @@ public class ConfigMigrateService {
                     startGrayEmptyId = batchConfigInfoGraysFromEmpty.get(batchConfigInfoGraysFromEmpty.size() - 1)
                             .getId();
                 }
+            } else {
+                totalUpdateGrayFromEmptyNum += batchConfigInfoGraysFromEmpty.size();
             }
+            LOGGER.info("[migrate] syncing config gray namespace from empty to public, finished:" + totalUpdateGrayFromEmptyNum);
         } while (batchConfigInfoGraysFromEmpty.size() == batchSize);
         
         long startGrayPublicId = -1;
+        int totalUpdateGrayFromPublicNum = 0;
         List<ConfigInfoGrayWrapper> batchConfigInfoGraysFromPublic = new ArrayList<>();
         do {
             int retryTimes = 0;
@@ -705,8 +728,13 @@ public class ConfigMigrateService {
                     startGrayPublicId = batchConfigInfoGraysFromPublic.get(batchConfigInfoGraysFromPublic.size() - 1)
                             .getId();
                 }
+            } else {
+                totalUpdateGrayFromPublicNum += batchConfigInfoGraysFromPublic.size();
             }
+            LOGGER.info("[migrate] syncing config gray namespace from public to empty, finished:" + totalUpdateGrayFromPublicNum);
         } while (batchConfigInfoGraysFromPublic.size() == batchSize);
+        LOGGER.info("[migrate] finish migrate config namespace" + "total time taken: "
+                + (System.currentTimeMillis() - startTime) + " ms");
     }
     
     private void namespaceMigratePreCheck(int maxRetryTimes) throws Exception {
