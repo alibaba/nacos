@@ -23,7 +23,6 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
-import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigMigratePersistService;
@@ -74,8 +73,6 @@ public class EmbeddedConfigMigratePersistServiceImpl implements ConfigMigratePer
     
     private final IdGeneratorManager idGeneratorManager;
     
-    private final ConfigMigrateService configMigrateService;
-    
     private DataSourceService dataSourceService;
     
     private MapperManager mapperManager;
@@ -95,8 +92,7 @@ public class EmbeddedConfigMigratePersistServiceImpl implements ConfigMigratePer
     public EmbeddedConfigMigratePersistServiceImpl(DatabaseOperate databaseOperate,
             IdGeneratorManager idGeneratorManager,
             @Qualifier("embeddedConfigInfoPersistServiceImpl") ConfigInfoPersistService configInfoPersistService,
-            @Qualifier("embeddedConfigInfoGrayPersistServiceImpl") ConfigInfoGrayPersistService configInfoGrayPersistService,
-            ConfigMigrateService configMigrateService) {
+            @Qualifier("embeddedConfigInfoGrayPersistServiceImpl") ConfigInfoGrayPersistService configInfoGrayPersistService) {
         this.databaseOperate = databaseOperate;
         this.idGeneratorManager = idGeneratorManager;
         this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
@@ -107,7 +103,6 @@ public class EmbeddedConfigMigratePersistServiceImpl implements ConfigMigratePer
         NotifyCenter.registerToSharePublisher(DerbyImportEvent.class);
         this.configInfoPersistService = configInfoPersistService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
-        this.configMigrateService = configMigrateService;
     }
     
     @Override
