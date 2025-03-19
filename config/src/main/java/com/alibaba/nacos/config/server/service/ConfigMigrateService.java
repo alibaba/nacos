@@ -508,7 +508,7 @@ public class ConfigMigrateService {
     
     @SuppressWarnings("PMD.MethodTooLongRule")
     private void doCheckNamespaceMigrate() throws Exception {
-        long startTime = System.currentTimeMillis();
+        final long startTime = System.currentTimeMillis();
         int maxNamespaceMigrateRetryTimes = EnvUtil.getProperty("nacos.namespace.migrate.retry.times", Integer.class,
                 3);
         namespaceMigratePreCheck(maxNamespaceMigrateRetryTimes);
