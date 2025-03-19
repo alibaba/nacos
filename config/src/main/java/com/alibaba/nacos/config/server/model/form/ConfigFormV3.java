@@ -41,13 +41,6 @@ public class ConfigFormV3 extends ConfigForm {
     }
     
     @Override
-    public ConfigFormV3 clone() {
-        ConfigFormV3 configFormV3 = (ConfigFormV3) super.clone();
-        configFormV3.setGroupName(groupName);
-        return configFormV3;
-    }
-    
-    @Override
     public void validate() throws NacosApiException {
         if (StringUtils.isBlank(groupName)) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
