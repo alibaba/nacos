@@ -26,6 +26,7 @@ import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import jakarta.servlet.ServletContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -76,11 +77,17 @@ class MetricControllerV3Test {
     
     @BeforeEach
     void setUp() {
+        System.setProperty("nacos.core.auth.admin.enabled", "false");
         EnvUtil.setEnvironment(new StandardEnvironment());
         when(servletContext.getContextPath()).thenReturn("/nacos");
         ReflectionTestUtils.setField(metricsControllerV3, "serverMemberManager", memberManager);
         ReflectionTestUtils.setField(metricsControllerV3, "connectionManager", connectionManager);
         mockMvc = MockMvcBuilders.standaloneSetup(metricsControllerV3).build();
+    }
+    
+    @AfterEach
+    void tearDown() {
+        System.clearProperty("nacos.core.auth.admin.enabled");
     }
     
     @Test
