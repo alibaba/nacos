@@ -35,6 +35,7 @@ public class ConfigCompatibleConfig extends AbstractDynamicConfig {
     
     protected ConfigCompatibleConfig() {
         super(CONFIG_NAME);
+        resetConfig();
     }
     
     public boolean isNamespaceCompatibleMode() {
