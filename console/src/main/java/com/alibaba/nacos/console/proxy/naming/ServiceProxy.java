@@ -124,10 +124,6 @@ public class ServiceProxy {
      */
     public Object getServiceList(boolean withInstances, String namespaceId, int pageNo, int pageSize,
             String serviceName, String groupName, boolean hasIpCount) throws NacosException {
-        if (withInstances) {
-            return serviceHandler.getServiceList(withInstances, namespaceId, pageNo, pageSize, serviceName, groupName,
-                    hasIpCount);
-        }
         return serviceHandler.getServiceList(withInstances, namespaceId, pageNo, pageSize, serviceName, groupName,
                 hasIpCount);
     }
