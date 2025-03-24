@@ -38,7 +38,7 @@ public interface ConfigMigrateMapper extends Mapper {
      * @return the namespace conflict count
      */
     default MapperResult getConfigConflictCount(MapperContext context) {
-        String sql = "SELECT COUNT(DISTINCT ci1.data_id, ci1.group_id) AS count FROM config_info ci1"
+        String sql = "SELECT COUNT(*) AS count FROM config_info ci1"
                 + " WHERE ci1.tenant_id = 'public' AND (ci1.src_user <> ? OR ci1.src_user IS NULL) "
                 + " AND EXISTS (SELECT 1 FROM config_info ci2"
                 + " WHERE ci2.data_id = ci1.data_id AND ci2.group_id = ci1.group_id"
@@ -56,7 +56,7 @@ public interface ConfigMigrateMapper extends Mapper {
     default MapperResult findConfigIdNeedInsertMigrate(MapperContext context) {
         String sql = "SELECT ci.id FROM config_info ci WHERE ci.tenant_id = '' AND NOT EXISTS "
                 + " ( SELECT 1 FROM config_info ci2  WHERE ci2.data_id = ci.data_id AND ci2.group_id = ci.group_id AND ci2.tenant_id = 'public' )"
-                + " AND id > ?" + " ORDER BY id LIMIT ?";
+                + " AND ci.id > ?" + " ORDER BY ci.id LIMIT ?";
         return new MapperResult(sql,
                 CollectionUtils.list(context.getWhereParameter(FieldConstant.ID), context.getPageSize()));
     }
@@ -96,7 +96,7 @@ public interface ConfigMigrateMapper extends Mapper {
                 + " ( SELECT 1 FROM config_info_gray ci2 WHERE ci2.data_id = ci.data_id AND ci2.group_id = ci.group_id "
                 + " AND ci2.gray_name = ci.gray_name AND ci2.tenant_id = ? AND ci2.src_user = ? AND ci2.md5 <> ci.md5 "
                 + " AND ci2.gmt_modified < ci.gmt_modified )"
-                + " AND id > ?" + " ORDER BY id LIMIT ?";
+                + " AND ci.id > ?" + " ORDER BY ci.id LIMIT ?";
         return new MapperResult(sql,
                 CollectionUtils.list(context.getWhereParameter(FieldConstant.SRC_TENANT),
                         context.getWhereParameter(FieldConstant.SRC_USER),
@@ -140,7 +140,7 @@ public interface ConfigMigrateMapper extends Mapper {
      */
     default MapperResult getConfigGrayConflictCount(MapperContext context) {
         String sql =
-                "SELECT COUNT(DISTINCT ci1.data_id, ci1.group_id, ci1.gray_name) AS count FROM config_info_gray ci1"
+                "SELECT COUNT(*) AS count FROM config_info_gray ci1"
                         + " WHERE ci1.tenant_id = 'public' AND (ci1.src_user <> ? OR ci1.src_user IS NULL)"
                         + " AND EXISTS (SELECT 1 FROM config_info_gray ci2"
                         + " WHERE ci2.data_id = ci1.data_id AND ci2.group_id = ci1.group_id AND ci2.gray_name = ci1.gray_name"
@@ -158,8 +158,8 @@ public interface ConfigMigrateMapper extends Mapper {
     default MapperResult findConfigGrayIdNeedInsertMigrate(MapperContext context) {
         String sql = "SELECT ci.id FROM config_info_gray ci WHERE ci.tenant_id = '' AND NOT EXISTS "
                 + " ( SELECT 1 FROM config_info_gray ci2  WHERE ci2.data_id = ci.data_id AND ci2.group_id = ci.group_id"
-                + " AND ci2.tenant_id = 'public' AND ci2.gray_name = ci.gray_name )" + " AND id > ?"
-                + " ORDER BY id LIMIT ?";
+                + " AND ci2.tenant_id = 'public' AND ci2.gray_name = ci.gray_name )" + " AND ci.id > ?"
+                + " ORDER BY ci.id LIMIT ?";
         return new MapperResult(sql,
                 CollectionUtils.list(context.getWhereParameter(FieldConstant.ID), context.getPageSize()));
     }
