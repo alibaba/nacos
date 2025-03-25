@@ -17,28 +17,18 @@
 
 package com.alibaba.nacos.core.controller.v3;
 
-import com.alibaba.nacos.api.ability.ServerAbilities;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.response.ServerLoaderMetric;
+import com.alibaba.nacos.api.model.response.ServerLoaderMetrics;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
-import com.alibaba.nacos.api.remote.ability.ServerRemoteAbility;
-import com.alibaba.nacos.api.remote.response.ServerLoaderInfoResponse;
-import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy;
-import com.alibaba.nacos.api.model.response.ServerLoaderMetrics;
 import com.alibaba.nacos.core.remote.Connection;
-import com.alibaba.nacos.core.remote.ConnectionManager;
-import com.alibaba.nacos.core.remote.core.ServerLoaderInfoRequestHandler;
-import com.alibaba.nacos.core.remote.core.ServerReloaderRequestHandler;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.core.service.NacosServerLoaderService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import java.util.Collections;
@@ -46,6 +36,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * {@link ServerLoaderControllerV3} unit test.
@@ -60,24 +52,11 @@ class ServerLoaderControllerV3Test {
     private ServerLoaderControllerV3 serverLoaderControllerV3;
     
     @Mock
-    private ConnectionManager connectionManager;
-    
-    @Mock
-    private ServerMemberManager serverMemberManager;
-    
-    @Mock
-    private ServerLoaderInfoRequestHandler serverLoaderInfoRequestHandler;
-    
-    @Mock
-    private ClusterRpcClientProxy clusterRpcClientProxy;
-    
-    @Mock
-    private ServerReloaderRequestHandler serverReloaderRequestHandler;
+    private NacosServerLoaderService serverLoaderService;
     
     @Test
     void testCurrentClients() {
-        Mockito.when(connectionManager.currentClients()).thenReturn(new HashMap<>());
-        
+        when(serverLoaderService.getAllClients()).thenReturn(new HashMap<>());
         Result<Map<String, Connection>> result = serverLoaderControllerV3.currentClients();
         assertEquals(0, result.getData().size());
     }
@@ -85,31 +64,16 @@ class ServerLoaderControllerV3Test {
     @Test
     void testReloadCount() {
         Result<String> result = serverLoaderControllerV3.reloadCount(1, "1.1.1.1");
+        verify(serverLoaderService).reloadCount(1, "1.1.1.1");
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(ErrorCode.SUCCESS.getMsg(), result.getMessage());
     }
     
     @Test
     void testSmartReload() throws NacosException {
-        EnvUtil.setEnvironment(new MockEnvironment());
-        Member member = new Member();
-        member.setIp("1.1.1.1");
-        member.setPort(8848);
-        Mockito.when(serverMemberManager.allMembersWithoutSelf()).thenReturn(Collections.singletonList(member));
-        
-        Map<String, String> metrics = new HashMap<>();
-        metrics.put("conCount", "1");
-        metrics.put("sdkConCount", "1");
-        ServerLoaderInfoResponse serverLoaderInfoResponse = new ServerLoaderInfoResponse();
-        serverLoaderInfoResponse.setLoaderMetrics(metrics);
-        Mockito.when(serverLoaderInfoRequestHandler.handle(Mockito.any(), Mockito.any()))
-                .thenReturn(serverLoaderInfoResponse);
-        
-        Mockito.when(serverMemberManager.getSelf()).thenReturn(member);
-        
+        when(serverLoaderService.smartReload(1f)).thenReturn(true);
         MockHttpServletRequest httpServletRequest = new MockHttpServletRequest();
         Result<String> result = serverLoaderControllerV3.smartReload(httpServletRequest, "1");
-        
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(ErrorCode.SUCCESS.getMsg(), result.getMessage());
     }
@@ -117,35 +81,22 @@ class ServerLoaderControllerV3Test {
     @Test
     void testReloadSingle() {
         Result<String> result = serverLoaderControllerV3.reloadSingle("111", "1.1.1.1");
+        verify(serverLoaderService).reloadClient("111", "1.1.1.1");
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(ErrorCode.SUCCESS.getMsg(), result.getMessage());
     }
     
     @Test
     void testLoaderMetrics() throws NacosException {
-        EnvUtil.setEnvironment(new MockEnvironment());
-        Member member = new Member();
-        member.setIp("1.1.1.1");
-        member.setPort(8848);
-        ServerAbilities serverAbilities = new ServerAbilities();
-        ServerRemoteAbility serverRemoteAbility = new ServerRemoteAbility();
-        serverRemoteAbility.setSupportRemoteConnection(true);
-        serverAbilities.setRemoteAbility(serverRemoteAbility);
-        member.setAbilities(serverAbilities);
-        Mockito.when(serverMemberManager.allMembersWithoutSelf()).thenReturn(Collections.singletonList(member));
-        
-        Map<String, String> metrics = new HashMap<>();
-        metrics.put("sdkConCount", "1");
-        metrics.put("conCount", "2");
-        metrics.put("load", "3");
-        metrics.put("cpu", "4");
-        ServerLoaderInfoResponse serverLoaderInfoResponse = new ServerLoaderInfoResponse();
-        serverLoaderInfoResponse.setLoaderMetrics(metrics);
-        Mockito.when(serverLoaderInfoRequestHandler.handle(Mockito.any(), Mockito.any()))
-                .thenReturn(serverLoaderInfoResponse);
-        
-        Mockito.when(serverMemberManager.getSelf()).thenReturn(member);
-        
+        ServerLoaderMetric serverLoaderMetric = new ServerLoaderMetric();
+        serverLoaderMetric.setCpu("4");
+        serverLoaderMetric.setLoad("3");
+        serverLoaderMetric.setConCount(2);
+        serverLoaderMetric.setSdkConCount(1);
+        serverLoaderMetric.setAddress("1.1.1.1:8848");
+        ServerLoaderMetrics mock = new ServerLoaderMetrics();
+        mock.setDetail(Collections.singletonList(serverLoaderMetric));
+        when(serverLoaderService.getServerLoaderMetrics()).thenReturn(mock);
         Result<ServerLoaderMetrics> result = serverLoaderControllerV3.loaderMetrics();
         
         assertEquals(1, result.getData().getDetail().size());
