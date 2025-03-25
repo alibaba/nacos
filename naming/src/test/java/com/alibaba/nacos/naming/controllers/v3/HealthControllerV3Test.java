@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming.controllers.v3;
 
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
-import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.core.HealthOperatorV2Impl;
@@ -76,9 +75,9 @@ class HealthControllerV3Test extends BaseTest {
     
     @Test
     void testUpdate() throws Exception {
-        doNothing().when(healthOperatorV2).updateHealthStatusForPersistentInstance(TEST_NAMESPACE,
-                NamingUtils.getGroupedName(updateHealthForm.getServiceName(), updateHealthForm.getGroupName()), TEST_CLUSTER_NAME,
-                "123.123.123.123", 8888, true);
+        doNothing().when(healthOperatorV2)
+                .updateHealthStatusForPersistentInstance(TEST_NAMESPACE, updateHealthForm.getServiceName(),
+                        updateHealthForm.getGroupName(), TEST_CLUSTER_NAME, "123.123.123.123", 8888, true);
         MockHttpServletRequestBuilder builder = convert(updateHealthForm,
                 MockMvcRequestBuilders.put(UtilsAndCommons.HEALTH_CONTROLLER_V3_ADMIN_PATH + "/instance"));
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
