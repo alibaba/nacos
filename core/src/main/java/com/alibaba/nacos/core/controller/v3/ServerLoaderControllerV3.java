@@ -44,6 +44,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -113,7 +114,7 @@ public class ServerLoaderControllerV3 {
      */
     @Secured(resource = NACOS_ADMIN_CORE_CONTEXT_V3
             + "/loader", action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
-    @GetMapping("/reloadCurrent")
+    @PostMapping("/reloadCurrent")
     public Result<String> reloadCount(@RequestParam Integer count,
             @RequestParam(value = "redirectAddress", required = false) String redirectAddress) {
         connectionManager.loadCount(count, redirectAddress);
@@ -126,7 +127,7 @@ public class ServerLoaderControllerV3 {
      *
      * @return state json.
      */
-    @GetMapping("/smartReloadCluster")
+    @PostMapping("/smartReloadCluster")
     @Secured(resource = NACOS_ADMIN_CORE_CONTEXT_V3
             + "/loader", action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<String> smartReload(HttpServletRequest request,
@@ -232,7 +233,7 @@ public class ServerLoaderControllerV3 {
      *
      * @return state json.
      */
-    @GetMapping("/reloadClient")
+    @PostMapping("/reloadClient")
     @Secured(resource = NACOS_ADMIN_CORE_CONTEXT_V3
             + "/loader", action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<String> reloadSingle(@RequestParam String connectionId,
