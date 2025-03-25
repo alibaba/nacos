@@ -267,42 +267,6 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     }
     
     @Override
-    public ObjectNode getSubscribers(int pageNo, int pageSize, String namespaceId, String serviceName, String groupName,
-            boolean aggregation) throws Exception {
-        
-        Service service = Service.newService(namespaceId, groupName, serviceName);
-        
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        
-        int count = 0;
-        
-        try {
-            List<Subscriber> subscribers = subscribeManager.getSubscribers(service, aggregation);
-            
-            int start = (pageNo - 1) * pageSize;
-            if (start < 0) {
-                start = 0;
-            }
-            
-            int end = start + pageSize;
-            count = subscribers.size();
-            if (end > count) {
-                end = count;
-            }
-            
-            result.replace("subscribers", JacksonUtils.transferToJsonNode(subscribers.subList(start, end)));
-            result.put("count", count);
-            
-            return result;
-        } catch (Exception e) {
-            Loggers.SRV_LOG.warn("query subscribers failed!", e);
-            result.replace("subscribers", JacksonUtils.createEmptyArrayNode());
-            result.put("count", count);
-            return result;
-        }
-    }
-    
-    @Override
     public Page<SubscriberInfo> getSubscribers(String namespaceId, String serviceName, String groupName,
             boolean aggregation, int pageNo, int pageSize) throws NacosException {
         Service service = Service.newService(namespaceId, groupName, serviceName);
