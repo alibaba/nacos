@@ -25,6 +25,7 @@ import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -216,6 +217,25 @@ class AuthFilterTest {
         authFilter.doFilter(request, response, filterChain);
         verify(filterChain, never()).doFilter(request, response);
         verify(response).sendError(eq(403), anyString());
+    }
+    
+    @Test
+    @Secured(tags = Constants.Tag.ONLY_IDENTITY)
+    void testDoFilterWithNeedAuthSecuredOnlyIdentity()
+            throws NoSuchMethodException, ServletException, IOException, AccessException {
+        when(authConfig.isAuthEnabled()).thenReturn(true);
+        when(authConfig.getServerIdentityKey()).thenReturn("1");
+        when(authConfig.getServerIdentityValue()).thenReturn("2");
+        when(methodsCache.getMethod(request)).thenReturn(
+                this.getClass().getDeclaredMethod("testDoFilterWithNeedAuthSecuredOnlyIdentity"));
+        HttpProtocolAuthService protocolAuthService = injectMockPlugins();
+        when(protocolAuthService.enableAuth(any(Secured.class))).thenReturn(true);
+        doReturn(new IdentityContext()).when(protocolAuthService).parseIdentity(eq(request));
+        doReturn(Resource.EMPTY_RESOURCE).when(protocolAuthService).parseResource(eq(request), any(Secured.class));
+        when(protocolAuthService.validateIdentity(any(IdentityContext.class), any(Resource.class))).thenReturn(true);
+        authFilter.doFilter(request, response, filterChain);
+        verify(filterChain).doFilter(request, response);
+        verify(response, never()).sendError(anyInt(), anyString());
     }
     
     private HttpProtocolAuthService injectMockPlugins() {

@@ -51,4 +51,8 @@ public class NacosAuthConfigHolder {
     public Collection<NacosAuthConfig> getAllNacosAuthConfig() {
         return nacosAuthConfigMap.values();
     }
+    
+    public boolean isAnyAuthEnabled() {
+        return nacosAuthConfigMap.values().stream().anyMatch(NacosAuthConfig::isAuthEnabled);
+    }
 }
