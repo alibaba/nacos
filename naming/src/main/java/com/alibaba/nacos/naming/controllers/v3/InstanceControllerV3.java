@@ -130,8 +130,8 @@ public class InstanceControllerV3 {
         checkWeight(instanceForm.getWeight());
         // build instance
         Instance instance = buildInstance(instanceForm);
-        instanceService.removeInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm),
-                instance);
+        instanceService.removeInstance(instanceForm.getNamespaceId(), instanceForm.getGroupName(),
+                instanceForm.getServiceName(), instance);
         NotifyCenter.publishEvent(
                 new DeregisterInstanceTraceEvent(System.currentTimeMillis(), NamingRequestUtil.getSourceIp(), false,
                         DeregisterInstanceReason.REQUEST, instanceForm.getNamespaceId(), instanceForm.getGroupName(),
@@ -153,8 +153,8 @@ public class InstanceControllerV3 {
         checkWeight(instanceForm.getWeight());
         // build instance
         Instance instance = buildInstance(instanceForm);
-        instanceService.updateInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm),
-                instance);
+        instanceService.updateInstance(instanceForm.getNamespaceId(), instanceForm.getGroupName(),
+                instanceForm.getServiceName(), instance);
         NotifyCenter.publishEvent(
                 new UpdateInstanceTraceEvent(System.currentTimeMillis(), NamingRequestUtil.getSourceIp(),
                         instanceForm.getNamespaceId(), instanceForm.getGroupName(), instanceForm.getServiceName(),
@@ -254,8 +254,8 @@ public class InstanceControllerV3 {
         if (enabled != null) {
             patchObject.setEnabled(enabled);
         }
-        String serviceName = NamingUtils.getGroupedName(instanceForm.getServiceName(), instanceForm.getGroupName());
-        instanceService.patchInstance(instanceForm.getNamespaceId(), serviceName, patchObject);
+        instanceService.patchInstance(instanceForm.getNamespaceId(), instanceForm.getGroupName(),
+                instanceForm.getServiceName(), patchObject);
         return Result.success("ok");
     }
     
@@ -284,13 +284,12 @@ public class InstanceControllerV3 {
     @Secured(resource = UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<Instance> detail(InstanceForm instanceForm) throws NacosException {
         instanceForm.validate();
-        String compositeServiceName = NamingUtils.getGroupedName(instanceForm.getServiceName(),
-                instanceForm.getGroupName());
         String namespaceId = instanceForm.getNamespaceId();
         String clusterName = instanceForm.getClusterName();
         String ip = instanceForm.getIp();
         int port = instanceForm.getPort();
-        Instance instance = instanceService.getInstance(namespaceId, compositeServiceName, clusterName, ip, port);
+        Instance instance = instanceService.getInstance(namespaceId, instanceForm.getGroupName(),
+                instanceForm.getServiceName(), clusterName, ip, port);
         return Result.success(instance);
     }
     

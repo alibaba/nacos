@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
-import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.naming.core.HealthOperatorV2Impl;
@@ -60,15 +59,11 @@ public class HealthControllerV3 {
     @Secured(resource = UtilsAndCommons.HEALTH_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<String> update(UpdateHealthForm updateHealthForm) throws NacosException {
         updateHealthForm.validate();
-        healthOperatorV2.updateHealthStatusForPersistentInstance(updateHealthForm.getNamespaceId(), buildCompositeServiceName(updateHealthForm),
-                updateHealthForm.getClusterName(), updateHealthForm.getIp(), updateHealthForm.getPort(),
-                updateHealthForm.getHealthy());
+        healthOperatorV2.updateHealthStatusForPersistentInstance(updateHealthForm.getNamespaceId(),
+                updateHealthForm.getGroupName(), updateHealthForm.getServiceName(), updateHealthForm.getClusterName(),
+                updateHealthForm.getIp(), updateHealthForm.getPort(), updateHealthForm.getHealthy());
         
         return Result.success("ok");
-    }
-    
-    private String buildCompositeServiceName(UpdateHealthForm updateHealthForm) {
-        return NamingUtils.getGroupedName(updateHealthForm.getServiceName(), updateHealthForm.getGroupName());
     }
     
     /**

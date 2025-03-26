@@ -367,7 +367,7 @@ public class K8sSyncServer {
      * @param oldInstanceList old instance list from nacos service
      */
     public void unregisterInstances(Set<String> deleteIpSet, String namespace, String serviceName,
-            List<? extends Instance> oldInstanceList) {
+            List<? extends Instance> oldInstanceList) throws NacosException {
         for (Instance instance:oldInstanceList) {
             if (deleteIpSet.contains(instance.getIp())) {
                 instanceOperatorClient.removeInstance(namespace, serviceName, instance);
