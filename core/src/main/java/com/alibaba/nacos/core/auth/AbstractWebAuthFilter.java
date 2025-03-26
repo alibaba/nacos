@@ -28,6 +28,7 @@ import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
@@ -75,7 +76,7 @@ public abstract class AbstractWebAuthFilter implements Filter {
             chain.doFilter(request, response);
             return;
         }
-
+        
         try {
             Secured secured = method.getAnnotation(Secured.class);
             if (!isMatchFilter(secured)) {
@@ -113,6 +114,14 @@ public abstract class AbstractWebAuthFilter implements Filter {
                 // TODO Get reason of failure
                 throw new AccessException("Validate Identity failed.");
             }
+            if (isIdentityOnlyApi(secured)) {
+                if (Loggers.AUTH.isDebugEnabled()) {
+                    Loggers.AUTH.debug("API is identity only, skip validate authority, request: {} {}", req.getMethod(),
+                            req.getRequestURI());
+                }
+                chain.doFilter(request, response);
+                return;
+            }
             String action = secured.action().toString();
             result = protocolAuthService.validateAuthority(identityContext, new Permission(resource, action));
             if (!result) {
@@ -132,6 +141,15 @@ public abstract class AbstractWebAuthFilter implements Filter {
             Loggers.AUTH.warn("[AUTH-FILTER] Server failed: ", e);
             
         }
+    }
+    
+    private boolean isIdentityOnlyApi(Secured secured) {
+        for (String tag : secured.tags()) {
+            if (Constants.Tag.ONLY_IDENTITY.equals(tag)) {
+                return true;
+            }
+        }
+        return false;
     }
     
     /**
