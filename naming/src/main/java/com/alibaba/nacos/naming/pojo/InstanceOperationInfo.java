@@ -38,7 +38,8 @@ public class InstanceOperationInfo {
     }
     
     /**
-     * serverName.
+     * serverName with groupName.
+     * TODO split serviceName to serverName and serviceName. After disabled v1 client api.
      */
     private String serviceName;
     

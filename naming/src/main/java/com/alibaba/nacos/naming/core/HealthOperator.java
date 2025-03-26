@@ -41,7 +41,9 @@ public interface HealthOperator {
      * @param port            port of instance
      * @param healthy         health status of instance
      * @throws NacosException any exception during updating
+     * @deprecated use {@link #updateHealthStatusForPersistentInstance(String, String, String, String, String, int, boolean)} replaced
      */
+    @Deprecated
     default void updateHealthStatusForPersistentInstance(String namespace, String fullServiceName, String clusterName,
             String ip, int port, boolean healthy) throws NacosException {
         String groupName = NamingUtils.getGroupName(fullServiceName);
