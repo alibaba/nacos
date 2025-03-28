@@ -27,6 +27,7 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
@@ -185,7 +186,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
             String cluster, boolean healthOnly) {
         Service service = Service.newService(namespaceId, groupName, serviceName, true);
         // For adapt 1.X subscribe logic
-        if (subscriber.getPort() > 0 && pushService.canEnablePush(subscriber.getAgent())) {
+        if (null != subscriber && subscriber.getPort() > 0 && pushService.canEnablePush(subscriber.getAgent())) {
             String clientId = IpPortBasedClient.getClientId(subscriber.getAddrStr(), true);
             createIpPortClientIfAbsent(clientId);
             clientOperationService.subscribeService(service, subscriber, clientId);
@@ -193,7 +194,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
         ServiceInfo serviceInfo = serviceStorage.getData(service);
         ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(service).orElse(null);
         ServiceInfo result = ServiceUtil.selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, cluster,
-                healthOnly, true, subscriber.getIp());
+                healthOnly, true, null == subscriber ? StringUtils.EMPTY : subscriber.getIp());
         // adapt for v1.x sdk
         result.setName(NamingUtils.getGroupedName(result.getName(), result.getGroupName()));
         return result;

@@ -62,6 +62,7 @@ import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
  * @author Nacos
  */
 @Service
+@Deprecated
 public class ConfigSubService {
     
     private ServerMemberManager memberManager;

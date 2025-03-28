@@ -152,6 +152,8 @@ public class Constants {
     
     public static final String METRICS_CONTROLLER_V3_ADMIN_PATH = BASE_ADMIN_V3_PATH + "/metrics";
     
+    public static final String CONFIG_V3_CLIENT_API_PATH = "/v3/client/cs/config";
+    
     public static final String ENCODE = "UTF-8";
     
     public static final String PERSIST_ENCODE = getPersistEncode();
