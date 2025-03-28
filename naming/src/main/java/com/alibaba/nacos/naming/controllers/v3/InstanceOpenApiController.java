@@ -23,25 +23,20 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.trace.DeregisterInstanceReason;
 import com.alibaba.nacos.common.trace.event.naming.DeregisterInstanceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.RegisterInstanceTraceEvent;
-import com.alibaba.nacos.common.utils.InternetAddressUtil;
-import com.alibaba.nacos.core.context.RequestContext;
-import com.alibaba.nacos.core.context.RequestContextHolder;
-import com.alibaba.nacos.core.context.addition.BasicContext;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.naming.core.InstanceOperator;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.InstanceForm;
+import com.alibaba.nacos.naming.model.form.InstanceListForm;
 import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.naming.paramcheck.NamingInstanceListHttpParamExtractor;
-import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.pojo.instance.BeatInfoInstanceBuilder;
 import com.alibaba.nacos.naming.utils.InstanceUtil;
 import com.alibaba.nacos.naming.utils.NamingRequestUtil;
@@ -64,7 +59,7 @@ import java.util.List;
  * This open API is used for some program language which not support gRPC request and want to develop a application used
  * client to register/deregister self to Nacos, or get remote call service instance list from Nacos. So this client used
  * open API only provide specified feature APIs to register instance/deregister instance/get instance list for specified
- * service.
+ * service. Not support subscribe service instances with HTTP, please use gRPC request to subscribe service.
  * </p>
  *
  * @author xiweng.yy
@@ -103,7 +98,7 @@ public class InstanceOpenApiController {
         instanceForm.validate();
         if (heartBeat) {
             if (ResponseCode.OK != doHeartBeat(instanceForm)) {
-                Result.failure(ErrorCode.INSTANCE_NOT_FOUND, null);
+                return Result.failure(ErrorCode.INSTANCE_NOT_FOUND, null);
             }
         } else {
             doRegisterInstance(instanceForm);
@@ -152,20 +147,13 @@ public class InstanceOpenApiController {
     @TpsControl(pointName = "NamingServiceSubscribe", name = "HttpNamingServiceSubscribe")
     @Secured(action = ActionTypes.READ, apiType = ApiType.OPEN_API)
     @ExtractorManager.Extractor(httpExtractor = NamingInstanceListHttpParamExtractor.class)
-    public Result<List<Instance>> list(InstanceForm instanceForm) throws Exception {
+    public Result<List<Instance>> list(InstanceListForm instanceForm) throws Exception {
         // check param
         instanceForm.validate();
-        String address = instanceForm.getIp() + InternetAddressUtil.IP_PORT_SPLITER + instanceForm.getPort();
-        RequestContext requestContext = RequestContextHolder.getContext();
-        BasicContext basicContext = requestContext.getBasicContext();
         String namespaceId = instanceForm.getNamespaceId();
         String groupName = instanceForm.getGroupName();
         String serviceName = instanceForm.getServiceName();
-        String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
-        String clusterName = instanceForm.getClusterName();
-        Subscriber subscriber = new Subscriber(address, basicContext.getUserAgent(), basicContext.getApp(),
-                instanceForm.getIp(), namespaceId, groupedServiceName, instanceForm.getPort(), clusterName);
-        ServiceInfo serviceInfo = instanceOperator.listInstance(namespaceId, groupName, serviceName, subscriber,
+        ServiceInfo serviceInfo = instanceOperator.listInstance(namespaceId, groupName, serviceName, null,
                 instanceForm.getClusterName(), false);
         return Result.success(serviceInfo.getHosts());
     }
