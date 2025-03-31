@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.auth.api.AuthResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
@@ -31,6 +32,7 @@ import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import org.springframework.http.HttpStatus;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -67,7 +69,16 @@ public class NacosAuthPluginService implements AuthPluginService {
     }
     
     @Override
-    public boolean validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException {
+    public AuthResult validateIdentity(IdentityContext identityContext, Resource resource) {
+        try {
+            NacosUser nacosUser = validateUser(identityContext);
+            return AuthResult.successResult(nacosUser);
+        } catch (AccessException e) {
+            return AuthResult.failureResult(HttpStatus.UNAUTHORIZED.value(), e.getErrMsg());
+        }
+    }
+    
+    private NacosUser validateUser(IdentityContext identityContext) throws AccessException {
         checkNacosAuthManager();
         String token = resolveToken(identityContext);
         NacosUser nacosUser;
@@ -81,7 +92,7 @@ public class NacosAuthPluginService implements AuthPluginService {
         identityContext.setParameter(AuthConstants.NACOS_USER_KEY, nacosUser);
         identityContext.setParameter(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID,
                 nacosUser.getUserName());
-        return true;
+        return nacosUser;
     }
     
     private String resolveToken(IdentityContext identityContext) {
@@ -94,10 +105,14 @@ public class NacosAuthPluginService implements AuthPluginService {
     }
     
     @Override
-    public Boolean validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException {
-        NacosUser user = (NacosUser) identityContext.getParameter(AuthConstants.NACOS_USER_KEY);
-        authenticationManager.authorize(permission, user);
-        return true;
+    public AuthResult validateAuthority(IdentityContext identityContext, Permission permission) {
+        try {
+            NacosUser user = (NacosUser) identityContext.getParameter(AuthConstants.NACOS_USER_KEY);
+            authenticationManager.authorize(permission, user);
+            return AuthResult.successResult(user);
+        } catch (AccessException e) {
+            return AuthResult.failureResult(HttpStatus.FORBIDDEN.value(), e.getErrMsg());
+        }
     }
     
     @Override

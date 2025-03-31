@@ -18,6 +18,7 @@ package com.alibaba.nacos.auth;
 
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.serveridentity.ServerIdentityResult;
+import com.alibaba.nacos.plugin.auth.api.AuthResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
@@ -72,20 +73,20 @@ public interface ProtocolAuthService<R> {
      *
      * @param identityContext identity context
      * @param resource        resource
-     * @return {@code true} if legal, otherwise {@code false}
+     * @return {@link AuthResult} of validate result
      * @throws AccessException exception during validating
      */
-    boolean validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException;
+    AuthResult validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException;
     
     /**
      * Validate identity whether had permission for the resource and action.
      *
      * @param identityContext identity context
      * @param permission      permission include resource and action
-     * @return {@code true} if legal, otherwise {@code false}
+     * @return {@link AuthResult} of validate result
      * @throws AccessException exception during validating
      */
-    boolean validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException;
+    AuthResult validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException;
     
     /**
      * check server identity.

@@ -25,6 +25,7 @@ import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.context.RequestContext;
 import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.plugin.auth.api.AuthResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
@@ -103,16 +104,13 @@ public abstract class AbstractWebAuthFilter implements Filter {
             }
             Resource resource = protocolAuthService.parseResource(req, secured);
             IdentityContext identityContext = protocolAuthService.parseIdentity(req);
-            boolean result = protocolAuthService.validateIdentity(identityContext, resource);
+            AuthResult result = protocolAuthService.validateIdentity(identityContext, resource);
             RequestContext requestContext = RequestContextHolder.getContext();
             requestContext.getAuthContext().setIdentityContext(identityContext);
             requestContext.getAuthContext().setResource(resource);
-            if (null == requestContext.getAuthContext().getAuthResult()) {
-                requestContext.getAuthContext().setAuthResult(result);
-            }
-            if (!result) {
-                // TODO Get reason of failure
-                throw new AccessException("Validate Identity failed.");
+            requestContext.getAuthContext().setAuthResult(result);
+            if (!result.isSuccess()) {
+                throw new AccessException(result.format());
             }
             if (isIdentityOnlyApi(secured)) {
                 if (Loggers.AUTH.isDebugEnabled()) {
@@ -124,9 +122,8 @@ public abstract class AbstractWebAuthFilter implements Filter {
             }
             String action = secured.action().toString();
             result = protocolAuthService.validateAuthority(identityContext, new Permission(resource, action));
-            if (!result) {
-                // TODO Get reason of failure
-                throw new AccessException("Validate Authority failed.");
+            if (!result.isSuccess()) {
+                throw new AccessException(result.format());
             }
             chain.doFilter(request, response);
         } catch (AccessException e) {
