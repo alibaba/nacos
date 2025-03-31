@@ -17,7 +17,7 @@
 package com.alibaba.nacos.test.core.auth;
 
 import com.alibaba.nacos.Nacos;
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

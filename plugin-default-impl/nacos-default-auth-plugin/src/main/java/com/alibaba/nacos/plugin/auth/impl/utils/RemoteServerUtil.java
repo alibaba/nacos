@@ -17,7 +17,7 @@
 package com.alibaba.nacos.plugin.auth.impl.utils;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.utils.StringUtils;
