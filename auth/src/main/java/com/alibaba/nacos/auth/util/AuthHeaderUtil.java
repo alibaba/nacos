@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.auth.util;
 
+import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -39,6 +40,21 @@ public class AuthHeaderUtil {
         }
         if (StringUtils.isNotBlank(authConfig.getServerIdentityKey())) {
             header.addParam(authConfig.getServerIdentityKey(), authConfig.getServerIdentityValue());
+        }
+    }
+    
+    /**
+     * Add identity info to Grpc request header.
+     *
+     * @param request     grpc request
+     * @param authConfig  nacos auth config
+     */
+    public static void addIdentityToHeader(Request request, NacosAuthConfig authConfig) {
+        if (!authConfig.isSupportServerIdentity()) {
+            return;
+        }
+        if (StringUtils.isNotBlank(authConfig.getServerIdentityKey())) {
+            request.putHeader(authConfig.getServerIdentityKey(), authConfig.getServerIdentityValue());
         }
     }
     
