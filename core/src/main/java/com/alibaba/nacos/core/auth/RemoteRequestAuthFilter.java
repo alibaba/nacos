@@ -30,6 +30,7 @@ import com.alibaba.nacos.core.context.RequestContext;
 import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.core.remote.AbstractRequestFilter;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.plugin.auth.api.AuthResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
@@ -100,22 +101,18 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
                 request.putHeader(Constants.Identity.X_REAL_IP, clientIp);
                 Resource resource = protocolAuthService.parseResource(request, secured);
                 IdentityContext identityContext = protocolAuthService.parseIdentity(request);
-                boolean result = protocolAuthService.validateIdentity(identityContext, resource);
+                AuthResult result = protocolAuthService.validateIdentity(identityContext, resource);
                 RequestContext requestContext = RequestContextHolder.getContext();
                 requestContext.getAuthContext().setIdentityContext(identityContext);
                 requestContext.getAuthContext().setResource(resource);
-                if (null == requestContext.getAuthContext().getAuthResult()) {
-                    requestContext.getAuthContext().setAuthResult(result);
-                }
-                if (!result) {
-                    // TODO Get reason of failure
-                    throw new AccessException("Validate Identity failed.");
+                requestContext.getAuthContext().setAuthResult(result);
+                if (!result.isSuccess()) {
+                    throw new AccessException(result.format());
                 }
                 String action = secured.action().toString();
                 result = protocolAuthService.validateAuthority(identityContext, new Permission(resource, action));
-                if (!result) {
-                    // TODO Get reason of failure
-                    throw new AccessException("Validate Authority failed.");
+                if (!result.isSuccess()) {
+                    throw new AccessException(result.format());
                 }
             }
         } catch (AccessException e) {

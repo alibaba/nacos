@@ -40,8 +40,6 @@ public class ConsoleAuthModuleStateBuilder extends AbstractConsoleModuleStateBui
     
     public static final String AUTH_SYSTEM_TYPE = "auth_system_type";
     
-    public static final String AUTH_ADMIN_REQUEST = "auth_admin_request";
-    
     private boolean cacheable;
     
     @Override
@@ -52,7 +50,6 @@ public class ConsoleAuthModuleStateBuilder extends AbstractConsoleModuleStateBui
         result.newState(AUTH_ENABLED, authConfig.isAuthEnabled());
         result.newState(LOGIN_PAGE_ENABLED, isLoginPageEnabled(authConfig));
         result.newState(AUTH_SYSTEM_TYPE, authConfig.getNacosAuthSystemType());
-        result.newState(AUTH_ADMIN_REQUEST, isAdminRequest(authConfig));
         return result;
     }
     
@@ -67,13 +64,4 @@ public class ConsoleAuthModuleStateBuilder extends AbstractConsoleModuleStateBui
         return authPluginService.map(AuthPluginService::isLoginEnabled).orElse(false);
     }
     
-    private Boolean isAdminRequest(NacosAuthConfig authConfigs) {
-        Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
-                .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
-        boolean isAdminRequest = authPluginService.map(AuthPluginService::isAdminRequest).orElse(true);
-        if (!isAdminRequest) {
-            cacheable = true;
-        }
-        return isAdminRequest;
-    }
 }

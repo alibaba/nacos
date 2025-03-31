@@ -38,6 +38,8 @@ import jakarta.servlet.http.HttpServletRequest;
  */
 public class AbstractAuthenticationManager implements IAuthenticationManager {
     
+    private static final String USER_NOT_FOUND_MESSAGE = "User not found! Please check user exist or password is right!";
+    
     protected NacosUserService userDetailsService;
     
     protected TokenManagerDelegate jwtTokenManager;
@@ -54,11 +56,11 @@ public class AbstractAuthenticationManager implements IAuthenticationManager {
     @Override
     public NacosUser authenticate(String username, String rawPassword) throws AccessException {
         if (StringUtils.isBlank(username) || StringUtils.isBlank(rawPassword)) {
-            throw new AccessException("user not found!");
+            throw new AccessException(USER_NOT_FOUND_MESSAGE);
         }
         NacosUserDetails nacosUserDetails = (NacosUserDetails) userDetailsService.loadUserByUsername(username);
         if (nacosUserDetails == null || !PasswordEncoderUtil.matches(rawPassword, nacosUserDetails.getPassword())) {
-            throw new AccessException("user not found!");
+            throw new AccessException(USER_NOT_FOUND_MESSAGE);
         }
         return new NacosUser(nacosUserDetails.getUsername(), jwtTokenManager.createToken(username));
     }
@@ -66,7 +68,7 @@ public class AbstractAuthenticationManager implements IAuthenticationManager {
     @Override
     public NacosUser authenticate(String token) throws AccessException {
         if (StringUtils.isBlank(token)) {
-            throw new AccessException("user not found!");
+            throw new AccessException(USER_NOT_FOUND_MESSAGE);
         }
         return jwtTokenManager.parseToken(token);
     }

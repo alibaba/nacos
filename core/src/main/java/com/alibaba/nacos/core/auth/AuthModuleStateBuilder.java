@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2023 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.auth.config;
+package com.alibaba.nacos.core.auth;
 
+import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
 import com.alibaba.nacos.sys.module.AbstractServerModuleStateBuilder;
 import com.alibaba.nacos.sys.module.ModuleState;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
 import java.util.Optional;
 
@@ -35,8 +35,6 @@ public class AuthModuleStateBuilder extends AbstractServerModuleStateBuilder {
     
     public static final String AUTH_ENABLED = "auth_enabled";
     
-    public static final String LOGIN_PAGE_ENABLED = "login_page_enabled";
-    
     public static final String AUTH_SYSTEM_TYPE = "auth_system_type";
     
     public static final String AUTH_ADMIN_REQUEST = "auth_admin_request";
@@ -46,11 +44,13 @@ public class AuthModuleStateBuilder extends AbstractServerModuleStateBuilder {
     @Override
     public ModuleState build() {
         ModuleState result = new ModuleState(AUTH_MODULE);
-        AuthConfigs authConfigs = ApplicationUtils.getBean(AuthConfigs.class);
-        result.newState(AUTH_ENABLED, authConfigs.isConsoleAuthEnabled());
-        result.newState(LOGIN_PAGE_ENABLED, isLoginPageEnabled(authConfigs));
-        result.newState(AUTH_SYSTEM_TYPE, authConfigs.getNacosAuthSystemType());
-        result.newState(AUTH_ADMIN_REQUEST, isAdminRequest(authConfigs));
+        boolean authEnabled = NacosAuthConfigHolder.getInstance()
+                .isAnyAuthEnabled(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE,
+                        NacosServerAdminAuthConfig.NACOS_SERVER_ADMIN_AUTH_SCOPE);
+        String authSystemType = NacosAuthConfigHolder.getInstance().getNacosAuthSystemType();
+        result.newState(AUTH_ENABLED, authEnabled);
+        result.newState(AUTH_SYSTEM_TYPE, authSystemType);
+        result.newState(AUTH_ADMIN_REQUEST, isAdminRequest(authSystemType));
         return result;
     }
     
@@ -59,15 +59,9 @@ public class AuthModuleStateBuilder extends AbstractServerModuleStateBuilder {
         return cacheable;
     }
     
-    private Boolean isLoginPageEnabled(AuthConfigs authConfigs) {
+    private Boolean isAdminRequest(String authConfigs) {
         Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
-                .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
-        return authPluginService.map(AuthPluginService::isLoginEnabled).orElse(false);
-    }
-    
-    private Boolean isAdminRequest(AuthConfigs authConfigs) {
-        Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
-                .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
+                .findAuthServiceSpiImpl(authConfigs);
         boolean isAdminRequest = authPluginService.map(AuthPluginService::isAdminRequest).orElse(true);
         if (!isAdminRequest) {
             cacheable = true;

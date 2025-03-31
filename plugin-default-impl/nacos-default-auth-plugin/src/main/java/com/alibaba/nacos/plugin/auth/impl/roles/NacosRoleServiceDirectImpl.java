@@ -17,7 +17,7 @@
 package com.alibaba.nacos.plugin.auth.impl.roles;
 
 import com.alibaba.nacos.api.model.Page;
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
