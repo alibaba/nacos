@@ -105,9 +105,7 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
                 RequestContext requestContext = RequestContextHolder.getContext();
                 requestContext.getAuthContext().setIdentityContext(identityContext);
                 requestContext.getAuthContext().setResource(resource);
-                if (null == requestContext.getAuthContext().getAuthResult()) {
-                    requestContext.getAuthContext().setAuthResult(result);
-                }
+                requestContext.getAuthContext().setAuthResult(result);
                 if (!result.isSuccess()) {
                     throw new AccessException(result.format());
                 }
