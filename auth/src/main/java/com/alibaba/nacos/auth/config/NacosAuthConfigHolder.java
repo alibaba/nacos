@@ -55,4 +55,33 @@ public class NacosAuthConfigHolder {
     public boolean isAnyAuthEnabled() {
         return nacosAuthConfigMap.values().stream().anyMatch(NacosAuthConfig::isAuthEnabled);
     }
+    
+    /**
+     * Is any auth config by input scope is enabled.
+     *
+     * @param scope the scopes to check whether enabled
+     * @return {@code true} if any input scope auth is enabled, {@code false} all input scope auth is disabled.
+     */
+    public boolean isAnyAuthEnabled(String... scope) {
+        for (String each : scope) {
+            NacosAuthConfig config = nacosAuthConfigMap.get(each);
+            if (null != config && config.isAuthEnabled()) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Get nacos auth system type from the first {@link NacosAuthConfig}.
+     *
+     * <p>
+     *     It should be same with for all {@link NacosAuthConfig}s in one nacos server.
+     * </p>
+     * @return nacos auth system type
+     */
+    public String getNacosAuthSystemType() {
+        return nacosAuthConfigMap.values().stream().findFirst().map(NacosAuthConfig::getNacosAuthSystemType)
+                .orElse(null);
+    }
 }

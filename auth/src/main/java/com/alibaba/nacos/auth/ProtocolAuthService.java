@@ -17,6 +17,7 @@
 package com.alibaba.nacos.auth;
 
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.auth.serveridentity.ServerIdentityResult;
 import com.alibaba.nacos.plugin.auth.api.AuthResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
@@ -39,7 +40,7 @@ public interface ProtocolAuthService<R> {
     /**
      * Judgement whether enable auth feature according to secured information.
      * <p>
-     *     configuration authEnabled in {@link com.alibaba.nacos.auth.config.AuthConfigs} is the main switch.
+     *     configuration authEnabled in {@link NacosAuthConfig} is the main switch.
      *     If authEnabled is {@code false}, this method and other follow methods should not be called.
      *
      *     This method is only for plugin to judge whether auth this {@link Secured}.
