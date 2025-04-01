@@ -29,6 +29,7 @@ import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.core.remote.HealthCheckRequestHandler;
 import com.alibaba.nacos.core.remote.RequestHandler;
+import com.alibaba.nacos.plugin.auth.api.AuthResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
@@ -163,8 +164,10 @@ class RemoteRequestAuthFilterTest {
         when(protocolAuthService.enableAuth(any(Secured.class))).thenReturn(true);
         doReturn(new IdentityContext()).when(protocolAuthService).parseIdentity(eq(request));
         doReturn(Resource.EMPTY_RESOURCE).when(protocolAuthService).parseResource(eq(request), any(Secured.class));
-        when(protocolAuthService.validateIdentity(any(IdentityContext.class), any(Resource.class))).thenReturn(true);
-        when(protocolAuthService.validateAuthority(any(IdentityContext.class), any(Permission.class))).thenReturn(true);
+        when(protocolAuthService.validateIdentity(any(IdentityContext.class), any(Resource.class))).thenReturn(
+                AuthResult.successResult());
+        when(protocolAuthService.validateAuthority(any(IdentityContext.class), any(Permission.class))).thenReturn(
+                AuthResult.successResult());
         Response actual = authFilter.filter(request, requestMeta, MockRequestHandler.class);
         assertNull(actual);
     }
@@ -177,7 +180,8 @@ class RemoteRequestAuthFilterTest {
         when(protocolAuthService.enableAuth(any(Secured.class))).thenReturn(true);
         doReturn(new IdentityContext()).when(protocolAuthService).parseIdentity(eq(request));
         doReturn(Resource.EMPTY_RESOURCE).when(protocolAuthService).parseResource(eq(request), any(Secured.class));
-        when(protocolAuthService.validateIdentity(any(IdentityContext.class), any(Resource.class))).thenReturn(false);
+        when(protocolAuthService.validateIdentity(any(IdentityContext.class), any(Resource.class))).thenReturn(
+                AuthResult.failureResult(403, "test"));
         Response actual = authFilter.filter(request, requestMeta, MockRequestHandler.class);
         assertNotNull(actual);
         assertEquals(ResponseCode.FAIL.getCode(), actual.getResultCode());
@@ -192,9 +196,10 @@ class RemoteRequestAuthFilterTest {
         when(protocolAuthService.enableAuth(any(Secured.class))).thenReturn(true);
         doReturn(new IdentityContext()).when(protocolAuthService).parseIdentity(eq(request));
         doReturn(Resource.EMPTY_RESOURCE).when(protocolAuthService).parseResource(eq(request), any(Secured.class));
-        when(protocolAuthService.validateIdentity(any(IdentityContext.class), any(Resource.class))).thenReturn(true);
+        when(protocolAuthService.validateIdentity(any(IdentityContext.class), any(Resource.class))).thenReturn(
+                AuthResult.successResult());
         when(protocolAuthService.validateAuthority(any(IdentityContext.class), any(Permission.class))).thenReturn(
-                false);
+                AuthResult.failureResult(403, "test"));
         Response actual = authFilter.filter(request, requestMeta, MockRequestHandler.class);
         assertNotNull(actual);
         assertEquals(ResponseCode.FAIL.getCode(), actual.getResultCode());

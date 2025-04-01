@@ -19,7 +19,6 @@ package com.alibaba.nacos.core.cluster;
 import com.alibaba.nacos.api.ability.ServerAbilities;
 import com.alibaba.nacos.api.common.NodeState;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.model.RestResult;
@@ -59,7 +58,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-// todo remove this
 @MockitoSettings(strictness = Strictness.LENIENT)
 class ServerMemberManagerTest {
     
@@ -72,9 +70,6 @@ class ServerMemberManagerTest {
     private EventPublisher eventPublisher;
     
     @Mock
-    private AuthConfigs authConfigs;
-    
-    @Mock
     private ConfigurableApplicationContext context;
     
     private ServerMemberManager serverMemberManager;
@@ -83,7 +78,6 @@ class ServerMemberManagerTest {
     void setUp() throws Exception {
         when(environment.getProperty("nacos.server.main.port", Integer.class, 8848)).thenReturn(8848);
         when(environment.getProperty("nacos.member-change-event.queue.size", Integer.class, 128)).thenReturn(128);
-        when(context.getBean(AuthConfigs.class)).thenReturn(authConfigs);
         ApplicationUtils.injectContext(context);
         EnvUtil.setEnvironment(environment);
         EnvUtil.setIsStandalone(true);

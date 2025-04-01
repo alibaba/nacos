@@ -18,3 +18,4 @@
 
 com.alibaba.nacos.core.config.RaftModuleStateBuilder
 com.alibaba.nacos.core.config.DistroModuleStateBuilder
+com.alibaba.nacos.core.auth.AuthModuleStateBuilder

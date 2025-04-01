@@ -16,13 +16,17 @@
 
 package com.alibaba.nacos.naming.utils;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.builder.InstanceBuilder;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.model.form.InstanceForm;
 import com.alibaba.nacos.naming.pojo.instance.InstanceIdGeneratorManager;
 
 import java.util.HashMap;
@@ -132,5 +136,27 @@ public final class InstanceUtil {
                 setInstanceIdIfEmpty(instance, groupedServiceName);
             }
         }
+    }
+    
+    /**
+     * Build instance from instanceForm.
+     *
+     * @param instanceForm     request instance From
+     * @param defaultEphemeral default ephemeral
+     * @return new instance
+     * @throws NacosException if parse failed.
+     */
+    public static Instance buildInstance(InstanceForm instanceForm, boolean defaultEphemeral) throws NacosException {
+        String groupedServiceName = NamingUtils.getGroupedName(instanceForm.getServiceName(), instanceForm.getGroupName());
+        Instance instance = InstanceBuilder.newBuilder().setServiceName(groupedServiceName)
+                .setIp(instanceForm.getIp()).setClusterName(instanceForm.getClusterName())
+                .setPort(instanceForm.getPort()).setHealthy(instanceForm.getHealthy())
+                .setWeight(instanceForm.getWeight()).setEnabled(instanceForm.getEnabled())
+                .setMetadata(UtilsAndCommons.parseMetadata(instanceForm.getMetadata()))
+                .setEphemeral(instanceForm.getEphemeral()).build();
+        if (instanceForm.getEphemeral() == null) {
+            instance.setEphemeral(defaultEphemeral);
+        }
+        return instance;
     }
 }

@@ -62,4 +62,9 @@ public class Constants {
         
         public static final String IDENTITY_CONTEXT = "identity_context";
     }
+    
+    public static class Tag {
+        
+        public static final String ONLY_IDENTITY = "only_identity";
+    }
 }

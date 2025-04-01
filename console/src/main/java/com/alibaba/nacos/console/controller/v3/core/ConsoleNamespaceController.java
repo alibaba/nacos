@@ -30,6 +30,7 @@ import com.alibaba.nacos.core.namespace.model.form.NamespaceForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import io.swagger.v3.oas.annotations.Operation;
@@ -75,6 +76,8 @@ public class ConsoleNamespaceController {
      * @return namespace list
      */
     @GetMapping("/list")
+    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces",
+            action = ActionTypes.READ, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API, tags = Constants.Tag.ONLY_IDENTITY)
     @Operation(summary = "nacos.console.core.namespace.api.list.summary", description = "nacos.console.core.namespace.api.list.description")
     @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
             schema = @Schema(implementation = Result.class, example = "nacos.console.core.namespace.api.list.example")))
@@ -170,6 +173,8 @@ public class ConsoleNamespaceController {
      * @return true if exist, otherwise false
      */
     @GetMapping("/exist")
+    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces",
+            action = ActionTypes.READ, signType = SignType.CONSOLE, apiType = ApiType.CONSOLE_API, tags = Constants.Tag.ONLY_IDENTITY)
     @Operation(summary = "nacos.console.core.namespace.api.check.summary", description = "nacos.console.core.namespace.api.check.description")
     @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
             schema = @Schema(implementation = Result.class, example = "nacos.console.core.namespace.api.check.example")))

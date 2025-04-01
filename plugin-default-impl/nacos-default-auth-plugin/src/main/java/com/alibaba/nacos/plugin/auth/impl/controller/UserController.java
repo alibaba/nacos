@@ -19,7 +19,7 @@ package com.alibaba.nacos.plugin.auth.impl.controller;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -182,7 +182,7 @@ public class UserController {
      */
     @PutMapping
     @Secured(resource = AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, action = ActionTypes.WRITE, tags = {
-            AuthConstants.UPDATE_PASSWORD_ENTRY_POINT})
+            com.alibaba.nacos.plugin.auth.constant.Constants.Tag.ONLY_IDENTITY, AuthConstants.UPDATE_PASSWORD_ENTRY_POINT})
     @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "PUT ${contextPath:nacos}/v3/auth/user")
     public Object updateUser(@RequestParam String username, @RequestParam String newPassword,
             HttpServletResponse response, HttpServletRequest request) throws IOException {

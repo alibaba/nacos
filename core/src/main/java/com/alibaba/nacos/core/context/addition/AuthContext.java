@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.context.addition;
 
+import com.alibaba.nacos.plugin.auth.api.AuthResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 
@@ -31,11 +32,9 @@ public class AuthContext {
     private Resource resource;
     
     /**
-     * Auth result, default is {@code true} or {@code false}.
-     *
-     * <p>TODO with more auth result by auth plugin.
+     * Auth result, {@link AuthResult}.
      */
-    private Object authResult;
+    private AuthResult authResult;
     
     public IdentityContext getIdentityContext() {
         return identityContext;
@@ -53,11 +52,11 @@ public class AuthContext {
         this.resource = resource;
     }
     
-    public Object getAuthResult() {
+    public AuthResult getAuthResult() {
         return authResult;
     }
     
-    public void setAuthResult(Object authResult) {
+    public void setAuthResult(AuthResult authResult) {
         this.authResult = authResult;
     }
 }

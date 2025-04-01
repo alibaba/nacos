@@ -18,7 +18,11 @@
 package com.alibaba.nacos.plugin.auth.impl.controller.v3;
 
 import com.alibaba.nacos.api.model.v2.Result;
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.core.context.RequestContext;
+import com.alibaba.nacos.core.context.RequestContextHolder;
+import com.alibaba.nacos.plugin.auth.api.IdentityContext;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
+import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
@@ -29,7 +33,9 @@ import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,6 +44,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
@@ -84,10 +91,21 @@ class UserControllerV3Test {
     
     @BeforeEach
     void setUp() {
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "nacos");
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "nacos");
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "nacos");
+        EnvUtil.setEnvironment(environment);
         user = new NacosUser();
         user.setUserName("nacos");
         user.setToken("1234567890");
         user.setGlobalAdmin(true);
+    }
+    
+    @AfterEach
+    void tearDown() {
+        EnvUtil.setEnvironment(null);
+        RequestContextHolder.removeContext();
     }
     
     @Test
@@ -144,13 +162,18 @@ class UserControllerV3Test {
     
     @Test
     void testUpdateUserSuccess() throws IOException {
+        RequestContext requestContext = RequestContextHolder.getContext();
+        IdentityContext identityContext = new IdentityContext();
+        requestContext.getAuthContext().setIdentityContext(identityContext);
+        NacosUser nacosUser = new NacosUser("nacos");
+        nacosUser.setGlobalAdmin(true);
+        identityContext.setParameter(AuthConstants.NACOS_USER_KEY, nacosUser);
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
         
         when(userDetailsService.getUser("nacos")).thenReturn(new User());
         
         ArgumentCaptor<String> passwordCaptor = ArgumentCaptor.forClass(String.class);
-        
         Result<String> result = userControllerV3.updateUser("nacos", "newPass", response, request);
         
         verify(userDetailsService, times(1)).updateUserPassword(eq("nacos"), passwordCaptor.capture());

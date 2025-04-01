@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2023 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,69 +14,82 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.auth.config;
+package com.alibaba.nacos.core.config;
 
-import com.alibaba.nacos.auth.mock.MockAuthPluginServiceB;
+import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
+import com.alibaba.nacos.core.auth.AuthModuleStateBuilder;
+import com.alibaba.nacos.core.auth.NacosServerAdminAuthConfig;
+import com.alibaba.nacos.core.auth.NacosServerAuthConfig;
+import com.alibaba.nacos.core.mock.MockAuthPluginServiceB;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.module.ModuleState;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.mock.env.MockEnvironment;
 
-import static com.alibaba.nacos.auth.config.AuthModuleStateBuilder.AUTH_ENABLED;
+import static com.alibaba.nacos.core.auth.AuthModuleStateBuilder.AUTH_ENABLED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AuthModuleStateBuilderTest {
     
-    @Mock
-    private ConfigurableApplicationContext context;
-    
-    @Mock
-    private AuthConfigs authConfigs;
+    MockEnvironment environment;
     
     @BeforeEach
     void setUp() throws Exception {
-        when(context.getBean(AuthConfigs.class)).thenReturn(authConfigs);
-        ApplicationUtils.injectContext(context);
+        environment = new MockEnvironment();
+        EnvUtil.setEnvironment(environment);
     }
     
     @AfterEach
     void tearDown() throws Exception {
+        EnvUtil.setEnvironment(null);
+        resetAuthConfig();
+    }
+    
+    private void resetAuthConfig() {
+        AbstractDynamicConfig config = (AbstractDynamicConfig) NacosAuthConfigHolder.getInstance()
+                .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE);
+        config.resetConfig();
+        config = (AbstractDynamicConfig) NacosAuthConfigHolder.getInstance()
+                .getNacosAuthConfigByScope(NacosServerAdminAuthConfig.NACOS_SERVER_ADMIN_AUTH_SCOPE);
+        config.resetConfig();
     }
     
     @Test
     void testBuild() {
-        when(authConfigs.getNacosAuthSystemType()).thenReturn("nacos");
-        
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "nacos");
+        resetAuthConfig();
         ModuleState actual = new AuthModuleStateBuilder().build();
-        assertFalse((Boolean) actual.getStates().get(AUTH_ENABLED));
-        assertFalse((Boolean) actual.getStates().get("login_page_enabled"));
+        assertTrue((Boolean) actual.getStates().get(AUTH_ENABLED));
         assertEquals("nacos", actual.getStates().get("auth_system_type"));
         assertTrue((Boolean) actual.getStates().get("auth_admin_request"));
-    
-        when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginServiceB.TEST_PLUGIN);
+        
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, MockAuthPluginServiceB.TEST_PLUGIN);
+        resetAuthConfig();
         ModuleState actual2 = new AuthModuleStateBuilder().build();
-        assertTrue((Boolean) actual2.getStates().get("login_page_enabled"));
-        assertEquals(MockAuthPluginServiceB.TEST_PLUGIN, actual2.getStates().get("auth_system_type"));
+        Assertions.assertEquals(MockAuthPluginServiceB.TEST_PLUGIN, actual2.getStates().get("auth_system_type"));
         assertFalse((Boolean) actual2.getStates().get("auth_admin_request"));
     }
     
     @Test
     void testCacheable() {
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "nacos");
+        resetAuthConfig();
         AuthModuleStateBuilder authModuleStateBuilder = new AuthModuleStateBuilder();
         authModuleStateBuilder.build();
         boolean cacheable = authModuleStateBuilder.isCacheable();
         assertFalse(cacheable);
         
-        when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginServiceB.TEST_PLUGIN);
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, MockAuthPluginServiceB.TEST_PLUGIN);
+        resetAuthConfig();
         AuthModuleStateBuilder authModuleStateBuilder2 = new AuthModuleStateBuilder();
         authModuleStateBuilder2.build();
         boolean cacheable2 = authModuleStateBuilder2.isCacheable();

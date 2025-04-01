@@ -61,7 +61,7 @@ public class SubscribeManager {
         if (aggregation) {
             Collection<Subscriber> result = aggregationService.getFuzzySubscribers(namespaceId, serviceName);
             return CollectionUtils.isNotEmpty(result) ? result.stream().filter(distinctByKey(Subscriber::toString))
-                    .collect(Collectors.toList()) : Collections.EMPTY_LIST;
+                    .collect(Collectors.toList()) : Collections.emptyList();
         } else {
             return new LinkedList<>(localService.getFuzzySubscribers(namespaceId, serviceName));
         }
@@ -76,11 +76,11 @@ public class SubscribeManager {
      */
     public List<Subscriber> getSubscribers(Service service, boolean aggregation) {
         if (aggregation) {
-            Collection<Subscriber> result = aggregationService.getFuzzySubscribers(service);
+            Collection<Subscriber> result = aggregationService.getSubscribers(service);
             return CollectionUtils.isNotEmpty(result) ? result.stream().filter(distinctByKey(Subscriber::toString))
-                    .collect(Collectors.toList()) : Collections.EMPTY_LIST;
+                    .collect(Collectors.toList()) : Collections.emptyList();
         } else {
-            return new LinkedList<>(localService.getFuzzySubscribers(service));
+            return new LinkedList<>(localService.getSubscribers(service));
         }
     }
     

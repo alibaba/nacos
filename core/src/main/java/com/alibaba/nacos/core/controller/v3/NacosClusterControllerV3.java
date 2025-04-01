@@ -102,9 +102,6 @@ public class NacosClusterControllerV3 {
         return Result.success(nacosClusterOperationService.selfHealth());
     }
     
-    // The client can get all the nacos node information in the current
-    // cluster according to this interface
-    
     /**
      * Other nodes return their own metadata information.
      *
@@ -115,7 +112,7 @@ public class NacosClusterControllerV3 {
     @Secured(action = ActionTypes.WRITE, resource = NACOS_ADMIN_CORE_CONTEXT_V3
             + "/cluster", signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
     public Result<Boolean> updateNodes(@RequestBody List<Member> nodes) throws NacosApiException {
-        if (nodes == null || nodes.size() == 0) {
+        if (nodes == null || nodes.isEmpty()) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
                     "required parameter 'nodes' is missing");
         }

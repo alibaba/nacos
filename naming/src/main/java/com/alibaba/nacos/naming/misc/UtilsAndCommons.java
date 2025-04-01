@@ -89,6 +89,10 @@ public class UtilsAndCommons {
     
     public static final String CLIENT_CONTROLLER_V3_ADMIN_PATH = DEFAULT_NACOS_NAMING_ADMIN_CONTEXT_V3 + NACOS_NAMING_CLIENT_CONTEXT;
     
+    public static final String V3_CLIENT_API_PATH = NACOS_SERVER_VERSION_3 + "/client";
+    
+    public static final String INSTANCE_V3_CLIENT_API_PATH = V3_CLIENT_API_PATH + "/ns/instance";
+    
     // ********************** Nacos HTTP Context ************************ //
     
     public static final String NACOS_SERVER_HEADER = Constants.NACOS_SERVER_HEADER;

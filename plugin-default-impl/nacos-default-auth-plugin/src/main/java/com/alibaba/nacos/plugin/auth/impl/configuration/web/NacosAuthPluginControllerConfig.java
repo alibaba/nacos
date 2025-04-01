@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.configuration.web;
 
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.controller.v3.PermissionControllerV3;
 import com.alibaba.nacos.plugin.auth.impl.controller.v3.RoleControllerV3;

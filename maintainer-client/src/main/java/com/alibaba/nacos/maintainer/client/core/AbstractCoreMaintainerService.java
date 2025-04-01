@@ -161,7 +161,7 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
         params.put("count", String.valueOf(count));
         params.put("redirectAddress", redirectAddress);
         
-        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
                 .setPath(Constants.AdminApiPath.CORE_LOADER_ADMIN_PATH + "/reloadCurrent").setParamValue(params)
                 .build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
@@ -175,7 +175,7 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
         Map<String, String> params = new HashMap<>(8);
         params.put("loaderFactorStr", loaderFactorStr);
         
-        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
                 .setPath(Constants.AdminApiPath.CORE_LOADER_ADMIN_PATH + "/smartReloadCluster").setParamValue(params)
                 .build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
@@ -190,7 +190,7 @@ public abstract class AbstractCoreMaintainerService implements CoreMaintainerSer
         params.put("connectionId", connectionId);
         params.put("redirectAddress", redirectAddress);
         
-        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
+        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
                 .setPath(Constants.AdminApiPath.CORE_LOADER_ADMIN_PATH + "/reloadClient").setParamValue(params).build();
         HttpRestResult<String> httpRestResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
         Result<String> result = JacksonUtils.toObj(httpRestResult.getData(), new TypeReference<Result<String>>() {

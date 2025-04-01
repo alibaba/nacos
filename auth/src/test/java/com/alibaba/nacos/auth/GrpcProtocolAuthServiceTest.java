@@ -142,27 +142,27 @@ class GrpcProtocolAuthServiceTest {
     @Test
     void testValidateIdentityWithoutPlugin() throws AccessException {
         IdentityContext identityContext = new IdentityContext();
-        assertTrue(protocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE));
+        assertTrue(protocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE).isSuccess());
     }
     
     @Test
     void testValidateIdentityWithPlugin() throws AccessException {
         Mockito.when(authConfig.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
         IdentityContext identityContext = new IdentityContext();
-        assertFalse(protocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE));
+        assertFalse(protocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE).isSuccess());
     }
     
     @Test
     void testValidateAuthorityWithoutPlugin() throws AccessException {
         assertTrue(protocolAuthService.validateAuthority(new IdentityContext(),
-                new Permission(Resource.EMPTY_RESOURCE, "")));
+                new Permission(Resource.EMPTY_RESOURCE, "")).isSuccess());
     }
     
     @Test
     void testValidateAuthorityWithPlugin() throws AccessException {
         Mockito.when(authConfig.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
         assertFalse(protocolAuthService.validateAuthority(new IdentityContext(),
-                new Permission(Resource.EMPTY_RESOURCE, "")));
+                new Permission(Resource.EMPTY_RESOURCE, "")).isSuccess());
     }
     
     @Test

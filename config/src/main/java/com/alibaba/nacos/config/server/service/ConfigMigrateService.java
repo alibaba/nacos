@@ -559,9 +559,9 @@ public class ConfigMigrateService {
                         for (ConfigInfo configInfo : batchConfigInfosFromEmpty) {
                             configMigratePersistService.syncConfig(configInfo.getDataId(), configInfo.getGroup(),
                                     StringUtils.EMPTY, namespacePublic, NAMESPACE_MIGRATE_SRC_USER);
-                            startEmptyId = batchConfigInfosFromEmpty.get(batchConfigInfosFromEmpty.size() - 1)
-                                    .getId();
                         }
+                        startEmptyId = batchConfigInfosFromEmpty.get(batchConfigInfosFromEmpty.size() - 1)
+                                .getId();
                     }
                     migrateSuccess = true;
                     break;
@@ -598,9 +598,9 @@ public class ConfigMigrateService {
                         for (ConfigInfo configInfo : batchConfigInfosFromPublic) {
                             configMigratePersistService.syncConfig(configInfo.getDataId(), configInfo.getGroup(),
                                     namespacePublic, StringUtils.EMPTY, NAMESPACE_MIGRATE_SRC_USER);
-                            startPublicId = batchConfigInfosFromPublic.get(batchConfigInfosFromPublic.size() - 1)
-                                    .getId();
                         }
+                        startPublicId = batchConfigInfosFromPublic.get(batchConfigInfosFromPublic.size() - 1)
+                                .getId();
                     }
                     migrateSuccess = true;
                     break;
@@ -668,9 +668,9 @@ public class ConfigMigrateService {
                             configMigratePersistService.syncConfigGray(configInfoGrayWrapper.getDataId(),
                                     configInfoGrayWrapper.getGroup(), StringUtils.EMPTY,
                                     configInfoGrayWrapper.getGrayName(), namespacePublic, NAMESPACE_MIGRATE_SRC_USER);
-                            startGrayEmptyId = batchConfigInfoGraysFromEmpty.get(batchConfigInfoGraysFromEmpty.size() - 1)
-                                    .getId();
                         }
+                        startGrayEmptyId = batchConfigInfoGraysFromEmpty.get(batchConfigInfoGraysFromEmpty.size() - 1)
+                                .getId();
                     }
                     migrateSuccess = true;
                     break;
@@ -709,9 +709,9 @@ public class ConfigMigrateService {
                             configMigratePersistService.syncConfigGray(configInfoGrayWrapper.getDataId(),
                                     configInfoGrayWrapper.getGroup(), namespacePublic,
                                     configInfoGrayWrapper.getGrayName(), StringUtils.EMPTY, NAMESPACE_MIGRATE_SRC_USER);
-                            startGrayPublicId = batchConfigInfoGraysFromPublic.get(batchConfigInfoGraysFromPublic.size() - 1)
-                                    .getId();
                         }
+                        startGrayPublicId = batchConfigInfoGraysFromPublic.get(batchConfigInfoGraysFromPublic.size() - 1)
+                                .getId();
                     }
                     migrateSuccess = true;
                     break;

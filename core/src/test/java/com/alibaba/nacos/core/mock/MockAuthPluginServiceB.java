@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.auth.mock;
+package com.alibaba.nacos.core.mock;
 
+import com.alibaba.nacos.plugin.auth.api.AuthResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
@@ -42,16 +43,6 @@ public class MockAuthPluginServiceB implements AuthPluginService {
     }
     
     @Override
-    public boolean validateIdentity(IdentityContext identityContext, Resource resource) {
-        return false;
-    }
-    
-    @Override
-    public Boolean validateAuthority(IdentityContext identityContext, Permission permission) {
-        return Boolean.FALSE;
-    }
-    
-    @Override
     public String getAuthServiceName() {
         return TEST_PLUGIN;
     }
@@ -64,5 +55,15 @@ public class MockAuthPluginServiceB implements AuthPluginService {
     @Override
     public boolean isAdminRequest() {
         return false;
+    }
+    
+    @Override
+    public AuthResult validateAuthority(IdentityContext identityContext, Permission permission) {
+        return AuthResult.failureResult(401, "mock auth failed");
+    }
+    
+    @Override
+    public AuthResult validateIdentity(IdentityContext identityContext, Resource resource) {
+        return AuthResult.failureResult(403, "mock auth failed");
     }
 }
