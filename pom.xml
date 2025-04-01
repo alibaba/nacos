@@ -643,6 +643,7 @@
         <module>lock</module>
         <module>maintainer-client</module>
         <module>client-basic</module>
+        <module>swagger</module>
     </modules>
     
     <!-- Default dependencies in all subprojects -->

@@ -63,6 +63,11 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-k8s-sync</artifactId>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>nacos-swagger</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         
         <!-- log -->
         <!-- log4j通过slf4j来代理 -->
