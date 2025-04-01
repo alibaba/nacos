@@ -179,7 +179,8 @@ public class ConsoleServiceController {
     @GetMapping("/selector/types")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
             + "naming", action = ActionTypes.READ, apiType = ApiType.CONSOLE_API, tags = Constants.Tag.ONLY_IDENTITY)
-    @Operation(summary = "nacos.console.naming.service.api.selector.summary", description = "nacos.console.naming.service.api.selector.description")
+    @Operation(summary = "nacos.console.naming.service.api.selector.summary", description = "nacos.console.naming.service.api.selector.description",
+            security = @SecurityRequirement(name = "nacos"))
     @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
             schema = @Schema(implementation = Result.class, example = "nacos.console.naming.service.api.selector.example")))
     public Result<List<String>> getSelectorTypeList() throws NacosException {
