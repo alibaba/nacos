@@ -37,7 +37,7 @@ public class NacosSecurityOpenApiCustomizer implements GlobalOpenApiCustomizer {
     
     @Override
     public void customise(OpenAPI openApi) {
-        String accessTokenDesc = propertyResolverUtils.resolve("nacos.console.api.auth.description",
+        String accessTokenDesc = propertyResolverUtils.resolve("nacos.api.auth.description",
                 LocaleThreadLocalHolder.getLocale());
         openApi.getComponents().addSecuritySchemes("nacos",
                 new SecurityScheme().type(SecurityScheme.Type.APIKEY).name("accessToken").in(SecurityScheme.In.HEADER)

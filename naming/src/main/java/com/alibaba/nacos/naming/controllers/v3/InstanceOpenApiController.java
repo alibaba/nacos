@@ -43,6 +43,15 @@ import com.alibaba.nacos.naming.utils.NamingRequestUtil;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -68,6 +77,7 @@ import java.util.List;
 @RestController
 @RequestMapping(UtilsAndCommons.INSTANCE_V3_CLIENT_API_PATH)
 @ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)
+@Tag(name = "nacos.client.naming.instance.api.controller.name", description = "nacos.client.naming.instance.api.controller.description")
 public class InstanceOpenApiController {
     
     private final InstanceOperator instanceOperator;
@@ -92,6 +102,19 @@ public class InstanceOpenApiController {
     @PostMapping
     @TpsControl(pointName = "NamingInstanceRegister", name = "HttpNamingInstanceRegister")
     @Secured(action = ActionTypes.WRITE, apiType = ApiType.OPEN_API)
+    @Operation(summary = "nacos.client.naming.instance.api.register.summary", description = "nacos.client.naming.instance.api.register.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.client.naming.instance.api.register.example")))
+    @Parameters(value = {@Parameter(name = "namespaceId", example = "public"),
+            @Parameter(name = "groupName", example = "DEFAULT_GROUP"),
+            @Parameter(name = "serviceName", required = true, example = "test"),
+            @Parameter(name = "clusterName", example = "DEFAULT"),
+            @Parameter(name = "ip", required = true, example = "127.0.0.1"),
+            @Parameter(name = "port", required = true, example = "8080"), @Parameter(name = "weight", example = "1.0"),
+            @Parameter(name = "healthy", example = "true"), @Parameter(name = "ephemeral", example = "true"),
+            @Parameter(name = "enabled", example = "true"), @Parameter(name = "metadata", example = "{\"zone\":\"a\"}"),
+            @Parameter(name = "heartBeat", example = "false"), @Parameter(name = "instanceForm", hidden = true)})
     public Result<String> register(InstanceForm instanceForm, @RequestParam(defaultValue = "false") boolean heartBeat)
             throws NacosException {
         // check param
@@ -117,6 +140,17 @@ public class InstanceOpenApiController {
     @DeleteMapping
     @TpsControl(pointName = "NamingInstanceDeregister", name = "HttpNamingInstanceDeregister")
     @Secured(action = ActionTypes.WRITE, apiType = ApiType.OPEN_API)
+    @Operation(summary = "nacos.client.naming.instance.api.deregister.summary",
+            description = "nacos.client.naming.instance.api.deregister.description", security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.client.naming.instance.api.deregister.example")))
+    @Parameters(value = {@Parameter(name = "namespaceId", example = "public"),
+            @Parameter(name = "groupName", example = "DEFAULT_GROUP"),
+            @Parameter(name = "serviceName", required = true, example = "test"),
+            @Parameter(name = "clusterName", example = "DEFAULT"),
+            @Parameter(name = "ip", required = true, example = "127.0.0.1"),
+            @Parameter(name = "port", required = true, example = "8080"),
+            @Parameter(name = "instanceForm", hidden = true)})
     public Result<String> deregister(InstanceForm instanceForm) throws NacosException {
         // check param
         instanceForm.validate();
@@ -147,6 +181,17 @@ public class InstanceOpenApiController {
     @TpsControl(pointName = "NamingServiceSubscribe", name = "HttpNamingServiceSubscribe")
     @Secured(action = ActionTypes.READ, apiType = ApiType.OPEN_API)
     @ExtractorManager.Extractor(httpExtractor = NamingInstanceListHttpParamExtractor.class)
+    @Operation(summary = "nacos.client.naming.instance.api.list.summary", description = "nacos.client.naming.instance.api.list.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.client.naming.instance.api.list.example")))
+    @Parameters(value = {@Parameter(name = "pageNo", required = true, example = "1"),
+            @Parameter(name = "pageSize", required = true, example = "100"),
+            @Parameter(name = "namespaceId", example = "public"),
+            @Parameter(name = "groupName", example = "DEFAULT_GROUP"),
+            @Parameter(name = "serviceName", required = true, example = "test"),
+            @Parameter(name = "clusterName", example = "DEFAULT"), @Parameter(name = "instanceForm", hidden = true),
+            @Parameter(name = "pageForm", hidden = true)})
     public Result<List<Instance>> list(InstanceListForm instanceForm) throws Exception {
         // check param
         instanceForm.validate();

@@ -38,6 +38,15 @@ import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -65,6 +74,7 @@ import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
 @RestController
 @RequestMapping(Constants.CONFIG_V3_CLIENT_API_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
+@Tag(name = "nacos.client.config.config.api.controller.name", description = "nacos.client.config.config.api.controller.description")
 public class ConfigOpenApiController {
     
     private final ConfigQueryChainService configQueryChainService;
@@ -76,6 +86,13 @@ public class ConfigOpenApiController {
     @GetMapping
     @TpsControl(pointName = "ConfigQuery")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.OPEN_API)
+    @Operation(summary = "nacos.client.config.config.api.get.summary", description = "nacos.client.config.config.api.get.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.client.config.config.api.get.example")))
+    @Parameters(value = {@Parameter(name = "namespaceId", example = "public"),
+            @Parameter(name = "groupName", required = true, example = "DEFAULT_GROUP"),
+            @Parameter(name = "dataId", required = true, example = "test"), @Parameter(name = "configForm", hidden = true)})
     public Result<ConfigQueryResponse> getConfig(ConfigFormV3 configForm)
             throws NacosApiException, UnsupportedEncodingException {
         configForm.validate();
