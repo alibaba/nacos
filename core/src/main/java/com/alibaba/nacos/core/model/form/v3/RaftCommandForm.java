@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftConstants;
 import com.alibaba.nacos.api.model.NacosForm;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,11 +41,13 @@ public class RaftCommandForm implements NacosForm {
     /**
      * Raft command. Valid values:  "transferLeader", "doSnapshot", "resetRaftCluster", "removePeer".
      */
+    @Schema(example = "doSnapshot")
     private String command;
     
     /**
      * Command value. The format: {raft_server_ip}:{raft_port}[,{raft_server_ip}:{raft_port}]
      */
+    @Schema(example = "127.0.0.1:8848")
     private String value;
     
     @Override

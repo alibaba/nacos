@@ -17,7 +17,14 @@
 package com.alibaba.nacos.server.config;
 
 import com.alibaba.nacos.core.web.NacosWebBean;
+import com.alibaba.nacos.springdoc.cache.SchemaCache;
+import com.alibaba.nacos.springdoc.openapi.NacosBasicInfoOpenApiCustomizer;
+import com.alibaba.nacos.springdoc.openapi.NacosGenericSchemaOpenApiCustomizer;
+import com.alibaba.nacos.springdoc.operation.NacosGenericSchemaOperationCustomize;
+import org.springdoc.core.customizers.OpenApiCustomizer;
+import org.springdoc.core.customizers.OperationCustomizer;
 import org.springdoc.core.models.GroupedOpenApi;
+import org.springdoc.core.utils.PropertyResolverUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -31,9 +38,33 @@ import org.springframework.context.annotation.Configuration;
 public class ServerAdminDocConfig {
     
     @Bean
-    public GroupedOpenApi adminOpenApi() {
+    public GroupedOpenApi adminOpenApi(PropertyResolverUtils propertyResolverUtils) {
         String[] paths = {"/v3/admin/**"};
-        return GroupedOpenApi.builder().group("admin-api").pathsToMatch(paths)
-                .build();
+        SchemaCache clientSchemaCache = adminSchemaCache();
+        OpenApiCustomizer basicInfoOpenApiCustomizer = nacosAdminBasicInfoOpenApiCustomizer(propertyResolverUtils);
+        OpenApiCustomizer genericSchemaOpenApiCustomizer = nacosAdminGenericSchemaOpenApiCustomizer(clientSchemaCache);
+        OperationCustomizer genericSchemaOperationCustomizer = nacosAdminGenericSchemaOperationCustomize(clientSchemaCache);
+        GroupedOpenApi.Builder builder = GroupedOpenApi.builder().group("admin-api").pathsToMatch(paths);
+        builder.addOpenApiCustomizer(basicInfoOpenApiCustomizer);
+        builder.addOpenApiCustomizer(genericSchemaOpenApiCustomizer);
+        builder.addOperationCustomizer(genericSchemaOperationCustomizer);
+        return builder.build();
+    }
+    
+    public OpenApiCustomizer nacosAdminBasicInfoOpenApiCustomizer(PropertyResolverUtils propertyResolverUtils) {
+        return new NacosBasicInfoOpenApiCustomizer("nacos.admin.api.title", "nacos.admin.api.description",
+                propertyResolverUtils);
+    }
+    
+    public OpenApiCustomizer nacosAdminGenericSchemaOpenApiCustomizer(SchemaCache consoleSchemaCache) {
+        return new NacosGenericSchemaOpenApiCustomizer(consoleSchemaCache);
+    }
+    
+    public OperationCustomizer nacosAdminGenericSchemaOperationCustomize(SchemaCache consoleSchemaCache) {
+        return new NacosGenericSchemaOperationCustomize(consoleSchemaCache);
+    }
+    
+    public SchemaCache adminSchemaCache() {
+        return new SchemaCache();
     }
 }
