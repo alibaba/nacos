@@ -14,24 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.console.config;
+package com.alibaba.nacos.server.config;
 
-import com.alibaba.nacos.console.controller.v3.ConsoleServerStateController;
-import com.alibaba.nacos.springdoc.openapi.NacosBasicInfoOpenApiCustomizer;
-import com.alibaba.nacos.springdoc.operation.NacosExampleI18nOperationCustomize;
-import com.alibaba.nacos.springdoc.operation.NacosGenericSchemaOperationCustomize;
+import com.alibaba.nacos.core.web.NacosWebBean;
 import com.alibaba.nacos.springdoc.openapi.NacosLocaleCachedOpenApiService;
 import com.alibaba.nacos.springdoc.openapi.NacosOnlyTagControllerOpenApiBuilderCustomizer;
-import com.alibaba.nacos.springdoc.operation.NacosRequestBodyHiddenOperationCustomizer;
-import com.alibaba.nacos.springdoc.openapi.NacosGenericSchemaOpenApiCustomizer;
 import com.alibaba.nacos.springdoc.openapi.NacosSecurityOpenApiCustomizer;
-import com.alibaba.nacos.springdoc.cache.SchemaCache;
+import com.alibaba.nacos.springdoc.operation.NacosExampleI18nOperationCustomize;
+import com.alibaba.nacos.springdoc.operation.NacosRequestBodyHiddenOperationCustomizer;
 import io.swagger.v3.oas.models.OpenAPI;
 import org.springdoc.core.customizers.GlobalOpenApiCustomizer;
 import org.springdoc.core.customizers.GlobalOperationCustomizer;
 import org.springdoc.core.customizers.OpenApiBuilderCustomizer;
 import org.springdoc.core.customizers.ServerBaseUrlCustomizer;
-import org.springdoc.core.models.GroupedOpenApi;
 import org.springdoc.core.properties.SpringDocConfigProperties;
 import org.springdoc.core.providers.JavadocProvider;
 import org.springdoc.core.service.OpenAPIService;
@@ -46,16 +41,17 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * spring doc configuration for nacos console.
+ * Nacos web server doc configuration.
  *
  * @author xiweng.yy
  */
 @Configuration
-public class DocConfig {
+@NacosWebBean
+public class ServerDocConfig {
     
     private final SpringDocConfigProperties springDocConfigProperties;
     
-    public DocConfig(SpringDocConfigProperties springDocConfigProperties) {
+    public ServerDocConfig(SpringDocConfigProperties springDocConfigProperties) {
         this.springDocConfigProperties = springDocConfigProperties;
     }
     
@@ -66,18 +62,12 @@ public class DocConfig {
     }
     
     @Bean
-    public GroupedOpenApi consoleOpenApi() {
-        String[] packages = {ConsoleServerStateController.class.getPackageName()};
-        return GroupedOpenApi.builder().group("console-api").packagesToScan(packages).build();
-    }
-    
-    @Bean
-    public OpenApiBuilderCustomizer nacosConsoleOnlyTagConrollerOpenApiBuilderCustomizer() {
+    public OpenApiBuilderCustomizer nacosServerOnlyTagConrollerOpenApiBuilderCustomizer() {
         return new NacosOnlyTagControllerOpenApiBuilderCustomizer();
     }
     
     @Bean
-    public OpenAPIService nacosConsoleOpenApiService(Optional<OpenAPI> openApi, SecurityService securityParser,
+    public OpenAPIService nacosServerOpenApiService(Optional<OpenAPI> openApi, SecurityService securityParser,
             SpringDocConfigProperties springDocConfigProperties, PropertyResolverUtils propertyResolverUtils,
             Optional<List<OpenApiBuilderCustomizer>> openApiBuilderCustomisers,
             Optional<List<ServerBaseUrlCustomizer>> serverBaseUrlCustomisers,
@@ -87,40 +77,18 @@ public class DocConfig {
     }
     
     @Bean
-    public GlobalOpenApiCustomizer nacosConsoleBasicInfoOpenApiCustomizer(PropertyResolverUtils propertyResolverUtils) {
-        return new NacosBasicInfoOpenApiCustomizer("nacos.console.api.title", "nacos.console.api.description",
-                propertyResolverUtils);
-    }
-    
-    @Bean
-    public GlobalOpenApiCustomizer nacosConsoleGenericSchemaOpenApiCustomizer(SchemaCache consoleSchemaCache) {
-        return new NacosGenericSchemaOpenApiCustomizer(consoleSchemaCache);
-    }
-    
-    @Bean
-    public GlobalOpenApiCustomizer nacosConsoleSecurityRequirementOpenApiCustomizer(
+    public GlobalOpenApiCustomizer nacosServerSecurityRequirementOpenApiCustomizer(
             PropertyResolverUtils propertyResolverUtils) {
         return new NacosSecurityOpenApiCustomizer(propertyResolverUtils);
     }
     
     @Bean
-    public SchemaCache consoleSchemaCache() {
-        return new SchemaCache();
-    }
-    
-    @Bean
-    public GlobalOperationCustomizer nacosConsoleGenericSchemaOperationCustomize(SchemaCache consoleSchemaCache) {
-        return new NacosGenericSchemaOperationCustomize(consoleSchemaCache);
-    }
-    
-    @Bean
-    public GlobalOperationCustomizer nacosConsoleRequestBodyHiddenOperationCustomize() {
+    public GlobalOperationCustomizer nacosServerRequestBodyHiddenOperationCustomize() {
         return new NacosRequestBodyHiddenOperationCustomizer();
     }
     
     @Bean
-    public GlobalOperationCustomizer nacosConsoleExampleI18nOperationCustomize(PropertyResolverUtils propertyResolverUtils) {
+    public GlobalOperationCustomizer nacosServerExampleI18nOperationCustomize(PropertyResolverUtils propertyResolverUtils) {
         return new NacosExampleI18nOperationCustomize(propertyResolverUtils);
     }
-    
 }

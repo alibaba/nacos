@@ -31,20 +31,23 @@ import java.util.stream.Collectors;
  *
  * @author xiweng.yy
  */
-public class NacosSchemaOpenApiCustomizer implements GlobalOpenApiCustomizer {
+public class NacosGenericSchemaOpenApiCustomizer implements GlobalOpenApiCustomizer {
     
-    private final SchemaCache consoleSchemaCache;
+    private final SchemaCache schemaCache;
     
-    public NacosSchemaOpenApiCustomizer(SchemaCache consoleSchemaCache) {
-        this.consoleSchemaCache = consoleSchemaCache;
+    public NacosGenericSchemaOpenApiCustomizer(SchemaCache schemaCache) {
+        this.schemaCache = schemaCache;
     }
     
     @Override
     public void customise(OpenAPI openApi) {
         Map<String, Schema> schemas = openApi.getComponents().getSchemas();
+        if (null == schemas) {
+            return;
+        }
         Set<String> shouldRemoveRespSchemas = schemas.keySet().stream()
                 .filter(schema -> schema.startsWith(Result.class.getSimpleName())).collect(Collectors.toSet());
         shouldRemoveRespSchemas.forEach(schemas::remove);
-        schemas.putAll(consoleSchemaCache.getAllSchemas());
+        schemas.putAll(schemaCache.getAllSchemas());
     }
 }
