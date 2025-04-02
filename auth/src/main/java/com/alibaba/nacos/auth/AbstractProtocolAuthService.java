@@ -24,6 +24,7 @@ import com.alibaba.nacos.auth.serveridentity.ServerIdentityCheckerHolder;
 import com.alibaba.nacos.auth.serveridentity.ServerIdentityResult;
 import com.alibaba.nacos.auth.util.Loggers;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.auth.api.AuthResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
@@ -72,23 +73,23 @@ public abstract class AbstractProtocolAuthService<R> implements ProtocolAuthServ
     }
     
     @Override
-    public boolean validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException {
+    public AuthResult validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException {
         Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
                 .findAuthServiceSpiImpl(authConfig.getNacosAuthSystemType());
         if (authPluginService.isPresent()) {
             return authPluginService.get().validateIdentity(identityContext, resource);
         }
-        return true;
+        return AuthResult.successResult();
     }
     
     @Override
-    public boolean validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException {
+    public AuthResult validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException {
         Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
                 .findAuthServiceSpiImpl(authConfig.getNacosAuthSystemType());
         if (authPluginService.isPresent()) {
             return authPluginService.get().validateAuthority(identityContext, permission);
         }
-        return true;
+        return AuthResult.successResult();
     }
     
     @Override

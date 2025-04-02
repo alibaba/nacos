@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.controllers.v3;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -152,7 +153,7 @@ class InstanceControllerV3Test extends BaseTest {
         
         Result<String> result = instanceControllerV3.deregister(instanceForm);
         
-        verify(instanceService).removeInstance(eq(TEST_NAMESPACE), eq(TEST_SERVICE_NAME), any());
+        verify(instanceService).removeInstance(eq(TEST_NAMESPACE), eq("DEFAULT_GROUP"), eq("test-service"), any());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("ok", result.getData());
@@ -176,7 +177,7 @@ class InstanceControllerV3Test extends BaseTest {
         
         Result<String> result = instanceControllerV3.update(instanceForm);
         
-        verify(instanceService).updateInstance(eq(TEST_NAMESPACE), eq(TEST_SERVICE_NAME), any());
+        verify(instanceService).updateInstance(eq(TEST_NAMESPACE), eq("DEFAULT_GROUP"), eq("test-service"), any());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("ok", result.getData());
@@ -246,8 +247,8 @@ class InstanceControllerV3Test extends BaseTest {
         Instance instance = new Instance();
         instance.setInstanceId("test-id");
         
-        when(instanceService.getInstance(TEST_NAMESPACE, TEST_SERVICE_NAME, TEST_CLUSTER_NAME, TEST_IP,
-                9999)).thenReturn(instance);
+        when(instanceService.getInstance(TEST_NAMESPACE, Constants.DEFAULT_GROUP, "test-service", TEST_CLUSTER_NAME,
+                TEST_IP, 9999)).thenReturn(instance);
         InstanceForm instanceForm = new InstanceForm();
         instanceForm.setNamespaceId(TEST_NAMESPACE);
         instanceForm.setGroupName("DEFAULT_GROUP");
@@ -257,7 +258,8 @@ class InstanceControllerV3Test extends BaseTest {
         instanceForm.setPort(9999);
         Result<Instance> result = instanceControllerV3.detail(instanceForm);
         
-        verify(instanceService).getInstance(TEST_NAMESPACE, TEST_SERVICE_NAME, TEST_CLUSTER_NAME, TEST_IP, 9999);
+        verify(instanceService).getInstance(TEST_NAMESPACE, Constants.DEFAULT_GROUP, "test-service", TEST_CLUSTER_NAME,
+                TEST_IP, 9999);
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(instance.getInstanceId(), result.getData().getInstanceId());

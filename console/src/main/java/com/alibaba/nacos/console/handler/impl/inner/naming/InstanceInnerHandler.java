@@ -19,7 +19,6 @@ package com.alibaba.nacos.console.handler.impl.inner.naming;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.trace.event.naming.UpdateInstanceTraceEvent;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
@@ -66,17 +65,12 @@ public class InstanceInnerHandler implements InstanceHandler {
     
     @Override
     public void updateInstance(InstanceForm instanceForm, Instance instance) throws NacosException {
-        instanceServiceV2.updateInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm),
-                instance);
+        instanceServiceV2.updateInstance(instanceForm.getNamespaceId(), instanceForm.getGroupName(),
+                instanceForm.getServiceName(), instance);
         NotifyCenter.publishEvent(
                 new UpdateInstanceTraceEvent(System.currentTimeMillis(), "", instanceForm.getNamespaceId(),
                         instanceForm.getGroupName(), instanceForm.getServiceName(), instance.getIp(),
                         instance.getPort(), instance.getMetadata()));
     }
-    
-    private String buildCompositeServiceName(InstanceForm instanceForm) {
-        return NamingUtils.getGroupedName(instanceForm.getServiceName(), instanceForm.getGroupName());
-    }
-    
 }
 

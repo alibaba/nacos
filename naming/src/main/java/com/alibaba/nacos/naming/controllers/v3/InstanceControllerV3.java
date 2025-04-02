@@ -18,11 +18,8 @@ package com.alibaba.nacos.naming.controllers.v3;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.api.NacosApiException;
-import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.pojo.builder.InstanceBuilder;
 import com.alibaba.nacos.api.naming.pojo.maintainer.InstanceMetadataBatchResult;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
@@ -48,13 +45,13 @@ import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.naming.paramcheck.NamingInstanceListHttpParamExtractor;
 import com.alibaba.nacos.naming.paramcheck.NamingInstanceMetadataBatchHttpParamExtractor;
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
+import com.alibaba.nacos.naming.utils.InstanceUtil;
 import com.alibaba.nacos.naming.utils.NamingRequestUtil;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.collections.CollectionUtils;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -103,9 +100,9 @@ public class InstanceControllerV3 {
     public Result<String> register(InstanceForm instanceForm) throws NacosException {
         // check param
         instanceForm.validate();
-        checkWeight(instanceForm.getWeight());
+        NamingRequestUtil.checkWeight(instanceForm.getWeight());
         // build instance
-        Instance instance = buildInstance(instanceForm);
+        Instance instance = InstanceUtil.buildInstance(instanceForm, switchDomain.isDefaultInstanceEphemeral());
         String namespaceId = instanceForm.getNamespaceId();
         String groupName = instanceForm.getGroupName();
         String serviceName = instanceForm.getServiceName();
@@ -127,11 +124,10 @@ public class InstanceControllerV3 {
     public Result<String> deregister(InstanceForm instanceForm) throws NacosException {
         // check param
         instanceForm.validate();
-        checkWeight(instanceForm.getWeight());
         // build instance
-        Instance instance = buildInstance(instanceForm);
-        instanceService.removeInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm),
-                instance);
+        Instance instance = InstanceUtil.buildInstance(instanceForm, switchDomain.isDefaultInstanceEphemeral());
+        instanceService.removeInstance(instanceForm.getNamespaceId(), instanceForm.getGroupName(),
+                instanceForm.getServiceName(), instance);
         NotifyCenter.publishEvent(
                 new DeregisterInstanceTraceEvent(System.currentTimeMillis(), NamingRequestUtil.getSourceIp(), false,
                         DeregisterInstanceReason.REQUEST, instanceForm.getNamespaceId(), instanceForm.getGroupName(),
@@ -150,11 +146,11 @@ public class InstanceControllerV3 {
     public Result<String> update(InstanceForm instanceForm) throws NacosException {
         // check param
         instanceForm.validate();
-        checkWeight(instanceForm.getWeight());
+        NamingRequestUtil.checkWeight(instanceForm.getWeight());
         // build instance
-        Instance instance = buildInstance(instanceForm);
-        instanceService.updateInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm),
-                instance);
+        Instance instance = InstanceUtil.buildInstance(instanceForm, switchDomain.isDefaultInstanceEphemeral());
+        instanceService.updateInstance(instanceForm.getNamespaceId(), instanceForm.getGroupName(),
+                instanceForm.getServiceName(), instance);
         NotifyCenter.publishEvent(
                 new UpdateInstanceTraceEvent(System.currentTimeMillis(), NamingRequestUtil.getSourceIp(),
                         instanceForm.getNamespaceId(), instanceForm.getGroupName(), instanceForm.getServiceName(),
@@ -247,15 +243,15 @@ public class InstanceControllerV3 {
         }
         Double weight = instanceForm.getWeight();
         if (weight != null) {
-            checkWeight(weight);
+            NamingRequestUtil.checkWeight(weight);
             patchObject.setWeight(weight);
         }
         Boolean enabled = instanceForm.getEnabled();
         if (enabled != null) {
             patchObject.setEnabled(enabled);
         }
-        String serviceName = NamingUtils.getGroupedName(instanceForm.getServiceName(), instanceForm.getGroupName());
-        instanceService.patchInstance(instanceForm.getNamespaceId(), serviceName, patchObject);
+        instanceService.patchInstance(instanceForm.getNamespaceId(), instanceForm.getGroupName(),
+                instanceForm.getServiceName(), patchObject);
         return Result.success("ok");
     }
     
@@ -284,41 +280,13 @@ public class InstanceControllerV3 {
     @Secured(resource = UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<Instance> detail(InstanceForm instanceForm) throws NacosException {
         instanceForm.validate();
-        String compositeServiceName = NamingUtils.getGroupedName(instanceForm.getServiceName(),
-                instanceForm.getGroupName());
         String namespaceId = instanceForm.getNamespaceId();
         String clusterName = instanceForm.getClusterName();
         String ip = instanceForm.getIp();
         int port = instanceForm.getPort();
-        Instance instance = instanceService.getInstance(namespaceId, compositeServiceName, clusterName, ip, port);
+        Instance instance = instanceService.getInstance(namespaceId, instanceForm.getGroupName(),
+                instanceForm.getServiceName(), clusterName, ip, port);
         return Result.success(instance);
-    }
-    
-    private void checkWeight(Double weight) throws NacosException {
-        if (weight > com.alibaba.nacos.naming.constants.Constants.MAX_WEIGHT_VALUE
-                || weight < com.alibaba.nacos.naming.constants.Constants.MIN_WEIGHT_VALUE) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.WEIGHT_ERROR,
-                    "instance format invalid: The weights range from "
-                            + com.alibaba.nacos.naming.constants.Constants.MIN_WEIGHT_VALUE + " to "
-                            + com.alibaba.nacos.naming.constants.Constants.MAX_WEIGHT_VALUE);
-        }
-    }
-    
-    private Instance buildInstance(InstanceForm instanceForm) throws NacosException {
-        Instance instance = InstanceBuilder.newBuilder().setServiceName(buildCompositeServiceName(instanceForm))
-                .setIp(instanceForm.getIp()).setClusterName(instanceForm.getClusterName())
-                .setPort(instanceForm.getPort()).setHealthy(instanceForm.getHealthy())
-                .setWeight(instanceForm.getWeight()).setEnabled(instanceForm.getEnabled())
-                .setMetadata(UtilsAndCommons.parseMetadata(instanceForm.getMetadata()))
-                .setEphemeral(instanceForm.getEphemeral()).build();
-        if (instanceForm.getEphemeral() == null) {
-            instance.setEphemeral((switchDomain.isDefaultInstanceEphemeral()));
-        }
-        return instance;
-    }
-    
-    private String buildCompositeServiceName(InstanceForm instanceForm) {
-        return NamingUtils.getGroupedName(instanceForm.getServiceName(), instanceForm.getGroupName());
     }
     
     private String buildCompositeServiceName(InstanceMetadataBatchOperationForm form) {

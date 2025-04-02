@@ -43,7 +43,7 @@ import java.util.List;
 public class NamespaceOperationService {
     
     private final NamespacePersistService namespacePersistService;
-
+    
     private static final String DEFAULT_NAMESPACE_SHOW_NAME = "public";
     
     private static final String DEFAULT_NAMESPACE_DESCRIPTION = "Default Namespace";
@@ -113,19 +113,9 @@ public class NamespaceOperationService {
      */
     public Boolean createNamespace(String namespaceId, String namespaceName, String namespaceDesc)
             throws NacosException {
-        // TODO 获取用kp
-        if (NamespaceUtil.isDefaultNamespaceId(namespaceId)) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.NAMESPACE_ALREADY_EXIST,
-                    "namespaceId [" + namespaceId + "] is default namespace id and already exist.");
-        }
-        if (namespacePersistService.tenantInfoCountByTenantId(namespaceId) > 0) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.NAMESPACE_ALREADY_EXIST,
-                    "namespaceId [" + namespaceId + "] already exist.");
-        }
-        
-        namespacePersistService
-                .insertTenantInfoAtomic(DEFAULT_KP, namespaceId, namespaceName, namespaceDesc, DEFAULT_CREATE_SOURCE,
-                        System.currentTimeMillis());
+        isNamespaceExist(namespaceId);
+        namespacePersistService.insertTenantInfoAtomic(DEFAULT_KP, namespaceId, namespaceName, namespaceDesc,
+                DEFAULT_CREATE_SOURCE, System.currentTimeMillis());
         return true;
     }
     
@@ -133,7 +123,6 @@ public class NamespaceOperationService {
      * edit namespace.
      */
     public Boolean editNamespace(String namespaceId, String namespaceName, String namespaceDesc) {
-        // TODO 获取用kp
         namespacePersistService.updateTenantNameAtomic(DEFAULT_KP, namespaceId, namespaceName, namespaceDesc);
         return true;
     }
@@ -144,5 +133,20 @@ public class NamespaceOperationService {
     public Boolean removeNamespace(String namespaceId) {
         namespacePersistService.removeTenantInfoAtomic(DEFAULT_KP, namespaceId);
         return true;
+    }
+    
+    /**
+     * check namespace exist.
+     */
+    public boolean isNamespaceExist(String namespaceId) throws NacosApiException {
+        if (NamespaceUtil.isDefaultNamespaceId(namespaceId)) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.NAMESPACE_ALREADY_EXIST,
+                    "namespaceId [" + namespaceId + "] is default namespace id and already exist.");
+        }
+        if (namespacePersistService.tenantInfoCountByTenantId(namespaceId) > 0) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.NAMESPACE_ALREADY_EXIST,
+                    "namespaceId [" + namespaceId + "] already exist.");
+        }
+        return false;
     }
 }

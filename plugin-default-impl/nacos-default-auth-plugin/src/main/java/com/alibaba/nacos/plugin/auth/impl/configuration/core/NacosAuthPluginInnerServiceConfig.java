@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.configuration.core;
 
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.condition.ConditionOnInnerDatasource;
 import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionPersistService;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RolePersistService;

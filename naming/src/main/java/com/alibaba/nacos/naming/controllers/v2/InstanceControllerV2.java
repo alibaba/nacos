@@ -310,7 +310,8 @@ public class InstanceControllerV2 {
             @RequestParam(value = "healthyOnly", defaultValue = "false") Boolean healthyOnly,
             @RequestParam(value = "app", defaultValue = StringUtils.EMPTY) String app,
             @RequestHeader(value = HttpHeaderConsts.USER_AGENT_HEADER, required = false) String userAgent,
-            @RequestHeader(value = HttpHeaderConsts.CLIENT_VERSION_HEADER, required = false) String clientVersion) {
+            @RequestHeader(value = HttpHeaderConsts.CLIENT_VERSION_HEADER, required = false) String clientVersion)
+            throws Exception {
         if (StringUtils.isEmpty(userAgent)) {
             userAgent = StringUtils.defaultIfEmpty(clientVersion, StringUtils.EMPTY);
         }

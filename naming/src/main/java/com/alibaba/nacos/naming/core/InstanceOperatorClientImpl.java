@@ -27,6 +27,7 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
@@ -112,22 +113,23 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     }
     
     @Override
-    public void removeInstance(String namespaceId, String serviceName, Instance instance) {
+    public void removeInstance(String namespaceId, String groupName, String serviceName, Instance instance) {
         boolean ephemeral = instance.isEphemeral();
         String clientId = IpPortBasedClient.getClientId(instance.toInetAddr(), ephemeral);
         if (!clientManager.contains(clientId)) {
             Loggers.SRV_LOG.warn("remove instance from non-exist client: {}", clientId);
             return;
         }
-        Service service = getService(namespaceId, serviceName, ephemeral);
+        Service service = Service.newService(namespaceId, groupName, serviceName, ephemeral);
         clientOperationService.deregisterInstance(service, instance, clientId);
     }
     
     @Override
-    public void updateInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
+    public void updateInstance(String namespaceId, String groupName, String serviceName, Instance instance)
+            throws NacosException {
         NamingUtils.checkInstanceIsLegal(instance);
         
-        Service service = getService(namespaceId, serviceName, instance.isEphemeral());
+        Service service = Service.newService(namespaceId, groupName, serviceName, instance.isEphemeral());
         if (!ServiceManager.getInstance().containSingleton(service)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.INSTANCE_ERROR,
                     "service not found, namespace: " + namespaceId + ", service: " + service);
@@ -147,11 +149,10 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     }
     
     @Override
-    public void patchInstance(String namespaceId, String serviceName, InstancePatchObject patchObject)
+    public void patchInstance(String namespaceId, String groupName, String serviceName, InstancePatchObject patchObject)
             throws NacosException {
-        Service service = getService(namespaceId, serviceName, true);
-        Instance instance = getInstance(namespaceId, serviceName, patchObject.getCluster(), patchObject.getIp(),
-                patchObject.getPort());
+        Service service = Service.newService(namespaceId, groupName, serviceName, true);
+        Instance instance = getInstance0(service, patchObject.getCluster(), patchObject.getIp(), patchObject.getPort());
         String metadataId = InstancePublishInfo.genMetadataId(instance.getIp(), instance.getPort(),
                 instance.getClusterName());
         Optional<InstanceMetadata> instanceMetadata = metadataManager.getInstanceMetadata(service, metadataId);
@@ -181,11 +182,11 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     }
     
     @Override
-    public ServiceInfo listInstance(String namespaceId, String serviceName, Subscriber subscriber, String cluster,
-            boolean healthOnly) {
-        Service service = getService(namespaceId, serviceName, true);
+    public ServiceInfo listInstance(String namespaceId, String groupName, String serviceName, Subscriber subscriber,
+            String cluster, boolean healthOnly) {
+        Service service = Service.newService(namespaceId, groupName, serviceName, true);
         // For adapt 1.X subscribe logic
-        if (subscriber.getPort() > 0 && pushService.canEnablePush(subscriber.getAgent())) {
+        if (null != subscriber && subscriber.getPort() > 0 && pushService.canEnablePush(subscriber.getAgent())) {
             String clientId = IpPortBasedClient.getClientId(subscriber.getAddrStr(), true);
             createIpPortClientIfAbsent(clientId);
             clientOperationService.subscribeService(service, subscriber, clientId);
@@ -193,16 +194,16 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
         ServiceInfo serviceInfo = serviceStorage.getData(service);
         ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(service).orElse(null);
         ServiceInfo result = ServiceUtil.selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, cluster,
-                healthOnly, true, subscriber.getIp());
+                healthOnly, true, null == subscriber ? StringUtils.EMPTY : subscriber.getIp());
         // adapt for v1.x sdk
         result.setName(NamingUtils.getGroupedName(result.getName(), result.getGroupName()));
         return result;
     }
     
     @Override
-    public Instance getInstance(String namespaceId, String serviceName, String cluster, String ip, int port)
-            throws NacosException {
-        Service service = getService(namespaceId, serviceName, true);
+    public Instance getInstance(String namespaceId, String groupName, String serviceName, String cluster, String ip,
+            int port) throws NacosException {
+        Service service = Service.newService(namespaceId, groupName, serviceName, true);
         return getInstance0(service, cluster, ip, port);
     }
     
@@ -221,29 +222,30 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     }
     
     @Override
-    public int handleBeat(String namespaceId, String serviceName, String ip, int port, String cluster,
+    public int handleBeat(String namespaceId, String groupName, String serviceName, String ip, int port, String cluster,
             RsInfo clientBeat, BeatInfoInstanceBuilder builder) throws NacosException {
-        Service service = getService(namespaceId, serviceName, true);
+        Service service = Service.newService(namespaceId, groupName, serviceName, true);
         String clientId = IpPortBasedClient.getClientId(ip + InternetAddressUtil.IP_PORT_SPLITER + port, true);
         IpPortBasedClient client = (IpPortBasedClient) clientManager.getClient(clientId);
+        String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
         if (null == client || !client.getAllPublishedService().contains(service)) {
             if (null == clientBeat) {
                 return NamingResponseCode.RESOURCE_NOT_FOUND;
             }
-            Instance instance = builder.setBeatInfo(clientBeat).setServiceName(serviceName).build();
-            registerInstance(namespaceId, serviceName, instance);
+            Instance instance = builder.setBeatInfo(clientBeat).setServiceName(groupedServiceName).build();
+            registerInstance(namespaceId, groupName, serviceName, instance);
             client = (IpPortBasedClient) clientManager.getClient(clientId);
         }
         if (!ServiceManager.getInstance().containSingleton(service)) {
             throw new NacosException(NacosException.SERVER_ERROR,
-                    "service not found: " + serviceName + "@" + namespaceId);
+                    "service not found: " + groupedServiceName + "@" + namespaceId);
         }
         if (null == clientBeat) {
             clientBeat = new RsInfo();
             clientBeat.setIp(ip);
             clientBeat.setPort(port);
             clientBeat.setCluster(cluster);
-            clientBeat.setServiceName(serviceName);
+            clientBeat.setServiceName(groupedServiceName);
         }
         ClientBeatProcessorV2 beatProcessor = new ClientBeatProcessorV2(namespaceId, clientBeat, client);
         HealthCheckReactor.scheduleNow(beatProcessor);

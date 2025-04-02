@@ -22,9 +22,11 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.context.RequestContextHolder;
+import com.alibaba.nacos.plugin.auth.api.AuthResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -171,8 +173,10 @@ class AuthFilterTest {
         when(protocolAuthService.enableAuth(any(Secured.class))).thenReturn(true);
         doReturn(new IdentityContext()).when(protocolAuthService).parseIdentity(eq(request));
         doReturn(Resource.EMPTY_RESOURCE).when(protocolAuthService).parseResource(eq(request), any(Secured.class));
-        when(protocolAuthService.validateIdentity(any(IdentityContext.class), any(Resource.class))).thenReturn(true);
-        when(protocolAuthService.validateAuthority(any(IdentityContext.class), any(Permission.class))).thenReturn(true);
+        when(protocolAuthService.validateIdentity(any(IdentityContext.class), any(Resource.class))).thenReturn(
+                AuthResult.successResult());
+        when(protocolAuthService.validateAuthority(any(IdentityContext.class), any(Permission.class))).thenReturn(
+                AuthResult.successResult());
         authFilter.doFilter(request, response, filterChain);
         verify(filterChain).doFilter(request, response);
         verify(response, never()).sendError(anyInt(), anyString());
@@ -191,7 +195,8 @@ class AuthFilterTest {
         when(protocolAuthService.enableAuth(any(Secured.class))).thenReturn(true);
         doReturn(new IdentityContext()).when(protocolAuthService).parseIdentity(eq(request));
         doReturn(Resource.EMPTY_RESOURCE).when(protocolAuthService).parseResource(eq(request), any(Secured.class));
-        when(protocolAuthService.validateIdentity(any(IdentityContext.class), any(Resource.class))).thenReturn(false);
+        when(protocolAuthService.validateIdentity(any(IdentityContext.class), any(Resource.class))).thenReturn(
+                AuthResult.failureResult(403, "test"));
         authFilter.doFilter(request, response, filterChain);
         verify(filterChain, never()).doFilter(request, response);
         verify(response).sendError(eq(403), anyString());
@@ -210,12 +215,33 @@ class AuthFilterTest {
         when(protocolAuthService.enableAuth(any(Secured.class))).thenReturn(true);
         doReturn(new IdentityContext()).when(protocolAuthService).parseIdentity(eq(request));
         doReturn(Resource.EMPTY_RESOURCE).when(protocolAuthService).parseResource(eq(request), any(Secured.class));
-        when(protocolAuthService.validateIdentity(any(IdentityContext.class), any(Resource.class))).thenReturn(true);
+        when(protocolAuthService.validateIdentity(any(IdentityContext.class), any(Resource.class))).thenReturn(
+                AuthResult.successResult());
         when(protocolAuthService.validateAuthority(any(IdentityContext.class), any(Permission.class))).thenReturn(
-                false);
+                AuthResult.failureResult(403, "test"));
         authFilter.doFilter(request, response, filterChain);
         verify(filterChain, never()).doFilter(request, response);
         verify(response).sendError(eq(403), anyString());
+    }
+    
+    @Test
+    @Secured(tags = Constants.Tag.ONLY_IDENTITY)
+    void testDoFilterWithNeedAuthSecuredOnlyIdentity()
+            throws NoSuchMethodException, ServletException, IOException, AccessException {
+        when(authConfig.isAuthEnabled()).thenReturn(true);
+        when(authConfig.getServerIdentityKey()).thenReturn("1");
+        when(authConfig.getServerIdentityValue()).thenReturn("2");
+        when(methodsCache.getMethod(request)).thenReturn(
+                this.getClass().getDeclaredMethod("testDoFilterWithNeedAuthSecuredOnlyIdentity"));
+        HttpProtocolAuthService protocolAuthService = injectMockPlugins();
+        when(protocolAuthService.enableAuth(any(Secured.class))).thenReturn(true);
+        doReturn(new IdentityContext()).when(protocolAuthService).parseIdentity(eq(request));
+        doReturn(Resource.EMPTY_RESOURCE).when(protocolAuthService).parseResource(eq(request), any(Secured.class));
+        when(protocolAuthService.validateIdentity(any(IdentityContext.class), any(Resource.class))).thenReturn(
+                AuthResult.successResult());
+        authFilter.doFilter(request, response, filterChain);
+        verify(filterChain).doFilter(request, response);
+        verify(response, never()).sendError(anyInt(), anyString());
     }
     
     private HttpProtocolAuthService injectMockPlugins() {

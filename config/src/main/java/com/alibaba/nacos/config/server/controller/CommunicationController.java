@@ -54,6 +54,7 @@ import java.util.Set;
 @RestController
 @RequestMapping(Constants.COMMUNICATION_CONTROLLER_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
+@Deprecated
 public class CommunicationController {
     
     private final LongPollingService longPollingService;

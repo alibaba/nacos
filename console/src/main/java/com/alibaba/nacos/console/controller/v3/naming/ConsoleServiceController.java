@@ -47,6 +47,8 @@ import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
+import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -175,7 +177,10 @@ public class ConsoleServiceController {
      * @return {@link Selector} types.
      */
     @GetMapping("/selector/types")
-    @Operation(summary = "nacos.console.naming.service.api.selector.summary", description = "nacos.console.naming.service.api.selector.description")
+    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
+            + "naming", action = ActionTypes.READ, apiType = ApiType.CONSOLE_API, tags = Constants.Tag.ONLY_IDENTITY)
+    @Operation(summary = "nacos.console.naming.service.api.selector.summary", description = "nacos.console.naming.service.api.selector.description",
+            security = @SecurityRequirement(name = "nacos"))
     @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
             schema = @Schema(implementation = Result.class, example = "nacos.console.naming.service.api.selector.example")))
     public Result<List<String>> getSelectorTypeList() throws NacosException {
@@ -223,7 +228,7 @@ public class ConsoleServiceController {
      * List service detail information.
      *
      * @param serviceListForm service list form
-     * @param pageForm page form
+     * @param pageForm        page form
      * @return list service detail, depend on withInstances parameters, return ServiceDetailInfo or ServiceView.
      */
     @Secured(action = ActionTypes.READ, apiType = ApiType.CONSOLE_API)

@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.ability.ServerAbilities;
 import com.alibaba.nacos.api.common.NodeState;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
+import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.auth.util.AuthHeaderUtil;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.http.Callback;
@@ -40,6 +41,7 @@ import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.ability.ServerAbilityInitializer;
 import com.alibaba.nacos.core.ability.ServerAbilityInitializerHolder;
 import com.alibaba.nacos.core.ability.control.ServerAbilityControlManager;
+import com.alibaba.nacos.core.auth.NacosServerAuthConfig;
 import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
 import com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy;
 import com.alibaba.nacos.core.cluster.remote.request.MemberReportRequest;
@@ -569,7 +571,8 @@ public class ServerMemberManager implements NacosMemberManager {
             
             try {
                 Header header = Header.newInstance().addParam(Constants.NACOS_SERVER_HEADER, VersionUtils.version);
-                AuthHeaderUtil.addIdentityToHeader(header);
+                AuthHeaderUtil.addIdentityToHeader(header, NacosAuthConfigHolder.getInstance()
+                        .getNacosAuthConfigByScope(NacosServerAuthConfig.NACOS_SERVER_AUTH_SCOPE));
                 asyncRestTemplate.post(url, header, Query.EMPTY, getSelf(), reference.getType(),
                         new Callback<String>() {
                             @Override

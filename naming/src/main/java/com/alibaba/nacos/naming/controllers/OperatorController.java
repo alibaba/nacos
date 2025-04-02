@@ -153,7 +153,7 @@ public class OperatorController {
      * @return metrics information
      */
     @GetMapping("/metrics")
-    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/ops/metrics")
+    @Compatibility(apiType = ApiType.OPEN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/ops/metrics")
     public ObjectNode metrics(HttpServletRequest request) {
         boolean onlyStatus = Boolean.parseBoolean(WebUtils.optional(request, "onlyStatus", "true"));
         ObjectNode result = JacksonUtils.createEmptyJsonNode();

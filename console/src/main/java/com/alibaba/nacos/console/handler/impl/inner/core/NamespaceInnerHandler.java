@@ -18,14 +18,11 @@ package com.alibaba.nacos.console.handler.impl.inner.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
-import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.console.handler.core.NamespaceHandler;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
-import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.core.namespace.model.form.NamespaceForm;
-import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -41,12 +38,8 @@ public class NamespaceInnerHandler implements NamespaceHandler {
     
     private final NamespaceOperationService namespaceOperationService;
     
-    private final NamespacePersistService namespacePersistService;
-    
-    public NamespaceInnerHandler(NamespaceOperationService namespaceOperationService,
-            NamespacePersistService namespacePersistService) {
+    public NamespaceInnerHandler(NamespaceOperationService namespaceOperationService) {
         this.namespaceOperationService = namespaceOperationService;
-        this.namespacePersistService = namespacePersistService;
     }
     
     @Override
@@ -62,10 +55,6 @@ public class NamespaceInnerHandler implements NamespaceHandler {
     @Override
     public Boolean createNamespace(String namespaceId, String namespaceName, String namespaceDesc)
             throws NacosException {
-        if (namespacePersistService.tenantInfoCountByTenantId(namespaceId) > 0) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.ILLEGAL_NAMESPACE,
-                    "the namespaceId is existed, namespaceId: " + namespaceId);
-        }
         return namespaceOperationService.createNamespace(namespaceId, namespaceName, namespaceDesc);
     }
     
@@ -82,7 +71,11 @@ public class NamespaceInnerHandler implements NamespaceHandler {
     
     @Override
     public Boolean checkNamespaceIdExist(String namespaceId) {
-        return (namespacePersistService.tenantInfoCountByTenantId(namespaceId) > 0);
+        try {
+            return namespaceOperationService.isNamespaceExist(namespaceId);
+        } catch (NacosApiException e) {
+            return true;
+        }
     }
 }
 
