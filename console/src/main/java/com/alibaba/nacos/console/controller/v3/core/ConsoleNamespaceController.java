@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
@@ -36,6 +37,8 @@ import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.extensions.Extension;
+import io.swagger.v3.oas.annotations.extensions.ExtensionProperty;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -61,7 +64,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/v3/console/core/namespace")
 @ExtractorManager.Extractor(httpExtractor = ConsoleDefaultHttpParamExtractor.class)
-@Tag(name = "nacos.console.core.namespace.api.controller.name", description = "nacos.console.core.namespace.api.controller.description")
+@Tag(name = "nacos.console.core.namespace.api.controller.name", description = "nacos.console.core.namespace.api.controller.description", extensions = {
+        @Extension(name = RemoteConstants.LABEL_MODULE, properties = @ExtensionProperty(name = RemoteConstants.LABEL_MODULE, value = "common"))})
 public class ConsoleNamespaceController {
     
     private final NamespaceProxy namespaceProxy;

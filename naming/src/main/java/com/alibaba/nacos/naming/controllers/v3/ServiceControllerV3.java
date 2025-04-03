@@ -25,6 +25,7 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceView;
 import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -53,6 +54,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.extensions.Extension;
+import io.swagger.v3.oas.annotations.extensions.ExtensionProperty;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -81,7 +84,9 @@ import java.util.Optional;
 @RestController
 @RequestMapping(UtilsAndCommons.SERVICE_CONTROLLER_V3_ADMIN_PATH)
 @ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)
-@Tag(name = "nacos.admin.naming.service.api.controller.name", description = "nacos.admin.naming.service.api.controller.description")
+@Tag(name = "nacos.admin.naming.service.api.controller.name", description = "nacos.admin.naming.service.api.controller.description", extensions = {
+        @Extension(name = RemoteConstants.LABEL_MODULE,
+                properties = @ExtensionProperty(name = RemoteConstants.LABEL_MODULE, value = RemoteConstants.LABEL_MODULE_NAMING))})
 public class ServiceControllerV3 {
     
     private final ServiceOperatorV2Impl serviceOperatorV2;

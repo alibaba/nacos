@@ -27,6 +27,7 @@ import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckerFactory;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -53,6 +54,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.extensions.Extension;
+import io.swagger.v3.oas.annotations.extensions.ExtensionProperty;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -81,7 +84,9 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/v3/console/ns/service")
 @ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)
-@Tag(name = "nacos.console.naming.service.api.controller.name", description = "nacos.console.naming.service.api.controller.description")
+@Tag(name = "nacos.console.naming.service.api.controller.name", description = "nacos.console.naming.service.api.controller.description", extensions = {
+        @Extension(name = RemoteConstants.LABEL_MODULE,
+                properties = @ExtensionProperty(name = RemoteConstants.LABEL_MODULE, value = RemoteConstants.LABEL_MODULE_NAMING))})
 public class ConsoleServiceController {
     
     private final ServiceProxy serviceProxy;

@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.controller.v3;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -32,6 +33,8 @@ import com.alibaba.nacos.plugin.auth.constant.SignType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.extensions.Extension;
+import io.swagger.v3.oas.annotations.extensions.ExtensionProperty;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -55,7 +58,9 @@ import java.util.Map;
 @RestController
 @RequestMapping(Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
-@Tag(name = "nacos.admin.config.config.api.controller.name", description = "nacos.admin.config.config.api.controller.description")
+@Tag(name = "nacos.admin.config.config.api.controller.name", description = "nacos.admin.config.config.api.controller.description", extensions = {
+        @Extension(name = RemoteConstants.LABEL_MODULE,
+                properties = @ExtensionProperty(name = RemoteConstants.LABEL_MODULE, value = RemoteConstants.LABEL_MODULE_CONFIG))})
 public class ListenerControllerV3 {
     
     private final ConfigListenerStateDelegate configListenerStateDelegate;

@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.model.response.ServerLoaderMetrics;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.service.NacosServerLoaderService;
@@ -29,6 +30,8 @@ import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.extensions.Extension;
+import io.swagger.v3.oas.annotations.extensions.ExtensionProperty;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -57,7 +60,8 @@ import static com.alibaba.nacos.core.utils.Commons.NACOS_ADMIN_CORE_CONTEXT_V3;
 @NacosApi
 @RestController
 @RequestMapping(NACOS_ADMIN_CORE_CONTEXT_V3 + "/loader")
-@Tag(name = "nacos.admin.core.loader.api.controller.name", description = "nacos.admin.core.loader.api.controller.description")
+@Tag(name = "nacos.admin.core.loader.api.controller.name", description = "nacos.admin.core.loader.api.controller.description", extensions = {
+        @Extension(name = RemoteConstants.LABEL_MODULE, properties = @ExtensionProperty(name = RemoteConstants.LABEL_MODULE, value = "common"))})
 @SuppressWarnings("PMD.MethodTooLongRule")
 public class ServerLoaderControllerV3 {
     

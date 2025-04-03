@@ -21,10 +21,13 @@ import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.model.v2.SupportedLanguage;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
 import com.alibaba.nacos.console.proxy.ServerStateProxy;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.extensions.Extension;
+import io.swagger.v3.oas.annotations.extensions.ExtensionProperty;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -47,7 +50,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/v3/console/server")
 @ExtractorManager.Extractor(httpExtractor = ConsoleDefaultHttpParamExtractor.class)
-@Tag(name = "nacos.console.state.api.controller.name", description = "nacos.console.state.api.controller.description")
+@Tag(name = "nacos.console.state.api.controller.name", description = "nacos.console.state.api.controller.description", extensions = {
+        @Extension(name = RemoteConstants.LABEL_MODULE, properties = @ExtensionProperty(name = RemoteConstants.LABEL_MODULE, value = "common"))})
 public class ConsoleServerStateController {
     
     private final ServerStateProxy serverStateProxy;

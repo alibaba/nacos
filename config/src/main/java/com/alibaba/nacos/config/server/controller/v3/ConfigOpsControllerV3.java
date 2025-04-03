@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.controller.v3;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
@@ -43,6 +44,8 @@ import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.extensions.Extension;
+import io.swagger.v3.oas.annotations.extensions.ExtensionProperty;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.SchemaProperty;
@@ -75,7 +78,9 @@ import java.util.Objects;
 @RestController
 @RequestMapping(Constants.OPS_CONTROLLER_V3_ADMIN_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
-@Tag(name = "nacos.admin.config.ops.api.controller.name", description = "nacos.admin.config.ops.api.controller.description")
+@Tag(name = "nacos.admin.config.ops.api.controller.name", description = "nacos.admin.config.ops.api.controller.description", extensions = {
+        @Extension(name = RemoteConstants.LABEL_MODULE,
+                properties = @ExtensionProperty(name = RemoteConstants.LABEL_MODULE, value = RemoteConstants.LABEL_MODULE_CONFIG))})
 public class ConfigOpsControllerV3 {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigOpsControllerV3.class);

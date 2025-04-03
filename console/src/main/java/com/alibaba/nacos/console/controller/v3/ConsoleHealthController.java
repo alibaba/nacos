@@ -20,10 +20,13 @@ package com.alibaba.nacos.console.controller.v3;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
 import com.alibaba.nacos.console.proxy.HealthProxy;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.extensions.Extension;
+import io.swagger.v3.oas.annotations.extensions.ExtensionProperty;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -42,7 +45,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController()
 @RequestMapping("/v3/console/health")
 @ExtractorManager.Extractor(httpExtractor = ConsoleDefaultHttpParamExtractor.class)
-@Tag(name = "nacos.console.health.api.controller.name", description = "nacos.console.health.api.controller.description")
+@Tag(name = "nacos.console.health.api.controller.name", description = "nacos.console.health.api.controller.description", extensions = {
+        @Extension(name = RemoteConstants.LABEL_MODULE, properties = @ExtensionProperty(name = RemoteConstants.LABEL_MODULE, value = "common"))})
 public class ConsoleHealthController {
     
     private final HealthProxy healthProxy;
