@@ -77,4 +77,9 @@ public class AuthConstants {
     public static final String LDAP_DEFAULT_ENCODED_PASSWORD = PasswordEncoderUtil.encode(System.getProperty("ldap.default.password", "nacos"));
     
     public static final String LDAP_PREFIX = "LDAP_";
+    
+    /**
+     * Maximum allowed password length.
+     */
+    public static final int MAX_PASSWORD_LENGTH = 72;
 }
