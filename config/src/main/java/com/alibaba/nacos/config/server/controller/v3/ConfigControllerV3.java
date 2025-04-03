@@ -335,7 +335,7 @@ public class ConfigControllerV3 {
      * Execute to remove beta operation.
      */
     @DeleteMapping("/beta")
-    @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Boolean> stopBeta(HttpServletRequest httpServletRequest, ConfigFormV3 configForm)
             throws NacosApiException {
         configForm.validate();
