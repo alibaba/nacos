@@ -27,6 +27,7 @@ import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -49,8 +50,12 @@ import com.alibaba.nacos.plugin.auth.constant.SignType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.extensions.Extension;
+import io.swagger.v3.oas.annotations.extensions.ExtensionProperty;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.SchemaProperty;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -85,7 +90,9 @@ import static com.alibaba.nacos.config.server.utils.RequestUtil.getRemoteIp;
 @RestController
 @RequestMapping("/v3/console/cs/config")
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
-@Tag(name = "nacos.console.config.config.api.controller.name", description = "nacos.console.config.config.api.controller.description")
+@Tag(name = "nacos.console.config.config.api.controller.name", description = "nacos.console.config.config.api.controller.description", extensions = {
+        @Extension(name = RemoteConstants.LABEL_MODULE,
+                properties = @ExtensionProperty(name = RemoteConstants.LABEL_MODULE, value = RemoteConstants.LABEL_MODULE_CONFIG))})
 public class ConsoleConfigController {
     
     private final ConfigProxy configProxy;
@@ -386,7 +393,7 @@ public class ConsoleConfigController {
             security = @SecurityRequirement(name = "nacos"))
     @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE))
     @Parameters(value = {@Parameter(name = "namespaceId"), @Parameter(name = "groupName"), @Parameter(name = "dataId"),
-            @Parameter(name = "ids", example = "1,2,3"), @Parameter(name = "configForm", hidden = true)})
+            @Parameter(name = "ids", example = "[1,2,3]"), @Parameter(name = "configForm", hidden = true)})
     public ResponseEntity<byte[]> exportConfigV2(ConfigFormV3 configForm,
             @RequestParam(value = "ids", required = false) List<Long> ids) throws Exception {
         configForm.blurSearchValidate();
@@ -416,7 +423,13 @@ public class ConsoleConfigController {
             security = @SecurityRequirement(name = "nacos"))
     @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
             schema = @Schema(implementation = Result.class, example = "nacos.console.config.config.api.import.example")))
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "nacos.console.config.config.api.import.body.description",
+            content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schemaProperties = {
+                    @SchemaProperty(name = "file", schema = @Schema(type = "string", format = "binary")),
+                    @SchemaProperty(name = "src_user", schema = @Schema(type = "string", example = "nacos")),
+                    @SchemaProperty(name = "namespaceId", schema = @Schema(type = "string", example = "public")),
+                    @SchemaProperty(name = "policy", schema = @Schema(requiredMode = Schema.RequiredMode.REQUIRED,
+                            implementation = SameConfigPolicy.class))}))
     public Result<Map<String, Object>> importAndPublishConfig(HttpServletRequest request,
             @RequestParam(required = false) String srcUser,
             @RequestParam(value = "namespaceId", required = false) String namespaceId,
@@ -450,6 +463,11 @@ public class ConsoleConfigController {
             security = @SecurityRequirement(name = "nacos"))
     @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
             schema = @Schema(implementation = Result.class, example = "nacos.console.config.config.api.clone.example")))
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            array = @ArraySchema(schema = @Schema(implementation = SameNamespaceCloneConfigBean.class))))
+    @Parameters(value = {@Parameter(name = "srcUser", example = "nacos"),
+            @Parameter(name = "namespaceId", example = "public"),
+            @Parameter(name = "policy", required = true, schema = @Schema(implementation = SameConfigPolicy.class))})
     public Result<Map<String, Object>> cloneConfig(HttpServletRequest request,
             @RequestParam(required = false) String srcUser,
             @RequestParam(value = "targetNamespaceId") String namespaceId,

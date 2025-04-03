@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.naming.core.HealthOperatorV2Impl;
@@ -29,7 +30,18 @@ import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.extensions.Extension;
+import io.swagger.v3.oas.annotations.extensions.ExtensionProperty;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -46,6 +58,9 @@ import java.util.Map;
 @RestController
 @RequestMapping(UtilsAndCommons.HEALTH_CONTROLLER_V3_ADMIN_PATH)
 @ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)
+@Tag(name = "nacos.admin.naming.health.api.controller.name", description = "nacos.admin.naming.health.api.controller.description", extensions = {
+        @Extension(name = RemoteConstants.LABEL_MODULE,
+                properties = @ExtensionProperty(name = RemoteConstants.LABEL_MODULE, value = RemoteConstants.LABEL_MODULE_NAMING))})
 public class HealthControllerV3 {
     
     @Autowired
@@ -57,6 +72,17 @@ public class HealthControllerV3 {
     @CanDistro
     @PutMapping(value = "/instance")
     @Secured(resource = UtilsAndCommons.HEALTH_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.naming.health.api.update.summary", description = "nacos.admin.naming.health.api.update.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.naming.health.api.update.example")))
+    @Parameters(value = {@Parameter(name = "namespaceId", example = "public"),
+            @Parameter(name = "groupName", example = "DEFAULT_GROUP"),
+            @Parameter(name = "serviceName", required = true, example = "test"),
+            @Parameter(name = "clusterName", example = "DEFAULT"),
+            @Parameter(name = "ip", required = true, example = "127.0.0.1"),
+            @Parameter(name = "port", required = true, example = "8080"),
+            @Parameter(name = "healthy", example = "true"), @Parameter(name = "updateHealthForm", hidden = true)})
     public Result<String> update(UpdateHealthForm updateHealthForm) throws NacosException {
         updateHealthForm.validate();
         healthOperatorV2.updateHealthStatusForPersistentInstance(updateHealthForm.getNamespaceId(),
@@ -71,6 +97,10 @@ public class HealthControllerV3 {
      */
     @GetMapping("/checkers")
     @Secured(resource = UtilsAndCommons.HEALTH_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.naming.health.api.checkers.summary", description = "nacos.admin.naming.health.api.checkers.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.naming.health.api.checkers.example")))
     public Result<Map<String, AbstractHealthChecker>> checkers() {
         return Result.success(healthOperatorV2.checkers());
     }

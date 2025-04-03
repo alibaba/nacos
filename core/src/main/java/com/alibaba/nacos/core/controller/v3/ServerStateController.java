@@ -19,9 +19,18 @@ package com.alibaba.nacos.core.controller.v3;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.core.cluster.health.ModuleHealthCheckerHolder;
 import com.alibaba.nacos.core.cluster.health.ReadinessResult;
 import com.alibaba.nacos.core.service.NacosServerStateService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.extensions.Extension;
+import io.swagger.v3.oas.annotations.extensions.ExtensionProperty;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -38,6 +47,8 @@ import static com.alibaba.nacos.core.utils.Commons.NACOS_ADMIN_CORE_CONTEXT_V3;
 @NacosApi
 @RestController
 @RequestMapping(NACOS_ADMIN_CORE_CONTEXT_V3 + "/state")
+@Tag(name = "nacos.admin.core.state.api.controller.name", description = "nacos.admin.core.state.api.controller.description", extensions = {
+        @Extension(name = RemoteConstants.LABEL_MODULE, properties = @ExtensionProperty(name = RemoteConstants.LABEL_MODULE, value = "common"))})
 public class ServerStateController {
     
     private final NacosServerStateService stateService;
@@ -52,6 +63,9 @@ public class ServerStateController {
      * @return state key-value map.
      */
     @GetMapping()
+    @Operation(summary = "nacos.admin.core.state.api.state.summary", description = "nacos.admin.core.state.api.state.description")
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Map.class, example = "nacos.admin.core.state.api.state.example")))
     public Result<Map<String, String>> serverState() {
         return Result.success(stateService.getServerState());
     }
@@ -63,6 +77,9 @@ public class ServerStateController {
      * Nacos is in broken states.
      */
     @GetMapping("/liveness")
+    @Operation(summary = "nacos.admin.core.state.api.liveness.summary", description = "nacos.admin.core.state.api.liveness.description")
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.core.state.api.liveness.example")))
     public Result<String> liveness() {
         return Result.success("ok");
     }
@@ -74,6 +91,9 @@ public class ServerStateController {
      * ready.
      */
     @GetMapping("/readiness")
+    @Operation(summary = "nacos.admin.core.state.api.readiness.summary", description = "nacos.admin.core.state.api.readiness.description")
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.core.state.api.readiness.example")))
     public Result<String> readiness() throws NacosException {
         ReadinessResult result = ModuleHealthCheckerHolder.getInstance().checkReadiness();
         if (result.isSuccess()) {

@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -32,7 +33,19 @@ import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.extensions.Extension;
+import io.swagger.v3.oas.annotations.extensions.ExtensionProperty;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -55,6 +68,8 @@ import static com.alibaba.nacos.core.utils.Commons.NACOS_ADMIN_CORE_CONTEXT_V3;
 @NacosApi
 @RestController
 @RequestMapping(NACOS_ADMIN_CORE_CONTEXT_V3 + "/cluster")
+@Tag(name = "nacos.admin.core.cluster.api.controller.name", description = "nacos.admin.core.cluster.api.controller.description", extensions = {
+        @Extension(name = RemoteConstants.LABEL_MODULE, properties = @ExtensionProperty(name = RemoteConstants.LABEL_MODULE, value = "common"))})
 public class NacosClusterControllerV3 {
     
     private final NacosClusterOperationService nacosClusterOperationService;
@@ -66,6 +81,10 @@ public class NacosClusterControllerV3 {
     @GetMapping(value = "/node/self")
     @Secured(action = ActionTypes.READ, resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
             + "/cluster", signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.core.cluster.api.node.self.summary", description = "nacos.admin.core.cluster.api.node.self.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.core.cluster.api.node.self.example")))
     public Result<Member> self() {
         return Result.success(nacosClusterOperationService.self());
     }
@@ -80,6 +99,10 @@ public class NacosClusterControllerV3 {
     @GetMapping(value = "/node/list")
     @Secured(action = ActionTypes.READ, resource = NACOS_ADMIN_CORE_CONTEXT_V3
             + "/cluster", signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.core.cluster.api.node.list.summary", description = "nacos.admin.core.cluster.api.node.list.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.core.cluster.api.node.list.example")))
     public Result<Collection<Member>> listNodes(@RequestParam(value = "address", required = false) String address,
             @RequestParam(value = "state", required = false) String state) throws NacosException {
         
@@ -98,6 +121,7 @@ public class NacosClusterControllerV3 {
     @GetMapping(value = "/node/self/health")
     @Secured(action = ActionTypes.READ, resource = NACOS_ADMIN_CORE_CONTEXT_V3
             + "/cluster", signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
+    @Deprecated
     public Result<String> selfHealth() {
         return Result.success(nacosClusterOperationService.selfHealth());
     }
@@ -111,6 +135,12 @@ public class NacosClusterControllerV3 {
     @PutMapping(value = "/node/list")
     @Secured(action = ActionTypes.WRITE, resource = NACOS_ADMIN_CORE_CONTEXT_V3
             + "/cluster", signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.core.cluster.api.node.update.summary", description = "nacos.admin.core.cluster.api.node.update.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.core.cluster.api.node.update.example")))
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            array = @ArraySchema(schema = @Schema(implementation = Member.class))))
     public Result<Boolean> updateNodes(@RequestBody List<Member> nodes) throws NacosApiException {
         if (nodes == null || nodes.isEmpty()) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
@@ -128,6 +158,13 @@ public class NacosClusterControllerV3 {
     @PutMapping(value = "/lookup")
     @Secured(action = ActionTypes.WRITE, resource = NACOS_ADMIN_CORE_CONTEXT_V3
             + "/cluster", signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.core.cluster.api.lookup.update.summary", description = "nacos.admin.core.cluster.api.lookup.update.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.core.cluster.api.lookup.update.example")))
+    @Parameters(value = {
+            @Parameter(name = "type", required = true, example = "address-server", description = "address-server/file/standalone"),
+            @Parameter(name = "request", hidden = true)})
     public Result<Boolean> updateLookup(LookupUpdateRequest request) throws NacosException {
         if (request == null || request.getType() == null) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,

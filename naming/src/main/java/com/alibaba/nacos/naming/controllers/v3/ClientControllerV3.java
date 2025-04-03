@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.naming.pojo.maintainer.ClientPublisherInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ClientServiceInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ClientSubscriberInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ClientSummaryInfo;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.naming.core.ClientService;
@@ -34,7 +35,18 @@ import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.extensions.Extension;
+import io.swagger.v3.oas.annotations.extensions.ExtensionProperty;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -52,6 +64,9 @@ import java.util.List;
 @RestController
 @RequestMapping(UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH)
 @ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)
+@Tag(name = "nacos.admin.naming.client.api.controller.name", description = "nacos.admin.naming.client.api.controller.description", extensions = {
+        @Extension(name = RemoteConstants.LABEL_MODULE,
+                properties = @ExtensionProperty(name = RemoteConstants.LABEL_MODULE, value = RemoteConstants.LABEL_MODULE_NAMING))})
 public class ClientControllerV3 {
     
     private final ClientManager clientManager;
@@ -68,6 +83,10 @@ public class ClientControllerV3 {
      */
     @GetMapping("/list")
     @Secured(resource = UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.naming.client.api.list.summary", description = "nacos.admin.naming.client.api.list.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.naming.client.api.list.example")))
     public Result<List<String>> getClientList() {
         return Result.success(clientServiceV2Impl.getClientList());
     }
@@ -77,6 +96,11 @@ public class ClientControllerV3 {
      */
     @GetMapping()
     @Secured(resource = UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.naming.client.api.get.summary", description = "nacos.admin.naming.client.api.get.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.naming.client.api.get.example")))
+    @Parameters(value = {@Parameter(name = "clientId", example = "public")})
     public Result<ClientSummaryInfo> getClientDetail(@RequestParam("clientId") String clientId)
             throws NacosApiException {
         checkClientId(clientId);
@@ -88,6 +112,11 @@ public class ClientControllerV3 {
      */
     @GetMapping("/publish/list")
     @Secured(resource = UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.naming.client.api.publish.list.summary", description = "nacos.admin.naming.client.api.publish.list.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.naming.client.api.publish.list.example")))
+    @Parameters(value = {@Parameter(name = "clientId", example = "public")})
     public Result<List<ClientServiceInfo>> getPublishedServiceList(@RequestParam("clientId") String clientId)
             throws NacosApiException {
         checkClientId(clientId);
@@ -99,6 +128,11 @@ public class ClientControllerV3 {
      */
     @GetMapping("/subscribe/list")
     @Secured(resource = UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.naming.client.api.subscribe.list.summary",
+            description = "nacos.admin.naming.client.api.subscribe.list.description", security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.naming.client.api.subscribe.list.example")))
+    @Parameters(value = {@Parameter(name = "clientId", example = "public")})
     public Result<List<ClientServiceInfo>> getSubscribeServiceList(@RequestParam("clientId") String clientId)
             throws NacosApiException {
         checkClientId(clientId);
@@ -110,6 +144,14 @@ public class ClientControllerV3 {
      */
     @GetMapping("/service/publisher/list")
     @Secured(resource = UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.naming.client.api.service.publisher.list.summary",
+            description = "nacos.admin.naming.client.api.service.publisher.list.description", security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.naming.client.api.service.publisher.list.example")))
+    @Parameters(value = {@Parameter(name = "namespaceId", example = "public"),
+            @Parameter(name = "groupName", example = "DEFAULT_GROUP"),
+            @Parameter(name = "serviceName", required = true, example = "nacos.test.1"), @Parameter(name = "ip"),
+            @Parameter(name = "port"), @Parameter(name = "clientServiceForm", hidden = true)})
     public Result<List<ClientPublisherInfo>> getPublishedClientList(ClientServiceForm clientServiceForm)
             throws NacosApiException {
         clientServiceForm.validate();
@@ -123,6 +165,14 @@ public class ClientControllerV3 {
      */
     @GetMapping("/service/subscriber/list")
     @Secured(resource = UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.naming.client.api.service.subscriber.list.summary",
+            description = "nacos.admin.naming.client.api.service.subscriber.list.description", security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.naming.client.api.service.subscriber.list.example")))
+    @Parameters(value = {@Parameter(name = "namespaceId", example = "public"),
+            @Parameter(name = "groupName", example = "DEFAULT_GROUP"),
+            @Parameter(name = "serviceName", required = true, example = "nacos.test.1"), @Parameter(name = "ip"),
+            @Parameter(name = "port"), @Parameter(name = "clientServiceForm", hidden = true)})
     public Result<List<ClientSubscriberInfo>> getSubscribeClientList(ClientServiceForm clientServiceForm)
             throws NacosApiException {
         clientServiceForm.validate();
@@ -136,6 +186,12 @@ public class ClientControllerV3 {
      */
     @GetMapping("/distro")
     @Secured(resource = UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.naming.client.api.distro.summary", description = "nacos.admin.naming.client.api.distro.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.naming.client.api.distro.example")))
+    @Parameters(value = {@Parameter(name = "ip", required = true, example = "127.0.0.1"),
+            @Parameter(name = "port", required = true, example = "8080")})
     public Result<ObjectNode> getResponsibleServer4Client(@RequestParam String ip, @RequestParam String port) {
         return Result.success(clientServiceV2Impl.getResponsibleServer4Client(ip, port));
     }

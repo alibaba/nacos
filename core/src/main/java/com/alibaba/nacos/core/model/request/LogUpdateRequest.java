@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.core.model.request;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 /**
  * Request entity for log operator interface.
  *
@@ -23,8 +25,10 @@ package com.alibaba.nacos.core.model.request;
  */
 public class LogUpdateRequest {
     
+    @Schema(example = "core-auth")
     private String logName;
     
+    @Schema(example = "DEBUG")
     private String logLevel;
     
     public String getLogName() {

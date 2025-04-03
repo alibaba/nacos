@@ -20,6 +20,7 @@ import com.alibaba.nacos.core.web.NacosWebBean;
 import com.alibaba.nacos.springdoc.openapi.NacosLocaleCachedOpenApiService;
 import com.alibaba.nacos.springdoc.openapi.NacosOnlyTagControllerOpenApiBuilderCustomizer;
 import com.alibaba.nacos.springdoc.openapi.NacosSecurityOpenApiCustomizer;
+import com.alibaba.nacos.springdoc.openapi.NacosTagSorterOpenApiCustomizer;
 import com.alibaba.nacos.springdoc.operation.NacosExampleI18nOperationCustomize;
 import com.alibaba.nacos.springdoc.operation.NacosRequestBodyHiddenOperationCustomizer;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -80,6 +81,11 @@ public class ServerDocConfig {
     public GlobalOpenApiCustomizer nacosServerSecurityRequirementOpenApiCustomizer(
             PropertyResolverUtils propertyResolverUtils) {
         return new NacosSecurityOpenApiCustomizer(propertyResolverUtils);
+    }
+    
+    @Bean
+    public GlobalOpenApiCustomizer nacosServerTagSorterOpenApiCustomizer() {
+        return new NacosTagSorterOpenApiCustomizer();
     }
     
     @Bean

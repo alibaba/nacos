@@ -18,6 +18,7 @@ package com.alibaba.nacos.console.config;
 
 import com.alibaba.nacos.console.controller.v3.ConsoleServerStateController;
 import com.alibaba.nacos.springdoc.openapi.NacosBasicInfoOpenApiCustomizer;
+import com.alibaba.nacos.springdoc.openapi.NacosTagSorterOpenApiCustomizer;
 import com.alibaba.nacos.springdoc.operation.NacosExampleI18nOperationCustomize;
 import com.alibaba.nacos.springdoc.operation.NacosGenericSchemaOperationCustomize;
 import com.alibaba.nacos.springdoc.openapi.NacosLocaleCachedOpenApiService;
@@ -101,6 +102,11 @@ public class DocConfig {
     public GlobalOpenApiCustomizer nacosConsoleSecurityRequirementOpenApiCustomizer(
             PropertyResolverUtils propertyResolverUtils) {
         return new NacosSecurityOpenApiCustomizer(propertyResolverUtils);
+    }
+    
+    @Bean
+    public GlobalOpenApiCustomizer nacosConsoleTagSorterOpenApiCustomizer() {
+        return new NacosTagSorterOpenApiCustomizer();
     }
     
     @Bean
