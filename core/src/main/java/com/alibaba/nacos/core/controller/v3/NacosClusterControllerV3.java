@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.controller.v3;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.common.NodeState;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -26,7 +27,6 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.api.common.NodeState;
 import com.alibaba.nacos.core.model.request.LookupUpdateRequest;
 import com.alibaba.nacos.core.service.NacosClusterOperationService;
 import com.alibaba.nacos.core.utils.Commons;
@@ -116,14 +116,6 @@ public class NacosClusterControllerV3 {
             }
         }
         return Result.success(nacosClusterOperationService.listNodes(address, nodeState));
-    }
-    
-    @GetMapping(value = "/node/self/health")
-    @Secured(action = ActionTypes.READ, resource = NACOS_ADMIN_CORE_CONTEXT_V3
-            + "/cluster", signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
-    @Deprecated
-    public Result<String> selfHealth() {
-        return Result.success(nacosClusterOperationService.selfHealth());
     }
     
     /**
