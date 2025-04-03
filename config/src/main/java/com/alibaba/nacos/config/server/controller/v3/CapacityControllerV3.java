@@ -31,9 +31,18 @@ import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -51,6 +60,7 @@ import static com.alibaba.nacos.config.server.constant.Constants.CAPACITY_CONTRO
 @RestController
 @RequestMapping(CAPACITY_CONTROLLER_V3_ADMIN_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
+@Tag(name = "nacos.admin.config.capacity.api.controller.name", description = "nacos.admin.config.capacity.api.controller.description")
 public class CapacityControllerV3 {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(CapacityControllerV3.class);
@@ -67,6 +77,12 @@ public class CapacityControllerV3 {
     @GetMapping
     @Secured(resource = Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.config.capacity.api.get.summary", description = "nacos.admin.config.capacity.api.get.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.config.capacity.api.get.example")))
+    @Parameters(value = {@Parameter(name = "namespaceId", example = "public"),
+            @Parameter(name = "groupName", required = true)})
     public Result<Capacity> getCapacity(@RequestParam(required = false) String groupName,
             @RequestParam(required = false) String namespaceId) throws NacosApiException {
         if (StringUtils.isBlank(groupName) && StringUtils.isBlank(namespaceId)) {
@@ -94,6 +110,13 @@ public class CapacityControllerV3 {
     @PostMapping
     @Secured(resource = Constants.CAPACITY_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.config.capacity.api.update.summary", description = "nacos.admin.config.capacity.api.update.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.config.capacity.api.update.example")))
+    @Parameters(value = {@Parameter(name = "namespaceId", example = "public"),
+            @Parameter(name = "groupName", required = true), @Parameter(name = "quota", example = "100"),
+            @Parameter(name = "maxSize", example = "102400"), @Parameter(name = "updateCapacityForm", hidden = true)})
     public Result<Boolean> updateCapacity(UpdateCapacityForm updateCapacityForm) throws NacosApiException {
         updateCapacityForm.checkNamespaceIdAndGroupName(capacityService);
         updateCapacityForm.validate();

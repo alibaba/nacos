@@ -40,8 +40,17 @@ import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -59,6 +68,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping(Constants.HISTORY_ADMIN_V3_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
+@Tag(name = "nacos.admin.config.history.api.controller.name", description = "nacos.admin.config.history.api.controller.description")
 public class HistoryControllerV3 {
     
     private final HistoryService historyService;
@@ -72,6 +82,15 @@ public class HistoryControllerV3 {
      */
     @GetMapping("/list")
     @Secured(resource = Constants.HISTORY_ADMIN_V3_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.config.history.api.list.summary", description = "nacos.admin.config.history.api.list.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.config.history.api.list.example")))
+    @Parameters(value = {@Parameter(name = "pageNo", required = true, example = "1"),
+            @Parameter(name = "pageSize", required = true, example = "100"),
+            @Parameter(name = "namespaceId", example = "public"), @Parameter(name = "groupName", required = true),
+            @Parameter(name = "dataId", required = true), @Parameter(name = "configForm", hidden = true),
+            @Parameter(name = "pageForm", hidden = true)})
     public Result<Page<ConfigHistoryBasicInfo>> listConfigHistory(ConfigFormV3 configForm, PageForm pageForm)
             throws NacosApiException {
         configForm.validate();
@@ -98,6 +117,14 @@ public class HistoryControllerV3 {
      */
     @GetMapping
     @Secured(resource = Constants.HISTORY_ADMIN_V3_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.config.history.api.get.summary", description = "nacos.admin.config.history.api.get.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.config.history.api.get.example")))
+    @Parameters(value = {@Parameter(name = "namespaceId", example = "public"),
+            @Parameter(name = "groupName", required = true, example = "DEFAULT_GROUP"),
+            @Parameter(name = "dataId", required = true, example = "test"),
+            @Parameter(name = "nid", required = true, example = "1"), @Parameter(name = "configForm", hidden = true)})
     public Result<ConfigHistoryDetailInfo> getConfigHistoryInfo(ConfigFormV3 configForm, @RequestParam("nid") Long nid)
             throws AccessException, NacosApiException {
         ConfigHistoryInfo configHistoryInfo;
@@ -121,6 +148,14 @@ public class HistoryControllerV3 {
      */
     @GetMapping(value = "/previous")
     @Secured(resource = Constants.HISTORY_ADMIN_V3_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.config.history.api.previous.summary", description = "nacos.admin.config.history.api.previous.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.config.history.api.previous.example")))
+    @Parameters(value = {@Parameter(name = "namespaceId", example = "public"),
+            @Parameter(name = "groupName", required = true, example = "DEFAULT_GROUP"),
+            @Parameter(name = "dataId", required = true, example = "test"),
+            @Parameter(name = "id", required = true, example = "1"), @Parameter(name = "configForm", hidden = true)})
     public Result<ConfigHistoryDetailInfo> getPreviousConfigHistoryInfo(ConfigFormV3 configForm,
             @RequestParam("id") Long id) throws AccessException, NacosApiException {
         ConfigHistoryInfo configHistoryInfo;
@@ -145,6 +180,11 @@ public class HistoryControllerV3 {
      */
     @GetMapping(value = "/configs")
     @Secured(resource = Constants.HISTORY_ADMIN_V3_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.config.history.api.names.summary", description = "nacos.admin.config.history.api.names.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.config.history.api.names.example")))
+    @Parameters(value = {@Parameter(name = "namespaceId", example = "public")})
     public Result<List<ConfigBasicInfo>> getConfigsByNamespace(@RequestParam("namespaceId") String namespaceId)
             throws NacosApiException {
         // check namespaceId

@@ -40,8 +40,18 @@ import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.SchemaProperty;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -65,6 +75,7 @@ import java.util.Objects;
 @RestController
 @RequestMapping(Constants.OPS_CONTROLLER_V3_ADMIN_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
+@Tag(name = "nacos.admin.config.ops.api.controller.name", description = "nacos.admin.config.ops.api.controller.description")
 public class ConfigOpsControllerV3 {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigOpsControllerV3.class);
@@ -81,6 +92,10 @@ public class ConfigOpsControllerV3 {
     @PostMapping(value = "/localCache")
     @Secured(resource = Constants.OPS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.config.ops.api.localCache.summary", description = "nacos.admin.config.ops.api.localCache.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.config.ops.api.localCache.example")))
     public Result<String> updateLocalCacheFromStore() {
         LOGGER.info("start to dump all data from store.");
         try {
@@ -95,6 +110,12 @@ public class ConfigOpsControllerV3 {
     @PutMapping(value = "/log")
     @Secured(resource = Constants.OPS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.config.ops.api.log.summary", description = "nacos.admin.config.ops.api.log.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.config.ops.api.log.example")))
+    @Parameters(value = {@Parameter(name = "logName", example = "config-server"),
+            @Parameter(name = "logLevel", required = true, example = "DEBUG")})
     public Result<String> setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
         try {
             LogUtil.setLogLevel(logName, logLevel);
@@ -120,6 +141,11 @@ public class ConfigOpsControllerV3 {
     @GetMapping(value = "/derby")
     @Secured(resource = Constants.OPS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.config.ops.api.derby.summary", description = "nacos.admin.config.ops.api.derby.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.config.ops.api.derby.example")))
+    @Parameters(value = {@Parameter(name = "sql", example = "SELECT dataId FROM config_info")})
     public Result<Object> derbyOps(@RequestParam(value = "sql") String sql) {
         String selectSign = "SELECT";
         String limitSign = "ROWS FETCH NEXT";
@@ -167,6 +193,12 @@ public class ConfigOpsControllerV3 {
     @PostMapping(value = "/derby/import")
     @Secured(resource = Constants.OPS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE,
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.config.ops.api.derby.import.summary", description = "nacos.admin.config.ops.api.derby.import.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.config.ops.api.derby.import.example")))
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
+            schemaProperties = {@SchemaProperty(name = "file", schema = @Schema(type = "string", format = "binary"))}))
     public DeferredResult<Result<String>> importDerby(@RequestParam(value = "file") MultipartFile multipartFile) {
         DeferredResult<RestResult<String>> response = new DeferredResult<>();
         if (!DatasourceConfiguration.isEmbeddedStorage()) {

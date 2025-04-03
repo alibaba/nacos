@@ -49,6 +49,15 @@ import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -73,6 +82,7 @@ import static com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequ
 @RestController
 @RequestMapping(Constants.METRICS_CONTROLLER_V3_ADMIN_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
+@Tag(name = "nacos.admin.config.metrics.api.controller.name", description = "nacos.admin.config.metrics.api.controller.description")
 public class MetricsControllerV3 {
     
     private final ServerMemberManager serverMemberManager;
@@ -90,6 +100,14 @@ public class MetricsControllerV3 {
     @GetMapping("/cluster")
     @Secured(resource = Constants.METRICS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.config.metrics.api.cluster.summary", description = "nacos.admin.config.metrics.api.cluster.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.config.metrics.api.cluster.example")))
+    @Parameters(value = {@Parameter(name = "ip", required = true, example = "127.0.0.1"),
+            @Parameter(name = "dataId", required = true, example = "test"),
+            @Parameter(name = "groupName", required = true, example = "DEFAULT_GROUP"),
+            @Parameter(name = "namespaceId", required = true, example = "public")})
     public Result<Map<String, Object>> metric(@RequestParam("ip") String ip,
             @RequestParam(value = "dataId", required = false) String dataId,
             @RequestParam(value = "groupName", required = false) String groupName,
@@ -181,6 +199,14 @@ public class MetricsControllerV3 {
     @GetMapping("/ip")
     @Secured(resource = Constants.METRICS_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ,
             signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.config.metrics.api.ip.summary", description = "nacos.admin.config.metrics.api.ip.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.config.metrics.api.ip.example")))
+    @Parameters(value = {@Parameter(name = "ip", required = true, example = "127.0.0.1"),
+            @Parameter(name = "dataId", required = true, example = "test"),
+            @Parameter(name = "groupName", required = true, example = "DEFAULT_GROUP"),
+            @Parameter(name = "namespaceId", required = true, example = "public")})
     public Result<Map<String, Object>> getClientMetrics(@RequestParam("ip") String ip,
             @RequestParam(value = "dataId", required = false) String dataId,
             @RequestParam(value = "groupName", required = false) String groupName,

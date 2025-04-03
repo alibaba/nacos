@@ -29,6 +29,15 @@ import com.alibaba.nacos.core.model.form.AggregationForm;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -46,6 +55,7 @@ import java.util.Map;
 @RestController
 @RequestMapping(Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
+@Tag(name = "nacos.admin.config.config.api.controller.name", description = "nacos.admin.config.config.api.controller.description")
 public class ListenerControllerV3 {
     
     private final ConfigListenerStateDelegate configListenerStateDelegate;
@@ -59,6 +69,13 @@ public class ListenerControllerV3 {
      */
     @GetMapping
     @Secured(resource = Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.config.config.api.listener.ip.summary",
+            description = "nacos.admin.config.config.api.listener.ip.description", security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.config.config.api.listener.ip.example")))
+    @Parameters(value = {@Parameter(name = "ip", required = true, example = "127.0.0.1"),
+            @Parameter(name = "namespaceId", example = "public"), @Parameter(name = "aggregation", example = "true"),
+            @Parameter(name = "aggregationForm", hidden = true)})
     public Result<ConfigListenerInfo> getAllSubClientConfigByIp(@RequestParam("ip") String ip,
             @RequestParam(value = "all", required = false) boolean all,
             @RequestParam(value = "namespaceId", required = false) String namespaceId,

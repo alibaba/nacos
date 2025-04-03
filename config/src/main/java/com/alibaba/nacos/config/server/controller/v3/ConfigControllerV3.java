@@ -73,11 +73,22 @@ import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import com.alibaba.nacos.sys.utils.InetUtils;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.SchemaProperty;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -112,6 +123,7 @@ import static com.alibaba.nacos.config.server.utils.RequestUtil.getRemoteIp;
 @RestController
 @RequestMapping(Constants.CONFIG_ADMIN_V3_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
+@Tag(name = "nacos.admin.config.config.api.controller.name", description = "nacos.admin.config.config.api.controller.description")
 public class ConfigControllerV3 {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigControllerV3.class);
@@ -159,6 +171,13 @@ public class ConfigControllerV3 {
     @GetMapping
     @TpsControl(pointName = "ConfigQuery")
     @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.config.config.api.get.summary", description = "nacos.admin.config.config.api.get.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.config.config.api.get.example")))
+    @Parameters(value = {@Parameter(name = "namespaceId", example = "public"),
+            @Parameter(name = "groupName", required = true, example = "DEFAULT_GROUP"),
+            @Parameter(name = "dataId", required = true, example = "test"), @Parameter(name = "configForm", hidden = true)})
     public Result<ConfigDetailInfo> getConfig(ConfigFormV3 configForm) throws NacosException {
         configForm.validate();
         // check namespaceId
@@ -186,6 +205,17 @@ public class ConfigControllerV3 {
     @PostMapping
     @TpsControl(pointName = "ConfigPublish")
     @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.config.config.api.publish.summary", description = "nacos.admin.config.config.api.publish.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.config.config.api.publish.example")))
+    @Parameters(value = {@Parameter(name = "namespaceId", example = "public"),
+            @Parameter(name = "groupName", required = true, example = "DEFAULT_GROUP"),
+            @Parameter(name = "dataId", required = true, example = "test"),
+            @Parameter(name = "content", required = true, example = "testContent"),
+            @Parameter(name = "desc", example = "testDesc"), @Parameter(name = "type", example = "text"),
+            @Parameter(name = "configTags", example = "customTag"), @Parameter(name = "appName", example = "testApp"),
+            @Parameter(name = "configForm", hidden = true)})
     public Result<Boolean> publishConfig(HttpServletRequest request, ConfigFormV3 configForm) throws NacosException {
         // check required field
         configForm.validateWithContent();
@@ -229,6 +259,13 @@ public class ConfigControllerV3 {
      */
     @DeleteMapping
     @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.config.config.api.delete.summary", description = "nacos.admin.config.config.api.delete.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.config.config.api.delete.example")))
+    @Parameters(value = {@Parameter(name = "namespaceId", example = "public"),
+            @Parameter(name = "groupName", required = true, example = "DEFAULT_GROUP"),
+            @Parameter(name = "dataId", required = true, example = "test"), @Parameter(name = "configForm", hidden = true)})
     public Result<Boolean> deleteConfig(HttpServletRequest request, ConfigFormV3 configForm) throws NacosException {
         configForm.validate();
         // check namespaceId
@@ -249,6 +286,11 @@ public class ConfigControllerV3 {
      */
     @DeleteMapping("/batch")
     @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.config.config.api.delete.batch.summary",
+            description = "nacos.admin.config.config.api.delete.batch.description", security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.config.config.api.delete.batch.example")))
+    @Parameters(value = {@Parameter(name = "ids", required = true, example = "[1,2,3]")})
     public Result<Boolean> deleteConfigs(HttpServletRequest request, @RequestParam(value = "ids") List<Long> ids) {
         String clientIp = getRemoteIp(request);
         String srcUser = RequestUtil.getSrcUserName(request);
@@ -274,6 +316,14 @@ public class ConfigControllerV3 {
      */
     @GetMapping("/listener")
     @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.config.config.api.listener.summary", description = "nacos.admin.config.config.api.listener.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.config.config.api.listener.example")))
+    @Parameters(value = {@Parameter(name = "namespaceId", example = "public"),
+            @Parameter(name = "groupName", required = true, example = "DEFAULT_GROUP"),
+            @Parameter(name = "dataId", required = true, example = "test"), @Parameter(name = "aggregation", example = "true"),
+            @Parameter(name = "configForm", hidden = true), @Parameter(name = "aggregationForm", hidden = true)})
     public Result<ConfigListenerInfo> getListeners(ConfigFormV3 configForm, AggregationForm aggregationForm)
             throws Exception {
         configForm.validate();
@@ -297,6 +347,18 @@ public class ConfigControllerV3 {
     @GetMapping("/list")
     @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     @ExtractorManager.Extractor(httpExtractor = ConfigBlurSearchHttpParamExtractor.class)
+    @Operation(summary = "nacos.admin.config.config.api.list.summary", description = "nacos.admin.config.config.api.list.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.config.config.api.list.example")))
+    @Parameters(value = {@Parameter(name = "pageNo", required = true, example = "1"),
+            @Parameter(name = "pageSize", required = true, example = "100"),
+            @Parameter(name = "namespaceId", example = "public"), @Parameter(name = "groupName", required = true),
+            @Parameter(name = "dataId", required = true), @Parameter(name = "type", example = "text"),
+            @Parameter(name = "configTags", example = "customTag"), @Parameter(name = "appName", example = "testApp"),
+            @Parameter(name = "search", example = "blur", description = "blur or accurate"),
+            @Parameter(name = "configDetail"), @Parameter(name = "configForm", hidden = true),
+            @Parameter(name = "pageForm", hidden = true)})
     public Result<Page<ConfigBasicInfo>> list(ConfigFormV3 configForm, PageForm pageForm, String configDetail,
             @RequestParam(defaultValue = "blur") String search) throws NacosApiException {
         configForm.blurSearchValidate();
@@ -336,6 +398,13 @@ public class ConfigControllerV3 {
      */
     @DeleteMapping("/beta")
     @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.config.config.api.delete.beta.summary",
+            description = "nacos.admin.config.config.api.delete.beta.description", security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.config.config.api.delete.beta.example")))
+    @Parameters(value = {@Parameter(name = "namespaceId", example = "public"),
+            @Parameter(name = "groupName", required = true, example = "DEFAULT_GROUP"),
+            @Parameter(name = "dataId", required = true, example = "test"), @Parameter(name = "configForm", hidden = true)})
     public Result<Boolean> stopBeta(HttpServletRequest httpServletRequest, ConfigFormV3 configForm)
             throws NacosApiException {
         configForm.validate();
@@ -371,6 +440,13 @@ public class ConfigControllerV3 {
      */
     @GetMapping("/beta")
     @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.config.config.api.get.beta.summary",
+            description = "nacos.admin.config.config.api.get.beta.description", security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.config.config.api.get.beta.example")))
+    @Parameters(value = {@Parameter(name = "namespaceId", example = "public"),
+            @Parameter(name = "groupName", required = true, example = "DEFAULT_GROUP"),
+            @Parameter(name = "dataId", required = true, example = "test"), @Parameter(name = "configForm", hidden = true)})
     public Result<ConfigGrayInfo> queryBeta(ConfigFormV3 configForm) throws NacosApiException {
         configForm.validate();
         String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
@@ -396,6 +472,17 @@ public class ConfigControllerV3 {
      */
     @PostMapping("/import")
     @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.config.config.api.import.summary", description = "nacos.admin.config.config.api.import.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.config.config.api.import.example")))
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "nacos.admin.config.config.api.import.body.description",
+            content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schemaProperties = {
+                    @SchemaProperty(name = "file", schema = @Schema(type = "string", format = "binary")),
+                    @SchemaProperty(name = "src_user", schema = @Schema(type = "string", example = "nacos")),
+                    @SchemaProperty(name = "namespaceId", schema = @Schema(type = "string", example = "public")),
+                    @SchemaProperty(name = "policy", schema = @Schema(requiredMode = Schema.RequiredMode.REQUIRED,
+                            implementation = SameConfigPolicy.class))}))
     public Result<Map<String, Object>> importAndPublishConfig(HttpServletRequest request,
             @RequestParam(value = "src_user", required = false) String srcUser,
             @RequestParam(value = "namespaceId", required = false) String namespaceId,
@@ -548,6 +635,11 @@ public class ConfigControllerV3 {
      */
     @GetMapping("/export")
     @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.config.config.api.export.summary", description = "nacos.admin.config.config.api.export.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE))
+    @Parameters(value = {@Parameter(name = "namespaceId"), @Parameter(name = "groupName"), @Parameter(name = "dataId"),
+            @Parameter(name = "ids", example = "[1,2,3]"), @Parameter(name = "configForm", hidden = true)})
     public ResponseEntity<byte[]> exportConfig(ConfigFormV3 configForm,
             @RequestParam(value = "ids", required = false) List<Long> ids) throws NacosApiException {
         configForm.blurSearchValidate();
@@ -588,6 +680,15 @@ public class ConfigControllerV3 {
      */
     @PostMapping("/clone")
     @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Operation(summary = "nacos.admin.config.config.api.clone.summary", description = "nacos.admin.config.config.api.clone.description",
+            security = @SecurityRequirement(name = "nacos"))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = Result.class, example = "nacos.admin.config.config.api.clone.example")))
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            array = @ArraySchema(schema = @Schema(implementation = ConfigCloneInfo.class))))
+    @Parameters(value = {@Parameter(name = "srcUser", example = "nacos"),
+            @Parameter(name = "namespaceId", example = "public"),
+            @Parameter(name = "policy", required = true, schema = @Schema(implementation = SameConfigPolicy.class))})
     public Result<Map<String, Object>> cloneConfig(HttpServletRequest request,
             @RequestParam(value = "src_user", required = false) String srcUser,
             @RequestParam(value = "namespaceId") String namespaceId, @RequestBody List<ConfigCloneInfo> cloneInfos,
