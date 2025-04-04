@@ -1010,15 +1010,15 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         for (ConfigAllInfo configAllInfo : configAllInfos) {
             List<String> configTagList = selectTagByConfig(configAllInfo.getDataId(), configAllInfo.getGroup(), configAllInfo.getTenant());
             if (CollectionUtils.isNotEmpty(configTagList)) {
-                StringBuilder configTagsTmp = new StringBuilder();
+                StringBuilder configTags = new StringBuilder();
                 for (String configTag : configTagList) {
-                    if (configTagsTmp.length() == 0) {
-                        configTagsTmp.append(configTag);
+                    if (configTags.length() == 0) {
+                        configTags.append(configTag);
                     } else {
-                        configTagsTmp.append(',').append(configTag);
+                        configTags.append(',').append(configTag);
                     }
                 }
-                configAllInfo.setConfigTags(configTagsTmp.toString());
+                configAllInfo.setConfigTags(configTags.toString());
             }
         }
         
