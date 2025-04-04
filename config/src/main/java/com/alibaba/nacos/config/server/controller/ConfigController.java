@@ -582,6 +582,7 @@ public class ConfigController {
             configMetadataItem.setDesc(ci.getDesc());
             configMetadataItem.setGroup(ci.getGroup());
             configMetadataItem.setType(ci.getType());
+            configMetadataItem.setConfigTags(ci.getConfigTags());
             configMetadataItems.add(configMetadataItem);
             Pair<String, String> pair = EncryptionHandler.decryptHandler(ci.getDataId(), ci.getEncryptedDataKey(),
                     ci.getContent());
@@ -823,6 +824,7 @@ public class ConfigController {
             ci.setTenant(namespace);
             ci.setEncryptedDataKey(pair.getFirst());
             ci.setCreateUser(srcUser);
+            ci.setConfigTags(configExportItem.getConfigTags());
             configInfoList.add(ci);
         }
         return null;
