@@ -19,8 +19,7 @@
 package com.alibaba.nacos.client.utils;
 
 import com.alibaba.nacos.api.common.Constants;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -28,45 +27,48 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class EnvUtilTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+class EnvUtilTest {
     
     @Test
-    public void testSetSelfEnv() {
+    void testSetSelfEnv() {
         Map<String, List<String>> headers = new HashMap<>();
         headers.put(Constants.AMORY_TAG, Arrays.asList("a", "1"));
         headers.put(Constants.VIPSERVER_TAG, Arrays.asList("b", "2"));
         headers.put(Constants.LOCATION_TAG, Arrays.asList("c", "3"));
         EnvUtil.setSelfEnv(headers);
-        Assert.assertEquals("a,1", EnvUtil.getSelfAmoryTag());
-        Assert.assertEquals("b,2", EnvUtil.getSelfVipserverTag());
-        Assert.assertEquals("c,3", EnvUtil.getSelfLocationTag());
+        assertEquals("a,1", EnvUtil.getSelfAmoryTag());
+        assertEquals("b,2", EnvUtil.getSelfVipserverTag());
+        assertEquals("c,3", EnvUtil.getSelfLocationTag());
         // reset by empty list
         headers.put(Constants.AMORY_TAG, Collections.emptyList());
         headers.put(Constants.VIPSERVER_TAG, Collections.emptyList());
         headers.put(Constants.LOCATION_TAG, Collections.emptyList());
         EnvUtil.setSelfEnv(headers);
-        Assert.assertNull(EnvUtil.getSelfAmoryTag());
-        Assert.assertNull(EnvUtil.getSelfVipserverTag());
-        Assert.assertNull(EnvUtil.getSelfLocationTag());
+        assertNull(EnvUtil.getSelfAmoryTag());
+        assertNull(EnvUtil.getSelfVipserverTag());
+        assertNull(EnvUtil.getSelfLocationTag());
     }
     
     @Test
-    public void testSetSelfEnv2() {
+    void testSetSelfEnv2() {
         Map<String, List<String>> headers = new HashMap<>();
         headers.put(Constants.AMORY_TAG, Arrays.asList("a", "1"));
         headers.put(Constants.VIPSERVER_TAG, Arrays.asList("b", "2"));
         headers.put(Constants.LOCATION_TAG, Arrays.asList("c", "3"));
         EnvUtil.setSelfEnv(headers);
-        Assert.assertEquals("a,1", EnvUtil.getSelfAmoryTag());
-        Assert.assertEquals("b,2", EnvUtil.getSelfVipserverTag());
-        Assert.assertEquals("c,3", EnvUtil.getSelfLocationTag());
+        assertEquals("a,1", EnvUtil.getSelfAmoryTag());
+        assertEquals("b,2", EnvUtil.getSelfVipserverTag());
+        assertEquals("c,3", EnvUtil.getSelfLocationTag());
         // reset
         headers.put(Constants.AMORY_TAG, null);
         headers.put(Constants.VIPSERVER_TAG, null);
         headers.put(Constants.LOCATION_TAG, null);
         EnvUtil.setSelfEnv(headers);
-        Assert.assertNull(EnvUtil.getSelfAmoryTag());
-        Assert.assertNull(EnvUtil.getSelfVipserverTag());
-        Assert.assertNull(EnvUtil.getSelfLocationTag());
+        assertNull(EnvUtil.getSelfAmoryTag());
+        assertNull(EnvUtil.getSelfVipserverTag());
+        assertNull(EnvUtil.getSelfLocationTag());
     }
 }

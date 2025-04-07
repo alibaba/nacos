@@ -18,10 +18,9 @@ package com.alibaba.nacos.client.naming.cache;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -29,11 +28,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
-public class DiskCacheTest {
+class DiskCacheTest {
     
     private static final String CACHE_DIR = DiskCacheTest.class.getResource("/").getPath() + "cache/";
     
@@ -41,8 +41,8 @@ public class DiskCacheTest {
     
     private Instance instance;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         System.out.println(CACHE_DIR);
         serviceInfo = new ServiceInfo("G@@testName", "testClusters");
         instance = new Instance();
@@ -54,8 +54,8 @@ public class DiskCacheTest {
         serviceInfo.setHosts(Collections.singletonList(instance));
     }
     
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         File file = new File(CACHE_DIR);
         if (file.exists() && file.list().length > 0) {
             for (File each : file.listFiles()) {
@@ -66,7 +66,7 @@ public class DiskCacheTest {
     }
     
     @Test
-    public void testCache() {
+    void testCache() {
         DiskCache.write(serviceInfo, CACHE_DIR);
         Map<String, ServiceInfo> actual = DiskCache.read(CACHE_DIR);
         assertEquals(1, actual.size());
@@ -75,7 +75,7 @@ public class DiskCacheTest {
     }
     
     @Test
-    public void testWriteCacheWithErrorPath() {
+    void testWriteCacheWithErrorPath() {
         File file = new File(CACHE_DIR, serviceInfo.getKeyEncoded());
         try {
             file.mkdirs();
@@ -87,7 +87,7 @@ public class DiskCacheTest {
     }
     
     @Test
-    public void testReadCacheForAllSituation() {
+    void testReadCacheForAllSituation() {
         String dir = DiskCacheTest.class.getResource("/").getPath() + "/disk_cache_test";
         Map<String, ServiceInfo> actual = DiskCache.read(dir);
         assertEquals(2, actual.size());
@@ -98,28 +98,32 @@ public class DiskCacheTest {
     }
     
     @Test
-    public void testReadCacheForNullFile() {
+    void testReadCacheForNullFile() {
         Map<String, ServiceInfo> actual = DiskCache.read(null);
         assertTrue(actual.isEmpty());
     }
     
     @Test
-    public void testParseServiceInfoFromNonExistFile() throws UnsupportedEncodingException {
+    void testParseServiceInfoFromNonExistFile() throws UnsupportedEncodingException {
         File file = new File("non%40%40exist%40%40file");
         Map<String, ServiceInfo> actual = DiskCache.parseServiceInfoFromCache(file);
         assertTrue(actual.isEmpty());
     }
     
-    @Test(expected = IllegalStateException.class)
-    public void testCreateFileIfAbsentForDir() throws Throwable {
-        File file = mock(File.class);
-        DiskCache.createFileIfAbsent(file, true);
+    @Test
+    void testCreateFileIfAbsentForDir() throws Throwable {
+        assertThrows(IllegalStateException.class, () -> {
+            File file = mock(File.class);
+            DiskCache.createFileIfAbsent(file, true);
+        });
     }
     
-    @Test(expected = IllegalStateException.class)
-    public void testCreateFileIfAbsentForFile() throws Throwable {
-        File file = mock(File.class);
-        DiskCache.createFileIfAbsent(file, false);
+    @Test
+    void testCreateFileIfAbsentForFile() throws Throwable {
+        assertThrows(IllegalStateException.class, () -> {
+            File file = mock(File.class);
+            DiskCache.createFileIfAbsent(file, false);
+        });
     }
     
     private void assertServiceInfo(ServiceInfo actual, ServiceInfo expected) {
@@ -148,8 +152,8 @@ public class DiskCacheTest {
     }
     
     @Test
-    public void testGetLineSeparator() {
+    void testGetLineSeparator() {
         String lineSeparator = DiskCache.getLineSeparator();
-        Assert.assertTrue(lineSeparator.length() > 0);
+        assertTrue(lineSeparator.length() > 0);
     }
 }

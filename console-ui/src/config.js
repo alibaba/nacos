@@ -27,22 +27,22 @@ module.exports = {
       {
         key: 'home', // 用作顶部菜单的选中
         text: 'HOME',
-        link: 'https://nacos.io/en-us/index.html',
+        link: 'https://https://nacos.io/en/',
       },
       {
         key: 'docs',
         text: 'DOCS',
-        link: 'https://nacos.io/en-us/docs/v2/quickstart/quick-start.html',
+        link: 'https://nacos.io/en/docs/latest/overview/',
       },
       {
         key: 'blog',
         text: 'BLOG',
-        link: 'https://nacos.io/en-us/blog',
+        link: 'https://nacos.io/en/blog/',
       },
       {
         key: 'community',
         text: 'COMMUNITY',
-        link: 'https://nacos.io/en-us/community',
+        link: 'https://nacos.io/en/blog/community/',
       },
       {
         key: 'enterprise',
@@ -92,22 +92,22 @@ module.exports = {
       {
         key: 'home',
         text: '首页',
-        link: 'https://nacos.io/zh-cn/',
+        link: 'https://nacos.io/',
       },
       {
         key: 'docs',
         text: '文档',
-        link: 'https://nacos.io/zh-cn/docs/v2/what-is-nacos.html',
+        link: 'https://nacos.io/docs/latest/overview/',
       },
       {
         key: 'blog',
         text: '博客',
-        link: 'https://nacos.io/zh-cn/blog/index.html',
+        link: 'https://nacos.io/blog/',
       },
       {
         key: 'community',
         text: '社区',
-        link: 'https://nacos.io/zh-cn/community/index.html',
+        link: 'https://nacos.io/blog/community/',
       },
       {
         key: 'enterprise',

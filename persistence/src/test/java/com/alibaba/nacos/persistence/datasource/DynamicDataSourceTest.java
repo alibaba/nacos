@@ -17,17 +17,22 @@
 package com.alibaba.nacos.persistence.datasource;
 
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
-@RunWith(MockitoJUnitRunner.class)
-public class DynamicDataSourceTest {
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+@ExtendWith(MockitoExtension.class)
+class DynamicDataSourceTest {
     
     @InjectMocks
     private DynamicDataSource dataSource;
@@ -38,20 +43,47 @@ public class DynamicDataSourceTest {
     @Mock
     private ExternalDataSourceServiceImpl basicDataSourceService;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
+        EnvUtil.setEnvironment(new MockEnvironment());
         dataSource = DynamicDataSource.getInstance();
-        ReflectionTestUtils.setField(dataSource, "localDataSourceService", localDataSourceService);
-        ReflectionTestUtils.setField(dataSource, "basicDataSourceService", basicDataSourceService);
+    }
+    
+    @AfterEach
+    void tearDown() {
+        DatasourceConfiguration.setEmbeddedStorage(true);
+        DatasourceConfiguration.setUseExternalDB(false);
+        ReflectionTestUtils.setField(dataSource, "localDataSourceService", null);
+        ReflectionTestUtils.setField(dataSource, "basicDataSourceService", null);
+        EnvUtil.setEnvironment(null);
     }
     
     @Test
-    public void testGetDataSource() {
+    void testGetDataSourceWithAlreadyInitialized() {
+        ReflectionTestUtils.setField(dataSource, "localDataSourceService", localDataSourceService);
+        ReflectionTestUtils.setField(dataSource, "basicDataSourceService", basicDataSourceService);
         DatasourceConfiguration.setEmbeddedStorage(true);
-        Assert.assertTrue(dataSource.getDataSource() instanceof LocalDataSourceServiceImpl);
+        assertInstanceOf(LocalDataSourceServiceImpl.class, dataSource.getDataSource());
         
         DatasourceConfiguration.setEmbeddedStorage(false);
-        Assert.assertTrue(dataSource.getDataSource() instanceof ExternalDataSourceServiceImpl);
+        assertInstanceOf(ExternalDataSourceServiceImpl.class, dataSource.getDataSource());
     }
     
+    @Test
+    void testInitWithEmbeddedStorage() {
+        DatasourceConfiguration.setEmbeddedStorage(true);
+        assertInstanceOf(LocalDataSourceServiceImpl.class, dataSource.getDataSource());
+    }
+    
+    @Test
+    void testInitWithExternalStorage() {
+        DatasourceConfiguration.setEmbeddedStorage(false);
+        assertInstanceOf(ExternalDataSourceServiceImpl.class, dataSource.getDataSource());
+    }
+    
+    @Test
+    void testInitWithException() {
+        EnvUtil.setEnvironment(null);
+        assertThrows(RuntimeException.class, () -> dataSource.getDataSource());
+    }
 }

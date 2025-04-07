@@ -36,6 +36,9 @@ $dark-input-color: #585858;
 //contain
 .dark {
   filter: grayscale(.25);
+  .login-header {
+    color: $dark-color-deep;
+  }
   //侧边栏背景
   .next-shell-navigation.next-shell-mini.next-shell-aside, .next-menu-item:not(.next-disabled).next-focused {
     background-color: $dark-menu-bac !important;

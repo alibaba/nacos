@@ -29,24 +29,26 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class DefaultHttpClientRequestTest {
+@ExtendWith(MockitoExtension.class)
+class DefaultHttpClientRequestTest {
+    
+    DefaultHttpClientRequest httpClientRequest;
     
     @Mock
     private CloseableHttpClient client;
@@ -56,16 +58,14 @@ public class DefaultHttpClientRequestTest {
     
     private RequestConfig defaultConfig;
     
-    DefaultHttpClientRequest httpClientRequest;
-    
     private boolean isForm;
     
     private boolean withConfig;
     
     private URI uri;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         defaultConfig = RequestConfig.DEFAULT;
         httpClientRequest = new DefaultHttpClientRequest(client, defaultConfig);
         when(client.execute(argThat(httpUriRequest -> {
@@ -81,18 +81,17 @@ public class DefaultHttpClientRequestTest {
         
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         isForm = false;
         withConfig = false;
         httpClientRequest.close();
     }
     
     @Test
-    public void testExecuteForFormWithoutConfig() throws Exception {
+    void testExecuteForFormWithoutConfig() throws Exception {
         isForm = true;
-        Header header = Header.newInstance()
-                .addParam(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED);
+        Header header = Header.newInstance().addParam(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED);
         Map<String, String> body = new HashMap<>();
         body.put("test", "test");
         RequestHttpEntity httpEntity = new RequestHttpEntity(header, Query.EMPTY, body);
@@ -101,21 +100,19 @@ public class DefaultHttpClientRequestTest {
     }
     
     @Test
-    public void testExecuteForFormWithConfig() throws Exception {
+    void testExecuteForFormWithConfig() throws Exception {
         isForm = true;
         withConfig = true;
-        Header header = Header.newInstance()
-                .addParam(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED);
+        Header header = Header.newInstance().addParam(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED);
         Map<String, String> body = new HashMap<>();
         body.put("test", "test");
-        RequestHttpEntity httpEntity = new RequestHttpEntity(HttpClientConfig.builder().build(), header, Query.EMPTY,
-                body);
+        RequestHttpEntity httpEntity = new RequestHttpEntity(HttpClientConfig.builder().build(), header, Query.EMPTY, body);
         HttpClientResponse actual = httpClientRequest.execute(uri, "PUT", httpEntity);
         assertEquals(response, getActualResponse(actual));
     }
     
     @Test
-    public void testExecuteForOther() throws Exception {
+    void testExecuteForOther() throws Exception {
         Header header = Header.newInstance();
         RequestHttpEntity httpEntity = new RequestHttpEntity(header, Query.EMPTY, "body");
         HttpClientResponse actual = httpClientRequest.execute(uri, "PUT", httpEntity);

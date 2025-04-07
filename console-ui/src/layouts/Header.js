@@ -18,7 +18,7 @@ import React from 'react';
 import { withRouter } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { ConfigProvider, Dropdown, Menu } from '@alifd/next';
+import { ConfigProvider, Dropdown, Menu, Message } from '@alifd/next';
 import siteConfig from '../config';
 import { changeLanguage } from '@/reducers/locale';
 import PasswordReset from '../pages/AuthorityControl/UserManagement/PasswordReset';
@@ -88,12 +88,13 @@ class Header extends React.Component {
     } = this.props;
     const { home, docs, blog, community, enterprise, languageSwitchButton } = locale;
     const { passwordResetUser = '', passwordResetUserVisible = false } = this.state;
-    const BASE_URL = `https://nacos.io/${language.toLocaleLowerCase()}/`;
+    const BASE_URL =
+      language.toLocaleLowerCase() === 'en-us' ? 'https://nacos.io/en/' : 'https://nacos.io/';
     const NAV_MENU = [
       { id: 1, title: home, link: BASE_URL },
-      { id: 2, title: docs, link: `${BASE_URL}docs/v2/what-is-nacos.html` },
-      { id: 3, title: blog, link: `${BASE_URL}blog/index.html` },
-      { id: 4, title: community, link: `${BASE_URL}community/index.html` },
+      { id: 2, title: docs, link: `${BASE_URL}docs/latest/what-is-nacos/` },
+      { id: 3, title: blog, link: `${BASE_URL}blog/` },
+      { id: 4, title: community, link: `${BASE_URL}news/` },
       {
         id: 5,
         title: enterprise,
@@ -142,6 +143,9 @@ class Header extends React.Component {
           username={passwordResetUser}
           onOk={user =>
             passwordReset(user).then(res => {
+              if (res.code === 200) {
+                Message.success(locale.PasswordReset.resetSuccessfully);
+              }
               return res;
             })
           }

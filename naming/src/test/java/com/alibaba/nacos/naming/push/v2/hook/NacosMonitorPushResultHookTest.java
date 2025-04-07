@@ -23,17 +23,19 @@ import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.ArrayList;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 /**
@@ -41,8 +43,13 @@ import static org.mockito.Mockito.when;
  *
  * @author <a href="mailto:liuyixiao0821@gmail.com">liuyixiao</a>
  */
-@RunWith(MockitoJUnitRunner.Silent.class)
-public class NacosMonitorPushResultHookTest {
+@MockitoSettings(strictness = Strictness.LENIENT)
+@ExtendWith(MockitoExtension.class)
+class NacosMonitorPushResultHookTest {
+    
+    private final ServiceInfo serviceInfo = new ServiceInfo("name", "cluster");
+    
+    private final long allCost = 100L;
     
     @Mock
     private PushResult pushResult;
@@ -59,12 +66,8 @@ public class NacosMonitorPushResultHookTest {
     @Mock
     private Instance instance;
     
-    private final ServiceInfo serviceInfo = new ServiceInfo("name", "cluster");
-    
-    private final long allCost = 100L;
-    
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         EnvUtil.setEnvironment(new MockEnvironment());
         MetricsMonitor.resetAll();
         serviceInfo.setHosts(new ArrayList<>());
@@ -79,7 +82,7 @@ public class NacosMonitorPushResultHookTest {
     }
     
     @Test
-    public void testPushSuccessForEmptyPush() {
+    void testPushSuccessForEmptyPush() {
         new NacosMonitorPushResultHook().pushSuccess(pushResult);
         assertEquals(1, MetricsMonitor.getTotalPushMonitor().get());
         assertEquals(1, MetricsMonitor.getEmptyPushMonitor().get());
@@ -87,7 +90,7 @@ public class NacosMonitorPushResultHookTest {
     }
     
     @Test
-    public void testPushSuccessForNoEmptyPush() {
+    void testPushSuccessForNoEmptyPush() {
         ArrayList<Instance> hosts = new ArrayList<>();
         hosts.add(instance);
         serviceInfo.setHosts(hosts);
@@ -98,7 +101,7 @@ public class NacosMonitorPushResultHookTest {
     }
     
     @Test
-    public void testPushFailed() {
+    void testPushFailed() {
         new NacosMonitorPushResultHook().pushFailed(pushResult);
         assertEquals(1, MetricsMonitor.getFailedPushMonitor().get());
         assertEquals(1, MetricsMonitor.getTotalPushMonitor().get());

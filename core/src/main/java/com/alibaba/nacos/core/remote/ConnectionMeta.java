@@ -98,6 +98,8 @@ public class ConnectionMeta {
     
     protected Map<String, String> labels = new HashMap<>();
     
+    boolean tlsProtected = false;
+    
     public String getLabel(String labelKey) {
         return labels.get(labelKey);
     }
@@ -195,6 +197,24 @@ public class ConnectionMeta {
      */
     public void setClientIp(String clientIp) {
         this.clientIp = clientIp;
+    }
+    
+    /**
+     * Getter method for property <tt>remoteIp</tt>.
+     *
+     * @return property value of remoteIp
+     */
+    public String getRemoteIp() {
+        return remoteIp;
+    }
+    
+    /**
+     * Getter method for property <tt>remotePort</tt>.
+     *
+     * @return property value of remotePort
+     */
+    public int getRemotePort() {
+        return remotePort;
     }
     
     /**
@@ -338,6 +358,14 @@ public class ConnectionMeta {
     public void clearPushQueueBlockTimes() {
         this.firstPushQueueBlockTime = 0;
         this.lastPushQueueBlockTime = 0;
+    }
+    
+    public boolean isTlsProtected() {
+        return tlsProtected;
+    }
+    
+    public void setTlsProtected(boolean tlsProtected) {
+        this.tlsProtected = tlsProtected;
     }
     
     /**

@@ -53,7 +53,7 @@ public abstract class ConfigTransportClient {
     
     ScheduledExecutorService executor;
     
-    final ServerListManager serverListManager;
+    final ConfigServerListManager serverListManager;
     
     final Properties properties;
     
@@ -67,7 +67,7 @@ public abstract class ConfigTransportClient {
         securityProxy.shutdown();
     }
     
-    public ConfigTransportClient(NacosClientProperties properties, ServerListManager serverListManager) {
+    public ConfigTransportClient(NacosClientProperties properties, ConfigServerListManager serverListManager) {
         
         String encodeTmp = properties.getProperty(PropertyKeyConst.ENCODE);
         if (StringUtils.isBlank(encodeTmp)) {
@@ -79,7 +79,7 @@ public abstract class ConfigTransportClient {
         this.tenant = properties.getProperty(PropertyKeyConst.NAMESPACE);
         this.serverListManager = serverListManager;
         this.properties = properties.asProperties();
-        this.securityProxy = new SecurityProxy(serverListManager.getServerUrls(),
+        this.securityProxy = new SecurityProxy(serverListManager,
                 ConfigHttpClientManager.getInstance().getNacosRestTemplate());
     }
     
@@ -134,6 +134,10 @@ public abstract class ConfigTransportClient {
         this.executor.scheduleWithFixedDelay(() -> securityProxy.login(properties), 0,
                 this.securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
         startInternal();
+    }
+    
+    public void reLogin() {
+        securityProxy.reLogin();
     }
     
     /**

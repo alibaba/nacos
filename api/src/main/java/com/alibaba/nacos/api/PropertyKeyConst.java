@@ -35,6 +35,11 @@ public class PropertyKeyConst {
     
     public static final String ENDPOINT_CONTEXT_PATH = "endpointContextPath";
     
+    public static final String ENDPOINT_CLUSTER_NAME = "endpointClusterName";
+    
+    public static final String ENDPOINT_REFRESH_INTERVAL_SECONDS = "endpointRefreshIntervalSeconds";
+    
+    @Deprecated
     public static final String SERVER_NAME = "serverName";
     
     public static final String NAMESPACE = "namespace";
@@ -53,7 +58,18 @@ public class PropertyKeyConst {
     
     public static final String CONTEXT_PATH = "contextPath";
     
+    /**
+     * Please use {@link #ENDPOINT_CLUSTER_NAME} replaced.
+     */
+    @Deprecated
     public static final String CLUSTER_NAME = "clusterName";
+    
+    /**
+     * Default is {@code "false"}, if true, and without {@link #ENDPOINT_CLUSTER_NAME}, use {@link #CLUSTER_NAME} to set
+     * endpoint cluster name.
+     */
+    @Deprecated
+    public static final String IS_ADAPT_CLUSTER_NAME_USAGE = "isAdaptClusterNameUsage";
     
     public static final String ENCODE = "encode";
     
@@ -61,8 +77,10 @@ public class PropertyKeyConst {
     
     public static final String CONFIG_RETRY_TIME = "configRetryTime";
     
+    public static final String CONFIG_REQUEST_TIMEOUT = "configRequestTimeout";
+    
     public static final String CLIENT_WORKER_MAX_THREAD_COUNT = "clientWorkerMaxThreadCount";
-
+    
     public static final String CLIENT_WORKER_THREAD_COUNT = "clientWorkerThreadCount";
     
     public static final String MAX_RETRY = "maxRetry";
@@ -89,6 +107,15 @@ public class PropertyKeyConst {
     
     public static final String REDO_DELAY_THREAD_COUNT = "redoDelayThreadCount";
     
+    public static final String SIGNATURE_REGION_ID = "signatureRegionId";
+    
+    public static final String LOG_ALL_PROPERTIES = "logAllProperties";
+    
+    /**
+     * Since 2.3.3, For some situation like java agent using nacos-client which can't use env ram info.
+     */
+    public static final String IS_USE_RAM_INFO_PARSING = "isUseRamInfoParsing";
+    
     /**
      * Get the key value of some variable value from the system property.
      */
@@ -102,5 +129,10 @@ public class PropertyKeyConst {
         
         public static final String ALIBABA_ALIWARE_ENDPOINT_URL = "ALIBABA_ALIWARE_ENDPOINT_URL";
     }
+    
+    /**
+     * Client Metric Switch.
+     */
+    public static final String ENABLE_CLIENT_METRICS = "enableClientMetrics";
     
 }

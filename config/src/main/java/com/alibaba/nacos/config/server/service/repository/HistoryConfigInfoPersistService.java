@@ -45,15 +45,18 @@ public interface HistoryConfigInfoPersistService {
     /**
      * Update change records; database atomic operations, minimal sql actions, no business encapsulation.
      *
-     * @param id         id
-     * @param configInfo config info
-     * @param srcIp      ip
-     * @param srcUser    user
-     * @param time       time
-     * @param ops        ops type
+     * @param id          id
+     * @param configInfo  config info
+     * @param srcIp       ip
+     * @param srcUser     user
+     * @param time        time
+     * @param ops         ops type
+     * @param publishType publish type
+     * @param grayName    gray name
+     * @param extInfo     extra config info
      */
     void insertConfigHistoryAtomic(long id, ConfigInfo configInfo, String srcIp, String srcUser, final Timestamp time,
-            String ops);
+            String ops, String publishType, String grayName, String extInfo);
     //------------------------------------------delete---------------------------------------------//
     
     /**
@@ -69,12 +72,14 @@ public interface HistoryConfigInfoPersistService {
     /**
      * Query deleted config.
      *
-     * @param startTime start time
-     * @param startId   last max id
-     * @param size      page size
+     * @param startTime   start time
+     * @param startId     last max id
+     * @param size        page size
+     * @param publishType publish type
      * @return {@link ConfigInfoStateWrapper} list
      */
-    List<ConfigInfoStateWrapper> findDeletedConfig(final Timestamp startTime, final long startId, int size);
+    List<ConfigInfoStateWrapper> findDeletedConfig(final Timestamp startTime, final long startId, int size,
+            String publishType);
     
     /**
      * List configuration history change record.
@@ -112,4 +117,18 @@ public interface HistoryConfigInfoPersistService {
      */
     @Deprecated
     int findConfigHistoryCountByTime(final Timestamp startTime);
+
+    /**
+     * Get the next history config detail of the history config.
+     *
+     * @param dataId      data Id
+     * @param group       group
+     * @param tenant      tenant
+     * @param publishType publish type
+     * @param grayName    gray name
+     * @param startNid    start nid
+     * @return the next history config detail of the history config
+     */
+    ConfigHistoryInfo getNextHistoryInfo(String dataId, String group, String tenant, String publishType, String grayName,
+            long startNid);
 }

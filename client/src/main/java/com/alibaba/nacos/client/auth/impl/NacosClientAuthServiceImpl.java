@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.auth.impl;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.auth.impl.process.HttpLoginProcessor;
+import com.alibaba.nacos.common.utils.RandomUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
@@ -35,6 +36,7 @@ import java.util.concurrent.TimeUnit;
  * @author wuyfee
  */
 
+@SuppressWarnings("checkstyle:SummaryJavadoc")
 public class NacosClientAuthServiceImpl extends AbstractClientAuthService {
     
     private static final Logger SECURITY_LOGGER = LoggerFactory.getLogger(NacosClientAuthServiceImpl.class);
@@ -59,6 +61,10 @@ public class NacosClientAuthServiceImpl extends AbstractClientAuthService {
      */
     private volatile LoginIdentityContext loginIdentityContext = new LoginIdentityContext();
     
+    /**
+     * Re-login window in milliseconds.
+     */
+    private final long reLoginWindow = 60000;
     
     /**
      * Login to servers.
@@ -69,9 +75,16 @@ public class NacosClientAuthServiceImpl extends AbstractClientAuthService {
     @Override
     public Boolean login(Properties properties) {
         try {
-            if ((System.currentTimeMillis() - lastRefreshTime) < TimeUnit.SECONDS
-                    .toMillis(tokenTtl - tokenRefreshWindow)) {
-                return true;
+            boolean reLoginFlag = Boolean.parseBoolean(loginIdentityContext.getParameter(NacosAuthLoginConstant.RELOGINFLAG, "false"));
+            if (reLoginFlag) {
+                if ((System.currentTimeMillis() - lastRefreshTime) < reLoginWindow) {
+                    return true;
+                }
+            } else {
+                if ((System.currentTimeMillis() - lastRefreshTime) < TimeUnit.SECONDS
+                        .toMillis(tokenTtl - tokenRefreshWindow)) {
+                    return true;
+                }
             }
             
             if (StringUtils.isBlank(properties.getProperty(PropertyKeyConst.USERNAME))) {
@@ -86,12 +99,13 @@ public class NacosClientAuthServiceImpl extends AbstractClientAuthService {
                 if (identityContext != null) {
                     if (identityContext.getAllKey().contains(NacosAuthLoginConstant.ACCESSTOKEN)) {
                         tokenTtl = Long.parseLong(identityContext.getParameter(NacosAuthLoginConstant.TOKENTTL));
-                        tokenRefreshWindow = tokenTtl / 10;
+                        tokenRefreshWindow = generateTokenRefreshWindow(tokenTtl);
                         lastRefreshTime = System.currentTimeMillis();
-                        
-                        loginIdentityContext = new LoginIdentityContext();
-                        loginIdentityContext.setParameter(NacosAuthLoginConstant.ACCESSTOKEN,
+
+                        LoginIdentityContext newCtx = new LoginIdentityContext();
+                        newCtx.setParameter(NacosAuthLoginConstant.ACCESSTOKEN,
                                 identityContext.getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
+                        this.loginIdentityContext = newCtx;
                     }
                     return true;
                 }
@@ -111,5 +125,16 @@ public class NacosClientAuthServiceImpl extends AbstractClientAuthService {
     @Override
     public void shutdown() throws NacosException {
     
+    }
+    
+    /**
+     * Randomly generate TokenRefreshWindow, Avoid a large number of logins causing pressure on the Nacos server.
+     * @param tokenTtl TTL of token in seconds.
+     * @return tokenRefreshWindow, numerical range [tokenTtl/15 ~ tokenTtl/10]
+     */
+    public long generateTokenRefreshWindow(long tokenTtl) {
+        long startNumber = tokenTtl / 15;
+        long endNumber   = tokenTtl / 10;
+        return RandomUtils.nextLong(startNumber, endNumber);
     }
 }

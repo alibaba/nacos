@@ -529,8 +529,9 @@ public abstract class RpcClient implements Closeable {
                     
                     lastException = null;
                     
-                } catch (Exception e) {
-                    lastException = e;
+                } catch (Throwable throwable) {
+                    LoggerUtils.printIfErrorEnabled(LOGGER, "Fail to connect server, error = {}", throwable.getMessage());
+                    lastException = new Exception(throwable);
                 } finally {
                     recommendServer.set(null);
                 }

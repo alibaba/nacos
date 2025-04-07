@@ -17,8 +17,7 @@
 package com.alibaba.nacos.client.naming.utils;
 
 import com.alibaba.nacos.client.utils.ConcurrentDiskUtil;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,76 +27,83 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ConcurrentDiskUtilTest {
+class ConcurrentDiskUtilTest {
     
     @Test
-    public void testReadAndWrite() throws IOException {
+    void testReadAndWrite() throws IOException {
         File tempFile = File.createTempFile("aaa", "bbb");
         String fileName = tempFile.getAbsolutePath();
         String content = "hello";
         String charset = "UTF-8";
         ConcurrentDiskUtil.writeFileContent(fileName, content, charset);
         String actualContent = ConcurrentDiskUtil.getFileContent(fileName, charset);
-        Assert.assertEquals(content, actualContent);
+        assertEquals(content, actualContent);
     }
     
     @Test
-    public void testReadAndWrite2() throws IOException {
+    void testReadAndWrite2() throws IOException {
         File tempFile = File.createTempFile("aaa", "bbb");
         String content = "hello";
         String charset = "UTF-8";
         ConcurrentDiskUtil.writeFileContent(tempFile, content, charset);
         String actualContent = ConcurrentDiskUtil.getFileContent(tempFile, charset);
-        Assert.assertEquals(content, actualContent);
+        assertEquals(content, actualContent);
     }
     
     @Test
-    public void testByteBufferToString() throws IOException {
+    void testByteBufferToString() throws IOException {
         String msg = "test buff to string";
         ByteBuffer buff = ByteBuffer.wrap(msg.getBytes(StandardCharsets.UTF_8));
         String actual = ConcurrentDiskUtil.byteBufferToString(buff, "UTF-8");
-        Assert.assertEquals(msg, actual);
+        assertEquals(msg, actual);
     }
     
     @Test
-    public void testWriteFileContent() throws IOException {
+    void testWriteFileContent() throws IOException {
         File file = mock(File.class);
-        Assert.assertFalse(ConcurrentDiskUtil.writeFileContent(file, "hello", "UTF-8"));
+        assertFalse(ConcurrentDiskUtil.writeFileContent(file, "hello", "UTF-8"));
     }
     
-    @Test(expected = IOException.class)
-    public void testTryLockFailure() throws Throwable {
-        Method method = ConcurrentDiskUtil.class
-                .getDeclaredMethod("tryLock", File.class, FileChannel.class, boolean.class);
-        method.setAccessible(true);
-        File file = new File("non-exist");
-        FileChannel channel = mock(FileChannel.class);
-        when(channel.tryLock(anyLong(), anyLong(), anyBoolean())).thenThrow(new RuntimeException());
-        try {
-            method.invoke(null, file, channel, true);
-        } catch (InvocationTargetException e) {
-            throw e.getCause();
-        }
+    @Test
+    void testTryLockFailure() throws Throwable {
+        assertThrows(IOException.class, () -> {
+            Method method = ConcurrentDiskUtil.class.getDeclaredMethod("tryLock", File.class, FileChannel.class,
+                    boolean.class);
+            method.setAccessible(true);
+            File file = new File("non-exist");
+            FileChannel channel = mock(FileChannel.class);
+            when(channel.tryLock(anyLong(), anyLong(), anyBoolean())).thenThrow(new RuntimeException());
+            try {
+                method.invoke(null, file, channel, true);
+            } catch (InvocationTargetException e) {
+                throw e.getCause();
+            }
+        });
     }
     
-    @Test(expected = IOException.class)
-    public void testTryLockFailureForIntercept() throws Throwable {
-        Method method = ConcurrentDiskUtil.class
-                .getDeclaredMethod("tryLock", File.class, FileChannel.class, boolean.class);
-        method.setAccessible(true);
-        File file = new File("non-exist");
-        FileChannel channel = mock(FileChannel.class);
-        Thread.currentThread().interrupt();
-        when(channel.tryLock(anyLong(), anyLong(), anyBoolean())).thenThrow(new RuntimeException());
-        try {
-            method.invoke(null, file, channel, true);
-        } catch (InvocationTargetException e) {
-            throw e.getCause();
-        }
+    @Test
+    void testTryLockFailureForIntercept() throws Throwable {
+        assertThrows(IOException.class, () -> {
+            Method method = ConcurrentDiskUtil.class.getDeclaredMethod("tryLock", File.class, FileChannel.class,
+                    boolean.class);
+            method.setAccessible(true);
+            File file = new File("non-exist");
+            FileChannel channel = mock(FileChannel.class);
+            Thread.currentThread().interrupt();
+            when(channel.tryLock(anyLong(), anyLong(), anyBoolean())).thenThrow(new RuntimeException());
+            try {
+                method.invoke(null, file, channel, true);
+            } catch (InvocationTargetException e) {
+                throw e.getCause();
+            }
+        });
     }
 }

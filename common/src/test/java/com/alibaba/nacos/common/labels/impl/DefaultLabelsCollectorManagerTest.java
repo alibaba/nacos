@@ -17,11 +17,12 @@
 package com.alibaba.nacos.common.labels.impl;
 
 import com.alibaba.nacos.api.common.Constants;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.Properties;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * description.
@@ -29,26 +30,26 @@ import java.util.Properties;
  * @author rong
  * @date 2024-02-29 20:13
  */
-public class DefaultLabelsCollectorManagerTest {
+class DefaultLabelsCollectorManagerTest {
     
     @Test
-    public void tagV2LabelsCollectorTest() {
+    void tagV2LabelsCollectorTest() {
         Properties properties = new Properties();
         properties.put(Constants.APP_CONN_LABELS_KEY, "k1=v1,gray=properties_pre");
         properties.put(Constants.CONFIG_GRAY_LABEL, "properties_after");
         DefaultLabelsCollectorManager defaultLabelsCollectorManager = new DefaultLabelsCollectorManager();
         Map<String, String> labels = defaultLabelsCollectorManager.getLabels(properties);
-        Assert.assertEquals("properties_after", labels.get(Constants.CONFIG_GRAY_LABEL));
-        Assert.assertEquals("v1", labels.get("k1"));
+        assertEquals("properties_after", labels.get(Constants.CONFIG_GRAY_LABEL));
+        assertEquals("v1", labels.get("k1"));
     }
     
     @Test
-    public void tagV2LabelsCollectorOrderTest() {
+    void tagV2LabelsCollectorOrderTest() {
         Properties properties = new Properties();
         DefaultLabelsCollectorManager defaultLabelsCollectorManager = new DefaultLabelsCollectorManager();
         Map<String, String> labels = defaultLabelsCollectorManager.getLabels(properties);
         String test = labels.get("test");
-        Assert.assertEquals("test2", test);
+        assertEquals("test2", test);
     }
     
 }

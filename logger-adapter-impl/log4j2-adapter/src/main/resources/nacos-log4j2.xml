@@ -33,7 +33,7 @@
             </Policies>
             
             <DefaultRolloverStrategy max="${nacosClientProperty:JM.LOG.RETAIN.COUNT:-7}">
-                <Delete basePath="${logPath}/nacos" maxDepth="1" testMode="${nacosClientProperty:JM.LOG.RETAIN.DURATION.OFF:-true}">
+                <Delete basePath="${logPath}/nacos" maxDepth="1" testMode="${nacosClientProperty:JM.LOG.RETAIN.DURATION.OFF:-false}">
                     <IfFileName glob="config.log.*.*" />
                     <IfLastModified age="${nacosClientProperty:JM.LOG.RETAIN.DURATION:-P180D}" />
                 </Delete>
@@ -56,7 +56,7 @@
             </Policies>
     
             <DefaultRolloverStrategy max="${nacosClientProperty:JM.LOG.RETAIN.COUNT:-7}">
-                <Delete basePath="${logPath}/nacos" maxDepth="1" testMode="${nacosClientProperty:JM.LOG.RETAIN.DURATION.OFF:-true}">
+                <Delete basePath="${logPath}/nacos" maxDepth="1" testMode="${nacosClientProperty:JM.LOG.RETAIN.DURATION.OFF:-false}">
                     <IfFileName glob="remote.log.*.*" />
                     <IfLastModified age="${nacosClientProperty:JM.LOG.RETAIN.DURATION:-P180D}" />
                 </Delete>
@@ -79,7 +79,7 @@
             </Policies>
             
             <DefaultRolloverStrategy max="${nacosClientProperty:JM.LOG.RETAIN.COUNT:-7}">
-                <Delete basePath="${logPath}/nacos" maxDepth="1" testMode="${nacosClientProperty:JM.LOG.RETAIN.DURATION.OFF:-true}">
+                <Delete basePath="${logPath}/nacos" maxDepth="1" testMode="${nacosClientProperty:JM.LOG.RETAIN.DURATION.OFF:-false}">
                     <IfFileName glob="naming.log.*.*" />
                     <IfLastModified age="${nacosClientProperty:JM.LOG.RETAIN.DURATION:-P180D}" />
                 </Delete>
@@ -110,7 +110,7 @@
         
         <Logger name="com.alibaba.nacos.shaded.io.grpc" level="${nacosClientProperty:com.alibaba.nacos.config.log.level:-info}"
             additivity="false">
-            <appender-ref ref="ASYNC-REMOTE"/>
+            <appender-ref ref="ASYNC_REMOTE"/>
         </Logger>
         
         <Logger name="com.alibaba.nacos.client.config" level="${nacosClientProperty:com.alibaba.nacos.config.log.level:-info}"

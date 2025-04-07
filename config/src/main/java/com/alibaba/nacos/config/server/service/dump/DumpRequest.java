@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.service.dump;
 
 /**
  * dump request.
+ *
  * @author shiyiyue
  */
 public class DumpRequest {
@@ -29,11 +30,7 @@ public class DumpRequest {
     
     String tenant;
     
-    private boolean isBeta;
-    
-    private boolean isBatch;
-    
-    private String tag;
+    String grayName;
     
     private long lastModifiedTs;
     
@@ -63,30 +60,6 @@ public class DumpRequest {
         this.tenant = tenant;
     }
     
-    public boolean isBeta() {
-        return isBeta;
-    }
-    
-    public void setBeta(boolean beta) {
-        isBeta = beta;
-    }
-    
-    public boolean isBatch() {
-        return isBatch;
-    }
-    
-    public void setBatch(boolean batch) {
-        isBatch = batch;
-    }
-    
-    public String getTag() {
-        return tag;
-    }
-    
-    public void setTag(String tag) {
-        this.tag = tag;
-    }
-    
     public long getLastModifiedTs() {
         return lastModifiedTs;
     }
@@ -99,17 +72,26 @@ public class DumpRequest {
         return sourceIp;
     }
     
+    public String getGrayName() {
+        return grayName;
+    }
+    
+    public void setGrayName(String grayName) {
+        this.grayName = grayName;
+    }
+    
     public void setSourceIp(String sourceIp) {
         this.sourceIp = sourceIp;
     }
     
     /**
      * create dump request.
-     * @param dataId dataId.
-     * @param group group.
-     * @param tenant tenant.
+     *
+     * @param dataId         dataId.
+     * @param group          group.
+     * @param tenant         tenant.
      * @param lastModifiedTs lastModifiedTs.
-     * @param sourceIp sourceIp.
+     * @param sourceIp       sourceIp.
      * @return
      */
     public static DumpRequest create(String dataId, String group, String tenant, long lastModifiedTs, String sourceIp) {

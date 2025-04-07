@@ -18,8 +18,6 @@ package com.alibaba.nacos.config.server.model.event;
 
 import com.alibaba.nacos.common.notify.Event;
 
-import java.util.List;
-
 /**
  * LocalDataChangeEvent.
  *
@@ -29,49 +27,8 @@ public class LocalDataChangeEvent extends Event {
     
     public final String groupKey;
     
-    public final boolean isBeta;
-    
-    public final List<String> betaIps;
-    
-    public final String tag;
-    
-    public final boolean isBatch;
-    
-    public final int delimiter;
-    
     public LocalDataChangeEvent(String groupKey) {
         this.groupKey = groupKey;
-        this.isBeta = false;
-        this.betaIps = null;
-        this.tag = null;
-        this.isBatch = false;
-        this.delimiter = 0;
     }
-    
-    public LocalDataChangeEvent(String groupKey, boolean isBeta, List<String> betaIps) {
-        this.groupKey = groupKey;
-        this.isBeta = isBeta;
-        this.betaIps = betaIps;
-        this.tag = null;
-        this.isBatch = false;
-        this.delimiter = 0;
-    }
-    
-    public LocalDataChangeEvent(String groupKey, String tag) {
-        this.groupKey = groupKey;
-        this.isBeta = false;
-        this.betaIps = null;
-        this.tag = tag;
-        this.isBatch = false;
-        this.delimiter = 0;
-    }
-    
-    public LocalDataChangeEvent(String groupKey, boolean isBatch, int delimiter) {
-        this.groupKey = groupKey;
-        this.isBeta = false;
-        this.betaIps = null;
-        this.tag = null;
-        this.isBatch = isBatch;
-        this.delimiter = delimiter;
-    }
+
 }

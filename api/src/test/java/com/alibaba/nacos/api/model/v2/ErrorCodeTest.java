@@ -16,16 +16,17 @@
 
 package com.alibaba.nacos.api.model.v2;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ErrorCodeTest {
+class ErrorCodeTest {
+    
     @Test
-    public void testCodeNotSame() {
+    void testCodeNotSame() {
         Class<ErrorCode> errorCodeClass = ErrorCode.class;
         
         ErrorCode[] errorCodes = errorCodeClass.getEnumConstants();

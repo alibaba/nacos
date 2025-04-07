@@ -79,7 +79,7 @@ const deleteUser = username =>
  * @param {*} param0
  */
 const passwordReset = ([username, newPassword]) =>
-  request.put('v1/auth/users', { username, newPassword }).then(res => successMsg(res));
+  request.put('v1/auth/users', { username, newPassword });
 
 /**
  * 角色列表
@@ -120,6 +120,15 @@ const getPermissions = params => dispatch =>
     .then(data => dispatch({ type: PERMISSIONS_LIST, data }));
 
 /**
+ * 添加权限前置校验
+ * @param {*} param0
+ */
+const checkPermission = ([role, resource, action]) => {
+  const params = { role, resource, action };
+  return request.get('v1/auth/permissions', { params }).then(res => res.data);
+};
+
+/**
  * 给角色添加权限
  * @param {*} param0
  */
@@ -157,6 +166,7 @@ export {
   createRole,
   deleteRole,
   getPermissions,
+  checkPermission,
   createPermission,
   deletePermission,
 };

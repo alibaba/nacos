@@ -16,23 +16,24 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.io.UnsupportedEncodingException;
 
-public class ResponseUtilTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class ResponseUtilTest {
     
     String lineSeparator = System.lineSeparator();
     
     @Test
-    public void testWriteErrMsg() {
+    void testWriteErrMsg() {
         MockHttpServletResponse response = new MockHttpServletResponse();
         ResponseUtil.writeErrMsg(response, 404, "test");
-        Assert.assertEquals(404, response.getStatus());
+        assertEquals(404, response.getStatus());
         try {
-            Assert.assertEquals("test" + lineSeparator, response.getContentAsString());
+            assertEquals("test" + lineSeparator, response.getContentAsString());
         } catch (UnsupportedEncodingException e) {
             System.out.println(e.toString());
         }

@@ -21,8 +21,10 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -40,6 +42,8 @@ public class ModuleStateHolder {
     
     private final Map<String, ModuleState> moduleStates;
     
+    private final List<ModuleStateBuilder> moduleStateBuilders = new ArrayList<>();
+    
     private ModuleStateHolder() {
         this.moduleStates = new HashMap<>();
         for (ModuleStateBuilder each : NacosServiceLoader.load(ModuleStateBuilder.class)) {
@@ -47,6 +51,7 @@ public class ModuleStateHolder {
                 continue;
             }
             try {
+                moduleStateBuilders.add(each);
                 ModuleState moduleState = each.build();
                 moduleStates.put(moduleState.getModuleName(), moduleState);
             } catch (Exception e) {
@@ -59,11 +64,28 @@ public class ModuleStateHolder {
         return INSTANCE;
     }
     
+    private void reBuildModuleState() {
+        for (ModuleStateBuilder each : moduleStateBuilders) {
+            if (each.isCacheable()) {
+                continue;
+            }
+            try {
+                ModuleState moduleState = each.build();
+                moduleStates.put(moduleState.getModuleName(), moduleState);
+            } catch (Exception e) {
+                LOGGER.warn("reBuild ModuleState failed in builder:{}", each.getClass().getCanonicalName(), e);
+            }
+        }
+        
+    }
+    
     public Optional<ModuleState> getModuleState(String moduleName) {
+        reBuildModuleState();
         return Optional.ofNullable(moduleStates.get(moduleName));
     }
     
     public Set<ModuleState> getAllModuleStates() {
+        reBuildModuleState();
         return new HashSet<>(moduleStates.values());
     }
     

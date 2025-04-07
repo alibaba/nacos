@@ -185,7 +185,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 return result == 0;
             }
         } catch (CannotGetJdbcConnectionException e) {
-            LOGGER.error("[db-error] " + e.toString(), e);
+            LOGGER.error("[db-error] " + e, e);
             return false;
         }
         
@@ -277,7 +277,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("check db health.");
             }
-            String sql = "SELECT * FROM config_info_beta WHERE id = 1";
+            String sql = "SELECT * FROM config_info_gray WHERE id = 1";
             
             for (int i = 0; i < testJtList.size(); i++) {
                 JdbcTemplate jdbcTemplate = testJtList.get(i);

@@ -18,36 +18,37 @@ package com.alibaba.nacos.api.naming.pojo.healthcheck.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class HttpTest {
+class HttpTest {
     
     private ObjectMapper objectMapper;
     
     private Http http;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         objectMapper = new ObjectMapper();
         http = new Http();
     }
     
     @Test
-    public void testGetExpectedResponseCodeWithEmpty() {
+    void testGetExpectedResponseCodeWithEmpty() {
         http.setHeaders("");
         assertTrue(http.getCustomHeaders().isEmpty());
     }
     
     @Test
-    public void testGetExpectedResponseCodeWithoutEmpty() {
+    void testGetExpectedResponseCodeWithoutEmpty() {
         http.setHeaders("x:a|y:");
         Map<String, String> actual = http.getCustomHeaders();
         assertFalse(actual.isEmpty());
@@ -56,7 +57,7 @@ public class HttpTest {
     }
     
     @Test
-    public void testSerialize() throws JsonProcessingException {
+    void testSerialize() throws JsonProcessingException {
         http.setHeaders("x:a|y:");
         http.setPath("/x");
         String actual = objectMapper.writeValueAsString(http);
@@ -67,7 +68,7 @@ public class HttpTest {
     }
     
     @Test
-    public void testDeserialize() throws IOException {
+    void testDeserialize() throws IOException {
         String testChecker = "{\"type\":\"HTTP\",\"path\":\"/x\",\"headers\":\"x:a|y:\",\"expectedResponseCode\":200}";
         Http actual = objectMapper.readValue(testChecker, Http.class);
         assertEquals("x:a|y:", actual.getHeaders());
@@ -78,23 +79,23 @@ public class HttpTest {
     }
     
     @Test
-    public void testClone() throws CloneNotSupportedException {
+    void testClone() throws CloneNotSupportedException {
         Http cloned = http.clone();
         assertEquals(http.hashCode(), cloned.hashCode());
-        assertTrue(http.equals(cloned));
+        assertEquals(http, cloned);
     }
     
     @Test
-    public void testNotEquals() throws CloneNotSupportedException {
-        assertFalse(http.equals(new Tcp()));
+    void testNotEquals() throws CloneNotSupportedException {
+        assertNotEquals(http, new Tcp());
         Http cloned = http.clone();
         cloned.setPath("aaa");
-        assertFalse(http.equals(cloned));
+        assertNotEquals(http, cloned);
         cloned = http.clone();
         cloned.setHeaders("aaa");
-        assertFalse(http.equals(cloned));
+        assertNotEquals(http, cloned);
         cloned = http.clone();
         cloned.setExpectedResponseCode(500);
-        assertFalse(http.equals(cloned));
+        assertNotEquals(http, cloned);
     }
 }

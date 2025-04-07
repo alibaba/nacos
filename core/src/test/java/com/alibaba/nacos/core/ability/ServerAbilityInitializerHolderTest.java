@@ -16,14 +16,14 @@
 
 package com.alibaba.nacos.core.ability;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ServerAbilityInitializerHolderTest {
+class ServerAbilityInitializerHolderTest {
     
     @Test
-    public void testGetInitializers() {
+    void testGetInitializers() {
         assertEquals(1, ServerAbilityInitializerHolder.getInstance().getInitializers().size());
     }
 }

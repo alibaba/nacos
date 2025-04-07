@@ -18,20 +18,21 @@ package com.alibaba.nacos.plugin.control.impl;
 
 import com.alibaba.nacos.plugin.control.connection.ConnectionControlManager;
 import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class NacosControlManagerBuilderTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class NacosControlManagerBuilderTest {
     
     @Test
-    public void test() {
+    void test() {
         NacosControlManagerBuilder nacosControlManagerBuilder = new NacosControlManagerBuilder();
         ConnectionControlManager connectionControlManager = nacosControlManagerBuilder.buildConnectionControlManager();
         TpsControlManager tpsControlManager = nacosControlManagerBuilder.buildTpsControlManager();
         
-        Assert.assertEquals("nacos", tpsControlManager.getName());
-        Assert.assertEquals("nacos", connectionControlManager.getName());
-        Assert.assertEquals("nacos", nacosControlManagerBuilder.getName());
+        assertEquals("nacos", tpsControlManager.getName());
+        assertEquals("nacos", connectionControlManager.getName());
+        assertEquals("nacos", nacosControlManagerBuilder.getName());
     }
     
 }

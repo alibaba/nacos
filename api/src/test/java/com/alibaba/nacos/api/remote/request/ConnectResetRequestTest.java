@@ -16,35 +16,38 @@
 
 package com.alibaba.nacos.api.remote.request;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class ConnectResetRequestTest extends BasicRequestTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class ConnectResetRequestTest extends BasicRequestTest {
     
     @Test
-    public void testSerialize() throws Exception {
+    void testSerialize() throws Exception {
         ConnectResetRequest request = new ConnectResetRequest();
         request.setServerIp("127.0.0.1");
         request.setServerPort("8888");
         request.setRequestId("1");
         request.setConnectionId("11111_127.0.0.1_8888");
         String json = mapper.writeValueAsString(request);
-        Assert.assertNotNull(json);
-        Assert.assertTrue(json.contains("\"serverIp\":\"127.0.0.1\""));
-        Assert.assertTrue(json.contains("\"serverPort\":\"8888\""));
-        Assert.assertTrue(json.contains("\"module\":\"internal\""));
-        Assert.assertTrue(json.contains("\"requestId\":\"1\""));
-        Assert.assertTrue(json.contains("\"connectionId\":\"11111_127.0.0.1_8888\""));
+        assertNotNull(json);
+        assertTrue(json.contains("\"serverIp\":\"127.0.0.1\""));
+        assertTrue(json.contains("\"serverPort\":\"8888\""));
+        assertTrue(json.contains("\"module\":\"internal\""));
+        assertTrue(json.contains("\"requestId\":\"1\""));
+        assertTrue(json.contains("\"connectionId\":\"11111_127.0.0.1_8888\""));
     }
     
     @Test
-    public void testDeserialize() throws Exception {
+    void testDeserialize() throws Exception {
         String json = "{\"headers\":{},\"requestId\":\"1\",\"serverIp\":\"127.0.0.1\",\"serverPort\":\"8888\","
                 + "\"module\":\"internal\",\"connectionId\":\"11111_127.0.0.1_8888\"}";
         ConnectResetRequest result = mapper.readValue(json, ConnectResetRequest.class);
-        Assert.assertNotNull(result);
-        Assert.assertEquals("127.0.0.1", result.getServerIp());
-        Assert.assertEquals("8888", result.getServerPort());
-        Assert.assertEquals("11111_127.0.0.1_8888", result.getConnectionId());
+        assertNotNull(result);
+        assertEquals("127.0.0.1", result.getServerIp());
+        assertEquals("8888", result.getServerPort());
+        assertEquals("11111_127.0.0.1_8888", result.getConnectionId());
     }
 }

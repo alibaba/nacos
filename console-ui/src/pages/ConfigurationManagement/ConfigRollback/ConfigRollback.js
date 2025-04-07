@@ -39,6 +39,7 @@ class ConfigRollback extends React.Component {
       envName: '',
       visible: false,
       showmore: false,
+      extInfo: {},
     };
     // this.params = window.location.hash.split('?')[1]||'';
   }
@@ -93,6 +94,7 @@ class ConfigRollback extends React.Component {
           self.field.setValue('envName', envName);
           self.setState({
             envName,
+            extInfo: data.extInfo ? JSON.parse(data.extInfo) : {},
           });
         }
       },
@@ -138,12 +140,19 @@ class ConfigRollback extends React.Component {
         self.serverId = getParams('serverId') || 'center';
         self.dataId = self.field.getValue('dataId');
         self.group = self.field.getValue('group');
+        const { extInfo } = self.state;
         let postData = {
           appName: self.field.getValue('appName'),
           dataId: self.dataId,
           group: self.group,
           content: self.field.getValue('content'),
           tenant: self.tenant,
+          ...(extInfo.type ? { type: extInfo.type } : {}),
+          ...(extInfo.config_tags ? { config_tags: extInfo.config_tags } : {}),
+          ...(extInfo.effect ? { effect: extInfo.effect } : {}),
+          ...(extInfo.c_desc ? { desc: extInfo.c_desc } : {}),
+          ...(extInfo.c_use ? { use: extInfo.c_use } : {}),
+          ...(extInfo.c_schema ? { schema: extInfo.c_schema } : {}),
         };
 
         let url = 'v1/cs/configs';
@@ -173,7 +182,7 @@ class ConfigRollback extends React.Component {
       const typeMap = {
         U: locale.update,
         I: locale.insert,
-        D: locale.deleteAction,
+        D: locale.rollbackDelete,
       };
       return typeMap[type];
     }

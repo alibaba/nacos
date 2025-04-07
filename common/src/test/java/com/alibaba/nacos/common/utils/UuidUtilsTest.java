@@ -16,14 +16,14 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
-public class UuidUtilsTest {
+class UuidUtilsTest {
     
     @Test
-    public void testGenerateUuid() {
+    void testGenerateUuid() {
         String uuid = UuidUtils.generateUuid();
         // try parse to UUID.
         UUID.fromString(uuid);

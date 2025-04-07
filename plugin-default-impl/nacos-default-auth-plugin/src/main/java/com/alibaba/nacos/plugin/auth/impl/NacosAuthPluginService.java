@@ -99,7 +99,6 @@ public class NacosAuthPluginService implements AuthPluginService {
     public Boolean validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException {
         NacosUser user = (NacosUser) identityContext.getParameter(AuthConstants.NACOS_USER_KEY);
         authenticationManager.authorize(permission, user);
-        
         return true;
     }
     
@@ -111,6 +110,18 @@ public class NacosAuthPluginService implements AuthPluginService {
     @Override
     public boolean isLoginEnabled() {
         return ApplicationUtils.getBean(AuthConfigs.class).isAuthEnabled();
+    }
+    
+    /**
+     * Only auth enabled and not global admin role existed.
+     *
+     * @return {@code true} when auth enabled and not global admin role existed, otherwise {@code false}
+     */
+    @Override
+    public boolean isAdminRequest() {
+        boolean authEnabled = ApplicationUtils.getBean(AuthConfigs.class).isAuthEnabled();
+        boolean hasGlobalAdminRole = ApplicationUtils.getBean(IAuthenticationManager.class).hasGlobalAdminRole();
+        return authEnabled && !hasGlobalAdminRole;
     }
     
     protected void checkNacosAuthManager() {

@@ -77,11 +77,6 @@
         </dependency>
         
         <dependency>
-            <artifactId>commons-codec</artifactId>
-            <groupId>commons-codec</groupId>
-        </dependency>
-        
-        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
         </dependency>
@@ -146,6 +141,7 @@
                                             <exclude>META-INF/*.SF</exclude>
                                             <exclude>META-INF/*.DSA</exclude>
                                             <exclude>META-INF/*.RSA</exclude>
+                                            <exclude>**/module-info.class</exclude>
                                         </excludes>
                                     </filter>
                                     <filter>

@@ -16,26 +16,27 @@
 
 package com.alibaba.nacos.plugin.control.utils;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 
-public class EnvUtilsTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class EnvUtilsTest {
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         System.clearProperty("nacos.home");
     }
     
     @Test
-    public void test() {
+    void test() {
         String nacosHome = EnvUtils.getNacosHome();
-        Assert.assertEquals(System.getProperty("user.home") + File.separator + "nacos", nacosHome);
+        assertEquals(System.getProperty("user.home") + File.separator + "nacos", nacosHome);
         
         System.setProperty("nacos.home", "test");
         String testHome = EnvUtils.getNacosHome();
-        Assert.assertEquals("test", testHome);
+        assertEquals("test", testHome);
     }
 }

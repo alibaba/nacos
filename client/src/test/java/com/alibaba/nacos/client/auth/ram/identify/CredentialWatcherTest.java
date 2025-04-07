@@ -16,13 +16,12 @@
 
 package com.alibaba.nacos.client.auth.ram.identify;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -39,16 +38,17 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class CredentialWatcherTest {
+@ExtendWith(MockitoExtension.class)
+class CredentialWatcherTest {
     
     @Mock
     private CredentialService credentialService;
@@ -59,18 +59,18 @@ public class CredentialWatcherTest {
     
     private Method loadCredentialFromPropertiesMethod;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         credentialWatcher = new CredentialWatcher("testApp", credentialService);
         loadCredentialMethod = CredentialWatcher.class.getDeclaredMethod("loadCredential", boolean.class);
         loadCredentialMethod.setAccessible(true);
-        loadCredentialFromPropertiesMethod = CredentialWatcher.class
-                .getDeclaredMethod("loadCredentialFromProperties", InputStream.class, boolean.class, Credentials.class);
+        loadCredentialFromPropertiesMethod = CredentialWatcher.class.getDeclaredMethod("loadCredentialFromProperties",
+                InputStream.class, boolean.class, Credentials.class);
         loadCredentialFromPropertiesMethod.setAccessible(true);
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         credentialWatcher.stop();
         System.clearProperty("spas.identity");
         System.clearProperty(IdentifyConstants.ENV_ACCESS_KEY);
@@ -79,16 +79,16 @@ public class CredentialWatcherTest {
     }
     
     @Test
-    public void testStop() throws NoSuchFieldException, IllegalAccessException {
+    void testStop() throws NoSuchFieldException, IllegalAccessException {
         credentialWatcher.stop();
         Field executorField = CredentialWatcher.class.getDeclaredField("executor");
         executorField.setAccessible(true);
         ScheduledExecutorService executor = (ScheduledExecutorService) executorField.get(credentialWatcher);
-        Assert.assertTrue(executor.isShutdown());
+        assertTrue(executor.isShutdown());
     }
     
     @Test
-    public void testLoadCredentialByEnv() throws InvocationTargetException, IllegalAccessException {
+    void testLoadCredentialByEnv() throws InvocationTargetException, IllegalAccessException {
         System.setProperty(IdentifyConstants.ENV_ACCESS_KEY, "testAk");
         System.setProperty(IdentifyConstants.ENV_SECRET_KEY, "testSk");
         final AtomicReference<String> readAk = new AtomicReference<>("");
@@ -108,7 +108,7 @@ public class CredentialWatcherTest {
     }
     
     @Test
-    public void testLoadCredentialByIdentityFile() throws InvocationTargetException, IllegalAccessException {
+    void testLoadCredentialByIdentityFile() throws InvocationTargetException, IllegalAccessException {
         URL url = CredentialWatcherTest.class.getResource("/spas.identity");
         System.setProperty("spas.identity", url.getPath());
         final AtomicReference<String> readAk = new AtomicReference<>("");
@@ -128,7 +128,7 @@ public class CredentialWatcherTest {
     }
     
     @Test
-    public void testLoadCredentialByInvalidIdentityFile() throws InvocationTargetException, IllegalAccessException {
+    void testLoadCredentialByInvalidIdentityFile() throws InvocationTargetException, IllegalAccessException {
         URL url = CredentialWatcherTest.class.getResource("/spas_invalid.identity");
         System.setProperty("spas.identity", url.getPath());
         final AtomicReference<String> readAk = new AtomicReference<>("");
@@ -151,7 +151,7 @@ public class CredentialWatcherTest {
      * The docker file is need /etc permission, which depend environment. So use mock InputStream to test.
      */
     @Test
-    public void testLoadCredentialByDockerFile()
+    void testLoadCredentialByDockerFile()
             throws FileNotFoundException, InvocationTargetException, IllegalAccessException, NoSuchFieldException {
         URL url = CredentialWatcherTest.class.getResource("/spas_docker.identity");
         InputStream propertiesIS = new FileInputStream(url.getPath());
@@ -166,7 +166,7 @@ public class CredentialWatcherTest {
     }
     
     @Test
-    public void testLoadCredentialByFileWithIoException()
+    void testLoadCredentialByFileWithIoException()
             throws IOException, InvocationTargetException, IllegalAccessException {
         InputStream propertiesIS = mock(InputStream.class);
         when(propertiesIS.read(any())).thenThrow(new IOException("test"));
@@ -179,8 +179,7 @@ public class CredentialWatcherTest {
     }
     
     @Test
-    public void testReLoadCredential()
-            throws InvocationTargetException, IllegalAccessException, InterruptedException {
+    void testReLoadCredential() throws InvocationTargetException, IllegalAccessException, InterruptedException {
         URL url = CredentialWatcherTest.class.getResource("/spas_modified.identity");
         modifiedFile(url, true);
         System.setProperty("spas.identity", url.getPath());

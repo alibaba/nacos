@@ -16,78 +16,77 @@
 
 package com.alibaba.nacos.common.http;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
-public class HttpClientConfigTest {
+class HttpClientConfigTest {
     
     @Test
-    public void testGetConTimeOutMillis() {
+    void testGetConTimeOutMillis() {
         HttpClientConfig config = HttpClientConfig.builder().setConTimeOutMillis(1000).build();
         assertEquals(1000, config.getConTimeOutMillis());
     }
     
     @Test
-    public void testGetReadTimeOutMillis() {
+    void testGetReadTimeOutMillis() {
         HttpClientConfig config = HttpClientConfig.builder().setReadTimeOutMillis(2000).build();
         assertEquals(2000, config.getReadTimeOutMillis());
     }
     
     @Test
-    public void testGetConnTimeToLive() {
-        HttpClientConfig config = HttpClientConfig.builder().setConnectionTimeToLive(3000, TimeUnit.MILLISECONDS)
-                .build();
+    void testGetConnTimeToLive() {
+        HttpClientConfig config = HttpClientConfig.builder().setConnectionTimeToLive(3000, TimeUnit.MILLISECONDS).build();
         assertEquals(3000, config.getConnTimeToLive());
     }
     
     @Test
-    public void testGetConnTimeToLiveTimeUnit() {
+    void testGetConnTimeToLiveTimeUnit() {
         HttpClientConfig config = HttpClientConfig.builder().setConnectionTimeToLive(4000, TimeUnit.SECONDS).build();
         assertEquals(TimeUnit.SECONDS, config.getConnTimeToLiveTimeUnit());
     }
     
     @Test
-    public void testGetConnectionRequestTimeout() {
+    void testGetConnectionRequestTimeout() {
         HttpClientConfig config = HttpClientConfig.builder().setConnectionRequestTimeout(5000).build();
         assertEquals(5000, config.getConnectionRequestTimeout());
     }
     
     @Test
-    public void testGetMaxRedirects() {
+    void testGetMaxRedirects() {
         HttpClientConfig config = HttpClientConfig.builder().setMaxRedirects(60).build();
         assertEquals(60, config.getMaxRedirects());
     }
     
     @Test
-    public void testGetMaxConnTotal() {
+    void testGetMaxConnTotal() {
         HttpClientConfig config = HttpClientConfig.builder().setMaxConnTotal(70).build();
         assertEquals(70, config.getMaxConnTotal());
     }
     
     @Test
-    public void testGetMaxConnPerRoute() {
+    void testGetMaxConnPerRoute() {
         HttpClientConfig config = HttpClientConfig.builder().setMaxConnPerRoute(80).build();
         assertEquals(80, config.getMaxConnPerRoute());
     }
     
     @Test
-    public void testGetContentCompressionEnabled() {
+    void testGetContentCompressionEnabled() {
         HttpClientConfig config = HttpClientConfig.builder().setContentCompressionEnabled(false).build();
         assertFalse(config.getContentCompressionEnabled());
     }
     
     @Test
-    public void testGetIoThreadCount() {
+    void testGetIoThreadCount() {
         HttpClientConfig config = HttpClientConfig.builder().setIoThreadCount(90).build();
         assertEquals(90, config.getIoThreadCount());
     }
     
     @Test
-    public void testGetUserAgent() {
+    void testGetUserAgent() {
         HttpClientConfig config = HttpClientConfig.builder().setUserAgent("testUserAgent").build();
         assertEquals("testUserAgent", config.getUserAgent());
     }

@@ -17,13 +17,14 @@
 
 package com.alibaba.nacos.consistency.snapshot;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * {@link Reader} unit test.
@@ -31,12 +32,12 @@ import java.util.Properties;
  * @author chenglu
  * @date 2021-07-27 18:46
  */
-public class ReaderTest {
+class ReaderTest {
     
     private Reader reader;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         Map<String, LocalFileMeta> map = new HashMap<>(2);
         Properties properties = new Properties();
         properties.put("k", "v");
@@ -45,11 +46,11 @@ public class ReaderTest {
     }
     
     @Test
-    public void test() {
-        Assert.assertEquals("test", reader.getPath());
+    void test() {
+        assertEquals("test", reader.getPath());
         
-        Assert.assertEquals(1, reader.listFiles().size());
+        assertEquals(1, reader.listFiles().size());
         
-        Assert.assertEquals("v", reader.getFileMeta("a").getFileMeta().getProperty("k"));
+        assertEquals("v", reader.getFileMeta("a").getFileMeta().getProperty("k"));
     }
 }

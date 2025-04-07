@@ -16,113 +16,101 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
  * thread factory builder unit test.
+ *
  * @author zzq
  * @date 2021/8/3
  */
-public class ThreadFactoryBuilderTest {
+class ThreadFactoryBuilderTest {
     
     int priority = 2;
     
     @Test
-    public void simpleTest() {
-        ThreadFactory threadFactory = new ThreadFactoryBuilder()
-                .daemon(true)
-                .priority(priority)
-                .nameFormat("nacos-grpc-executor-%d")
-                .build();
+    void simpleTest() {
+        ThreadFactory threadFactory = new ThreadFactoryBuilder().daemon(true).priority(priority)
+                .nameFormat("nacos-grpc-executor-%d").build();
         Thread thread1 = threadFactory.newThread(() -> {
         });
-        Assert.assertEquals("nacos-grpc-executor-0", thread1.getName());
-        Assert.assertEquals(priority, thread1.getPriority());
-        Assert.assertTrue(thread1.isDaemon());
+        assertEquals("nacos-grpc-executor-0", thread1.getName());
+        assertEquals(priority, thread1.getPriority());
+        assertTrue(thread1.isDaemon());
         Thread thread2 = threadFactory.newThread(() -> {
         });
-        Assert.assertEquals("nacos-grpc-executor-1", thread2.getName());
-        Assert.assertEquals(priority, thread2.getPriority());
-        Assert.assertTrue(thread2.isDaemon());
+        assertEquals("nacos-grpc-executor-1", thread2.getName());
+        assertEquals(priority, thread2.getPriority());
+        assertTrue(thread2.isDaemon());
     }
     
     @Test
-    public void customizeFactoryTest() {
+    void customizeFactoryTest() {
         String threadName = "hello is me!";
         ThreadFactory myFactory = r -> {
             Thread thread = new Thread();
             thread.setName(threadName);
             return thread;
         };
-        ThreadFactory factory = new ThreadFactoryBuilder()
-                .daemon(true)
-                .priority(priority)
-                .customizeFactory(myFactory)
-                .build();
-        Thread thread = factory.newThread(() -> { });
-        Assert.assertEquals(threadName, thread.getName());
+        ThreadFactory factory = new ThreadFactoryBuilder().daemon(true).priority(priority).customizeFactory(myFactory).build();
+        Thread thread = factory.newThread(() -> {
+        });
+        assertEquals(threadName, thread.getName());
     }
     
     @Test
-    public void uncaughtExceptionHandlerTest() throws Exception {
+    void uncaughtExceptionHandlerTest() throws Exception {
         AtomicBoolean state = new AtomicBoolean(false);
-        ThreadFactory threadFactory = new ThreadFactoryBuilder()
-                .daemon(true)
-                .priority(priority)
-                .nameFormat("nacos-grpc-executor-%d")
-                .uncaughtExceptionHandler((t, e) -> state.set(true))
-                .build();
+        ThreadFactory threadFactory = new ThreadFactoryBuilder().daemon(true).priority(priority)
+                .nameFormat("nacos-grpc-executor-%d").uncaughtExceptionHandler((t, e) -> state.set(true)).build();
         threadFactory.newThread(() -> {
             throw new NullPointerException("null pointer");
         }).start();
         TimeUnit.SECONDS.sleep(1);
-        Assert.assertTrue(state.get());
+        assertTrue(state.get());
     }
     
-    @Test(expected = IllegalArgumentException.class)
-    public void propertyPriorityTest1() {
-        new ThreadFactoryBuilder()
-                .priority(11)
-                .nameFormat("nacos-grpc-executor-%d")
-                .build();
+    @Test
+    void propertyPriorityTest1() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new ThreadFactoryBuilder().priority(11).nameFormat("nacos-grpc-executor-%d").build();
+        });
     }
     
-    @Test(expected = IllegalArgumentException.class)
-    public void propertyPriorityTest2() {
-        new ThreadFactoryBuilder()
-                .priority(-1)
-                .nameFormat("nacos-grpc-executor-%d")
-                .build();
+    @Test
+    void propertyPriorityTest2() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new ThreadFactoryBuilder().priority(-1).nameFormat("nacos-grpc-executor-%d").build();
+        });
     }
     
-    @Test(expected = IllegalArgumentException.class)
-    public void propertyNameFormatTest() {
-        new ThreadFactoryBuilder()
-                .priority(priority)
-                .nameFormat(null)
-                .build();
+    @Test
+    void propertyNameFormatTest() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new ThreadFactoryBuilder().priority(priority).nameFormat(null).build();
+        });
     }
     
-    @Test(expected = IllegalArgumentException.class)
-    public void propertyUncaughtExceptionHandlerTest() {
-        new ThreadFactoryBuilder()
-                .priority(priority)
-                .nameFormat("nacos-grpc-executor-%d")
-                .uncaughtExceptionHandler(null)
-                .build();
+    @Test
+    void propertyUncaughtExceptionHandlerTest() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new ThreadFactoryBuilder().priority(priority).nameFormat("nacos-grpc-executor-%d").uncaughtExceptionHandler(null)
+                    .build();
+        });
     }
     
-    @Test(expected = IllegalArgumentException.class)
-    public void propertyCustomizeFactoryHandlerTest() {
-        new ThreadFactoryBuilder()
-                .priority(priority)
-                .nameFormat("nacos-grpc-executor-%d")
-                .customizeFactory(null)
-                .build();
+    @Test
+    void propertyCustomizeFactoryHandlerTest() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new ThreadFactoryBuilder().priority(priority).nameFormat("nacos-grpc-executor-%d").customizeFactory(null).build();
+        });
     }
 }

@@ -28,12 +28,12 @@ import org.apache.http.concurrent.FutureCallback;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
 import org.apache.http.impl.nio.reactor.ExceptionEvent;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.net.URI;
 import java.util.Collections;
@@ -41,14 +41,16 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class DefaultAsyncHttpClientRequestTest {
+@ExtendWith(MockitoExtension.class)
+class DefaultAsyncHttpClientRequestTest {
+    
+    DefaultAsyncHttpClientRequest httpClientRequest;
     
     @Mock
     private CloseableHttpAsyncClient client;
@@ -64,24 +66,22 @@ public class DefaultAsyncHttpClientRequestTest {
     
     private RequestConfig defaultConfig;
     
-    DefaultAsyncHttpClientRequest httpClientRequest;
-    
     private URI uri;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         defaultConfig = RequestConfig.DEFAULT;
         httpClientRequest = new DefaultAsyncHttpClientRequest(client, ioReactor, defaultConfig);
         uri = URI.create("http://127.0.0.1:8080");
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         httpClientRequest.close();
     }
     
     @Test
-    public void testExecuteOnFail() throws Exception {
+    void testExecuteOnFail() throws Exception {
         Header header = Header.newInstance();
         Map<String, String> body = new HashMap<>();
         body.put("test", "test");
@@ -96,7 +96,7 @@ public class DefaultAsyncHttpClientRequestTest {
     }
     
     @Test
-    public void testExecuteOnCancel() throws Exception {
+    void testExecuteOnCancel() throws Exception {
         Header header = Header.newInstance();
         Map<String, String> body = new HashMap<>();
         body.put("test", "test");
@@ -110,7 +110,7 @@ public class DefaultAsyncHttpClientRequestTest {
     }
     
     @Test
-    public void testExecuteOnComplete() throws Exception {
+    void testExecuteOnComplete() throws Exception {
         Header header = Header.newInstance();
         Map<String, String> body = new HashMap<>();
         body.put("test", "test");
@@ -127,7 +127,7 @@ public class DefaultAsyncHttpClientRequestTest {
     }
     
     @Test
-    public void testExecuteOnCompleteWithException() throws Exception {
+    void testExecuteOnCompleteWithException() throws Exception {
         Header header = Header.newInstance();
         Map<String, String> body = new HashMap<>();
         body.put("test", "test");
@@ -144,7 +144,7 @@ public class DefaultAsyncHttpClientRequestTest {
     }
     
     @Test
-    public void testExecuteException() throws Exception {
+    void testExecuteException() throws Exception {
         Header header = Header.newInstance();
         Map<String, String> body = new HashMap<>();
         body.put("test", "test");

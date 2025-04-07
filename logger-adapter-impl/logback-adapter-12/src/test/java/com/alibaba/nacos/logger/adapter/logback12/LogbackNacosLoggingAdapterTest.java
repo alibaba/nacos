@@ -22,12 +22,12 @@ import ch.qos.logback.classic.joran.ReconfigureOnChangeTask;
 import ch.qos.logback.classic.spi.LoggerContextListener;
 import ch.qos.logback.core.CoreConstants;
 import com.alibaba.nacos.common.logging.NacosLoggingProperties;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.LoggerFactory;
 import org.slf4j.impl.StaticLoggerBinder;
@@ -35,14 +35,15 @@ import org.slf4j.impl.StaticLoggerBinder;
 import java.lang.reflect.Field;
 import java.util.Properties;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class LogbackNacosLoggingAdapterTest {
     
     LogbackNacosLoggingAdapter logbackNacosLoggingAdapter;
@@ -54,8 +55,8 @@ public class LogbackNacosLoggingAdapterTest {
     
     NacosLoggingProperties loggingProperties;
     
-    @Before
-    public void setUp() throws NoSuchFieldException, IllegalAccessException {
+    @BeforeEach
+    void setUp() throws NoSuchFieldException, IllegalAccessException {
         logbackNacosLoggingAdapter = new LogbackNacosLoggingAdapter();
         ILoggerFactory loggerFactory = LoggerFactory.getILoggerFactory();
         if (loggerFactory instanceof LoggerContext) {
@@ -70,8 +71,8 @@ public class LogbackNacosLoggingAdapterTest {
         loggingProperties = new NacosLoggingProperties("classpath:nacos-logback12.xml", new Properties());
     }
     
-    @After
-    public void tearDown() throws NoSuchFieldException, IllegalAccessException {
+    @AfterEach
+    void tearDown() throws NoSuchFieldException, IllegalAccessException {
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         loggerContext.removeListener(loggerContextListener);
         if (null != cachedLoggerFactory) {
@@ -89,7 +90,7 @@ public class LogbackNacosLoggingAdapterTest {
     }
     
     @Test
-    public void testLoadConfigurationSuccess() {
+    void testLoadConfigurationSuccess() {
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         loggerContext.putObject(CoreConstants.RECONFIGURE_ON_CHANGE_TASK, new ReconfigureOnChangeTask());
         logbackNacosLoggingAdapter.loadConfiguration(loggingProperties);
@@ -122,30 +123,32 @@ public class LogbackNacosLoggingAdapterTest {
     }
     
     @Test
-    public void testIsAdaptedLogger() {
+    void testIsAdaptedLogger() {
         assertTrue(logbackNacosLoggingAdapter.isAdaptedLogger(Logger.class));
         assertFalse(logbackNacosLoggingAdapter.isAdaptedLogger(java.util.logging.Logger.class));
     }
     
-    @Test(expected = IllegalStateException.class)
-    public void testLoadConfigurationFailure() {
-        System.setProperty("nacos.logging.config", "http://localhost");
-        loggingProperties = new NacosLoggingProperties("classpath:nacos-logback12.xml", System.getProperties());
-        logbackNacosLoggingAdapter.loadConfiguration(loggingProperties);
+    @Test
+    void testLoadConfigurationFailure() {
+        assertThrows(IllegalStateException.class, () -> {
+            System.setProperty("nacos.logging.config", "http://localhost");
+            loggingProperties = new NacosLoggingProperties("classpath:nacos-logback12.xml", System.getProperties());
+            logbackNacosLoggingAdapter.loadConfiguration(loggingProperties);
+        });
     }
     
     @Test
-    public void testIsNeedReloadConfiguration() {
+    void testIsNeedReloadConfiguration() {
         assertFalse(logbackNacosLoggingAdapter.isNeedReloadConfiguration());
     }
     
     @Test
-    public void testGetDefaultConfigLocation() {
+    void testGetDefaultConfigLocation() {
         assertEquals("classpath:nacos-logback12.xml", logbackNacosLoggingAdapter.getDefaultConfigLocation());
     }
     
     @Test
-    public void testLoadConfigurationReload() {
+    void testLoadConfigurationReload() {
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         loggerContext.putObject(CoreConstants.RECONFIGURE_ON_CHANGE_TASK, new ReconfigureOnChangeTask());
         logbackNacosLoggingAdapter.loadConfiguration(loggingProperties);
@@ -160,7 +163,7 @@ public class LogbackNacosLoggingAdapterTest {
     }
     
     @Test
-    public void testLoadConfigurationStart() {
+    void testLoadConfigurationStart() {
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         loggerContext.putObject(CoreConstants.RECONFIGURE_ON_CHANGE_TASK, new ReconfigureOnChangeTask());
         logbackNacosLoggingAdapter.loadConfiguration(loggingProperties);
@@ -175,7 +178,7 @@ public class LogbackNacosLoggingAdapterTest {
     }
     
     @Test
-    public void testLoadConfigurationStop() {
+    void testLoadConfigurationStop() {
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         loggerContext.putObject(CoreConstants.RECONFIGURE_ON_CHANGE_TASK, new ReconfigureOnChangeTask());
         logbackNacosLoggingAdapter.loadConfiguration(loggingProperties);

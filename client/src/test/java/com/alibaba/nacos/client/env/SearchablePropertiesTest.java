@@ -17,59 +17,59 @@
 package com.alibaba.nacos.client.env;
 
 import com.alibaba.nacos.client.constant.Constants;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Additional test cases for SearchableProperties.
  *
  * <p> Common cases see {@link NacosClientPropertiesTest}.</p>
  */
-public class SearchablePropertiesTest {
+class SearchablePropertiesTest {
     
     Method initMethod;
     
-    @BeforeClass
-    public static void init() {
+    @BeforeAll
+    static void init() {
         System.setProperty(Constants.SysEnv.NACOS_ENV_FIRST, "jvm");
     }
     
-    @Before
-    public void setUp() throws Exception {
+    @AfterAll
+    static void teardown() {
+        System.clearProperty(Constants.SysEnv.NACOS_ENV_FIRST);
+    }
+    
+    @BeforeEach
+    void setUp() throws Exception {
         initMethod = SearchableProperties.class.getDeclaredMethod("init");
         initMethod.setAccessible(true);
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         init();
         initMethod.invoke(null);
     }
     
-    @AfterClass
-    public static void teardown() {
-        System.clearProperty(Constants.SysEnv.NACOS_ENV_FIRST);
-    }
-    
     @Test
-    public void testInitWithInvalidOrder() throws IllegalAccessException, InvocationTargetException {
+    void testInitWithInvalidOrder() throws IllegalAccessException, InvocationTargetException {
         System.setProperty(Constants.SysEnv.NACOS_ENV_FIRST, "invalid");
         List<SourceType> order = (List<SourceType>) initMethod.invoke(null);
         assertOrder(order, SourceType.PROPERTIES, SourceType.JVM, SourceType.ENV);
     }
     
     @Test
-    public void testInitWithoutSpecifiedOrder() throws IllegalAccessException, InvocationTargetException {
+    void testInitWithoutSpecifiedOrder() throws IllegalAccessException, InvocationTargetException {
         System.clearProperty(Constants.SysEnv.NACOS_ENV_FIRST);
         List<SourceType> order = (List<SourceType>) initMethod.invoke(null);
         assertOrder(order, SourceType.PROPERTIES, SourceType.JVM, SourceType.ENV);
@@ -83,7 +83,7 @@ public class SearchablePropertiesTest {
     }
     
     @Test
-    public void testGetPropertyFromEnv() {
+    void testGetPropertyFromEnv() {
         System.setProperty("testFromSource", "jvm");
         NacosClientProperties properties = SearchableProperties.INSTANCE.derive();
         properties.setProperty("testFromSource", "properties");
@@ -91,7 +91,7 @@ public class SearchablePropertiesTest {
     }
     
     @Test
-    public void testGetPropertyFromUnknown() {
+    void testGetPropertyFromUnknown() {
         System.setProperty("testFromSource", "jvm");
         NacosClientProperties properties = SearchableProperties.INSTANCE.derive();
         properties.setProperty("testFromSource", "properties");

@@ -38,6 +38,8 @@ public class ConfigInfoStateWrapper implements Serializable {
     
     private String md5;
     
+    private String grayName;
+    
     public long getId() {
         return id;
     }
@@ -76,6 +78,14 @@ public class ConfigInfoStateWrapper implements Serializable {
     
     public void setTenant(String tenant) {
         this.tenant = tenant;
+    }
+    
+    public String getGrayName() {
+        return grayName;
+    }
+    
+    public void setGrayName(String grayName) {
+        this.grayName = grayName;
     }
     
     @Override

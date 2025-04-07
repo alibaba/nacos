@@ -18,15 +18,17 @@ package com.alibaba.nacos.client.auth.ram.injector;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.client.auth.ram.RamConstants;
+import com.alibaba.nacos.client.auth.ram.RamContext;
 import com.alibaba.nacos.client.auth.ram.identify.IdentifyConstants;
 import com.alibaba.nacos.client.auth.ram.identify.StsConfig;
 import com.alibaba.nacos.client.auth.ram.identify.StsCredential;
 import com.alibaba.nacos.client.auth.ram.identify.StsCredentialHolder;
-import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
-import com.alibaba.nacos.client.auth.ram.RamContext;
-import com.alibaba.nacos.plugin.auth.api.RequestResource;
+import com.alibaba.nacos.client.auth.ram.utils.CalculateV4SigningKeyUtil;
 import com.alibaba.nacos.client.auth.ram.utils.SignUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
@@ -56,8 +58,14 @@ public class NamingResourceInjector extends AbstractResourceInjector {
                     secretKey = stsCredential.getAccessKeySecret();
                     result.setParameter(IdentifyConstants.SECURITY_TOKEN_HEADER, stsCredential.getSecurityToken());
                 }
+                String signatureKey = secretKey;
+                if (StringUtils.isNotEmpty(context.getRegionId())) {
+                    signatureKey = CalculateV4SigningKeyUtil
+                            .finalSigningKeyStringWithDefaultInfo(secretKey, context.getRegionId());
+                    result.setParameter(RamConstants.SIGNATURE_VERSION, RamConstants.V4);
+                }
                 String signData = getSignData(getGroupedServiceName(resource));
-                String signature = SignUtil.sign(signData, secretKey);
+                String signature = SignUtil.sign(signData, signatureKey);
                 result.setParameter(SIGNATURE_FILED, signature);
                 result.setParameter(DATA_FILED, signData);
                 result.setParameter(AK_FILED, accessKey);
@@ -68,7 +76,8 @@ public class NamingResourceInjector extends AbstractResourceInjector {
     }
     
     private String getGroupedServiceName(RequestResource resource) {
-        if (resource.getResource().contains(Constants.SERVICE_INFO_SPLITER) || StringUtils.isBlank(resource.getGroup())) {
+        if (resource.getResource().contains(Constants.SERVICE_INFO_SPLITER) || StringUtils
+                .isBlank(resource.getGroup())) {
             return resource.getResource();
         }
         return NamingUtils.getGroupedNameOptional(resource.getResource(), resource.getGroup());
