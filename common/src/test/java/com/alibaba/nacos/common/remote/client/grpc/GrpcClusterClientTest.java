@@ -32,7 +32,7 @@ class GrpcClusterClientTest {
     
     @AfterEach
     void tearDown() throws NacosException {
-        System.clearProperty(GrpcConstants.NACOS_SERVER_GRPC_PORT_OFFSET_KEY);
+        System.clearProperty(GrpcConstants.NACOS_CLUSTER_GRPC_PORT_OFFSET_KEY);
         if (grpcClusterClient != null) {
             grpcClusterClient.shutdown();
         }
@@ -54,7 +54,7 @@ class GrpcClusterClientTest {
     
     @Test
     void testRpcPortOffsetFromSystemProperty() {
-        System.setProperty(GrpcConstants.NACOS_SERVER_GRPC_PORT_OFFSET_KEY, "10001");
+        System.setProperty(GrpcConstants.NACOS_CLUSTER_GRPC_PORT_OFFSET_KEY, "10001");
         grpcClusterClient = new GrpcClusterClient("test", 8, 8, Collections.emptyMap());
         assertEquals(10001, grpcClusterClient.rpcPortOffset());
     }
