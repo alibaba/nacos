@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.console.handler.impl.inner.ai;
 
-import com.alibaba.nacos.ai.service.McpOperationService;
+import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -38,39 +38,39 @@ import java.util.List;
 @EnabledInnerHandler
 public class McpInnerHandler implements McpHandler {
     
-    private final McpOperationService mcpOperationService;
+    private final McpServerOperationService mcpServerOperationService;
     
-    public McpInnerHandler(McpOperationService mcpOperationService) {
-        this.mcpOperationService = mcpOperationService;
+    public McpInnerHandler(McpServerOperationService mcpServerOperationService) {
+        this.mcpServerOperationService = mcpServerOperationService;
     }
     
     @Override
     public Page<McpServerBasicInfo> listMcpServers(String namespaceId, String mcpName, String search, int pageNo,
             int pageSize) {
-        return mcpOperationService.listMcpServer(namespaceId, mcpName, search, pageNo, pageSize);
+        return mcpServerOperationService.listMcpServer(namespaceId, mcpName, search, pageNo, pageSize);
     }
     
     @Override
     public McpServerDetailInfo getMcpServer(String namespaceId, String mcpName) throws NacosException {
-        return mcpOperationService.getMcpServer(namespaceId, mcpName);
+        return mcpServerOperationService.getMcpServer(namespaceId, mcpName);
     }
     
     @Override
     public void createMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
             List<McpTool> toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
-        mcpOperationService.createMcpServer(namespaceId, mcpName, serverSpecification, toolSpecification,
+        mcpServerOperationService.createMcpServer(namespaceId, mcpName, serverSpecification, toolSpecification,
                 endpointSpecification);
     }
     
     @Override
     public void updateMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
             List<McpTool> toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
-        mcpOperationService.updateMcpServer(namespaceId, mcpName, serverSpecification, toolSpecification,
+        mcpServerOperationService.updateMcpServer(namespaceId, mcpName, serverSpecification, toolSpecification,
                 endpointSpecification);
     }
     
     @Override
     public void deleteMcpServer(String namespaceId, String mcpName) throws NacosException {
-        mcpOperationService.deleteMcpServer(namespaceId, mcpName);
+        mcpServerOperationService.deleteMcpServer(namespaceId, mcpName);
     }
 }

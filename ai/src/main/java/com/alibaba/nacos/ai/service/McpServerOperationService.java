@@ -46,12 +46,12 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * Nacos AI MCP operation service.
+ * Nacos AI MCP server operation service.
  *
  * @author xiweng.yy
  */
 @Service
-public class McpOperationService {
+public class McpServerOperationService {
     
     private final ConfigQueryChainService configQueryChainService;
     
@@ -59,14 +59,17 @@ public class McpOperationService {
     
     private final ConfigDetailService configDetailService;
     
+    private final McpToolOperationService toolOperationService;
+    
     private final InstanceOperator instanceOperator;
     
-    public McpOperationService(ConfigQueryChainService configQueryChainService,
+    public McpServerOperationService(ConfigQueryChainService configQueryChainService,
             ConfigOperationService configOperationService, ConfigDetailService configDetailService,
-            InstanceOperator instanceOperator) {
+            McpToolOperationService toolOperationService, InstanceOperator instanceOperator) {
         this.configQueryChainService = configQueryChainService;
         this.configOperationService = configOperationService;
         this.configDetailService = configDetailService;
+        this.toolOperationService = toolOperationService;
         this.instanceOperator = instanceOperator;
     }
     
@@ -110,7 +113,7 @@ public class McpOperationService {
      * @return detail info with {@link McpServerDetailInfo}
      * @throws NacosApiException any exception during handling
      */
-    public McpServerDetailInfo getMcpServer(String namespaceId, String mcpName) throws NacosApiException {
+    public McpServerDetailInfo getMcpServer(String namespaceId, String mcpName) throws NacosException {
         ConfigQueryChainRequest request = buildQueryMcpServerRequest(namespaceId, mcpName);
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         if (ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND == response.getStatus()) {
@@ -118,7 +121,9 @@ public class McpOperationService {
                     String.format("mcp server `%s` not found", mcpName));
         }
         McpServerDetailInfo result = JacksonUtils.toObj(response.getContent(), McpServerDetailInfo.class);
-        // TODO get tool info and endpoint service info.
+        List<McpTool> tools = toolOperationService.getMcpTool(namespaceId, mcpName);
+        result.setTools(tools);
+        // TODO add endpoint info.
         return result;
     }
     
@@ -142,7 +147,7 @@ public class McpOperationService {
         }
         serverSpecification.setCapabilities(new LinkedList<>());
         if (null != toolSpecification && !toolSpecification.isEmpty()) {
-            // TODO create tool specification.
+            toolOperationService.refreshMcpTool(namespaceId, mcpName, toolSpecification);
             serverSpecification.getCapabilities().add(McpCapability.TOOL);
             serverSpecification.setToolsDescriptionRef(Constants.MCP_SERVER_TOOL_GROUP);
         }
@@ -179,7 +184,7 @@ public class McpOperationService {
         }
         serverSpecification.setCapabilities(new LinkedList<>());
         if (null != toolSpecification && !toolSpecification.isEmpty()) {
-            // TODO create tool specification.
+            toolOperationService.refreshMcpTool(namespaceId, mcpName, toolSpecification);
             serverSpecification.getCapabilities().add(McpCapability.TOOL);
             serverSpecification.setToolsDescriptionRef(Constants.MCP_SERVER_TOOL_GROUP);
         }
@@ -198,6 +203,7 @@ public class McpOperationService {
      * @throws NacosException any exception during handling
      */
     public void deleteMcpServer(String namespaceId, String mcpName) throws NacosException {
+        // TODO delete tool and service ref if needed (async or sync)
         configOperationService.deleteConfig(mcpName + Constants.MCP_SERVER_SPEC_DATA_ID_SUFFIX,
                 Constants.MCP_SERVER_GROUP, namespaceId, null, null, "nacos", null);
     }
