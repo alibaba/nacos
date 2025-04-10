@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,27 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.auth.constant;
+package com.alibaba.nacos.api.ai.model.mcp;
 
 /**
- * Auth sign type.
+ * AI MCP Server Capability enum, Mark the MCP Server support which capability such as support tools, prompts or resources.
  *
  * @author xiweng.yy
  */
-public class SignType {
+public enum McpCapability {
     
-    public static final String NAMING = "naming";
+    /**
+     * The MCP Server provider tools.
+     */
+    TOOL,
     
-    public static final String CONFIG = "config";
+    /**
+     * The MCP Server provider prompts.
+     */
+    PROMPT,
     
-    public static final String LOCK = "lock";
-    
-    public static final String AI = "ai";
-    
-    public static final String CONSOLE = "console";
-    
-    public static final String SPECIFIED = "specified";
+    /**
+     * The MCP Server provider resources.
+     */
+    RESOURCE;
 }

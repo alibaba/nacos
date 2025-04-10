@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.auth.constant;
+package com.alibaba.nacos.api.ai.constant;
 
 /**
- * Auth sign type.
+ * Nacos Ai contants.
  *
  * @author xiweng.yy
  */
-public class SignType {
+public class AiConstants {
     
-    public static final String NAMING = "naming";
-    
-    public static final String CONFIG = "config";
-    
-    public static final String LOCK = "lock";
-    
-    public static final String AI = "ai";
-    
-    public static final String CONSOLE = "console";
-    
-    public static final String SPECIFIED = "specified";
+    public static class Mcp {
+        
+        public static final String MCP_DEFAULT_NAMESPACE = "nacos-default-mcp";
+        
+        public static final String MCP_TYPE_LOCAL = "local";
+        
+        public static final String MCP_TYPE_SSE_REMOTE = "sse-remote";
+        
+        public static final String MCP_TYPE_STREAM_REMOTE = "streamble-remote";
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,18 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.auth.constant;
+package com.alibaba.nacos.ai.controller;
+
+import com.alibaba.nacos.api.annotation.NacosApi;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Auth sign type.
+ * Nacos AI MCP controller.
  *
  * @author xiweng.yy
  */
-public class SignType {
-    
-    public static final String NAMING = "naming";
-    
-    public static final String CONFIG = "config";
-    
-    public static final String LOCK = "lock";
-    
-    public static final String AI = "ai";
-    
-    public static final String CONSOLE = "console";
-    
-    public static final String SPECIFIED = "specified";
+@NacosApi
+@RestController
+public class McpController {
+
 }
