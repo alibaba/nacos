@@ -37,6 +37,8 @@ public class McpDetailForm extends McpForm {
     
     private String toolSpecification;
     
+    private String endpointSpecification;
+    
     @Override
     public void validate() throws NacosApiException {
         super.validate();
@@ -60,5 +62,13 @@ public class McpDetailForm extends McpForm {
     
     public void setToolSpecification(String toolSpecification) {
         this.toolSpecification = toolSpecification;
+    }
+    
+    public String getEndpointSpecification() {
+        return endpointSpecification;
+    }
+    
+    public void setEndpointSpecification(String endpointSpecification) {
+        this.endpointSpecification = endpointSpecification;
     }
 }

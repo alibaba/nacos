@@ -37,5 +37,10 @@ public class Constants {
     
     public static final String MCP_SERVER_GROUP = "mcp_server";
     
-    public static final String MCP_SPECIFICATION_DATA_ID_SUFFIX = "_mcp_server.json";
+    public static final String MCP_SERVER_TOOL_GROUP = "mcp_server_tool";
+    
+    public static final String MCP_SERVER_SPEC_DATA_ID_SUFFIX = "_mcp_server.json";
+    
+    public static final String MCP_SERVER_TOOL_DATA_ID_SUFFIX = "_mcp_server_tool.json";
+    
 }

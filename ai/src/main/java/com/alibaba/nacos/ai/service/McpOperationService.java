@@ -17,6 +17,8 @@
 package com.alibaba.nacos.ai.service;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.api.ai.model.mcp.McpCapability;
+import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpTool;
@@ -40,6 +42,7 @@ import com.alibaba.nacos.naming.core.InstanceOperator;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -82,10 +85,10 @@ public class McpOperationService {
             int pageSize) {
         String targetMcpName;
         if (StringUtils.isBlank(mcpName)) {
-            targetMcpName = Constants.ALL_PATTERN + Constants.MCP_SPECIFICATION_DATA_ID_SUFFIX;
+            targetMcpName = Constants.ALL_PATTERN + Constants.MCP_SERVER_SPEC_DATA_ID_SUFFIX;
             search = Constants.MCP_LIST_SEARCH_BLUR;
         } else {
-            targetMcpName = mcpName + Constants.MCP_SPECIFICATION_DATA_ID_SUFFIX;
+            targetMcpName = mcpName + Constants.MCP_SERVER_SPEC_DATA_ID_SUFFIX;
         }
         Page<ConfigInfo> mcpServerPage = configDetailService.findConfigInfoPage(search, pageNo, pageSize, targetMcpName,
                 Constants.MCP_SERVER_GROUP, namespaceId, Collections.emptyMap());
@@ -122,27 +125,34 @@ public class McpOperationService {
     /**
      * Create new mcp server.
      *
-     * @param namespaceId         namespace id of mcp server
-     * @param mcpName             name of mcp server
-     * @param serverSpecification mcp server specification, see {@link McpServerBasicInfo}
-     * @param toolSpecification   mcp server included tools, see {@link McpTool}, optional
+     * @param namespaceId           namespace id of mcp server
+     * @param mcpName               name of mcp server
+     * @param serverSpecification   mcp server specification, see {@link McpServerBasicInfo}
+     * @param toolSpecification     mcp server included tools, see {@link McpTool}, optional
+     * @param endpointSpecification mcp server endpoint specification, see {@link McpEndpointSpec}, optional
      * @throws NacosException any exception during handling
      */
     public void createMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
-            List<McpTool> toolSpecification) throws NacosException {
+            List<McpTool> toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
         ConfigQueryChainRequest request = buildQueryMcpServerRequest(namespaceId, mcpName);
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         if (ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND != response.getStatus()) {
             throw new NacosApiException(NacosApiException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
                     String.format("mcp server `%s` has existed, please update it rather than create.", mcpName));
         }
+        serverSpecification.setCapabilities(new LinkedList<>());
+        if (null != toolSpecification && !toolSpecification.isEmpty()) {
+            // TODO create tool specification.
+            serverSpecification.getCapabilities().add(McpCapability.TOOL);
+            serverSpecification.setToolsDescriptionRef(Constants.MCP_SERVER_TOOL_GROUP);
+        }
+        if (null != endpointSpecification) {
+            // TODO create service ref
+        }
         ConfigForm configForm = buildMcpConfigForm(namespaceId, mcpName, serverSpecification);
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
         configRequestInfo.setUpdateForExist(false);
         configOperationService.publishConfig(configForm, configRequestInfo, null);
-        if (null != toolSpecification && !toolSpecification.isEmpty()) {
-            // TODO create tool specification.
-        }
     }
     
     /**
@@ -152,25 +162,32 @@ public class McpOperationService {
      * `namespaceId` and `mcpName` can't be changed.
      * </p>
      *
-     * @param namespaceId         namespace id of mcp server, used to mark which mcp server to update
-     * @param mcpName             name of mcp server, used to mark which mcp server to update
-     * @param serverSpecification mcp server specification, see {@link McpServerBasicInfo}
-     * @param toolSpecification   mcp server included tools, see {@link McpTool}, optional
+     * @param namespaceId           namespace id of mcp server, used to mark which mcp server to update
+     * @param mcpName               name of mcp server, used to mark which mcp server to update
+     * @param serverSpecification   mcp server specification, see {@link McpServerBasicInfo}
+     * @param toolSpecification     mcp server included tools, see {@link McpTool}, optional
+     * @param endpointSpecification mcp server endpoint specification, see {@link McpEndpointSpec}, optional
      * @throws NacosException any exception during handling
      */
     public void updateMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
-            List<McpTool> toolSpecification) throws NacosException {
+            List<McpTool> toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
         ConfigQueryChainRequest request = buildQueryMcpServerRequest(namespaceId, mcpName);
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         if (ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND == response.getStatus()) {
             throw new NacosApiException(NacosApiException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     String.format("mcp server `%s` not found", mcpName));
         }
-        ConfigForm configForm = buildMcpConfigForm(namespaceId, mcpName, serverSpecification);
-        configOperationService.publishConfig(configForm, new ConfigRequestInfo(), null);
+        serverSpecification.setCapabilities(new LinkedList<>());
         if (null != toolSpecification && !toolSpecification.isEmpty()) {
             // TODO create tool specification.
+            serverSpecification.getCapabilities().add(McpCapability.TOOL);
+            serverSpecification.setToolsDescriptionRef(Constants.MCP_SERVER_TOOL_GROUP);
         }
+        if (null != endpointSpecification) {
+            // TODO create service ref
+        }
+        ConfigForm configForm = buildMcpConfigForm(namespaceId, mcpName, serverSpecification);
+        configOperationService.publishConfig(configForm, new ConfigRequestInfo(), null);
     }
     
     /**
@@ -181,7 +198,7 @@ public class McpOperationService {
      * @throws NacosException any exception during handling
      */
     public void deleteMcpServer(String namespaceId, String mcpName) throws NacosException {
-        configOperationService.deleteConfig(mcpName + Constants.MCP_SPECIFICATION_DATA_ID_SUFFIX,
+        configOperationService.deleteConfig(mcpName + Constants.MCP_SERVER_SPEC_DATA_ID_SUFFIX,
                 Constants.MCP_SERVER_GROUP, namespaceId, null, null, "nacos", null);
     }
     
@@ -191,7 +208,7 @@ public class McpOperationService {
         configFormV3.setGroupName(Constants.MCP_SERVER_GROUP);
         configFormV3.setGroup(Constants.MCP_SERVER_GROUP);
         configFormV3.setNamespaceId(namespaceId);
-        configFormV3.setDataId(mcpName + Constants.MCP_SPECIFICATION_DATA_ID_SUFFIX);
+        configFormV3.setDataId(mcpName + Constants.MCP_SERVER_SPEC_DATA_ID_SUFFIX);
         configFormV3.setContent(JacksonUtils.toJson(serverSpecification));
         configFormV3.setType(ConfigType.JSON.getType());
         configFormV3.setAppName(mcpName);
@@ -201,7 +218,7 @@ public class McpOperationService {
     
     private ConfigQueryChainRequest buildQueryMcpServerRequest(String namespaceId, String mcpName) {
         ConfigQueryChainRequest request = new ConfigQueryChainRequest();
-        request.setDataId(mcpName + Constants.MCP_SPECIFICATION_DATA_ID_SUFFIX);
+        request.setDataId(mcpName + Constants.MCP_SERVER_SPEC_DATA_ID_SUFFIX);
         request.setGroup(Constants.MCP_SERVER_GROUP);
         request.setTenant(namespaceId);
         return request;

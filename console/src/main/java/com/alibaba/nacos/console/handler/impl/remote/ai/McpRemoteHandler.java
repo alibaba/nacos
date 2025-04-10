@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.handler.impl.remote.ai;
 
+import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpTool;
@@ -49,13 +50,13 @@ public class McpRemoteHandler implements McpHandler {
     
     @Override
     public void createMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
-            List<McpTool> toolSpecification) throws NacosException {
+            List<McpTool> toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
         throw new UnsupportedOperationException("AI MCP API not support for console mode.");
     }
     
     @Override
     public void updateMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
-            List<McpTool> toolSpecification) throws NacosException {
+            List<McpTool> toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
         throw new UnsupportedOperationException("AI MCP API not support for console mode.");
     }
     

@@ -20,6 +20,8 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.mcp.McpDetailForm;
 import com.alibaba.nacos.ai.form.mcp.McpForm;
 import com.alibaba.nacos.ai.form.mcp.McpListForm;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpTool;
@@ -113,7 +115,8 @@ public class ConsoleMcpController {
         mcpForm.validate();
         McpServerBasicInfo basicInfo = parseMcpServerBasicInfo(mcpForm);
         List<McpTool> mcpTools = parseMcpTools(mcpForm);
-        mcpProxy.createMcpServer(mcpForm.getNamespaceId(), mcpForm.getMcpName(), basicInfo, mcpTools);
+        McpEndpointSpec endpointSpec = parseMcpEndpointSpec(basicInfo, mcpForm);
+        mcpProxy.createMcpServer(mcpForm.getNamespaceId(), mcpForm.getMcpName(), basicInfo, mcpTools, endpointSpec);
         return Result.success("ok");
     }
     
@@ -133,7 +136,8 @@ public class ConsoleMcpController {
         mcpForm.validate();
         McpServerBasicInfo basicInfo = parseMcpServerBasicInfo(mcpForm);
         List<McpTool> mcpTools = parseMcpTools(mcpForm);
-        mcpProxy.updateMcpServer(mcpForm.getNamespaceId(), mcpForm.getMcpName(), basicInfo, mcpTools);
+        McpEndpointSpec endpointSpec = parseMcpEndpointSpec(basicInfo, mcpForm);
+        mcpProxy.updateMcpServer(mcpForm.getNamespaceId(), mcpForm.getMcpName(), basicInfo, mcpTools, endpointSpec);
         return Result.success("ok");
     }
     
@@ -167,6 +171,19 @@ public class ConsoleMcpController {
             return Collections.emptyList();
         }
         return deserializeSpec(mcpForm.getServerSpecification(), new TypeReference<>() {
+        });
+    }
+    
+    private McpEndpointSpec parseMcpEndpointSpec(McpServerBasicInfo basicInfo, McpDetailForm mcpForm)
+            throws NacosApiException {
+        if (AiConstants.Mcp.MCP_TYPE_LOCAL.equalsIgnoreCase(basicInfo.getType())) {
+            return null;
+        }
+        if (StringUtils.isBlank(mcpForm.getEndpointSpecification())) {
+            throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "request parameter `endpointSpecification` is required if mcp server type not `local`.");
+        }
+        return deserializeSpec(mcpForm.getEndpointSpecification(), new TypeReference<>() {
         });
     }
     

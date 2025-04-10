@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.handler.ai;
 
+import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpTool;
@@ -59,14 +60,15 @@ public interface McpHandler {
     /**
      * Create new mcp server.
      *
-     * @param namespaceId         namespace id of mcp server
-     * @param mcpName             name of mcp server
-     * @param serverSpecification mcp server specification, see {@link McpServerBasicInfo}
-     * @param toolSpecification   mcp server included tools, see {@link McpTool}, optional
+     * @param namespaceId           namespace id of mcp server
+     * @param mcpName               name of mcp server
+     * @param serverSpecification   mcp server specification, see {@link McpServerBasicInfo}
+     * @param toolSpecification     mcp server included tools, see {@link McpTool}, optional
+     * @param endpointSpecification mcp server endpoint specification, see {@link McpEndpointSpec}, optional
      * @throws NacosException any exception during handling
      */
     void createMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
-            List<McpTool> toolSpecification) throws NacosException;
+            List<McpTool> toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException;
     
     /**
      * Update existed mcp server.
@@ -75,14 +77,15 @@ public interface McpHandler {
      * `namespaceId` and `mcpName` can't be changed.
      * </p>
      *
-     * @param namespaceId         namespace id of mcp server, used to mark which mcp server to update
-     * @param mcpName             name of mcp server, used to mark which mcp server to update
-     * @param serverSpecification mcp server specification, see {@link McpServerBasicInfo}
-     * @param toolSpecification   mcp server included tools, see {@link McpTool}, optional
+     * @param namespaceId           namespace id of mcp server, used to mark which mcp server to update
+     * @param mcpName               name of mcp server, used to mark which mcp server to update
+     * @param serverSpecification   mcp server specification, see {@link McpServerBasicInfo}
+     * @param toolSpecification     mcp server included tools, see {@link McpTool}, optional
+     * @param endpointSpecification mcp server endpoint specification, see {@link McpEndpointSpec}, optional
      * @throws NacosException any exception during handling
      */
     void updateMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
-            List<McpTool> toolSpecification) throws NacosException;
+            List<McpTool> toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException;
     
     /**
      * Delete existed mcp server.

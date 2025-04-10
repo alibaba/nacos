@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.proxy.ai;
 
+import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpTool;
@@ -75,11 +76,12 @@ public class McpProxy {
      * @param mcpName             name of mcp server
      * @param serverSpecification mcp server specification, see {@link McpServerBasicInfo}
      * @param toolSpecification   mcp server included tools, see {@link McpTool}, optional
+     * @param endpointSpecification mcp server endpoint specification, see {@link McpEndpointSpec}, optional
      * @throws NacosException any exception during handling
      */
     public void createMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
-            List<McpTool> toolSpecification) throws NacosException {
-        mcpHandler.createMcpServer(namespaceId, mcpName, serverSpecification, toolSpecification);
+            List<McpTool> toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
+        mcpHandler.createMcpServer(namespaceId, mcpName, serverSpecification, toolSpecification, endpointSpecification);
     }
     
     /**
@@ -93,11 +95,12 @@ public class McpProxy {
      * @param mcpName             name of mcp server, used to mark which mcp server to update
      * @param serverSpecification mcp server specification, see {@link McpServerBasicInfo}
      * @param toolSpecification   mcp server included tools, see {@link McpTool}, optional
+     * @param endpointSpecification mcp server endpoint specification, see {@link McpEndpointSpec}, optional
      * @throws NacosException any exception during handling
      */
     public void updateMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
-            List<McpTool> toolSpecification) throws NacosException {
-        mcpHandler.updateMcpServer(namespaceId, mcpName, serverSpecification, toolSpecification);
+            List<McpTool> toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
+        mcpHandler.updateMcpServer(namespaceId, mcpName, serverSpecification, toolSpecification, endpointSpecification);
     }
     
     /**
