@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpTool;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.McpHandler;
 import org.springframework.stereotype.Service;
 
@@ -46,18 +47,20 @@ public class McpProxy {
      * @param mcpName     mcp name pattern, if null or empty, filter all mcp servers.
      * @param search      search type `blur` or `accurate`, means whether to search by fuzzy or exact match by
      *                    `mcpName`.
+     * @param pageNo      page number, start from 1
+     * @param pageSize    page size each page
      * @return list of {@link McpServerBasicInfo} matched input parameters.
      */
-    public List<McpServerBasicInfo> listMcpServers(String namespaceId, String mcpName, String search)
-            throws NacosException {
-        return mcpHandler.listMcpServers(namespaceId, mcpName, search);
+    public Page<McpServerBasicInfo> listMcpServers(String namespaceId, String mcpName, String search, int pageNo,
+            int pageSize) throws NacosException {
+        return mcpHandler.listMcpServers(namespaceId, mcpName, search, pageNo, pageSize);
     }
     
     /**
      * Get specified mcp server detail info.
      *
-     * @param namespaceId   namespace id of mcp server
-     * @param mcpName       name of mcp server
+     * @param namespaceId namespace id of mcp server
+     * @param mcpName     name of mcp server
      * @return detail info with {@link McpServerDetailInfo}
      * @throws NacosException any exception during handling
      */
@@ -68,11 +71,11 @@ public class McpProxy {
     /**
      * Create new mcp server.
      *
-     * @param namespaceId           namespace id of mcp server
-     * @param mcpName               name of mcp server
-     * @param serverSpecification   mcp server specification, see {@link McpServerBasicInfo}
-     * @param toolSpecification     mcp server included tools, see {@link McpTool}, optional
-     * @throws NacosException       any exception during handling
+     * @param namespaceId         namespace id of mcp server
+     * @param mcpName             name of mcp server
+     * @param serverSpecification mcp server specification, see {@link McpServerBasicInfo}
+     * @param toolSpecification   mcp server included tools, see {@link McpTool}, optional
+     * @throws NacosException any exception during handling
      */
     public void createMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
             List<McpTool> toolSpecification) throws NacosException {
@@ -83,14 +86,14 @@ public class McpProxy {
      * Update existed mcp server.
      *
      * <p>
-     *     `namespaceId` and `mcpName` can't be changed.
+     * `namespaceId` and `mcpName` can't be changed.
      * </p>
      *
-     * @param namespaceId           namespace id of mcp server, used to mark which mcp server to update
-     * @param mcpName               name of mcp server, used to mark which mcp server to update
-     * @param serverSpecification   mcp server specification, see {@link McpServerBasicInfo}
-     * @param toolSpecification     mcp server included tools, see {@link McpTool}, optional
-     * @throws NacosException       any exception during handling
+     * @param namespaceId         namespace id of mcp server, used to mark which mcp server to update
+     * @param mcpName             name of mcp server, used to mark which mcp server to update
+     * @param serverSpecification mcp server specification, see {@link McpServerBasicInfo}
+     * @param toolSpecification   mcp server included tools, see {@link McpTool}, optional
+     * @throws NacosException any exception during handling
      */
     public void updateMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
             List<McpTool> toolSpecification) throws NacosException {
@@ -100,8 +103,8 @@ public class McpProxy {
     /**
      * Delete existed mcp server.
      *
-     * @param namespaceId   namespace id of mcp server
-     * @param mcpName       name of mcp server
+     * @param namespaceId namespace id of mcp server
+     * @param mcpName     name of mcp server
      * @throws NacosException any exception during handling
      */
     public void deleteMcpServer(String namespaceId, String mcpName) throws NacosException {

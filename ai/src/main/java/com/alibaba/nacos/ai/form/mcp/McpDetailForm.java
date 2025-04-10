@@ -16,15 +16,12 @@
 
 package com.alibaba.nacos.ai.form.mcp;
 
-import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
-import com.alibaba.nacos.api.ai.model.mcp.McpTool;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.Serial;
-import java.util.List;
-import java.util.Objects;
 
 /**
  * Nacos AI Mcp Server request detail form, used in create or update.
@@ -36,32 +33,32 @@ public class McpDetailForm extends McpForm {
     @Serial
     private static final long serialVersionUID = 8016131725604983670L;
     
-    private McpServerBasicInfo serverSpecification;
+    private String serverSpecification;
     
-    private List<McpTool> toolSpecification;
+    private String toolSpecification;
     
     @Override
     public void validate() throws NacosApiException {
         super.validate();
-        if (Objects.isNull(serverSpecification)) {
+        if (StringUtils.isEmpty(serverSpecification)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter 'serverSpecification' type McpServerBasicInfo is not present");
         }
     }
     
-    public McpServerBasicInfo getServerSpecification() {
+    public String getServerSpecification() {
         return serverSpecification;
     }
     
-    public void setServerSpecification(McpServerBasicInfo serverSpecification) {
+    public void setServerSpecification(String serverSpecification) {
         this.serverSpecification = serverSpecification;
     }
     
-    public List<McpTool> getToolSpecification() {
+    public String getToolSpecification() {
         return toolSpecification;
     }
     
-    public void setToolSpecification(List<McpTool> toolSpecification) {
+    public void setToolSpecification(String toolSpecification) {
         this.toolSpecification = toolSpecification;
     }
 }

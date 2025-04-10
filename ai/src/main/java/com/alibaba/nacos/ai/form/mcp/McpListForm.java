@@ -40,14 +40,19 @@ public class McpListForm extends McpForm {
     
     @Override
     public void validate() throws NacosApiException {
-        super.validate();
-        if (StringUtils.isEmpty(search)) {
-            search = Constants.MCP_LIST_SEARCH_ACCURATE;
-        }
+        fillDefaultValue();
         if (!Constants.MCP_LIST_SEARCH_ACCURATE.equalsIgnoreCase(search)
                 && !Constants.MCP_LIST_SEARCH_BLUR.equalsIgnoreCase(search)) {
             throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "Request parameter `search` should be `accurate` or `blur`.");
+        }
+    }
+    
+    @Override
+    protected void fillDefaultValue() {
+        super.fillDefaultValue();
+        if (StringUtils.isEmpty(search)) {
+            search = Constants.MCP_LIST_SEARCH_ACCURATE;
         }
     }
     

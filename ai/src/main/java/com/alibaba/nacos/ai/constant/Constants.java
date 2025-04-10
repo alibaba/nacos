@@ -32,4 +32,10 @@ public class Constants {
     public static final String MCP_LIST_SEARCH_ACCURATE = "accurate";
     
     public static final String MCP_LIST_SEARCH_BLUR = "blur";
+    
+    public static final String ALL_PATTERN = com.alibaba.nacos.api.common.Constants.ALL_PATTERN;
+    
+    public static final String MCP_SERVER_GROUP = "mcp_server";
+    
+    public static final String MCP_SPECIFICATION_DATA_ID_SUFFIX = "_mcp_server.json";
 }

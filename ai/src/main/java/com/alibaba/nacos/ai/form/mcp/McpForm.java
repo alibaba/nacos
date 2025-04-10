@@ -48,7 +48,7 @@ public class McpForm implements NacosForm {
         }
     }
     
-    private void fillDefaultValue() {
+    protected void fillDefaultValue() {
         if (StringUtils.isEmpty(namespaceId)) {
             namespaceId = AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;
         }

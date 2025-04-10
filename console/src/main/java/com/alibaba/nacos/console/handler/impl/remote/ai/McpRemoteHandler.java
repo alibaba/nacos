@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpTool;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.McpHandler;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import org.springframework.stereotype.Service;
@@ -36,8 +37,8 @@ import java.util.List;
 public class McpRemoteHandler implements McpHandler {
     
     @Override
-    public List<McpServerBasicInfo> listMcpServers(String namespaceId, String mcpName, String search)
-            throws NacosException {
+    public Page<McpServerBasicInfo> listMcpServers(String namespaceId, String mcpName, String search, int pageNo,
+            int pageSize) throws NacosException {
         throw new UnsupportedOperationException("AI MCP API not support for console mode.");
     }
     
