@@ -20,6 +20,7 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.auth.context.HttpIdentityContextBuilder;
 import com.alibaba.nacos.auth.parser.http.AbstractHttpResourceParser;
+import com.alibaba.nacos.auth.parser.http.AiHttpResourceParser;
 import com.alibaba.nacos.auth.parser.http.ConfigHttpResourceParser;
 import com.alibaba.nacos.auth.parser.http.NamingHttpResourceParser;
 import com.alibaba.nacos.auth.serveridentity.ServerIdentity;
@@ -55,6 +56,7 @@ public class HttpProtocolAuthService extends AbstractProtocolAuthService<HttpSer
         super.initialize();
         resourceParserMap.put(SignType.NAMING, new NamingHttpResourceParser());
         resourceParserMap.put(SignType.CONFIG, new ConfigHttpResourceParser());
+        resourceParserMap.put(SignType.AI, new AiHttpResourceParser());
     }
     
     @Override
