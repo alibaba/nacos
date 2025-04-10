@@ -40,11 +40,7 @@ public class McpServerBasicInfo {
     
     private String resourceDescriptionRef;
     
-    private String backendProtocol;
-    
-    private McpServiceRef serviceRef;
-    
-    private String exportPath;
+    private McpServerRemoteServiceConfig remoteServiceConfig;
     
     private Map<String, Object> localServerConfig;
     
@@ -108,28 +104,12 @@ public class McpServerBasicInfo {
         this.resourceDescriptionRef = resourceDescriptionRef;
     }
     
-    public String getBackendProtocol() {
-        return backendProtocol;
+    public McpServerRemoteServiceConfig getRemoteServiceConfig() {
+        return remoteServiceConfig;
     }
     
-    public void setBackendProtocol(String backendProtocol) {
-        this.backendProtocol = backendProtocol;
-    }
-    
-    public McpServiceRef getServiceRef() {
-        return serviceRef;
-    }
-    
-    public void setServiceRef(McpServiceRef serviceRef) {
-        this.serviceRef = serviceRef;
-    }
-    
-    public String getExportPath() {
-        return exportPath;
-    }
-    
-    public void setExportPath(String exportPath) {
-        this.exportPath = exportPath;
+    public void setRemoteServiceConfig(McpServerRemoteServiceConfig remoteServiceConfig) {
+        this.remoteServiceConfig = remoteServiceConfig;
     }
     
     public Map<String, Object> getLocalServerConfig() {
