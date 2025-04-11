@@ -17,16 +17,20 @@
 package com.alibaba.nacos.ai.service;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpCapability;
+import com.alibaba.nacos.api.ai.model.mcp.McpEndpointInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServiceRef;
 import com.alibaba.nacos.api.ai.model.mcp.McpTool;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -38,8 +42,7 @@ import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
-import com.alibaba.nacos.naming.core.InstanceOperator;
-import org.springframework.stereotype.Service;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -50,7 +53,7 @@ import java.util.List;
  *
  * @author xiweng.yy
  */
-@Service
+@org.springframework.stereotype.Service
 public class McpServerOperationService {
     
     private final ConfigQueryChainService configQueryChainService;
@@ -61,16 +64,16 @@ public class McpServerOperationService {
     
     private final McpToolOperationService toolOperationService;
     
-    private final InstanceOperator instanceOperator;
+    private final McpEndpointOperationService endpointOperationService;
     
     public McpServerOperationService(ConfigQueryChainService configQueryChainService,
             ConfigOperationService configOperationService, ConfigDetailService configDetailService,
-            McpToolOperationService toolOperationService, InstanceOperator instanceOperator) {
+            McpToolOperationService toolOperationService, McpEndpointOperationService endpointOperationService) {
         this.configQueryChainService = configQueryChainService;
         this.configOperationService = configOperationService;
         this.configDetailService = configDetailService;
         this.toolOperationService = toolOperationService;
-        this.instanceOperator = instanceOperator;
+        this.endpointOperationService = endpointOperationService;
     }
     
     /**
@@ -111,7 +114,7 @@ public class McpServerOperationService {
      * @param namespaceId namespace id of mcp server
      * @param mcpName     name of mcp server
      * @return detail info with {@link McpServerDetailInfo}
-     * @throws NacosApiException any exception during handling
+     * @throws NacosException any exception during handling
      */
     public McpServerDetailInfo getMcpServer(String namespaceId, String mcpName) throws NacosException {
         ConfigQueryChainRequest request = buildQueryMcpServerRequest(namespaceId, mcpName);
@@ -121,10 +124,27 @@ public class McpServerOperationService {
                     String.format("mcp server `%s` not found", mcpName));
         }
         McpServerDetailInfo result = JacksonUtils.toObj(response.getContent(), McpServerDetailInfo.class);
-        List<McpTool> tools = toolOperationService.getMcpTool(namespaceId, mcpName);
-        result.setTools(tools);
-        // TODO add endpoint info.
+        if (null != result.getToolsDescriptionRef()) {
+            List<McpTool> tools = toolOperationService.getMcpTool(namespaceId, mcpName);
+            result.setTools(tools);
+        }
+        if (!AiConstants.Mcp.MCP_TYPE_LOCAL.equalsIgnoreCase(result.getType())) {
+            injectBackendEndpointRef(result);
+        }
         return result;
+    }
+    
+    private void injectBackendEndpointRef(McpServerDetailInfo detailInfo) throws NacosException {
+        List<Instance> instances = endpointOperationService.getMcpServerEndpointInstances(
+                detailInfo.getRemoteServerConfig().getServiceRef());
+        List<McpEndpointInfo> backendEndpoints = new LinkedList<>();
+        for (Instance each : instances) {
+            McpEndpointInfo mcpEndpointInfo = new McpEndpointInfo();
+            mcpEndpointInfo.setAddress(each.getIp());
+            mcpEndpointInfo.setPort(each.getPort());
+            backendEndpoints.add(mcpEndpointInfo);
+        }
+        detailInfo.setBackendEndpoints(backendEndpoints);
     }
     
     /**
@@ -145,15 +165,7 @@ public class McpServerOperationService {
             throw new NacosApiException(NacosApiException.CONFLICT, ErrorCode.RESOURCE_CONFLICT,
                     String.format("mcp server `%s` has existed, please update it rather than create.", mcpName));
         }
-        serverSpecification.setCapabilities(new LinkedList<>());
-        if (null != toolSpecification && !toolSpecification.isEmpty()) {
-            toolOperationService.refreshMcpTool(namespaceId, mcpName, toolSpecification);
-            serverSpecification.getCapabilities().add(McpCapability.TOOL);
-            serverSpecification.setToolsDescriptionRef(Constants.MCP_SERVER_TOOL_GROUP);
-        }
-        if (null != endpointSpecification) {
-            // TODO create service ref
-        }
+        injectToolAndEndpoint(namespaceId, mcpName, serverSpecification, toolSpecification, endpointSpecification);
         ConfigForm configForm = buildMcpConfigForm(namespaceId, mcpName, serverSpecification);
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
         configRequestInfo.setUpdateForExist(false);
@@ -182,15 +194,7 @@ public class McpServerOperationService {
             throw new NacosApiException(NacosApiException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
                     String.format("mcp server `%s` not found", mcpName));
         }
-        serverSpecification.setCapabilities(new LinkedList<>());
-        if (null != toolSpecification && !toolSpecification.isEmpty()) {
-            toolOperationService.refreshMcpTool(namespaceId, mcpName, toolSpecification);
-            serverSpecification.getCapabilities().add(McpCapability.TOOL);
-            serverSpecification.setToolsDescriptionRef(Constants.MCP_SERVER_TOOL_GROUP);
-        }
-        if (null != endpointSpecification) {
-            // TODO create service ref
-        }
+        injectToolAndEndpoint(namespaceId, mcpName, serverSpecification, toolSpecification, endpointSpecification);
         ConfigForm configForm = buildMcpConfigForm(namespaceId, mcpName, serverSpecification);
         configOperationService.publishConfig(configForm, new ConfigRequestInfo(), null);
     }
@@ -203,9 +207,29 @@ public class McpServerOperationService {
      * @throws NacosException any exception during handling
      */
     public void deleteMcpServer(String namespaceId, String mcpName) throws NacosException {
-        // TODO delete tool and service ref if needed (async or sync)
+        toolOperationService.deleteMcpTool(namespaceId, mcpName);
+        endpointOperationService.deleteMcpServerEndpointService(namespaceId, mcpName);
         configOperationService.deleteConfig(mcpName + Constants.MCP_SERVER_SPEC_DATA_ID_SUFFIX,
                 Constants.MCP_SERVER_GROUP, namespaceId, null, null, "nacos", null);
+    }
+    
+    private void injectToolAndEndpoint(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
+            List<McpTool> toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
+        serverSpecification.setCapabilities(new LinkedList<>());
+        if (null != toolSpecification && !toolSpecification.isEmpty()) {
+            toolOperationService.refreshMcpTool(namespaceId, mcpName, toolSpecification);
+            serverSpecification.getCapabilities().add(McpCapability.TOOL);
+            serverSpecification.setToolsDescriptionRef(mcpName + Constants.MCP_SERVER_TOOL_DATA_ID_SUFFIX);
+        }
+        if (null != endpointSpecification) {
+            Service service = endpointOperationService.createMcpServerEndpointServiceIfNecessary(namespaceId, mcpName,
+                    endpointSpecification);
+            McpServiceRef serviceRef = new McpServiceRef();
+            serviceRef.setNamespaceId(service.getNamespace());
+            serviceRef.setGroupName(service.getGroup());
+            serviceRef.setServiceName(service.getName());
+            serverSpecification.getRemoteServerConfig().setServiceRef(serviceRef);
+        }
     }
     
     private ConfigFormV3 buildMcpConfigForm(String namespaceId, String mcpName,

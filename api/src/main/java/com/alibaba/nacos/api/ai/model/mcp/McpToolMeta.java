@@ -27,6 +27,8 @@ public class McpToolMeta {
     
     private Map<String, String> invokeContext;
     
+    private boolean enabled;
+    
     private Map<String, Object> templates;
     
     public Map<String, String> getInvokeContext() {
@@ -35,6 +37,14 @@ public class McpToolMeta {
     
     public void setInvokeContext(Map<String, String> invokeContext) {
         this.invokeContext = invokeContext;
+    }
+    
+    public boolean isEnabled() {
+        return enabled;
+    }
+    
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
     
     public Map<String, Object> getTemplates() {

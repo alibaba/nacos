@@ -76,6 +76,11 @@ public class McpToolOperationService {
         return transferToMcpServerTool(response);
     }
     
+    public void deleteMcpTool(String namespaceId, String mcpName) throws NacosException {
+        configOperationService.deleteConfig(mcpName + Constants.MCP_SERVER_TOOL_DATA_ID_SUFFIX,
+                Constants.MCP_SERVER_TOOL_GROUP, namespaceId, null, null, "nacos", null);
+    }
+    
     private ConfigFormV3 buildMcpToolConfigForm(String namespaceId, String mcpName, List<McpTool> toolSpecification) {
         ConfigFormV3 configFormV3 = new ConfigFormV3();
         configFormV3.setGroupName(Constants.MCP_SERVER_TOOL_GROUP);

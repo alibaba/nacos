@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.ai.model.mcp;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -27,7 +28,7 @@ public class McpEndpointSpec {
     
     private String type;
     
-    private Map<String, String> data;
+    private Map<String, String> data = new HashMap<>();
     
     public String getType() {
         return type;

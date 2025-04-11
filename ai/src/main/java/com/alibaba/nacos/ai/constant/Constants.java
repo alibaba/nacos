@@ -43,4 +43,14 @@ public class Constants {
     
     public static final String MCP_SERVER_TOOL_DATA_ID_SUFFIX = "_mcp_server_tool.json";
     
+    public static final String MCP_SERVER_ENDPOINT_GROUP = "mcp_server_endpoint";
+    
+    public static final String MCP_SERVER_ENDPOINT_CLUSTER = com.alibaba.nacos.api.common.Constants.DEFAULT_CLUSTER_NAME;
+    
+    public static final String MCP_SERVER_ENDPOINT_ADDRESS = "address";
+    
+    public static final String MCP_SERVER_ENDPOINT_PORT = "port";
+    
+    public static final String MCP_SERVER_ENDPOINT_METADATA_MARK = "__nacos.ai.mcp.service__";
+    
 }

@@ -40,7 +40,7 @@ public class McpServerBasicInfo {
     
     private String resourceDescriptionRef;
     
-    private McpServerRemoteServiceConfig remoteServiceConfig;
+    private McpServerRemoteServiceConfig remoteServerConfig;
     
     private Map<String, Object> localServerConfig;
     
@@ -104,12 +104,12 @@ public class McpServerBasicInfo {
         this.resourceDescriptionRef = resourceDescriptionRef;
     }
     
-    public McpServerRemoteServiceConfig getRemoteServiceConfig() {
-        return remoteServiceConfig;
+    public McpServerRemoteServiceConfig getRemoteServerConfig() {
+        return remoteServerConfig;
     }
     
-    public void setRemoteServiceConfig(McpServerRemoteServiceConfig remoteServiceConfig) {
-        this.remoteServiceConfig = remoteServiceConfig;
+    public void setRemoteServerConfig(McpServerRemoteServiceConfig remoteServerConfig) {
+        this.remoteServerConfig = remoteServerConfig;
     }
     
     public Map<String, Object> getLocalServerConfig() {

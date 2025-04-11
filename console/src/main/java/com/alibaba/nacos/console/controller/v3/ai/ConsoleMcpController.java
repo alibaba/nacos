@@ -170,7 +170,7 @@ public class ConsoleMcpController {
         if (StringUtils.isBlank(mcpForm.getToolSpecification())) {
             return Collections.emptyList();
         }
-        return deserializeSpec(mcpForm.getServerSpecification(), new TypeReference<>() {
+        return deserializeSpec(mcpForm.getToolSpecification(), new TypeReference<>() {
         });
     }
     

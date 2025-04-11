@@ -32,5 +32,9 @@ public class AiConstants {
         public static final String MCP_TYPE_SSE_REMOTE = "sse-remote";
         
         public static final String MCP_TYPE_STREAM_REMOTE = "streamble-remote";
+        
+        public static final String MCP_ENDPOINT_TYPE_REF = "REF";
+        
+        public static final String MCP_ENDPOINT_TYPE_DIRECT = "DIRECT";
     }
 }
