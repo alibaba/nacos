@@ -1073,8 +1073,28 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         }
         MapperResult mapperResult = configInfoMapper.findAllConfigInfo4Export(context);
         try {
-            return this.jt.query(mapperResult.getSql(), mapperResult.getParamList().toArray(),
+            List<ConfigAllInfo> configAllInfos = jt.query(mapperResult.getSql(), mapperResult.getParamList().toArray(),
                     CONFIG_ALL_INFO_ROW_MAPPER);
+            
+            if (CollectionUtils.isEmpty(configAllInfos)) {
+                return configAllInfos;
+            }
+            for (ConfigAllInfo configAllInfo : configAllInfos) {
+                List<String> configTagList = selectTagByConfig(configAllInfo.getDataId(), configAllInfo.getGroup(), configAllInfo.getTenant());
+                if (CollectionUtils.isNotEmpty(configTagList)) {
+                    StringBuilder configTags = new StringBuilder();
+                    for (String configTag : configTagList) {
+                        if (configTags.length() == 0) {
+                            configTags.append(configTag);
+                        } else {
+                            configTags.append(',').append(configTag);
+                        }
+                    }
+                    configAllInfo.setConfigTags(configTags.toString());
+                }
+            }
+            
+            return configAllInfos;
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;

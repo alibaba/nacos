@@ -1001,8 +1001,28 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         }
         
         MapperResult mapperResult = configInfoMapper.findAllConfigInfo4Export(context);
-        return databaseOperate.queryMany(mapperResult.getSql(), mapperResult.getParamList().toArray(),
-                CONFIG_ALL_INFO_ROW_MAPPER);
+        List<ConfigAllInfo> configAllInfos = databaseOperate.queryMany(mapperResult.getSql(),
+                mapperResult.getParamList().toArray(), CONFIG_ALL_INFO_ROW_MAPPER);
+        
+        if (CollectionUtils.isEmpty(configAllInfos)) {
+            return configAllInfos;
+        }
+        for (ConfigAllInfo configAllInfo : configAllInfos) {
+            List<String> configTagList = selectTagByConfig(configAllInfo.getDataId(), configAllInfo.getGroup(), configAllInfo.getTenant());
+            if (CollectionUtils.isNotEmpty(configTagList)) {
+                StringBuilder configTags = new StringBuilder();
+                for (String configTag : configTagList) {
+                    if (configTags.length() == 0) {
+                        configTags.append(configTag);
+                    } else {
+                        configTags.append(',').append(configTag);
+                    }
+                }
+                configAllInfo.setConfigTags(configTags.toString());
+            }
+        }
+        
+        return configAllInfos;
     }
     
     @Override
