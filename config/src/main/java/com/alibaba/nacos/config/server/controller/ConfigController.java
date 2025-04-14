@@ -453,7 +453,7 @@ public class ConfigController {
             @RequestParam(value = "srcUser", required = false, defaultValue = StringUtils.EMPTY) String srcUser) {
         String remoteIp = getRemoteIp(httpServletRequest);
         if (StringUtils.isBlank(srcUser)) {
-            srcUser = RequestUtil.getSrcUserName(request);
+            srcUser = RequestUtil.getSrcUserName(httpServletRequest);
         }
         try {
             
