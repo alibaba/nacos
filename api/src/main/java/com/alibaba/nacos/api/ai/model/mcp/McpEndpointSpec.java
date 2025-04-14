@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,35 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.auth.constant;
+package com.alibaba.nacos.api.ai.model.mcp;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * Auth sign type.
+ * AI MCP Server Endpoint Specification.
  *
  * @author xiweng.yy
  */
-public class SignType {
+public class McpEndpointSpec {
     
-    public static final String NAMING = "naming";
+    private String type;
     
-    public static final String CONFIG = "config";
+    private Map<String, String> data = new HashMap<>();
     
-    public static final String LOCK = "lock";
+    public String getType() {
+        return type;
+    }
     
-    public static final String AI = "ai";
+    public void setType(String type) {
+        this.type = type;
+    }
     
-    public static final String CONSOLE = "console";
+    public Map<String, String> getData() {
+        return data;
+    }
     
-    public static final String SPECIFIED = "specified";
+    public void setData(Map<String, String> data) {
+        this.data = data;
+    }
 }

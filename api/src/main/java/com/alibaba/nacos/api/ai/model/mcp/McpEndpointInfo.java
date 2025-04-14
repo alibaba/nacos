@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,32 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.auth.constant;
+package com.alibaba.nacos.api.ai.model.mcp;
 
 /**
- * Auth sign type.
+ * AI MCP backend endpoint info.
  *
  * @author xiweng.yy
  */
-public class SignType {
+public class McpEndpointInfo {
     
-    public static final String NAMING = "naming";
+    private String address;
     
-    public static final String CONFIG = "config";
+    private int port;
     
-    public static final String LOCK = "lock";
+    public String getAddress() {
+        return address;
+    }
     
-    public static final String AI = "ai";
+    public void setAddress(String address) {
+        this.address = address;
+    }
     
-    public static final String CONSOLE = "console";
+    public int getPort() {
+        return port;
+    }
     
-    public static final String SPECIFIED = "specified";
+    public void setPort(int port) {
+        this.port = port;
+    }
 }

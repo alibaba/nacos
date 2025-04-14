@@ -190,10 +190,10 @@ public interface InstanceOperator {
      * @param cluster     cluster of instances
      * @param healthOnly  whether only return health instances
      * @return service info
-     * @throws Exception exception when list instance failed
+     * @throws NacosException exception when list instance failed
      */
     ServiceInfo listInstance(String namespaceId, String groupName, String serviceName, Subscriber subscriber,
-            String cluster, boolean healthOnly) throws Exception;
+            String cluster, boolean healthOnly) throws NacosException;
     
     /**
      * Get instance detail information.
