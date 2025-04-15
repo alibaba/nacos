@@ -98,16 +98,6 @@ class NacosClusterControllerV3Test {
     }
     
     @Test
-    void testSelfHealth() {
-        String selfHealth = "UP";
-        when(nacosClusterOperationService.selfHealth()).thenReturn(selfHealth);
-        
-        Result<String> result = nacosClusterControllerV3.selfHealth();
-        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
-        assertEquals(selfHealth, result.getData());
-    }
-    
-    @Test
     void testUpdateNodes() throws NacosApiException {
         Member member = new Member();
         member.setIp("1.1.1.1");

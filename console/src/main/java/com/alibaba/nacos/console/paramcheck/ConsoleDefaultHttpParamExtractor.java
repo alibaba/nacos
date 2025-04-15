@@ -50,7 +50,6 @@ public class ConsoleDefaultHttpParamExtractor extends AbstractHttpParamExtractor
     }
     
     private String getAliasNamespaceShowName(HttpServletRequest request) {
-        String namespaceShowName = request.getParameter("namespaceName");
-        return namespaceShowName;
+        return request.getParameter("namespaceName");
     }
 }
