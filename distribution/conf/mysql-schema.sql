@@ -165,7 +165,7 @@ CREATE TABLE `users` (
 );
 
 CREATE TABLE IF NOT EXISTS `roles` (
-                                       `id`       bigint(20)   NOT NULL AUTO_INCREMENT COMMENT 'id',  
+                                       `id`       bigint(20)  NOT NULL AUTO_INCREMENT COMMENT 'id',  
                                        `username` varchar(50) NOT NULL COMMENT 'username',
                                        `role`     varchar(50) NOT NULL COMMENT 'role',
                                        PRIMARY KEY (`id`),    
