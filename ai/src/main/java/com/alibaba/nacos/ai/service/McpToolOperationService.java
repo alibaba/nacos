@@ -67,8 +67,8 @@ public class McpToolOperationService {
                 configRequestInfo, null);
     }
     
-    public List<McpTool> getMcpTool(String namespaceId, String mcpName) throws NacosException {
-        ConfigQueryChainRequest request = buildQueryMcpToolRequest(namespaceId, mcpName);
+    public List<McpTool> getMcpTool(String namespaceId, String toolsDescriptionRef) throws NacosException {
+        ConfigQueryChainRequest request = buildQueryMcpToolRequest(namespaceId, toolsDescriptionRef);
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         if (ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND == response.getStatus()) {
             return Collections.emptyList();
@@ -94,9 +94,9 @@ public class McpToolOperationService {
         return configFormV3;
     }
     
-    private ConfigQueryChainRequest buildQueryMcpToolRequest(String namespaceId, String mcpName) {
+    private ConfigQueryChainRequest buildQueryMcpToolRequest(String namespaceId, String toolsDescriptionRef) {
         ConfigQueryChainRequest request = new ConfigQueryChainRequest();
-        request.setDataId(mcpName + Constants.MCP_SERVER_TOOL_DATA_ID_SUFFIX);
+        request.setDataId(toolsDescriptionRef);
         request.setGroup(Constants.MCP_SERVER_TOOL_GROUP);
         request.setTenant(namespaceId);
         return request;

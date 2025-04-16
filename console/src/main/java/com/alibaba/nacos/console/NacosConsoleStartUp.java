@@ -78,7 +78,7 @@ public class NacosConsoleStartUp extends AbstractNacosStartUp {
             } catch (Exception e) {
                 throw new NacosRuntimeException(ErrorCode.IOMakeDirError.getCode(), e);
             }
-            return new String[] {EnvUtil.getNacosHome() + File.pathSeparator + "logs"};
+            return new String[] {EnvUtil.getNacosHome() + File.separator + "logs"};
         }
         return super.makeWorkDir();
     }
