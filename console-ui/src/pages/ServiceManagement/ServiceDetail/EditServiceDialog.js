@@ -179,7 +179,10 @@ class EditServiceDialog extends React.Component {
             {!isCreate ? (
               <p>{serviceName}</p>
             ) : (
-              <Input value={serviceName} onChange={name => this.onChangeCluster({ name })} />
+              <Input
+                value={serviceName}
+                onChange={name => this.onChangeCluster({ serviceName: name })}
+              />
             )}
           </Form.Item>
           <Form.Item
