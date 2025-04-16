@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.mcp.McpDetailForm;
 import com.alibaba.nacos.ai.form.mcp.McpForm;
 import com.alibaba.nacos.ai.form.mcp.McpListForm;
+import com.alibaba.nacos.ai.param.McpHttpParamExtractor;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
@@ -37,6 +38,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.proxy.ai.McpProxy;
 import com.alibaba.nacos.core.model.form.PageForm;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
@@ -61,6 +63,7 @@ import java.util.List;
 @NacosApi
 @RestController
 @RequestMapping(Constants.MCP_CONSOLE_PATH)
+@ExtractorManager.Extractor(httpExtractor = McpHttpParamExtractor.class)
 public class ConsoleMcpController {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsoleMcpController.class);
