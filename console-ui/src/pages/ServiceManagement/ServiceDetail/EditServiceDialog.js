@@ -102,7 +102,9 @@ class EditServiceDialog extends React.Component {
           return;
         }
         if (isCreate) {
-          this.props.queryServiceList();
+          setTimeout(() => {
+            this.props.queryServiceList();
+          }, 500);
         } else {
           this.props.getServiceDetail();
         }
