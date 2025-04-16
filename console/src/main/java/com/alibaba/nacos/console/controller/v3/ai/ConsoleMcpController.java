@@ -158,10 +158,13 @@ public class ConsoleMcpController {
     private McpServerBasicInfo parseMcpServerBasicInfo(McpDetailForm mcpForm) throws NacosApiException {
         McpServerBasicInfo result = deserializeSpec(mcpForm.getServerSpecification(), new TypeReference<>() {
         });
+        if (StringUtils.isEmpty(result.getName())) {
+            result.setName(mcpForm.getMcpName());
+        }
         if (!StringUtils.equals(mcpForm.getMcpName(), result.getName())) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
-                    String.format("Mcp Name is conflicted, `%s` is in spec, but requested is `%s`", result.getName(),
-                            mcpForm.getMcpName()));
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR, String.format(
+                    "Mcp Name is conflicted, `%s` is in spec, but requested is `%s`, please not set name in spec or set `%s` in spec",
+                    result.getName(), mcpForm.getMcpName(), mcpForm.getMcpName()));
         }
         return result;
     }
