@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useImperativeHandle, useState } from 'react';
 import { Dialog, Field, Form, Input, Grid, Table, Button } from '@alifd/next';
 import { formitemLayout, GetTitle, tableOperation } from './components';
 import { request } from '../../../../globalLib';
 const { Row, Col } = Grid;
 
-const CreateTools = props => {
-  const { locale, showTemplates = false, serverConfig = {} } = props;
+const CreateTools = React.forwardRef((props, ref) => {
+  const { locale, showTemplates = false } = props;
   const field = Field.useField({
     parseName: true,
     values: {
@@ -19,6 +19,7 @@ const CreateTools = props => {
   const [idx, setIdx] = useState(0);
   const [invokeIdx, setInvokeIdx] = useState(0);
   const [templateIdx, setTemplateIdx] = useState(0);
+  const [type, setType] = useState('');
   useEffect(() => {
     if (field.getValue('toolParams') && !field.getValue('toolParams')?.length) {
       addNewToolParam();
@@ -30,50 +31,133 @@ const CreateTools = props => {
       addNewTemplates();
     }
   }, []);
+
+  useImperativeHandle(ref, () => ({
+    openVisible: ({ record, type }) => {
+      const { name, description, inputSchema, toolMeta } = record;
+      setType(type);
+
+      const _toolParams = inputSchema?.properties
+        ? Object.keys(inputSchema?.properties).map(key => ({
+            name: key,
+            type: inputSchema?.properties[key].type,
+            description: inputSchema?.properties[key].description,
+          }))
+        : [];
+      setIdx(_toolParams.length + 1);
+
+      const _invokeContext = toolMeta?.invokeContext
+        ? Object.keys(toolMeta?.invokeContext).map(key => ({
+            key,
+            value: toolMeta?.invokeContext[key],
+          }))
+        : [];
+      setInvokeIdx(_invokeContext.length + 1);
+
+      const _templates = toolMeta?.templates
+        ? Object.keys(toolMeta?.templates).map(key => ({
+            key,
+            value: JSON.stringify(toolMeta?.templates[key]),
+          }))
+        : [];
+      setTemplateIdx(_templates.length + 1);
+
+      field.setValues({
+        name,
+        description,
+        toolParams: _toolParams,
+        invokeContext: _invokeContext,
+        templates: _templates,
+      });
+
+      setVisible(true);
+      console.log('{first}', { record, type });
+    },
+  }));
+
   const openDialog = () => {
     setVisible(true);
   };
+
   const closeDialog = () => {
     setVisible(false);
+    setType('');
+    field.reset();
   };
+
   const createItems = () => {
     field.validate((error, values) => {
       if (error) {
         return;
       }
       console.log('values', values);
-      const toolitem = {
-        name: values?.name,
-        description: values?.description,
-        inputSchema: {
-          type: 'object',
-          properties: values?.toolParams?.map(item => ({
-            [item.name]: {
+      const properties = {};
+      if (values?.toolParams?.length) {
+        values?.toolParams?.forEach(
+          item =>
+            (properties[item.name] = {
               type: item.type,
               description: item.description,
-            },
-          })),
+            })
+        );
+      }
+
+      const invokeContext = {};
+      if (values?.invokeContext?.length) {
+        values?.invokeContext?.forEach(item => (invokeContext[item.key] = item.value));
+      }
+
+      const templates = {};
+      if (values?.templates?.length) {
+        values?.templates?.forEach(item => (templates[item.key] = item.value));
+      }
+
+      const serverSpecification = `{
+        "name": "${props?.serverConfig?.name}",
+        "type": "${props?.serverConfig?.type}",
+        "version": "${props?.serverConfig?.version}",
+        "description": "${props?.serverConfig?.description}",
+        "backendProtocol": "${props?.serverConfig?.remoteServerConfig?.backendProtocol}",
+        "exportPath": "${props?.serverConfig?.remoteServerConfig?.exportPath}",
+        "localServerConfig": ${JSON.stringify(props?.serverConfig?.localServerConfig || {})},
+        "capabilitys": ${JSON.stringify(props?.serverConfig?.capabilitys || [])},
+        "backendEndpoints": ${JSON.stringify(props?.serverConfig?.backendEndpoints)},
+        "tools": ${JSON.stringify(props?.serverConfig?.tools || [])}
+      }`;
+
+      const toolSpecification = `[{
+        "name": "${values?.name}",
+        "description": "${values?.description}",
+        "inputSchema": {
+          "type": "object",
+          "properties": ${JSON.stringify(properties)}
         },
-        toolMeta: {
-          enabled: true,
-          invokeContext: values?.invokeContext.map(item => ({
-            [item.key]: item.value,
-          })),
-          templates: values?.templates.map(item => ({
-            [item.key]: item.value,
-          })),
-        },
-      };
+        "toolMeta": {
+          "enabled": true,
+          "invokeContext": ${JSON.stringify(invokeContext)}
+        }
+      }]`;
+
+      const endpointSpecification = `{
+        "type": "REF",
+        "data":{
+          "namespaceId":"${props?.serverConfig?.remoteServerConfig?.serviceRef?.namespaceId}",
+          "serviceName": "${props?.serverConfig?.remoteServerConfig?.serviceRef?.serviceName}",
+          "groupName":"${props?.serverConfig?.remoteServerConfig?.serviceRef?.groupName}"
+        }
+      }`;
+
       const params = {
-        mcpName: serverConfig?.name,
-        serverSpecification: JSON.stringify(serverConfig),
-        toolSpecification: JSON.stringify(toolitem),
+        mcpName: props?.serverConfig?.name,
+        serverSpecification,
+        toolSpecification,
+        endpointSpecification,
       };
-      console.log('toolitem ===>', {
-        serverConfig,
-        toolitem,
-        params,
-      });
+
+      window.serverSpecification = serverSpecification;
+      window.params = params;
+      window.putMcp = putMcp;
+
       putMcp(params);
     });
   };
@@ -110,7 +194,7 @@ const CreateTools = props => {
   };
   // 删除Tool 元数据
   const deleteToolMetadata = index => {
-    field.removeArrayValue('invokeContext', index);
+    field.deleteArrayValue('invokeContext', index);
   };
   // 添加模板 template
   const addNewTemplates = () => {
@@ -119,7 +203,7 @@ const CreateTools = props => {
   };
   // 删除模板 template
   const deleteTemplates = index => {
-    field.removeArrayValue('templates', index);
+    field.deleteArrayValue('templates', index);
   };
 
   // 渲染表格
@@ -140,217 +224,251 @@ const CreateTools = props => {
     }
 
     return (
-      <Form.Item style={{ margin: 0 }}>
+      <Form.Item style={{ margin: 0, minWidth: 200 }}>
         <Input {...field.init(key, { rules })} />
       </Form.Item>
     );
   };
 
+  const isPreview = type == 'preview' ? true : false;
   return (
     <div>
       <Button type="primary" onClick={openDialog}>
-        {locale.newMcpTool}2
+        {locale.newMcpTool}
       </Button>
 
-      <Dialog
-        v2
-        title={locale.newMcpTool}
-        visible={visible}
-        onOk={createItems}
-        onClose={closeDialog}
-        style={{ width: '70%' }}
-      >
-        <Form field={field} {...formitemLayout}>
-          <h3>{locale.baseData}</h3>
-          {/* 名称 */}
-          <Form.Item label={locale.toolName} required>
-            <Input
-              placeholder={locale.toolName}
-              {...init('name', { rules: [{ required: true, message: locale.toolNameRequired }] })}
+      {visible ? (
+        <Dialog
+          v2
+          title={locale.newMcpTool}
+          visible={true}
+          footer={
+            isPreview ? (
+              <Button type="primary" onClick={closeDialog}>
+                {locale.close}
+              </Button>
+            ) : (
+              true
+            )
+          }
+          footerActions={isPreview ? [] : ['ok', 'cancel']}
+          onOk={createItems}
+          onClose={closeDialog}
+          style={{ width: '70%' }}
+        >
+          <Form field={field} {...formitemLayout} isPreview={isPreview}>
+            <h3>{locale.baseData}</h3>
+            {/* 名称 */}
+            <Form.Item label={locale.toolName} required>
+              <Input
+                placeholder={locale.toolName}
+                {...init('name', { rules: [{ required: true, message: locale.toolNameRequired }] })}
+              />
+            </Form.Item>
+
+            {/* 描述 */}
+            <Form.Item label={locale.toolDescription} required>
+              <Input.TextArea
+                placeholder={locale.toolDescription}
+                {...init('description', {
+                  rules: [{ required: true, message: locale.toolDescriptionRequired }],
+                })}
+              />
+            </Form.Item>
+
+            {/* 入参描述 */}
+            <GetTitle
+              label={locale.toolInputSchema}
+              onClick={addNewToolParam}
+              locale={locale}
+              disabled={isPreview}
             />
-          </Form.Item>
+            <Row>
+              <Col span={20} offset={4}>
+                <Table
+                  size="small"
+                  style={{ marginTop: '10px' }}
+                  dataSource={field.getValue('toolParams')}
+                >
+                  <Table.Column
+                    title={locale.toolParamName}
+                    dataIndex="name"
+                    // cell={(value, index) => (
+                    //   <Form.Item style={{ margin: 0 }}>
+                    //     <Input
+                    //       {...field.init(`toolParams.${index}.name`, {
+                    //         rules: [{ required: true, message: locale.toolParamNameRequired }]
+                    //       })}
+                    //     />
+                    //   </Form.Item>
+                    // )}
+                    cell={(value, index, record) =>
+                      renderTableCell({ key: `toolParams.${index}.name` })
+                    }
+                  />
+                  <Table.Column
+                    title={locale.toolParamType}
+                    dataIndex="type"
+                    // cell={(value, index) => (
+                    //   <Form.Item style={{ margin: 0 }}>
+                    //     <Input {...field.init(`toolParams.${index}.type`, { rules: [{ required: true, message: locale.toolParamTypeRequired }] })} />
+                    //   </Form.Item>
+                    // )}
+                    cell={(value, index, record) =>
+                      renderTableCell({ key: `toolParams.${index}.type` })
+                    }
+                  />
+                  <Table.Column
+                    title={locale.toolParamDescription}
+                    dataIndex="description"
+                    // cell={(value, index) => (
+                    //   <Form.Item style={{ margin: 0 }}>
+                    //     <Input.TextArea
+                    //       aria-label="auto height"
+                    //       autoHeight={{ minRows: 2, maxRows: 8 }}
+                    //       {...field.init(`toolParams.${index}.description`, {
+                    //         rules: [
+                    //           { required: true, message: locale.toolInputSchemaRequired }
+                    //         ]
+                    //       })}
+                    //     />
+                    //   </Form.Item>
+                    // )}
+                    cell={(value, index, record) =>
+                      renderTableCell({
+                        key: `toolParams.${index}.description`,
+                        component: 'textArea',
+                      })
+                    }
+                  />
+                  {/* delete */}
+                  {tableOperation({ onClick: deleteToolParam, locale, disabled: isPreview })}
+                </Table>
+              </Col>
+            </Row>
 
-          {/* 描述 */}
-          <Form.Item label={locale.toolDescription} required>
-            <Input.TextArea
-              placeholder={locale.toolDescription}
-              {...init('description', {
-                rules: [{ required: true, message: locale.toolDescriptionRequired }],
-              })}
+            <h3>{locale.toolMetadata}</h3>
+            {/* Tool 元数据 */}
+            <GetTitle
+              label={locale.invokeContext}
+              onClick={addNewToolMetadata}
+              locale={locale}
+              disabled={isPreview}
             />
-          </Form.Item>
+            <Row>
+              <Col span={20} offset={4}>
+                <Table
+                  size="small"
+                  style={{ marginTop: '10px' }}
+                  dataSource={field.getValue('invokeContext')}
+                >
+                  <Table.Column
+                    title="Key"
+                    dataIndex="key"
+                    // cell={(value, index) => (
+                    //   <Form.Item style={{ margin: 0 }}>
+                    //     <Input
+                    //       {...field.init(`invokeContext.${index}.key`, {
+                    //         rules: [{ required: true, message: locale.placeInput }]
+                    //       })}
+                    //     />
+                    //   </Form.Item>
+                    // )}
+                    cell={(value, index, record) =>
+                      renderTableCell({ key: `invokeContext.${index}.key` })
+                    }
+                  />
+                  <Table.Column
+                    title="Value"
+                    dataIndex="value"
+                    // cell={(value, index) => (
+                    //   <Form.Item style={{ margin: 0 }}>
+                    //     <Input
+                    //       {...field.init(`invokeContext.${index}.value`, {
+                    //         rules: [{ required: true, message: locale.placeInput }]
+                    //       })}
+                    //     />
+                    //   </Form.Item>
+                    // )}
+                    cell={(value, index, record) =>
+                      renderTableCell({
+                        key: `invokeContext.${index}.value`,
+                        component: 'textArea',
+                      })
+                    }
+                  />
 
-          {/* 入参描述 */}
-          <GetTitle label={locale.toolInputSchema} onClick={addNewToolMetadata} locale={locale} />
-          <Row>
-            <Col span={20} offset={4}>
-              <Table
-                size="small"
-                style={{ marginTop: '10px' }}
-                dataSource={field.getValue('toolParams')}
-              >
-                <Table.Column
-                  title={locale.toolParamName}
-                  dataIndex="name"
-                  // cell={(value, index) => (
-                  //   <Form.Item style={{ margin: 0 }}>
-                  //     <Input
-                  //       {...field.init(`toolParams.${index}.name`, {
-                  //         rules: [{ required: true, message: locale.toolParamNameRequired }]
-                  //       })}
-                  //     />
-                  //   </Form.Item>
-                  // )}
-                  cell={(value, index, record) =>
-                    renderTableCell({ key: `toolParams.${index}.name` })
-                  }
-                />
-                <Table.Column
-                  title={locale.toolParamType}
-                  dataIndex="type"
-                  // cell={(value, index) => (
-                  //   <Form.Item style={{ margin: 0 }}>
-                  //     <Input {...field.init(`toolParams.${index}.type`, { rules: [{ required: true, message: locale.toolParamTypeRequired }] })} />
-                  //   </Form.Item>
-                  // )}
-                  cell={(value, index, record) =>
-                    renderTableCell({ key: `toolParams.${index}.type` })
-                  }
-                />
-                <Table.Column
-                  title={locale.toolParamDescription}
-                  dataIndex="description"
-                  // cell={(value, index) => (
-                  //   <Form.Item style={{ margin: 0 }}>
-                  //     <Input.TextArea
-                  //       aria-label="auto height"
-                  //       autoHeight={{ minRows: 2, maxRows: 8 }}
-                  //       {...field.init(`toolParams.${index}.description`, {
-                  //         rules: [
-                  //           { required: true, message: locale.toolInputSchemaRequired }
-                  //         ]
-                  //       })}
-                  //     />
-                  //   </Form.Item>
-                  // )}
-                  cell={(value, index, record) =>
-                    renderTableCell({
-                      key: `toolParams.${index}.description`,
-                      component: 'textArea',
-                    })
-                  }
-                />
-                {/* delete */}
-                {tableOperation({ onClick: deleteToolParam, locale })}
-              </Table>
-            </Col>
-          </Row>
+                  {/* delete */}
+                  {tableOperation({ onClick: deleteToolMetadata, locale, disabled: isPreview })}
+                </Table>
+              </Col>
+            </Row>
 
-          <h3>{locale.toolMetadata}</h3>
-          {/* Tool 元数据 */}
-          <GetTitle label={locale.invokeContext} onClick={addNewToolMetadata} locale={locale} />
-          <Row>
-            <Col span={20} offset={4}>
-              <Table
-                size="small"
-                style={{ marginTop: '10px' }}
-                dataSource={field.getValue('invokeContext')}
-              >
-                <Table.Column
-                  title="Key"
-                  dataIndex="key"
-                  // cell={(value, index) => (
-                  //   <Form.Item style={{ margin: 0 }}>
-                  //     <Input
-                  //       {...field.init(`invokeContext.${index}.key`, {
-                  //         rules: [{ required: true, message: locale.placeInput }]
-                  //       })}
-                  //     />
-                  //   </Form.Item>
-                  // )}
-                  cell={(value, index, record) =>
-                    renderTableCell({ key: `invokeContext.${index}.key` })
-                  }
+            {showTemplates ? (
+              <>
+                <GetTitle
+                  label={locale.invokeTemplates}
+                  onClick={addNewTemplates}
+                  locale={locale}
+                  disabled={isPreview}
                 />
-                <Table.Column
-                  title="Value"
-                  dataIndex="value"
-                  // cell={(value, index) => (
-                  //   <Form.Item style={{ margin: 0 }}>
-                  //     <Input
-                  //       {...field.init(`invokeContext.${index}.value`, {
-                  //         rules: [{ required: true, message: locale.placeInput }]
-                  //       })}
-                  //     />
-                  //   </Form.Item>
-                  // )}
-                  cell={(value, index, record) =>
-                    renderTableCell({ key: `invokeContext.${index}.value`, component: 'textArea' })
-                  }
-                />
+                <Row>
+                  <Col span={20} offset={4}>
+                    <Table
+                      size="small"
+                      style={{ marginTop: '10px' }}
+                      dataSource={field.getValue('templates')}
+                    >
+                      <Table.Column
+                        title="Key"
+                        dataIndex="key"
+                        // cell={(value, index) => (
+                        //   <Form.Item style={{ margin: 0 }}>
+                        //     <Input
+                        //       {...field.init(`templates.${index}.key`, {
+                        //         rules: [{ required: true, message: locale.placeInput }]
+                        //       })}
+                        //     />
+                        //   </Form.Item>
+                        // )}
+                        cell={(value, index, record) =>
+                          renderTableCell({ key: `templates.${index}.key` })
+                        }
+                      />
+                      <Table.Column
+                        title="Value"
+                        dataIndex="value"
+                        // cell={(value, index) => (
+                        //   <Form.Item style={{ margin: 0 }}>
+                        //     <Input.TextArea
+                        //       aria-label="auto height"
+                        //       autoHeight={{ minRows: 2, maxRows: 8 }}
+                        //       {...field.init(`templates.${index}.value`, {
+                        //         rules: [{ required: true, message: locale.placeInput }]
+                        //       })}
+                        //     />
+                        //   </Form.Item>
+                        // )}
+                        cell={(value, index, record) =>
+                          renderTableCell({
+                            key: `templates.${index}.value`,
+                            component: 'textArea',
+                          })
+                        }
+                      />
 
-                {/* delete */}
-                {tableOperation({ onClick: deleteToolMetadata, locale })}
-              </Table>
-            </Col>
-          </Row>
-
-          {showTemplates ? (
-            <>
-              <GetTitle label={locale.invokeTemplates} onClick={addNewTemplates} locale={locale} />
-              <Row>
-                <Col span={20} offset={4}>
-                  <Table
-                    size="small"
-                    style={{ marginTop: '10px' }}
-                    dataSource={field.getValue('templates')}
-                  >
-                    <Table.Column
-                      title="Key"
-                      dataIndex="key"
-                      // cell={(value, index) => (
-                      //   <Form.Item style={{ margin: 0 }}>
-                      //     <Input
-                      //       {...field.init(`templates.${index}.key`, {
-                      //         rules: [{ required: true, message: locale.placeInput }]
-                      //       })}
-                      //     />
-                      //   </Form.Item>
-                      // )}
-                      cell={(value, index, record) =>
-                        renderTableCell({ key: `templates.${index}.key` })
-                      }
-                    />
-                    <Table.Column
-                      title="Value"
-                      dataIndex="value"
-                      // cell={(value, index) => (
-                      //   <Form.Item style={{ margin: 0 }}>
-                      //     <Input.TextArea
-                      //       aria-label="auto height"
-                      //       autoHeight={{ minRows: 2, maxRows: 8 }}
-                      //       {...field.init(`templates.${index}.value`, {
-                      //         rules: [{ required: true, message: locale.placeInput }]
-                      //       })}
-                      //     />
-                      //   </Form.Item>
-                      // )}
-                      cell={(value, index, record) =>
-                        renderTableCell({ key: `templates.${index}.value`, component: 'textArea' })
-                      }
-                    />
-
-                    {/* delete */}
-                    {tableOperation({ onClick: deleteTemplates, locale })}
-                  </Table>
-                </Col>
-              </Row>
-            </>
-          ) : null}
-        </Form>
-      </Dialog>
+                      {/* delete */}
+                      {tableOperation({ onClick: deleteTemplates, locale, disabled: isPreview })}
+                    </Table>
+                  </Col>
+                </Row>
+              </>
+            ) : null}
+          </Form>
+        </Dialog>
+      ) : null}
     </div>
   );
-};
+});
 
 export default CreateTools;

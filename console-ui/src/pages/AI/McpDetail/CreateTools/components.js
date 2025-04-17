@@ -12,26 +12,34 @@ export const formitemLayout = {
 };
 
 // 表格头组件
-export const GetTitle = ({ label, onClick, text = '', locale }) => (
+export const GetTitle = ({ label, onClick, text = '', locale, disabled = false }) => (
   <Form.Item {...formitemLayout} label={label} required style={{ margin: '16px 0 0' }}>
-    <Button type="primary" onClick={onClick} size="small">
-      {text || locale.newMcpTool}
-    </Button>
+    {disabled ? null : (
+      <Button type="primary" onClick={onClick} size="small">
+        {text || locale.newMcpTool}
+      </Button>
+    )}
   </Form.Item>
 );
 
 // 表格操作组件
-export const tableOperation = ({ onClick, locale }) => (
-  <Table.Column
-    title={locale.toolOperation}
-    width={40}
-    dataIndex={'operation'}
-    cell={(t, index, record) => {
-      return (
-        <Button type="primary" size="small" warning onClick={() => onClick(index)}>
-          {locale.deleteParam}
-        </Button>
-      );
-    }}
-  />
-);
+export const tableOperation = ({ onClick, locale, disabled = false }) => {
+  if (disabled) {
+    return null;
+  }
+
+  return (
+    <Table.Column
+      title={locale.toolOperation}
+      width={40}
+      dataIndex={'operation'}
+      cell={(t, index, record) => {
+        return (
+          <Button type="primary" size="small" warning onClick={() => onClick(index)}>
+            {locale.deleteParam}
+          </Button>
+        );
+      }}
+    />
+  );
+};

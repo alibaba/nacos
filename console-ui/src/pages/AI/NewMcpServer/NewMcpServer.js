@@ -277,7 +277,7 @@ class NewMcpServer extends React.Component {
     if (result.code === 0) {
       this.setState({
         serviceList: result.data.pageItems.map(item => ({
-          label: item.name,
+          label: `${item.groupName} / ${item.name}`,
           value: item.name,
           ...item,
         })),
@@ -287,6 +287,7 @@ class NewMcpServer extends React.Component {
     }
   };
   handleNamespaceChange = value => {
+    this.field.reset('service');
     this.getServiceList(value);
   };
 
