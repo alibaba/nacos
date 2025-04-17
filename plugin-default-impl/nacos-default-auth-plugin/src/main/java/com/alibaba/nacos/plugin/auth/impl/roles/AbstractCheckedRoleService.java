@@ -17,13 +17,13 @@
 package com.alibaba.nacos.plugin.auth.impl.roles;
 
 import com.alibaba.nacos.api.model.v2.Result;
-import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
@@ -80,6 +80,9 @@ public abstract class AbstractCheckedRoleService extends AbstractCachedRoleServi
             }
             for (PermissionInfo permissionInfo : permissionInfoList) {
                 String permissionResource = permissionInfo.getResource().replaceAll("\\*", ".*");
+                if (permissionResource.startsWith(":")) {
+                    permissionResource = DEFAULT_NAMESPACE_ID + permissionResource;
+                }
                 String permissionAction = permissionInfo.getAction();
                 if (permissionAction.contains(permission.getAction()) && Pattern.matches(permissionResource,
                         joinResource(permission.getResource()))) {
@@ -139,12 +142,11 @@ public abstract class AbstractCheckedRoleService extends AbstractCachedRoleServi
         }
         StringBuilder result = new StringBuilder();
         String namespaceId = resource.getNamespaceId();
-        if (StringUtils.isNotBlank(namespaceId)) {
-            // https://github.com/alibaba/nacos/issues/10347
-            if (!DEFAULT_NAMESPACE_ID.equals(namespaceId)) {
-                result.append(namespaceId);
-            }
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = DEFAULT_NAMESPACE_ID;
         }
+        
+        result.append(namespaceId);
         String group = resource.getGroup();
         if (StringUtils.isBlank(group)) {
             result.append(Constants.Resource.SPLITTER).append('*');

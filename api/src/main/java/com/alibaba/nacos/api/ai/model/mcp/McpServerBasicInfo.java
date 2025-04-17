@@ -34,12 +34,6 @@ public class McpServerBasicInfo {
     
     private String version;
     
-    private String toolsDescriptionRef;
-    
-    private String promptDescriptionRef;
-    
-    private String resourceDescriptionRef;
-    
     private McpServerRemoteServiceConfig remoteServerConfig;
     
     private Map<String, Object> localServerConfig;
@@ -78,30 +72,6 @@ public class McpServerBasicInfo {
     
     public void setVersion(String version) {
         this.version = version;
-    }
-    
-    public String getToolsDescriptionRef() {
-        return toolsDescriptionRef;
-    }
-    
-    public void setToolsDescriptionRef(String toolsDescriptionRef) {
-        this.toolsDescriptionRef = toolsDescriptionRef;
-    }
-    
-    public String getPromptDescriptionRef() {
-        return promptDescriptionRef;
-    }
-    
-    public void setPromptDescriptionRef(String promptDescriptionRef) {
-        this.promptDescriptionRef = promptDescriptionRef;
-    }
-    
-    public String getResourceDescriptionRef() {
-        return resourceDescriptionRef;
-    }
-    
-    public void setResourceDescriptionRef(String resourceDescriptionRef) {
-        this.resourceDescriptionRef = resourceDescriptionRef;
     }
     
     public McpServerRemoteServiceConfig getRemoteServerConfig() {
