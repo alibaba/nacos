@@ -140,7 +140,7 @@ else
     echo "nacos is starting with cluster"
 fi
 
-logfile="${BASE_DIR}/logs/nacos.log"
+logfile="${BASE_DIR}/logs/startup.log"
 if [ ! -f "$logfile" ]; then
   touch "$logfile"
 fi
