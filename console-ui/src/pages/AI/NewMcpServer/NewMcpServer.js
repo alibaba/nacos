@@ -61,7 +61,6 @@ class NewMcpServer extends React.Component {
     if (mcpname && mcptype === 'edit') {
       const result = await request({ url: `v3/console/ai/mcp?mcpName=${mcpname}` });
       if (result.code === 0 && result.data) {
-        console.log('result.data=>', result.data);
         const {
           description = '',
           name = '',

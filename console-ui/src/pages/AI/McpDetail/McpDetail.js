@@ -34,6 +34,7 @@ import { generateUrl } from '../../../utils/nacosutil';
 import PropTypes from 'prop-types';
 import requestUtils from '../../../utils/request';
 import { Button } from '@alifd/theme-design-pro';
+import CreateTools from './CreateTools/index';
 
 const TabPane = Tab.Item;
 const FormItem = Form.Item;
@@ -162,13 +163,10 @@ class McpDetail extends React.Component {
   getServerDetail = async () => {
     const { locale = {} } = this.props;
     const mcpname = getParams('mcpname');
-
-    console.log('{first}', { mcpname });
-
     const result = await request({
       url: `v3/console/ai/mcp?mcpName=${mcpname}`,
     });
-    console.log('result', result);
+    console.log('【 查询详情获取参数 result】=》', result);
 
     if (result.code == 0 && result.data) {
       this.setState({
@@ -337,6 +335,11 @@ class McpDetail extends React.Component {
           <Divider></Divider>
 
           <h2>Tools</h2>
+          <CreateTools
+            locale={locale}
+            serverConfig={this.state.serverConfig}
+            showTemplates={this.state.serverConfig?.remoteServerConfig?.backendProtocol == 'http'}
+          />
           <Button
             type="primary"
             onClick={() => {
