@@ -144,7 +144,8 @@ logfile="${BASE_DIR}/logs/nacos.log"
 if [ ! -f "$logfile" ]; then
   touch "$logfile"
 fi
-echo "$JAVA $JAVA_OPT_EXT_FIX ${JAVA_OPT}" > "$logfile" 2>&1
+
+echo "$JAVA $JAVA_OPT_EXT_FIX ${JAVA_OPT}" > "$logfile"
 
 if [[ "$JAVA_OPT_EXT_FIX" == "" ]]; then
   nohup "$JAVA" ${JAVA_OPT} nacos.nacos >> "$logfile" 2>&1 &
