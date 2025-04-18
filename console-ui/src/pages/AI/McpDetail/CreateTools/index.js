@@ -208,7 +208,12 @@ const CreateTools = React.forwardRef((props, ref) => {
 
   // 渲染表格
   const renderTableCell = params => {
-    const { component = 'input', key = '', rulesMessage = locale.placeInput } = params;
+    const {
+      component = 'input',
+      key = '',
+      rulesMessage = locale.placeInput,
+      minWidth = 200,
+    } = params;
 
     const rules = [{ required: true, message: rulesMessage }];
     if (component == 'textArea') {
@@ -224,7 +229,7 @@ const CreateTools = React.forwardRef((props, ref) => {
     }
 
     return (
-      <Form.Item style={{ margin: 0, minWidth: 200 }}>
+      <Form.Item style={{ margin: 0, minWidth }}>
         <Input {...field.init(key, { rules })} />
       </Form.Item>
     );
@@ -293,15 +298,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                   <Table.Column
                     title={locale.toolParamName}
                     dataIndex="name"
-                    // cell={(value, index) => (
-                    //   <Form.Item style={{ margin: 0 }}>
-                    //     <Input
-                    //       {...field.init(`toolParams.${index}.name`, {
-                    //         rules: [{ required: true, message: locale.toolParamNameRequired }]
-                    //       })}
-                    //     />
-                    //   </Form.Item>
-                    // )}
+                    width={200}
                     cell={(value, index, record) =>
                       renderTableCell({ key: `toolParams.${index}.name` })
                     }
@@ -309,11 +306,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                   <Table.Column
                     title={locale.toolParamType}
                     dataIndex="type"
-                    // cell={(value, index) => (
-                    //   <Form.Item style={{ margin: 0 }}>
-                    //     <Input {...field.init(`toolParams.${index}.type`, { rules: [{ required: true, message: locale.toolParamTypeRequired }] })} />
-                    //   </Form.Item>
-                    // )}
+                    width={200}
                     cell={(value, index, record) =>
                       renderTableCell({ key: `toolParams.${index}.type` })
                     }
@@ -321,19 +314,6 @@ const CreateTools = React.forwardRef((props, ref) => {
                   <Table.Column
                     title={locale.toolParamDescription}
                     dataIndex="description"
-                    // cell={(value, index) => (
-                    //   <Form.Item style={{ margin: 0 }}>
-                    //     <Input.TextArea
-                    //       aria-label="auto height"
-                    //       autoHeight={{ minRows: 2, maxRows: 8 }}
-                    //       {...field.init(`toolParams.${index}.description`, {
-                    //         rules: [
-                    //           { required: true, message: locale.toolInputSchemaRequired }
-                    //         ]
-                    //       })}
-                    //     />
-                    //   </Form.Item>
-                    // )}
                     cell={(value, index, record) =>
                       renderTableCell({
                         key: `toolParams.${index}.description`,
@@ -365,15 +345,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                   <Table.Column
                     title="Key"
                     dataIndex="key"
-                    // cell={(value, index) => (
-                    //   <Form.Item style={{ margin: 0 }}>
-                    //     <Input
-                    //       {...field.init(`invokeContext.${index}.key`, {
-                    //         rules: [{ required: true, message: locale.placeInput }]
-                    //       })}
-                    //     />
-                    //   </Form.Item>
-                    // )}
+                    width={200}
                     cell={(value, index, record) =>
                       renderTableCell({ key: `invokeContext.${index}.key` })
                     }
@@ -381,15 +353,6 @@ const CreateTools = React.forwardRef((props, ref) => {
                   <Table.Column
                     title="Value"
                     dataIndex="value"
-                    // cell={(value, index) => (
-                    //   <Form.Item style={{ margin: 0 }}>
-                    //     <Input
-                    //       {...field.init(`invokeContext.${index}.value`, {
-                    //         rules: [{ required: true, message: locale.placeInput }]
-                    //       })}
-                    //     />
-                    //   </Form.Item>
-                    // )}
                     cell={(value, index, record) =>
                       renderTableCell({
                         key: `invokeContext.${index}.value`,
@@ -397,7 +360,6 @@ const CreateTools = React.forwardRef((props, ref) => {
                       })
                     }
                   />
-
                   {/* delete */}
                   {tableOperation({ onClick: deleteToolMetadata, locale, disabled: isPreview })}
                 </Table>
@@ -422,15 +384,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                       <Table.Column
                         title="Key"
                         dataIndex="key"
-                        // cell={(value, index) => (
-                        //   <Form.Item style={{ margin: 0 }}>
-                        //     <Input
-                        //       {...field.init(`templates.${index}.key`, {
-                        //         rules: [{ required: true, message: locale.placeInput }]
-                        //       })}
-                        //     />
-                        //   </Form.Item>
-                        // )}
+                        width={200}
                         cell={(value, index, record) =>
                           renderTableCell({ key: `templates.${index}.key` })
                         }
@@ -438,17 +392,6 @@ const CreateTools = React.forwardRef((props, ref) => {
                       <Table.Column
                         title="Value"
                         dataIndex="value"
-                        // cell={(value, index) => (
-                        //   <Form.Item style={{ margin: 0 }}>
-                        //     <Input.TextArea
-                        //       aria-label="auto height"
-                        //       autoHeight={{ minRows: 2, maxRows: 8 }}
-                        //       {...field.init(`templates.${index}.value`, {
-                        //         rules: [{ required: true, message: locale.placeInput }]
-                        //       })}
-                        //     />
-                        //   </Form.Item>
-                        // )}
                         cell={(value, index, record) =>
                           renderTableCell({
                             key: `templates.${index}.value`,
@@ -456,7 +399,6 @@ const CreateTools = React.forwardRef((props, ref) => {
                           })
                         }
                       />
-
                       {/* delete */}
                       {tableOperation({ onClick: deleteTemplates, locale, disabled: isPreview })}
                     </Table>

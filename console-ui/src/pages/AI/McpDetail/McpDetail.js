@@ -43,7 +43,6 @@ class McpDetail extends React.Component {
   }
 
   getServerDetail = async () => {
-    const { locale = {} } = this.props;
     const mcpname = getParams('mcpname');
     this.setState({ loading: true, tools: [] });
     const result = await request({
@@ -55,7 +54,7 @@ class McpDetail extends React.Component {
     if (result.code == 0 && result.data) {
       this.setState({
         serverConfig: result.data,
-        tools: result.data.tools,
+        tools: result.data?.tools || [],
       });
     }
   };
@@ -63,6 +62,23 @@ class McpDetail extends React.Component {
   openToolDetial = params => {
     const { type, record } = params;
     this.toolsRef?.current?.openVisible({ type, record });
+  };
+
+  getFormItem = params => {
+    const { list = [] } = params;
+    return (
+      <Row>
+        {list.map((item, index) => {
+          return (
+            <Col key={index}>
+              <FormItem label={item.label}>
+                <p>{item.value}</p>
+              </FormItem>
+            </Col>
+          );
+        })}
+      </Row>
+    );
   };
 
   render() {
@@ -89,56 +105,33 @@ class McpDetail extends React.Component {
         >
           <h1 style={{ position: 'relative', width: '60%' }}>{locale.mcpServerDetail}</h1>
           <Form inline={false} field={this.field} {...formItemLayout}>
-            <Row>
-              <Col>
-                <FormItem label={locale.namespace}>
-                  <p>{getParams('namespace') || ''}</p>
-                </FormItem>
-              </Col>
-              <Col>
-                <FormItem label={locale.serverName}>
-                  <p>{this.state.serverConfig.name}</p>
-                </FormItem>
-              </Col>
-            </Row>
+            {this.getFormItem({
+              list: [
+                { label: locale.namespace, value: getParams('namespace') || '' }, // 命名空间
+                { label: locale.serverName, value: this.state.serverConfig.name }, // 名称
+              ],
+            })}
 
-            <Row>
-              <Col>
-                <FormItem label={locale.serverType}>
-                  <p>
-                    {this.state.serverConfig.type}
-                    {/* 类型 */}
-                  </p>
-                </FormItem>
-              </Col>
-              <Col>
-                <FormItem label={locale.serverDescription}>
-                  <p>
-                    {this.state.serverConfig.description}
-                    {/* 描述 */}
-                  </p>
-                </FormItem>
-              </Col>
-            </Row>
+            {this.getFormItem({
+              list: [
+                { label: locale.serverType, value: this.state.serverConfig.type }, // 类型
+                { label: locale.serverDescription, value: this.state.serverConfig.description }, // 描述
+              ],
+            })}
 
-            <Row>
-              <Col>
-                <FormItem label={locale.backendProtocol}>
-                  <p>
-                    {this.state.serverConfig?.remoteServerConfig?.backendProtocol}
-                    {/* 后端协议 */}
-                  </p>
-                </FormItem>
-              </Col>
-              <Col>
-                <FormItem label={locale.exportPath}>
-                  <p>
-                    {this.state.serverConfig?.remoteServerConfig?.exportPath}
-                    {/* 暴露路径 */}
-                  </p>
-                </FormItem>
-              </Col>
-            </Row>
+            {this.state.serverConfig?.remoteServerConfig &&
+              this.getFormItem({
+                list: [
+                  {
+                    label: locale.backendProtocol,
+                    value: this.state.serverConfig?.remoteServerConfig?.backendProtocol,
+                  }, // 后端协议
+                  {
+                    label: locale.exportPath,
+                    value: this.state.serverConfig?.remoteServerConfig?.exportPath,
+                  }, // 暴露路径
+                ],
+              })}
           </Form>
           <Divider></Divider>
 
