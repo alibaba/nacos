@@ -140,17 +140,17 @@ else
     echo "nacos is starting with cluster"
 fi
 
-# check the start.out log output file
-if [ ! -f "${BASE_DIR}/logs/start.out" ]; then
-  touch "${BASE_DIR}/logs/start.out"
+logfile="${BASE_DIR}/logs/startup.log"
+if [ ! -f "$logfile" ]; then
+  touch "$logfile"
 fi
-# start
-echo "$JAVA $JAVA_OPT_EXT_FIX ${JAVA_OPT}" > ${BASE_DIR}/logs/start.out 2>&1 &
+
+echo "$JAVA $JAVA_OPT_EXT_FIX ${JAVA_OPT}" > "$logfile"
 
 if [[ "$JAVA_OPT_EXT_FIX" == "" ]]; then
-  nohup "$JAVA" ${JAVA_OPT} nacos.nacos >> ${BASE_DIR}/logs/start.out 2>&1 &
+  nohup "$JAVA" ${JAVA_OPT} nacos.nacos >> "$logfile" 2>&1 &
 else
-  nohup "$JAVA" "$JAVA_OPT_EXT_FIX" ${JAVA_OPT} nacos.nacos >> ${BASE_DIR}/logs/start.out 2>&1 &
+  nohup "$JAVA" "$JAVA_OPT_EXT_FIX" ${JAVA_OPT} nacos.nacos >> "$logfile" 2>&1 &
 fi
 
-echo "nacos is starting. you can check the ${BASE_DIR}/logs/start.out"
+echo "nacos is starting. you can check the ${logfile}"
