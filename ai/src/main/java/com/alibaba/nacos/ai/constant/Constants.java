@@ -35,15 +35,15 @@ public class Constants {
     
     public static final String ALL_PATTERN = com.alibaba.nacos.api.common.Constants.ALL_PATTERN;
     
-    public static final String MCP_SERVER_GROUP = "mcp_server";
+    public static final String MCP_SERVER_GROUP = "mcp-server";
     
-    public static final String MCP_SERVER_TOOL_GROUP = "mcp_server_tool";
+    public static final String MCP_SERVER_TOOL_GROUP = "mcp-tools";
     
-    public static final String MCP_SERVER_SPEC_DATA_ID_SUFFIX = "_mcp_server.json";
+    public static final String MCP_SERVER_SPEC_DATA_ID_SUFFIX = "-mcp-server.json";
     
-    public static final String MCP_SERVER_TOOL_DATA_ID_SUFFIX = "_mcp_server_tool.json";
+    public static final String MCP_SERVER_TOOL_DATA_ID_SUFFIX = "-mcp-server-tool.json";
     
-    public static final String MCP_SERVER_ENDPOINT_GROUP = "mcp_server_endpoint";
+    public static final String MCP_SERVER_ENDPOINT_GROUP = "mcp-endpoints";
     
     public static final String MCP_SERVER_ENDPOINT_CLUSTER = com.alibaba.nacos.api.common.Constants.DEFAULT_CLUSTER_NAME;
     
