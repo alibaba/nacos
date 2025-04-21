@@ -67,6 +67,8 @@ const I18N_CONF = {
     privilegeManagement: 'Privilege Management',
     consoleClosed: 'Console Closed',
     settingCenter: 'Setting Center',
+    AiManagementVirtual: 'AI',
+    mcpServerManagement: 'MCP Managenment',
   },
   Password: {
     passwordNotConsistent: 'The passwords are not consistent',
@@ -311,9 +313,9 @@ const I18N_CONF = {
     queryResults: 'Found',
     articleMeetRequirements: 'configuration items',
     fuzzydMode: 'Default fuzzy query mode',
-    fuzzyd: 'Accurate query mode opened',
+    fuzzyd: "Add wildcard '*' for fuzzy query",
     defaultFuzzyd: 'Default fuzzy query mode opened',
-    fuzzyg: 'Accurate query mode opened',
+    fuzzyg: "Add wildcard '*' for fuzzy query",
     defaultFuzzyg: 'Default fuzzy query mode opened',
     query: 'Search',
     advancedQuery9: 'Advanced Query',
@@ -702,6 +704,10 @@ const I18N_CONF = {
     settingShow: 'namespace select style',
     settingLocale: 'Language',
     settingSubmit: 'Apply',
+  },
+  McpServerManagement: {
+    mcpManagement8: 'MCP Management',
+    addNewMcpServer: 'Add New Mcp Server',
   },
 };
 

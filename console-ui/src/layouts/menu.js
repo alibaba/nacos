@@ -46,6 +46,16 @@ const configurationMenu = {
     },
   ],
 };
+
+const AiControlMenu = {
+  key: 'AiManagementVirtual',
+  children: [
+    {
+      key: 'mcpServerManagement',
+      url: '/mcpServerManagement',
+    },
+  ],
+};
 /**
  * 权限控制相关
  */
@@ -100,5 +110,6 @@ export default function(model) {
   result.push(namespaceMenu);
   result.push(clusterMenu);
   result.push(settingMenu);
+  result.push(AiControlMenu);
   return result.filter(item => item);
 }

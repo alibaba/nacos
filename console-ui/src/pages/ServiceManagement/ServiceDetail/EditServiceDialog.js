@@ -102,7 +102,9 @@ class EditServiceDialog extends React.Component {
           return;
         }
         if (isCreate) {
-          this.props.queryServiceList();
+          setTimeout(() => {
+            this.props.queryServiceList();
+          }, 500);
         } else {
           this.props.getServiceDetail();
         }
@@ -179,7 +181,10 @@ class EditServiceDialog extends React.Component {
             {!isCreate ? (
               <p>{serviceName}</p>
             ) : (
-              <Input value={serviceName} onChange={name => this.onChangeCluster({ name })} />
+              <Input
+                value={serviceName}
+                onChange={name => this.onChangeCluster({ serviceName: name })}
+              />
             )}
           </Form.Item>
           <Form.Item
