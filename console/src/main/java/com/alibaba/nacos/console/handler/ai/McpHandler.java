@@ -20,10 +20,9 @@ import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpTool;
+import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
-
-import java.util.List;
 
 /**
  * Actual Handler class for handling AI MCP operations.
@@ -68,7 +67,7 @@ public interface McpHandler {
      * @throws NacosException any exception during handling
      */
     void createMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
-            List<McpTool> toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException;
+            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException;
     
     /**
      * Update existed mcp server.
@@ -85,7 +84,7 @@ public interface McpHandler {
      * @throws NacosException any exception during handling
      */
     void updateMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
-            List<McpTool> toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException;
+            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException;
     
     /**
      * Delete existed mcp server.

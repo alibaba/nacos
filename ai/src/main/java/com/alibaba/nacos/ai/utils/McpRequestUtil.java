@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpTool;
+import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
@@ -30,9 +31,6 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Collections;
-import java.util.List;
 
 /**
  * MCP request util.
@@ -72,9 +70,9 @@ public class McpRequestUtil {
      * @return mcp server tool info
      * @throws NacosApiException if parse failed.
      */
-    public static List<McpTool> parseMcpTools(McpDetailForm mcpForm) throws NacosApiException {
+    public static McpToolSpecification parseMcpTools(McpDetailForm mcpForm) throws NacosApiException {
         if (StringUtils.isBlank(mcpForm.getToolSpecification())) {
-            return Collections.emptyList();
+            return null;
         }
         return McpRequestUtil.deserializeSpec(mcpForm.getToolSpecification(), new TypeReference<>() {
         });

@@ -19,7 +19,7 @@ package com.alibaba.nacos.console.proxy.ai;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
-import com.alibaba.nacos.api.ai.model.mcp.McpTool;
+import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.McpHandler;
@@ -96,7 +96,7 @@ public class McpProxyTest {
     @Test
     public void createMcpServer() throws NacosException {
         McpServerBasicInfo serverSpecification = new McpServerBasicInfo();
-        List<McpTool> toolSpecification = new ArrayList<>();
+        McpToolSpecification toolSpecification = new McpToolSpecification();
         McpEndpointSpec endpointSpecification = new McpEndpointSpec();
         
         doNothing().when(mcpHandler)
@@ -114,7 +114,7 @@ public class McpProxyTest {
     @Test
     public void updateMcpServer() throws NacosException {
         McpServerBasicInfo serverSpecification = new McpServerBasicInfo();
-        List<McpTool> toolSpecification = new ArrayList<>();
+        McpToolSpecification toolSpecification = new McpToolSpecification();
         McpEndpointSpec endpointSpecification = new McpEndpointSpec();
         
         doNothing().when(mcpHandler)

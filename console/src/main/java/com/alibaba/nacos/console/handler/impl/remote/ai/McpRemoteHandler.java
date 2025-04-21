@@ -20,15 +20,13 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
-import com.alibaba.nacos.api.ai.model.mcp.McpTool;
+import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.McpHandler;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 /**
  * Remote implementation of Mcp handler.
@@ -62,14 +60,14 @@ public class McpRemoteHandler implements McpHandler {
     
     @Override
     public void createMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
-            List<McpTool> toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
+            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
         clientHolder.getAiMaintainerService()
                 .createMcpServer(mcpName, serverSpecification, toolSpecification, endpointSpecification);
     }
     
     @Override
     public void updateMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
-            List<McpTool> toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
+            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
         clientHolder.getAiMaintainerService()
                 .updateMcpServer(mcpName, serverSpecification, toolSpecification, endpointSpecification);
     }

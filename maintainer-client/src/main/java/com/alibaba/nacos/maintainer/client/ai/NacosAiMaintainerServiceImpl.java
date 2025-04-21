@@ -19,7 +19,7 @@ package com.alibaba.nacos.maintainer.client.ai;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
-import com.alibaba.nacos.api.ai.model.mcp.McpTool;
+import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -34,7 +34,6 @@ import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -96,7 +95,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     }
     
     @Override
-    public boolean createMcpServer(String mcpName, McpServerBasicInfo serverSpec, List<McpTool> toolSpec,
+    public boolean createMcpServer(String mcpName, McpServerBasicInfo serverSpec, McpToolSpecification toolSpec,
             McpEndpointSpec endpointSpec) throws NacosException {
         Map<String, String> params = buildFullParameters(mcpName, serverSpec, toolSpec, endpointSpec);
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
@@ -108,7 +107,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     }
     
     @Override
-    public boolean updateMcpServer(String mcpName, McpServerBasicInfo serverSpec, List<McpTool> toolSpec,
+    public boolean updateMcpServer(String mcpName, McpServerBasicInfo serverSpec, McpToolSpecification toolSpec,
             McpEndpointSpec endpointSpec) throws NacosException {
         Map<String, String> params = buildFullParameters(mcpName, serverSpec, toolSpec, endpointSpec);
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.PUT)
@@ -120,7 +119,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     }
     
     private Map<String, String> buildFullParameters(String mcpName, McpServerBasicInfo serverSpec,
-            List<McpTool> toolSpec, McpEndpointSpec endpointSpec) {
+            McpToolSpecification toolSpec, McpEndpointSpec endpointSpec) {
         Map<String, String> params = new HashMap<>(4);
         params.put("mcpName", mcpName);
         params.put("serverSpecification", JacksonUtils.toJson(serverSpec));
