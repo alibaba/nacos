@@ -351,7 +351,6 @@ class McpManagement extends React.Component {
   }
 
   showCode(record) {
-    console.log('show code');
     this.showcode.current.getInstance().openDialog(record);
   }
 
@@ -526,13 +525,8 @@ class McpManagement extends React.Component {
           </div>
         ),
         onOk: () => {
-          // const promises = selectedRows.map(item => request({
-          //   url: `v3/console/ai/mcp?mcpName=${item.name}`,
-          //   type: 'delete',
-          // }));
           self.setState({ loading: true });
           Promise.all([]).then(res => {
-            console.log('111', 111);
             self.getData();
             self.setState({ loading: false });
 

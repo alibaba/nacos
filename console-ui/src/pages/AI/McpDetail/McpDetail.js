@@ -50,7 +50,6 @@ class McpDetail extends React.Component {
       url: `v3/console/ai/mcp?mcpName=${mcpname}`,
     });
     this.setState({ loading: false });
-    console.log('【 查询详情获取参数 result】=》', result);
 
     if (result.code == 0 && result.data) {
       this.setState({
