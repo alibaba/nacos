@@ -134,7 +134,7 @@ public class McpServerOperationService {
                     serverSpecification.getToolsDescriptionRef());
             result.setToolSpec(toolSpec);
         }
-        if (!AiConstants.Mcp.MCP_TYPE_LOCAL.equalsIgnoreCase(serverSpecification.getType())) {
+        if (!AiConstants.Mcp.MCP_PROTOCOL_STDIO.equalsIgnoreCase(serverSpecification.getProtocol())) {
             injectBackendEndpointRef(result);
         }
         return result;

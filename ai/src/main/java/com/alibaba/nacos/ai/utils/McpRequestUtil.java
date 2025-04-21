@@ -88,7 +88,7 @@ public class McpRequestUtil {
      */
     public static McpEndpointSpec parseMcpEndpointSpec(McpServerBasicInfo basicInfo, McpDetailForm mcpForm)
             throws NacosApiException {
-        if (AiConstants.Mcp.MCP_TYPE_LOCAL.equalsIgnoreCase(basicInfo.getType())) {
+        if (AiConstants.Mcp.MCP_PROTOCOL_STDIO.equalsIgnoreCase(basicInfo.getProtocol())) {
             return null;
         }
         if (StringUtils.isBlank(mcpForm.getEndpointSpecification())) {

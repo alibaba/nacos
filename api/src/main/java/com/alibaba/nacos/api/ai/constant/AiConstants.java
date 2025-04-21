@@ -27,11 +27,15 @@ public class AiConstants {
         
         public static final String MCP_DEFAULT_NAMESPACE = "nacos-default-mcp";
         
-        public static final String MCP_TYPE_LOCAL = "local";
+        public static final String MCP_PROTOCOL_STDIO = "stdio";
         
-        public static final String MCP_TYPE_SSE_REMOTE = "sse-remote";
+        public static final String MCP_PROTOCOL_SSE = "mcp-sse";
         
-        public static final String MCP_TYPE_STREAM_REMOTE = "streamable-remote";
+        public static final String MCP_PROTOCOL_STREAMABLE = "mcp-streamable";
+        
+        public static final String MCP_PROTOCOL_HTTP = "http";
+        
+        public static final String MCP_PROTOCOL_DUBBO = "dubbo";
         
         public static final String MCP_ENDPOINT_TYPE_REF = "REF";
         
