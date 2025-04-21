@@ -20,13 +20,13 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
-import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.common.constant.RequestUrlConstants;
 import com.alibaba.nacos.common.http.DefaultHttpClientFactory;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
 import com.alibaba.nacos.plugin.auth.impl.utils.RemoteServerUtil;
@@ -125,12 +125,30 @@ public class NacosUserServiceRemoteImpl extends AbstractCachedUserService implem
     
     @Override
     public void createUser(String username, String password, boolean encode) {
+        if (AuthConstants.DEFAULT_USER.equals(username)) {
+            doCreateAdminUser(password);
+            return;
+        }
         // ignore encode = true, let nacos server do encode
         Query query = Query.newInstance().addParam("username", username);
         Map<String, String> body = Map.of("password", password);
         try {
             HttpRestResult<String> result = nacosRestTemplate.postForm(buildRemoteUserUrlPath(AuthConstants.USER_PATH),
                     RemoteServerUtil.buildServerRemoteHeader(authConfigs), query, body, String.class);
+            RemoteServerUtil.singleCheckResult(result);
+        } catch (NacosException e) {
+            throw new NacosRuntimeException(e.getErrCode(), e.getErrMsg());
+        } catch (Exception unpectedException) {
+            throw new NacosRuntimeException(NacosException.SERVER_ERROR, unpectedException.getMessage());
+        }
+    }
+    
+    private void doCreateAdminUser(String password) {
+        Map<String, String> body = Map.of("password", password);
+        try {
+            HttpRestResult<String> result = nacosRestTemplate.postForm(
+                    buildRemoteUserUrlPath(AuthConstants.USER_PATH + "/admin"),
+                    RemoteServerUtil.buildServerRemoteHeader(authConfigs), Query.newInstance(), body, String.class);
             RemoteServerUtil.singleCheckResult(result);
         } catch (NacosException e) {
             throw new NacosRuntimeException(e.getErrCode(), e.getErrMsg());
