@@ -16,31 +16,12 @@
 
 package com.alibaba.nacos.maintainer.client.constants;
 
-import com.alibaba.nacos.common.utils.StringUtils;
-
 /**
  * All the constants.
  *
  * @author Nacos
  */
 public class Constants {
-    
-    public static final String NACOS_PERSIST_ENCODE_KEY = "nacosPersistEncodingKey";
-    
-    public static final String DEFAULT_NACOS_ENCODE = "UTF-8";
-    
-    public static final String PERSIST_ENCODE = getPersistEncode();
-    
-    public static String getPersistEncode() {
-        String persistEncode = System.getenv(NACOS_PERSIST_ENCODE_KEY);
-        if (StringUtils.isBlank(persistEncode)) {
-            persistEncode = System.getProperty(NACOS_PERSIST_ENCODE_KEY);
-            if (StringUtils.isBlank(persistEncode)) {
-                persistEncode = DEFAULT_NACOS_ENCODE;
-            }
-        }
-        return persistEncode;
-    }
     
     public static class AdminApiPath {
         
@@ -73,6 +54,8 @@ public class Constants {
         public static final String CORE_NAMESPACE_ADMIN_PATH = "/v3/admin/core/namespace";
         
         public static final String CORE_STATE_ADMIN_PATH = "/v3/admin/core/state";
+        
+        public static final String AI_MCP_ADMIN_PATH = "/v3/admin/ai/mcp";
     }
     
 }

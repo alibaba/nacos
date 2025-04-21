@@ -106,7 +106,7 @@ public class NamespaceControllerV3 {
     @PostMapping
     @Secured(resource = Commons.NACOS_ADMIN_CORE_CONTEXT_V3
             + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE, apiType = ApiType.ADMIN_API)
-    public Result<Boolean> createNamespace(NamespaceForm namespaceForm) throws NacosException {
+    public Result<Boolean> createNamespace(NamespaceForm namespaceForm) throws Exception {
         namespaceForm.validate();
         
         String namespaceId = namespaceForm.getNamespaceId();
