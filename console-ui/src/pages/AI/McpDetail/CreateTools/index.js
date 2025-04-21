@@ -1,5 +1,5 @@
 import React, { useEffect, useImperativeHandle, useState } from 'react';
-import { Dialog, Field, Form, Input, Grid, Table, Button } from '@alifd/next';
+import { Dialog, Field, Form, Input, Grid, Table, Button, Message } from '@alifd/next';
 import { formitemLayout, GetTitle, tableOperation } from './components';
 import { request } from '../../../../globalLib';
 const { Row, Col } = Grid;
@@ -20,69 +20,86 @@ const CreateTools = React.forwardRef((props, ref) => {
   const [invokeIdx, setInvokeIdx] = useState(0);
   const [templateIdx, setTemplateIdx] = useState(0);
   const [type, setType] = useState('');
+  const [okLoading, setOkLoading] = useState(false);
   useEffect(() => {
-    if (field.getValue('toolParams') && !field.getValue('toolParams')?.length) {
-      addNewToolParam();
+    if (visible) {
+      if (field.getValue('toolParams') && !field.getValue('toolParams')?.length) {
+        addNewToolParam();
+      }
+      if (field.getValue('invokeContext') && !field.getValue('invokeContext')?.length) {
+        addNewToolMetadata();
+      } else {
+        field.setValues({ invokeContext: [] });
+      }
+      if (field.getValue('templates') && !field.getValue('templates')?.length) {
+        addNewTemplates();
+      } else {
+        field.setValues({ templates: [] });
+      }
     }
-    if (field.getValue('invokeContext') && !field.getValue('invokeContext')?.length) {
-      addNewToolMetadata();
-    }
-    if (field.getValue('templates') && !field.getValue('templates')?.length) {
-      addNewTemplates();
-    }
-  }, []);
+  }, [visible]);
+
+  const openVisible = ({ record, type }) => {
+    const { name, description, inputSchema, toolMeta } = record;
+    setType(type);
+
+    const _toolParams = inputSchema?.properties
+      ? Object.keys(inputSchema?.properties).map(key => ({
+          name: key,
+          type: inputSchema?.properties[key].type,
+          description: inputSchema?.properties[key].description,
+        }))
+      : [];
+    setIdx(_toolParams.length + 1);
+
+    const _invokeContext = toolMeta?.invokeContext
+      ? Object.keys(toolMeta?.invokeContext).map(key => ({
+          key,
+          value: toolMeta?.invokeContext[key],
+        }))
+      : [];
+    setInvokeIdx(_invokeContext.length + 1);
+
+    const _templates = toolMeta?.templates
+      ? Object.keys(toolMeta?.templates).map(key => ({
+          key,
+          // 判断 toolMeta?.templates[key] 是否是字符串
+          value:
+            typeof toolMeta?.templates[key] === 'string'
+              ? toolMeta?.templates[key]
+              : JSON.stringify(toolMeta?.templates[key]),
+        }))
+      : [];
+    setTemplateIdx(_templates.length + 1);
+
+    field.setValues({
+      name,
+      description,
+      toolParams: _toolParams,
+      invokeContext: _invokeContext,
+      templates: _templates,
+    });
+
+    setVisible(true);
+  };
 
   useImperativeHandle(ref, () => ({
-    openVisible: ({ record, type }) => {
-      const { name, description, inputSchema, toolMeta } = record;
-      setType(type);
-
-      const _toolParams = inputSchema?.properties
-        ? Object.keys(inputSchema?.properties).map(key => ({
-            name: key,
-            type: inputSchema?.properties[key].type,
-            description: inputSchema?.properties[key].description,
-          }))
-        : [];
-      setIdx(_toolParams.length + 1);
-
-      const _invokeContext = toolMeta?.invokeContext
-        ? Object.keys(toolMeta?.invokeContext).map(key => ({
-            key,
-            value: toolMeta?.invokeContext[key],
-          }))
-        : [];
-      setInvokeIdx(_invokeContext.length + 1);
-
-      const _templates = toolMeta?.templates
-        ? Object.keys(toolMeta?.templates).map(key => ({
-            key,
-            value: JSON.stringify(toolMeta?.templates[key]),
-          }))
-        : [];
-      setTemplateIdx(_templates.length + 1);
-
-      field.setValues({
-        name,
-        description,
-        toolParams: _toolParams,
-        invokeContext: _invokeContext,
-        templates: _templates,
-      });
-
-      setVisible(true);
-      console.log('{first}', { record, type });
-    },
+    openVisible,
   }));
 
   const openDialog = () => {
-    setVisible(true);
+    openVisible({
+      record: {
+        name: '',
+        description: '',
+      },
+      type: '',
+    });
   };
 
   const closeDialog = () => {
     setVisible(false);
     setType('');
-    field.reset();
   };
 
   const createItems = () => {
@@ -90,7 +107,7 @@ const CreateTools = React.forwardRef((props, ref) => {
       if (error) {
         return;
       }
-      console.log('values', values);
+
       const properties = {};
       if (values?.toolParams?.length) {
         values?.toolParams?.forEach(
@@ -112,40 +129,56 @@ const CreateTools = React.forwardRef((props, ref) => {
         values?.templates?.forEach(item => (templates[item.key] = item.value));
       }
 
-      const serverSpecification = `{
-        "name": "${props?.serverConfig?.name}",
-        "type": "${props?.serverConfig?.type}",
-        "version": "${props?.serverConfig?.version}",
-        "description": "${props?.serverConfig?.description}",
-        "backendProtocol": "${props?.serverConfig?.remoteServerConfig?.backendProtocol}",
-        "exportPath": "${props?.serverConfig?.remoteServerConfig?.exportPath}",
-        "localServerConfig": ${JSON.stringify(props?.serverConfig?.localServerConfig || {})},
-        "capabilitys": ${JSON.stringify(props?.serverConfig?.capabilitys || [])},
-        "backendEndpoints": ${JSON.stringify(props?.serverConfig?.backendEndpoints)},
-        "tools": ${JSON.stringify(props?.serverConfig?.tools || [])}
-      }`;
-
-      const toolSpecification = `[{
-        "name": "${values?.name}",
-        "description": "${values?.description}",
-        "inputSchema": {
-          "type": "object",
-          "properties": ${JSON.stringify(properties)}
+      const serverSpecification = JSON.stringify({
+        type: props?.serverConfig?.type,
+        name: props?.serverConfig?.name,
+        description: props?.serverConfig?.description,
+        version: props?.serverConfig?.version,
+        enbled: true,
+        remoteServerConfig: {
+          exportPath: props?.serverConfig?.remoteServerConfig?.exportPath,
+          backendProtocol: props?.serverConfig?.remoteServerConfig?.backendProtocol,
         },
-        "toolMeta": {
-          "enabled": true,
-          "invokeContext": ${JSON.stringify(invokeContext)}
-        }
-      }]`;
+      });
 
-      const endpointSpecification = `{
-        "type": "REF",
-        "data":{
-          "namespaceId":"${props?.serverConfig?.remoteServerConfig?.serviceRef?.namespaceId}",
-          "serviceName": "${props?.serverConfig?.remoteServerConfig?.serviceRef?.serviceName}",
-          "groupName":"${props?.serverConfig?.remoteServerConfig?.serviceRef?.groupName}"
-        }
-      }`;
+      // 根据 item.name  去除 重复的 name 值
+      let _tool = JSON.parse(JSON.stringify(props?.serverConfig?.tools || []));
+      const itemTool = {
+        name: values?.name,
+        description: values?.description,
+        inputSchema: {
+          type: 'object',
+          properties,
+        },
+        toolMeta: {
+          enabled: true,
+          invokeContext,
+          templates,
+        },
+      };
+
+      if (type == 'edit') {
+        _tool
+          .map(i => i.name)
+          .forEach((name, index) => {
+            if (values?.name === name) {
+              _tool[index] = itemTool;
+            }
+          });
+      } else {
+        _tool.push(itemTool);
+      }
+
+      const toolSpecification = JSON.stringify(_tool);
+
+      const endpointSpecification = JSON.stringify({
+        type: 'REF',
+        data: {
+          namespaceId: props?.serverConfig?.remoteServerConfig?.serviceRef?.namespaceId,
+          serviceName: props?.serverConfig?.remoteServerConfig?.serviceRef?.serviceName,
+          groupName: props?.serverConfig?.remoteServerConfig?.serviceRef?.groupName,
+        },
+      });
 
       const params = {
         mcpName: props?.serverConfig?.name,
@@ -154,34 +187,46 @@ const CreateTools = React.forwardRef((props, ref) => {
         endpointSpecification,
       };
 
-      window.serverSpecification = serverSpecification;
-      window.params = params;
-      window.putMcp = putMcp;
-
       putMcp(params);
     });
   };
 
   const putMcp = async params => {
+    setOkLoading(true);
     const result = await request({
       url: 'v3/console/ai/mcp',
       method: 'put',
       data: params,
     });
+    setOkLoading(false);
 
-    console.log('result', result);
+    if (result?.code === 0 && result?.data === 'ok') {
+      if (type == 'edit') {
+        Message.success(locale.editToolSuccess);
+      } else {
+        Message.success(locale.createToolSuccess);
+      }
+      await new Promise(resolve => setTimeout(resolve, 300));
+      closeDialog();
+      props?.getServerDetail();
+    } else {
+      if (type == 'edit') {
+        Message.error(result?.message || locale.editToolFailed);
+      } else {
+        Message.error(result?.message || locale.createToolFailed);
+      }
+    }
   };
 
   // 添加入参描述
   const addNewToolParam = () => {
     setIdx(idx + 1);
-    const item = {
+    field.addArrayValue('toolParams', idx, {
       id: idx + 1,
       name: '',
       type: '',
       description: '',
-    };
-    field.addArrayValue('toolParams', idx, item);
+    });
   };
   // 删除入参描述
   const deleteToolParam = index => {
@@ -190,7 +235,11 @@ const CreateTools = React.forwardRef((props, ref) => {
   // 添加Tool 元数据
   const addNewToolMetadata = () => {
     setInvokeIdx(invokeIdx + 1);
-    field.addArrayValue('invokeContext', invokeIdx, { id: invokeIdx + 1, key: '', value: '' });
+    field.addArrayValue('invokeContext', invokeIdx, {
+      id: invokeIdx + 1,
+      key: '',
+      value: '',
+    });
   };
   // 删除Tool 元数据
   const deleteToolMetadata = index => {
@@ -199,7 +248,11 @@ const CreateTools = React.forwardRef((props, ref) => {
   // 添加模板 template
   const addNewTemplates = () => {
     setTemplateIdx(templateIdx + 1);
-    field.addArrayValue('templates', templateIdx, { id: templateIdx + 1, key: '', value: '' });
+    field.addArrayValue('templates', templateIdx, {
+      id: templateIdx + 1,
+      key: '',
+      value: '',
+    });
   };
   // 删除模板 template
   const deleteTemplates = index => {
@@ -258,16 +311,33 @@ const CreateTools = React.forwardRef((props, ref) => {
           }
           footerActions={isPreview ? [] : ['ok', 'cancel']}
           onOk={createItems}
+          okProps={{ loading: okLoading }}
           onClose={closeDialog}
           style={{ width: '70%' }}
         >
           <Form field={field} {...formitemLayout} isPreview={isPreview}>
             <h3>{locale.baseData}</h3>
             {/* 名称 */}
-            <Form.Item label={locale.toolName} required>
+            <Form.Item label={locale.toolName} required isPreview={type ? true : false}>
               <Input
                 placeholder={locale.toolName}
-                {...init('name', { rules: [{ required: true, message: locale.toolNameRequired }] })}
+                {...init('name', {
+                  rules: [
+                    { required: true, message: locale.toolNameRequired },
+                    {
+                      validator: (rule, value, callback) => {
+                        const _tools = props?.serverConfig?.tools || [];
+                        if (_tools?.length && !type) {
+                          const names = _tools.map(item => item.name);
+                          if (names.includes(value)) {
+                            callback(locale.toolNameRepeat);
+                          }
+                        }
+                        callback();
+                      },
+                    },
+                  ],
+                })}
               />
             </Form.Item>
 
@@ -366,6 +436,7 @@ const CreateTools = React.forwardRef((props, ref) => {
               </Col>
             </Row>
 
+            {/* 调用模板 */}
             {showTemplates ? (
               <>
                 <GetTitle

@@ -3,6 +3,7 @@ import { Divider, ConfigProvider, Field, Form, Loading, Grid, Table } from '@ali
 import { getParams, request } from '../../../globalLib';
 import PropTypes from 'prop-types';
 import CreateTools from './CreateTools/index';
+import DeleteTool from './CreateTools/DeleteTool';
 const FormItem = Form.Item;
 const { Row, Col } = Grid;
 
@@ -19,7 +20,6 @@ class McpDetail extends React.Component {
     super(props);
     this.state = {
       loading: false,
-      tools: [],
       serverConfig: {
         name: '',
         type: '',
@@ -32,6 +32,7 @@ class McpDetail extends React.Component {
           backendProtocol: '',
           serviceRef: {},
         },
+        tools: [],
       },
     };
     this.field = new Field(this);
@@ -44,7 +45,7 @@ class McpDetail extends React.Component {
 
   getServerDetail = async () => {
     const mcpname = getParams('mcpname');
-    this.setState({ loading: true, tools: [] });
+    this.setState({ loading: true });
     const result = await request({
       url: `v3/console/ai/mcp?mcpName=${mcpname}`,
     });
@@ -54,7 +55,6 @@ class McpDetail extends React.Component {
     if (result.code == 0 && result.data) {
       this.setState({
         serverConfig: result.data,
-        tools: result.data?.tools || [],
       });
     }
   };
@@ -83,8 +83,6 @@ class McpDetail extends React.Component {
 
   render() {
     const { locale = {} } = this.props;
-    const { init } = this.field;
-    const { tools } = this.state;
     const formItemLayout = {
       labelCol: {
         span: 2,
@@ -136,15 +134,20 @@ class McpDetail extends React.Component {
           <Divider></Divider>
 
           <h2>Tools</h2>
-          <CreateTools
-            locale={locale}
-            serverConfig={this.state.serverConfig}
-            showTemplates={this.state.serverConfig?.remoteServerConfig?.backendProtocol == 'http'}
-            ref={this.toolsRef}
-          />
+          {!this.state.loading && (
+            <CreateTools
+              key={JSON.stringify(this.state?.serverConfig)}
+              locale={locale}
+              serverConfig={this.state.serverConfig}
+              showTemplates={this.state.serverConfig?.remoteServerConfig?.backendProtocol == 'http'}
+              ref={this.toolsRef}
+              getServerDetail={this.getServerDetail}
+            />
+          )}
 
-          <Table style={{ marginTop: '20px' }} dataSource={tools}>
-            <Table.Column sortable={true} title={locale.toolName} dataIndex={'name'} />
+          <Table style={{ marginTop: '20px' }} dataSource={this.state?.serverConfig?.tools || []}>
+            <Table.Column title={locale.toolName} dataIndex={'name'} />
+            <Table.Column title={locale.toolDescription} dataIndex={'description'} />
             <Table.Column
               title={locale.operations}
               cell={(value, index, record) => {
@@ -164,9 +167,12 @@ class McpDetail extends React.Component {
                       {/* 编辑 */}
                     </a>
                     <span style={{ margin: '0 5px' }}>|</span>
-                    <a>
-                      {locale.operationToolDelete} {/* 删除 */}
-                    </a>
+                    <DeleteTool
+                      record={record}
+                      locale={locale}
+                      serverConfig={this.state.serverConfig}
+                      getServerDetail={this.getServerDetail}
+                    />
                   </div>
                 );
               }}
