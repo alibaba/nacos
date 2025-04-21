@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
-import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.common.constant.RequestUrlConstants;
 import com.alibaba.nacos.common.http.DefaultHttpClientFactory;
 import com.alibaba.nacos.common.http.HttpRestResult;
@@ -28,6 +27,7 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
@@ -209,10 +209,12 @@ public class NacosRoleServiceRemoteImpl extends AbstractCheckedRoleService imple
     
     @Override
     public void addAdminRole(String username) {
+        // if has global admin role, means already synced admin role to console cached.
         if (hasGlobalAdminRole()) {
-            throw new IllegalArgumentException("role '" + AuthConstants.GLOBAL_ADMIN_ROLE + "' already exist !");
+            return;
         }
-        addRole(AuthConstants.GLOBAL_ADMIN_ROLE, username);
+        // No need to call add admin role. In {@link NacosUserServiceRemoteImpl#createUser},
+        // it will call create admin role which include add admin role operation.
         getCachedRoleSet().add(AuthConstants.GLOBAL_ADMIN_ROLE);
         authConfigs.setHasGlobalAdminRole(true);
     }
