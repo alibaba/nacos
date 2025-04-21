@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.handler.impl.remote.ai;
 
+import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -24,6 +25,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.McpHandler;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
+import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -37,31 +39,43 @@ import java.util.List;
 @EnabledRemoteHandler
 public class McpRemoteHandler implements McpHandler {
     
+    private final NacosMaintainerClientHolder clientHolder;
+    
+    public McpRemoteHandler(NacosMaintainerClientHolder clientHolder) {
+        this.clientHolder = clientHolder;
+    }
+    
     @Override
     public Page<McpServerBasicInfo> listMcpServers(String namespaceId, String mcpName, String search, int pageNo,
             int pageSize) throws NacosException {
-        throw new UnsupportedOperationException("AI MCP API not support for console mode.");
+        if (Constants.MCP_LIST_SEARCH_ACCURATE.equalsIgnoreCase(search)) {
+            return clientHolder.getAiMaintainerService().listMcpServer(mcpName, pageNo, pageSize);
+        } else {
+            return clientHolder.getAiMaintainerService().searchMcpServer(mcpName, pageNo, pageSize);
+        }
     }
     
     @Override
     public McpServerDetailInfo getMcpServer(String namespaceId, String mcpName) throws NacosException {
-        throw new UnsupportedOperationException("AI MCP API not support for console mode.");
+        return clientHolder.getAiMaintainerService().getMcpServerDetail(mcpName);
     }
     
     @Override
     public void createMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
             List<McpTool> toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
-        throw new UnsupportedOperationException("AI MCP API not support for console mode.");
+        clientHolder.getAiMaintainerService()
+                .createMcpServer(mcpName, serverSpecification, toolSpecification, endpointSpecification);
     }
     
     @Override
     public void updateMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
             List<McpTool> toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
-        throw new UnsupportedOperationException("AI MCP API not support for console mode.");
+        clientHolder.getAiMaintainerService()
+                .updateMcpServer(mcpName, serverSpecification, toolSpecification, endpointSpecification);
     }
     
     @Override
     public void deleteMcpServer(String namespaceId, String mcpName) throws NacosException {
-        throw new UnsupportedOperationException("AI MCP API not support for console mode.");
+        clientHolder.getAiMaintainerService().deleteMcpServer(mcpName);
     }
 }

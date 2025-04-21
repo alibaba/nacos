@@ -34,6 +34,7 @@ import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -52,11 +53,12 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     }
     
     @Override
-    public Page<McpServerBasicInfo> listMcpServer(int pageNo, int pageSize) throws NacosException {
+    public Page<McpServerBasicInfo> listMcpServer(String mcpName, int pageNo, int pageSize) throws NacosException {
         Map<String, String> params = new HashMap<>(3);
         params.put("pageNo", String.valueOf(pageNo));
         params.put("pageSize", String.valueOf(pageSize));
         params.put("search", "accurate");
+        params.put("mcpName", mcpName);
         return getMcpServerBasicInfoPage(params);
     }
     
@@ -65,7 +67,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         Map<String, String> params = new HashMap<>(4);
         params.put("pageNo", String.valueOf(pageNo));
         params.put("pageSize", String.valueOf(pageSize));
-        params.put("search", "accurate");
+        params.put("search", "blur");
         params.put("mcpName", mcpName);
         return getMcpServerBasicInfoPage(params);
     }
@@ -94,7 +96,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     }
     
     @Override
-    public boolean createMcpServer(String mcpName, McpServerBasicInfo serverSpec, McpTool toolSpec,
+    public boolean createMcpServer(String mcpName, McpServerBasicInfo serverSpec, List<McpTool> toolSpec,
             McpEndpointSpec endpointSpec) throws NacosException {
         Map<String, String> params = buildFullParameters(mcpName, serverSpec, toolSpec, endpointSpec);
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
@@ -106,7 +108,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     }
     
     @Override
-    public boolean updateMcpServer(String mcpName, McpServerBasicInfo serverSpec, McpTool toolSpec,
+    public boolean updateMcpServer(String mcpName, McpServerBasicInfo serverSpec, List<McpTool> toolSpec,
             McpEndpointSpec endpointSpec) throws NacosException {
         Map<String, String> params = buildFullParameters(mcpName, serverSpec, toolSpec, endpointSpec);
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.PUT)
@@ -117,8 +119,8 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
     
-    private Map<String, String> buildFullParameters(String mcpName, McpServerBasicInfo serverSpec, McpTool toolSpec,
-            McpEndpointSpec endpointSpec) {
+    private Map<String, String> buildFullParameters(String mcpName, McpServerBasicInfo serverSpec,
+            List<McpTool> toolSpec, McpEndpointSpec endpointSpec) {
         Map<String, String> params = new HashMap<>(4);
         params.put("mcpName", mcpName);
         params.put("serverSpecification", JacksonUtils.toJson(serverSpec));

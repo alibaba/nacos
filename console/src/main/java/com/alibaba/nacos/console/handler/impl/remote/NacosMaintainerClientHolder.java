@@ -24,6 +24,8 @@ import com.alibaba.nacos.console.cluster.RemoteServerMemberManager;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
+import com.alibaba.nacos.maintainer.client.ai.AiMaintainerFactory;
+import com.alibaba.nacos.maintainer.client.ai.AiMaintainerService;
 import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerFactory;
 import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerService;
 import com.alibaba.nacos.maintainer.client.naming.NamingMaintainerFactory;
@@ -52,6 +54,8 @@ public class NacosMaintainerClientHolder extends MemberChangeListener {
     
     private volatile ConfigMaintainerService configMaintainerService;
     
+    private volatile AiMaintainerService aiMaintainerService;
+    
     public NacosMaintainerClientHolder(RemoteServerMemberManager memberManager) throws NacosException {
         this.memberManager = memberManager;
         buildMaintainerService();
@@ -65,6 +69,7 @@ public class NacosMaintainerClientHolder extends MemberChangeListener {
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, memberAddressString);
         namingMaintainerService = NamingMaintainerFactory.createNamingMaintainerService(properties);
         configMaintainerService = ConfigMaintainerFactory.createConfigMaintainerService(properties);
+        aiMaintainerService = AiMaintainerFactory.createAiMaintainerService(properties);
     }
     
     public NamingMaintainerService getNamingMaintainerService() {
@@ -73,6 +78,10 @@ public class NacosMaintainerClientHolder extends MemberChangeListener {
     
     public ConfigMaintainerService getConfigMaintainerService() {
         return configMaintainerService;
+    }
+    
+    public AiMaintainerService getAiMaintainerService() {
+        return aiMaintainerService;
     }
     
     @Override
