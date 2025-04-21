@@ -62,7 +62,6 @@ public class McpToolOperationService {
     public void refreshMcpTool(String namespaceId, String mcpName, List<McpTool> toolSpecification)
             throws NacosException {
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
-        configRequestInfo.setUpdateForExist(false);
         configOperationService.publishConfig(buildMcpToolConfigForm(namespaceId, mcpName, toolSpecification),
                 configRequestInfo, null);
     }

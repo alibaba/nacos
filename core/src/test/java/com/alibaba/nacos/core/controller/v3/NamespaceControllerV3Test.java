@@ -96,7 +96,7 @@ class NamespaceControllerV3Test {
     }
     
     @Test
-    void testCreateNamespace() throws NacosException {
+    void testCreateNamespace() throws Exception {
         NamespaceForm form = new NamespaceForm();
         form.setNamespaceId(TEST_NAMESPACE_ID);
         form.setNamespaceName(TEST_NAMESPACE_NAME);

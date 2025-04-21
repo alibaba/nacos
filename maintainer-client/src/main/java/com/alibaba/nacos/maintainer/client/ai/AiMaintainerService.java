@@ -14,27 +14,13 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.constant;
+package com.alibaba.nacos.maintainer.client.ai;
 
 /**
- * Nacos Ai contants.
+ * Nacos AI module maintainer service.
  *
  * @author xiweng.yy
  */
-public class AiConstants {
-    
-    public static class Mcp {
-        
-        public static final String MCP_DEFAULT_NAMESPACE = "nacos-default-mcp";
-        
-        public static final String MCP_TYPE_LOCAL = "local";
-        
-        public static final String MCP_TYPE_SSE_REMOTE = "sse-remote";
-        
-        public static final String MCP_TYPE_STREAM_REMOTE = "streamable-remote";
-        
-        public static final String MCP_ENDPOINT_TYPE_REF = "REF";
-        
-        public static final String MCP_ENDPOINT_TYPE_DIRECT = "DIRECT";
-    }
+public interface AiMaintainerService extends McpMaintainerService {
+
 }
