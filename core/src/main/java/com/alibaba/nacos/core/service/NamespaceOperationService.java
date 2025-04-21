@@ -84,14 +84,25 @@ public class NamespaceOperationService {
      * @return Namespace.
      */
     public Namespace getNamespace(String namespaceId) throws NacosException {
-        // TODO 获取用kp
+        return getNamespace(namespaceId, NamespaceTypeEnum.CUSTOM);
+    }
+    
+    /**
+     * query namespace by namespace id and type.
+     *
+     * @param namespaceId namespace Id.
+     * @param type        namespace type.
+     * @return Namespace.
+     */
+    public Namespace getNamespace(String namespaceId, NamespaceTypeEnum type) throws NacosException {
         Namespace result;
         if (StringUtils.isBlank(namespaceId) || namespaceId.equals(NamespaceUtil.getNamespaceDefaultId())) {
             result = new Namespace(namespaceId, DEFAULT_NAMESPACE_SHOW_NAME, DEFAULT_NAMESPACE_DESCRIPTION,
                     DEFAULT_QUOTA, 0, NamespaceTypeEnum.GLOBAL.getType());
             
         } else {
-            TenantInfo tenantInfo = namespacePersistService.findTenantByKp(DEFAULT_KP, namespaceId);
+            String typeString = String.valueOf(type.getType());
+            TenantInfo tenantInfo = namespacePersistService.findTenantByKp(typeString, namespaceId);
             if (null == tenantInfo) {
                 throw new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.NAMESPACE_NOT_EXIST,
                         "namespaceId [ " + namespaceId + " ] not exist");
@@ -113,8 +124,23 @@ public class NamespaceOperationService {
      */
     public Boolean createNamespace(String namespaceId, String namespaceName, String namespaceDesc)
             throws NacosException {
+        return createNamespace(namespaceId, namespaceName, namespaceDesc, NamespaceTypeEnum.CUSTOM);
+    }
+    
+    /**
+     * create namespace.
+     *
+     * @param namespaceId   namespace ID
+     * @param namespaceName namespace Name
+     * @param namespaceDesc namespace Desc
+     * @param type          namespace type, see {@link NamespaceTypeEnum}
+     * @return whether create ok
+     */
+    public Boolean createNamespace(String namespaceId, String namespaceName, String namespaceDesc,
+            NamespaceTypeEnum type) throws NacosException {
         isNamespaceExist(namespaceId);
-        namespacePersistService.insertTenantInfoAtomic(DEFAULT_KP, namespaceId, namespaceName, namespaceDesc,
+        String typeString = String.valueOf(type.getType());
+        namespacePersistService.insertTenantInfoAtomic(typeString, namespaceId, namespaceName, namespaceDesc,
                 DEFAULT_CREATE_SOURCE, System.currentTimeMillis());
         return true;
     }
