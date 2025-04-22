@@ -19,13 +19,11 @@ package com.alibaba.nacos.console.proxy.ai;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
-import com.alibaba.nacos.api.ai.model.mcp.McpTool;
+import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.McpHandler;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 /**
  * Proxy class for handling AI MCP operations.
@@ -72,15 +70,15 @@ public class McpProxy {
     /**
      * Create new mcp server.
      *
-     * @param namespaceId         namespace id of mcp server
-     * @param mcpName             name of mcp server
-     * @param serverSpecification mcp server specification, see {@link McpServerBasicInfo}
-     * @param toolSpecification   mcp server included tools, see {@link McpTool}, optional
+     * @param namespaceId           namespace id of mcp server
+     * @param mcpName               name of mcp server
+     * @param serverSpecification   mcp server specification, see {@link McpServerBasicInfo}
+     * @param toolSpecification     mcp server included tools, see {@link McpToolSpecification}, optional
      * @param endpointSpecification mcp server endpoint specification, see {@link McpEndpointSpec}, optional
      * @throws NacosException any exception during handling
      */
     public void createMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
-            List<McpTool> toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
+            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
         mcpHandler.createMcpServer(namespaceId, mcpName, serverSpecification, toolSpecification, endpointSpecification);
     }
     
@@ -91,15 +89,15 @@ public class McpProxy {
      * `namespaceId` and `mcpName` can't be changed.
      * </p>
      *
-     * @param namespaceId         namespace id of mcp server, used to mark which mcp server to update
-     * @param mcpName             name of mcp server, used to mark which mcp server to update
-     * @param serverSpecification mcp server specification, see {@link McpServerBasicInfo}
-     * @param toolSpecification   mcp server included tools, see {@link McpTool}, optional
+     * @param namespaceId           namespace id of mcp server, used to mark which mcp server to update
+     * @param mcpName               name of mcp server, used to mark which mcp server to update
+     * @param serverSpecification   mcp server specification, see {@link McpServerBasicInfo}
+     * @param toolSpecification     mcp server included tools, see {@link McpToolSpecification}, optional
      * @param endpointSpecification mcp server endpoint specification, see {@link McpEndpointSpec}, optional
      * @throws NacosException any exception during handling
      */
     public void updateMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
-            List<McpTool> toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
+            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
         mcpHandler.updateMcpServer(namespaceId, mcpName, serverSpecification, toolSpecification, endpointSpecification);
     }
     

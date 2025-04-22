@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.ai.model.mcp;
 
+import com.alibaba.nacos.api.ai.constant.AiConstants;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,8 +28,23 @@ import java.util.Map;
  */
 public class McpEndpointSpec {
     
+    /**
+     * Endpoint type. Should be {@link AiConstants.Mcp#MCP_ENDPOINT_TYPE_DIRECT} or
+     * {@link AiConstants.Mcp#MCP_ENDPOINT_TYPE_REF}.
+     */
     private String type;
     
+    /**
+     * Endpoint data. Depend on the `type`, the data should be different.
+     * <p>
+     *  If `type` is {@link AiConstants.Mcp#MCP_ENDPOINT_TYPE_DIRECT}, the data should be include `address` and `port` to
+     *  spec mcp server endpoint.
+     * </p>
+     * <p>
+     *  If `type` is {@link AiConstants.Mcp#MCP_ENDPOINT_TYPE_REF}, the data should be include `namespaceId`, `groupName` and `serviceName`
+     *  to spec the ref server which already register into Nacos.
+     * </p>
+     */
     private Map<String, String> data = new HashMap<>();
     
     public String getType() {

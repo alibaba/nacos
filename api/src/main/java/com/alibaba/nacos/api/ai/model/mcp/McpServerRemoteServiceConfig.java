@@ -23,19 +23,9 @@ package com.alibaba.nacos.api.ai.model.mcp;
  */
 public class McpServerRemoteServiceConfig {
     
-    private String backendProtocol;
-    
     private McpServiceRef serviceRef;
     
     private String exportPath;
-    
-    public String getBackendProtocol() {
-        return backendProtocol;
-    }
-    
-    public void setBackendProtocol(String backendProtocol) {
-        this.backendProtocol = backendProtocol;
-    }
     
     public McpServiceRef getServiceRef() {
         return serviceRef;

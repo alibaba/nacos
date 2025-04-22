@@ -31,8 +31,6 @@ public class McpTool {
     
     private Map<String, Object> inputSchema;
     
-    private McpToolMeta toolMeta;
-    
     public String getName() {
         return name;
     }
@@ -57,11 +55,4 @@ public class McpTool {
         this.inputSchema = inputSchema;
     }
     
-    public McpToolMeta getToolMeta() {
-        return toolMeta;
-    }
-    
-    public void setToolMeta(McpToolMeta toolMeta) {
-        this.toolMeta = toolMeta;
-    }
 }

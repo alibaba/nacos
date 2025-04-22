@@ -20,14 +20,12 @@ import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
-import com.alibaba.nacos.api.ai.model.mcp.McpTool;
+import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.McpHandler;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 /**
  * Inner implementation of Mcp handler.
@@ -57,14 +55,14 @@ public class McpInnerHandler implements McpHandler {
     
     @Override
     public void createMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
-            List<McpTool> toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
+            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
         mcpServerOperationService.createMcpServer(namespaceId, mcpName, serverSpecification, toolSpecification,
                 endpointSpecification);
     }
     
     @Override
     public void updateMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
-            List<McpTool> toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
+            McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
         mcpServerOperationService.updateMcpServer(namespaceId, mcpName, serverSpecification, toolSpecification,
                 endpointSpecification);
     }

@@ -492,7 +492,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */.setting-box{margin-top:15px;padding:20px;background-color:#fff;border:1px solid #f6f7fb;border-radius:0;-webkit-box-shadow:0 1px 3px rgba(0,0,0,.1);-moz-box-shadow:0 1px 3px rgba(0,0,0,.1);box-shadow:0 1px 3px rgba(0,0,0,.1)}.text-box{width:100%;flex-wrap:wrap;display:flex}.setting-checkbox{flex:0 0 50%;height:100px;box-sizing:border-box}.setting-span{font-size:18px;font-weight:400;margin-bottom:15px}
+ */.setting-box{margin-top:15px;padding:20px;background-color:#fff;border:1px solid #f6f7fb;border-radius:0;-webkit-box-shadow:0 1px 3px rgba(0,0,0,.1);-moz-box-shadow:0 1px 3px rgba(0,0,0,.1);box-shadow:0 1px 3px rgba(0,0,0,.1)}.text-box{width:100%;flex-wrap:wrap;display:flex}.setting-checkbox{flex:0 0 50%;height:100px;box-sizing:border-box}.setting-span{font-size:18px;font-weight:400;margin-bottom:15px}.next-divider,.next-divider-ver{background:#dcdee3}.next-divider-hoz.next-divider-with-text-center:after,.next-divider-hoz.next-divider-with-text-center:before,.next-divider-hoz.next-divider-with-text-left:after,.next-divider-hoz.next-divider-with-text-left:before,.next-divider-hoz.next-divider-with-text-right:after,.next-divider-hoz.next-divider-with-text-right:before{border-top:1px solid #dcdee3}.next-divider-dashed{border:dashed #dcdee3}
 /*!
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *

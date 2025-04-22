@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.service;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.api.ai.model.mcp.McpTool;
+import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -29,9 +30,6 @@ import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainReque
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.stereotype.Service;
-
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Nacos AI MCP tool operation service.
@@ -59,19 +57,18 @@ public class McpToolOperationService {
      * @param toolSpecification mcp server included tools, see {@link McpTool}, optional
      * @throws NacosException any exception during handling
      */
-    public void refreshMcpTool(String namespaceId, String mcpName, List<McpTool> toolSpecification)
+    public void refreshMcpTool(String namespaceId, String mcpName, McpToolSpecification toolSpecification)
             throws NacosException {
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
-        configRequestInfo.setUpdateForExist(false);
         configOperationService.publishConfig(buildMcpToolConfigForm(namespaceId, mcpName, toolSpecification),
                 configRequestInfo, null);
     }
     
-    public List<McpTool> getMcpTool(String namespaceId, String toolsDescriptionRef) throws NacosException {
+    public McpToolSpecification getMcpTool(String namespaceId, String toolsDescriptionRef) throws NacosException {
         ConfigQueryChainRequest request = buildQueryMcpToolRequest(namespaceId, toolsDescriptionRef);
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         if (ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND == response.getStatus()) {
-            return Collections.emptyList();
+            return null;
         }
         return transferToMcpServerTool(response);
     }
@@ -81,7 +78,7 @@ public class McpToolOperationService {
                 Constants.MCP_SERVER_TOOL_GROUP, namespaceId, null, null, "nacos", null);
     }
     
-    private ConfigFormV3 buildMcpToolConfigForm(String namespaceId, String mcpName, List<McpTool> toolSpecification) {
+    private ConfigFormV3 buildMcpToolConfigForm(String namespaceId, String mcpName, McpToolSpecification toolSpecification) {
         ConfigFormV3 configFormV3 = new ConfigFormV3();
         configFormV3.setGroupName(Constants.MCP_SERVER_TOOL_GROUP);
         configFormV3.setGroup(Constants.MCP_SERVER_TOOL_GROUP);
@@ -102,7 +99,7 @@ public class McpToolOperationService {
         return request;
     }
     
-    private List<McpTool> transferToMcpServerTool(ConfigQueryChainResponse response) {
+    private McpToolSpecification transferToMcpServerTool(ConfigQueryChainResponse response) {
         return JacksonUtils.toObj(response.getContent(), new TypeReference<>() {
         });
     }

@@ -26,7 +26,7 @@ import com.alibaba.nacos.ai.utils.McpRequestUtil;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
-import com.alibaba.nacos.api.ai.model.mcp.McpTool;
+import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -44,8 +44,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 /**
  * Nacos AI MCP controller.
@@ -107,7 +105,7 @@ public class McpController {
     public Result<String> createMcpServer(McpDetailForm mcpForm) throws NacosException {
         mcpForm.validate();
         McpServerBasicInfo basicInfo = McpRequestUtil.parseMcpServerBasicInfo(mcpForm);
-        List<McpTool> mcpTools = McpRequestUtil.parseMcpTools(mcpForm);
+        McpToolSpecification mcpTools = McpRequestUtil.parseMcpTools(mcpForm);
         McpEndpointSpec endpointSpec = McpRequestUtil.parseMcpEndpointSpec(basicInfo, mcpForm);
         mcpServerOperationService.createMcpServer(mcpForm.getNamespaceId(), mcpForm.getMcpName(), basicInfo, mcpTools,
                 endpointSpec);
@@ -129,7 +127,7 @@ public class McpController {
     public Result<String> updateMcpServer(McpDetailForm mcpForm) throws NacosException {
         mcpForm.validate();
         McpServerBasicInfo basicInfo = McpRequestUtil.parseMcpServerBasicInfo(mcpForm);
-        List<McpTool> mcpTools = McpRequestUtil.parseMcpTools(mcpForm);
+        McpToolSpecification mcpTools = McpRequestUtil.parseMcpTools(mcpForm);
         McpEndpointSpec endpointSpec = McpRequestUtil.parseMcpEndpointSpec(basicInfo, mcpForm);
         mcpServerOperationService.updateMcpServer(mcpForm.getNamespaceId(), mcpForm.getMcpName(), basicInfo, mcpTools,
                 endpointSpec);

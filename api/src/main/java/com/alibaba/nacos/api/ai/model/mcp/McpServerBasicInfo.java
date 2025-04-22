@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.ai.model.mcp;
 
+import com.alibaba.nacos.api.ai.constant.AiConstants;
+
 import java.util.List;
 import java.util.Map;
 
@@ -28,18 +30,31 @@ public class McpServerBasicInfo {
     
     private String name;
     
-    private String type;
+    /**
+     * It should be {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}, {@link AiConstants.Mcp#MCP_PROTOCOL_SSE}, 
+     * {@link AiConstants.Mcp#MCP_PROTOCOL_STREAMABLE}, {@link AiConstants.Mcp#MCP_PROTOCOL_HTTP} or {@link AiConstants.Mcp#MCP_PROTOCOL_DUBBO}.
+     */
+    private String protocol;
     
     private String description;
     
     private String version;
     
+    /**
+     * Should be set when `type` is not {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}.
+     */
     private McpServerRemoteServiceConfig remoteServerConfig;
     
+    /**
+     * Should be set when `type` is {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}.
+     */
     private Map<String, Object> localServerConfig;
     
     private boolean enabled;
     
+    /**
+     * Auto discovery capabilities by Nacos. No need to set when create or update Mcp server.
+     */
     private List<McpCapability> capabilities;
     
     public String getName() {
@@ -50,12 +65,12 @@ public class McpServerBasicInfo {
         this.name = name;
     }
     
-    public String getType() {
-        return type;
+    public String getProtocol() {
+        return protocol;
     }
     
-    public void setType(String type) {
-        this.type = type;
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
     }
     
     public String getDescription() {
