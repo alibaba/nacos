@@ -238,7 +238,7 @@ public class ConfigInfoMapperByDerby extends AbstractMapperByDerby implements Co
         final String[] types = (String[]) context.getWhereParameter(FieldConstant.TYPE);
         
         WhereBuilder where = new WhereBuilder(
-                "SELECT id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key,type FROM config_info");
+                "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,encrypted_data_key,type FROM config_info");
         where.like("tenant_id", tenantId);
         if (StringUtils.isNotBlank(dataId)) {
             where.and().like("data_id", dataId);
