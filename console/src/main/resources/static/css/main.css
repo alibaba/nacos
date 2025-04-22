@@ -57,7 +57,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
+ */.oidc-button{margin-top:20px}.oidc-button a{display:flex;align-items:center;justify-content:center;color:#fff;background-color:#007bff;width:100%;height:60px;font-size:16px;font-weight:700;text-decoration:underline;border-radius:4px;transition:all .3s ease}.oidc-button a:hover{background-color:#0056b3}.oidc-button a .oidc-svg-icon{width:16px;height:16px;margin-right:8px;vertical-align:middle}
 /*!
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
