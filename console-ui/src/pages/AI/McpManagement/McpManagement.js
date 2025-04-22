@@ -492,7 +492,7 @@ class McpManagement extends React.Component {
             <Table dataSource={selectedRows}>
               <Table.Column title="MCP Server" dataIndex="name" />
               <Table.Column title={locale.description} dataIndex="description" />
-              <Table.Column title={locale.mcpServerType} dataIndex="type" />
+              <Table.Column title={locale.mcpServerType} dataIndex="protocol" />
               <Table.Column title={locale.mcpServerVersion} dataIndex="version" />
             </Table>
           </div>
@@ -644,7 +644,7 @@ class McpManagement extends React.Component {
               <Table.Column
                 title={locale.mcpServerType}
                 cell={(value, index, record) => {
-                  return record.type || '--';
+                  return record.protocol || '--';
                 }}
               />
               <Table.Column
