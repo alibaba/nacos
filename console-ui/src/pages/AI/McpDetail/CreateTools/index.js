@@ -1,5 +1,5 @@
 import React, { useEffect, useImperativeHandle, useState } from 'react';
-import { Dialog, Field, Form, Input, Grid, Table, Button, Message } from '@alifd/next';
+import { Dialog, Field, Form, Input, Grid, Table, Button, Message, Select } from '@alifd/next';
 import { formitemLayout, GetTitle, tableOperation } from './components';
 import { request } from '../../../../globalLib';
 const { Row, Col } = Grid;
@@ -39,8 +39,8 @@ const CreateTools = React.forwardRef((props, ref) => {
     }
   }, [visible]);
 
-  const openVisible = ({ record, type }) => {
-    const { name, description, inputSchema, toolMeta } = record;
+  const openVisible = ({ record, type, toolsMeta }) => {
+    const { name, description, inputSchema } = record;
     setType(type);
 
     const _toolParams = inputSchema?.properties
@@ -52,22 +52,22 @@ const CreateTools = React.forwardRef((props, ref) => {
       : [];
     setIdx(_toolParams.length + 1);
 
-    const _invokeContext = toolMeta?.invokeContext
-      ? Object.keys(toolMeta?.invokeContext).map(key => ({
+    const _invokeContext = toolsMeta?.invokeContext
+      ? Object.keys(toolsMeta?.invokeContext).map(key => ({
           key,
-          value: toolMeta?.invokeContext[key],
+          value: toolsMeta?.invokeContext[key],
         }))
       : [];
     setInvokeIdx(_invokeContext.length + 1);
 
-    const _templates = toolMeta?.templates
-      ? Object.keys(toolMeta?.templates).map(key => ({
+    const _templates = toolsMeta?.templates
+      ? Object.keys(toolsMeta?.templates).map(key => ({
           key,
-          // 判断 toolMeta?.templates[key] 是否是字符串
+          // 判断 toolsMeta?.templates[key] 是否是字符串
           value:
-            typeof toolMeta?.templates[key] === 'string'
-              ? toolMeta?.templates[key]
-              : JSON.stringify(toolMeta?.templates[key]),
+            typeof toolsMeta?.templates[key] === 'string'
+              ? toolsMeta?.templates[key]
+              : JSON.stringify(toolsMeta?.templates[key]),
         }))
       : [];
     setTemplateIdx(_templates.length + 1);
@@ -79,7 +79,7 @@ const CreateTools = React.forwardRef((props, ref) => {
       invokeContext: _invokeContext,
       templates: _templates,
     });
-
+    setOkLoading(false);
     setVisible(true);
   };
 
@@ -104,6 +104,7 @@ const CreateTools = React.forwardRef((props, ref) => {
 
   const createItems = () => {
     field.validate((error, values) => {
+      const records = props?.serverConfig;
       if (error) {
         return;
       }
@@ -130,62 +131,73 @@ const CreateTools = React.forwardRef((props, ref) => {
       }
 
       const serverSpecification = JSON.stringify({
-        type: props?.serverConfig?.type,
-        name: props?.serverConfig?.name,
-        description: props?.serverConfig?.description,
-        version: props?.serverConfig?.version,
+        protocol: records?.protocol,
+        name: records?.name,
+        description: records?.description,
+        version: records?.version,
         enbled: true,
         remoteServerConfig: {
-          exportPath: props?.serverConfig?.remoteServerConfig?.exportPath,
-          backendProtocol: props?.serverConfig?.remoteServerConfig?.backendProtocol,
+          exportPath: records?.remoteServerConfig?.exportPath,
         },
       });
 
       // 根据 item.name  去除 重复的 name 值
-      let _tool = JSON.parse(JSON.stringify(props?.serverConfig?.tools || []));
-      const itemTool = {
+      let _tool = JSON.parse(JSON.stringify(records?.toolSpec?.tools || []));
+      let _toolsMeta = JSON.parse(JSON.stringify(records?.toolSpec?.toolsMeta || {}));
+      const _toolitem = {
         name: values?.name,
         description: values?.description,
         inputSchema: {
           type: 'object',
           properties,
         },
-        toolMeta: {
+      };
+      const _toolsMetaitem = {
+        [values?.name]: {
           enabled: true,
           invokeContext,
           templates,
         },
       };
-
       if (type == 'edit') {
         _tool
           .map(i => i.name)
           .forEach((name, index) => {
             if (values?.name === name) {
-              _tool[index] = itemTool;
+              _tool[index] = _toolitem;
+              _toolsMeta[values?.name] = _toolsMetaitem[values?.name];
             }
           });
       } else {
-        _tool.push(itemTool);
+        _tool.push(_toolitem);
+        _toolsMeta = {
+          ..._toolsMeta,
+          ..._toolsMetaitem,
+        };
       }
-
-      const toolSpecification = JSON.stringify(_tool);
+      const toolSpecification = JSON.stringify({
+        tools: _tool,
+        toolsMeta: _toolsMeta,
+      });
 
       const endpointSpecification = JSON.stringify({
         type: 'REF',
         data: {
-          namespaceId: props?.serverConfig?.remoteServerConfig?.serviceRef?.namespaceId,
-          serviceName: props?.serverConfig?.remoteServerConfig?.serviceRef?.serviceName,
-          groupName: props?.serverConfig?.remoteServerConfig?.serviceRef?.groupName,
+          namespaceId: records?.remoteServerConfig?.serviceRef?.namespaceId,
+          serviceName: records?.remoteServerConfig?.serviceRef?.serviceName,
+          groupName: records?.remoteServerConfig?.serviceRef?.groupName,
         },
       });
 
       const params = {
-        mcpName: props?.serverConfig?.name,
+        mcpName: records?.name,
         serverSpecification,
         toolSpecification,
-        endpointSpecification,
       };
+
+      if (records?.protocol !== 'stdio') {
+        params['endpointSpecification'] = endpointSpecification;
+      }
 
       putMcp(params);
     });
@@ -197,6 +209,7 @@ const CreateTools = React.forwardRef((props, ref) => {
       url: 'v3/console/ai/mcp',
       method: 'put',
       data: params,
+      error: err => setOkLoading(false),
     });
     setOkLoading(false);
 
@@ -224,7 +237,7 @@ const CreateTools = React.forwardRef((props, ref) => {
     field.addArrayValue('toolParams', idx, {
       id: idx + 1,
       name: '',
-      type: '',
+      type: 'string',
       description: '',
     });
   };
@@ -281,6 +294,25 @@ const CreateTools = React.forwardRef((props, ref) => {
       );
     }
 
+    if (component == 'select') {
+      return (
+        <Form.Item style={{ margin: 0 }}>
+          <Select
+            style={{ width: '100%', maxWidth: minWidth }}
+            dataSource={[
+              { label: '字符串类型 string', value: 'string' },
+              { label: '数字类型 number', value: 'number' },
+              { label: '整数类型 integer', value: 'integer' },
+              { label: '布尔类型 boolean', value: 'boolean' },
+              { label: '数组类型 array', value: 'array' },
+              // { label:'对象类型，使用 properties 字段定义对象属性的模式', value:'object' },
+            ]}
+            {...field.init(key, { initValue: 'string', rules })}
+          />
+        </Form.Item>
+      );
+    }
+
     return (
       <Form.Item style={{ margin: 0, minWidth }}>
         <Input {...field.init(key, { rules })} />
@@ -326,7 +358,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                     { required: true, message: locale.toolNameRequired },
                     {
                       validator: (rule, value, callback) => {
-                        const _tools = props?.serverConfig?.tools || [];
+                        const _tools = props?.serverConfig?.toolSpec?.tools || [];
                         if (_tools?.length && !type) {
                           const names = _tools.map(item => item.name);
                           if (names.includes(value)) {
@@ -378,7 +410,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                     dataIndex="type"
                     width={200}
                     cell={(value, index, record) =>
-                      renderTableCell({ key: `toolParams.${index}.type` })
+                      renderTableCell({ key: `toolParams.${index}.type`, component: 'select' })
                     }
                   />
                   <Table.Column

@@ -47,12 +47,14 @@ const configurationMenu = {
   ],
 };
 
+export const McpServerManagementRoute = '/mcpServerManagement';
+export const McpServerManagementRouteName = 'nacos-default-mcp';
 const AiControlMenu = {
   key: 'AiManagementVirtual',
   children: [
     {
       key: 'mcpServerManagement',
-      url: '/mcpServerManagement',
+      url: McpServerManagementRoute,
     },
   ],
 };
@@ -104,12 +106,12 @@ export default function(model) {
   } else {
     result.push(configurationMenu, serviceDiscoveryMenu);
   }
+  result.push(AiControlMenu);
   if (globalAdmin) {
     result.push(authorityControlMenu);
   }
   result.push(namespaceMenu);
   result.push(clusterMenu);
   result.push(settingMenu);
-  result.push(AiControlMenu);
   return result.filter(item => item);
 }

@@ -361,10 +361,10 @@ class McpManagement extends React.Component {
         <a onClick={() => this.openDetail(record)} style={{ marginRight: 5 }}>
           {locale.details}
         </a>
-        <span style={{ marginRight: 5 }}>|</span>
+        {/* <span style={{ marginRight: 5 }}>|</span>
         <a style={{ marginRight: 5 }} onClick={this.showCode.bind(this, record)}>
           {locale.sampleConfig}
-        </a>
+        </a> */}
         <span style={{ marginRight: 5 }}>|</span>
         <a style={{ marginRight: 5 }} onClick={() => this.editDetail(record)}>
           {locale.edit}
@@ -462,33 +462,6 @@ class McpManagement extends React.Component {
       nownamespace_desc: desc,
     });
   }
-
-  // goDetail(record) {
-  //   this.serverId = getParams('serverId') || 'center';
-  //   this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
-  //   // 点击详情到另一个页面, 返回时候要保留原来的搜索条件 比如: record.dataId为详情的, this.dataId为搜索条件的.
-  //   this.serverName = record.dataId.replace('-mcp-server.json', '');
-  //   this.props.history.push(
-  //     `/mcpServerDetail?serverId=${this.serverId || ''}&serverName=${this.serverName}
-  //     &namespace=${this.tenant}&searchMcpServer=${this.dataId}&pageSize=${this.pageSize}&pageNo=${
-  //       this.pageNo
-  //     }`
-  //   );
-  // }
-
-  // goEditor(record) {
-  //   this.serverId = getParams('serverId') || 'center';
-  //   this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
-  //   this.props.history.push(
-  //     `/configeditor?serverId=${this.serverId || ''}&dataId=${record.dataId}&group=${
-  //       record.group
-  //     }&namespace=${this.tenant}&edasAppName=${this.edasAppName}&edasAppId=${
-  //       this.edasAppId
-  //     }&searchDataId=${this.dataId}&searchGroup=${this.group}&pageSize=${this.pageSize}&pageNo=${
-  //       this.pageNo
-  //     }`
-  //   );
-  // }
 
   setConfigTypes(value) {
     this.setState({
