@@ -78,6 +78,8 @@ public class AuthConstants {
     
     public static final String LDAP_PREFIX = "LDAP_";
     
+    public static final String OIDC_PREFIX = "OIDC_";
+    
     /**
      * Maximum allowed password length.
      */

@@ -150,6 +150,8 @@
         <rpc-grpc-impl.version>${jraft-core.version}</rpc-grpc-impl.version>
         <SnakeYaml.version>2.0</SnakeYaml.version>
         <junit5.version>5.10.2</junit5.version>
+        <nimbusds-oidc-sdk.version>10.14.2</nimbusds-oidc-sdk.version>
+        <nimbusds-jose-jwt.version>9.31</nimbusds-jose-jwt.version>
         
         <!-- override dependency version -->
         <spring.version>5.3.39</spring.version>
@@ -1065,6 +1067,18 @@
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
                 <version>${SnakeYaml.version}</version>
+            </dependency>
+            
+            <!-- oidc sdk and jwt parser -->
+            <dependency>
+                <groupId>com.nimbusds</groupId>
+                <artifactId>oauth2-oidc-sdk</artifactId>
+                <version>${nimbusds-oidc-sdk.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.nimbusds</groupId>
+                <artifactId>nimbus-jose-jwt</artifactId>
+                <version>${nimbusds-jose-jwt.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
