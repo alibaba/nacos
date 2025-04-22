@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
+import com.alibaba.nacos.config.server.service.dump.task.DumpAllGrayTask;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
@@ -43,6 +44,12 @@ public class DumpAllGrayProcessor implements NacosTaskProcessor {
     
     @Override
     public boolean process(NacosTask task) {
+        if (!(task instanceof DumpAllGrayTask)) {
+            DEFAULT_LOG.error(
+                    "[all-dump-gray-error] ,invalid task type {},DumpAllGrayProcessor should process DumpAllGrayTask type.",
+                    task.getClass().getSimpleName());
+            return false;
+        }
         int rowCount = configInfoGrayPersistService.configInfoGrayCount();
         int pageCount = (int) Math.ceil(rowCount * 1.0 / PAGE_SIZE);
         
