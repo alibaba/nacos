@@ -192,7 +192,7 @@ public class ConfigInfoMapperByDerby extends AbstractMapperByDerby implements Co
         
         List<Object> paramList = new ArrayList<>();
         
-        final String sql = "SELECT id,data_id,group_id,tenant_id,app_name,content,type FROM config_info";
+        final String sql = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,type FROM config_info";
         StringBuilder where = new StringBuilder(" WHERE ");
         where.append(" tenant_id=? ");
         paramList.add(tenantId);
