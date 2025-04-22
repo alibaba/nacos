@@ -21,6 +21,7 @@ import { getParams, setParams, request } from '../../globalLib';
 
 import './index.scss';
 import { NAME_SHOW } from '../../constants';
+import { McpServerManagementRoute } from '../../layouts/menu';
 
 /**
  * 命名空间列表
@@ -196,7 +197,16 @@ class NameSpaceList extends React.Component {
         />
       );
     }
-    const namespacesBtn = namespaceList.map((obj, index) => {
+    const isAIpage = window.location.href.includes(McpServerManagementRoute);
+    const AIlist = [
+      {
+        namespace: 'nacos-default-mcp',
+        namespaceShowName: 'nacos-default-mcp',
+        namespaceDesc: 'nacos-default-mcp',
+      },
+    ];
+    const _nslist = isAIpage ? AIlist : namespaceList;
+    const namespacesBtn = _nslist.map((obj, index) => {
       return (
         <div key={index} style={{ cursor: 'pointer' }}>
           {index === 0 ? '' : <span style={{ marginRight: 8, color: '#999' }}>|</span>}

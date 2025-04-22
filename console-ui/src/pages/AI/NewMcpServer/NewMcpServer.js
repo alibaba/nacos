@@ -2,7 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import SuccessDialog from '../../../components/SuccessDialog';
 import { getParams, setParams, request } from '../../../globalLib';
-import { generateUrl } from '../../../utils/nacosutil';
 import {
   Balloon,
   Button,
@@ -18,7 +17,6 @@ import {
   Radio,
   ConfigProvider,
 } from '@alifd/next';
-import validateContent from 'utils/validateContent';
 const { Row, Col } = Grid;
 
 const FormItem = Form.Item;
@@ -82,7 +80,6 @@ class NewMcpServer extends React.Component {
         }
 
         if (remoteServerConfig) {
-          initFileData['backendProtocol'] = remoteServerConfig?.backendProtocol;
           initFileData['exportPath'] = remoteServerConfig?.exportPath;
           initFileData['useExistService'] = remoteServerConfig?.serviceRef?.serviceName
             ? true
@@ -150,7 +147,7 @@ class NewMcpServer extends React.Component {
       const params = {
         mcpName: values?.serverName,
         serverSpecification: `{
-          "type":"${values?.serverType}",
+          "protocol":"${values?.serverType}",
           "name":"${values?.serverName}",
           "description":"${values?.description || ''}",
           "version":"${values?.version || '1.0.0'}",
@@ -159,17 +156,16 @@ class NewMcpServer extends React.Component {
         }`,
       };
 
-      if (values?.serverType === 'remote') {
+      if (values?.serverType !== 'stdio') {
         // 获取服务组
         params.serverSpecification = `{
-          "type":"${values?.serverType}",
+          "protocol":"${values?.serverType}",
           "name":"${values?.serverName}",
           "description":"${values?.description || ''}",
           "version":"${values?.version || '1.0.0'}",
           "enabled":true,
           "remoteServerConfig":{
-            "exportPath": "${values?.exportPath || ''}",
-            "backendProtocol": "${values?.backendProtocol}"
+            "exportPath": "${values?.exportPath || ''}"
           }
         }`;
         // 添加服务
@@ -303,6 +299,13 @@ class NewMcpServer extends React.Component {
         span: 20,
       },
     };
+    const textAreaProps = {
+      'aria-label': 'auto height',
+      autoHeight: {
+        minRows: 10,
+        maxRows: 20,
+      },
+    };
 
     return (
       <Loading
@@ -339,16 +342,17 @@ class NewMcpServer extends React.Component {
           </FormItem>
           {/* 服务类型 */}
           <FormItem label={locale.serverType}>
-            <RadioGroup {...init('serverType', { initValue: 'local' })} isPreview={isEdit}>
-              <Radio id="local" value="local">
-                Local
-              </Radio>
-              <Radio id="remote" value="remote">
-                Remote
-              </Radio>
+            <RadioGroup {...init('serverType', { initValue: 'stdio' })} isPreview={isEdit}>
+              {['stdio', 'http', 'dubbo', 'mcp-sse', 'mcp-streamble'].map(item => {
+                return (
+                  <Radio key={item} id={item} value={item}>
+                    {item.charAt(0).toUpperCase() + item.slice(1)}
+                  </Radio>
+                );
+              })}
             </RadioGroup>
           </FormItem>
-          {this.field.getValue('serverType') === 'remote' ? (
+          {this.field.getValue('serverType') !== 'stdio' ? (
             <>
               <FormItem label={locale.backendService}>
                 <RadioGroup
@@ -428,18 +432,6 @@ class NewMcpServer extends React.Component {
                   </Row>
                 </FormItem>
               )}
-              {/* 后端服务协议 */}
-              <FormItem label={locale.backendServiceProtocol}>
-                <RadioGroup {...init('backendProtocol', { initValue: 'http' })}>
-                  {['http', 'dubbo', 'mcp-sse', 'mcp-streamble'].map((item, index) => {
-                    return (
-                      <Radio key={item} id={item} value={item}>
-                        {item.charAt(0).toUpperCase() + item.slice(1)}
-                      </Radio>
-                    );
-                  })}
-                </RadioGroup>
-              </FormItem>
               {/* 暴露路径 */}
               <FormItem label={locale.exportPath} required>
                 <Input
@@ -463,9 +455,10 @@ class NewMcpServer extends React.Component {
               </FormItem>
             </>
           ) : (
+            // Local Server 配置
             <>
               <FormItem label={locale.localServerConfig}>
-                <Input.TextArea {...init('localServerConfig')} />
+                <Input.TextArea {...init('localServerConfig', { props: textAreaProps })} />
               </FormItem>
             </>
           )}
@@ -478,6 +471,7 @@ class NewMcpServer extends React.Component {
                     message: locale.pleaseEnter,
                   },
                 ],
+                props: textAreaProps,
               })}
             />
           </FormItem>

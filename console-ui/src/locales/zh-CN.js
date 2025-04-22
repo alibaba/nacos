@@ -780,7 +780,7 @@ const I18N_CONF = {
     backendServiceProtocol: '后端服务协议',
     exportPath: '暴露路径',
     description: '描述',
-    serverType: '服务类型',
+    serverType: '协议类型',
     serverVersion: '服务版本',
     pleaseEnter: '请输入',
     placeSelect: '请选择',

@@ -22,14 +22,12 @@ class McpDetail extends React.Component {
       loading: false,
       serverConfig: {
         name: '',
-        type: '',
+        protocol: '',
         description: '',
         version: '',
-        backendProtocol: '',
         exportPath: '',
         remoteServerConfig: {
           exportPath: '',
-          backendProtocol: '',
           serviceRef: {},
         },
         tools: [],
@@ -60,7 +58,8 @@ class McpDetail extends React.Component {
 
   openToolDetial = params => {
     const { type, record } = params;
-    this.toolsRef?.current?.openVisible({ type, record });
+    const toolsMeta = this.state.serverConfig?.toolSpec?.toolsMeta?.[record.name];
+    this.toolsRef?.current?.openVisible({ type, record, toolsMeta });
   };
 
   getFormItem = params => {
@@ -111,18 +110,14 @@ class McpDetail extends React.Component {
 
             {this.getFormItem({
               list: [
-                { label: locale.serverType, value: this.state.serverConfig.type }, // 类型
+                { label: locale.serverType, value: this.state.serverConfig.protocol }, // 类型
                 { label: locale.serverDescription, value: this.state.serverConfig.description }, // 描述
               ],
             })}
 
-            {this.state.serverConfig?.remoteServerConfig &&
+            {this.state.serverConfig?.protocol !== 'stdio' &&
               this.getFormItem({
                 list: [
-                  {
-                    label: locale.backendProtocol,
-                    value: this.state.serverConfig?.remoteServerConfig?.backendProtocol,
-                  }, // 后端协议
                   {
                     label: locale.exportPath,
                     value: this.state.serverConfig?.remoteServerConfig?.exportPath,
@@ -138,13 +133,16 @@ class McpDetail extends React.Component {
               key={JSON.stringify(this.state?.serverConfig)}
               locale={locale}
               serverConfig={this.state.serverConfig}
-              showTemplates={this.state.serverConfig?.remoteServerConfig?.backendProtocol == 'http'}
+              showTemplates={this.state.serverConfig?.protocol === 'http'}
               ref={this.toolsRef}
               getServerDetail={this.getServerDetail}
             />
           )}
 
-          <Table style={{ marginTop: '20px' }} dataSource={this.state?.serverConfig?.tools || []}>
+          <Table
+            style={{ marginTop: '20px' }}
+            dataSource={this.state?.serverConfig?.toolSpec?.tools || []}
+          >
             <Table.Column title={locale.toolName} dataIndex={'name'} />
             <Table.Column title={locale.toolDescription} dataIndex={'description'} />
             <Table.Column

@@ -21,7 +21,6 @@ const DeleteTool = props => {
           enbled: true,
           remoteServerConfig: {
             exportPath: serverConfig?.remoteServerConfig?.exportPath,
-            backendProtocol: serverConfig?.remoteServerConfig?.backendProtocol,
           },
         }),
         toolSpecification: JSON.stringify(_serverConfig?.tools),
