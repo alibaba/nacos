@@ -17,6 +17,7 @@ import {
   Radio,
   ConfigProvider,
 } from '@alifd/next';
+import { McpServerManagementRouteName, McpServerManagementRoute } from '../../../layouts/menu';
 const { Row, Col } = Grid;
 
 const FormItem = Form.Item;
@@ -48,6 +49,11 @@ class NewMcpServer extends React.Component {
   }
 
   componentDidMount() {
+    if (!getParams('namespace')) {
+      this.props?.history?.push({
+        pathname: McpServerManagementRoute,
+      });
+    }
     this.initEditedData();
     this.getNamespaces();
   }
@@ -318,7 +324,7 @@ class NewMcpServer extends React.Component {
         <h1>{locale.newListing}</h1>
         <Form className="new-config-form" field={this.field} {...formItemLayout}>
           <Form.Item label={locale.namespace}>
-            <p>{this.tenant ? this.tenant : 'public'}</p>
+            <p>{this.tenant ? this.tenant : McpServerManagementRouteName}</p>
           </Form.Item>
           <FormItem label={locale.serverName} required>
             <Input

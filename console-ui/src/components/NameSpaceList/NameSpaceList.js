@@ -21,7 +21,7 @@ import { getParams, setParams, request } from '../../globalLib';
 
 import './index.scss';
 import { NAME_SHOW } from '../../constants';
-import { McpServerManagementRoute } from '../../layouts/menu';
+import { McpServerManagementRoute, McpServerManagementRouteName } from '../../layouts/menu';
 
 /**
  * 命名空间列表
@@ -139,7 +139,9 @@ class NameSpaceList extends React.Component {
   }
 
   handleNameSpaces(data) {
-    const nownamespace = getParams('namespace') || 'public';
+    const isAIpage = window.location.href.includes(McpServerManagementRoute);
+    const nownamespace =
+      getParams('namespace') || (isAIpage ? McpServerManagementRouteName : 'public');
 
     // let namespaceShowName = this._namespaceShowName || data[0].namespaceShowName || '';
     window.namespaceList = data;
