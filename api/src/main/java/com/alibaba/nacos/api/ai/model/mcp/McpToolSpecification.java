@@ -16,43 +16,35 @@
 
 package com.alibaba.nacos.api.ai.model.mcp;
 
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 /**
- * AI MCP Tool.
+ * Mcp Tool specification.
  *
  * @author xiweng.yy
  */
-public class McpTool {
+public class McpToolSpecification {
 
-    private String name;
+    private List<McpTool> tools = new LinkedList<>();
     
-    private String description;
+    private Map<String, McpToolMeta> toolsMeta = new HashMap<>(1);
     
-    private Map<String, Object> inputSchema;
-    
-    public String getName() {
-        return name;
+    public List<McpTool> getTools() {
+        return tools;
     }
     
-    public void setName(String name) {
-        this.name = name;
+    public void setTools(List<McpTool> tools) {
+        this.tools = tools;
     }
     
-    public String getDescription() {
-        return description;
+    public Map<String, McpToolMeta> getToolsMeta() {
+        return toolsMeta;
     }
     
-    public void setDescription(String description) {
-        this.description = description;
+    public void setToolsMeta(Map<String, McpToolMeta> toolsMeta) {
+        this.toolsMeta = toolsMeta;
     }
-    
-    public Map<String, Object> getInputSchema() {
-        return inputSchema;
-    }
-    
-    public void setInputSchema(Map<String, Object> inputSchema) {
-        this.inputSchema = inputSchema;
-    }
-    
 }

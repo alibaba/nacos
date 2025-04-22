@@ -31,23 +31,22 @@ public class McpServerBasicInfo {
     private String name;
     
     /**
-     * It should be {@link AiConstants.Mcp#MCP_TYPE_LOCAL}, {@link AiConstants.Mcp#MCP_TYPE_SSE_REMOTE} or
-     * {@link AiConstants.Mcp#MCP_TYPE_STREAM_REMOTE}.
+     * It should be {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}, {@link AiConstants.Mcp#MCP_PROTOCOL_SSE}, 
+     * {@link AiConstants.Mcp#MCP_PROTOCOL_STREAMABLE}, {@link AiConstants.Mcp#MCP_PROTOCOL_HTTP} or {@link AiConstants.Mcp#MCP_PROTOCOL_DUBBO}.
      */
-    private String type;
+    private String protocol;
     
     private String description;
     
     private String version;
     
     /**
-     * Should be set when `type` is {@link AiConstants.Mcp#MCP_TYPE_SSE_REMOTE} or
-     * {@link AiConstants.Mcp#MCP_TYPE_STREAM_REMOTE}.
+     * Should be set when `type` is not {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}.
      */
     private McpServerRemoteServiceConfig remoteServerConfig;
     
     /**
-     * Should be set when `type` is {@link AiConstants.Mcp#MCP_TYPE_LOCAL}.
+     * Should be set when `type` is {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}.
      */
     private Map<String, Object> localServerConfig;
     
@@ -66,12 +65,12 @@ public class McpServerBasicInfo {
         this.name = name;
     }
     
-    public String getType() {
-        return type;
+    public String getProtocol() {
+        return protocol;
     }
     
-    public void setType(String type) {
-        this.type = type;
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
     }
     
     public String getDescription() {

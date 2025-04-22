@@ -27,7 +27,7 @@ public class McpServerDetailInfo extends McpServerBasicInfo {
     
     private List<McpEndpointInfo> backendEndpoints;
     
-    private List<McpTool> tools;
+    private McpToolSpecification toolSpec;
     
     public List<McpEndpointInfo> getBackendEndpoints() {
         return backendEndpoints;
@@ -37,11 +37,11 @@ public class McpServerDetailInfo extends McpServerBasicInfo {
         this.backendEndpoints = backendEndpoints;
     }
     
-    public List<McpTool> getTools() {
-        return tools;
+    public McpToolSpecification getToolSpec() {
+        return toolSpec;
     }
     
-    public void setTools(List<McpTool> tools) {
-        this.tools = tools;
+    public void setToolSpec(McpToolSpecification toolSpec) {
+        this.toolSpec = toolSpec;
     }
 }

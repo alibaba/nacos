@@ -21,12 +21,11 @@ import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerRemoteServiceConfig;
-import com.alibaba.nacos.api.ai.model.mcp.McpTool;
+import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.StringUtils;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -132,12 +131,12 @@ public interface McpMaintainerService {
      * @param mcpName     mcp server name of the new mcp server
      * @param version     version of the new mcp server
      * @param description description of the new mcp server
-     * @param toolSpec    mcp server tools specification, see {@link McpTool}, nullable.
+     * @param toolSpec    mcp server tools specification, see {@link McpToolSpecification}, nullable.
      * @return {@code true} if create success, {@code false} otherwise
      * @throws NacosException if fail to create mcp server.
      */
-    default boolean createLocalMcpServer(String mcpName, String version, String description, List<McpTool> toolSpec)
-            throws NacosException {
+    default boolean createLocalMcpServer(String mcpName, String version, String description,
+            McpToolSpecification toolSpec) throws NacosException {
         return createLocalMcpServer(mcpName, version, description, null, toolSpec);
     }
     
@@ -148,15 +147,15 @@ public interface McpMaintainerService {
      * @param version           version of the new mcp server
      * @param description       description of the new mcp server
      * @param localServerConfig custom config of the new mcp server
-     * @param toolSpec          mcp server tools specification, see {@link McpTool}, nullable.
+     * @param toolSpec          mcp server tools specification, see {@link McpToolSpecification}, nullable.
      * @return {@code true} if create success, {@code false} otherwise
      * @throws NacosException if fail to create mcp server.
      */
     default boolean createLocalMcpServer(String mcpName, String version, String description,
-            Map<String, Object> localServerConfig, List<McpTool> toolSpec) throws NacosException {
+            Map<String, Object> localServerConfig, McpToolSpecification toolSpec) throws NacosException {
         McpServerBasicInfo serverSpec = new McpServerBasicInfo();
         serverSpec.setName(mcpName);
-        serverSpec.setType(AiConstants.Mcp.MCP_TYPE_LOCAL);
+        serverSpec.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_STDIO);
         serverSpec.setVersion(version);
         serverSpec.setDescription(description);
         serverSpec.setLocalServerConfig(localServerConfig);
@@ -168,19 +167,19 @@ public interface McpMaintainerService {
      *
      * @param mcpName    mcp server name of the new mcp server
      * @param serverSpec mcp server specification, see {@link McpServerBasicInfo} which `type` is
-     *                   {@link AiConstants.Mcp#MCP_TYPE_LOCAL}.
-     * @param toolSpec   mcp server tools specification, see {@link McpTool}, nullable.
+     *                   {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}.
+     * @param toolSpec   mcp server tools specification, see {@link McpToolSpecification}, nullable.
      * @return {@code true} if create success, {@code false} otherwise
      * @throws NacosException if fail to create mcp server.
      */
-    default boolean createLocalMcpServer(String mcpName, McpServerBasicInfo serverSpec, List<McpTool> toolSpec)
+    default boolean createLocalMcpServer(String mcpName, McpServerBasicInfo serverSpec, McpToolSpecification toolSpec)
             throws NacosException {
         if (Objects.isNull(serverSpec)) {
             throw new NacosException(NacosException.INVALID_PARAM, "Mcp server specification cannot be null.");
         }
-        if (!AiConstants.Mcp.MCP_TYPE_LOCAL.equalsIgnoreCase(serverSpec.getType())) {
+        if (!AiConstants.Mcp.MCP_PROTOCOL_STDIO.equalsIgnoreCase(serverSpec.getProtocol())) {
             throw new NacosException(NacosException.INVALID_PARAM,
-                    String.format("Mcp server type must be `local`, input is `%s`", serverSpec.getType()));
+                    String.format("Mcp server type must be `local`, input is `%s`", serverSpec.getProtocol()));
         }
         return createMcpServer(mcpName, serverSpec, toolSpec, null);
     }
@@ -190,14 +189,14 @@ public interface McpMaintainerService {
      *
      * @param mcpName      mcp server name of the new mcp server
      * @param version      version of the new mcp server
-     * @param isStream     whether is streamable remote mcp server.
+     * @param protocol     mcp protocol type not {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}.
      * @param endpointSpec mcp server endpoint specification, see {@link McpEndpointSpec}, can't be null.
      * @return {@code true} if create success, {@code false} otherwise
      * @throws NacosException if fail to create mcp server.
      */
-    default boolean createRemoteMcpServer(String mcpName, String version, boolean isStream,
+    default boolean createRemoteMcpServer(String mcpName, String version, String protocol,
             McpEndpointSpec endpointSpec) throws NacosException {
-        return createRemoteMcpServer(mcpName, version, isStream, null, endpointSpec);
+        return createRemoteMcpServer(mcpName, version, protocol, null, endpointSpec);
     }
     
     /**
@@ -205,15 +204,15 @@ public interface McpMaintainerService {
      *
      * @param mcpName             mcp server name of the new mcp server
      * @param version             version of the new mcp server
-     * @param isStream            whether is streamable remote mcp server.
+     * @param protocol            mcp protocol type not {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}.
      * @param remoteServiceConfig remote service configuration, see {@link McpServerRemoteServiceConfig}.
      * @param endpointSpec        mcp server endpoint specification, see {@link McpEndpointSpec}, can't be null.
      * @return {@code true} if create success, {@code false} otherwise
      * @throws NacosException if fail to create mcp server.
      */
-    default boolean createRemoteMcpServer(String mcpName, String version, boolean isStream,
+    default boolean createRemoteMcpServer(String mcpName, String version, String protocol,
             McpServerRemoteServiceConfig remoteServiceConfig, McpEndpointSpec endpointSpec) throws NacosException {
-        return createRemoteMcpServer(mcpName, version, null, isStream, remoteServiceConfig, endpointSpec);
+        return createRemoteMcpServer(mcpName, version, null, protocol, remoteServiceConfig, endpointSpec);
     }
     
     /**
@@ -222,15 +221,15 @@ public interface McpMaintainerService {
      * @param mcpName             mcp server name of the new mcp server
      * @param version             version of the new mcp server
      * @param description         description of the new mcp server
-     * @param isStream            whether is streamable remote mcp server.
+     * @param protocol            mcp protocol type not {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}.
      * @param remoteServiceConfig remote service configuration, see {@link McpServerRemoteServiceConfig}.
      * @param endpointSpec        mcp server endpoint specification, see {@link McpEndpointSpec}, can't be null.
      * @return {@code true} if create success, {@code false} otherwise
      * @throws NacosException if fail to create mcp server.
      */
-    default boolean createRemoteMcpServer(String mcpName, String version, String description, boolean isStream,
+    default boolean createRemoteMcpServer(String mcpName, String version, String description, String protocol,
             McpServerRemoteServiceConfig remoteServiceConfig, McpEndpointSpec endpointSpec) throws NacosException {
-        return createRemoteMcpServer(mcpName, version, description, isStream, remoteServiceConfig, endpointSpec, null);
+        return createRemoteMcpServer(mcpName, version, description, protocol, remoteServiceConfig, endpointSpec, null);
     }
     
     /**
@@ -239,32 +238,31 @@ public interface McpMaintainerService {
      * @param mcpName             mcp server name of the new mcp server
      * @param version             version of the new mcp server
      * @param description         description of the new mcp server
-     * @param isStream            whether is streamable remote mcp server.
+     * @param protocol            mcp protocol type not {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}.
      * @param remoteServiceConfig remote service configuration, see {@link McpServerRemoteServiceConfig}.
      * @param endpointSpec        mcp server endpoint specification, see {@link McpEndpointSpec}, can't be null.
-     * @param toolSpec            mcp server tools specification, see {@link McpTool}, nullable.
+     * @param toolSpec            mcp server tools specification, see {@link McpToolSpecification}, nullable.
      * @return {@code true} if create success, {@code false} otherwise
      * @throws NacosException if fail to create mcp server.
      */
-    default boolean createRemoteMcpServer(String mcpName, String version, String description, boolean isStream,
-            McpServerRemoteServiceConfig remoteServiceConfig, McpEndpointSpec endpointSpec, McpTool toolSpec)
+    default boolean createRemoteMcpServer(String mcpName, String version, String description, String protocol,
+            McpServerRemoteServiceConfig remoteServiceConfig, McpEndpointSpec endpointSpec, McpToolSpecification toolSpec)
             throws NacosException {
         McpServerBasicInfo serverSpec = new McpServerBasicInfo();
         serverSpec.setName(mcpName);
-        serverSpec.setType(isStream ? AiConstants.Mcp.MCP_TYPE_STREAM_REMOTE : AiConstants.Mcp.MCP_TYPE_SSE_REMOTE);
+        serverSpec.setProtocol(protocol);
         serverSpec.setVersion(version);
         serverSpec.setDescription(description);
         serverSpec.setRemoteServerConfig(remoteServiceConfig);
-        return createRemoteMcpServer(mcpName, serverSpec, endpointSpec);
+        return createRemoteMcpServer(mcpName, serverSpec, toolSpec, endpointSpec);
     }
     
     /**
      * Create new remote mcp server to Nacos.
      *
      * @param mcpName      mcp server name of the new mcp server
-     * @param serverSpec   mcp server specification, see {@link McpServerBasicInfo} which `type` is
-     *                     {@link AiConstants.Mcp#MCP_TYPE_SSE_REMOTE} or
-     *                     {@link AiConstants.Mcp#MCP_TYPE_STREAM_REMOTE}.
+     * @param serverSpec   mcp server specification, see {@link McpServerBasicInfo} which `type` is not
+     *                     {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}.
      * @param endpointSpec mcp server endpoint specification, see {@link McpEndpointSpec}, can't be null.
      * @return {@code true} if create success, {@code false} otherwise
      * @throws NacosException if fail to create mcp server.
@@ -278,20 +276,19 @@ public interface McpMaintainerService {
      * Create new remote mcp server to Nacos.
      *
      * @param mcpName      mcp server name of the new mcp server
-     * @param serverSpec   mcp server specification, see {@link McpServerBasicInfo} which `type` is
-     *                     {@link AiConstants.Mcp#MCP_TYPE_SSE_REMOTE} or
-     *                     {@link AiConstants.Mcp#MCP_TYPE_STREAM_REMOTE}.
-     * @param toolSpec     mcp server tools specification, see {@link McpTool}, nullable.
+     * @param serverSpec   mcp server specification, see {@link McpServerBasicInfo} which `type` is not
+     *                     {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}.
+     * @param toolSpec     mcp server tools specification, see {@link McpToolSpecification}, nullable.
      * @param endpointSpec mcp server endpoint specification, see {@link McpEndpointSpec}, nullable.
      * @return {@code true} if create success, {@code false} otherwise
      * @throws NacosException if fail to create mcp server.
      */
-    default boolean createRemoteMcpServer(String mcpName, McpServerBasicInfo serverSpec, List<McpTool> toolSpec,
+    default boolean createRemoteMcpServer(String mcpName, McpServerBasicInfo serverSpec, McpToolSpecification toolSpec,
             McpEndpointSpec endpointSpec) throws NacosException {
         if (Objects.isNull(serverSpec)) {
             throw new NacosException(NacosException.INVALID_PARAM, "Mcp server specification cannot be null.");
         }
-        if (AiConstants.Mcp.MCP_TYPE_LOCAL.equalsIgnoreCase(serverSpec.getType())) {
+        if (AiConstants.Mcp.MCP_PROTOCOL_STDIO.equalsIgnoreCase(serverSpec.getProtocol())) {
             throw new NacosException(NacosException.INVALID_PARAM, "Mcp server type cannot be `local` or empty.");
         }
         if (Objects.isNull(endpointSpec)) {
@@ -305,13 +302,13 @@ public interface McpMaintainerService {
      *
      * @param mcpName      mcp server name of the new mcp server
      * @param serverSpec   mcp server specification, see {@link McpServerBasicInfo}
-     * @param toolSpec     mcp server tools specification, see {@link McpTool}, nullable.
+     * @param toolSpec     mcp server tools specification, see {@link McpToolSpecification}, nullable.
      * @param endpointSpec mcp server endpoint specification, see {@link McpEndpointSpec}, nullable if `type` is
-     *                     {@link AiConstants.Mcp#MCP_TYPE_LOCAL}.
+     *                     {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}.
      * @return {@code true} if create success, {@code false} otherwise
      * @throws NacosException if fail to create mcp server.
      */
-    boolean createMcpServer(String mcpName, McpServerBasicInfo serverSpec, List<McpTool> toolSpec,
+    boolean createMcpServer(String mcpName, McpServerBasicInfo serverSpec, McpToolSpecification toolSpec,
             McpEndpointSpec endpointSpec) throws NacosException;
     
     /**
@@ -323,13 +320,13 @@ public interface McpMaintainerService {
      *
      * @param mcpName      mcp server name of the new mcp server
      * @param serverSpec   mcp server specification, see {@link McpServerBasicInfo}
-     * @param toolSpec     mcp server tools specification, see {@link McpTool}, nullable.
+     * @param toolSpec     mcp server tools specification, see {@link McpToolSpecification}, nullable.
      * @param endpointSpec mcp server endpoint specification, see {@link McpEndpointSpec}, nullable if `type` is
-     *                     {@link AiConstants.Mcp#MCP_TYPE_LOCAL}.
+     *                     {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}.
      * @return {@code true} if update success, {@code false} otherwise
      * @throws NacosException if fail to update mcp server.
      */
-    boolean updateMcpServer(String mcpName, McpServerBasicInfo serverSpec, List<McpTool> toolSpec,
+    boolean updateMcpServer(String mcpName, McpServerBasicInfo serverSpec, McpToolSpecification toolSpec,
             McpEndpointSpec endpointSpec) throws NacosException;
     
     /**
