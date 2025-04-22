@@ -33,10 +33,13 @@ const I18N_CONF = {
     internalSysTip1: 'Internal system.',
     internalSysTip2: 'Not exposed to the public network',
     submit: 'Submit',
+    oidcPrefix: 'Sign With',
+    oidcSuffix: '',
     pleaseInputUsername: 'Please input username',
     pleaseInputPassword: 'Please input password',
     pleaseInputPasswordTips: 'Please input password, or generate one for you.',
     invalidUsernameOrPassword: 'invalid username or password',
+    invalidMsgFormOIDC: 'Invalid OIDC response',
     productDesc:
       'an easy-to-use dynamic service discovery, configuration and service management platform for building cloud native applications',
   },
