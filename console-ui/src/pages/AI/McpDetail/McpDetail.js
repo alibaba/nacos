@@ -1,10 +1,8 @@
 import React from 'react';
-import { Divider, ConfigProvider, Field, Form, Loading, Grid, Table } from '@alifd/next';
+import { Divider, ConfigProvider, Loading, Grid } from '@alifd/next';
 import { getParams, request } from '../../../globalLib';
 import PropTypes from 'prop-types';
-import CreateTools from './CreateTools/index';
-import DeleteTool from './CreateTools/DeleteTool';
-const FormItem = Form.Item;
+import ShowTools from './ShowTools';
 const { Row, Col } = Grid;
 
 @ConfigProvider.config
@@ -33,7 +31,6 @@ class McpDetail extends React.Component {
         tools: [],
       },
     };
-    this.field = new Field(this);
     this.toolsRef = React.createRef();
   }
 
@@ -56,22 +53,15 @@ class McpDetail extends React.Component {
     }
   };
 
-  openToolDetial = params => {
-    const { type, record } = params;
-    const toolsMeta = this.state.serverConfig?.toolSpec?.toolsMeta?.[record.name];
-    this.toolsRef?.current?.openVisible({ type, record, toolsMeta });
-  };
-
   getFormItem = params => {
     const { list = [] } = params;
     return (
-      <Row>
+      <Row wrap style={{ textAlign: 'left', marginBottom: '8px' }}>
         {list.map((item, index) => {
           return (
-            <Col key={index}>
-              <FormItem label={item.label}>
-                <p>{item.value}</p>
-              </FormItem>
+            <Col key={JSON.stringify(item)} span={12} style={{ display: 'flex' }}>
+              <p style={{ minWidth: 80 }}>{item.label}</p>
+              <p>{item.value}</p>
             </Col>
           );
         })}
@@ -81,14 +71,6 @@ class McpDetail extends React.Component {
 
   render() {
     const { locale = {} } = this.props;
-    const formItemLayout = {
-      labelCol: {
-        span: 2,
-      },
-      wrapperCol: {
-        span: 22,
-      },
-    };
 
     return (
       <div>
@@ -100,7 +82,8 @@ class McpDetail extends React.Component {
           color={'#333'}
         >
           <h1 style={{ position: 'relative', width: '60%' }}>{locale.mcpServerDetail}</h1>
-          <Form inline={false} field={this.field} {...formItemLayout}>
+          <h2 style={{ color: '#333', fontWeight: 'bold' }}>{locale.basicInformation}</h2>
+          <div style={{ marginTop: '16px' }}>
             {this.getFormItem({
               list: [
                 { label: locale.namespace, value: getParams('namespace') || '' }, // 命名空间
@@ -124,57 +107,16 @@ class McpDetail extends React.Component {
                   }, // 暴露路径
                 ],
               })}
-          </Form>
+          </div>
           <Divider></Divider>
 
           <h2>Tools</h2>
-          {!this.state.loading && (
-            <CreateTools
-              key={JSON.stringify(this.state?.serverConfig)}
-              locale={locale}
-              serverConfig={this.state.serverConfig}
-              showTemplates={this.state.serverConfig?.protocol === 'http'}
-              ref={this.toolsRef}
-              getServerDetail={this.getServerDetail}
-            />
-          )}
-
-          <Table
-            style={{ marginTop: '20px' }}
-            dataSource={this.state?.serverConfig?.toolSpec?.tools || []}
-          >
-            <Table.Column title={locale.toolName} dataIndex={'name'} />
-            <Table.Column title={locale.toolDescription} dataIndex={'description'} />
-            <Table.Column
-              title={locale.operations}
-              cell={(value, index, record) => {
-                const { locale = {} } = this.props;
-                return (
-                  <div>
-                    <a onClick={() => this.openToolDetial({ type: 'preview', record })}>
-                      {locale.operationToolDetail}
-                      {/* 详情 */}
-                    </a>
-                    <span style={{ margin: '0 5px' }}>|</span>
-                    <a
-                      style={{ marginRight: 5 }}
-                      onClick={() => this.openToolDetial({ type: 'edit', record })}
-                    >
-                      {locale.operationToolEdit}
-                      {/* 编辑 */}
-                    </a>
-                    <span style={{ margin: '0 5px' }}>|</span>
-                    <DeleteTool
-                      record={record}
-                      locale={locale}
-                      serverConfig={this.state.serverConfig}
-                      getServerDetail={this.getServerDetail}
-                    />
-                  </div>
-                );
-              }}
-            />
-          </Table>
+          <ShowTools
+            locale={locale}
+            serverConfig={this.state.serverConfig}
+            getServerDetail={this.getServerDetail}
+            isPreview={true}
+          />
         </Loading>
       </div>
     );

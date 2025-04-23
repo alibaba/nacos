@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import SuccessDialog from '../../../components/SuccessDialog';
 import { getParams, setParams, request } from '../../../globalLib';
 import {
   Balloon,
@@ -18,6 +17,7 @@ import {
   ConfigProvider,
 } from '@alifd/next';
 import { McpServerManagementRouteName, McpServerManagementRoute } from '../../../layouts/menu';
+import ShowTools from '../McpDetail/ShowTools';
 const { Row, Col } = Grid;
 
 const FormItem = Form.Item;
@@ -34,10 +34,7 @@ class NewMcpServer extends React.Component {
 
   constructor(props) {
     super(props);
-    this.successDialog = React.createRef();
     this.field = new Field(this);
-    this.searchDataId = getParams('searchDataId') || '';
-    this.searchGroup = getParams('searchGroup') || '';
     this.tenant = getParams('namespace') || '';
     this.state = {
       loading: false,
@@ -45,6 +42,7 @@ class NewMcpServer extends React.Component {
       namespaceSelects: [],
       useExistService: true,
       serviceList: [],
+      serverConfig: {},
     };
   }
 
@@ -68,15 +66,15 @@ class NewMcpServer extends React.Component {
         const {
           description = '',
           name = '',
-          type = '',
           version = '',
+          protocol = 'stdio',
           localServerConfig = {},
           remoteServerConfig = {},
         } = result.data;
 
         const initFileData = {
           serverName: name,
-          serverType: type,
+          protocol,
           description: description,
           version: version,
         };
@@ -100,6 +98,7 @@ class NewMcpServer extends React.Component {
         }
 
         this.field.setValues(initFileData);
+        this.setState({ serverConfig: result.data });
       }
     }
   };
@@ -152,40 +151,52 @@ class NewMcpServer extends React.Component {
       }
       const params = {
         mcpName: values?.serverName,
-        serverSpecification: `{
-          "protocol":"${values?.serverType}",
-          "name":"${values?.serverName}",
-          "description":"${values?.description || ''}",
-          "version":"${values?.version || '1.0.0'}",
-          "enabled":true,
-          "localServerConfig": ${values?.localServerConfig || '{}'}
-        }`,
+        serverSpecification: JSON.stringify(
+          {
+            protocol: values?.protocol,
+            name: values?.serverName,
+            description: values?.description || '',
+            version: values?.version || '1.0.0',
+            enabled: true,
+            localServerConfig: JSON.parse(values?.localServerConfig) || '{}',
+          },
+          null,
+          2
+        ),
       };
 
-      if (values?.serverType !== 'stdio') {
+      if (values?.protocol !== 'stdio') {
         // 获取服务组
-        params.serverSpecification = `{
-          "protocol":"${values?.serverType}",
-          "name":"${values?.serverName}",
-          "description":"${values?.description || ''}",
-          "version":"${values?.version || '1.0.0'}",
-          "enabled":true,
-          "remoteServerConfig":{
-            "exportPath": "${values?.exportPath || ''}"
-          }
-        }`;
+        params.serverSpecification = JSON.stringify(
+          {
+            protocol: values?.protocol,
+            name: values?.serverName,
+            description: values?.description || '',
+            version: values?.version || '1.0.0',
+            enabled: true,
+            remoteServerConfig: {
+              exportPath: values?.exportPath || '',
+            },
+          },
+          null,
+          2
+        );
         // 添加服务
         const serverGroup = serviceList.find(item => item.value === values?.service);
 
         params.endpointSpecification = useExistService
-          ? `{
-          "type": "REF",
-          "data":{
-            "namespaceId":"${values?.namespace || ''}",
-            "serviceName": "${values?.service || ''}",
-            "groupName":"${serverGroup?.groupName || ''}"
-          }
-        }`
+          ? JSON.stringify(
+              {
+                type: 'REF',
+                data: {
+                  namespaceId: values?.namespace || '',
+                  serviceName: values?.service || '',
+                  groupName: serverGroup?.groupName || '',
+                },
+              },
+              null,
+              2
+            )
           : `{"type": "DIRECT","data":{"address":"${values?.address}","port": "${values?.port}"}}`;
       }
 
@@ -299,7 +310,7 @@ class NewMcpServer extends React.Component {
     const isEdit = getParams('mcptype') && getParams('mcptype') === 'edit';
     const formItemLayout = {
       labelCol: {
-        span: 4,
+        span: 3,
       },
       wrapperCol: {
         span: 20,
@@ -321,7 +332,8 @@ class NewMcpServer extends React.Component {
         visible={this.state.loading}
         color={'#333'}
       >
-        <h1>{locale.newListing}</h1>
+        {!getParams('mcptype') && <h1>{locale.addNewMcpServer}</h1>}
+        {getParams('mcptype') && <h1>{isEdit ? locale.editService : locale.viewService}</h1>}
         <Form className="new-config-form" field={this.field} {...formItemLayout}>
           <Form.Item label={locale.namespace}>
             <p>{this.tenant ? this.tenant : McpServerManagementRouteName}</p>
@@ -347,9 +359,9 @@ class NewMcpServer extends React.Component {
             />
           </FormItem>
           {/* 服务类型 */}
-          <FormItem label={locale.serverType}>
-            <RadioGroup {...init('serverType', { initValue: 'stdio' })} isPreview={isEdit}>
-              {['stdio', 'http', 'dubbo', 'mcp-sse', 'mcp-streamble'].map(item => {
+          <FormItem label={locale.serverType} help={locale.serverTypeDesc}>
+            <RadioGroup {...init('protocol', { initValue: 'stdio' })} isPreview={isEdit}>
+              {['stdio', 'mcp-sse', 'mcp-streamble', 'http', 'dubbo'].map(item => {
                 return (
                   <Radio key={item} id={item} value={item}>
                     {item.charAt(0).toUpperCase() + item.slice(1)}
@@ -358,7 +370,7 @@ class NewMcpServer extends React.Component {
               })}
             </RadioGroup>
           </FormItem>
-          {this.field.getValue('serverType') !== 'stdio' ? (
+          {this.field.getValue('protocol') !== 'stdio' ? (
             <>
               <FormItem label={locale.backendService}>
                 <RadioGroup
@@ -463,8 +475,18 @@ class NewMcpServer extends React.Component {
           ) : (
             // Local Server 配置
             <>
-              <FormItem label={locale.localServerConfig}>
-                <Input.TextArea {...init('localServerConfig', { props: textAreaProps })} />
+              <FormItem label={locale.localServerConfig} required>
+                <Input.TextArea
+                  {...init('localServerConfig', {
+                    props: textAreaProps,
+                    rules: [
+                      {
+                        required: true,
+                        message: locale.pleaseEnter,
+                      },
+                    ],
+                  })}
+                />
               </FormItem>
             </>
           )}
@@ -485,24 +507,33 @@ class NewMcpServer extends React.Component {
           <FormItem label={locale.serverVersion}>
             <Input {...init('version', { props: { placeholder: '1.0.0' } })} />
           </FormItem>
-
-          <FormItem label=" ">
-            <div style={{ textAlign: 'right' }}>
-              <Button
-                type={'primary'}
-                style={{ marginRight: 10 }}
-                onClick={this.publishConfig.bind(this)}
-              >
-                {isEdit ? locale.updateExit : locale.escExit}
-              </Button>
-
-              <Button type={'normal'} onClick={this.goList.bind(this)}>
-                {locale.release}
-              </Button>
-            </div>
-          </FormItem>
         </Form>
-        <SuccessDialog ref={this.successDialog} />
+
+        {getParams('mcptype') && (
+          <FormItem label={'Tools'} {...formItemLayout}>
+            <ShowTools
+              locale={locale}
+              serverConfig={this.state.serverConfig}
+              getServerDetail={this.initEditedData}
+            />
+          </FormItem>
+        )}
+
+        <FormItem label=" ">
+          <div style={{ textAlign: 'right' }}>
+            <Button
+              type={'primary'}
+              style={{ marginRight: 10 }}
+              onClick={this.publishConfig.bind(this)}
+            >
+              {isEdit ? locale.updateExit : locale.escExit}
+            </Button>
+
+            <Button type={'normal'} onClick={this.goList.bind(this)}>
+              {locale.release}
+            </Button>
+          </div>
+        </FormItem>
       </Loading>
     );
   }

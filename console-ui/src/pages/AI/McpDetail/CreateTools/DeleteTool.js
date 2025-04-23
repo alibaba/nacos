@@ -50,9 +50,7 @@ const DeleteTool = props => {
 
   return (
     <>
-      <a onClick={deleteTool} style={{ color: '#FF4D4F' }}>
-        {locale.operationToolDelete}
-      </a>
+      <a onClick={deleteTool}>{locale.operationToolDelete}</a>
       <Dialog
         visible={visible}
         title={locale.deleteToolTitle}
