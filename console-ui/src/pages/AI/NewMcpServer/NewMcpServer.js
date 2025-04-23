@@ -528,7 +528,7 @@ class NewMcpServer extends React.Component {
     "@amap/amap-maps-mcp-server"
   ],
   "env": {
-    "AMAP_MAPS_API_KEY": "<credential_id>"
+    "AMAP_MAPS_API_KEY": "<API_KEY>" // 配置API_KEY信息
   }
 }}`}
                 />
