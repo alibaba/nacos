@@ -27,7 +27,7 @@ public class McpToolMeta {
     
     private Map<String, String> invokeContext;
     
-    private boolean enabled;
+    private boolean enabled = true;
     
     private Map<String, Object> templates;
     
