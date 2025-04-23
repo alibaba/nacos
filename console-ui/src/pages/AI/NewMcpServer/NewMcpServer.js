@@ -98,7 +98,10 @@ class NewMcpServer extends React.Component {
         }
 
         this.field.setValues(initFileData);
-        this.setState({ serverConfig: result.data });
+        this.setState({
+          serverConfig: result.data,
+          // useExistService: ['mcp-sse', 'mcp-streamble'].includes(protocol)? false : true,
+        });
       }
     }
   };
@@ -322,7 +325,7 @@ class NewMcpServer extends React.Component {
     const textAreaProps = {
       'aria-label': 'auto height',
       autoHeight: {
-        minRows: 10,
+        minRows: 12,
         maxRows: 20,
       },
     };
@@ -363,14 +366,24 @@ class NewMcpServer extends React.Component {
           </FormItem>
           {/* 协议类型 */}
           <FormItem label={locale.serverType} help={locale.serverTypeDesc}>
-            <RadioGroup {...init('protocol', { initValue: 'stdio' })} isPreview={isEdit}>
-              {['stdio', 'mcp-sse', 'mcp-streamble', 'http', 'dubbo'].map(item => {
-                return (
-                  <Radio key={item} id={item} value={item}>
-                    {item.charAt(0).toUpperCase() + item.slice(1)}
-                  </Radio>
-                );
+            <RadioGroup
+              {...init('protocol', {
+                initValue: 'stdio',
+                props: {
+                  // onChange: value => {
+                  //   this.setState({
+                  //     useExistService: ['mcp-sse', 'mcp-streamble'].includes(value)? false : true,
+                  //   });
+                  // }
+                },
               })}
+              isPreview={isEdit}
+            >
+              {['stdio', 'mcp-sse', 'mcp-streamble', 'http', 'dubbo'].map(item => (
+                <Radio key={item} id={item} value={item}>
+                  {item.charAt(0).toUpperCase() + item.slice(1)}
+                </Radio>
+              ))}
             </RadioGroup>
           </FormItem>
           {this.field.getValue('protocol') !== 'stdio' ? (
@@ -384,9 +397,16 @@ class NewMcpServer extends React.Component {
                     });
                   }}
                 >
+                  {/* {
+                    // 使用已有服务
+                    !['mcp-sse', 'mcp-streamble'].includes(this.field.getValue('protocol')) && (
+                      <Radio id="useExistService" value="useExistService">
+                        {locale.useExistService}
+                      </Radio>
+                    )
+                  } */}
                   <Radio id="useExistService" value="useExistService">
                     {locale.useExistService}
-                    {/* 使用已有服务 */}
                   </Radio>
                   <Radio id="useRemoteService" value="useRemoteService">
                     {locale.useNewService}
@@ -454,7 +474,7 @@ class NewMcpServer extends React.Component {
                 </FormItem>
               )}
               {/* 暴露路径 */}
-              <FormItem label={locale.exportPath} required>
+              <FormItem label={locale.exportPath} required help={locale.exportPathDesc}>
                 <Input
                   {...init('exportPath', {
                     rules: [
@@ -499,6 +519,18 @@ class NewMcpServer extends React.Component {
                       },
                     ],
                   })}
+                  placeholder={`示例：{
+  "mcpServers":{
+  "description": "高德地图服务",
+  "command": "npx",
+  "args": [
+    "-y",
+    "@amap/amap-maps-mcp-server"
+  ],
+  "env": {
+    "AMAP_MAPS_API_KEY": "<credential_id>"
+  }
+}}`}
                 />
               </FormItem>
             </>
