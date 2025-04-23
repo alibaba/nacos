@@ -214,7 +214,12 @@ const CreateTools = React.forwardRef((props, ref) => {
         params['endpointSpecification'] = endpointSpecification;
       }
 
-      putMcp(params);
+      if (props?.onChange) {
+        props?.onChange(JSON.parse(toolSpecification));
+        closeDialog();
+      } else {
+        putMcp(params);
+      }
     });
   };
 
