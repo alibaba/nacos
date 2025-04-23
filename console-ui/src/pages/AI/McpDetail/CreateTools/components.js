@@ -35,7 +35,7 @@ export const tableOperation = ({ onClick, locale, disabled = false }) => {
       dataIndex={'operation'}
       cell={(t, index, record) => {
         return (
-          <Button type="primary" size="small" warning onClick={() => onClick(index)}>
+          <Button type="primary" warning onClick={() => onClick(index)}>
             {locale.deleteParam}
           </Button>
         );

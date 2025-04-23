@@ -51,13 +51,29 @@ const ShowTools = props => {
         showTemplates={serverConfig?.protocol === 'http'}
         ref={toolsRef}
         getServerDetail={getServerDetail}
+        onChange={props?.onChange}
       />
 
       <Table style={{ marginTop: '20px' }} dataSource={serverConfig?.toolSpec?.tools || []}>
         <Table.Column title={locale.toolName} dataIndex={'name'} />
         <Table.Column title={locale.toolDescription} dataIndex={'description'} />
         <Table.Column
+          title={locale.toolOnline}
+          cell={(value, index, record) => {
+            if (serverConfig?.toolSpec?.toolsMeta?.[record.name]) {
+              return serverConfig?.toolSpec?.toolsMeta?.[record.name]?.enabled ? (
+                <span style={{ color: 'green' }}>{locale.online}</span>
+              ) : (
+                <span style={{ color: 'red' }}>{locale.offline}</span>
+              );
+            } else {
+              return '--';
+            }
+          }}
+        />
+        <Table.Column
           title={locale.operations}
+          width={200}
           cell={(value, index, record) => {
             if (isPreview) {
               return (
@@ -86,6 +102,7 @@ const ShowTools = props => {
                   locale={locale}
                   serverConfig={serverConfig}
                   getServerDetail={getServerDetail}
+                  onChange={props?.onChange}
                 />
               </div>
             );

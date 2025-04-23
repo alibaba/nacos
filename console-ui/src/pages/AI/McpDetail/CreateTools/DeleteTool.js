@@ -6,39 +6,41 @@ const DeleteTool = props => {
   const { record, locale, getServerDetail, serverConfig } = props;
   const [visible, setVisible] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
-  const handleDelete = async _serverConfig => {
-    setLoading(true);
-    const result = await request({
-      url: `v3/console/ai/mcp`,
-      method: 'PUT',
-      data: {
-        mcpName: serverConfig?.name,
-        serverSpecification: JSON.stringify({
-          type: serverConfig?.type,
-          name: serverConfig?.name,
-          description: serverConfig?.description,
-          version: serverConfig?.version,
-          enbled: true,
-          remoteServerConfig: {
-            exportPath: serverConfig?.remoteServerConfig?.exportPath,
-          },
-        }),
-        toolSpecification: JSON.stringify(_serverConfig?.tools),
-        endpointSpecification: JSON.stringify({
-          type: 'REF',
-          data: serverConfig?.remoteServerConfig?.serviceRef,
-        }),
-      },
-    });
-    setLoading(false);
+  const handleDelete = async _toolSpec => {
+    console.log('_toolSpec', _toolSpec);
+    props?.onChange && props.onChange(_toolSpec);
+    // setLoading(true);
+    // const result = await request({
+    //   url: `v3/console/ai/mcp`,
+    //   method: 'PUT',
+    //   data: {
+    //     mcpName: serverConfig?.name,
+    //     serverSpecification: JSON.stringify({
+    //       type: serverConfig?.type,
+    //       name: serverConfig?.name,
+    //       description: serverConfig?.description,
+    //       version: serverConfig?.version,
+    //       enbled: true,
+    //       remoteServerConfig: {
+    //         exportPath: serverConfig?.remoteServerConfig?.exportPath,
+    //       },
+    //     }),
+    //     toolSpecification: JSON.stringify(_serverConfig?.tools),
+    //     endpointSpecification: JSON.stringify({
+    //       type: 'REF',
+    //       data: serverConfig?.remoteServerConfig?.serviceRef,
+    //     }),
+    //   },
+    // });
+    // setLoading(false);
 
-    if (result.code === 0) {
-      getServerDetail();
-      closeDialog();
-      Message.success(locale.deleteToolSuccess);
-    } else {
-      Message.error(result.message || locale.deleteToolFailed);
-    }
+    // if (result.code === 0) {
+    //   getServerDetail();
+    //   closeDialog();
+    //   Message.success(locale.deleteToolSuccess);
+    // } else {
+    //   Message.error(result.message || locale.deleteToolFailed);
+    // }
   };
 
   const deleteTool = () => {
@@ -56,13 +58,12 @@ const DeleteTool = props => {
         title={locale.deleteToolTitle}
         content={locale.deleteToolContent}
         onOk={() => {
-          const _serverConfig = {
-            ...serverConfig,
-            tools: serverConfig?.tools
-              ? serverConfig.tools.filter(item => item.name !== record.name)
-              : [],
-          };
-          handleDelete(_serverConfig);
+          const _toolsMeta = serverConfig?.toolSpec?.toolsMeta;
+          delete _toolsMeta[record.name];
+          handleDelete({
+            tools: serverConfig?.toolSpec?.tools.filter(item => item.name !== record.name),
+            toolsMeta: _toolsMeta,
+          });
         }}
         okProps={{
           loading,

@@ -67,7 +67,7 @@ class NewMcpServer extends React.Component {
           description = '',
           name = '',
           version = '',
-          protocol = 'stdio',
+          protocol = '',
           localServerConfig = {},
           remoteServerConfig = {},
         } = result.data;
@@ -158,11 +158,14 @@ class NewMcpServer extends React.Component {
             description: values?.description || '',
             version: values?.version || '1.0.0',
             enabled: true,
-            localServerConfig: JSON.parse(values?.localServerConfig) || '{}',
+            localServerConfig: values?.localServerConfig
+              ? JSON.parse(values?.localServerConfig)
+              : '{}',
           },
           null,
           2
         ),
+        toolSpecification: JSON.stringify(this.state?.serverConfig?.toolSpec || {}),
       };
 
       if (values?.protocol !== 'stdio') {
@@ -358,7 +361,7 @@ class NewMcpServer extends React.Component {
               isPreview={isEdit}
             />
           </FormItem>
-          {/* 服务类型 */}
+          {/* 协议类型 */}
           <FormItem label={locale.serverType} help={locale.serverTypeDesc}>
             <RadioGroup {...init('protocol', { initValue: 'stdio' })} isPreview={isEdit}>
               {['stdio', 'mcp-sse', 'mcp-streamble', 'http', 'dubbo'].map(item => {
@@ -484,6 +487,16 @@ class NewMcpServer extends React.Component {
                         required: true,
                         message: locale.pleaseEnter,
                       },
+                      {
+                        validator: (rule, value, callback) => {
+                          try {
+                            JSON.parse(value);
+                            callback();
+                          } catch (e) {
+                            callback(locale.localServerConfigError);
+                          }
+                        },
+                      },
                     ],
                   })}
                 />
@@ -507,33 +520,45 @@ class NewMcpServer extends React.Component {
           <FormItem label={locale.serverVersion}>
             <Input {...init('version', { props: { placeholder: '1.0.0' } })} />
           </FormItem>
-        </Form>
 
-        {getParams('mcptype') && (
-          <FormItem label={'Tools'} {...formItemLayout}>
-            <ShowTools
-              locale={locale}
-              serverConfig={this.state.serverConfig}
-              getServerDetail={this.initEditedData}
-            />
+          {getParams('mcptype') && (
+            <FormItem label={'Tools'} {...formItemLayout}>
+              <ShowTools
+                locale={locale}
+                serverConfig={this.state.serverConfig}
+                getServerDetail={this.initEditedData}
+                onChange={_toolSpec => {
+                  this.setState({
+                    serverConfig: {
+                      ...this.state?.serverConfig,
+                      toolSpec: {
+                        ...this.state?.serverConfig?.toolSpec,
+                        tools: _toolSpec?.tools || [],
+                        toolsMeta: _toolSpec?.toolsMeta || {},
+                      },
+                    },
+                  });
+                }}
+              />
+            </FormItem>
+          )}
+
+          <FormItem label=" ">
+            <div style={{ textAlign: 'right' }}>
+              <Button
+                type={'primary'}
+                style={{ marginRight: 10 }}
+                onClick={this.publishConfig.bind(this)}
+              >
+                {isEdit ? locale.updateExit : locale.escExit}
+              </Button>
+
+              <Button type={'normal'} onClick={this.goList.bind(this)}>
+                {locale.release}
+              </Button>
+            </div>
           </FormItem>
-        )}
-
-        <FormItem label=" ">
-          <div style={{ textAlign: 'right' }}>
-            <Button
-              type={'primary'}
-              style={{ marginRight: 10 }}
-              onClick={this.publishConfig.bind(this)}
-            >
-              {isEdit ? locale.updateExit : locale.escExit}
-            </Button>
-
-            <Button type={'normal'} onClick={this.goList.bind(this)}>
-              {locale.release}
-            </Button>
-          </div>
-        </FormItem>
+        </Form>
       </Loading>
     );
   }
