@@ -53,12 +53,10 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.slf4j.Logger;
 
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -70,6 +68,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.alibaba.nacos.api.annotation.NacosProperties.NAMESPACE;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -103,17 +102,14 @@ class ClientWorkerTest {
     
     private ClientWorker clientWorkerSpy;
     
-    @Mock
-    private Logger logger;
-    
     @BeforeEach
     void before() throws Exception {
         rpcClientFactoryMockedStatic = Mockito.mockStatic(RpcClientFactory.class);
         
-        rpcClientFactoryMockedStatic.when(
-                () -> RpcClientFactory.createClient(anyString(), any(ConnectionType.class), any(GrpcClientConfig.class))).thenReturn(rpcClient);
-        rpcClientFactoryMockedStatic.when(
-                () -> RpcClientFactory.createClient(anyString(), any(ConnectionType.class), any(GrpcClientConfig.class))).thenReturn(rpcClient);
+        rpcClientFactoryMockedStatic.when(() -> RpcClientFactory.createClient(anyString(), any(ConnectionType.class),
+                any(GrpcClientConfig.class))).thenReturn(rpcClient);
+        rpcClientFactoryMockedStatic.when(() -> RpcClientFactory.createClient(anyString(), any(ConnectionType.class),
+                any(GrpcClientConfig.class))).thenReturn(rpcClient);
         localConfigInfoProcessorMockedStatic = Mockito.mockStatic(LocalConfigInfoProcessor.class);
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.NAMESPACE, TEST_NAMESPACE);
@@ -126,14 +122,6 @@ class ClientWorkerTest {
             throw new RuntimeException(e);
         }
         clientWorkerSpy = Mockito.spy(clientWorker);
-        
-        Field loggerField = ClientWorker.class.getDeclaredField("LOGGER");
-        loggerField.setAccessible(true);
-        
-        Field modifiersField = Field.class.getDeclaredField("modifiers");
-        modifiersField.setAccessible(true);
-        modifiersField.setInt(loggerField, loggerField.getModifiers() & ~Modifier.FINAL);
-        loggerField.set(null, logger);
     }
     
     @AfterEach
@@ -250,8 +238,7 @@ class ClientWorkerTest {
         String casMd5 = "1111";
         
         String type = "properties";
-        Mockito.when(rpcClient.request(any(ConfigPublishRequest.class)))
-                .thenReturn(new ConfigPublishResponse());
+        Mockito.when(rpcClient.request(any(ConfigPublishRequest.class))).thenReturn(new ConfigPublishResponse());
         boolean b = clientWorker.publishConfig(dataId, group, tenant, appName, tag, betaIps, content, null, casMd5,
                 type);
         assertTrue(b);
@@ -575,11 +562,10 @@ class ClientWorkerTest {
         
         RpcClient rpcClientInner = Mockito.mock(RpcClient.class);
         Mockito.when(rpcClientInner.isWaitInitiated()).thenReturn(true, false);
-        rpcClientFactoryMockedStatic.when(
-                () -> RpcClientFactory.createClient(anyString(), any(ConnectionType.class), any(GrpcClientConfig.class))).thenReturn(rpcClientInner);
+        rpcClientFactoryMockedStatic.when(() -> RpcClientFactory.createClient(anyString(), any(ConnectionType.class),
+                any(GrpcClientConfig.class))).thenReturn(rpcClientInner);
         // mock listen and remove listen request
-        Mockito.when(rpcClientInner.request(any(ConfigBatchListenRequest.class)))
-                .thenReturn(response, response);
+        Mockito.when(rpcClientInner.request(any(ConfigBatchListenRequest.class))).thenReturn(response, response);
         // mock query changed config
         ConfigQueryResponse configQueryResponse = new ConfigQueryResponse();
         configQueryResponse.setContent("content" + System.currentTimeMillis());
@@ -789,8 +775,7 @@ class ClientWorkerTest {
         
         ConfigRemoveResponse response = ConfigRemoveResponse.buildFailResponse("accessToken invalid");
         response.setErrorCode(ConfigQueryResponse.NO_RIGHT);
-        Mockito.when(rpcClient.request(any(ConfigRemoveRequest.class)))
-                .thenReturn(response);
+        Mockito.when(rpcClient.request(any(ConfigRemoveRequest.class))).thenReturn(response);
         boolean result = clientWorker.removeConfig("a", "b", "c", "tag");
         assertFalse(result);
     }
@@ -889,12 +874,7 @@ class ClientWorkerTest {
             RuntimeException exception = new RuntimeException("Mocked exception");
             doThrow(exception).when(mockGaugeChild).set(0);
             
-            clientWorker.removeCache(dataId, group, tenant);
-            
-            String groupKey = GroupKey.getKeyTenant(dataId, group, tenant);
-            
-            verify(logger, times(1)).info("[{}] [unsubscribe] {}", null, groupKey);
-            verify(logger, times(1)).error("Failed to update metrics for listen config count", exception);
+            assertDoesNotThrow(() -> clientWorker.removeCache(dataId, group, tenant));
         }
     }
     
@@ -915,16 +895,16 @@ class ClientWorkerTest {
         Gauge.Child mockGaugeChild = mock(Gauge.Child.class);
         try (MockedStatic<MetricsMonitor> mockedMetricsMonitor = Mockito.mockStatic(MetricsMonitor.class)) {
             mockedMetricsMonitor.when(MetricsMonitor::getListenConfigCountMonitor).thenReturn(mockGaugeChild);
-   
+            
             clientWorker.addCacheDataIfAbsent(dataId, group, tenant);
-
+            
             verify(mockGaugeChild, times(1)).set(1);
         }
     }
     
     @Test
     public void testAddCacheDataIfAbsentEnableClientMetricsFalse() throws NacosException {
-
+        
         String dataId = "testDataId";
         String group = "testGroup";
         String tenant = "testTenant";

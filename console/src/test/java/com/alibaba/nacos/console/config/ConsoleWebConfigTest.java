@@ -20,6 +20,8 @@ import com.alibaba.nacos.console.filter.NacosConsoleAuthFilter;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.controller.compatibility.ApiCompatibilityFilter;
 import com.alibaba.nacos.core.paramcheck.ParamCheckerFilter;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,7 +30,9 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
@@ -51,10 +55,16 @@ class ConsoleWebConfigTest {
     @Mock
     private ControllerMethodsCache methodsCache;
     
+    private ConfigurableEnvironment cachedEnvironment;
+    
     ConsoleWebConfig consoleWebConfig;
     
     @BeforeEach
     void setUp() {
+        cachedEnvironment = EnvUtil.getEnvironment();
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_ADMIN_ENABLED, "false");
+        EnvUtil.setEnvironment(environment);
         consoleWebConfig = new ConsoleWebConfig(methodsCache);
     }
     
@@ -62,6 +72,7 @@ class ConsoleWebConfigTest {
     void init() {
         consoleWebConfig.init();
         verify(methodsCache).initClassMethod("com.alibaba.nacos.console.controller");
+        EnvUtil.setEnvironment(cachedEnvironment);
     }
     
     @Test

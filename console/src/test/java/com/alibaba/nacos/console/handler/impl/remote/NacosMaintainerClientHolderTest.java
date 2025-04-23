@@ -23,6 +23,7 @@ import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerService;
 import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerService;
 import com.alibaba.nacos.maintainer.client.naming.NamingMaintainerService;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,7 +54,9 @@ class NacosMaintainerClientHolderTest {
     @BeforeEach
     void setUp() throws NacosException {
         cachedEnvironment = EnvUtil.getEnvironment();
-        EnvUtil.setEnvironment(new MockEnvironment());
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_ADMIN_ENABLED, "false");
+        EnvUtil.setEnvironment(environment);
         Member member = new Member();
         member.setIp("127.0.0.1");
         member.setPort(3306);

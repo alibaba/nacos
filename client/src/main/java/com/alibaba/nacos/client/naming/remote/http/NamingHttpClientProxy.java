@@ -277,8 +277,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         try {
             String result = reqApi(UtilAndComs.webContext + "/v3/admin/core/state/liveness", new HashMap<>(8), HttpMethod.GET);
             JsonNode json = JacksonUtils.toObj(result);
-            String serverStatus = json.get("status").asText();
-            return "UP".equals(serverStatus);
+            int statusCode = json.get("code").asInt();
+            return 0 == statusCode;
         } catch (Exception e) {
             return false;
         }

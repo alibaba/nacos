@@ -21,12 +21,16 @@ import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.auth.config.NacosAuthConfigHolder;
 import com.alibaba.nacos.console.config.NacosConsoleAuthConfig;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Map;
@@ -44,6 +48,8 @@ class ConsoleMaintainerClientAuthPluginTest {
     
     private static final String MOCK_IDENTITY_VALUE = "mockIdentityValue";
     
+    private ConfigurableEnvironment cachedEnvironment;
+    
     @Mock
     NacosConsoleAuthConfig mockNacosAuthConfig;
     
@@ -53,6 +59,10 @@ class ConsoleMaintainerClientAuthPluginTest {
     
     @BeforeEach
     void setUp() {
+        cachedEnvironment = EnvUtil.getEnvironment();
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_ADMIN_ENABLED, "false");
+        EnvUtil.setEnvironment(environment);
         authPlugin = new ConsoleMaintainerClientAuthPlugin();
         cachedConsoleAuthConfig = NacosAuthConfigHolder.getInstance()
                 .getNacosAuthConfigByScope(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE);
@@ -67,6 +77,7 @@ class ConsoleMaintainerClientAuthPluginTest {
                 NacosAuthConfigHolder.getInstance(), "nacosAuthConfigMap");
         nacosAuthConfigMap.put(NacosConsoleAuthConfig.NACOS_CONSOLE_AUTH_SCOPE, cachedConsoleAuthConfig);
         authPlugin.shutdown();
+        EnvUtil.setEnvironment(cachedEnvironment);
     }
     
     @Test

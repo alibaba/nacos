@@ -17,6 +17,8 @@
 package com.alibaba.nacos.console.handler.impl.remote;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.module.ModuleState;
 import com.alibaba.nacos.sys.module.ModuleStateHolder;
 import org.junit.jupiter.api.AfterEach;
@@ -24,6 +26,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.HashMap;
@@ -41,9 +45,15 @@ class ServerStateRemoteHandlerTest extends AbstractRemoteHandlerTest {
     
     ModuleState mockModuleState;
     
+    private ConfigurableEnvironment cachedEnvironment;
+    
     @BeforeEach
     void setUp() {
         super.setUpWithNaming();
+        cachedEnvironment = EnvUtil.getEnvironment();
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_ADMIN_ENABLED, "false");
+        EnvUtil.setEnvironment(environment);
         remoteHandler = new ServerStateRemoteHandler(clientHolder);
         mockModuleState = new ModuleState("mock");
         mockModuleState.newState("moduleK", "moduleV");
@@ -57,6 +67,7 @@ class ServerStateRemoteHandlerTest extends AbstractRemoteHandlerTest {
         Map<String, ModuleState> moduleStates = (Map<String, ModuleState>) ReflectionTestUtils.getField(
                 ModuleStateHolder.getInstance(), "moduleStates");
         moduleStates.remove("mock");
+        EnvUtil.setEnvironment(cachedEnvironment);
     }
     
     @Test

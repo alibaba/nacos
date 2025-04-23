@@ -20,6 +20,9 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberLookup;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +31,8 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collection;
@@ -42,6 +47,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @ExtendWith(MockitoExtension.class)
 class RemoteServerMemberManagerTest {
     
+    private ConfigurableEnvironment cachedEnvironment;
+    
     private RemoteServerMemberManager memberManager;
     
     @Mock
@@ -49,7 +56,16 @@ class RemoteServerMemberManagerTest {
     
     @BeforeEach
     void setUp() throws Exception {
+        cachedEnvironment = EnvUtil.getEnvironment();
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_ADMIN_ENABLED, "false");
+        EnvUtil.setEnvironment(environment);
         memberManager = new RemoteServerMemberManager();
+    }
+    
+    @AfterEach
+    void tearDown() {
+        EnvUtil.setEnvironment(cachedEnvironment);
     }
     
     @Test
