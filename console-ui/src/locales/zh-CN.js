@@ -723,6 +723,7 @@ const I18N_CONF = {
   },
   McpDetail: {
     basicInformation: '基本信息',
+    serviceRef: '服务引用',
     mcpServerDetail: 'MCP Server 详情',
     operationToolDetail: '详情',
     operationToolEdit: '编辑',
@@ -830,6 +831,7 @@ const I18N_CONF = {
     serviceRef: '服务引用',
     backendServiceProtocol: '后端服务协议',
     exportPath: '访问路径',
+    exportPathDesc: '当前MCP服务对外暴露的Http Path',
     description: '描述',
     serverType: '协议类型',
     serverVersion: '服务版本',
