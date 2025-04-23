@@ -25,6 +25,7 @@ import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetails;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -44,6 +45,7 @@ public class OIDCService {
     
     private final TokenManagerDelegate jwtTokenManager;
     
+    @Autowired
     public OIDCService(NacosUserDetailsServiceImpl userDetailsService, TokenManagerDelegate jwtTokenManager) {
         this.userDetailsService = userDetailsService;
         this.jwtTokenManager = jwtTokenManager;

@@ -33,19 +33,13 @@ import com.nimbusds.oauth2.sdk.TokenRequest;
 import com.nimbusds.oauth2.sdk.TokenResponse;
 import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
 import com.nimbusds.oauth2.sdk.auth.Secret;
-import com.nimbusds.oauth2.sdk.http.HTTPRequest;
 import com.nimbusds.oauth2.sdk.http.HTTPResponse;
-import com.nimbusds.oauth2.sdk.http.ServletUtils;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.Issuer;
 import com.nimbusds.oauth2.sdk.id.State;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
-import com.nimbusds.openid.connect.sdk.AuthenticationErrorResponse;
 import com.nimbusds.openid.connect.sdk.AuthenticationRequest;
 import com.nimbusds.openid.connect.sdk.AuthenticationRequest.Builder;
-import com.nimbusds.openid.connect.sdk.AuthenticationResponse;
-import com.nimbusds.openid.connect.sdk.AuthenticationResponseParser;
-import com.nimbusds.openid.connect.sdk.AuthenticationSuccessResponse;
 import com.nimbusds.openid.connect.sdk.Nonce;
 import com.nimbusds.openid.connect.sdk.OIDCTokenResponse;
 import com.nimbusds.openid.connect.sdk.OIDCTokenResponseParser;
@@ -59,14 +53,13 @@ import com.nimbusds.openid.connect.sdk.token.OIDCTokens;
 import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 
 /**
  * Open ID Connect Client for handling Open ID Connect authentication requests and responses.
@@ -81,10 +74,14 @@ public class OIDCClient {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(OIDCClient.class);
     
-    private final OIDCConfiguration config;
+    private final OIDCConfig config;
     
-    public OIDCClient() {
-        this.config = OIDCConfigurations.getConfiguration(OIDCConfigurations.getProvider());
+    public OIDCClient(@Autowired(required = false) OIDCConfig config) {
+        if (config == null) {
+            this.config = OIDCConfigs.getConfiguration(OIDCConfigs.getProvider());
+        } else {
+            this.config = config;
+        }
     }
     
     /**
@@ -93,44 +90,17 @@ public class OIDCClient {
      * @param callbackUrl Callback url for Authorization Server
      * @return AuthenticationRequest
      */
-    public AuthenticationRequest createAuthenticationRequest(String callbackUrl) {
-        // 生成随机 state 和 nonce，并存入 Session，防止 CSRF 和重放攻击
-        State state = new State();
+    public AuthenticationRequest createAuthenticationRequest(String callbackUrl, String originUrl) {
+        // generate state and nonce and store them in session to prevent CSRF and replay attacks
         Nonce nonce = new Nonce();
+        State state = new State();
+        OIDCState oidcState = new OIDCState();
+        oidcState.setState(state.getValue());
+        oidcState.setNonce(nonce.getValue());
+        oidcState.setOrigin(originUrl);
         OIDCProviderMetadata providerMetadata = getProviderMetadata();
-        return new Builder(RESPONSE_TYPE,           // 授权码模式
-                getScope(),                         // 请求 scope，例如 "openid profile email"
-                getClientId(),                              // 客户端 ID
-                URI.create(callbackUrl))                              // 重定向 URI
-                .endpointURI(providerMetadata.getAuthorizationEndpointURI())         // 授权端点
-                .state(state)                                           // 防 CSRF
-                .nonce(nonce)                                           // 防重放
-                .build();
-    }
-    
-    /**
-     * Extract the authorization code from the callback request.
-     *
-     * @param callbackRequest HttpServletRequest
-     * @return AuthorizationCode
-     */
-    public AuthorizationCode getAuthorizationCode(HttpServletRequest callbackRequest) {
-        LOGGER.debug("Retrieving authorization code from callback request's query parameters: {}",
-                callbackRequest.getQueryString());
-        AuthenticationResponse authResponse;
-        try {
-            HTTPRequest request = ServletUtils.createHTTPRequest(callbackRequest);
-            authResponse = AuthenticationResponseParser.parse(request.getURL().toURI(), request.getQueryParameters());
-        } catch (ParseException | URISyntaxException | IOException e) {
-            throw new IllegalStateException("Error while parsing callback request", e);
-        }
-        if (authResponse instanceof AuthenticationErrorResponse) {
-            ErrorObject error = ((AuthenticationErrorResponse) authResponse).getErrorObject();
-            throw new IllegalStateException("Authentication request failed: " + error.toJSONObject());
-        }
-        AuthorizationCode authorizationCode = ((AuthenticationSuccessResponse) authResponse).getAuthorizationCode();
-        LOGGER.debug("Authorization code: {}", authorizationCode.getValue());
-        return authorizationCode;
+        return new Builder(RESPONSE_TYPE, getScope(), getClientId(), URI.create(callbackUrl)).endpointURI(
+                providerMetadata.getAuthorizationEndpointURI()).state(oidcState.toState()).nonce(nonce).build();
     }
     
     /**
@@ -138,21 +108,24 @@ public class OIDCClient {
      *
      * @param authorizationCode Authorization Code
      * @param callbackUrl       Callback URL
+     * @param nonce             OriginNonce
      * @return UserInfo
      */
-    public UserInfo getUserInfo(AuthorizationCode authorizationCode, String callbackUrl) {
+    public UserInfo getUserInfo(AuthorizationCode authorizationCode, String callbackUrl, String nonce) {
         OIDCProviderMetadata providerMetadata = getProviderMetadata();
         LOGGER.debug("Getting user info for authorization code");
-        OIDCTokens oidcTokens = getOidcTokens(authorizationCode, callbackUrl);
+        OIDCTokens oidcTokens = exchangeToken(authorizationCode, callbackUrl, nonce);
         
-        UserInfo userInfo;
+        UserInfo userInfo = null;
         try {
-            userInfo = new UserInfo(oidcTokens.getIDToken().getJWTClaimsSet());
+            if (oidcTokens.getIDToken() != null && oidcTokens.getIDToken().getJWTClaimsSet() != null) {
+                userInfo = new UserInfo(oidcTokens.getIDToken().getJWTClaimsSet());
+            }
         } catch (java.text.ParseException e) {
             throw new IllegalStateException("Parsing ID token failed", e);
         }
-        if (((userInfo.getName() == null) && (userInfo.getPreferredUsername() == null))) {
-            UserInfoResponse userInfoResponse = getUserInfoResponse(providerMetadata.getUserInfoEndpointURI(),
+        if (userInfo == null || ((userInfo.getName() == null) && (userInfo.getPreferredUsername() == null))) {
+            UserInfoResponse userInfoResponse = exchangeUserInfo(providerMetadata.getUserInfoEndpointURI(),
                     oidcTokens.getBearerAccessToken());
             if (userInfoResponse instanceof UserInfoErrorResponse) {
                 ErrorObject errorObject = ((UserInfoErrorResponse) userInfoResponse).getErrorObject();
@@ -175,37 +148,33 @@ public class OIDCClient {
      *
      * @param authorizationCode Authorization Code
      * @param callbackUrl       Callback URL
+     * @param nonce             Origin Nonce
      * @return OIDCTokens
      */
-    private OIDCTokens getOidcTokens(AuthorizationCode authorizationCode, String callbackUrl) {
+    protected OIDCTokens exchangeToken(AuthorizationCode authorizationCode, String callbackUrl, String nonce) {
         OIDCProviderMetadata providerMetadata = getProviderMetadata();
-        TokenResponse tokenResponse = getTokenResponse(providerMetadata.getTokenEndpointURI(), authorizationCode,
-                callbackUrl);
-        if (tokenResponse instanceof TokenErrorResponse) {
-            ErrorObject errorObject = ((TokenErrorResponse) tokenResponse).getErrorObject();
-            if (errorObject == null || errorObject.getCode() == null) {
-                throw new IllegalStateException("Token request failed: No error code returned "
-                        + "(identity provider not reachable - check network proxy setting 'http.nonProxyHosts' in 'sonar.properties')");
-            } else {
-                throw new IllegalStateException("Token request failed: " + errorObject.toJSONObject());
-            }
-        }
-        OIDCTokens oidcTokens = ((OIDCTokenResponse) tokenResponse).getOIDCTokens();
-        if (isIdTokenSigned()) {
-            validateIdToken(providerMetadata.getIssuer(), providerMetadata.getJWKSetURI(), oidcTokens.getIDToken());
-        }
-        return oidcTokens;
-    }
-    
-    private TokenResponse getTokenResponse(URI tokenEndpointURI, AuthorizationCode authorizationCode,
-            String callbackUrl) {
         try {
-            TokenRequest request = new TokenRequest(tokenEndpointURI,
+            TokenRequest request = new TokenRequest(providerMetadata.getTokenEndpointURI(),
                     new ClientSecretBasic(getClientId(), getClientSecret()),
                     new AuthorizationCodeGrant(authorizationCode, new URI(callbackUrl)));
             HTTPResponse response = request.toHTTPRequest().send();
             LOGGER.debug("Token response content: {}", response.getContent());
-            return OIDCTokenResponseParser.parse(response);
+            TokenResponse tokenResponse = OIDCTokenResponseParser.parse(response);
+            if (tokenResponse instanceof TokenErrorResponse) {
+                ErrorObject errorObject = ((TokenErrorResponse) tokenResponse).getErrorObject();
+                if (errorObject == null || errorObject.getCode() == null) {
+                    throw new IllegalStateException("Token request failed: No error code returned "
+                            + "(identity provider not reachable - check network proxy setting 'http.nonProxyHosts' in 'sonar.properties')");
+                } else {
+                    throw new IllegalStateException("Token request failed: " + errorObject.toJSONObject());
+                }
+            }
+            OIDCTokens oidcTokens = ((OIDCTokenResponse) tokenResponse).getOIDCTokens();
+            if (isIdTokenSigned()) {
+                validateIdToken(providerMetadata.getIssuer(), providerMetadata.getJWKSetURI(), oidcTokens.getIDToken(),
+                        nonce);
+            }
+            return oidcTokens;
         } catch (URISyntaxException | ParseException e) {
             throw new IllegalStateException("Retrieving access token failed", e);
         } catch (IOException e) {
@@ -214,25 +183,7 @@ public class OIDCClient {
         }
     }
     
-    private void validateIdToken(Issuer issuer, URI jwkSetURI, JWT idToken) {
-        LOGGER.debug("Validating ID token with {} and key set from from {}", getIdTokenSignAlgorithm(), jwkSetURI);
-        try {
-            IDTokenValidator validator = createValidator(issuer, jwkSetURI.toURL());
-            validator.validate(idToken, null);
-        } catch (MalformedURLException e) {
-            throw new IllegalStateException("Invalid JWK set URL", e);
-        } catch (BadJOSEException e) {
-            throw new IllegalStateException("Invalid ID token", e);
-        } catch (JOSEException e) {
-            throw new IllegalStateException("Validating ID token failed", e);
-        }
-    }
-    
-    private IDTokenValidator createValidator(Issuer issuer, URL jwkSetUrl) {
-        return new IDTokenValidator(issuer, getClientId(), getIdTokenSignAlgorithm(), jwkSetUrl);
-    }
-    
-    private UserInfoResponse getUserInfoResponse(URI userInfoEndpointURI, BearerAccessToken accessToken) {
+    protected UserInfoResponse exchangeUserInfo(URI userInfoEndpointURI, BearerAccessToken accessToken) {
         LOGGER.debug("Retrieving user info from {}", userInfoEndpointURI);
         try {
             UserInfoRequest request = new UserInfoRequest(userInfoEndpointURI, accessToken);
@@ -247,7 +198,22 @@ public class OIDCClient {
         }
     }
     
-    private OIDCProviderMetadata getProviderMetadata() {
+    private void validateIdToken(Issuer issuer, URI jwkSetURI, JWT idToken, String nonce) {
+        LOGGER.debug("Validating ID token with {} and key set from from {}", getIdTokenSignAlgorithm(), jwkSetURI);
+        try {
+            IDTokenValidator validator = new IDTokenValidator(issuer, getClientId(), getIdTokenSignAlgorithm(),
+                    jwkSetURI.toURL());
+            validator.validate(idToken, Nonce.parse(nonce));
+        } catch (MalformedURLException e) {
+            throw new IllegalStateException("Invalid JWK set URL", e);
+        } catch (BadJOSEException e) {
+            throw new IllegalStateException("Invalid ID token", e);
+        } catch (JOSEException e) {
+            throw new IllegalStateException("Validating ID token failed", e);
+        }
+    }
+    
+    protected OIDCProviderMetadata getProviderMetadata() {
         LOGGER.debug("Retrieving provider metadata from {}", config.getIssuerUri());
         try {
             return OIDCProviderMetadata.resolve(new Issuer(config.getIssuerUri()));
@@ -280,7 +246,7 @@ public class OIDCClient {
     
     private JWSAlgorithm getIdTokenSignAlgorithm() {
         String algorithmName = config.getIdTokenSignAlgorithm();
-        return algorithmName == null ? null : new JWSAlgorithm(algorithmName);
+        return algorithmName == null ? JWSAlgorithm.RS512 : new JWSAlgorithm(algorithmName);
     }
     
 }

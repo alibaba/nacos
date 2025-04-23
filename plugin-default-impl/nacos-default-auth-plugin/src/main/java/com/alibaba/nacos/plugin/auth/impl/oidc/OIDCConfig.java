@@ -22,7 +22,7 @@ package com.alibaba.nacos.plugin.auth.impl.oidc;
  * @author Roiocam
  */
 @SuppressWarnings("checkstyle:abbreviationaswordinname")
-public class OIDCConfiguration {
+public class OIDCConfig {
     
     private String scope;
     

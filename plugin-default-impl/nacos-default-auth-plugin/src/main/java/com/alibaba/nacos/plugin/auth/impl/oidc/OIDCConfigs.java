@@ -24,7 +24,7 @@ import com.alibaba.nacos.sys.env.EnvUtil;
  * @author Roiocam
  */
 @SuppressWarnings("checkstyle:abbreviationaswordinname")
-public class OIDCConfigurations {
+public class OIDCConfigs {
     
     private static final String PREFIX = "nacos.core.auth.oidc";
     
@@ -42,14 +42,14 @@ public class OIDCConfigurations {
     
     private static final String ID_TOKEN_SIGN_ALGORITHM = PREFIX + KEY_PLACEHOLDER + ".id-token-sign-algorithm";
     
-    public static OIDCConfiguration getConfiguration(String key) {
-        OIDCConfiguration oidcConfiguration = new OIDCConfiguration();
-        oidcConfiguration.setScope(getValueByKey(SCOPE, key));
-        oidcConfiguration.setClientId(getValueByKey(CLIENT_ID, key));
-        oidcConfiguration.setClientSecret(getValueByKey(CLIENT_SECRET, key));
-        oidcConfiguration.setIssuerUri(getValueByKey(ISSUER_URI, key));
-        oidcConfiguration.setIdTokenSignAlgorithm(getValueByKey(ID_TOKEN_SIGN_ALGORITHM, key));
-        return oidcConfiguration;
+    public static OIDCConfig getConfiguration(String key) {
+        OIDCConfig oidcConfig = new OIDCConfig();
+        oidcConfig.setScope(getValueByKey(SCOPE, key));
+        oidcConfig.setClientId(getValueByKey(CLIENT_ID, key));
+        oidcConfig.setClientSecret(getValueByKey(CLIENT_SECRET, key));
+        oidcConfig.setIssuerUri(getValueByKey(ISSUER_URI, key));
+        oidcConfig.setIdTokenSignAlgorithm(getValueByKey(ID_TOKEN_SIGN_ALGORITHM, key));
+        return oidcConfig;
     }
     
     public static String getValueByKey(String path, String key) {

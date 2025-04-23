@@ -22,14 +22,17 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.oidc.OIDCClient;
-import com.alibaba.nacos.plugin.auth.impl.oidc.OIDCConfigurations;
+import com.alibaba.nacos.plugin.auth.impl.oidc.OIDCConfigs;
 import com.alibaba.nacos.plugin.auth.impl.oidc.OIDCProvider;
 import com.alibaba.nacos.plugin.auth.impl.oidc.OIDCService;
+import com.alibaba.nacos.plugin.auth.impl.oidc.OIDCState;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.nimbusds.jose.util.Base64URL;
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
 import com.nimbusds.openid.connect.sdk.AuthenticationRequest;
 import com.nimbusds.openid.connect.sdk.claims.UserInfo;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -60,103 +63,10 @@ public class OIDCController {
     
     private final OIDCService oidcService;
     
+    @Autowired
     public OIDCController(OIDCClient oidcClient, OIDCService oidcService) {
         this.oidcClient = oidcClient;
         this.oidcService = oidcService;
-    }
-    
-    /**
-     * Get current OIDC provider.
-     */
-    @GetMapping("/provider")
-    public OIDCProvider getProvider() {
-        String providerKey = OIDCConfigurations.getProvider();
-        OIDCProvider provider = new OIDCProvider();
-        provider.setName(OIDCConfigurations.getNameByKey(providerKey));
-        provider.setKey(providerKey);
-        return provider;
-        
-    }
-    
-    /**
-     * Start Open ID Connect Authentication Flow.
-     *
-     * @param response HttpServletResponse
-     * @param session  HttpSession
-     * @throws IOException IOException
-     */
-    @GetMapping("/start")
-    public void startAuthentication(@RequestParam("origin") String origin, HttpServletResponse response,
-            HttpSession session) throws IOException {
-        
-        String callbackUri = ServletUriComponentsBuilder.fromCurrentContextPath().path(CALLBACK_PATH)
-                .queryParam("origin", origin).toUriString();
-        
-        AuthenticationRequest authRequest = oidcClient.createAuthenticationRequest(callbackUri);
-        
-        session.setAttribute("oidc_state", authRequest.getState().getValue());
-        session.setAttribute("oidc_nonce", authRequest.getNonce().getValue());
-        
-        // Redirect to Authentication endpoint
-        response.sendRedirect(authRequest.toURI().toString());
-    }
-    
-    /**
-     * Authorization server callback this interface, process the authorization code and exchange token.
-     *
-     * @param code          Authorization Code
-     * @param returnedState State returned by the authorization server
-     * @param response      HttpServletResponse
-     * @param session       HttpSession
-     * @throws IOException IOException
-     */
-    @GetMapping("/callback")
-    public void callback(@RequestParam("code") String code, @RequestParam("state") String returnedState,
-            @RequestParam("origin") String origin, HttpServletResponse response, HttpSession session)
-            throws IOException {
-        
-        // Check if the state is valid
-        String originalState = (String) session.getAttribute("oidc_state");
-        if (originalState == null || !originalState.equals(returnedState)) {
-            String uriString = buildRedirectUriWithPayload(origin, "msg", "Invalid state");
-            response.sendRedirect(uriString);
-            return;
-        }
-        
-        // Exchange the authorization code for the information
-        String callbackUri = ServletUriComponentsBuilder.fromCurrentContextPath().path(CALLBACK_PATH)
-                .queryParam("origin", origin).toUriString();
-        UserInfo userInfo = oidcClient.getUserInfo(new AuthorizationCode(code), callbackUri);
-        
-        // Extract the username from the user info
-        String preferredUsername = userInfo.getPreferredUsername();
-        NacosUser nacosUser;
-        try {
-            nacosUser = oidcService.getUser(preferredUsername);
-        } catch (AccessException e) {
-            String uriString = buildRedirectUriWithPayload(origin, "msg", "User not found");
-            response.sendRedirect(uriString);
-            return;
-        }
-        
-        session.setAttribute(AuthConstants.NACOS_USER_KEY, nacosUser);
-        session.setAttribute(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID,
-                nacosUser.getUserName());
-        
-        response.addHeader(AuthConstants.AUTHORIZATION_HEADER, AuthConstants.TOKEN_PREFIX + nacosUser.getToken());
-        
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        result.put(Constants.ACCESS_TOKEN, nacosUser.getToken());
-        result.put(Constants.TOKEN_TTL, oidcService.getTokenTtlInSeconds(nacosUser.getToken()));
-        result.put(Constants.GLOBAL_ADMIN, nacosUser.isGlobalAdmin());
-        result.put(Constants.USERNAME, nacosUser.getUserName());
-        
-        byte[] resultCodedBytes = Base64.encodeBase64(result.toString().getBytes(StandardCharsets.UTF_8));
-        
-        String uriString = buildRedirectUriWithPayload(origin, "token",
-                new String(resultCodedBytes, StandardCharsets.UTF_8));
-        
-        response.sendRedirect(uriString);
     }
     
     private static String buildRedirectUriWithPayload(String origin, String resultCode, String result) {
@@ -177,6 +87,109 @@ public class OIDCController {
             hashRoute = sb.append(resultCode).append("=").append(result).toString();
         }
         return redirectUriBuilder.build().toUriString() + hashRoute;
+    }
+    
+    /**
+     * Get current OIDC provider.
+     */
+    @GetMapping("/provider")
+    public OIDCProvider getProvider() {
+        String providerKey = OIDCConfigs.getProvider();
+        OIDCProvider provider = new OIDCProvider();
+        provider.setName(OIDCConfigs.getNameByKey(providerKey));
+        provider.setKey(providerKey);
+        return provider;
+        
+    }
+    
+    /**
+     * Start Open ID Connect Authentication Flow.
+     *
+     * @param response HttpServletResponse
+     * @param session  HttpSession
+     * @throws IOException IOException
+     */
+    @GetMapping("/start")
+    public void startAuthentication(@RequestParam("origin") String origin, HttpServletResponse response,
+            HttpSession session) throws IOException {
+        
+        String callbackUri = ServletUriComponentsBuilder.fromCurrentContextPath().path(CALLBACK_PATH).toUriString();
+        
+        AuthenticationRequest authRequest = oidcClient.createAuthenticationRequest(callbackUri, origin);
+        
+        session.setAttribute(AuthConstants.OIDC_STATE, authRequest.getState().getValue());
+        session.setAttribute(AuthConstants.OIDC_NONCE, authRequest.getNonce().getValue());
+        
+        // Redirect to Authentication endpoint
+        response.sendRedirect(authRequest.toURI().toString());
+    }
+    
+    /**
+     * Authorization server callback this interface, process the authorization code and exchange token.
+     *
+     * @param code          Authorization Code
+     * @param returnedState State returned by the authorization server
+     * @param response      HttpServletResponse
+     * @param session       HttpSession
+     * @throws IOException IOException
+     */
+    @GetMapping("/callback")
+    public void callback(@RequestParam("code") String code, @RequestParam("state") String returnedState,
+            HttpServletResponse response, HttpSession session) throws IOException {
+        
+        // Check if the state is valid
+        String originalState = (String) session.getAttribute(AuthConstants.OIDC_STATE);
+        if (originalState == null) {
+            String missingOrigin = ServletUriComponentsBuilder.fromCurrentContextPath().path(AuthConstants.LOGIN_PAGE)
+                    .toUriString();
+            String uriString = buildRedirectUriWithPayload(missingOrigin, AuthConstants.OIDC_PARAM_MSG,
+                    "Session expired");
+            response.sendRedirect(uriString);
+            return;
+        }
+        String json = Base64URL.from(originalState).decodeToString();
+        OIDCState state = JacksonUtils.toObj(json, OIDCState.class);
+        if (!originalState.equals(returnedState)) {
+            String uriString = buildRedirectUriWithPayload(state.getOrigin(), AuthConstants.OIDC_PARAM_MSG,
+                    "Invalid state");
+            response.sendRedirect(uriString);
+            return;
+        }
+        
+        // Exchange the authorization code for the information
+        String callbackUri = ServletUriComponentsBuilder.fromCurrentContextPath().path(CALLBACK_PATH).toUriString();
+        UserInfo userInfo = oidcClient.getUserInfo(new AuthorizationCode(code), callbackUri, state.getNonce());
+        
+        // Extract the username from the user info
+        String preferredUsername = userInfo.getPreferredUsername();
+        NacosUser nacosUser;
+        try {
+            nacosUser = oidcService.getUser(preferredUsername);
+        } catch (AccessException e) {
+            String uriString = buildRedirectUriWithPayload(state.getOrigin(), AuthConstants.OIDC_PARAM_MSG,
+                    "User not found");
+            response.sendRedirect(uriString);
+            return;
+        }
+        
+        session.setAttribute(AuthConstants.NACOS_USER_KEY, nacosUser);
+        session.setAttribute(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID,
+                nacosUser.getUserName());
+        
+        response.addHeader(AuthConstants.AUTHORIZATION_HEADER, AuthConstants.TOKEN_PREFIX + nacosUser.getToken());
+        
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+        result.put(Constants.ACCESS_TOKEN, nacosUser.getToken());
+        result.put(Constants.TOKEN_TTL, oidcService.getTokenTtlInSeconds(nacosUser.getToken()));
+        result.put(Constants.GLOBAL_ADMIN, nacosUser.isGlobalAdmin());
+        result.put(Constants.USERNAME, nacosUser.getUserName());
+        
+        byte[] resultCodedBytes = Base64.encodeBase64(result.toString().getBytes(StandardCharsets.UTF_8));
+        
+        String uriString = buildRedirectUriWithPayload(state.getOrigin(), AuthConstants.OIDC_PARAM_TOKEN,
+                new String(resultCodedBytes, StandardCharsets.UTF_8));
+        
+        response.sendRedirect(uriString);
     }
     
 }
