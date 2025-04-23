@@ -124,7 +124,7 @@ public class OIDCClient {
         } catch (java.text.ParseException e) {
             throw new IllegalStateException("Parsing ID token failed", e);
         }
-        if (userInfo == null || ((userInfo.getName() == null) && (userInfo.getPreferredUsername() == null))) {
+        if (userInfo == null || hasEnoughInfo(userInfo)) {
             UserInfoResponse userInfoResponse = exchangeUserInfo(providerMetadata.getUserInfoEndpointURI(),
                     oidcTokens.getBearerAccessToken());
             if (userInfoResponse instanceof UserInfoErrorResponse) {
@@ -218,7 +218,7 @@ public class OIDCClient {
         try {
             return OIDCProviderMetadata.resolve(new Issuer(config.getIssuerUri()));
         } catch (IOException | GeneralException e) {
-            if (e instanceof GeneralException && e.getMessage().contains("issuer doesn't match")) {
+            if (e instanceof GeneralException) {
                 throw new IllegalStateException("Retrieving OpenID Connect provider metadata failed: "
                         + "Issuer URL in provider metadata doesn't match the issuer URI specified in plugin configuration");
             } else {
@@ -247,6 +247,10 @@ public class OIDCClient {
     private JWSAlgorithm getIdTokenSignAlgorithm() {
         String algorithmName = config.getIdTokenSignAlgorithm();
         return algorithmName == null ? JWSAlgorithm.RS512 : new JWSAlgorithm(algorithmName);
+    }
+    
+    private boolean hasEnoughInfo(UserInfo userInfo) {
+        return userInfo.getName() != null && userInfo.getPreferredUsername() != null;
     }
     
 }

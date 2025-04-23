@@ -94,11 +94,17 @@ public class AuthConstants {
     
     public static final String OIDC_NONCE = "oidc_nonce";
     
-    public static final String OIDC_PARAM_ORIGIN = "origin";
-    
     public static final String OIDC_PARAM_TOKEN = "token";
     
     public static final String OIDC_PARAM_MSG = "msg";
     
     public static final String LOGIN_PAGE = "/#/login";
+    
+    public static final String HASH_ROUTE = "#";
+    
+    public static final String QUERY_PREFIX = "?";
+    
+    public static final String QUERY_PARAM_SEPARATOR = "&";
+    
+    public static final String QUERY_PARAM_EQUAL = "=";
 }

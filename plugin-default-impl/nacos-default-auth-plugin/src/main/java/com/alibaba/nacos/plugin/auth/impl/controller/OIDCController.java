@@ -71,7 +71,7 @@ public class OIDCController {
     
     private static String buildRedirectUriWithPayload(String origin, String resultCode, String result) {
         // split the origin URL into base URL and hash route
-        int hashIndex = origin.indexOf('#');
+        int hashIndex = origin.indexOf(AuthConstants.HASH_ROUTE);
         String baseUrl = hashIndex != -1 ? origin.substring(0, hashIndex) : origin;
         String hashRoute = hashIndex != -1 ? origin.substring(hashIndex) : "";
         
@@ -79,12 +79,12 @@ public class OIDCController {
         UriComponentsBuilder redirectUriBuilder = UriComponentsBuilder.fromUriString(baseUrl);
         if (!hashRoute.isEmpty()) {
             StringBuilder sb = new StringBuilder(hashRoute);
-            if (hashRoute.contains("?")) {
-                sb.append("&");
+            if (hashRoute.contains(AuthConstants.QUERY_PREFIX)) {
+                sb.append(AuthConstants.QUERY_PARAM_SEPARATOR);
             } else {
-                sb.append("?");
+                sb.append(AuthConstants.QUERY_PREFIX);
             }
-            hashRoute = sb.append(resultCode).append("=").append(result).toString();
+            hashRoute = sb.append(resultCode).append(AuthConstants.QUERY_PARAM_EQUAL).append(result).toString();
         }
         return redirectUriBuilder.build().toUriString() + hashRoute;
     }
