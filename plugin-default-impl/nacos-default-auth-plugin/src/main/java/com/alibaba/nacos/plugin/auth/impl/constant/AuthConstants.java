@@ -81,6 +81,11 @@ public class AuthConstants {
     public static final String LDAP_PREFIX = "LDAP_";
     
     /**
+     * Maximum allowed password length.
+     */
+    public static final int MAX_PASSWORD_LENGTH = 72;
+    
+    /**
      * Path for nacos plugin controller.
      */
     public static final String USER_PATH = "/v3/auth/user";

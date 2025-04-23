@@ -50,7 +50,7 @@ public class McpServerBasicInfo {
      */
     private Map<String, Object> localServerConfig;
     
-    private boolean enabled;
+    private boolean enabled = true;
     
     /**
      * Auto discovery capabilities by Nacos. No need to set when create or update Mcp server.

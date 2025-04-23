@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.naming.remote.gprc;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.common.Constants;
@@ -98,6 +99,8 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     private final NamingGrpcRedoService redoService;
     
+    private boolean enableClientMetrics = true;
+    
     public NamingGrpcClientProxy(String namespaceId, SecurityProxy securityProxy, ServerListFactory serverListFactory,
             NacosClientProperties properties, ServiceInfoHolder serviceInfoHolder,
             NamingFuzzyWatchServiceListHolder namingFuzzyWatchServiceListHolder) throws NacosException {
@@ -114,6 +117,8 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                 .createGrpcClientConfig(properties.asProperties(), labels);
         this.rpcClient = RpcClientFactory.createClient(uuid, ConnectionType.GRPC, grpcClientConfig);
         this.redoService = new NamingGrpcRedoService(this, namingFuzzyWatchServiceListHolder, properties);
+        this.enableClientMetrics = Boolean.parseBoolean(
+                properties.getProperty(PropertyKeyConst.ENABLE_CLIENT_METRICS, "true"));
         NAMING_LOGGER.info("Create naming rpc client for uuid->{}", uuid);
         start(serverListFactory, serviceInfoHolder, namingFuzzyWatchServiceListHolder);
     }
@@ -506,13 +511,21 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
      * @param response  The response object containing registration result information, or null if registration failed.
      */
     private void recordRequestFailedMetrics(Request request, Exception exception, Response response) {
-        if (Objects.isNull(response)) {
-            MetricsMonitor.getNamingRequestFailedMonitor(request.getClass().getSimpleName(), MONITOR_LABEL_NONE,
-                    MONITOR_LABEL_NONE, exception.getClass().getSimpleName()).inc();
-        } else {
-            MetricsMonitor.getNamingRequestFailedMonitor(request.getClass().getSimpleName(),
-                    String.valueOf(response.getResultCode()), String.valueOf(response.getErrorCode()),
-                    MONITOR_LABEL_NONE).inc();
+        if (!enableClientMetrics) {
+            return;
+        }
+        
+        try {
+            if (Objects.isNull(response)) {
+                MetricsMonitor.getNamingRequestFailedMonitor(request.getClass().getSimpleName(), MONITOR_LABEL_NONE,
+                        MONITOR_LABEL_NONE, exception.getClass().getSimpleName()).inc();
+            } else {
+                MetricsMonitor.getNamingRequestFailedMonitor(request.getClass().getSimpleName(),
+                        String.valueOf(response.getResultCode()), String.valueOf(response.getErrorCode()),
+                        MONITOR_LABEL_NONE).inc();
+            }
+        } catch (Throwable t) {
+            NAMING_LOGGER.warn("Fail to record metrics for request {}", request.getClass().getSimpleName(), t);
         }
     }
     

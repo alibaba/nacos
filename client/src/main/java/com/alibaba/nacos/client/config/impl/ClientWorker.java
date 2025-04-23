@@ -153,6 +153,8 @@ public class ClientWorker implements Closeable {
     
     private static final int THREAD_MULTIPLE = 1;
     
+    private boolean enableClientMetrics = true;
+    
     /**
      * index(taskId)-> total cache count for this taskId.
      */
@@ -325,7 +327,13 @@ public class ClientWorker implements Closeable {
         }
         LOGGER.info("[{}] [unsubscribe] {}", agent.getName(), groupKey);
         
-        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
+        if (enableClientMetrics) {
+            try {
+                MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
+            } catch (Throwable t) {
+                LOGGER.error("Failed to update metrics for listen config count", t);
+            }
+        }
     }
     
     /**
@@ -400,7 +408,13 @@ public class ClientWorker implements Closeable {
         
         LOGGER.info("[{}] [subscribe] {}", agent.getName(), key);
         
-        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
+        if (enableClientMetrics) {
+            try {
+                MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
+            } catch (Throwable t) {
+                LOGGER.error("Failed to update metrics for listen config count", t);
+            }
+        }
         
         return cache;
     }
@@ -447,7 +461,13 @@ public class ClientWorker implements Closeable {
         }
         LOGGER.info("[{}] [subscribe] {}", agent.getName(), key);
         
-        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
+        if (enableClientMetrics) {
+            try {
+                MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
+            } catch (Throwable t) {
+                LOGGER.error("Failed to update metrics for listen config count", t);
+            }
+        }
         
         return cache;
     }
@@ -547,6 +567,8 @@ public class ClientWorker implements Closeable {
         
         this.enableRemoteSyncConfig = Boolean.parseBoolean(
                 properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
+        this.enableClientMetrics = Boolean.parseBoolean(
+                properties.getProperty(PropertyKeyConst.ENABLE_CLIENT_METRICS, "true"));
         initAppLabels(properties.getProperties(SourceType.PROPERTIES));
     }
     

@@ -16,42 +16,33 @@
 
 package com.alibaba.nacos.api.ai.model.mcp;
 
-import java.util.Map;
-
 /**
- * AI MCP Tool metadata.
- *
+ * AI MCP server remote service credential.
+ * 
  * @author xiweng.yy
  */
-public class McpToolMeta {
+public class McpServerRemoteServiceCredential {
     
-    private Map<String, String> invokeContext;
+    /**
+     * Credential type, such as OAuth2.0, Jwt token or others, default is `custom`.
+     */
+    private String type = "custom";
     
-    private boolean enabled = true;
+    private String ref;
     
-    private Map<String, Object> templates;
-    
-    public Map<String, String> getInvokeContext() {
-        return invokeContext;
+    public String getType() {
+        return type;
     }
     
-    public void setInvokeContext(Map<String, String> invokeContext) {
-        this.invokeContext = invokeContext;
+    public void setType(String type) {
+        this.type = type;
     }
     
-    public boolean isEnabled() {
-        return enabled;
+    public String getRef() {
+        return ref;
     }
     
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
-    }
-    
-    public Map<String, Object> getTemplates() {
-        return templates;
-    }
-    
-    public void setTemplates(Map<String, Object> templates) {
-        this.templates = templates;
+    public void setRef(String ref) {
+        this.ref = ref;
     }
 }
