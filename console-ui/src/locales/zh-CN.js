@@ -738,6 +738,7 @@ const I18N_CONF = {
     online: '上线',
     offline: '下线',
     toolInputSchema: 'Tool 入参描述',
+    toolOnline: '是否上线',
     toolParamName: '名称',
     toolParamType: '类型',
     toolParamDescription: '描述',
