@@ -312,7 +312,7 @@ class McpManagement extends React.Component {
     }
   }
 
-  removeConfig(record) {
+  removeConfig = record => {
     const { locale = {} } = this.props;
     const self = this;
     Dialog.confirm({
@@ -335,20 +335,19 @@ class McpManagement extends React.Component {
         request({
           url: `v3/console/ai/mcp?mcpName=${record.name}`,
           type: 'delete',
-          success(res) {
+          success: res => {
             // 删除成功
             Message.success(locale.deleteSuccessfully);
-            self.getData();
-            self.setState({ loading: false });
+            this.setState({ loading: false }, this.getData);
           },
-          error(res) {
+          error: res => {
             Message.error(res.responseText || res.statusText);
-            self.setState({ loading: false });
+            this.setState({ loading: false });
           },
         });
       },
     });
-  }
+  };
 
   showCode(record) {
     this.showcode.current.getInstance().openDialog(record);
@@ -371,7 +370,7 @@ class McpManagement extends React.Component {
           {/* 编辑 */}
         </a>
         <span style={{ marginRight: 5 }}>|</span>
-        <a style={{ marginRight: 5 }} onClick={this.removeConfig.bind(this, record)}>
+        <a style={{ marginRight: 5 }} onClick={() => this.removeConfig(record)}>
           {locale.delete}
         </a>
       </div>
@@ -499,10 +498,18 @@ class McpManagement extends React.Component {
         ),
         onOk: () => {
           self.setState({ loading: true });
-          Promise.all([]).then(res => {
-            self.getData();
-            self.setState({ loading: false });
-
+          Promise.all(
+            selectedRows.map(item =>
+              request({
+                url: `v3/console/ai/mcp`,
+                type: 'delete',
+                data: {
+                  mcpName: item.name,
+                },
+              })
+            )
+          ).then(res => {
+            self.setState({ loading: false }, self.getData);
             // 判断是否全部删除成功
             if (res.every(item => item.code === 0)) {
               Message.success(locale.batchDeleteSuccessfully);

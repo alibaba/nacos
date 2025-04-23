@@ -1,5 +1,16 @@
 import React, { useEffect, useImperativeHandle, useState } from 'react';
-import { Dialog, Field, Form, Input, Grid, Table, Button, Message, Select } from '@alifd/next';
+import {
+  Dialog,
+  Field,
+  Form,
+  Input,
+  Grid,
+  Table,
+  Button,
+  Message,
+  Select,
+  Switch,
+} from '@alifd/next';
 import { formitemLayout, GetTitle, tableOperation } from './components';
 import { request } from '../../../../globalLib';
 const { Row, Col } = Grid;
@@ -78,6 +89,7 @@ const CreateTools = React.forwardRef((props, ref) => {
       toolParams: _toolParams,
       invokeContext: _invokeContext,
       templates: _templates,
+      enabled: toolsMeta?.enabled,
     });
     setOkLoading(false);
     setVisible(true);
@@ -94,6 +106,9 @@ const CreateTools = React.forwardRef((props, ref) => {
         description: '',
       },
       type: '',
+      toolsMeta: {
+        enabled: true,
+      },
     });
   };
 
@@ -154,7 +169,7 @@ const CreateTools = React.forwardRef((props, ref) => {
       };
       const _toolsMetaitem = {
         [values?.name]: {
-          enabled: true,
+          enabled: values?.enabled,
           invokeContext,
           templates,
         },
@@ -287,7 +302,8 @@ const CreateTools = React.forwardRef((props, ref) => {
         <Form.Item style={{ margin: 0 }}>
           <Input.TextArea
             aria-label="auto height"
-            autoHeight={{ minRows: 2, maxRows: 8 }}
+            style={{ minHeight: 32 }}
+            autoHeight={{ minRows: 1, maxRows: 8 }}
             {...field.init(key, { rules })}
           />
         </Form.Item>
@@ -323,14 +339,10 @@ const CreateTools = React.forwardRef((props, ref) => {
   const isPreview = type == 'preview' ? true : false;
   return (
     <div>
-      <Button type="primary" onClick={openDialog}>
-        {locale.newMcpTool}
-      </Button>
-
       {visible ? (
         <Dialog
           v2
-          title={locale.newMcpTool}
+          title={'Tools'}
           visible={true}
           footer={
             isPreview ? (
@@ -379,6 +391,16 @@ const CreateTools = React.forwardRef((props, ref) => {
                 placeholder={locale.toolDescription}
                 {...init('description', {
                   rules: [{ required: true, message: locale.toolDescriptionRequired }],
+                })}
+              />
+            </Form.Item>
+
+            {/* 是否上线 */}
+            <Form.Item label={locale.toolOnline} required>
+              <Switch
+                {...init('enabled', {
+                  valueName: 'checked',
+                  initValue: true,
                 })}
               />
             </Form.Item>
