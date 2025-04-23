@@ -5,9 +5,9 @@ name: "Integration Test"
 
 on:
   push:
-    branches: [ master, develop, v1.x-develop, v1.X ]
+    branches: [ master, develop, v2.x-develop ]
   pull_request:
-    branches: [ develop, v1.x-develop ]
+    branches: [ develop, v2.x-develop ]
 
 permissions:
   contents: read # to fetch code (actions/checkout)
