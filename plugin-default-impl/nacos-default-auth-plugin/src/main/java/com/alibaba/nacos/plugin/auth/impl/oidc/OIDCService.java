@@ -81,12 +81,21 @@ public class OIDCService {
         UserDetails userDetails;
         try {
             userDetails = userDetailsService.loadUserByUsername(AuthConstants.LDAP_PREFIX + username);
-        } catch (UsernameNotFoundException exception) {
-            String ldapUsername = AuthConstants.OIDC_PREFIX + username;
-            userDetailsService.createUser(ldapUsername, AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD);
+            return generateUserFromUsername(userDetails.getUsername());
+        } catch (UsernameNotFoundException ignored) {
+            if (Loggers.AUTH.isWarnEnabled()) {
+                Loggers.AUTH.warn("try login with OIDC, user: {}", username);
+            }
+        }
+        
+        String oidcUsername = AuthConstants.OIDC_PREFIX + username;
+        try {
+            userDetails = userDetailsService.loadUserByUsername(oidcUsername);
+        } catch (UsernameNotFoundException ignored) {
+            userDetailsService.createUser(oidcUsername, null);
             User user = new User();
-            user.setUsername(ldapUsername);
-            user.setPassword(AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD);
+            user.setUsername(oidcUsername);
+            user.setPassword(null);
             userDetails = new NacosUserDetails(user);
         } catch (Exception e) {
             Loggers.AUTH.error("[LDAP-LOGIN] failed", e);

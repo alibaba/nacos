@@ -41,11 +41,10 @@ class Login extends React.Component {
     this.state = {
       consoleUiEnable: true,
       guideMsg: '',
+      provider: {},
+      hasProvider: false,
     };
     this.field = new Field(this);
-    this.state = {
-      provider: {},
-    };
   }
 
   componentDidMount() {
@@ -82,13 +81,16 @@ class Login extends React.Component {
       this.props.history.push('/');
     } else if (msg) {
       Message.error({
-        content: locale.invalidMsgFormOIDC + " " + msg,
+        content: `${locale.invalidMsgFormOIDC} ${msg}`,
       });
     } else {
       this.fetchOIDCProvider().then(provider => {
-        this.setState({
-          provider: provider,
-        });
+        if (Object.keys(provider).length > 0) {
+          this.setState({
+            provider,
+            hasProvider: true,
+          });
+        }
       });
     }
   }
@@ -103,7 +105,9 @@ class Login extends React.Component {
   }
 
   getOIDCStartUri() {
-    return location.origin + '/nacos/v1/auth/oidc/start?origin=' + encodeURIComponent(location.href);
+    return `${location.origin}/nacos/v1/auth/oidc/start?origin=${encodeURIComponent(
+      location.href
+    )}`;
   }
 
   handleSearch = () => {
@@ -212,7 +216,7 @@ class Login extends React.Component {
                     {locale.submit}
                   </Form.Submit>
                 </FormItem>
-                {this.state.provider?.key !== '' && (
+                {this.state.hasProvider && (
                   <FormItem className="oidc-button">
                     <Button
                       component="a"

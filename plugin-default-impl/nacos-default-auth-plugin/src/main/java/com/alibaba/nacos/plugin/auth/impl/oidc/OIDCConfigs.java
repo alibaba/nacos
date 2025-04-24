@@ -18,6 +18,8 @@ package com.alibaba.nacos.plugin.auth.impl.oidc;
 
 import com.alibaba.nacos.sys.env.EnvUtil;
 
+import java.util.Objects;
+
 /**
  * Open ID Connect Configuration Helper Class.
  *
@@ -43,21 +45,40 @@ public class OIDCConfigs {
     private static final String ID_TOKEN_SIGN_ALGORITHM = PREFIX + KEY_PLACEHOLDER + ".id-token-sign-algorithm";
     
     public static OIDCConfig getConfiguration(String key) {
+        if (key == null) {
+            return null;
+        }
         OIDCConfig oidcConfig = new OIDCConfig();
-        oidcConfig.setScope(getValueByKey(SCOPE, key));
-        oidcConfig.setClientId(getValueByKey(CLIENT_ID, key));
-        oidcConfig.setClientSecret(getValueByKey(CLIENT_SECRET, key));
-        oidcConfig.setIssuerUri(getValueByKey(ISSUER_URI, key));
-        oidcConfig.setIdTokenSignAlgorithm(getValueByKey(ID_TOKEN_SIGN_ALGORITHM, key));
+        oidcConfig.setScope(getValueByKeyNotNull(SCOPE, key));
+        oidcConfig.setClientId(getValueByKeyNotNull(CLIENT_ID, key));
+        oidcConfig.setClientSecret(getValueByKeyNotNull(CLIENT_SECRET, key));
+        oidcConfig.setIssuerUri(getValueByKeyNotNull(ISSUER_URI, key));
+        oidcConfig.setIdTokenSignAlgorithm(getValueByKey(ID_TOKEN_SIGN_ALGORITHM, key, true));
         return oidcConfig;
     }
     
-    public static String getValueByKey(String path, String key) {
-        return EnvUtil.getProperty(path.replace(KEY_PLACEHOLDER, "." + key));
+    public static String getValueByKeyNotNull(String path, String key) {
+        return getValueByKey(path, key, false);
+    }
+    
+    public static String getValueByKey(String path, String key, boolean nullable) {
+        Objects.requireNonNull(path, "path cannot be null");
+        Objects.requireNonNull(key, "key cannot be null");
+        String finalKey = path.replace(KEY_PLACEHOLDER, "." + key);
+        String property = EnvUtil.getProperty(finalKey);
+        if (!nullable) {
+            if (property == null || property.trim().isEmpty()) {
+                throw new IllegalArgumentException(String.format("%s cannot be empty", finalKey));
+            }
+        }
+        return property;
     }
     
     public static String getProvider() {
         String providerStr = EnvUtil.getProperty(PREFIX, String.class);
+        if (providerStr == null || providerStr.trim().isEmpty()) {
+            return null;
+        }
         String[] split = providerStr.trim().split(",");
         if (split.length != 1) {
             throw new IllegalArgumentException("OIDC provider only support one provider");
@@ -66,6 +87,6 @@ public class OIDCConfigs {
     }
     
     public static String getNameByKey(String key) {
-        return getValueByKey(NAME, key);
+        return getValueByKeyNotNull(NAME, key);
     }
 }
