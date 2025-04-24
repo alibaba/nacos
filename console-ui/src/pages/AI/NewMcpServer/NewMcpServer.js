@@ -2,17 +2,18 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { getParams, setParams, request } from '../../../globalLib';
 import {
+  Balloon,
   Button,
+  Dialog,
   Field,
   Form,
+  Icon,
   Grid,
   Input,
   Loading,
   Message,
   Select,
   Radio,
-  Icon,
-  Balloon,
   ConfigProvider,
 } from '@alifd/next';
 import { McpServerManagementRouteName, McpServerManagementRoute } from '../../../layouts/menu';
@@ -54,6 +55,7 @@ class NewMcpServer extends React.Component {
       useExistService: true,
       serviceList: [],
       serverConfig: {},
+      credentials: {},
     };
   }
 
@@ -81,6 +83,7 @@ class NewMcpServer extends React.Component {
           protocol = '',
           localServerConfig = {},
           remoteServerConfig = {},
+          credentials = {},
         } = result.data;
 
         const initFileData = {
@@ -88,6 +91,7 @@ class NewMcpServer extends React.Component {
           protocol,
           description: description,
           version: version,
+          credentials: credentials,
         };
 
         if (localServerConfig && JSON.stringify(localServerConfig, null, 2) !== '{}') {
@@ -115,6 +119,7 @@ class NewMcpServer extends React.Component {
         });
       }
     }
+    this.getCredentials();
   };
 
   // 获取服务组列表
@@ -174,6 +179,7 @@ class NewMcpServer extends React.Component {
               description: values?.description || '',
               version: values?.version || '1.0.0',
               enabled: true,
+              credentials: values?.credentials,
               localServerConfig: values?.localServerConfig
                 ? JSON.parse(values?.localServerConfig)
                 : '{}',
@@ -196,6 +202,7 @@ class NewMcpServer extends React.Component {
               remoteServerConfig: {
                 exportPath: values?.exportPath || '',
               },
+              credentials: values?.credentials,
             },
             null,
             2
@@ -401,6 +408,40 @@ class NewMcpServer extends React.Component {
     );
   };
 
+  handleCredentialChange = value => {
+    const result = {};
+    for (const credentialId in value) {
+      const key = value[credentialId];
+      result[key] = {
+        ref: key,
+      };
+    }
+    this.field.setValue('credentials', result);
+  };
+
+  getCredentials = () => {
+    const self = this;
+    const url = `v3/console/cs/config/list?dataId=&groupName=credentials`;
+    request({
+      url: url,
+      type: 'get',
+      data: {
+        pageNo: 1,
+        pageSize: 1000,
+      },
+      success(result) {
+        if (result.code === 0) {
+          self.setState({
+            credentials: result.data.pageItems.map(item => ({
+              label: item.dataId,
+              value: item.dataId,
+            })),
+          });
+        }
+      },
+    });
+  };
+
   render() {
     const { locale = {} } = this.props;
     const { init } = this.field;
@@ -477,11 +518,20 @@ class NewMcpServer extends React.Component {
               })}
               isPreview={isEdit}
             >
-              {['stdio', 'mcp-sse', 'mcp-streamble', 'http', 'dubbo'].map(item => (
-                <Radio key={item} id={item} value={item}>
-                  {item.charAt(0).toUpperCase() + item.slice(1)}
-                </Radio>
-              ))}
+              <Row>
+                {['stdio', 'mcp-sse', 'mcp-streamble'].map(item => (
+                  <Radio key={item} id={item} value={item}>
+                    {item.charAt(0).toUpperCase() + item.slice(1)}
+                  </Radio>
+                ))}
+              </Row>
+              <Row>
+                {['http', 'dubbo'].map(item => (
+                  <Radio key={item} id={item} value={item}>
+                    {item.charAt(0).toUpperCase() + item.slice(1)}
+                  </Radio>
+                ))}
+              </Row>
             </RadioGroup>
           </FormItem>
           {this.field.getValue('protocol') !== 'stdio' ? (
@@ -588,6 +638,20 @@ class NewMcpServer extends React.Component {
                       </div>
                     ) : null
                   }
+                />
+              </FormItem>
+              <FormItem label={locale.CredentialRef}>
+                <Select
+                  mode="multiple"
+                  showSearch
+                  onChange={this.handleCredentialChange}
+                  defaultValue={
+                    this.field.getValue('credentials')
+                      ? Object.keys(this.field.getValue('credentials'))
+                      : []
+                  }
+                  dataSource={this.state.credentials}
+                  style={{ width: '100%', marginRight: 8 }}
                 />
               </FormItem>
             </>

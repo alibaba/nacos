@@ -48,6 +48,7 @@ const configurationMenu = {
 };
 
 export const McpServerManagementRoute = '/mcpServerManagement';
+export const CredentialManagementRoute = '/credentialManagement';
 export const McpServerManagementRouteName = 'nacos-default-mcp';
 const AiControlMenu = {
   key: 'AiManagementVirtual',
@@ -55,6 +56,10 @@ const AiControlMenu = {
     {
       key: 'mcpServerManagement',
       url: McpServerManagementRoute,
+    },
+    {
+      key: 'credentialManagement',
+      url: CredentialManagementRoute,
     },
   ],
 };

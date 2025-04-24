@@ -21,7 +21,11 @@ import { getParams, setParams, request } from '../../globalLib';
 
 import './index.scss';
 import { NAME_SHOW } from '../../constants';
-import { McpServerManagementRoute, McpServerManagementRouteName } from '../../layouts/menu';
+import {
+  CredentialManagementRoute,
+  McpServerManagementRoute,
+  McpServerManagementRouteName,
+} from '../../layouts/menu';
 
 /**
  * 命名空间列表
@@ -139,7 +143,9 @@ class NameSpaceList extends React.Component {
   }
 
   handleNameSpaces(data) {
-    const isAIpage = window.location.href.includes(McpServerManagementRoute);
+    const isAIpage =
+      window.location.href.includes(McpServerManagementRoute) ||
+      window.location.href.includes(CredentialManagementRoute);
     const nownamespace =
       getParams('namespace') || (isAIpage ? McpServerManagementRouteName : 'public');
 
@@ -199,7 +205,9 @@ class NameSpaceList extends React.Component {
         />
       );
     }
-    const isAIpage = window.location.href.includes(McpServerManagementRoute);
+    const isAIpage =
+      window.location.href.includes(McpServerManagementRoute) ||
+      window.location.href.includes(CredentialManagementRoute);
     const AIlist = [
       {
         namespace: 'nacos-default-mcp',
