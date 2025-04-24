@@ -14,8 +14,6 @@ import {
   Message,
   Select,
   Radio,
-  Icon,
-  Balloon,
   ConfigProvider,
 } from '@alifd/next';
 import { McpServerManagementRouteName, McpServerManagementRoute } from '../../../layouts/menu';
