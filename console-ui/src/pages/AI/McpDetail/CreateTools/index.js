@@ -78,7 +78,7 @@ const CreateTools = React.forwardRef((props, ref) => {
       const node = {
         label: element,
         type: arg.type,
-        description: arg.description,
+        description: arg.description ? arg.description : '',
         children: children,
         key: prefix + '@@' + element,
       };
@@ -194,8 +194,6 @@ const CreateTools = React.forwardRef((props, ref) => {
         return;
       }
 
-      const properties = values?.toolParams;
-
       const invokeContext = {};
       if (values?.invokeContext?.length) {
         values?.invokeContext?.forEach(item => (invokeContext[item.key] = item.value));
@@ -203,7 +201,7 @@ const CreateTools = React.forwardRef((props, ref) => {
 
       const templates = {};
       if (values?.templates?.length) {
-        values?.templates?.forEach(item => (templates[item.key] = item.value));
+        values?.templates?.forEach(item => (templates[item.key] = JSON.parse(item.value)));
       }
 
       const serverSpecification = JSON.stringify({
@@ -220,6 +218,7 @@ const CreateTools = React.forwardRef((props, ref) => {
       // 根据 item.name  去除 重复的 name 值
       let _tool = JSON.parse(JSON.stringify(records?.toolSpec?.tools || []));
       let _toolsMeta = JSON.parse(JSON.stringify(records?.toolSpec?.toolsMeta || {}));
+      const properties = values?.toolParams;
       const _toolitem = {
         name: values?.name,
         description: values?.description,
@@ -339,6 +338,15 @@ const CreateTools = React.forwardRef((props, ref) => {
     field.deleteArrayValue('templates', index);
   };
 
+  const validateTemplateJsonFormat = (rule, value, callback) => {
+    try {
+      JSON.parse(value);
+      callback();
+    } catch (e) {
+      callback(locale.templateShouldBeJson);
+    }
+  };
+
   // 渲染表格
   const renderTableCell = params => {
     const {
@@ -350,6 +358,12 @@ const CreateTools = React.forwardRef((props, ref) => {
 
     const rules = [{ required: true, message: rulesMessage }];
     if (component === 'textArea') {
+      if (key.startsWith('templates')) {
+        rules.push({
+          validator: validateTemplateJsonFormat,
+        });
+      }
+
       return (
         <Form.Item style={{ margin: 0 }}>
           <Input.TextArea
@@ -559,9 +573,9 @@ const CreateTools = React.forwardRef((props, ref) => {
                             <a>{node.label}</a>&nbsp;&nbsp;({args[node.key].type})
                           </Col>
                           <Col style={{ textOverflow: 'ellipsis' }}>
-                            {args[node.key].description.length <= 25
+                            {args[node.key].description?.length <= 25
                               ? args[node.key].description
-                              : args[node.key].description.substring(0, 20) + '...'}
+                              : args[node.key].description?.substring(0, 20) + '...'}
                           </Col>
                         </Row>
                       );

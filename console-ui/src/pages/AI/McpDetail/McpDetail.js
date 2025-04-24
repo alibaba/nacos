@@ -81,6 +81,7 @@ class McpDetail extends React.Component {
   };
 
   render() {
+    const localServerConfig = JSON.stringify(this.state.serverConfig?.localServerConfig, null, 2);
     const { locale = {} } = this.props;
     const credentials = this.state.serverConfig?.credentials;
     const credentialsTables = [];
@@ -173,6 +174,13 @@ class McpDetail extends React.Component {
                 ],
               })}
           </div>
+          {this.state.serverConfig?.protocol === 'stdio' && (
+            <>
+              <Divider></Divider>
+              <h2>Local Server Config</h2>
+              <pre>{localServerConfig}</pre>
+            </>
+          )}
           <Divider></Divider>
           <h2>Credentials</h2>
           <Table dataSource={credentialsTables}>

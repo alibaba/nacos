@@ -80,7 +80,7 @@ class NewCredential extends React.Component {
       showGroupWarning: false,
       editorClass: 'editor-normal',
     };
-    this.codeValue = '';
+    this.codeValue = '{"api-key": "keyxxxxx"}';
     this.mode = 'json';
     this.ips = '';
   }
@@ -425,8 +425,7 @@ class NewCredential extends React.Component {
 
   validateChart(rule, value, callback) {
     const { locale = {} } = this.props;
-    const chartReg = /[a-zA-Z0-9]+/g;
-
+    const chartReg = /^[a-zA-Z0-9_]+$/;
     if (!chartReg.test(value)) {
       callback(locale.doNotEnter);
     } else {
