@@ -697,6 +697,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                   onClick={addNewToolMetadata}
                   locale={locale}
                   disabled={isPreview}
+                  required={false}
                 />
                 <Row>
                   <Col span={20} offset={4}>
