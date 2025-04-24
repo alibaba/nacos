@@ -146,7 +146,7 @@ const CreateTools = React.forwardRef((props, ref) => {
     field.setValues({
       name,
       description,
-      toolParams: _toolParams,
+      toolParams: inputSchema?.properties ? inputSchema?.properties : {},
       invokeContext: _invokeContext,
       templates: _templates,
       enabled: toolsMeta?.enabled,
@@ -689,51 +689,6 @@ const CreateTools = React.forwardRef((props, ref) => {
             )}
             {showTemplates ? (
               <>
-                <h3>{locale.toolMetadata}</h3>
-                {/* Tool 元数据 */}
-
-                <GetTitle
-                  label={locale.invokeContext}
-                  onClick={addNewToolMetadata}
-                  locale={locale}
-                  disabled={isPreview}
-                  required={false}
-                />
-                <Row>
-                  <Col span={20} offset={4}>
-                    <Table
-                      size="small"
-                      style={{ marginTop: '10px' }}
-                      dataSource={field.getValue('invokeContext')}
-                    >
-                      <Table.Column
-                        title="Key"
-                        dataIndex="key"
-                        width={200}
-                        cell={(value, index, record) =>
-                          renderTableCell({ key: `invokeContext.${index}.key` })
-                        }
-                      />
-                      <Table.Column
-                        title="Value"
-                        dataIndex="value"
-                        cell={(value, index, record) =>
-                          renderTableCell({
-                            key: `invokeContext.${index}.value`,
-                            component: 'textArea',
-                          })
-                        }
-                      />
-                      {/* delete */}
-                      {tableOperation({
-                        onClick: deleteToolMetadata,
-                        locale,
-                        disabled: isPreview,
-                      })}
-                    </Table>
-                  </Col>
-                </Row>
-
                 <GetTitle
                   label={locale.invokeTemplates}
                   onClick={addNewTemplates}
