@@ -54,6 +54,7 @@ const ShowTools = props => {
         onChange={props?.onChange}
       />
 
+      {console.log('serverConfig?.toolSpec?.tools', serverConfig?.toolSpec)}
       <Table style={{ marginTop: '20px' }} dataSource={serverConfig?.toolSpec?.tools || []}>
         <Table.Column title={locale.toolName} dataIndex={'name'} />
         <Table.Column title={locale.toolDescription} dataIndex={'description'} />
