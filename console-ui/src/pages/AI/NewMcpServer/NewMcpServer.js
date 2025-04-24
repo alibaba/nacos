@@ -333,14 +333,12 @@ class NewMcpServer extends React.Component {
     const { locale = {} } = this.props;
     // 更新 tools 之后, 立即调用接口全量覆盖。
     const validate = await this.field.validate();
-    console.log('validate', validate);
     if (!validate) {
       // 请先完善基础配置
       cb && cb();
       return Message.warning(locale.pleaseComplete);
     }
 
-    console.log('执行下一步执行下一步执行下一步执行下一步执行下一步');
     await new Promise(resolve => {
       this.setState(
         {

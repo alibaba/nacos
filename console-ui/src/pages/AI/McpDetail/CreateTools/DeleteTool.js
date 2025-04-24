@@ -7,7 +7,6 @@ const DeleteTool = props => {
   const [visible, setVisible] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const handleDelete = async _toolSpec => {
-    console.log('_toolSpec', _toolSpec);
     props?.onChange && props.onChange(_toolSpec, closeDialog);
     // setLoading(true);
     // const result = await request({
