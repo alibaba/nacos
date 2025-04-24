@@ -163,7 +163,7 @@ class NewMcpServer extends React.Component {
     return new Promise((resolve, reject) => {
       this.field.validate((errors, values) => {
         if (errors) {
-          return;
+          return resolve({ errors });
         }
         const params = {
           mcpName: values?.serverName,
@@ -332,15 +332,13 @@ class NewMcpServer extends React.Component {
   toolsChange = async (_toolSpec = {}, cb = () => {}) => {
     const { locale = {} } = this.props;
     // 更新 tools 之后, 立即调用接口全量覆盖。
-    const validate = await this.field.validate();
-    console.log('validate', validate);
-    if (!validate) {
+    const validate = await this.handleData();
+    if (!validate || validate?.errors) {
       // 请先完善基础配置
       cb && cb();
       return Message.warning(locale.pleaseComplete);
     }
 
-    console.log('执行下一步执行下一步执行下一步执行下一步执行下一步');
     await new Promise(resolve => {
       this.setState(
         {
@@ -409,7 +407,7 @@ class NewMcpServer extends React.Component {
     const isEdit = getParams('mcptype') && getParams('mcptype') === 'edit';
     const formItemLayout = { labelCol: { span: 3 }, wrapperCol: { span: 20 } };
     const textAreaProps = { 'aria-label': 'auto height', autoHeight: { minRows: 12, maxRows: 20 } };
-    const descAreaProps = { 'aria-label': 'auto height', autoHeight: { minRows: 5, maxRows: 20 } };
+    const descAreaProps = { 'aria-label': 'auto height', autoHeight: { minRows: 5, maxRows: 10 } };
 
     return (
       <Loading
