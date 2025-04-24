@@ -1,4 +1,4 @@
-import React, { useEffect, useImperativeHandle, useState } from 'react';
+import React, { Children, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import {
   Dialog,
   Field,
@@ -9,7 +9,9 @@ import {
   Button,
   Message,
   Select,
+  Tree,
   Switch,
+  Tag,
 } from '@alifd/next';
 import { formitemLayout, GetTitle, tableOperation } from './components';
 import { request } from '../../../../globalLib';
@@ -27,16 +29,22 @@ const CreateTools = React.forwardRef((props, ref) => {
   });
   const { init } = field;
   const [visible, setVisible] = useState(false);
-  const [idx, setIdx] = useState(0);
   const [invokeIdx, setInvokeIdx] = useState(0);
   const [templateIdx, setTemplateIdx] = useState(0);
   const [type, setType] = useState('');
   const [okLoading, setOkLoading] = useState(false);
+  const [rawData, setRawData] = useState([]);
+  const [data, setData] = useState([]);
+  const [args, setArgs] = useState({});
+  const [currentNode, setCurrentNode] = useState({
+    description: '',
+    type: 'object',
+    label: locale.ArgumentsList,
+    key: 'args',
+    children: [],
+  });
   useEffect(() => {
     if (visible) {
-      if (field.getValue('toolParams') && !field.getValue('toolParams')?.length) {
-        addNewToolParam();
-      }
       if (field.getValue('invokeContext') && !field.getValue('invokeContext')?.length) {
         addNewToolMetadata();
       } else {
@@ -50,18 +58,70 @@ const CreateTools = React.forwardRef((props, ref) => {
     }
   }, [visible]);
 
+  const convertPropertiesToTreeData = (properties, prefix) => {
+    const keys = Object.keys(properties);
+    let result = [];
+    for (let index = 0; index < keys.length; index++) {
+      const element = keys[index];
+      const arg = properties[element];
+      let children = [];
+      if (arg.type === 'object') {
+        children = convertPropertiesToTreeData(arg.properties, prefix + '@@' + element);
+      } else if (arg.type === 'array') {
+        children = convertPropertiesToTreeData(
+          {
+            items: arg.items,
+          },
+          prefix + '@@' + element
+        );
+      }
+      const node = {
+        label: element,
+        type: arg.type,
+        description: arg.description,
+        children: children,
+        key: prefix + '@@' + element,
+      };
+      result.push(node);
+      args[prefix + '@@' + element] = node;
+    }
+    return result;
+  };
+
   const openVisible = ({ record, type, toolsMeta }) => {
     const { name, description, inputSchema } = record;
     setType(type);
 
     const _toolParams = inputSchema?.properties
-      ? Object.keys(inputSchema?.properties).map(key => ({
-          name: key,
-          type: inputSchema?.properties[key].type,
-          description: inputSchema?.properties[key].description,
-        }))
+      ? convertPropertiesToTreeData(inputSchema?.properties, 'args')
       : [];
-    setIdx(_toolParams.length + 1);
+
+    let rootNode = {
+      type: 'object',
+      label: locale.ArgumentsList,
+      key: 'args',
+      description: '',
+      children: [],
+    };
+
+    args['args'] = rootNode;
+    rootNode.children = _toolParams;
+    if (rootNode.children.length === 0) {
+      const defaultNewArg = {
+        type: 'string',
+        label: 'NewArg1',
+        key: 'args@@NewArg1',
+        description: '',
+        children: [],
+      };
+      rootNode.children = [defaultNewArg];
+      args['args@@NewArg1'] = defaultNewArg;
+    }
+
+    rawData.push(rootNode);
+    setRawData(rawData);
+    setData(JSON.parse(JSON.stringify(rawData)));
+    setArgs(args);
 
     const _invokeContext = toolsMeta?.invokeContext
       ? Object.keys(toolsMeta?.invokeContext).map(key => ({
@@ -115,6 +175,16 @@ const CreateTools = React.forwardRef((props, ref) => {
   const closeDialog = () => {
     setVisible(false);
     setType('');
+    setCurrentNode({
+      description: '',
+      type: 'string',
+      label: '',
+      key: '',
+      children: [],
+    });
+    setData([]);
+    setRawData([]);
+    setArgs([]);
   };
 
   const createItems = () => {
@@ -124,16 +194,7 @@ const CreateTools = React.forwardRef((props, ref) => {
         return;
       }
 
-      const properties = {};
-      if (values?.toolParams?.length) {
-        values?.toolParams?.forEach(
-          item =>
-            (properties[item.name] = {
-              type: item.type,
-              description: item.description,
-            })
-        );
-      }
+      const properties = values?.toolParams;
 
       const invokeContext = {};
       if (values?.invokeContext?.length) {
@@ -251,20 +312,6 @@ const CreateTools = React.forwardRef((props, ref) => {
     }
   };
 
-  // 添加入参描述
-  const addNewToolParam = () => {
-    setIdx(idx + 1);
-    field.addArrayValue('toolParams', idx, {
-      id: idx + 1,
-      name: '',
-      type: 'string',
-      description: '',
-    });
-  };
-  // 删除入参描述
-  const deleteToolParam = index => {
-    field.deleteArrayValue('toolParams', index);
-  };
   // 添加Tool 元数据
   const addNewToolMetadata = () => {
     setInvokeIdx(invokeIdx + 1);
@@ -302,7 +349,7 @@ const CreateTools = React.forwardRef((props, ref) => {
     } = params;
 
     const rules = [{ required: true, message: rulesMessage }];
-    if (component == 'textArea') {
+    if (component === 'textArea') {
       return (
         <Form.Item style={{ margin: 0 }}>
           <Input.TextArea
@@ -315,7 +362,7 @@ const CreateTools = React.forwardRef((props, ref) => {
       );
     }
 
-    if (component == 'select') {
+    if (component === 'select') {
       return (
         <Form.Item style={{ margin: 0 }}>
           <Select
@@ -341,7 +388,63 @@ const CreateTools = React.forwardRef((props, ref) => {
     );
   };
 
-  const isPreview = type == 'preview' ? true : false;
+  const rawDataToFiledValue = rawData => {
+    const result = {};
+    if (!rawData) {
+      return result;
+    }
+    for (let index = 0; index < rawData.length; index++) {
+      const element = rawData[index];
+      let arg = {
+        type: element.type,
+        description: element.description,
+      };
+      if (element.type === 'object' && element.children.length > 0) {
+        arg.properties = rawDataToFiledValue(element.children);
+      } else if (element.type === 'array') {
+        arg.items = rawDataToFiledValue(element.children)['items'];
+      }
+      result[element.label] = arg;
+    }
+    return result;
+  };
+
+  const AddPropertiesToArgs = () => {
+    const parentNode = args[currentNode.key];
+    if (!parentNode.children) {
+      parentNode.children = [];
+    }
+    const childLen = parentNode.children.length + 1;
+    const newArgsName = 'newArg' + childLen;
+    const newNode = {
+      label: newArgsName,
+      key: currentNode.key + '@@' + newArgsName,
+      type: 'string',
+      description: '',
+      children: [],
+    };
+
+    args[currentNode.key + '@@' + newArgsName] = newNode;
+    if (!parentNode.children) {
+      parentNode.children = [];
+    }
+    parentNode.children.push(newNode);
+    setRawData(rawData);
+    setArgs(args);
+    setData(JSON.parse(JSON.stringify(rawData)));
+    saveParamToFiled();
+  };
+
+  const changeNodeInfo = () => {
+    setData(JSON.parse(JSON.stringify(rawData)));
+    saveParamToFiled();
+  };
+
+  const saveParamToFiled = () => {
+    field.setValue('toolParams', rawDataToFiledValue(rawData[0].children));
+  };
+
+  const isPreview = type === 'preview';
   return (
     <div>
       {visible ? (
@@ -411,93 +514,205 @@ const CreateTools = React.forwardRef((props, ref) => {
             </Form.Item>
 
             {/* 入参描述 */}
-            <GetTitle
+            <Form.Item
               label={locale.toolInputSchema}
-              onClick={addNewToolParam}
-              locale={locale}
-              disabled={isPreview}
-            />
-            <Row>
-              <Col span={20} offset={4}>
-                <Table
-                  size="small"
-                  style={{ marginTop: '10px' }}
-                  dataSource={field.getValue('toolParams')}
-                >
-                  <Table.Column
-                    title={locale.toolParamName}
-                    dataIndex="name"
-                    width={200}
-                    cell={(value, index, record) =>
-                      renderTableCell({ key: `toolParams.${index}.name` })
-                    }
+              required
+              style={{ margin: '16px 0 0' }}
+            ></Form.Item>
+            <Form.Item label={locale.ArgumentTree} style={{ margin: '16px 0 0' }}>
+              {!isPreview && (
+                <Row>
+                  <Col style={{ marginTop: 5 }}>
+                    <Button
+                      type="primary"
+                      size={'small'}
+                      onClick={AddPropertiesToArgs}
+                      disabled={currentNode.type !== 'object'}
+                    >
+                      {currentNode.key === 'args' ? locale.AddNewArg : locale.AddNewProperties}
+                    </Button>
+                    &nbsp;&nbsp;
+                    {currentNode.type !== 'object' ? locale.OnlyObjectSupportAddProperties : ''}
+                  </Col>
+                </Row>
+              )}
+              <Row style={{ marginTop: 5 }}>
+                <Col>
+                  <Tree
+                    defaultExpandAll
+                    autoExpandParent
+                    showLine
+                    isLabelBlock
+                    dataSource={data}
+                    defaultSelectedKeys={['args']}
+                    aria-label={'test'}
+                    labelRender={node => {
+                      return (
+                        <Row style={{ fontSize: 'medium' }}>
+                          <Col>
+                            <a>{node.label}</a>&nbsp;&nbsp;({args[node.key].type})
+                          </Col>
+                          <Col style={{ textOverflow: 'ellipsis' }}>
+                            {args[node.key].description.length <= 25
+                              ? args[node.key].description
+                              : args[node.key].description.substring(0, 20) + '...'}
+                          </Col>
+                        </Row>
+                      );
+                    }}
+                    onSelect={data => {
+                      if (data.length === 1) {
+                        const currentNode = args[data];
+                        setCurrentNode(currentNode);
+                      } else if (data.length === 0) {
+                        setCurrentNode({
+                          key: '',
+                          label: '',
+                          type: 'string',
+                          description: '',
+                        });
+                      }
+                    }}
                   />
-                  <Table.Column
-                    title={locale.toolParamType}
-                    dataIndex="type"
-                    width={200}
-                    cell={(value, index, record) =>
-                      renderTableCell({ key: `toolParams.${index}.type`, component: 'select' })
-                    }
-                  />
-                  <Table.Column
-                    title={locale.toolParamDescription}
-                    dataIndex="description"
-                    cell={(value, index, record) =>
-                      renderTableCell({
-                        key: `toolParams.${index}.description`,
-                        component: 'textArea',
-                      })
-                    }
-                  />
-                  {/* delete */}
-                  {tableOperation({ onClick: deleteToolParam, locale, disabled: isPreview })}
-                </Table>
-              </Col>
-            </Row>
-
-            <h3>{locale.toolMetadata}</h3>
-            {/* Tool 元数据 */}
-            <GetTitle
-              label={locale.invokeContext}
-              onClick={addNewToolMetadata}
-              locale={locale}
-              disabled={isPreview}
-            />
-            <Row>
-              <Col span={20} offset={4}>
-                <Table
-                  size="small"
-                  style={{ marginTop: '10px' }}
-                  dataSource={field.getValue('invokeContext')}
-                >
-                  <Table.Column
-                    title="Key"
-                    dataIndex="key"
-                    width={200}
-                    cell={(value, index, record) =>
-                      renderTableCell({ key: `invokeContext.${index}.key` })
-                    }
-                  />
-                  <Table.Column
-                    title="Value"
-                    dataIndex="value"
-                    cell={(value, index, record) =>
-                      renderTableCell({
-                        key: `invokeContext.${index}.value`,
-                        component: 'textArea',
-                      })
-                    }
-                  />
-                  {/* delete */}
-                  {tableOperation({ onClick: deleteToolMetadata, locale, disabled: isPreview })}
-                </Table>
-              </Col>
-            </Row>
-
-            {/* 调用模板 */}
+                </Col>
+              </Row>
+            </Form.Item>
+            {currentNode.key !== '' && currentNode.key !== 'args' && (
+              <Form.Item label={locale.ArgumentInfo}>
+                <Row>
+                  <Col>
+                    <Form.Item
+                      name="args.name"
+                      label={locale.toolParamName}
+                      required
+                      requiredTrigger="onBlur"
+                      asterisk={false}
+                    >
+                      <Input
+                        disabled={currentNode.key === 'args'}
+                        value={currentNode.label}
+                        onChange={data => {
+                          if (currentNode.key !== '') {
+                            currentNode.label = data;
+                            changeNodeInfo(currentNode);
+                          }
+                        }}
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col offset={1}>
+                    <Form.Item name="args.type" label={locale.toolParamType}>
+                      <Select
+                        disabled={currentNode.key === 'args'}
+                        value={currentNode.type}
+                        dataSource={[
+                          { label: '字符串类型 string', value: 'string' },
+                          { label: '数字类型 number', value: 'number' },
+                          { label: '整数类型 integer', value: 'integer' },
+                          { label: '布尔类型 boolean', value: 'boolean' },
+                          { label: '数组类型 array', value: 'array' },
+                          { label: '对象类型 object', value: 'object' },
+                          // { label:'对象类型，使用 properties 字段定义对象属性的模式', value:'object' },
+                        ]}
+                        style={{ width: '60%' }}
+                        onChange={data => {
+                          if (currentNode.key !== '') {
+                            if (!(data === 'array' || data === 'object')) {
+                              currentNode.children = [];
+                            }
+                            if (data === 'array') {
+                              const itemNode = {
+                                label: 'items',
+                                type: 'string',
+                                description: '',
+                                key: currentNode.key + '@@items',
+                              };
+                              currentNode.type = data;
+                              currentNode.children = [itemNode];
+                              args[currentNode.key + '@@items'] = itemNode;
+                              changeNodeInfo(currentNode);
+                            } else if (data === 'object') {
+                              currentNode.children = [];
+                              currentNode.type = data;
+                              changeNodeInfo(currentNode);
+                            } else {
+                              currentNode.type = data;
+                              changeNodeInfo(currentNode);
+                            }
+                          }
+                        }}
+                      ></Select>
+                    </Form.Item>
+                  </Col>
+                </Row>
+                <Row>
+                  <Col>
+                    <Form.Item
+                      label={locale.toolParamDescription}
+                      name="args.description"
+                      asterisk={false}
+                    >
+                      <Input.TextArea
+                        disabled={currentNode.key === 'args'}
+                        value={currentNode.description}
+                        onChange={data => {
+                          if (currentNode.key !== '') {
+                            currentNode.description = data;
+                            changeNodeInfo(currentNode);
+                          }
+                        }}
+                      />
+                    </Form.Item>
+                  </Col>
+                </Row>
+              </Form.Item>
+            )}
             {showTemplates ? (
               <>
+                <h3>{locale.toolMetadata}</h3>
+                {/* Tool 元数据 */}
+
+                <GetTitle
+                  label={locale.invokeContext}
+                  onClick={addNewToolMetadata}
+                  locale={locale}
+                  disabled={isPreview}
+                />
+                <Row>
+                  <Col span={20} offset={4}>
+                    <Table
+                      size="small"
+                      style={{ marginTop: '10px' }}
+                      dataSource={field.getValue('invokeContext')}
+                    >
+                      <Table.Column
+                        title="Key"
+                        dataIndex="key"
+                        width={200}
+                        cell={(value, index, record) =>
+                          renderTableCell({ key: `invokeContext.${index}.key` })
+                        }
+                      />
+                      <Table.Column
+                        title="Value"
+                        dataIndex="value"
+                        cell={(value, index, record) =>
+                          renderTableCell({
+                            key: `invokeContext.${index}.value`,
+                            component: 'textArea',
+                          })
+                        }
+                      />
+                      {/* delete */}
+                      {tableOperation({
+                        onClick: deleteToolMetadata,
+                        locale,
+                        disabled: isPreview,
+                      })}
+                    </Table>
+                  </Col>
+                </Row>
+
                 <GetTitle
                   label={locale.invokeTemplates}
                   onClick={addNewTemplates}
@@ -530,7 +745,11 @@ const CreateTools = React.forwardRef((props, ref) => {
                         }
                       />
                       {/* delete */}
-                      {tableOperation({ onClick: deleteTemplates, locale, disabled: isPreview })}
+                      {tableOperation({
+                        onClick: deleteTemplates,
+                        locale,
+                        disabled: isPreview,
+                      })}
                     </Table>
                   </Col>
                 </Row>

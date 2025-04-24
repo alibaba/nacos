@@ -1,8 +1,9 @@
 import React from 'react';
-import { Divider, ConfigProvider, Loading, Grid } from '@alifd/next';
+import { Divider, ConfigProvider, Loading, Grid, Table } from '@alifd/next';
 import { getParams, request } from '../../../globalLib';
 import PropTypes from 'prop-types';
 import ShowTools from './ShowTools';
+import { generateUrl } from '../../../utils/nacosutil';
 const { Row, Col } = Grid;
 
 @ConfigProvider.config
@@ -59,7 +60,7 @@ class McpDetail extends React.Component {
       <Row wrap style={{ textAlign: 'left', marginBottom: '8px' }}>
         {list.map((item, index) => {
           return (
-            <Col key={JSON.stringify(item)} span={12} style={{ display: 'flex' }}>
+            <Col key={item.label} span={12} style={{ display: 'flex' }}>
               <p style={{ minWidth: 80 }}>{item.label}</p>
               <p>{item.value}</p>
             </Col>
@@ -69,32 +70,80 @@ class McpDetail extends React.Component {
     );
   };
 
+  goToServiceDetail = serviceRef => {
+    this.props.history.push(
+      generateUrl('/serviceDetail', {
+        namespaceId: serviceRef.namespaceId,
+        groupName: serviceRef.groupName,
+        serviceName: serviceRef.serviceName,
+      })
+    );
+  };
+
   render() {
     const { locale = {} } = this.props;
-
+    const credentials = this.state.serverConfig?.credentials;
+    const credentialsTables = [];
+    if (credentials) {
+      for (const credentialsKey in credentials) {
+        credentialsTables.push({
+          id: credentialsKey,
+          name: credentialsKey,
+        });
+      }
+    }
     return (
       <div>
         <Loading
           shape={'flower'}
           tip={'Loading...'}
-          style={{ width: '100%', position: 'relative' }}
+          style={{
+            width: '100%',
+            position: 'relative',
+          }}
           visible={this.state.loading}
           color={'#333'}
         >
-          <h1 style={{ position: 'relative', width: '60%' }}>{locale.mcpServerDetail}</h1>
-          <h2 style={{ color: '#333', fontWeight: 'bold' }}>{locale.basicInformation}</h2>
+          <h1
+            style={{
+              position: 'relative',
+              width: '60%',
+            }}
+          >
+            {locale.mcpServerDetail}
+          </h1>
+          <h2
+            style={{
+              color: '#333',
+              fontWeight: 'bold',
+            }}
+          >
+            {locale.basicInformation}
+          </h2>
           <div style={{ marginTop: '16px' }}>
             {this.getFormItem({
               list: [
-                { label: locale.namespace, value: getParams('namespace') || '' }, // 命名空间
-                { label: locale.serverName, value: this.state.serverConfig.name }, // 名称
+                {
+                  label: locale.namespace,
+                  value: getParams('namespace') || '',
+                }, // 命名空间
+                {
+                  label: locale.serverName,
+                  value: this.state.serverConfig.name,
+                }, // 名称
               ],
             })}
 
             {this.getFormItem({
               list: [
-                { label: locale.serverType, value: this.state.serverConfig.protocol }, // 类型
-                { label: locale.serverDescription, value: this.state.serverConfig.description }, // 描述
+                {
+                  label: locale.serverType,
+                  value: this.state.serverConfig.protocol,
+                }, // 类型
+                {
+                  label: locale.serverDescription,
+                  value: this.state.serverConfig.description,
+                }, // 描述
               ],
             })}
 
@@ -105,11 +154,32 @@ class McpDetail extends React.Component {
                     label: locale.exportPath,
                     value: this.state.serverConfig?.remoteServerConfig?.exportPath,
                   }, // 暴露路径
+                  {
+                    label: '服务引用',
+                    value: (
+                      <a
+                        onClick={() => {
+                          this.goToServiceDetail(
+                            this.state.serverConfig?.remoteServerConfig?.serviceRef
+                          );
+                        }}
+                      >
+                        {this.state.serverConfig?.remoteServerConfig?.serviceRef.namespaceId}/
+                        {this.state.serverConfig?.remoteServerConfig?.serviceRef.groupName}/
+                        {this.state.serverConfig?.remoteServerConfig?.serviceRef.serviceName}
+                      </a>
+                    ),
+                  },
                 ],
               })}
           </div>
           <Divider></Divider>
+          <h2>Credentials</h2>
+          <Table dataSource={credentialsTables}>
+            <Table.Column title="Credential" dataIndex="id" />
+          </Table>
 
+          <Divider></Divider>
           <h2>Tools</h2>
           <ShowTools
             locale={locale}

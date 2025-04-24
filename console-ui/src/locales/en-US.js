@@ -69,6 +69,7 @@ const I18N_CONF = {
     settingCenter: 'Setting Center',
     AiManagementVirtual: 'AI',
     mcpServerManagement: 'MCP Managenment',
+    credentialManagement: 'Credential Managenment',
   },
   Password: {
     passwordNotConsistent: 'The passwords are not consistent',
