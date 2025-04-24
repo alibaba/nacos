@@ -22,7 +22,6 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.oidc.OIDCClient;
-import com.alibaba.nacos.plugin.auth.impl.oidc.OIDCConfigs;
 import com.alibaba.nacos.plugin.auth.impl.oidc.OIDCProvider;
 import com.alibaba.nacos.plugin.auth.impl.oidc.OIDCService;
 import com.alibaba.nacos.plugin.auth.impl.oidc.OIDCState;

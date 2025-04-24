@@ -60,7 +60,6 @@ class OIDCServiceTest {
     @Test
     void testGetUserWithUserExist() throws AccessException {
         String username = "nacos";
-        String token = "test-token";
         User user = new User();
         user.setUsername(username);
         
@@ -70,6 +69,7 @@ class OIDCServiceTest {
         when(userDetailsService.loadUserByUsername(AuthConstants.OIDC_PREFIX + username)).thenThrow(
                 new UsernameNotFoundException("User not found"));
         doNothing().when(userDetailsService).createUser(anyString(), anyString());
+        String token = "test-token";
         when(jwtTokenManager.createToken(anyString())).thenReturn(token);
         
         NacosUser retUser = oidcService.getUser(username);
@@ -87,7 +87,6 @@ class OIDCServiceTest {
     @Test
     void testGetUserWithLDAPExist() throws AccessException {
         String username = "nacos";
-        String token = "test-token";
         User user = new User();
         user.setUsername(AuthConstants.LDAP_PREFIX + username);
         
@@ -98,6 +97,7 @@ class OIDCServiceTest {
         when(userDetailsService.loadUserByUsername(AuthConstants.OIDC_PREFIX + username)).thenThrow(
                 new UsernameNotFoundException("User not found"));
         doNothing().when(userDetailsService).createUser(anyString(), anyString());
+        String token = "test-token";
         when(jwtTokenManager.createToken(anyString())).thenReturn(token);
         
         NacosUser retUser = oidcService.getUser(username);
@@ -114,7 +114,6 @@ class OIDCServiceTest {
     @Test
     void testGetUserWithOIDCExist() throws AccessException {
         String username = "nacos";
-        String token = "test-token";
         User user = new User();
         user.setUsername(AuthConstants.OIDC_PREFIX + username);
         
@@ -125,6 +124,7 @@ class OIDCServiceTest {
         when(userDetailsService.loadUserByUsername(AuthConstants.OIDC_PREFIX + username)).thenReturn(
                 new NacosUserDetails(user));
         doNothing().when(userDetailsService).createUser(anyString(), anyString());
+        String token = "test-token";
         when(jwtTokenManager.createToken(anyString())).thenReturn(token);
         
         NacosUser retUser = oidcService.getUser(username);
@@ -141,7 +141,6 @@ class OIDCServiceTest {
     void testGetUserWithNotUserFallback() throws AccessException {
         String username = "oidcUser";
         String oidcUsername = AuthConstants.OIDC_PREFIX + username;
-        String token = "oidc-token";
         
         when(userDetailsService.loadUserByUsername(username)).thenThrow(
                 new UsernameNotFoundException("User not found"));
@@ -150,6 +149,7 @@ class OIDCServiceTest {
         when(userDetailsService.loadUserByUsername(oidcUsername)).thenThrow(
                 new UsernameNotFoundException("OIDC user not found"));
         doNothing().when(userDetailsService).createUser(eq(oidcUsername), anyString());
+        String token = "oidc-token";
         when(jwtTokenManager.createToken(oidcUsername)).thenReturn(token);
         
         NacosUser user = oidcService.getUser(username);
