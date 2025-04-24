@@ -16,9 +16,6 @@
 
 package com.alibaba.nacos.api.ai.model.mcp;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * AI MCP server remote service config.
  *
@@ -29,8 +26,6 @@ public class McpServerRemoteServiceConfig {
     private McpServiceRef serviceRef;
     
     private String exportPath;
-    
-    private Map<String, McpServerRemoteServiceCredential> credentials = new HashMap<>(1);
     
     public McpServiceRef getServiceRef() {
         return serviceRef;
@@ -46,13 +41,5 @@ public class McpServerRemoteServiceConfig {
     
     public void setExportPath(String exportPath) {
         this.exportPath = exportPath;
-    }
-    
-    public Map<String, McpServerRemoteServiceCredential> getCredentials() {
-        return credentials;
-    }
-    
-    public void setCredentials(Map<String, McpServerRemoteServiceCredential> credentials) {
-        this.credentials = credentials;
     }
 }
