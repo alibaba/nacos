@@ -144,6 +144,34 @@ public class OIDCClient {
     }
     
     /**
+     * Verify the OIDC client configuration has been configured correctly.
+     * @return true if the provider is not configured
+     */
+    public boolean checkIfProviderIsNotExist() {
+        String provider = OIDCConfigs.getProvider();
+        if (provider == null || provider.trim().isEmpty()) {
+            LOGGER.warn("OIDC provider is not configured");
+            return true;
+        }
+        return false;
+    }
+    
+    /**
+     * Return the current configure OIDC provider information.
+     * @return OIDCProvider
+     */
+    public OIDCProvider getProviderInfo() {
+        if (checkIfProviderIsNotExist()) {
+            return null;
+        }
+        String providerKey = OIDCConfigs.getProvider();
+        OIDCProvider provider = new OIDCProvider();
+        provider.setName(OIDCConfigs.getNameByKey(providerKey));
+        provider.setKey(providerKey);
+        return provider;
+    }
+    
+    /**
      * Get OIDC Token from Authorization Server by exchange the authorization code.
      *
      * @param authorizationCode Authorization Code
@@ -252,5 +280,4 @@ public class OIDCClient {
     private boolean hasEnoughInfo(UserInfo userInfo) {
         return userInfo.getName() != null && userInfo.getPreferredUsername() != null;
     }
-    
 }

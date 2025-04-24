@@ -21,7 +21,6 @@ import com.alibaba.nacos.common.codec.Base64;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.oidc.OIDCClient;
-import com.alibaba.nacos.plugin.auth.impl.oidc.OIDCConfigs;
 import com.alibaba.nacos.plugin.auth.impl.oidc.OIDCProvider;
 import com.alibaba.nacos.plugin.auth.impl.oidc.OIDCService;
 import com.alibaba.nacos.plugin.auth.impl.oidc.OIDCState;
@@ -37,7 +36,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -53,7 +51,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 @SuppressWarnings("checkstyle:abbreviationaswordinname")
@@ -89,15 +86,17 @@ class OIDCControllerTest {
     
     @Test
     void testGetProvider() {
-        try (MockedStatic<OIDCConfigs> mockedConfigurations = mockStatic(OIDCConfigs.class)) {
-            mockedConfigurations.when(OIDCConfigs::getProvider).thenReturn("test-provider");
-            mockedConfigurations.when(() -> OIDCConfigs.getNameByKey("test-provider")).thenReturn("Test Provider");
-            
-            OIDCProvider provider = oidcController.getProvider();
-            
-            assertEquals("test-provider", provider.getKey());
-            assertEquals("Test Provider", provider.getName());
-        }
+        OIDCProvider mockProvider = new OIDCProvider();
+        mockProvider.setKey("test-provider");
+        mockProvider.setName("Test Provider");
+        
+        when(oidcClient.checkIfProviderIsNotExist()).thenReturn(false);
+        when(oidcClient.getProviderInfo()).thenReturn(mockProvider);
+        
+        OIDCProvider provider = oidcController.getProvider();
+        
+        assertEquals("test-provider", provider.getKey());
+        assertEquals("Test Provider", provider.getName());
     }
     
     @Test
@@ -112,6 +111,7 @@ class OIDCControllerTest {
         when(authRequest.getNonce()).thenReturn(new Nonce());
         when(authRequest.toURI()).thenReturn(java.net.URI.create("http://auth-server.com/auth"));
         when(oidcClient.createAuthenticationRequest(callbackUri, origin)).thenReturn(authRequest);
+        when(oidcClient.checkIfProviderIsNotExist()).thenReturn(false);
         
         oidcController.startAuthentication(origin, response, session);
         
@@ -140,6 +140,7 @@ class OIDCControllerTest {
         
         when(oidcClient.getUserInfo(any(), anyString(), anyString())).thenReturn(userInfo);
         when(oidcService.getUser("nacos")).thenReturn(nacosUser);
+        when(oidcClient.checkIfProviderIsNotExist()).thenReturn(false);
         
         String code = "authCode";
         oidcController.callback(code, stateValue, response, session);
@@ -159,6 +160,8 @@ class OIDCControllerTest {
     
     @Test
     void testCallbackWithInvalidState() throws IOException {
+        when(oidcClient.checkIfProviderIsNotExist()).thenReturn(false);
+        
         String origin = "http://localhost:8848/nacos/#/login";
         OIDCState state = new OIDCState();
         state.setOrigin(origin);

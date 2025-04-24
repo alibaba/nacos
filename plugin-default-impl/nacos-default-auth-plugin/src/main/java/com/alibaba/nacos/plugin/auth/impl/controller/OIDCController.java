@@ -94,15 +94,10 @@ public class OIDCController {
      */
     @GetMapping("/provider")
     public OIDCProvider getProvider() {
-        if (checkIfProviderIsNotExist()) {
+        if (oidcClient.checkIfProviderIsNotExist()) {
             return null;
         }
-        String providerKey = OIDCConfigs.getProvider();
-        OIDCProvider provider = new OIDCProvider();
-        provider.setName(OIDCConfigs.getNameByKey(providerKey));
-        provider.setKey(providerKey);
-        return provider;
-        
+        return oidcClient.getProviderInfo();
     }
     
     /**
@@ -115,7 +110,7 @@ public class OIDCController {
     @GetMapping("/start")
     public void startAuthentication(@RequestParam("origin") String origin, HttpServletResponse response,
             HttpSession session) throws IOException {
-        if (checkIfProviderIsNotExist()) {
+        if (oidcClient.checkIfProviderIsNotExist()) {
             return;
         }
         
@@ -142,7 +137,7 @@ public class OIDCController {
     @GetMapping("/callback")
     public void callback(@RequestParam("code") String code, @RequestParam("state") String returnedState,
             HttpServletResponse response, HttpSession session) throws IOException {
-        if (checkIfProviderIsNotExist()) {
+        if (oidcClient.checkIfProviderIsNotExist()) {
             return;
         }
         // Check if the state is valid
@@ -198,11 +193,6 @@ public class OIDCController {
                 new String(resultCodedBytes, StandardCharsets.UTF_8));
         
         response.sendRedirect(uriString);
-    }
-    
-    private boolean checkIfProviderIsNotExist() {
-        String providerKey = OIDCConfigs.getProvider();
-        return providerKey == null;
     }
     
 }
