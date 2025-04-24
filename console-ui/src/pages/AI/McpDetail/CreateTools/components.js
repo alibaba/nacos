@@ -12,8 +12,15 @@ export const formitemLayout = {
 };
 
 // 表格头组件
-export const GetTitle = ({ label, onClick, text = '', locale, disabled = false }) => (
-  <Form.Item {...formitemLayout} label={label} required style={{ margin: '16px 0 0' }}>
+export const GetTitle = ({
+  label,
+  onClick,
+  text = '',
+  locale,
+  disabled = false,
+  required = true,
+}) => (
+  <Form.Item {...formitemLayout} label={label} required={required} style={{ margin: '16px 0 0' }}>
     {disabled ? null : (
       <Button type="primary" onClick={onClick} size="small">
         {text || locale.newMcpTool}
@@ -31,7 +38,7 @@ export const tableOperation = ({ onClick, locale, disabled = false }) => {
   return (
     <Table.Column
       title={locale.toolOperation}
-      width={40}
+      width={100}
       dataIndex={'operation'}
       cell={(t, index, record) => {
         return (

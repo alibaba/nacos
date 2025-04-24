@@ -7,8 +7,7 @@ const DeleteTool = props => {
   const [visible, setVisible] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const handleDelete = async _toolSpec => {
-    console.log('_toolSpec', _toolSpec);
-    props?.onChange && props.onChange(_toolSpec);
+    props?.onChange && props.onChange(_toolSpec, closeDialog);
     // setLoading(true);
     // const result = await request({
     //   url: `v3/console/ai/mcp`,
@@ -58,7 +57,7 @@ const DeleteTool = props => {
         title={locale.deleteToolTitle}
         content={locale.deleteToolContent}
         onOk={() => {
-          const _toolsMeta = serverConfig?.toolSpec?.toolsMeta;
+          const _toolsMeta = JSON.parse(JSON.stringify(serverConfig?.toolSpec?.toolsMeta));
           delete _toolsMeta[record.name];
           handleDelete({
             tools: serverConfig?.toolSpec?.tools.filter(item => item.name !== record.name),

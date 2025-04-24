@@ -55,19 +55,29 @@ const ShowTools = props => {
       />
 
       <Table style={{ marginTop: '20px' }} dataSource={serverConfig?.toolSpec?.tools || []}>
-        <Table.Column title={locale.toolName} dataIndex={'name'} />
+        <Table.Column
+          title={locale.toolName}
+          cell={(value, index, record) => {
+            return <div style={{ minWidth: '100px' }}>{record.name}</div>;
+          }}
+        />
         <Table.Column title={locale.toolDescription} dataIndex={'description'} />
         <Table.Column
           title={locale.toolOnline}
+          width={100}
           cell={(value, index, record) => {
+            const onlineText = (
+              <div style={{ color: 'green', textAlign: 'center' }}>{locale.online}</div>
+            );
+            const offlineText = (
+              <div style={{ color: 'red', textAlign: 'center' }}>{locale.offline}</div>
+            );
             if (serverConfig?.toolSpec?.toolsMeta?.[record.name]) {
-              return serverConfig?.toolSpec?.toolsMeta?.[record.name]?.enabled ? (
-                <span style={{ color: 'green' }}>{locale.online}</span>
-              ) : (
-                <span style={{ color: 'red' }}>{locale.offline}</span>
-              );
+              return serverConfig?.toolSpec?.toolsMeta?.[record.name]?.enabled
+                ? onlineText
+                : offlineText;
             } else {
-              return '--';
+              return onlineText;
             }
           }}
         />

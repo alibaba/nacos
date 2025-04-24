@@ -51,7 +51,7 @@ const CreateTools = React.forwardRef((props, ref) => {
         field.setValues({ invokeContext: [] });
       }
       if (field.getValue('templates') && !field.getValue('templates')?.length) {
-        addNewTemplates();
+        // addNewTemplates();
       } else {
         field.setValues({ templates: [] });
       }
@@ -509,6 +509,12 @@ const CreateTools = React.forwardRef((props, ref) => {
                 {...init('enabled', {
                   valueName: 'checked',
                   initValue: true,
+                  props: isPreview
+                    ? {
+                        checkedChildren: locale.online,
+                        unCheckedChildren: locale.offline,
+                      }
+                    : {},
                 })}
               />
             </Form.Item>
@@ -718,6 +724,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                   onClick={addNewTemplates}
                   locale={locale}
                   disabled={isPreview}
+                  required={false}
                 />
                 <Row>
                   <Col span={20} offset={4}>
