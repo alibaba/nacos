@@ -18,6 +18,7 @@ package com.alibaba.nacos.api.ai.model.mcp;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -49,6 +50,8 @@ public class McpServerBasicInfo {
      * Should be set when `type` is {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}.
      */
     private Map<String, Object> localServerConfig;
+    
+    private Map<String, AiCredential> credentials = new HashMap<>(1);
     
     private boolean enabled = true;
     
@@ -103,6 +106,14 @@ public class McpServerBasicInfo {
     
     public void setLocalServerConfig(Map<String, Object> localServerConfig) {
         this.localServerConfig = localServerConfig;
+    }
+    
+    public Map<String, AiCredential> getCredentials() {
+        return credentials;
+    }
+    
+    public void setCredentials(Map<String, AiCredential> credentials) {
+        this.credentials = credentials;
     }
     
     public boolean isEnabled() {

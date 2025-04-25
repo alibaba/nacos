@@ -17,11 +17,11 @@
 package com.alibaba.nacos.api.ai.model.mcp;
 
 /**
- * AI MCP server remote service credential.
+ * AI service credential.
  * 
  * @author xiweng.yy
  */
-public class McpServerRemoteServiceCredential {
+public class AiCredential {
     
     /**
      * Credential type, such as OAuth2.0, Jwt token or others, default is `custom`.
