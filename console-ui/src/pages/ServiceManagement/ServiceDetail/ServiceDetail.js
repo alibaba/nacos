@@ -26,6 +26,7 @@ import MonacoEditor from 'components/MonacoEditor';
 import { MONACO_READONLY_OPTIONS, METADATA_ENTER } from './constant';
 import InstanceFilter from './InstanceFilter';
 import './ServiceDetail.scss';
+import { getParams } from '../../../globalLib';
 
 const FormItem = Form.Item;
 const pageFormLayout = {
@@ -71,8 +72,14 @@ class ServiceDetail extends React.Component {
 
   getServiceDetail() {
     const { serviceName, groupName } = this.state;
+    const namespaceId = getParams('namespaceId');
+    const url =
+      namespaceId === null
+        ? `v3/console/ns/service?serviceName=${serviceName}&groupName=${groupName}`
+        : `v3/console/ns/service?serviceName=${serviceName}&groupName=${groupName}&namespaceId=${namespaceId}`;
+    console.log(url);
     request({
-      url: `v3/console/ns/service?serviceName=${serviceName}&groupName=${groupName}`,
+      url: url,
       beforeSend: () => this.openLoading(),
       success: res => {
         if (res.code === 0) {
