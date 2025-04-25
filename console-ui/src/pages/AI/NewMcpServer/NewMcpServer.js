@@ -622,6 +622,7 @@ class NewMcpServer extends React.Component {
               {/* 暴露路径 */}
               <FormItem label={locale.exportPath} required help={locale.exportPathDesc}>
                 <Input
+                  placeholder={locale.exportPathEg}
                   {...init('exportPath', {
                     rules: [
                       {
