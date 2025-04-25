@@ -68,7 +68,7 @@ class CredentialManagement extends React.Component {
     this.field = new Field(this);
     setParams('namespace', null);
     setParams('namespaceShowName', null);
-    this.credentialName = getParams('credentialName') || '';
+    this.credentialId = getParams('credentialId') || '';
     this.state = {
       configurations: {
         pageItems: [],
@@ -202,11 +202,11 @@ class CredentialManagement extends React.Component {
 
     const prePageNo = getParams('pageNo');
     const prePageSize = getParams('pageSize');
-    const credentialName = getParams('credentialName') || this.credentialName || '';
+    const credentialId = getParams('credentialId') || this.credentialId || '';
     this.pageNo = prePageNo ? prePageNo : pageNo;
     this.pageSize = prePageSize ? prePageSize : this.state.pageSize;
     const params = {
-      dataId: credentialName,
+      dataId: credentialId,
       groupName: 'credentials',
       pageNo: prePageNo ? prePageNo : pageNo,
       pageSize: prePageSize ? prePageSize : this.state.pageSize,
@@ -340,13 +340,13 @@ class CredentialManagement extends React.Component {
   editDetail = record => {
     // 判断是否有编辑权限
     this.props.history.push(
-      `/newCredential?namespaceId=nacos-default-mcp&credentialName=${record?.dataId}&mcptype=edit`
+      `/newCredential?namespaceId=nacos-default-mcp&credentialId=${record?.dataId}&mcptype=edit`
     );
   };
   // 打开查看详情页
   openDetail = record => {
     this.props.history.push(
-      `/newCredential?namespaceId=nacos-default-mcp&credentialName=${record?.dataId}&mcptype=readonly`
+      `/newCredential?namespaceId=nacos-default-mcp&credentialId=${record?.dataId}&mcptype=readonly`
     );
   };
 
@@ -459,10 +459,10 @@ class CredentialManagement extends React.Component {
                   <Input
                     htmlType="text"
                     style={{ width: 200 }}
-                    onChange={credentialName => {
-                      this.credentialName = credentialName;
-                      this.setState({ credentialName });
-                      setParams('credentialName', credentialName);
+                    onChange={credentialId => {
+                      this.credentialId = credentialId;
+                      this.setState({ credentialId });
+                      setParams('credentialId', credentialId);
                     }}
                     onPressEnter={() => this.selectAll()}
                   />
