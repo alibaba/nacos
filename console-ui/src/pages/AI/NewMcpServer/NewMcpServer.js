@@ -504,7 +504,7 @@ class NewMcpServer extends React.Component {
             />
           </FormItem>
           {/* 协议类型 */}
-          <FormItem label={locale.serverType} help={isEdit ? null : locale.serverTypeDesc}>
+          <FormItem label={locale.serverType} help={isEdit ? null : locale.serverTypeDesc} required>
             <RadioGroup
               {...init('protocol', {
                 initValue: 'stdio',
@@ -516,7 +516,7 @@ class NewMcpServer extends React.Component {
                   },
                 },
               })}
-              isPreview={isEdit}
+              disabled={isEdit}
             >
               <Row>
                 {['stdio', 'mcp-sse', 'mcp-streamble'].map(item => (

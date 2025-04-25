@@ -86,21 +86,21 @@ class NewCredential extends React.Component {
   }
 
   componentDidMount() {
-    const credentialName = getParams('credentialName') || '';
+    const credentialId = getParams('credentialId') || '';
     const mcptype = getParams('mcptype') || '';
     const self = this;
-    this.credentialName = credentialName;
-    if (credentialName && mcptype === 'edit') {
+    this.credentialId = credentialId;
+    if (credentialId && mcptype === 'edit') {
       request({
         url: `v3/console/cs/config`,
         data: {
-          dataId: credentialName,
+          dataId: credentialId,
           groupName: 'credentials',
           tenant: 'nacos-default-mcp',
           namespaceId: 'nacos-default-mcp',
         },
         success(result) {
-          self.field.setValue('credentialName', credentialName);
+          self.field.setValue('credentialId', credentialId);
           self.field.setValue('desc', result.data.desc);
 
           if (result.code == 0 && result.data) {
@@ -320,7 +320,7 @@ class NewCredential extends React.Component {
     request({
       url: 'v3/console/cs/config',
       data: {
-        dataId: addonBefore + this.field.getValue('credentialName'),
+        dataId: addonBefore + this.field.getValue('credentialId'),
         groupName: 'credentials',
         namespaceId: 'nacos-default-mcp',
       },
@@ -356,7 +356,7 @@ class NewCredential extends React.Component {
     let { addonBefore, config_tags, configType } = this.state;
     this.tenant = 'nacos-default-mcp';
     const payload = {
-      dataId: addonBefore + this.field.getValue('credentialName'),
+      dataId: addonBefore + this.field.getValue('credentialId'),
       groupName: 'credentials',
       content,
       desc: this.field.getValue('desc'),
@@ -445,6 +445,7 @@ class NewCredential extends React.Component {
       },
     };
     const { editorClass } = this.state;
+    const isEdit = getParams('mcptype') === 'edit';
 
     return (
       <Loading
@@ -456,9 +457,9 @@ class NewCredential extends React.Component {
       >
         <h1>{locale.newListing}</h1>
         <Form className="new-config-form" field={this.field} {...formItemLayout}>
-          <FormItem label={locale.credentialName} required>
+          <FormItem label={locale.credentialId} required>
             <Input
-              {...init('credentialName', {
+              {...init('credentialId', {
                 rules: [
                   {
                     required: true,
@@ -473,6 +474,7 @@ class NewCredential extends React.Component {
                   <div style={{ minWidth: 100, color: '#373D41' }}>{this.state.addonBefore}</div>
                 ) : null
               }
+              isPreview={isEdit}
             />
           </FormItem>
 
