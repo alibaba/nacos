@@ -66,6 +66,8 @@ class CredentialManagement extends React.Component {
     this.deleteDialog = React.createRef();
     this.showcode = React.createRef();
     this.field = new Field(this);
+    setParams('namespace', null);
+    setParams('namespaceShowName', null);
     this.credentialName = getParams('credentialName') || '';
     this.state = {
       configurations: {
@@ -453,7 +455,7 @@ class CredentialManagement extends React.Component {
                     {locale.addNewCredential}
                   </Button>
                 </Form.Item>
-                <Form.Item label="Credential">
+                <Form.Item label="Credential Id">
                   <Input
                     htmlType="text"
                     style={{ width: 200 }}
@@ -504,7 +506,7 @@ class CredentialManagement extends React.Component {
             >
               <Table.Column
                 // sortable={true}
-                title={'Credential'}
+                title={'Credential Id'}
                 cell={(value, index, record) => {
                   return record.dataId || '--';
                 }}
