@@ -16,7 +16,7 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { request } from '../../../globalLib';
+import { getParams, request } from '../../../globalLib';
 import { Button, ConfigProvider, Message, Pagination, Table } from '@alifd/next';
 import { HEALTHY_COLOR_MAPPING } from './constant';
 import EditInstanceDialog from './EditInstanceDialog';
@@ -68,8 +68,13 @@ class InstanceTable extends React.Component {
 
     if (!clusterName) return;
     const { pageSize, pageNum } = this.state;
+    const namespaceId = getParams('namespaceId');
+    const url =
+      namespaceId === null
+        ? 'v3/console/ns/instance/list'
+        : `v3/console/ns/instance/list?namespaceId=${namespaceId}`;
     request({
-      url: 'v3/console/ns/instance/list',
+      url: url,
       data: {
         serviceName,
         clusterName,

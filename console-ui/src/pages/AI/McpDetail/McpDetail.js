@@ -75,7 +75,7 @@ class McpDetail extends React.Component {
       generateUrl('/serviceDetail', {
         namespaceId: serviceRef.namespaceId,
         groupName: serviceRef.groupName,
-        serviceName: serviceRef.serviceName,
+        name: serviceRef.serviceName,
       })
     );
   };
