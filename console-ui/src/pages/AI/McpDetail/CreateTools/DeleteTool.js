@@ -63,6 +63,7 @@ const DeleteTool = props => {
             tools: serverConfig?.toolSpec?.tools.filter(item => item.name !== record.name),
             toolsMeta: _toolsMeta,
           });
+          closeDialog();
         }}
         okProps={{
           loading,
