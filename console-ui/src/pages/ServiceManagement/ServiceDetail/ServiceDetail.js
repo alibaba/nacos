@@ -77,7 +77,6 @@ class ServiceDetail extends React.Component {
       namespaceId === null
         ? `v3/console/ns/service?serviceName=${serviceName}&groupName=${groupName}`
         : `v3/console/ns/service?serviceName=${serviceName}&groupName=${groupName}&namespaceId=${namespaceId}`;
-    console.log(url);
     request({
       url: url,
       beforeSend: () => this.openLoading(),
