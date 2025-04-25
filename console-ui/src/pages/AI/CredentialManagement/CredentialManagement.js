@@ -385,7 +385,7 @@ class CredentialManagement extends React.Component {
           <div style={{ marginTop: '-20px' }}>
             <h3>{locale.deleteCredential}</h3>
             <Table dataSource={selectedRows}>
-              <Table.Column title="Credential" dataIndex="dataId" />
+              <Table.Column title="Credential Id" dataIndex="dataId" />
             </Table>
           </div>
         ),
