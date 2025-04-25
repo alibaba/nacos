@@ -226,7 +226,7 @@ public class McpServerOperationService {
     private void injectToolAndEndpoint(String namespaceId, String mcpName, McpServerStorageInfo serverSpecification,
             McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
         serverSpecification.setCapabilities(new LinkedList<>());
-        if (null != toolSpecification) {
+        if (null != toolSpecification && null != toolSpecification.getTools() && !toolSpecification.getTools().isEmpty()) {
             toolOperationService.refreshMcpTool(namespaceId, mcpName, toolSpecification);
             serverSpecification.getCapabilities().add(McpCapability.TOOL);
             serverSpecification.setToolsDescriptionRef(mcpName + Constants.MCP_SERVER_TOOL_DATA_ID_SUFFIX);
