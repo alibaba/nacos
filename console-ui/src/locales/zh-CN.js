@@ -781,6 +781,7 @@ const I18N_CONF = {
     ArgumentInfo: '参数信息',
     ArgumentTree: '参数结构',
     templateShouldBeJson: 'template需要符合Json格式',
+    credentialsName: 'Credentials(密钥)',
   },
   NewMcpServer: {
     pleaseComplete: '请先完善基础配置',
