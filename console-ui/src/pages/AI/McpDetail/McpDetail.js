@@ -182,7 +182,7 @@ class McpDetail extends React.Component {
             </>
           )}
           <Divider></Divider>
-          <h2>Credentials(密钥)</h2>
+          <h2>{locale.credentialsName}</h2>
           <Table dataSource={credentialsTables}>
             <Table.Column title="Credential Id" dataIndex="id" />
           </Table>
