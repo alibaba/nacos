@@ -29,10 +29,17 @@ error_exit ()
 process_required_config() {
     local key_pattern="$1"
     local target_file="$2"
+    local isBase64="${3:-false}"
     local escaped_key=$(echo "$key_pattern" | sed 's/\./\\./g')
 
     if grep -q "^${escaped_key}=$" "${target_file}"; then
-        read -p "\`${key_pattern}\` is missing, please set: " input_val
+        hint_message="\`${key_pattern}\` is missing, please set: "
+        if [ "$isBase64" = "true" ]; then
+            hint_message="\`${key_pattern}\` is missing, please set with Base64 string: "
+            echo "The initial key used to generate JWT tokens (the original string must be over 32 characters and Base64 encoded)."
+            echo "用于密码生成JWT Token的初始密钥（原串长度32位以上做Base64格式化）。"
+        fi
+        read -p "${hint_message}" input_val
 
         if sed -i.bak "s/^\(${escaped_key}=\)$/\1${input_val}/" "${target_file}" 2>/dev/null; then
             rm -f "${target_file}.bak"
@@ -116,7 +123,7 @@ export CUSTOM_SEARCH_LOCATIONS=file:${BASE_DIR}/conf/
 #===========================================================================================
 # Check and Init properties
 #===========================================================================================
-process_required_config "nacos.core.auth.plugin.nacos.token.secret.key" ${BASE_DIR}/conf/application.properties
+process_required_config "nacos.core.auth.plugin.nacos.token.secret.key" ${BASE_DIR}/conf/application.properties true
 process_required_config "nacos.core.auth.server.identity.key" ${BASE_DIR}/conf/application.properties
 process_required_config "nacos.core.auth.server.identity.value" ${BASE_DIR}/conf/application.properties
 
