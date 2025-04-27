@@ -108,6 +108,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     private int serverPort = DEFAULT_SERVER_PORT;
     
+    private boolean enableClientMetrics = true;
+    
     public NamingHttpClientProxy(String namespaceId, SecurityProxy securityProxy, NamingServerListManager serverListManager,
             NacosClientProperties properties) {
         super(securityProxy);
@@ -116,6 +118,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         this.namespaceId = namespaceId;
         this.maxRetry = ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_REQUEST_DOMAIN_RETRY_COUNT,
                 String.valueOf(UtilAndComs.REQUEST_DOMAIN_RETRY_COUNT)));
+        this.enableClientMetrics = Boolean.parseBoolean(
+                properties.getProperty(PropertyKeyConst.ENABLE_CLIENT_METRICS, "true"));
     }
     
     @Override
@@ -431,8 +435,15 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                     Query.newInstance().initParams(params), body, method, String.class);
             end = System.currentTimeMillis();
             
-            MetricsMonitor.getNamingRequestMonitor(method, url, String.valueOf(restResult.getCode()))
-                    .observe(end - start);
+            if (enableClientMetrics) {
+                try {
+                    MetricsMonitor.getNamingRequestMonitor(method, url, String.valueOf(restResult.getCode()))
+                            .observe(end - start);
+                } catch (Throwable t) {
+                    NAMING_LOGGER.error("Failed to record metrics. Method: {}, URL: {}, HTTP Status Code: {}",
+                            method, url, restResult.getCode(), t);
+                }
+            }
             
             if (restResult.ok()) {
                 return restResult.getData();

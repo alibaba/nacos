@@ -236,6 +236,7 @@ const I18N_CONF = {
     pleaseInputGroup: 'Enter Group',
     groupCanNotBeEmpty: 'Group cannot be empty',
     pleaseInputIp: 'Enter IP',
+    ipCanNotBeEmpty: 'IP cannot be empty',
     query: 'Search',
     articleMeetRequirements: 'configuration items.',
   },

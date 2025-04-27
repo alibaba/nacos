@@ -234,6 +234,7 @@ const I18N_CONF = {
     pleaseInputGroup: '请输入Group',
     groupCanNotBeEmpty: 'Group不能为空',
     pleaseInputIp: '请输入IP',
+    ipCanNotBeEmpty: 'IP不能为空',
     query: '查询',
     articleMeetRequirements: '条满足要求的配置。',
   },

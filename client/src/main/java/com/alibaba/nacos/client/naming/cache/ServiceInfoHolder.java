@@ -57,6 +57,8 @@ public class ServiceInfoHolder implements Closeable {
     
     private String notifierEventScope;
     
+    private boolean enableClientMetrics = true;
+    
     public ServiceInfoHolder(String namespace, String notifierEventScope, NacosClientProperties properties) {
         cacheDir = CacheDirUtil.initCacheDir(namespace, properties);
         instancesDiffer = new InstancesDiffer();
@@ -68,6 +70,8 @@ public class ServiceInfoHolder implements Closeable {
         this.failoverReactor = new FailoverReactor(this, notifierEventScope);
         this.pushEmptyProtection = isPushEmptyProtect(properties);
         this.notifierEventScope = notifierEventScope;
+        this.enableClientMetrics = Boolean.parseBoolean(
+                properties.getProperty(PropertyKeyConst.ENABLE_CLIENT_METRICS, "true"));
     }
     
     private boolean isLoadCacheAtStart(NacosClientProperties properties) {
@@ -136,7 +140,15 @@ public class ServiceInfoHolder implements Closeable {
         if (StringUtils.isBlank(serviceInfo.getJsonFromServer())) {
             serviceInfo.setJsonFromServer(JacksonUtils.toJson(serviceInfo));
         }
-        MetricsMonitor.getServiceInfoMapSizeMonitor().set(serviceInfoMap.size());
+        
+        if (enableClientMetrics) {
+            try {
+                MetricsMonitor.getServiceInfoMapSizeMonitor().set(serviceInfoMap.size());
+            } catch (Throwable t) {
+                NAMING_LOGGER.error("Failed to update metrics for service info map size", t);
+            }
+        }
+        
         if (diff.hasDifferent()) {
             NAMING_LOGGER.info("current ips:({}) service: {} -> {}", serviceInfo.ipCount(), serviceKey,
                     JacksonUtils.toJson(serviceInfo.getHosts()));

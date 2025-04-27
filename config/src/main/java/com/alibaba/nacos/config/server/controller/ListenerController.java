@@ -56,7 +56,7 @@ public class ListenerController {
      * Get subscribe information from client side.
      */
     @GetMapping
-    @Secured(resource = Constants.LISTENER_CONTROLLER_PATH, action = ActionTypes.READ, signType = SignType.CONFIG)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     public GroupkeyListenserStatus getAllSubClientConfigByIp(@RequestParam("ip") String ip,
             @RequestParam(value = "all", required = false) boolean all,
             @RequestParam(value = "tenant", required = false) String tenant,

@@ -130,4 +130,9 @@ public class PropertyKeyConst {
         public static final String ALIBABA_ALIWARE_ENDPOINT_URL = "ALIBABA_ALIWARE_ENDPOINT_URL";
     }
     
+    /**
+     * Client Metric Switch.
+     */
+    public static final String ENABLE_CLIENT_METRICS = "enableClientMetrics";
+    
 }

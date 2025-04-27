@@ -452,6 +452,9 @@ public class ConfigController {
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "srcUser", required = false, defaultValue = StringUtils.EMPTY) String srcUser) {
         String remoteIp = getRemoteIp(httpServletRequest);
+        if (StringUtils.isBlank(srcUser)) {
+            srcUser = RequestUtil.getSrcUserName(httpServletRequest);
+        }
         try {
             
             configOperationService.deleteConfig(dataId, group, tenant, BetaGrayRule.TYPE_BETA, remoteIp, srcUser, Constants.HTTP);
@@ -582,6 +585,7 @@ public class ConfigController {
             configMetadataItem.setDesc(ci.getDesc());
             configMetadataItem.setGroup(ci.getGroup());
             configMetadataItem.setType(ci.getType());
+            configMetadataItem.setConfigTags(ci.getConfigTags());
             configMetadataItems.add(configMetadataItem);
             Pair<String, String> pair = EncryptionHandler.decryptHandler(ci.getDataId(), ci.getEncryptedDataKey(),
                     ci.getContent());
@@ -823,6 +827,7 @@ public class ConfigController {
             ci.setTenant(namespace);
             ci.setEncryptedDataKey(pair.getFirst());
             ci.setCreateUser(srcUser);
+            ci.setConfigTags(configExportItem.getConfigTags());
             configInfoList.add(ci);
         }
         return null;

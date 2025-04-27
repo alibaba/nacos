@@ -249,13 +249,17 @@ public class CatalogServiceV2Impl implements CatalogService {
     }
     
     private Collection<Service> doPage(Collection<Service> services, int pageNo, int pageSize) {
-        if (services.size() < pageSize) {
+        if (pageNo == 0 && services.size() < pageSize) {
             return services;
+        }
+        int start = pageNo * pageSize;
+        if (start > services.size()) {
+            return Collections.emptyList();
         }
         Collection<Service> result = new LinkedList<>();
         int i = 0;
         for (Service each : services) {
-            if (i++ < pageNo * pageSize) {
+            if (i++ < start) {
                 continue;
             }
             result.add(each);

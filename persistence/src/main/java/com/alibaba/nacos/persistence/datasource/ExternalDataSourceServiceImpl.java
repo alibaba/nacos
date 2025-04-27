@@ -277,7 +277,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("check db health.");
             }
-            String sql = "SELECT * FROM config_info_beta WHERE id = 1";
+            String sql = "SELECT * FROM config_info_gray WHERE id = 1";
             
             for (int i = 0; i < testJtList.size(); i++) {
                 JdbcTemplate jdbcTemplate = testJtList.get(i);

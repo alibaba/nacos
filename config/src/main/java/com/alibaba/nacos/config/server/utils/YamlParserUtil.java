@@ -132,6 +132,7 @@ public class YamlParserUtil {
                 configExportItem.setType(metadataMap.get("type"));
                 configExportItem.setDesc(metadataMap.get("desc"));
                 configExportItem.setAppName(metadataMap.get("appName"));
+                configExportItem.setConfigTags(metadataMap.get("configTags"));
                 return configExportItem;
             }).collect(Collectors.toList());
             

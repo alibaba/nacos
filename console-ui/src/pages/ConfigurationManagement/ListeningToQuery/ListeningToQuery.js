@@ -278,11 +278,19 @@ class ListeningToQuery extends React.Component {
                   style={{
                     display: this.getValue('type') === 0 ? 'none' : '',
                   }}
+                  required
                 >
                   <Input
                     placeholder={locale.pleaseInputIp}
                     style={{ width: 200, boxSize: 'border-box' }}
-                    {...this.init('ip')}
+                    {...this.init('ip', {
+                      rules: [
+                        {
+                          required: true,
+                          message: locale.ipCanNotBeEmpty,
+                        },
+                      ],
+                    })}
                   />
                 </FormItem>
                 <FormItem label="">
