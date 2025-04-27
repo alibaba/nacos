@@ -26,6 +26,34 @@ error_exit ()
     echo "ERROR: $1 !!"
     exit 1
 }
+
+validate_base64() {
+    decode_cmd=""
+    if command -v base64 &> /dev/null; then
+        decode_cmd="base64 -d"
+    else
+        return 0;
+    fi
+    local input_str=$1
+    decoded_content=$(echo "$input_str" | $decode_cmd)
+    decoded_result=$?
+    if [ $decoded_result -ne 0 ]; then
+        echo "Invalid Base64 string: $input_str, please input again."
+        return 1
+    fi
+    decoded_content_length=$(echo -n "$decoded_content" | wc -c)
+    # adapt macOS base64 -d
+    if [ ${decoded_content_length} -eq 0 ]; then
+        echo "Invalid Base64 string: $input_str, please input again."
+        return 1
+    fi
+    if [ ${decoded_content_length} -lt 32 ]; then
+        echo "Invalid original token.secret.key, please use more than 32 length string do Base64 encode, please input again."
+        return 1
+    fi
+    return 0
+}
+
 process_required_config() {
     local key_pattern="$1"
     local target_file="$2"
@@ -40,6 +68,16 @@ process_required_config() {
             echo "用于密码生成JWT Token的初始密钥（原串长度32位以上做Base64格式化）。"
         fi
         read -p "${hint_message}" input_val
+        inputCheckPass=1
+        if [ "$isBase64" = "true" ]; then
+            while [ $inputCheckPass -ne 0 ]; do
+                validate_base64 "${input_val}"
+                inputCheckPass=$?
+                if [ $inputCheckPass -ne 0 ]; then
+                  read -p "${hint_message}" input_val
+                fi
+            done
+        fi
 
         if sed -i.bak "s/^\(${escaped_key}=\)$/\1${input_val}/" "${target_file}" 2>/dev/null; then
             rm -f "${target_file}.bak"
@@ -55,6 +93,7 @@ process_required_config() {
         fi
     fi
 }
+
 [ ! -e "$JAVA_HOME/bin/java" ] && JAVA_HOME=$HOME/jdk/java
 [ ! -e "$JAVA_HOME/bin/java" ] && JAVA_HOME=/usr/java
 [ ! -e "$JAVA_HOME/bin/java" ] && JAVA_HOME=/opt/taobao/java
