@@ -140,3 +140,32 @@ $contentWidth: 1280px;
     }
   }
 }
+.oidc-button {
+  margin-top: 20px; // 增加按钮之间的间距
+  a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    background-color: #007bff;
+    width: 100%;
+    height: 60px; // 增加按钮高度
+    font-size: 16px;
+    font-weight: bold;
+    text-decoration: underline; // 添加下划线
+    border-radius: 4px; // 添加圆角
+    transition: all 0.3s ease;
+
+    &:hover {
+      background-color: #0056b3;
+    }
+
+    .oidc-svg-icon {
+      width: 16px; // 设置图标宽度
+      height: 16px; // 设置图标高度
+      margin-right: 8px; // 图标与文字的间距
+      vertical-align: middle; // 垂直居中
+    }
+  }
+}
+

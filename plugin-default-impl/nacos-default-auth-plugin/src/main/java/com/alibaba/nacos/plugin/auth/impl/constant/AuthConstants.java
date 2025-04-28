@@ -73,8 +73,9 @@ public class AuthConstants {
      * LDAP Ignore partial result exception.
      */
     public static final String NACOS_CORE_AUTH_IGNORE_PARTIAL_RESULT_EXCEPTION = "nacos.core.auth.ldap.ignore.partial.result.exception";
-
-    public static final String LDAP_DEFAULT_ENCODED_PASSWORD = PasswordEncoderUtil.encode(System.getProperty("ldap.default.password", "nacos"));
+    
+    public static final String LDAP_DEFAULT_ENCODED_PASSWORD = PasswordEncoderUtil.encode(
+            System.getProperty("ldap.default.password", "nacos"));
     
     public static final String LDAP_PREFIX = "LDAP_";
     
@@ -82,4 +83,28 @@ public class AuthConstants {
      * Maximum allowed password length.
      */
     public static final int MAX_PASSWORD_LENGTH = 72;
+    
+    /**
+     * OIDC Related Constants.
+     */
+    
+    public static final String OIDC_PREFIX = "OIDC_";
+    
+    public static final String OIDC_STATE = "oidc_state";
+    
+    public static final String OIDC_NONCE = "oidc_nonce";
+    
+    public static final String OIDC_PARAM_TOKEN = "token";
+    
+    public static final String OIDC_PARAM_MSG = "msg";
+    
+    public static final String LOGIN_PAGE = "/#/login";
+    
+    public static final String HASH_ROUTE = "#";
+    
+    public static final String QUERY_PREFIX = "?";
+    
+    public static final String QUERY_PARAM_SEPARATOR = "&";
+    
+    public static final String QUERY_PARAM_EQUAL = "=";
 }

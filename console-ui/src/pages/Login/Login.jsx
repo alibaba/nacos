@@ -15,13 +15,14 @@
  */
 
 import React from 'react';
-import { Card, Form, Input, Message, ConfigProvider, Field } from '@alifd/next';
+import { Card, Form, Input, Message, ConfigProvider, Field, Button } from '@alifd/next';
 import { withRouter } from 'react-router-dom';
 
 import './index.scss';
 import Header from '../../layouts/Header';
 import PropTypes from 'prop-types';
 import { login, guide, state } from '../../reducers/base';
+import request from '../../utils/request';
 
 const FormItem = Form.Item;
 
@@ -40,6 +41,8 @@ class Login extends React.Component {
     this.state = {
       consoleUiEnable: true,
       guideMsg: '',
+      provider: {},
+      hasProvider: false,
     };
     this.field = new Field(this);
   }
@@ -48,8 +51,63 @@ class Login extends React.Component {
     if (localStorage.getItem('token')) {
       const [baseUrl] = location.href.split('#');
       location.href = `${baseUrl}#/`;
+    } else {
+      this.handleOidcLogin();
     }
     this.handleSearch();
+  }
+
+  handleOidcLogin() {
+    const { locale = {} } = this.props;
+
+    const qsParse = require('qs/lib/parse');
+
+    // remove hash route
+    const hash = location.hash.slice(1);
+    // get the query string after '?'
+    const [_, queryString] = hash.split('?');
+    // get the query string from normal route
+    const normalQueryString = location.search.slice(1);
+
+    const hashQuery = qsParse(queryString);
+    const query = qsParse(normalQueryString);
+
+    const token = hashQuery.token || query.token;
+    const msg = hashQuery.msg || query.msg;
+    // oidc login will redirect to login page with token param in query
+    if (token) {
+      const decodedResponse = atob(token);
+      localStorage.setItem('token', decodedResponse);
+      this.props.history.push('/');
+    } else if (msg) {
+      Message.error({
+        content: `${locale.invalidMsgFormOIDC} ${msg}`,
+      });
+    } else {
+      this.fetchOIDCProvider().then(provider => {
+        if (Object.keys(provider).length > 0) {
+          this.setState({
+            provider,
+            hasProvider: true,
+          });
+        }
+      });
+    }
+  }
+
+  fetchOIDCProvider() {
+    return request({
+      url: 'v1/auth/oidc/provider',
+      method: 'GET',
+    }).then(res => {
+      return res || {};
+    });
+  }
+
+  getOIDCStartUri() {
+    return `${location.origin}/nacos/v1/auth/oidc/start?origin=${encodeURIComponent(
+      location.href
+    )}`;
   }
 
   handleSearch = () => {
@@ -153,9 +211,27 @@ class Login extends React.Component {
                     onKeyDown={this.onKeyDown}
                   />
                 </FormItem>
-                <FormItem label=" ">
-                  <Form.Submit onClick={this.handleSubmit}>{locale.submit}</Form.Submit>
+                <FormItem>
+                  <Form.Submit className="submit-btn" onClick={this.handleSubmit}>
+                    {locale.submit}
+                  </Form.Submit>
                 </FormItem>
+                {this.state.hasProvider && (
+                  <FormItem className="oidc-button">
+                    <Button
+                      component="a"
+                      href={this.getOIDCStartUri()}
+                      primary
+                      text
+                      key={this.state.provider?.key}
+                    >
+                      <span className="oidc-icon">
+                        <img src="img/oidc-icon.svg" alt="OIDC Icon" className="oidc-svg-icon" />
+                      </span>
+                      {locale.oidcPrefix}&nbsp;{this.state.provider?.name}&nbsp;{locale.oidcSuffix}
+                    </Button>
+                  </FormItem>
+                )}
               </Form>
             )}
             {consoleUiEnable && (
