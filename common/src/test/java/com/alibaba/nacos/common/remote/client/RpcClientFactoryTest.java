@@ -213,4 +213,34 @@ class RpcClientFactoryTest {
         assertEquals(testClient.getConnectionType(), ConnectionType.GRPC);
         assertEquals(testClient.getName(), "testClient");
     }
+
+    @Test
+    void testCreateClusterClientWithProperties() {
+        Mockito.when(rpcClientTlsConfig.getEnableTls()).thenReturn(true);
+        Properties properties = new Properties();
+        Map<String, String> labels = new HashMap<>();
+        labels.put("tls.enable", "false");
+        labels.put("labelKey", "labelValue");
+        GrpcClientConfig grpcClientConfig = RpcClientConfigFactory.getInstance()
+                .createGrpcClientConfig(properties, labels);
+        grpcClientConfig.setName("testClient");
+        RpcClient testClient = RpcClientFactory.createClusterClient("testClient", ConnectionType.GRPC, grpcClientConfig);
+        assertEquals(testClient.getLabels(), labels);
+        assertEquals(testClient.getConnectionType(), ConnectionType.GRPC);
+        assertEquals(testClient.getName(), "testClient");
+    }
+
+    @Test
+    void testCreatedOneClusterClientWhenConnectionTypeNotMappingThenThrowException() {
+        Properties properties = new Properties();
+        Map<String, String> labels = new HashMap<>();
+        labels.put("tls.enable", "false");
+        labels.put("labelKey", "labelValue");
+        GrpcClientConfig grpcClientConfig = RpcClientConfigFactory.getInstance()
+                .createGrpcClientConfig(properties, labels);
+        assertThrows(Exception.class, () -> {
+            RpcClientFactory.createClusterClient("testClient", mock(ConnectionType.class),
+                    grpcClientConfig);
+        });
+    }
 }
