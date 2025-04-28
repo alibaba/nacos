@@ -163,9 +163,12 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
      */
     private RpcClient buildRpcClient(ConnectionType type, Map<String, String> labels, String memberClientKey) {
         Properties properties = EnvUtil.getProperties();
+        GrpcClientConfig clientConfig = DefaultGrpcClientConfig.newBuilder().setLabels(labels)
+            .buildClusterFromProperties(properties).setName(memberClientKey)
+            .setThreadPoolCoreSize(EnvUtil.getAvailableProcessors(2))
+            .setThreadPoolMaxSize(EnvUtil.getAvailableProcessors(8)).build();
         RpcClientTlsConfig config = RpcClientTlsConfigFactory.getInstance().createClusterConfig(properties);
-        return RpcClientFactory.createClusterClient(memberClientKey, type, EnvUtil.getAvailableProcessors(2),
-                EnvUtil.getAvailableProcessors(8), labels, config);
+        return RpcClientFactory.createClusterClient(memberClientKey, type, clientConfig);
     }
     
     /**
