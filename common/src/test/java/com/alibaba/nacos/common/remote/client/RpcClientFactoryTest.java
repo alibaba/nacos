@@ -239,8 +239,7 @@ class RpcClientFactoryTest {
         GrpcClientConfig grpcClientConfig = RpcClientConfigFactory.getInstance()
                 .createGrpcClientConfig(properties, labels);
         assertThrows(Exception.class, () -> {
-            RpcClientFactory.createClusterClient("testClient", mock(ConnectionType.class),
-                    grpcClientConfig);
+            RpcClientFactory.createClusterClient("testClient", mock(ConnectionType.class), grpcClientConfig);
         });
     }
 }
