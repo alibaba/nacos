@@ -1,13 +1,13 @@
 # This workflow will build a Java project with Maven
 # For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
 
-name: "Integration Test"
+name: "Integration Test For 2.X"
 
 on:
   push:
-    branches: [ master, develop, v2.x-develop ]
+    branches: [ v2.x-develop ]
   pull_request:
-    branches: [ develop, v2.x-develop ]
+    branches: [ v2.x-develop ]
 
 permissions:
   contents: read # to fetch code (actions/checkout)

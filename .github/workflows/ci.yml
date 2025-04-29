@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        java: [8]
+        java: [17]
     steps:
       - name: "Cache Maven Repos"
         uses: actions/cache@v4

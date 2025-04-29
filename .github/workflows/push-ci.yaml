@@ -33,7 +33,7 @@ jobs:
       - uses: actions/setup-java@v3
         with:
           distribution: "temurin"
-          java-version: "8"
+          java-version: "17"
           cache: "maven"
       - name: Build distribution tar
         run: |
@@ -56,7 +56,7 @@ jobs:
     strategy:
       matrix:
         base-image: ["centos"]
-        java-version: ["8"]
+        java-version: ["17"]
     outputs:
       version-json: ${{ steps.show_versions.outputs.version-json }}
     steps:
