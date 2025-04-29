@@ -16,15 +16,11 @@
 
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
-import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.plugin.auth.impl.persistence.embedded.AuthEmbeddedPaginationHelperImpl;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Conditional;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,16 +32,17 @@ import static com.alibaba.nacos.plugin.auth.impl.persistence.AuthRowMapperManage
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@Conditional(value = ConditionOnEmbeddedStorage.class)
-@Component
 public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     
-    @Autowired
-    private DatabaseOperate databaseOperate;
+    private final DatabaseOperate databaseOperate;
     
     private static final String PATTERN_STR = "*";
     
     private static final String SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE = " ESCAPE '\\' ";
+    
+    public EmbeddedUserPersistServiceImpl(DatabaseOperate databaseOperate) {
+        this.databaseOperate = databaseOperate;
+    }
     
     /**
      * Execute create user operation.
@@ -90,8 +87,8 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     @Override
     public void updateUserPassword(String username, String password) {
         try {
-            EmbeddedStorageContextHolder
-                    .addSqlContext("UPDATE users SET password = ? WHERE username=?", password, username);
+            EmbeddedStorageContextHolder.addSqlContext("UPDATE users SET password = ? WHERE username=?", password,
+                    username);
             databaseOperate.blockUpdate();
         } finally {
             EmbeddedStorageContextHolder.cleanAllContext();
@@ -106,7 +103,7 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     
     @Override
     public Page<User> getUsers(int pageNo, int pageSize, String username) {
-    
+        
         AuthPaginationHelper<User> helper = createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM users ";
@@ -119,9 +116,8 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
             where.append(" AND username = ? ");
             params.add(username);
         }
-        Page<User> pageInfo = helper
-                .fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
-                        USER_ROW_MAPPER);
+        Page<User> pageInfo = helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo,
+                pageSize, USER_ROW_MAPPER);
         if (pageInfo == null) {
             pageInfo = new Page<>();
             pageInfo.setTotalCount(0);
@@ -148,7 +144,7 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
             where.append(SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
             params.add(generateLikeArgument(username));
         }
-    
+        
         AuthPaginationHelper<User> helper = createPaginationHelper();
         return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
                 USER_ROW_MAPPER);

@@ -26,7 +26,7 @@ import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
-import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import org.springframework.beans.BeanUtils;

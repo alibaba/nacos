@@ -52,6 +52,8 @@ import PermissionsManagement from './pages/AuthorityControl/PermissionsManagemen
 import RolesManagement from './pages/AuthorityControl/RolesManagement';
 import Welcome from './pages/Welcome/Welcome';
 import SettingCenter from './pages/SettingCenter';
+import McpManagement from './pages/AI/mcpManagement/McpManagement';
+import McpDetail from './pages/AI/McpDetail';
 
 import reducers from './reducers';
 import { changeLanguage } from './reducers/locale';
@@ -61,6 +63,9 @@ import changeNameShow from './components/NameSpaceList/show';
 
 import './index.scss';
 import PropTypes from 'prop-types';
+import NewMcpServer from './pages/AI/NewMcpServer';
+import CredentialManagement from './pages/AI/CredentialManagement';
+import NewCredential from './pages/AI/NewCredential';
 
 module.hot && module.hot.accept();
 
@@ -99,6 +104,11 @@ const MENU = [
   { path: '/rolesManagement', component: RolesManagement },
   { path: '/permissionsManagement', component: PermissionsManagement },
   { path: '/settingCenter', component: SettingCenter },
+  { path: '/mcpServerManagement', component: McpManagement },
+  { path: '/mcpServerDetail', component: McpDetail },
+  { path: '/newMcpServer', component: NewMcpServer },
+  { path: '/credentialManagement', component: CredentialManagement },
+  { path: '/newCredential', component: NewCredential },
 ];
 
 @connect(state => ({ ...state.locale, ...state.base }), {

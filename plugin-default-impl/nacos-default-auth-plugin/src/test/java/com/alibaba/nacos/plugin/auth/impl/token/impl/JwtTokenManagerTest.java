@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.token.impl;
 
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.jwt.NacosJwtParser;

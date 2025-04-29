@@ -18,11 +18,11 @@ package com.alibaba.nacos.naming.model.form;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.NacosForm;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.http.HttpStatus;
 
-import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -30,7 +30,7 @@ import java.util.Objects;
  * @author dongyafei
  * @date 2022/9/7
  */
-public class ServiceForm implements Serializable {
+public class ServiceForm implements NacosForm {
     
     private static final long serialVersionUID = -4905650083916616115L;
     
@@ -51,11 +51,7 @@ public class ServiceForm implements Serializable {
     public ServiceForm() {
     }
     
-    /**
-     * check param.
-     *
-     * @throws NacosApiException NacosApiException
-     */
+    @Override
     public void validate() throws NacosApiException {
         fillDefaultValue();
         if (StringUtils.isBlank(serviceName)) {

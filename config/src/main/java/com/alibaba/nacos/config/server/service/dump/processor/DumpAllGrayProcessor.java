@@ -18,13 +18,14 @@ package com.alibaba.nacos.config.server.service.dump.processor;
 
 import com.alibaba.nacos.common.task.NacosTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.dump.task.DumpAllGrayTask;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.api.model.Page;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 import static com.alibaba.nacos.config.server.utils.PropertyUtil.getAllDumpPageSize;
@@ -57,6 +58,9 @@ public class DumpAllGrayProcessor implements NacosTaskProcessor {
             Page<ConfigInfoGrayWrapper> page = configInfoGrayPersistService.findAllConfigInfoGrayForDumpAll(pageNo, PAGE_SIZE);
             if (page != null) {
                 for (ConfigInfoGrayWrapper cf : page.getPageItems()) {
+                    if (StringUtils.isBlank(cf.getTenant())) {
+                        continue;
+                    }
                     boolean result = ConfigCacheService
                             .dumpGray(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getGrayName(), cf.getGrayRule(), cf.getContent(),
                                     cf.getLastModified(), cf.getEncryptedDataKey());

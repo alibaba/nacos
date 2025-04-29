@@ -26,13 +26,13 @@ public class GroupCapacity extends Capacity {
     
     private static final long serialVersionUID = 5888791286289014878L;
     
-    private String group;
+    private String groupName;
     
-    public String getGroup() {
-        return group;
+    public String getGroupName() {
+        return groupName;
     }
     
-    public void setGroup(String group) {
-        this.group = group;
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
     }
 }

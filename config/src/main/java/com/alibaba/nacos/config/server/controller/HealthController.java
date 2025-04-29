@@ -19,10 +19,12 @@ package com.alibaba.nacos.config.server.controller;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.core.cluster.MemberLookup;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
-import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -36,6 +38,7 @@ import java.util.Map;
  *
  * @author Nacos
  */
+@Deprecated
 @RestController
 @RequestMapping(Constants.HEALTH_CONTROLLER_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
@@ -61,6 +64,7 @@ public class HealthController {
     }
     
     @GetMapping
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public String getHealth() {
         // TODO UP DOWN WARN
         StringBuilder sb = new StringBuilder();

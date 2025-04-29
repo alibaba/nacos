@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.utils.Observable;
 import com.alibaba.nacos.common.utils.Observer;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
@@ -51,8 +52,6 @@ import java.util.concurrent.atomic.AtomicReference;
 @Component
 public class EmbeddedDumpService extends DumpService {
     
-    private final ProtocolManager protocolManager;
-    
     /**
      * If it's just a normal reading failure, it can be resolved by retrying.
      */
@@ -62,6 +61,8 @@ public class EmbeddedDumpService extends DumpService {
      * If the read failed due to an internal problem in the Raft state machine, it cannot be remedied by retrying.
      */
     final String[] errorMessages = new String[] {"FSMCaller is overload.", "STATE_ERROR"};
+    
+    private final ProtocolManager protocolManager;
     
     /**
      * Here you inject the dependent objects constructively, ensuring that some of the dependent functionality is
@@ -73,9 +74,10 @@ public class EmbeddedDumpService extends DumpService {
     public EmbeddedDumpService(ConfigInfoPersistService configInfoPersistService,
             NamespacePersistService namespacePersistService,
             HistoryConfigInfoPersistService historyConfigInfoPersistService,
-            ConfigInfoGrayPersistService configInfoGrayPersistService,
-            ServerMemberManager memberManager, ProtocolManager protocolManager) {
-        super(configInfoPersistService, namespacePersistService, historyConfigInfoPersistService, configInfoGrayPersistService, memberManager);
+            ConfigInfoGrayPersistService configInfoGrayPersistService, ServerMemberManager memberManager,
+            ProtocolManager protocolManager, ConfigMigrateService configMigrateService) {
+        super(configInfoPersistService, namespacePersistService, historyConfigInfoPersistService,
+                configInfoGrayPersistService, memberManager, configMigrateService);
         this.protocolManager = protocolManager;
     }
     

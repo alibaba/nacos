@@ -285,6 +285,28 @@ class DefaultParamCheckerTest {
         assertTrue(actual.isSuccess());
     }
     
+    @Test
+    void testCheckParamInfoFoMcpName() {
+        ParamInfo paramInfo = new ParamInfo();
+        ArrayList<ParamInfo> paramInfos = new ArrayList<>();
+        paramInfos.add(paramInfo);
+        // Max Length
+        String mcpName = buildStringLength(257);
+        paramInfo.setMcpName(mcpName);
+        ParamCheckResponse actual = paramChecker.checkParamInfoList(paramInfos);
+        assertFalse(actual.isSuccess());
+        assertEquals("Param 'mcpName' is illegal, the param length should not exceed 256.", actual.getMessage());
+        // Pattern
+        paramInfo.setMcpName("hsbfkj@$!#khdkad");
+        actual = paramChecker.checkParamInfoList(paramInfos);
+        assertFalse(actual.isSuccess());
+        assertEquals("Param 'mcpName' is illegal, illegal characters should not appear in the param.", actual.getMessage());
+        // Success
+        paramInfo.setMcpName("a-zA-Z0-9-_:.");
+        actual = paramChecker.checkParamInfoList(paramInfos);
+        assertTrue(actual.isSuccess());
+    }
+    
     private String buildStringLength(int length) {
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < length; i++) {

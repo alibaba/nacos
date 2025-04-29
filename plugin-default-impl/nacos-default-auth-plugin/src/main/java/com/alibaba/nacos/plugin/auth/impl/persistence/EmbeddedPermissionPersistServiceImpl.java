@@ -16,15 +16,11 @@
 
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
-import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.plugin.auth.impl.persistence.embedded.AuthEmbeddedPaginationHelperImpl;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Conditional;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,16 +33,17 @@ import static com.alibaba.nacos.plugin.auth.impl.persistence.AuthRowMapperManage
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@Conditional(value = ConditionOnEmbeddedStorage.class)
-@Component
 public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistService {
     
-    @Autowired
-    private DatabaseOperate databaseOperate;
+    private final DatabaseOperate databaseOperate;
     
     private static final String PATTERN_STR = "*";
     
     private static final String SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE = " ESCAPE '\\' ";
+    
+    public EmbeddedPermissionPersistServiceImpl(DatabaseOperate databaseOperate) {
+        this.databaseOperate = databaseOperate;
+    }
     
     @Override
     public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {

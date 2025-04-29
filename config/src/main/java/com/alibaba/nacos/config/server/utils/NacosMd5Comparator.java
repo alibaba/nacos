@@ -16,12 +16,12 @@
 
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.config.server.model.ConfigListenState;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG;
@@ -39,17 +39,17 @@ public class NacosMd5Comparator implements Md5Comparator {
     }
     
     @Override
-    public List<String> compareMd5(HttpServletRequest request, HttpServletResponse response,
-            Map<String, String> clientMd5Map) {
-        List<String> changedGroupKeys = new ArrayList<>();
+    public Map<String, ConfigListenState> compareMd5(HttpServletRequest request, HttpServletResponse response,
+            Map<String, ConfigListenState> clientMd5Map) {
+        HashMap<String, ConfigListenState> changedGroupKeys = new HashMap<>(clientMd5Map.size());
         String tag = request.getHeader(VIPSERVER_TAG);
-        for (Map.Entry<String, String> entry : clientMd5Map.entrySet()) {
+        for (Map.Entry<String, ConfigListenState> entry : clientMd5Map.entrySet()) {
             String groupKey = entry.getKey();
-            String clientMd5 = entry.getValue();
+            String clientMd5 = entry.getValue().getMd5();
             String ip = RequestUtil.getRemoteIp(request);
             boolean isUptodate = ConfigCacheService.isUptodate(groupKey, clientMd5, ip, tag);
             if (!isUptodate) {
-                changedGroupKeys.add(groupKey);
+                changedGroupKeys.put(entry.getKey(), entry.getValue());
             }
         }
         return changedGroupKeys;

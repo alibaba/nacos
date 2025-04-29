@@ -23,7 +23,7 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.NodeState;
+import com.alibaba.nacos.api.common.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy;
 import com.alibaba.nacos.core.distributed.distro.DistroConfig;

@@ -16,10 +16,9 @@
 
 package com.alibaba.nacos.common.http.client.response;
 
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.StatusLine;
+import org.apache.hc.client5.http.async.methods.SimpleBody;
+import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
+import org.apache.hc.core5.http.Header;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,10 +28,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,26 +43,19 @@ class DefaultClientHttpResponseTest {
     DefaultClientHttpResponse clientHttpResponse;
     
     @Mock
-    private HttpResponse response;
+    private SimpleHttpResponse response;
     
     @Mock
-    private StatusLine statusLine;
-    
-    @Mock
-    private HttpEntity httpEntity;
-    
-    @Mock
-    private InputStream inputStream;
+    private SimpleBody simpleBody;
     
     @Mock
     private Header header;
     
     @BeforeEach
     void setUp() throws Exception {
-        when(httpEntity.getContent()).thenReturn(inputStream);
-        when(response.getEntity()).thenReturn(httpEntity);
-        when(response.getStatusLine()).thenReturn(statusLine);
-        when(response.getAllHeaders()).thenReturn(new Header[] {header});
+        when(response.getBody()).thenReturn(simpleBody);
+        when(response.getHeaders()).thenReturn(new Header[] {header});
+        when(response.getReasonPhrase()).thenReturn("test");
         when(header.getName()).thenReturn("testName");
         when(header.getValue()).thenReturn("testValue");
         clientHttpResponse = new DefaultClientHttpResponse(response);
@@ -75,13 +68,11 @@ class DefaultClientHttpResponseTest {
     
     @Test
     void testGetStatusCode() {
-        when(statusLine.getStatusCode()).thenReturn(200);
-        assertEquals(200, clientHttpResponse.getStatusCode());
+        assertEquals(0, clientHttpResponse.getStatusCode());
     }
     
     @Test
     void testGetStatusText() {
-        when(statusLine.getReasonPhrase()).thenReturn("test");
         assertEquals("test", clientHttpResponse.getStatusText());
     }
     
@@ -93,12 +84,6 @@ class DefaultClientHttpResponseTest {
     
     @Test
     void testGetBody() throws IOException {
-        assertEquals(inputStream, clientHttpResponse.getBody());
-    }
-    
-    @Test
-    void testCloseResponseWithException() {
-        when(response.getEntity()).thenThrow(new RuntimeException("test"));
-        clientHttpResponse.close();
+        assertTrue(clientHttpResponse.getBody() instanceof ByteArrayInputStream);
     }
 }

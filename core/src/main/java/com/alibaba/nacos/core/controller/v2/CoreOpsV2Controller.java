@@ -16,17 +16,19 @@
 
 package com.alibaba.nacos.core.controller.v2;
 
+import com.alibaba.nacos.api.model.response.IdGeneratorInfo;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.common.Beta;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.core.model.request.LogUpdateRequest;
-import com.alibaba.nacos.core.model.vo.IdGeneratorVO;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -47,6 +49,7 @@ import java.util.Map;
 @Beta
 @RestController
 @RequestMapping(Commons.NACOS_CORE_CONTEXT_V2 + "/ops")
+@Deprecated
 public class CoreOpsV2Controller {
     
     private final ProtocolManager protocolManager;
@@ -61,17 +64,16 @@ public class CoreOpsV2Controller {
     /**
      * Temporarily overpassed the raft operations interface.
      * <p>
-     *      {
-     *           "groupId": "xxx",
-     *           "command": "transferLeader or doSnapshot or resetRaftCluster or removePeer"
-     *           "value": "ip:{raft_port}"
-     *      }
+     * { "groupId": "xxx", "command": "transferLeader or doSnapshot or resetRaftCluster or removePeer" "value":
+     * "ip:{raft_port}" }
      * </p>
+     *
      * @param commands transferLeader or doSnapshot or resetRaftCluster or removePeer
      * @return {@link RestResult}
      */
     @PostMapping(value = "/raft")
     @Secured(action = ActionTypes.WRITE, resource = "nacos/admin", signType = SignType.CONSOLE)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "POST {contextPath:nacos}/v3/admin/core/ops/raft")
     public RestResult<String> raftOps(@RequestBody Map<String, String> commands) {
         return protocolManager.getCpProtocol().execute(commands);
     }
@@ -82,13 +84,14 @@ public class CoreOpsV2Controller {
      * @return {@link RestResult}
      */
     @GetMapping(value = "/ids")
-    public RestResult<List<IdGeneratorVO>> ids() {
-        List<IdGeneratorVO> result = new ArrayList<>();
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/admin/core/ops/ids")
+    public RestResult<List<IdGeneratorInfo>> ids() {
+        List<IdGeneratorInfo> result = new ArrayList<>();
         idGeneratorManager.getGeneratorMap().forEach((resource, idGenerator) -> {
-            IdGeneratorVO vo = new IdGeneratorVO();
+            IdGeneratorInfo vo = new IdGeneratorInfo();
             vo.setResource(resource);
             
-            IdGeneratorVO.IdInfo info = new IdGeneratorVO.IdInfo();
+            IdGeneratorInfo.IdInfo info = new IdGeneratorInfo.IdInfo();
             info.setCurrentId(idGenerator.currentId());
             info.setWorkerId(idGenerator.workerId());
             vo.setInfo(info);
@@ -101,6 +104,7 @@ public class CoreOpsV2Controller {
     
     @PutMapping(value = "/log")
     @Secured(action = ActionTypes.WRITE, resource = "nacos/admin", signType = SignType.CONSOLE)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "PUT {contextPath:nacos}/v3/admin/core/ops/log")
     public RestResult<Void> updateLog(@RequestBody LogUpdateRequest logUpdateRequest) {
         Loggers.setLogLevel(logUpdateRequest.getLogName(), logUpdateRequest.getLogLevel());
         return RestResultUtils.success();

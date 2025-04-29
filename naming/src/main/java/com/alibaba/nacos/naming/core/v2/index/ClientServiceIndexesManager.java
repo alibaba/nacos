@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.index;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
@@ -101,15 +102,15 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
         for (Service each : client.getAllSubscribeService()) {
             removeSubscriberIndexes(each, client.getClientId());
         }
-        DeregisterInstanceReason reason = event.isNative()
-                ? DeregisterInstanceReason.NATIVE_DISCONNECTED : DeregisterInstanceReason.SYNCED_DISCONNECTED;
+        DeregisterInstanceReason reason = event.isNative() ? DeregisterInstanceReason.NATIVE_DISCONNECTED
+                : DeregisterInstanceReason.SYNCED_DISCONNECTED;
         long currentTimeMillis = System.currentTimeMillis();
         for (Service each : client.getAllPublishedService()) {
             removePublisherIndexes(each, client.getClientId());
             InstancePublishInfo instance = client.getInstancePublishInfo(each);
-            NotifyCenter.publishEvent(new DeregisterInstanceTraceEvent(currentTimeMillis,
-                    "", false, reason, each.getNamespace(), each.getGroup(), each.getName(),
-                    instance.getIp(), instance.getPort()));
+            NotifyCenter.publishEvent(
+                    new DeregisterInstanceTraceEvent(currentTimeMillis, "", false, reason, each.getNamespace(),
+                            each.getGroup(), each.getName(), instance.getIp(), instance.getPort()));
         }
     }
     
@@ -128,14 +129,21 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
     }
     
     private void addPublisherIndexes(Service service, String clientId) {
+        String serviceChangedType = Constants.ServiceChangedType.INSTANCE_CHANGED;
+        if (!publisherIndexes.containsKey(service)) {
+            // The only time the index needs to be updated is when the service is first created
+            serviceChangedType = Constants.ServiceChangedType.ADD_SERVICE;
+        }
+        NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, serviceChangedType, true));
         publisherIndexes.computeIfAbsent(service, key -> new ConcurrentHashSet<>()).add(clientId);
-        NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, true));
     }
     
     private void removePublisherIndexes(Service service, String clientId) {
         publisherIndexes.computeIfPresent(service, (s, ids) -> {
             ids.remove(clientId);
-            NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, true));
+            String serviceChangedType = ids.isEmpty() ? Constants.ServiceChangedType.DELETE_SERVICE
+                    : Constants.ServiceChangedType.INSTANCE_CHANGED;
+            NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, serviceChangedType, true));
             return ids.isEmpty() ? null : ids;
         });
     }

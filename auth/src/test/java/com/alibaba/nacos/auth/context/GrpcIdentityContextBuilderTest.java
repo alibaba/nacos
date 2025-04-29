@@ -17,7 +17,7 @@
 package com.alibaba.nacos.auth.context;
 
 import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,7 +47,7 @@ class GrpcIdentityContextBuilderTest {
     private static final String IDENTITY_TEST_VALUE = "identity-test-value";
     
     @Mock
-    private AuthConfigs authConfigs;
+    private NacosAuthConfig authConfig;
     
     @Mock
     private Request request;
@@ -56,8 +56,8 @@ class GrpcIdentityContextBuilderTest {
     
     @BeforeEach
     void setUp() throws Exception {
-        identityContextBuilder = new GrpcIdentityContextBuilder(authConfigs);
-        when(authConfigs.getNacosAuthSystemType()).thenReturn(TEST_PLUGIN);
+        identityContextBuilder = new GrpcIdentityContextBuilder(authConfig);
+        when(authConfig.getNacosAuthSystemType()).thenReturn(TEST_PLUGIN);
         Map<String, String> headers = new HashMap<>();
         headers.put(IDENTITY_TEST_KEY, IDENTITY_TEST_VALUE);
         when(request.getHeaders()).thenReturn(headers);
@@ -66,7 +66,7 @@ class GrpcIdentityContextBuilderTest {
     
     @Test
     void testBuildWithoutPlugin() {
-        when(authConfigs.getNacosAuthSystemType()).thenReturn("non-exist");
+        when(authConfig.getNacosAuthSystemType()).thenReturn("non-exist");
         IdentityContext actual = identityContextBuilder.build(request);
         assertNull(actual.getParameter(IDENTITY_TEST_KEY));
     }

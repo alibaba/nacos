@@ -30,6 +30,7 @@ import com.alibaba.nacos.plugin.config.model.ConfigChangeRequest;
 import com.alibaba.nacos.plugin.config.model.ConfigChangeResponse;
 import com.alibaba.nacos.plugin.config.spi.ConfigChangePluginService;
 import com.alibaba.nacos.sys.utils.PropertiesUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,7 +41,6 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -79,10 +79,10 @@ class ConfigChangeAspectTest {
         requestUtilMockedStatic = Mockito.mockStatic(RequestUtil.class);
         Properties properties = new Properties();
         properties.put("mockedConfigChangeService.enabled", "true");
-        propertiesStatic.when(
-                () -> PropertiesUtil.getPropertiesWithPrefix(any(), eq(ConfigChangeConstants.NACOS_CORE_CONFIG_PLUGIN_PREFIX)))
-                .thenReturn(properties);
-        requestUtilMockedStatic.when(() -> RequestUtil.getSrcUserName(any(HttpServletRequest.class))).thenReturn("mockedUser");
+        propertiesStatic.when(() -> PropertiesUtil.getPropertiesWithPrefix(any(),
+                eq(ConfigChangeConstants.NACOS_CORE_CONFIG_PLUGIN_PREFIX))).thenReturn(properties);
+        requestUtilMockedStatic.when(() -> RequestUtil.getSrcUserName(any(HttpServletRequest.class)))
+                .thenReturn("mockedUser");
         Mockito.when(configChangePluginService.getServiceType()).thenReturn("mockedConfigChangeService");
         Mockito.when(configChangePluginService.pointcutMethodNames()).thenReturn(ConfigChangePointCutTypes.values());
         Mockito.when(configChangePluginService.executeType()).thenReturn(ConfigChangeExecuteTypes.EXECUTE_AFTER_TYPE);
@@ -103,7 +103,7 @@ class ConfigChangeAspectTest {
     void testPublishOrUpdateConfigAround() throws Throwable {
         Mockito.when(configChangePluginService.executeType()).thenReturn(ConfigChangeExecuteTypes.EXECUTE_AFTER_TYPE);
         
-        when(pjp.getArgs()).thenReturn(new Object[]{configForm, configRequestInfo});
+        when(pjp.getArgs()).thenReturn(new Object[] {configForm, configRequestInfo});
         when(configForm.getDataId()).thenReturn("dataId");
         when(configForm.getGroup()).thenReturn("group");
         when(configForm.getNamespaceId()).thenReturn("namespaceId");
@@ -134,7 +134,7 @@ class ConfigChangeAspectTest {
         String srcUser = "mockedUser";
         String srcType = "http";
         
-        when(pjp.getArgs()).thenReturn(new Object[]{dataId, group, namespaceId, tag, clientIp, srcUser, srcType});
+        when(pjp.getArgs()).thenReturn(new Object[] {dataId, group, namespaceId, tag, clientIp, srcUser, srcType});
         Mockito.when(pjp.proceed(any())).thenReturn("mock success return");
         Object o = configChangeAspect.removeConfigByIdAround(pjp);
         Thread.sleep(20L);
@@ -158,12 +158,12 @@ class ConfigChangeAspectTest {
         String srcUser = "mockedUser";
         String srcType = "http";
         
-        when(pjp.getArgs()).thenReturn(new Object[]{dataId, group, namespaceId, tag, clientIp, srcUser, srcType});
-        propertiesStatic.when(
-                () -> PropertiesUtil.getPropertiesWithPrefix(any(), eq(ConfigChangeConstants.NACOS_CORE_CONFIG_PLUGIN_PREFIX)))
-                .thenReturn(properties);
+        when(pjp.getArgs()).thenReturn(new Object[] {dataId, group, namespaceId, tag, clientIp, srcUser, srcType});
+        propertiesStatic.when(() -> PropertiesUtil.getPropertiesWithPrefix(any(),
+                eq(ConfigChangeConstants.NACOS_CORE_CONFIG_PLUGIN_PREFIX))).thenReturn(properties);
         configChangeConfigs.onEvent(ServerConfigChangeEvent.newEvent());
-        assertFalse(Boolean.parseBoolean(configChangeConfigs.getPluginProperties("mockedConfigChangeService").getProperty("enabled")));
+        assertFalse(Boolean.parseBoolean(
+                configChangeConfigs.getPluginProperties("mockedConfigChangeService").getProperty("enabled")));
         
         Mockito.when(configChangePluginService.executeType()).thenReturn(ConfigChangeExecuteTypes.EXECUTE_BEFORE_TYPE);
         Mockito.when(configChangePluginService.getServiceType()).thenReturn("mockedConfigChangeService");

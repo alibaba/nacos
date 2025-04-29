@@ -202,7 +202,7 @@ public class ParamUtils {
         }
         String[] ipsArr = betaIps.split(",");
         for (String ip : ipsArr) {
-            if (!InternetAddressUtil.isIP(ip)) {
+            if (!InternetAddressUtil.isIp(ip)) {
                 throw new NacosException(NacosException.CLIENT_INVALID_PARAM, BETAIPS_INVALID_MSG);
             }
         }

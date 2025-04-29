@@ -119,7 +119,7 @@ public class ConfigChangeAspect {
         ConfigChangePointCutTypes configChangePointCutType = null;
         if (HTTP.equals(scrType)) {
             // via console or api calls
-            configChangePointCutType = ConfigChangePointCutTypes.PUBLISH_BY_HTTP;  
+            configChangePointCutType = ConfigChangePointCutTypes.PUBLISH_BY_HTTP;
         } else {
             // via sdk rpc calls
             configChangePointCutType = ConfigChangePointCutTypes.PUBLISH_BY_RPC;
@@ -130,7 +130,6 @@ public class ConfigChangeAspect {
         if (pluginServices.isEmpty()) {
             return pjp.proceed();
         }
-        
         ConfigChangeRequest configChangeRequest = new ConfigChangeRequest(configChangePointCutType);
         configChangeRequest.setArg("dataId", dataId);
         configChangeRequest.setArg("group", group);
@@ -176,7 +175,6 @@ public class ConfigChangeAspect {
         if (pluginServices.isEmpty()) {
             return pjp.proceed();
         }
-        
         ConfigChangeRequest configChangeRequest = new ConfigChangeRequest(configChangePointCutType);
         configChangeRequest.setArg("dataId", dataId);
         configChangeRequest.setArg("group", group);

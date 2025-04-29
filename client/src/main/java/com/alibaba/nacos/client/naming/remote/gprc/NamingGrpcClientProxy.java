@@ -30,16 +30,19 @@ import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest;
 import com.alibaba.nacos.api.naming.remote.request.BatchInstanceRequest;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
+import com.alibaba.nacos.api.naming.remote.request.NamingFuzzyWatchRequest;
 import com.alibaba.nacos.api.naming.remote.request.PersistentInstanceRequest;
 import com.alibaba.nacos.api.naming.remote.request.ServiceListRequest;
 import com.alibaba.nacos.api.naming.remote.request.ServiceQueryRequest;
 import com.alibaba.nacos.api.naming.remote.request.SubscribeServiceRequest;
 import com.alibaba.nacos.api.naming.remote.response.BatchInstanceResponse;
+import com.alibaba.nacos.api.naming.remote.response.NamingFuzzyWatchResponse;
 import com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse;
 import com.alibaba.nacos.api.naming.remote.response.ServiceListResponse;
 import com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.remote.RemoteConstants;
+import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.selector.AbstractSelector;
@@ -47,6 +50,7 @@ import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.address.ServerListChangeEvent;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
+import com.alibaba.nacos.client.naming.cache.NamingFuzzyWatchServiceListHolder;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.NamingGrpcRedoService;
@@ -98,7 +102,8 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     private boolean enableClientMetrics = true;
     
     public NamingGrpcClientProxy(String namespaceId, SecurityProxy securityProxy, ServerListFactory serverListFactory,
-            NacosClientProperties properties, ServiceInfoHolder serviceInfoHolder) throws NacosException {
+            NacosClientProperties properties, ServiceInfoHolder serviceInfoHolder,
+            NamingFuzzyWatchServiceListHolder namingFuzzyWatchServiceListHolder) throws NacosException {
         super(securityProxy);
         this.namespaceId = namespaceId;
         this.uuid = UUID.randomUUID().toString();
@@ -107,21 +112,26 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
         labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_NAMING);
         labels.put(Constants.APPNAME, AppNameUtils.getAppName());
+        namingFuzzyWatchServiceListHolder.registerNamingGrpcClientProxy(this);
         GrpcClientConfig grpcClientConfig = RpcClientConfigFactory.getInstance()
                 .createGrpcClientConfig(properties.asProperties(), labels);
         this.rpcClient = RpcClientFactory.createClient(uuid, ConnectionType.GRPC, grpcClientConfig);
-        this.redoService = new NamingGrpcRedoService(this, properties);
+        this.redoService = new NamingGrpcRedoService(this, namingFuzzyWatchServiceListHolder, properties);
         this.enableClientMetrics = Boolean.parseBoolean(
                 properties.getProperty(PropertyKeyConst.ENABLE_CLIENT_METRICS, "true"));
         NAMING_LOGGER.info("Create naming rpc client for uuid->{}", uuid);
-        start(serverListFactory, serviceInfoHolder);
+        start(serverListFactory, serviceInfoHolder, namingFuzzyWatchServiceListHolder);
     }
     
-    private void start(ServerListFactory serverListFactory, ServiceInfoHolder serviceInfoHolder) throws NacosException {
+    private void start(ServerListFactory serverListFactory, ServiceInfoHolder serviceInfoHolder,
+            NamingFuzzyWatchServiceListHolder namingFuzzyWatchServiceListHolder) throws NacosException {
         rpcClient.serverListFactory(serverListFactory);
         rpcClient.registerConnectionListener(redoService);
         rpcClient.registerServerRequestHandler(new NamingPushRequestHandler(serviceInfoHolder));
+        rpcClient.registerServerRequestHandler(
+                new NamingFuzzyWatchNotifyRequestHandler(namingFuzzyWatchServiceListHolder));
         rpcClient.start();
+        namingFuzzyWatchServiceListHolder.start();
         NotifyCenter.registerSubscriber(this);
     }
     
@@ -275,9 +285,8 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
-        NAMING_LOGGER
-                .info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId, serviceName,
-                        instance);
+        NAMING_LOGGER.info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId,
+                serviceName, instance);
         if (instance.isEphemeral()) {
             deregisterServiceForEphemeral(serviceName, groupName, instance);
         } else {
@@ -445,12 +454,31 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         return rpcClient.getConnectionAbility(abilityKey) == AbilityStatus.SUPPORTED;
     }
     
-    private <T extends Response> T requestToServer(AbstractNamingRequest request, Class<T> responseClass)
+    /**
+     * Execute unsubscribe operation.
+     *
+     * @param namingFuzzyWatchRequest namingFuzzyWatchRequest
+     * @throws NacosException nacos exception
+     */
+    public NamingFuzzyWatchResponse fuzzyWatchRequest(NamingFuzzyWatchRequest namingFuzzyWatchRequest)
             throws NacosException {
+        return requestToServer(namingFuzzyWatchRequest, NamingFuzzyWatchResponse.class);
+    }
+    
+    private <T extends Response> T requestToServer(Request request, Class<T> responseClass) throws NacosException {
         Response response = null;
         try {
-            request.putAllHeader(
-                    getSecurityHeaders(request.getNamespace(), request.getGroupName(), request.getServiceName()));
+            if (request instanceof AbstractNamingRequest) {
+                request.putAllHeader(getSecurityHeaders(((AbstractNamingRequest) request).getNamespace(),
+                        ((AbstractNamingRequest) request).getGroupName(),
+                        ((AbstractNamingRequest) request).getServiceName()));
+            } else if (request instanceof NamingFuzzyWatchRequest) {
+                request.putAllHeader(
+                        getSecurityHeaders(((NamingFuzzyWatchRequest) request).getNamespace(), null, null));
+            } else {
+                throw new NacosException(400, "unknown naming request type");
+            }
+            
             response = requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
             if (ResponseCode.SUCCESS.getCode() != response.getResultCode()) {
                 // If the 403 login operation is triggered, refresh the accessToken of the client
@@ -482,7 +510,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
      *                  successful.
      * @param response  The response object containing registration result information, or null if registration failed.
      */
-    private void recordRequestFailedMetrics(AbstractNamingRequest request, Exception exception, Response response) {
+    private void recordRequestFailedMetrics(Request request, Exception exception, Response response) {
         if (!enableClientMetrics) {
             return;
         }
@@ -522,5 +550,9 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     public boolean isEnable() {
         return rpcClient.isRunning();
+    }
+    
+    public String getNamespaceId() {
+        return namespaceId;
     }
 }

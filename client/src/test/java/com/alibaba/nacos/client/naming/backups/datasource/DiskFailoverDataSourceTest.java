@@ -46,7 +46,7 @@ class DiskFailoverDataSourceTest {
     
     @Test
     void testGetSwitchForFailoverDisabled() throws NoSuchFieldException, IllegalAccessException {
-        String dir = DiskFailoverDataSourceTest.class.getResource("/").getPath() + "/failover_test/disabled";
+        String dir = DiskFailoverDataSourceTest.class.getClassLoader().getResource("failover_test/disabled").getPath();
         injectFailOverDir(dir);
         assertFalse(dataSource.getSwitch().getEnabled());
         Map<String, FailoverData> actual = dataSource.getFailoverData();
@@ -55,7 +55,7 @@ class DiskFailoverDataSourceTest {
     
     @Test
     void testGetSwitchForFailoverEnabled() throws NoSuchFieldException, IllegalAccessException {
-        String dir = DiskFailoverDataSourceTest.class.getResource("/").getPath() + "/failover_test/enabled";
+        String dir = DiskFailoverDataSourceTest.class.getClassLoader().getResource("failover_test/enabled").getPath();
         injectFailOverDir(dir);
         assertTrue(dataSource.getSwitch().getEnabled());
         Map<String, FailoverData> actual = dataSource.getFailoverData();
@@ -80,7 +80,7 @@ class DiskFailoverDataSourceTest {
     
     @Test
     void testGetSwitchForFailoverEnabledKeep() throws NoSuchFieldException, IllegalAccessException {
-        String dir = DiskFailoverDataSourceTest.class.getResource("/").getPath() + "/failover_test/enabled";
+        String dir = DiskFailoverDataSourceTest.class.getClassLoader().getResource("failover_test/enabled").getPath();
         injectFailOverDir(dir);
         assertTrue(dataSource.getSwitch().getEnabled());
         assertTrue(dataSource.getSwitch().getEnabled());
@@ -88,7 +88,7 @@ class DiskFailoverDataSourceTest {
     
     @Test
     void testGetSwitchForFailoverDisabledKeep() throws NoSuchFieldException, IllegalAccessException {
-        String dir = DiskFailoverDataSourceTest.class.getResource("/").getPath() + "/failover_test/disabled";
+        String dir = DiskFailoverDataSourceTest.class.getClassLoader().getResource("failover_test/disabled").getPath();
         injectFailOverDir(dir);
         assertFalse(dataSource.getSwitch().getEnabled());
         assertFalse(dataSource.getSwitch().getEnabled());

@@ -49,8 +49,10 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  *
  * @author liaochuntao
  * @since 1.0.1
+ * @deprecated Use {@link com.alibaba.nacos.api.naming.maintain.NamingMaintainService} in nacos-maintainer-client article tp replaced.
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
+@Deprecated
 public class NacosNamingMaintainService implements NamingMaintainService {
     
     private String namespace;

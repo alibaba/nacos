@@ -30,6 +30,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collections;
 
@@ -82,14 +83,28 @@ class ConfigCachePostProcessorDelegateTest {
                 .thenReturn(Collections.singletonList(mockConfigCacheMd5PostProcessor));
         Constructor constructor = ConfigCachePostProcessorDelegate.class.getDeclaredConstructor();
         constructor.setAccessible(true);
-        Field field = ConfigCachePostProcessorDelegate.class.getDeclaredField("INSTANCE");
-        Field modifiersField = Field.class.getDeclaredField("modifiers");
-        modifiersField.setAccessible(true);
+        Field field = ConfigCachePostProcessorDelegate.class.getDeclaredField("instance");
         field.setAccessible(true);
-        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
         ConfigCachePostProcessorDelegate delegate = (ConfigCachePostProcessorDelegate) constructor.newInstance();
-        field.set(null, delegate);
+        setStaticFinalField(field, delegate);
         ConfigCachePostProcessorDelegate.getInstance().postProcess(null, null);
         verify(mockConfigCacheMd5PostProcessor, times(1)).postProcess(null, null);
+    }
+    
+    private void setStaticFinalField(Field finalField, Object value)
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
+        getDeclaredFields0.setAccessible(true);
+        Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
+        Field modifiers = null;
+        for (Field each : fields) {
+            if ("modifiers".equals(each.getName())) {
+                modifiers = each;
+            }
+        }
+        modifiers.setAccessible(true);
+        modifiers.setInt(finalField, finalField.getModifiers() & ~Modifier.FINAL);
+        finalField.setAccessible(true);
+        finalField.set(null, value);
     }
 }

@@ -67,6 +67,7 @@ class Register extends React.Component {
 
       admin(data)
         .then(res => {
+          res = res.data;
           if (res.username && res.password) {
             localStorage.setItem('token', JSON.stringify(res));
             Dialog.alert({
@@ -79,7 +80,7 @@ class Register extends React.Component {
           } else {
             Dialog.alert({
               title: locale.Login.initPassword + locale.ListeningToQuery.failure,
-              content: res.data,
+              content: res,
               onOk: () => {
                 const _LOGINPAGE_ENABLED = localStorage.getItem(LOGINPAGE_ENABLED);
 

@@ -19,15 +19,15 @@ package com.alibaba.nacos.core.config;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.module.AbstractServerModuleStateBuilder;
 import com.alibaba.nacos.sys.module.ModuleState;
-import com.alibaba.nacos.sys.module.ModuleStateBuilder;
 
 /**
  * raft state builder.
  * @author 985492783@qq.com
  * @date 2023/4/6 11:26
  */
-public class RaftModuleStateBuilder implements ModuleStateBuilder {
+public class RaftModuleStateBuilder extends AbstractServerModuleStateBuilder {
     
     public static final String SPLICE_CHARACTER = RaftSysConstants.RAFT_CONFIG_PREFIX + ".";
     

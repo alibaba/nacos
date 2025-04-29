@@ -89,7 +89,7 @@ public class GroupCapacityPersistService {
             groupCapacity.setMaxSize(rs.getInt("max_size"));
             groupCapacity.setMaxAggrCount(rs.getInt("max_aggr_count"));
             groupCapacity.setMaxAggrSize(rs.getInt("max_aggr_size"));
-            groupCapacity.setGroup(rs.getString("group_id"));
+            groupCapacity.setGroupName(rs.getString("group_id"));
             return groupCapacity;
         }
     }
@@ -123,7 +123,7 @@ public class GroupCapacityPersistService {
                 TableConstant.GROUP_CAPACITY);
         MapperResult mapperResult;
         MapperContext context = new MapperContext();
-        context.putUpdateParameter(FieldConstant.GROUP_ID, capacity.getGroup());
+        context.putUpdateParameter(FieldConstant.GROUP_ID, capacity.getGroupName());
         context.putUpdateParameter(FieldConstant.QUOTA, capacity.getQuota());
         context.putUpdateParameter(FieldConstant.MAX_SIZE, capacity.getMaxSize());
         context.putUpdateParameter(FieldConstant.MAX_AGGR_SIZE, capacity.getMaxAggrSize());
@@ -131,8 +131,8 @@ public class GroupCapacityPersistService {
         context.putUpdateParameter(FieldConstant.GMT_CREATE, capacity.getGmtCreate());
         context.putUpdateParameter(FieldConstant.GMT_MODIFIED, capacity.getGmtModified());
         
-        context.putWhereParameter(FieldConstant.GROUP_ID, capacity.getGroup());
-        if (CLUSTER.equals(capacity.getGroup())) {
+        context.putWhereParameter(FieldConstant.GROUP_ID, capacity.getGroupName());
+        if (CLUSTER.equals(capacity.getGroupName())) {
             mapperResult = groupCapacityMapper.insertIntoSelect(context);
         } else {
             // Note: add "tenant_id = ''" condition.
@@ -167,7 +167,7 @@ public class GroupCapacityPersistService {
                 TableConstant.GROUP_CAPACITY);
         MapperContext context = new MapperContext();
         context.putUpdateParameter(FieldConstant.GMT_MODIFIED, groupCapacity.getGmtModified());
-        context.putWhereParameter(FieldConstant.GROUP_ID, groupCapacity.getGroup());
+        context.putWhereParameter(FieldConstant.GROUP_ID, groupCapacity.getGroupName());
         context.putWhereParameter(FieldConstant.USAGE, groupCapacity.getQuota());
         MapperResult mapperResult = groupCapacityMapper.incrementUsageByWhereQuotaEqualZero(context);
         try {
@@ -190,7 +190,7 @@ public class GroupCapacityPersistService {
                 TableConstant.GROUP_CAPACITY);
         MapperContext context = new MapperContext();
         context.putUpdateParameter(FieldConstant.GMT_MODIFIED, groupCapacity.getGmtModified());
-        context.putWhereParameter(FieldConstant.GROUP_ID, groupCapacity.getGroup());
+        context.putWhereParameter(FieldConstant.GROUP_ID, groupCapacity.getGroupName());
         MapperResult mapperResult = groupCapacityMapper.incrementUsageByWhereQuotaNotEqualZero(context);
         try {
             return jdbcTemplate.update(mapperResult.getSql(), mapperResult.getParamList().toArray()) == 1;
@@ -212,7 +212,7 @@ public class GroupCapacityPersistService {
                 TableConstant.GROUP_CAPACITY);
         MapperContext context = new MapperContext();
         context.putUpdateParameter(FieldConstant.GMT_MODIFIED, groupCapacity.getGmtModified());
-        context.putWhereParameter(FieldConstant.GROUP_ID, groupCapacity.getGroup());
+        context.putWhereParameter(FieldConstant.GROUP_ID, groupCapacity.getGroupName());
         MapperResult mapperResult = groupCapacityMapper.incrementUsageByWhere(context);
         try {
             int affectRow = jdbcTemplate.update(mapperResult.getSql(), mapperResult.getParamList().toArray());
@@ -234,7 +234,7 @@ public class GroupCapacityPersistService {
                 TableConstant.GROUP_CAPACITY);
         MapperContext context = new MapperContext();
         context.putUpdateParameter(FieldConstant.GMT_MODIFIED, groupCapacity.getGmtModified());
-        context.putWhereParameter(FieldConstant.GROUP_ID, groupCapacity.getGroup());
+        context.putWhereParameter(FieldConstant.GROUP_ID, groupCapacity.getGroupName());
         MapperResult mapperResult = groupCapacityMapper.decrementUsageByWhere(context);
         try {
             return jdbcTemplate.update(mapperResult.getSql(), mapperResult.getParamList().toArray()) == 1;
@@ -354,7 +354,7 @@ public class GroupCapacityPersistService {
             return jdbcTemplate.query(mapperResult.getSql(), mapperResult.getParamList().toArray(), (rs, rowNum) -> {
                 GroupCapacity groupCapacity = new GroupCapacity();
                 groupCapacity.setId(rs.getLong("id"));
-                groupCapacity.setGroup(rs.getString("group_id"));
+                groupCapacity.setGroupName(rs.getString("group_id"));
                 return groupCapacity;
             });
         } catch (CannotGetJdbcConnectionException e) {

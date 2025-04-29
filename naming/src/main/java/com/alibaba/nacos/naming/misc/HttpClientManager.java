@@ -21,10 +21,11 @@ import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.http.conn.routing.HttpRoute;
-import org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager;
-import org.apache.http.nio.conn.NHttpClientConnectionManager;
-import org.apache.http.pool.PoolStats;
+import org.apache.hc.client5.http.HttpRoute;
+import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
+import org.apache.hc.client5.http.nio.AsyncClientConnectionManager;
+import org.apache.hc.core5.pool.PoolStats;
+import org.apache.hc.core5.util.Timeout;
 import org.slf4j.Logger;
 
 import com.alibaba.nacos.common.http.AbstractApacheHttpClientFactory;
@@ -150,7 +151,9 @@ public class HttpClientManager {
         
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
-            return HttpClientConfig.builder().setConnectionTimeToLive(500, TimeUnit.MILLISECONDS)
+            return HttpClientConfig
+                    .builder()
+                    .setConnectionTimeToLive(500, TimeUnit.MILLISECONDS)
                     .setMaxConnTotal(EnvUtil.getAvailableProcessors(2))
                     .setMaxConnPerRoute(EnvUtil.getAvailableProcessors()).setMaxRedirects(0).build();
         }
@@ -165,9 +168,18 @@ public class HttpClientManager {
         
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
-            return HttpClientConfig.builder().setConnectionRequestTimeout(500).setReadTimeOutMillis(500)
-                    .setConTimeOutMillis(500).setIoThreadCount(1).setContentCompressionEnabled(false).setMaxRedirects(0)
-                    .setMaxConnTotal(5000).setMaxConnPerRoute(-1).setUserAgent("VIPServer").build();
+            return HttpClientConfig
+                    .builder()
+                    .setConnectionRequestTimeout(500)
+                    .setReadTimeOutMillis(500)
+                    .setConTimeOutMillis(500)
+                    .setIoThreadCount(1)
+                    .setContentCompressionEnabled(false)
+                    .setMaxRedirects(0)
+                    .setMaxConnTotal(5000)
+                    .setMaxConnPerRoute(-1)
+                    .setUserAgent("VIPServer")
+                    .build();
         }
         
         @Override
@@ -176,27 +188,28 @@ public class HttpClientManager {
         }
         
         @Override
-        protected void monitorAndExtension(NHttpClientConnectionManager connectionManager) {
+        protected void monitorAndExtension(AsyncClientConnectionManager connectionManager) {
             GlobalExecutor.scheduleMonitorHealthCheckPool(new MonitorHealthCheckPool(connectionManager), 60, 60, TimeUnit.SECONDS);
         }
     }
     
     private static class MonitorHealthCheckPool implements Runnable {
-        private NHttpClientConnectionManager connectionManager;
+        private AsyncClientConnectionManager connectionManager;
 
-        public MonitorHealthCheckPool(NHttpClientConnectionManager connectionManager) {
+        public MonitorHealthCheckPool(AsyncClientConnectionManager connectionManager) {
             this.connectionManager = connectionManager;
         }
 
         @Override
         public void run() {
+            // release source
             closeExpiredAndIdleConnections();
             monitor();
         }
 
         private void monitor() {
             try {
-                PoolingNHttpClientConnectionManager manager = (PoolingNHttpClientConnectionManager) connectionManager;
+                PoolingAsyncClientConnectionManager manager = (PoolingAsyncClientConnectionManager) connectionManager;
                 // Get the status of each route
                 Set<HttpRoute> routes = manager.getRoutes();
                 if (routes != null && !routes.isEmpty()) {
@@ -215,8 +228,9 @@ public class HttpClientManager {
 
         private void closeExpiredAndIdleConnections() {
             try {
-                connectionManager.closeExpiredConnections();
-                connectionManager.closeIdleConnections(CON_TIME_OUT_MILLIS * 10, TimeUnit.SECONDS);
+                PoolingAsyncClientConnectionManager manager = (PoolingAsyncClientConnectionManager) connectionManager;
+                manager.closeExpired();
+                manager.closeIdle(Timeout.of(CON_TIME_OUT_MILLIS * 10, TimeUnit.SECONDS));
             } catch (Exception e) {
                 SRV_LOG.warn("MonitorHealthCheckPool clean warn", e);
             }
