@@ -85,7 +85,7 @@ class ServiceInfoHolderTest {
         hosts.add(instance2);
         info.setHosts(hosts);
         
-        ServiceInfo actual1 = holder.processServiceInfo(info);
+        ServiceInfo actual1 = holder.processServiceInfo(info, false);
         assertEquals(info, actual1);
         
         Instance newInstance1 = createInstance("1.1.1.1", 1);
@@ -97,7 +97,7 @@ class ServiceInfoHolderTest {
         ServiceInfo info2 = new ServiceInfo("a@@b@@c");
         info2.setHosts(hosts2);
         
-        ServiceInfo actual2 = holder.processServiceInfo(info2);
+        ServiceInfo actual2 = holder.processServiceInfo(info2, false);
         assertEquals(info2, actual2);
     }
     
@@ -116,7 +116,7 @@ class ServiceInfoHolderTest {
         try (MockedStatic<MetricsMonitor> mockedMetricsMonitor = Mockito.mockStatic(MetricsMonitor.class)) {
             mockedMetricsMonitor.when(MetricsMonitor::getServiceInfoMapSizeMonitor).thenReturn(mockGaugeChild);
             
-            holder.processServiceInfo(info);
+            holder.processServiceInfo(info, false);
             
             verify(mockGaugeChild, times(1)).set(1);
         }
@@ -134,7 +134,7 @@ class ServiceInfoHolderTest {
         info.setHosts(hosts);
         
         try (MockedStatic<MetricsMonitor> mockedMetricsMonitor = Mockito.mockStatic(MetricsMonitor.class)) {
-            holder.processServiceInfo(info);
+            holder.processServiceInfo(info, false);
             
             mockedMetricsMonitor.verify(MetricsMonitor::getServiceInfoMapSizeMonitor, never());
         }
@@ -156,7 +156,7 @@ class ServiceInfoHolderTest {
         try (MockedStatic<MetricsMonitor> mockedMetricsMonitor = Mockito.mockStatic(MetricsMonitor.class)) {
             mockedMetricsMonitor.when(MetricsMonitor::getServiceInfoMapSizeMonitor).thenReturn(mockGaugeChild);
             
-            holder.processServiceInfo(info);
+            holder.processServiceInfo(info, false);
             
             verify(mockGaugeChild, times(1)).set(1);
         }
@@ -180,7 +180,7 @@ class ServiceInfoHolderTest {
             mockedMetricsMonitor.when(MetricsMonitor::getServiceInfoMapSizeMonitor).thenReturn(mockGaugeChild);
             doThrow(exception).when(mockGaugeChild).set(anyInt());
             
-            ServiceInfo actual2 = holder.processServiceInfo(info);
+            ServiceInfo actual2 = holder.processServiceInfo(info, false);
             
             assertEquals(info, actual2);
         }
@@ -208,7 +208,7 @@ class ServiceInfoHolderTest {
     void testProcessServiceInfo2() {
         String json = "{\"groupName\":\"a\",\"name\":\"b\",\"clusters\":\"c\"}";
         
-        ServiceInfo actual = holder.processServiceInfo(json);
+        ServiceInfo actual = holder.processServiceInfo(json, false);
         ServiceInfo expect = new ServiceInfo("a@@b@@c");
         expect.setJsonFromServer(json);
         assertEquals(expect.getKey(), actual.getKey());
@@ -227,11 +227,11 @@ class ServiceInfoHolderTest {
         nacosClientProperties.setProperty(PropertyKeyConst.NAMING_PUSH_EMPTY_PROTECTION, "true");
         holder.shutdown();
         holder = new ServiceInfoHolder("aa", "scope-001", nacosClientProperties);
-        holder.processServiceInfo(oldInfo);
+        holder.processServiceInfo(oldInfo, false);
         
         ServiceInfo newInfo = new ServiceInfo("a@@b@@c");
         
-        final ServiceInfo actual = holder.processServiceInfo(newInfo);
+        final ServiceInfo actual = holder.processServiceInfo(newInfo, false);
         
         assertEquals(oldInfo.getKey(), actual.getKey());
         assertEquals(2, actual.getHosts().size());
@@ -239,7 +239,7 @@ class ServiceInfoHolderTest {
     
     @Test
     void testProcessNullServiceInfo() {
-        assertNull(holder.processServiceInfo(new ServiceInfo()));
+        assertNull(holder.processServiceInfo(new ServiceInfo(), false));
     }
     
     @Test
@@ -252,10 +252,10 @@ class ServiceInfoHolderTest {
         hosts.add(instance2);
         info.setHosts(hosts);
         info.setLastRefTime(System.currentTimeMillis());
-        holder.processServiceInfo(info);
+        holder.processServiceInfo(info, false);
         ServiceInfo olderInfo = new ServiceInfo("a@@b@@c");
         olderInfo.setLastRefTime(0L);
-        final ServiceInfo actual = holder.processServiceInfo(olderInfo);
+        final ServiceInfo actual = holder.processServiceInfo(olderInfo, false);
         assertEquals(olderInfo, actual);
     }
     
@@ -267,7 +267,7 @@ class ServiceInfoHolderTest {
         hosts.add(instance1);
         info.setHosts(hosts);
         
-        ServiceInfo expect = holder.processServiceInfo(info);
+        ServiceInfo expect = holder.processServiceInfo(info, false);
         String serviceName = "b";
         String groupName = "a";
         ServiceInfo actual = holder.getServiceInfo(serviceName, groupName);
