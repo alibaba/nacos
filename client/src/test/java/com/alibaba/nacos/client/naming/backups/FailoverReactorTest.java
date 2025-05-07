@@ -21,6 +21,10 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.common.utils.ReflectUtils;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.ImmutableTag;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Tag;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,7 +35,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -64,6 +70,11 @@ class FailoverReactorTest {
     @AfterEach
     void tearDown() throws NacosException {
         failoverReactor.shutdown();
+        Gauge gauge = Metrics.globalRegistry.find("nacos_naming_client_failover_instances").tag("service_name", "g@@s1")
+                .gauge();
+        if (gauge != null) {
+            Metrics.globalRegistry.remove(gauge);
+        }
     }
     
     @Test
@@ -104,7 +115,7 @@ class FailoverReactorTest {
         when(failoverDataSource.getFailoverData()).thenReturn(null);
         // waiting refresh thread work
         TimeUnit.MILLISECONDS.sleep(5500);
-        assertTrue(((Map) ReflectUtils.getFieldValue(failoverDataSource, "serviceMap", new HashMap<>())).isEmpty());
+        assertTrue(((Map) ReflectUtils.getFieldValue(failoverReactor, "serviceMap", new HashMap<>())).isEmpty());
     }
     
     @Test
@@ -133,6 +144,8 @@ class FailoverReactorTest {
     @Test
     void testFailoverServiceCntMetrics()
             throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        ((Map) ReflectUtils.getFieldValue(failoverReactor, "serviceMap", new HashMap<>())).put("g@@s1",
+                new ServiceInfo());
         Method method = FailoverReactor.class.getDeclaredMethod("failoverServiceCntMetrics");
         method.setAccessible(true);
         method.invoke(failoverReactor);
@@ -142,6 +155,12 @@ class FailoverReactorTest {
     @Test
     void testFailoverServiceCntMetricsClear()
             throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException {
+        String serviceName = "g@@s1";
+        List<Tag> tags = new ArrayList<>();
+        tags.add(new ImmutableTag("service_name", serviceName));
+        Gauge.builder("nacos_naming_client_failover_instances", () -> 1).tags(tags).register(Metrics.globalRegistry);
+        ((Map) ReflectUtils.getFieldValue(failoverReactor, "serviceMap", new HashMap<>())).put(serviceName,
+                new ServiceInfo());
         Method method = FailoverReactor.class.getDeclaredMethod("failoverServiceCntMetricsClear");
         method.setAccessible(true);
         method.invoke(failoverReactor);
