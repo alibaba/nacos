@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.maintainer.client.naming;
 
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -54,6 +55,7 @@ import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
@@ -334,6 +336,68 @@ public class NacosNamingMaintainerServiceImplTest {
     }
     
     @Test
+    void testRegisterInstanceWithCluster() throws Exception {
+        String serviceName = "testService";
+        String ip = "127.0.0.1";
+        int port = 8080;
+        String clusterName = "testCluster";
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>("success")));
+        
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+        String result = nacosNamingMaintainerService.registerInstance(serviceName, ip, port, clusterName);
+        
+        assertEquals("success", result);
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+    }
+    
+    @Test
+    void testDeregisterInstanceWithCluster() throws Exception {
+        String serviceName = "testService";
+        String ip = "127.0.0.1";
+        int port = 8080;
+        String clusterName = "testCluster";
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>("success")));
+        
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+        String result = nacosNamingMaintainerService.deregisterInstance(serviceName, ip, port, clusterName);
+        
+        assertEquals("success", result);
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+    }
+    
+    @Test
+    void testRegisterInstanceWithEphemeral() throws Exception {
+        Instance instance = new Instance();
+        instance.setEphemeral(true);
+        instance.setIp("127.0.0.1");
+        instance.setPort(8080);
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>("success")));
+        
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+        String result = nacosNamingMaintainerService.registerInstance("testService", instance);
+        assertEquals("success", result);
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+    }
+    
+    @Test
+    void testDeregisterInstanceWithEphemeral() throws Exception {
+        Instance instance = new Instance();
+        instance.setEphemeral(true);
+        instance.setIp("127.0.0.1");
+        instance.setPort(8080);
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(new Result<>("success")));
+        
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+        String result = nacosNamingMaintainerService.deregisterInstance("testService", instance);
+        assertEquals("success", result);
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+    }
+    
+    @Test
     void testUpdateInstance() throws Exception {
         // Arrange
         final String service = "testService";
@@ -385,6 +449,24 @@ public class NacosNamingMaintainerServiceImplTest {
     }
     
     @Test
+    void testBatchUpdateInstanceMetadataWithoutNewMeta() throws Exception {
+        Service service = new Service();
+        service.setName("testService");
+        assertThrows(NacosApiException.class,
+                () -> nacosNamingMaintainerService.batchUpdateInstanceMetadata(service, null, null),
+                "Parameter `newMetadata` can't be null");
+    }
+    
+    @Test
+    void testBatchUpdateInstanceMetadataWithoutInstance() throws Exception {
+        Service service = new Service();
+        service.setName("testService");
+        InstanceMetadataBatchResult result = nacosNamingMaintainerService.batchUpdateInstanceMetadata(service,
+                Collections.emptyList(), new HashMap<>());
+        assertTrue(result.getUpdated().isEmpty());
+    }
+    
+    @Test
     void testBatchDeleteInstanceMetadata() throws Exception {
         // Arrange
         Service service = new Service();
@@ -409,6 +491,24 @@ public class NacosNamingMaintainerServiceImplTest {
         // Assert
         assertNotNull(result);
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+    }
+    
+    @Test
+    void testBatchDeleteInstanceMetadataWithoutNewMeta() throws Exception {
+        Service service = new Service();
+        service.setName("testService");
+        assertThrows(NacosApiException.class,
+                () -> nacosNamingMaintainerService.batchDeleteInstanceMetadata(service, null, null),
+                "Parameter `newMetadata` can't be null");
+    }
+    
+    @Test
+    void testBatchDeleteInstanceMetadataWithoutInstance() throws Exception {
+        Service service = new Service();
+        service.setName("testService");
+        InstanceMetadataBatchResult result = nacosNamingMaintainerService.batchDeleteInstanceMetadata(service,
+                Collections.emptyList(), new HashMap<>());
+        assertTrue(result.getUpdated().isEmpty());
     }
     
     @Test
@@ -451,9 +551,8 @@ public class NacosNamingMaintainerServiceImplTest {
         
         // Act
         String serviceName = "testService";
-        String clusterName = "testCluster";
         boolean healthyOnly = true;
-        List<Instance> result = nacosNamingMaintainerService.listInstances(serviceName, clusterName, healthyOnly);
+        List<Instance> result = nacosNamingMaintainerService.listInstances(serviceName, "", healthyOnly);
         
         // Assert
         assertNotNull(result);
@@ -479,6 +578,29 @@ public class NacosNamingMaintainerServiceImplTest {
         
         // Act
         Instance result = nacosNamingMaintainerService.getInstanceDetail(serviceName, ip, port);
+        
+        // Assert
+        assertNotNull(result);
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any());
+    }
+    
+    @Test
+    void testGetInstanceDetailWithClusterName() throws Exception {
+        // Arrange
+        String serviceName = "testService";
+        String ip = "127.0.0.1";
+        int port = 8080;
+        String clusterName = "testCluster";
+        
+        Instance expectedVo = new Instance();
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        Result<Instance> expectedResult = Result.success(expectedVo);
+        mockHttpRestResult.setData(new ObjectMapper().writeValueAsString(expectedResult));
+        
+        when(clientHttpProxy.executeSyncHttpRequest(any())).thenReturn(mockHttpRestResult);
+        
+        // Act
+        Instance result = nacosNamingMaintainerService.getInstanceDetail(serviceName, ip, port, clusterName);
         
         // Assert
         assertNotNull(result);

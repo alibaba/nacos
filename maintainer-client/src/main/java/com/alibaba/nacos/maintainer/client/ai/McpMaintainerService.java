@@ -289,7 +289,7 @@ public interface McpMaintainerService {
             throw new NacosException(NacosException.INVALID_PARAM, "Mcp server specification cannot be null.");
         }
         if (AiConstants.Mcp.MCP_PROTOCOL_STDIO.equalsIgnoreCase(serverSpec.getProtocol())) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Mcp server type cannot be `local` or empty.");
+            throw new NacosException(NacosException.INVALID_PARAM, "Mcp server protocol cannot be `stdio` or empty.");
         }
         if (Objects.isNull(endpointSpec)) {
             throw new NacosException(NacosException.INVALID_PARAM, "Mcp server endpoint specification cannot be null.");
