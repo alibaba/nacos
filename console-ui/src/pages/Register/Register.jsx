@@ -72,7 +72,7 @@ class Register extends React.Component {
             localStorage.setItem('token', JSON.stringify(res));
             Dialog.alert({
               title: locale.Login.initPassword + locale.ListeningToQuery.success,
-              content: locale.Password.newPassword + '：' + res.password,
+              content: (<div><div>{locale.Password.newPassword}：{res.password}</div><div>{locale.Password.hintSavePassword}</div></div>),
               onOk: () => {
                 this.props.history.push('/');
               }
@@ -143,7 +143,10 @@ class Register extends React.Component {
             <div className="login-header">{locale.Login.initPassword}</div>
             <div className="internal-sys-tip">
               <div>{locale.Login.internalSysTip1}</div>
-              <div>{locale.Login.internalSysTip2}</div>
+            </div>
+            <div className="internal-sys-tip2">
+              <div>{locale.Login.internalSysTip3}</div>
+              <div>{locale.Login.internalSysTip4}</div>
             </div>
             {!consoleUiEnable && (
               <Form className="login-form" field={this.field}>
