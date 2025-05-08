@@ -108,7 +108,9 @@ public class K8sSyncServer {
         } else {
             apiClient = ClientBuilder.defaultClient();
         }
-        coreV1Api = new CoreV1Api(apiClient);
+        // set the global default api-client
+        Configuration.setDefaultApiClient(apiClient);
+        coreV1Api = new CoreV1Api();
 
         OkHttpClient httpClient = apiClient.getHttpClient().newBuilder().build();
         apiClient.setHttpClient(httpClient);
