@@ -66,7 +66,8 @@ class HistoryDetail extends React.Component {
       url: `v3/console/cs/history?dataId=${this.dataId}&groupName=${this.group}&nid=${this.nid}`,
       success(result) {
         if (result != null) {
-          const { data } = result;
+          const data = result && result.data;
+          if (!data) return;
           const extInfo = data.extInfo ? JSON.parse(data.extInfo) : {};
           const grayRule = extInfo.gray_rule ? JSON.parse(extInfo.gray_rule) : {};
           self.field.setValue('dataId', data.dataId);

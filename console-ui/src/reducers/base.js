@@ -84,7 +84,7 @@ const getState = () => dispatch =>
 
 const getNotice = () => dispatch =>
   request
-    .get(`v3/console/server/announcement?language=${localStorage.getItem(LANGUAGE_KEY)}`)
+    .get(`v3/console/server/announcement?language=${localStorage.getItem(LANGUAGE_KEY) || 'zh-CN'}`)
     .then(res => {
       dispatch({
         type: GET_NOTICE,
