@@ -25,6 +25,7 @@ import com.alibaba.nacos.api.config.model.ConfigHistoryBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
 import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
 import com.alibaba.nacos.api.config.model.SameConfigPolicy;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.http.HttpRestResult;
@@ -48,6 +49,7 @@ import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
@@ -117,6 +119,35 @@ class NacosConfigMaintainerServiceImplTest {
     }
     
     @Test
+    void testPublishBetaConfig() throws Exception {
+        String dataId = "testDataId";
+        String content = "testContent";
+        String betaIps = "127.0.0.1";
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(JacksonUtils.toJson(new Result<>(true)));
+        
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockHttpRestResult);
+        
+        // Act
+        boolean result = nacosConfigMaintainerServiceImpl.publishBetaConfig(dataId, Constants.DEFAULT_GROUP,
+                Constants.DEFAULT_NAMESPACE_ID, content, null, null, null, null, null, betaIps);
+        
+        // Assert
+        assertTrue(result);
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any(HttpRequest.class));
+    }
+    
+    @Test
+    void testPublishBetaConfigWithoutBetaIps() throws Exception {
+        String dataId = "testDataId";
+        String content = "testContent";
+        assertThrows(NacosException.class,
+                () -> nacosConfigMaintainerServiceImpl.publishBetaConfig(dataId, Constants.DEFAULT_GROUP,
+                        Constants.DEFAULT_NAMESPACE_ID, content, null, null, null, null, null, ""),
+                "betaIps is empty, not publish beta configuration, please use `publishConfig` directly");
+    }
+    
+    @Test
     void testDeleteConfig() throws Exception {
         // Arrange
         String dataId = "testDataId";
@@ -130,6 +161,22 @@ class NacosConfigMaintainerServiceImplTest {
         boolean result = nacosConfigMaintainerServiceImpl.deleteConfig(dataId);
         
         // Assert
+        assertTrue(result);
+        verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any(HttpRequest.class));
+    }
+    
+    @Test
+    void testDeleteConfigs() throws Exception {
+        List<Long> ids = new ArrayList<>();
+        ids.add(1L);
+        ids.add(2L);
+        HttpRestResult<String> mockHttpRestResult = new HttpRestResult<>();
+        mockHttpRestResult.setData(JacksonUtils.toJson(new Result<>(true)));
+        
+        when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockHttpRestResult);
+        
+        boolean result = nacosConfigMaintainerServiceImpl.deleteConfigs(ids);
+        
         assertTrue(result);
         verify(clientHttpProxy, times(1)).executeSyncHttpRequest(any(HttpRequest.class));
     }

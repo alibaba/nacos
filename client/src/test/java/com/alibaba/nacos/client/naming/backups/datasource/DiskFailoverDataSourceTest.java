@@ -93,4 +93,10 @@ class DiskFailoverDataSourceTest {
         assertFalse(dataSource.getSwitch().getEnabled());
         assertFalse(dataSource.getSwitch().getEnabled());
     }
+    
+    @Test
+    void testGetSwitchWithException() throws NoSuchFieldException, IllegalAccessException {
+        injectFailOverDir("invalid\\0path");
+        assertFalse(dataSource.getSwitch().getEnabled());
+    }
 }

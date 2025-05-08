@@ -73,7 +73,7 @@ public class RestResult<T> implements Serializable {
     }
     
     public boolean isNoRight() {
-        return this.code == 403;
+        return this.code == 403 || this.code == 401;
     }
     
     @Override

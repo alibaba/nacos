@@ -37,15 +37,20 @@ class ServerIdentityCheckerHolderTest {
     
     Map<Class<?>, Collection<Class<?>>> servicesMap;
     
+    private Class<? extends ServerIdentityChecker> cachedCheckerClass;
+    
     @BeforeEach
     void setUp() {
         servicesMap = (Map<Class<?>, Collection<Class<?>>>) ReflectionTestUtils.getField(NacosServiceLoader.class,
                 "SERVICES");
+        cachedCheckerClass = (Class<? extends ServerIdentityChecker>) ReflectionTestUtils.getField(
+                ServerIdentityCheckerHolder.getInstance(), "checkerClass");
     }
     
     @AfterEach
     void tearDown() {
         servicesMap.remove(ServerIdentityChecker.class);
+        ReflectionTestUtils.setField(ServerIdentityCheckerHolder.getInstance(), "checkerClass", cachedCheckerClass);
     }
     
     @Test
