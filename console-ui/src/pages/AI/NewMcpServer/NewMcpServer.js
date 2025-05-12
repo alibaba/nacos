@@ -105,7 +105,7 @@ class NewMcpServer extends React.Component {
             : false;
           initFileData['namespace'] = remoteServerConfig?.serviceRef?.namespaceId;
           initFileData['service'] = remoteServerConfig?.serviceRef?.serviceName;
-          initFileData['groupName'] = remoteServerConfig?.serviceRef?.groupName;
+          initFileData['groupName'] = remoteServerConfig?.serviceRef?.groupName || '';
           // 通过 namespaceId 获取服务列表
           if (remoteServerConfig?.serviceRef?.namespaceId) {
             this.getServiceList(remoteServerConfig?.serviceRef?.namespaceId);
