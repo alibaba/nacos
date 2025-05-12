@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.config.server.constant.PropertiesConstant;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.core.namespace.injector.AbstractNamespaceDetailInjector;
-import com.alibaba.nacos.core.namespace.model.Namespace;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.stereotype.Service;
 

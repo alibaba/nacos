@@ -20,9 +20,9 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.ConfigHttpClientManager;
 import com.alibaba.nacos.client.config.impl.ConfigServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
-import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
@@ -231,7 +231,7 @@ public class ServerHttpAgent implements HttpAgent {
     }
     
     public static String getAppname() {
-        return ParamUtil.getAppName();
+        return AppNameUtils.getAppName();
     }
     
     public ServerHttpAgent(ConfigServerListManager mgr) {

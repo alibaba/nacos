@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.controllers.v2;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
@@ -27,7 +28,6 @@ import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.model.form.ServiceForm;
-import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
 import com.alibaba.nacos.naming.pojo.ServiceNameView;
 import com.alibaba.nacos.naming.selector.SelectorManager;
 import org.junit.jupiter.api.AfterEach;
@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -102,7 +103,8 @@ class ServiceControllerV2Test {
         serviceForm.setSelector("");
         
         Result<String> actual = serviceController.create(serviceForm);
-        verify(serviceOperatorV2).create(eq(Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service")),
+        verify(serviceOperatorV2).create(
+                eq(Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service")),
                 any(ServiceMetadata.class));
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals("ok", actual.getData());
@@ -110,8 +112,10 @@ class ServiceControllerV2Test {
     
     @Test
     void testRemove() throws Exception {
-        Result<String> actual = serviceController.remove(Constants.DEFAULT_NAMESPACE_ID, "service", Constants.DEFAULT_GROUP);
-        verify(serviceOperatorV2).delete(Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service"));
+        Result<String> actual = serviceController.remove(Constants.DEFAULT_NAMESPACE_ID, "service",
+                Constants.DEFAULT_GROUP);
+        verify(serviceOperatorV2).delete(
+                Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service"));
         assertEquals("ok", actual.getData());
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
     }
@@ -119,11 +123,16 @@ class ServiceControllerV2Test {
     @Test
     void testDetail() throws Exception {
         ServiceDetailInfo expected = new ServiceDetailInfo();
+        expected.setEphemeral(true);
+        expected.setMetadata(Collections.emptyMap());
+        expected.setClusterMap(Collections.emptyMap());
         when(serviceOperatorV2.queryService(
-                Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service"))).thenReturn(expected);
-        Result<ServiceDetailInfo> actual = serviceController.detail(Constants.DEFAULT_NAMESPACE_ID, "service", Constants.DEFAULT_GROUP);
+                Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service"))).thenReturn(
+                expected);
+        Result<com.alibaba.nacos.naming.pojo.ServiceDetailInfo> actual = serviceController.detail(
+                Constants.DEFAULT_NAMESPACE_ID, "service", Constants.DEFAULT_GROUP);
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
-        assertEquals(expected, actual.getData());
+        assertNotEquals(expected, actual.getData());
     }
     
     @Test
@@ -131,7 +140,8 @@ class ServiceControllerV2Test {
         
         when(serviceOperatorV2.listService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "")).thenReturn(
                 Collections.singletonList("serviceName"));
-        Result<ServiceNameView> actual = serviceController.list(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "", 1, 10);
+        Result<ServiceNameView> actual = serviceController.list(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP,
+                "", 1, 10);
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals(1, actual.getData().getCount());
         assertEquals(1, actual.getData().getServices().size());
@@ -148,7 +158,8 @@ class ServiceControllerV2Test {
         serviceForm.setMetadata("");
         serviceForm.setSelector("");
         Result<String> actual = serviceController.update(serviceForm);
-        verify(serviceOperatorV2).update(eq(Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service")),
+        verify(serviceOperatorV2).update(
+                eq(Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service")),
                 any(ServiceMetadata.class));
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals("ok", actual.getData());

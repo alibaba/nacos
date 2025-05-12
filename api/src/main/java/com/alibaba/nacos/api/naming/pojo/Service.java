@@ -16,7 +16,15 @@
 
 package com.alibaba.nacos.api.naming.pojo;
 
-import java.io.Serializable;
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.NacosForm;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.selector.NoneSelector;
+import com.alibaba.nacos.api.selector.Selector;
+import com.alibaba.nacos.api.utils.StringUtils;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,37 +38,38 @@ import java.util.Map;
  *
  * @author nkorange
  */
-public class Service implements Serializable {
+public class Service implements NacosForm {
     
     private static final long serialVersionUID = -3470985546826874460L;
     
-    /**
-     * service name.
-     */
+    private String namespaceId;
+    
+    private String groupName;
+    
     private String name;
     
-    /**
-     * protect threshold.
-     */
+    private boolean ephemeral;
+    
     private float protectThreshold = 0.0F;
-    
-    /**
-     * application name of this service.
-     */
-    private String appName;
-    
-    /**
-     * Service group to classify services into different sets.
-     */
-    private String groupName;
     
     private Map<String, String> metadata = new HashMap<>();
     
-    public Service() {
+    private Selector selector = new NoneSelector();
+    
+    public String getNamespaceId() {
+        return namespaceId;
     }
     
-    public Service(String name) {
-        this.name = name;
+    public void setNamespaceId(String namespaceId) {
+        this.namespaceId = namespaceId;
+    }
+    
+    public String getGroupName() {
+        return groupName;
+    }
+    
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
     }
     
     public String getName() {
@@ -71,28 +80,20 @@ public class Service implements Serializable {
         this.name = name;
     }
     
+    public boolean isEphemeral() {
+        return ephemeral;
+    }
+    
+    public void setEphemeral(boolean ephemeral) {
+        this.ephemeral = ephemeral;
+    }
+    
     public float getProtectThreshold() {
         return protectThreshold;
     }
     
     public void setProtectThreshold(float protectThreshold) {
         this.protectThreshold = protectThreshold;
-    }
-    
-    public String getAppName() {
-        return appName;
-    }
-    
-    public void setAppName(String appName) {
-        this.appName = appName;
-    }
-    
-    public String getGroupName() {
-        return groupName;
-    }
-    
-    public void setGroupName(String groupName) {
-        this.groupName = groupName;
     }
     
     public Map<String, String> getMetadata() {
@@ -107,9 +108,32 @@ public class Service implements Serializable {
         this.metadata.put(key, value);
     }
     
+    public Selector getSelector() {
+        return selector;
+    }
+    
+    public void setSelector(Selector selector) {
+        this.selector = selector;
+    }
+    
     @Override
-    public String toString() {
-        return "Service{" + "name='" + name + '\'' + ", protectThreshold=" + protectThreshold + ", appName='" + appName
-                + '\'' + ", groupName='" + groupName + '\'' + ", metadata=" + metadata + '}';
+    public void validate() throws NacosApiException {
+        fillDefaultValue();
+        if (StringUtils.isBlank(name)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Required parameter 'name' type String is not present");
+        }
+    }
+    
+    /**
+     * fill default value.
+     */
+    public void fillDefaultValue() {
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = Constants.DEFAULT_NAMESPACE_ID;
+        }
+        if (StringUtils.isBlank(groupName)) {
+            groupName = Constants.DEFAULT_GROUP;
+        }
     }
 }

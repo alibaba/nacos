@@ -276,6 +276,75 @@ public class Constants {
         public static final String CMDB_CONTEXT_TYPE = "CMDB";
     }
     
+    public static final String FUZZY_WATCH_PATTERN_SPLITTER = ">>";
+    
+    /**
+     * fuzzy watch sync type of watch init notify.
+     */
+    public static final String FUZZY_WATCH_INIT_NOTIFY = "FUZZY_WATCH_INIT_NOTIFY";
+    
+    /**
+     * fuzzy watch sync type of watch init notify finish.
+     */
+    public static final String FINISH_FUZZY_WATCH_INIT_NOTIFY = "FINISH_FUZZY_WATCH_INIT_NOTIFY";
+    
+    /**
+     * fuzzy watch sync type of watch diff sync notify.
+     */
+    public static final String FUZZY_WATCH_DIFF_SYNC_NOTIFY = "FUZZY_WATCH_DIFF_SYNC_NOTIFY";
+    
+    /**
+     * fuzzy watch sync type of watch resource changed.
+     */
+    public static final String FUZZY_WATCH_RESOURCE_CHANGED = "FUZZY_WATCH_RESOURCE_CHANGED";
+    
+    /**
+     * watch type of watch.
+     */
+    public static final String WATCH_TYPE_WATCH = "WATCH";
+    
+    /**
+     * watch type of cancel watch.
+     */
+    public static final String WATCH_TYPE_CANCEL_WATCH = "CANCEL_WATCH";
+    
+    /**
+     * The constants in config fuzzy watch changed type directory.
+     */
+    public static class ConfigChangedType {
+        
+        public static final String ADD_CONFIG = "ADD_CONFIG";
+        
+        public static final String DELETE_CONFIG = "DELETE_CONFIG";
+        
+        public static final String CONFIG_CHANGED = "CONFIG_CHANGED";
+    
+    }
+    
+    /**
+     * The constants in naming fuzzy watch changed type directory.
+     */
+    public static class ServiceChangedType {
+        
+        public static final String ADD_SERVICE = "ADD_SERVICE";
+        
+        public static final String DELETE_SERVICE = "DELETE_SERVICE";
+        
+        public static final String INSTANCE_CHANGED = "INSTANCE_CHANGED";
+        
+        public static final String HEART_BEAT = "HEART_BEAT";
+        
+    }
+    
+    /**
+     * The constants in lock directory.
+     */
+    public static class Lock {
+        
+        public static final String LOCK_MODULE = "lock";
+        
+    }
+    
     /**
      * The constants in remote directory.
      */

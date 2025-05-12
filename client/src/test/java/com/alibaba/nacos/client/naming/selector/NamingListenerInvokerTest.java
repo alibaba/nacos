@@ -27,7 +27,9 @@ import org.junit.jupiter.api.Test;
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -39,8 +41,10 @@ public class NamingListenerInvokerTest {
         EventListener listener = mock(EventListener.class);
         NamingListenerInvoker listenerInvoker = new NamingListenerInvoker(listener);
         NamingEvent event = new NamingEvent("serviceName", Collections.emptyList());
+        assertFalse(listenerInvoker.isInvoked());
         listenerInvoker.invoke(event);
         verify(listener).onEvent(event);
+        assertTrue(listenerInvoker.isInvoked());
     }
     
     @Test
@@ -48,8 +52,10 @@ public class NamingListenerInvokerTest {
         AbstractEventListener listener = mock(AbstractEventListener.class);
         NamingListenerInvoker listenerInvoker = new NamingListenerInvoker(listener);
         NamingEvent event = new NamingEvent("serviceName", Collections.emptyList());
+        assertFalse(listenerInvoker.isInvoked());
         listenerInvoker.invoke(event);
         verify(listener).getExecutor();
+        assertTrue(listenerInvoker.isInvoked());
     }
     
     @Test
@@ -57,8 +63,10 @@ public class NamingListenerInvokerTest {
         AbstractNamingChangeListener listener = spy(AbstractNamingChangeListener.class);
         NamingListenerInvoker listenerInvoker = new NamingListenerInvoker(listener);
         NamingChangeEvent event = new NamingChangeEvent("serviceName", Collections.emptyList(), new InstancesDiff());
+        assertFalse(listenerInvoker.isInvoked());
         listenerInvoker.invoke(event);
         verify(listener).onChange(event);
+        assertTrue(listenerInvoker.isInvoked());
     }
     
     @Test
@@ -72,5 +80,7 @@ public class NamingListenerInvokerTest {
         assertEquals(invoker1, invoker2);
         assertNotEquals(invoker1.hashCode(), invoker3.hashCode());
         assertNotEquals(invoker1, invoker3);
+        assertNotEquals(null, invoker1);
+        assertEquals(invoker1, invoker1);
     }
 }

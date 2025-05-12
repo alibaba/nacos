@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

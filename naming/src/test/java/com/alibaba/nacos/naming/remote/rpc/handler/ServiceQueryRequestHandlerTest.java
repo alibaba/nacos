@@ -69,8 +69,7 @@ class ServiceQueryRequestHandlerTest {
     
     @BeforeEach
     void setUp() {
-        ApplicationUtils applicationUtils = new ApplicationUtils();
-        applicationUtils.initialize(applicationContext);
+        ApplicationUtils.injectContext(applicationContext);
         Mockito.when(applicationContext.getBean(SelectorManager.class)).thenReturn(selectorManager);
     }
     

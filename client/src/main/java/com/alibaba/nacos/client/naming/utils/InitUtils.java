@@ -26,7 +26,6 @@ import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.env.SourceType;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
-import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.client.utils.TenantUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -39,8 +38,6 @@ import com.alibaba.nacos.common.utils.StringUtils;
  * @author deshao
  */
 public class InitUtils {
-    
-    private static final String DEFAULT_END_POINT_PORT = "8080";
     
     /**
      * Add a difference to the name naming. This method simply initializes the namespace for Naming. Config
@@ -63,7 +60,8 @@ public class InitUtils {
             
             tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, () -> {
                 String namespace = properties.getProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
-                LogUtils.NAMING_LOGGER.info("initializer namespace from ALIBABA_ALIWARE_NAMESPACE attribute :" + namespace);
+                LogUtils.NAMING_LOGGER.info(
+                        "initializer namespace from ALIBABA_ALIWARE_NAMESPACE attribute :" + namespace);
                 return namespace;
             });
         }
@@ -73,7 +71,7 @@ public class InitUtils {
             LogUtils.NAMING_LOGGER.info("initializer namespace from namespace attribute :" + namespace);
             return namespace;
         });
-    
+        
         if (StringUtils.isEmpty(tmpNamespace)) {
             tmpNamespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         }
@@ -95,46 +93,6 @@ public class InitUtils {
             UtilAndComs.nacosUrlBase = UtilAndComs.webContext + "/v1/ns";
             UtilAndComs.nacosUrlInstance = UtilAndComs.nacosUrlBase + "/instance";
         });
-    }
-    
-    /**
-     * Init end point.
-     *
-     * @param properties properties
-     * @return end point
-     */
-    public static String initEndpoint(final NacosClientProperties properties) {
-        if (properties == null) {
-            return "";
-        }
-        // Whether to enable domain name resolution rules
-        String isUseEndpointRuleParsing = properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
-                properties.getProperty(SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
-                        String.valueOf(ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE)));
-        
-        boolean isUseEndpointParsingRule = Boolean.parseBoolean(isUseEndpointRuleParsing);
-        String endpointUrl;
-        if (isUseEndpointParsingRule) {
-            // Get the set domain name information
-            endpointUrl = ParamUtil.parsingEndpointRule(properties.getProperty(PropertyKeyConst.ENDPOINT));
-            if (StringUtils.isBlank(endpointUrl)) {
-                return "";
-            }
-        } else {
-            endpointUrl = properties.getProperty(PropertyKeyConst.ENDPOINT);
-        }
-        
-        if (StringUtils.isBlank(endpointUrl)) {
-            return "";
-        }
-        
-        String endpointPort = TemplateUtils
-                .stringEmptyAndThenExecute(properties.getProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT),
-                        () -> properties.getProperty(PropertyKeyConst.ENDPOINT_PORT));
-        
-        endpointPort = TemplateUtils.stringEmptyAndThenExecute(endpointPort, () -> DEFAULT_END_POINT_PORT);
-        
-        return endpointUrl + ":" + endpointPort;
     }
     
     /**

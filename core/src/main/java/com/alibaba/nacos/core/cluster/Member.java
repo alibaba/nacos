@@ -16,10 +16,11 @@
 
 package com.alibaba.nacos.core.cluster;
 
-import com.alibaba.nacos.api.ability.ServerAbilities;
+import com.alibaba.nacos.api.common.NodeState;
+import com.alibaba.nacos.api.model.response.NacosMember;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -37,34 +38,27 @@ import java.util.TreeMap;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class Member implements Comparable<Member>, Cloneable, Serializable {
+public class Member extends NacosMember implements Comparable<Member>, Cloneable, Serializable {
     
     private static final long serialVersionUID = -6061130045021268736L;
     
-    private String ip;
-    
-    private int port = -1;
-    
-    private volatile NodeState state = NodeState.UP;
-    
-    private Map<String, Object> extendInfo = Collections.synchronizedMap(new TreeMap<>());
-    
-    private String address = "";
-    
     private transient int failAccessCnt = 0;
     
+    /**
+     * After 2.3 version, all server request will use grpc default.
+     *
+     * @deprecated will be deprecated after server not support upgrade from lower 2.3.
+     */
     @Deprecated
-    private ServerAbilities abilities = new ServerAbilities();
-    
     private boolean grpcReportEnabled;
     
     public Member() {
         String prefix = "nacos.core.member.meta.";
-        extendInfo.put(MemberMetaDataConstants.SITE_KEY,
+        super.getExtendInfo().put(MemberMetaDataConstants.SITE_KEY,
                 EnvUtil.getProperty(prefix + MemberMetaDataConstants.SITE_KEY, "unknow"));
-        extendInfo.put(MemberMetaDataConstants.AD_WEIGHT,
+        super.getExtendInfo().put(MemberMetaDataConstants.AD_WEIGHT,
                 EnvUtil.getProperty(prefix + MemberMetaDataConstants.AD_WEIGHT, "0"));
-        extendInfo
+        super.getExtendInfo()
                 .put(MemberMetaDataConstants.WEIGHT, EnvUtil.getProperty(prefix + MemberMetaDataConstants.WEIGHT, "1"));
     }
     
@@ -76,79 +70,24 @@ public class Member implements Comparable<Member>, Cloneable, Serializable {
         this.grpcReportEnabled = grpcReportEnabled;
     }
     
-    @Deprecated
-    public ServerAbilities getAbilities() {
-        return abilities;
-    }
-    
-    @Deprecated
-    public void setAbilities(ServerAbilities abilities) {
-        this.abilities = abilities;
-    }
-    
     public static MemberBuilder builder() {
         return new MemberBuilder();
     }
     
-    public int getPort() {
-        return port;
-    }
-    
-    public void setPort(int port) {
-        this.port = port;
-    }
-    
-    public NodeState getState() {
-        return state;
-    }
-    
-    public void setState(NodeState state) {
-        this.state = state;
-    }
-    
-    public Map<String, Object> getExtendInfo() {
-        return extendInfo;
-    }
-    
-    public void setExtendInfo(Map<String, Object> extendInfo) {
-        Map<String, Object> newExtendInfo = Collections.synchronizedMap(new TreeMap<>());
-        newExtendInfo.putAll(extendInfo);
-        this.extendInfo = newExtendInfo;
-    }
-    
-    public String getIp() {
-        return ip;
-    }
-    
-    public void setIp(String ip) {
-        this.ip = ip;
-    }
-    
-    public String getAddress() {
-        if (StringUtils.isBlank(address)) {
-            address = ip + ":" + port;
-        }
-        return address;
-    }
-    
-    public void setAddress(String address) {
-        this.address = address;
-    }
-    
     public Object getExtendVal(String key) {
-        return extendInfo.get(key);
+        return getExtendInfo().get(key);
     }
     
     public void setExtendVal(String key, Object value) {
-        extendInfo.put(key, value);
+        getExtendInfo().put(key, value);
     }
     
     public void delExtendVal(String key) {
-        extendInfo.remove(key);
+        getExtendInfo().remove(key);
     }
     
     public boolean check() {
-        return StringUtils.isNoneBlank(ip, address) && port != -1;
+        return StringUtils.isNoneBlank(getIp(), getAddress()) && getPort() != -1;
     }
     
     public int getFailAccessCnt() {
@@ -168,21 +107,7 @@ public class Member implements Comparable<Member>, Cloneable, Serializable {
             return false;
         }
         Member that = (Member) o;
-        if (StringUtils.isAnyBlank(address, that.address)) {
-            return port == that.port && StringUtils.equals(ip, that.ip);
-        }
-        return StringUtils.equals(address, that.address);
-    }
-    
-    @Override
-    public String toString() {
-        return "Member{" + "ip='" + ip + '\'' + ", port=" + port + ", state=" + state + ", extendInfo=" + extendInfo
-                + '}';
-    }
-    
-    @Override
-    public int hashCode() {
-        return Objects.hash(ip, port);
+        return super.equals(that);
     }
     
     @Override
@@ -252,12 +177,12 @@ public class Member implements Comparable<Member>, Cloneable, Serializable {
         public Member build() {
             Member serverNode = new Member();
             if (Objects.nonNull(this.extendInfo)) {
-                serverNode.extendInfo.putAll(this.extendInfo);
+                serverNode.getExtendInfo().putAll(this.extendInfo);
             }
-            serverNode.state = this.state;
-            serverNode.ip = this.ip;
-            serverNode.port = this.port;
-            serverNode.address = this.ip + ":" + this.port;
+            serverNode.setState(this.state);
+            serverNode.setIp(this.ip);
+            serverNode.setPort(this.port);
+            serverNode.setAddress(this.ip + ":" + this.port);
             return serverNode;
         }
     }

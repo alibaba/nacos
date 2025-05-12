@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.plugin.auth.impl.controller;
 
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.core.context.RequestContextHolder;
-import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
@@ -27,13 +27,15 @@ import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
-import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
-import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,8 +48,6 @@ import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -82,10 +82,10 @@ class UserControllerTest {
     private TokenManagerDelegate tokenManagerDelegate;
     
     @Mock
-    private NacosUserDetailsServiceImpl userDetailsService;
+    private NacosUserService userDetailsService;
     
     @Mock
-    private NacosRoleServiceImpl roleService;
+    private NacosRoleService roleService;
     
     @InjectMocks
     private UserController userController;
@@ -131,7 +131,7 @@ class UserControllerTest {
     
     @Test
     void testCreateUser1() {
-        when(userDetailsService.getUserFromDatabase("test")).thenReturn(null);
+        when(userDetailsService.getUser("test")).thenReturn(null);
         RestResult<String> result = (RestResult<String>) userController.createUser("test", "test");
         assertEquals(200, result.getCode());
         
@@ -139,7 +139,7 @@ class UserControllerTest {
     
     @Test
     void testCreateUser2() {
-        when(userDetailsService.getUserFromDatabase("test")).thenReturn(new User());
+        when(userDetailsService.getUser("test")).thenReturn(new User());
         assertThrows(IllegalArgumentException.class, () -> {
             userController.createUser("test", "test");
         });
@@ -211,7 +211,7 @@ class UserControllerTest {
     void testUpdateUser1() throws IOException {
         
         when(authConfigs.isAuthEnabled()).thenReturn(false);
-        when(userDetailsService.getUserFromDatabase(anyString())).thenReturn(new User());
+        when(userDetailsService.getUser(anyString())).thenReturn(new User());
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
         MockHttpServletResponse mockHttpServletResponse = new MockHttpServletResponse();
         RestResult<String> result = (RestResult<String>) userController.updateUser("nacos", "test",
@@ -224,7 +224,7 @@ class UserControllerTest {
     void testUpdateUser2() {
         
         when(authConfigs.isAuthEnabled()).thenReturn(false);
-        when(userDetailsService.getUserFromDatabase(anyString())).thenReturn(null);
+        when(userDetailsService.getUser(anyString())).thenReturn(null);
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
         MockHttpServletResponse mockHttpServletResponse = new MockHttpServletResponse();
         
@@ -251,7 +251,7 @@ class UserControllerTest {
         RequestContextHolder.getContext().getAuthContext().getIdentityContext()
                 .setParameter(AuthConstants.NACOS_USER_KEY, user);
         when(authConfigs.isAuthEnabled()).thenReturn(true);
-        when(userDetailsService.getUserFromDatabase(anyString())).thenReturn(new User());
+        when(userDetailsService.getUser(anyString())).thenReturn(new User());
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
         MockHttpServletResponse mockHttpServletResponse = new MockHttpServletResponse();
         RestResult<String> result = (RestResult<String>) userController.updateUser("nacos", "test",
@@ -265,7 +265,7 @@ class UserControllerTest {
         RequestContextHolder.getContext().getAuthContext().getIdentityContext()
                 .setParameter(AuthConstants.NACOS_USER_KEY, null);
         when(authConfigs.isAuthEnabled()).thenReturn(true);
-        when(userDetailsService.getUserFromDatabase(anyString())).thenReturn(new User());
+        when(userDetailsService.getUser(anyString())).thenReturn(new User());
         when(authenticationManager.authenticate(any(MockHttpServletRequest.class))).thenReturn(user);
         
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
@@ -313,7 +313,7 @@ class UserControllerTest {
     void testGetUsers() {
         Page<User> userPage = new Page<>();
         
-        when(userDetailsService.getUsersFromDatabase(anyInt(), anyInt(), anyString())).thenReturn(userPage);
+        when(userDetailsService.getUsers(anyInt(), anyInt(), anyString())).thenReturn(userPage);
         
         Page<User> nacos = userController.getUsers(1, 10, "nacos");
         assertEquals(userPage, nacos);
@@ -323,7 +323,7 @@ class UserControllerTest {
     void testFuzzySearchUser() {
         Page<User> userPage = new Page<>();
         
-        when(userDetailsService.findUsersLike4Page(anyString(), anyInt(), anyInt())).thenReturn(userPage);
+        when(userDetailsService.findUsers(anyString(), anyInt(), anyInt())).thenReturn(userPage);
         
         Page<User> nacos = userController.fuzzySearchUser(1, 10, "nacos");
         assertEquals(userPage, nacos);
@@ -333,7 +333,7 @@ class UserControllerTest {
     void testSearchUsersLikeUsername() {
         List<String> test = new ArrayList<>(1);
         
-        when(userDetailsService.findUserLikeUsername(anyString())).thenReturn(test);
+        when(userDetailsService.findUserNames(anyString())).thenReturn(test);
         List<String> list = userController.searchUsersLikeUsername("nacos");
         
         assertEquals(test, list);

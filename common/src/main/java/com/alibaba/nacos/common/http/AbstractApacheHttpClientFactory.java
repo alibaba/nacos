@@ -18,10 +18,13 @@ package com.alibaba.nacos.common.http;
 
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.client.request.DefaultHttpClientRequest;
-
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.protocol.RequestContent;
+import org.apache.hc.client5.http.config.ConnectionConfig;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.core5.http.protocol.RequestContent;
+import org.apache.hc.core5.util.Timeout;
 
 /**
  * apache http client factory implements.
@@ -34,15 +37,25 @@ public abstract class AbstractApacheHttpClientFactory extends AbstractHttpClient
     public final NacosRestTemplate createNacosRestTemplate() {
         final HttpClientConfig originalRequestConfig = buildHttpClientConfig();
         final RequestConfig defaultConfig = getRequestConfig();
+        // in latest version of Apache Http Components all client settings have been moved into manager
+        PoolingHttpClientConnectionManager poolingManager = PoolingHttpClientConnectionManagerBuilder
+                .create()
+                .setMaxConnTotal(originalRequestConfig.getMaxConnTotal())
+                .setMaxConnPerRoute(originalRequestConfig.getMaxConnPerRoute())
+                .setDefaultConnectionConfig(ConnectionConfig
+                        .custom()
+                        .setTimeToLive(Timeout.of(originalRequestConfig.getConnTimeToLive(),
+                                originalRequestConfig.getConnTimeToLiveTimeUnit()))
+                        .build())
+                .build();
         return new NacosRestTemplate(assignLogger(), new DefaultHttpClientRequest(
                 HttpClients.custom()
-                        .addInterceptorLast(new RequestContent(true))
+                        .addRequestInterceptorLast(new RequestContent(true))
                         .setDefaultRequestConfig(defaultConfig)
                         .setUserAgent(originalRequestConfig.getUserAgent())
-                        .setMaxConnTotal(originalRequestConfig.getMaxConnTotal())
-                        .setMaxConnPerRoute(originalRequestConfig.getMaxConnPerRoute())
-                        .setConnectionTimeToLive(originalRequestConfig.getConnTimeToLive(),
-                                originalRequestConfig.getConnTimeToLiveTimeUnit()).build(), defaultConfig));
+                        .setConnectionManager(poolingManager)
+                        .build(),
+                defaultConfig));
     }
     
 }

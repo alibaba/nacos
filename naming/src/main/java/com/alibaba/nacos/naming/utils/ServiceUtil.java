@@ -17,13 +17,20 @@
 package com.alibaba.nacos.naming.utils;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.pojo.Cluster;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.naming.constants.FieldsConstants;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,6 +39,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -41,6 +49,46 @@ import java.util.stream.Collectors;
  * @author xiweng.yy
  */
 public final class ServiceUtil {
+    
+    private static final int DEFAULT_PORT = 80;
+    
+    /**
+     * TODO removed after console controller and console-ui support use ServiceDetailInfo directly.
+     *
+     * @param serviceDetailInfo serviceDetailInfo
+     * @return old console ui custom result
+     */
+    public static Object transferToConsoleResult(ServiceDetailInfo serviceDetailInfo) {
+        ObjectNode serviceObject = JacksonUtils.createEmptyJsonNode();
+        serviceObject.put(FieldsConstants.NAME, serviceDetailInfo.getServiceName());
+        serviceObject.put(FieldsConstants.GROUP_NAME, serviceDetailInfo.getGroupName());
+        serviceObject.put(FieldsConstants.PROTECT_THRESHOLD, serviceDetailInfo.getProtectThreshold());
+        serviceObject.replace(FieldsConstants.SELECTOR,
+                JacksonUtils.transferToJsonNode(serviceDetailInfo.getSelector()));
+        serviceObject.replace(FieldsConstants.METADATA,
+                JacksonUtils.transferToJsonNode(serviceDetailInfo.getMetadata()));
+        
+        ObjectNode detailView = JacksonUtils.createEmptyJsonNode();
+        detailView.replace(FieldsConstants.SERVICE, serviceObject);
+        
+        List<com.alibaba.nacos.api.naming.pojo.Cluster> clusters = new ArrayList<>();
+        String groupedServiceName = NamingUtils.getGroupedName(serviceDetailInfo.getServiceName(),
+                serviceDetailInfo.getGroupName());
+        for (Map.Entry<String, ClusterInfo> entry : serviceDetailInfo.getClusterMap().entrySet()) {
+            com.alibaba.nacos.api.naming.pojo.Cluster clusterView = new Cluster();
+            clusterView.setName(entry.getKey());
+            clusterView.setHealthChecker(entry.getValue().getHealthChecker());
+            clusterView.setMetadata(entry.getValue().getMetadata());
+            clusterView.setDefaultPort(DEFAULT_PORT);
+            clusterView.setUseIpPort4Check(entry.getValue().isUseInstancePortForCheck());
+            clusterView.setDefaultCheckPort(entry.getValue().getHealthyCheckPort());
+            clusterView.setServiceName(groupedServiceName);
+            clusters.add(clusterView);
+        }
+        
+        detailView.replace(FieldsConstants.CLUSTERS, JacksonUtils.transferToJsonNode(clusters));
+        return detailView;
+    }
     
     /**
      * Page service name.

@@ -26,6 +26,7 @@ import MonacoEditor from 'components/MonacoEditor';
 import { MONACO_READONLY_OPTIONS, METADATA_ENTER } from './constant';
 import InstanceFilter from './InstanceFilter';
 import './ServiceDetail.scss';
+import { getParams } from '../../../globalLib';
 
 const FormItem = Form.Item;
 const pageFormLayout = {
@@ -71,10 +72,27 @@ class ServiceDetail extends React.Component {
 
   getServiceDetail() {
     const { serviceName, groupName } = this.state;
+    const namespaceId = getParams('namespaceId');
+    const url =
+      namespaceId === null
+        ? `v3/console/ns/service?serviceName=${serviceName}&groupName=${groupName}`
+        : `v3/console/ns/service?serviceName=${serviceName}&groupName=${groupName}&namespaceId=${namespaceId}`;
     request({
-      url: `v1/ns/catalog/service?serviceName=${serviceName}&groupName=${groupName}`,
+      url: url,
       beforeSend: () => this.openLoading(),
-      success: ({ clusters = [], service = {} }) => this.setState({ service, clusters }),
+      success: res => {
+        if (res.code === 0) {
+          // 确保 res.data 存在并且 clusters 是数组
+          const serviceFullData = res.data || {};
+          const clusters = Object.values(serviceFullData.clusterMap || {});
+          this.setState({
+            service: serviceFullData,
+            clusters: Array.isArray(clusters) ? clusters : [],
+          });
+        } else {
+          Message.error(res.message || '请求失败');
+        }
+      },
       error: e => Message.error(e.responseText || 'error'),
       complete: () => this.closeLoading(),
     });
@@ -93,7 +111,9 @@ class ServiceDetail extends React.Component {
   }
 
   openClusterDialog(cluster) {
-    this.editClusterDialog.current.getInstance().show(cluster);
+    this.editClusterDialog.current
+      .getInstance()
+      .show(cluster, this.state.groupName, this.state.serviceName);
   }
 
   setFilters = clusterName => filters => {
@@ -148,7 +168,7 @@ class ServiceDetail extends React.Component {
 
           <Form {...pageFormLayout}>
             <FormItem label={`${locale.serviceName}`}>
-              <Input value={service.name} readOnly />
+              <Input value={service.serviceName} readOnly />
             </FormItem>
             <FormItem label={`${locale.groupName}`}>
               <Input value={service.groupName} readOnly />
@@ -176,10 +196,10 @@ class ServiceDetail extends React.Component {
           </Form>
           {clusters.map(cluster => (
             <Card
-              key={cluster.name}
+              key={cluster.clusterName}
               className="cluster-card"
               title={`${locale.cluster}`}
-              subTitle={cluster.name}
+              subTitle={cluster.clusterName}
               contentHeight="auto"
               extra={
                 <Button type="normal" onClick={() => this.openClusterDialog(cluster)}>
@@ -188,14 +208,14 @@ class ServiceDetail extends React.Component {
               }
             >
               <InstanceFilter
-                setFilters={this.setFilters(cluster.name)}
+                setFilters={this.setFilters(cluster.clusterName)}
                 locale={locale.InstanceFilter}
               />
               <InstanceTable
-                clusterName={cluster.name}
+                clusterName={cluster.clusterName}
                 serviceName={serviceName}
                 groupName={groupName}
-                filters={instanceFilters.get(cluster.name)}
+                filters={instanceFilters.get(cluster.clusterName)}
               />
             </Card>
           ))}

@@ -51,21 +51,21 @@ class ClusterTest {
         assertEquals(Tcp.TYPE, actual.getHealthChecker().getType());
         assertEquals(80, actual.getDefaultPort());
         assertEquals(80, actual.getDefaultCheckPort());
-        assertTrue(actual.isUseIPPort4Check());
+        assertTrue(actual.isUseIpPort4Check());
         assertTrue(actual.getMetadata().isEmpty());
         actual.setName("cluster");
         actual.setServiceName("group@@service");
         actual.setHealthChecker(new Http());
         actual.setDefaultPort(81);
         actual.setDefaultCheckPort(82);
-        actual.setUseIPPort4Check(false);
+        actual.setUseIpPort4Check(false);
         actual.setMetadata(Collections.singletonMap("a", "a"));
         assertEquals("cluster", actual.getName());
         assertEquals("group@@service", actual.getServiceName());
         assertEquals(Http.TYPE, actual.getHealthChecker().getType());
         assertEquals(81, actual.getDefaultPort());
         assertEquals(82, actual.getDefaultCheckPort());
-        assertFalse(actual.isUseIPPort4Check());
+        assertFalse(actual.isUseIpPort4Check());
         assertFalse(actual.getMetadata().isEmpty());
         assertTrue(actual.getMetadata().containsKey("a"));
         assertEquals("a", actual.getMetadata().get("a"));
@@ -78,7 +78,7 @@ class ClusterTest {
         actual.setHealthChecker(new Http());
         actual.setDefaultPort(81);
         actual.setDefaultCheckPort(82);
-        actual.setUseIPPort4Check(false);
+        actual.setUseIpPort4Check(false);
         actual.setMetadata(Collections.singletonMap("a", "a"));
         String json = mapper.writeValueAsString(actual);
         assertTrue(json.contains("\"serviceName\":\"group@@service\""));
@@ -86,7 +86,7 @@ class ClusterTest {
         assertTrue(json.contains("\"type\":\"HTTP\""));
         assertTrue(json.contains("\"defaultPort\":81"));
         assertTrue(json.contains("\"defaultCheckPort\":82"));
-        assertTrue(json.contains("\"useIPPort4Check\":false"));
+        assertTrue(json.contains("\"useIpPort4Check\":false"));
         assertTrue(json.contains("\"metadata\":{\"a\":\"a\"}"));
     }
     
@@ -94,14 +94,14 @@ class ClusterTest {
     void testJsonDeserialize() throws JsonProcessingException {
         String json = "{\"serviceName\":\"group@@service\",\"name\":\"cluster\","
                 + "\"healthChecker\":{\"type\":\"HTTP\",\"path\":\"\",\"headers\":\"\",\"expectedResponseCode\":200},"
-                + "\"defaultPort\":81,\"defaultCheckPort\":82,\"useIPPort4Check\":false,\"metadata\":{\"a\":\"a\"}}";
+                + "\"defaultPort\":81,\"defaultCheckPort\":82,\"useIpPort4Check\":false,\"metadata\":{\"a\":\"a\"}}";
         Cluster actual = mapper.readValue(json, Cluster.class);
         assertEquals("cluster", actual.getName());
         assertEquals("group@@service", actual.getServiceName());
         assertEquals(Http.TYPE, actual.getHealthChecker().getType());
         assertEquals(81, actual.getDefaultPort());
         assertEquals(82, actual.getDefaultCheckPort());
-        assertFalse(actual.isUseIPPort4Check());
+        assertFalse(actual.isUseIpPort4Check());
         assertFalse(actual.getMetadata().isEmpty());
         assertTrue(actual.getMetadata().containsKey("a"));
         assertEquals("a", actual.getMetadata().get("a"));

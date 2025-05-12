@@ -18,6 +18,8 @@ package com.alibaba.nacos.core.listener;
 
 import com.alibaba.nacos.common.utils.ArrayUtils;
 import com.alibaba.nacos.core.code.StandaloneProfileApplicationListener;
+import com.alibaba.nacos.core.listener.startup.NacosStartUp;
+import com.alibaba.nacos.core.listener.startup.NacosStartUpManager;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,6 +47,7 @@ class StandaloneProfileApplicationListenerTest {
     @BeforeAll
     static void init() {
         System.setProperty("nacos.standalone", "true");
+        NacosStartUpManager.start(NacosStartUp.CORE_START_UP_PHASE);
     }
     
     @Test

@@ -86,7 +86,7 @@ public class AddressServerGeneratorManager {
     }
     
     private String[] generateIpAndPort(String ip) {
-        String[] result = InternetAddressUtil.splitIPPortStr(ip);
+        String[] result = InternetAddressUtil.splitIpPortStr(ip);
         if (result.length != InternetAddressUtil.SPLIT_IP_PORT_RESULT_LENGTH) {
             return new String[] {result[0], String.valueOf(AddressServerConstants.DEFAULT_SERVER_PORT)};
         }

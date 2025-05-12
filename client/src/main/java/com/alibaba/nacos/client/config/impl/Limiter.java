@@ -61,18 +61,18 @@ public class Limiter {
     /**
      * Judge whether access key is limited.
      *
-     * @param accessKeyID access key
+     * @param accessKeyId access key
      * @return true if is limited, otherwise false
      */
-    public static boolean isLimit(String accessKeyID) {
+    public static boolean isLimit(String accessKeyId) {
         RateLimiter rateLimiter = null;
         try {
-            rateLimiter = CACHE.get(accessKeyID, () -> RateLimiter.create(limit));
+            rateLimiter = CACHE.get(accessKeyId, () -> RateLimiter.create(limit));
         } catch (Exception e) {
             LOGGER.error("create limit fail", e);
         }
         if (rateLimiter != null && !rateLimiter.tryAcquire(LIMIT_TIME, TimeUnit.MILLISECONDS)) {
-            LOGGER.error("access_key_id:{} limited", accessKeyID);
+            LOGGER.error("access_key_id:{} limited", accessKeyId);
             return true;
         }
         return false;

@@ -33,7 +33,7 @@ public class ConfigCachePostProcessorDelegate {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigCacheFactoryDelegate.class);
     
-    private static final ConfigCachePostProcessorDelegate INSTANCE = new ConfigCachePostProcessorDelegate();
+    private static ConfigCachePostProcessorDelegate instance = new ConfigCachePostProcessorDelegate();
     
     private String configCacheMd5PostProcessorType = EnvUtil.getProperty("nacos.config.cache.type", "nacos");
     
@@ -67,7 +67,7 @@ public class ConfigCachePostProcessorDelegate {
     }
     
     public static ConfigCachePostProcessorDelegate getInstance() {
-        return INSTANCE;
+        return instance;
     }
     
     public void postProcess(ConfigCache configCache, String content) {

@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.plugin.auth.impl.authenticate;
 
-import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
-import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 
 /**
  * DefaultAuthenticationManager.
@@ -28,8 +28,8 @@ import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
  */
 public class DefaultAuthenticationManager extends AbstractAuthenticationManager {
     
-    public DefaultAuthenticationManager(NacosUserDetailsServiceImpl userDetailsService,
-            TokenManagerDelegate jwtTokenManager, NacosRoleServiceImpl roleService) {
+    public DefaultAuthenticationManager(NacosUserService userDetailsService, TokenManagerDelegate jwtTokenManager,
+            NacosRoleService roleService) {
         super(userDetailsService, jwtTokenManager, roleService);
     }
 }

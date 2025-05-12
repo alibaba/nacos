@@ -76,7 +76,7 @@ public class UnhealthyInstanceChecker implements InstanceBeatChecker {
                 .info("{POS} {IP-DISABLED} valid: {}:{}@{}@{}, region: {}, msg: client last beat: {}", instance.getIp(),
                         instance.getPort(), instance.getCluster(), service.getName(), UtilsAndCommons.LOCALHOST_SITE,
                         instance.getLastHeartBeatTime());
-        NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service));
+        NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, Constants.ServiceChangedType.HEART_BEAT));
         NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(client));
         NotifyCenter.publishEvent(new HealthStateChangeTraceEvent(System.currentTimeMillis(),
                 service.getNamespace(), service.getGroup(), service.getName(), instance.getIp(), instance.getPort(),

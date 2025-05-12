@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.remote;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.config.server.model.ConfigListenState;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -44,7 +45,7 @@ public class ConfigChangeListenContext {
     /**
      * connectionId-> group key set.
      */
-    private ConcurrentHashMap<String, HashMap<String, String>> connectionIdContext = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, HashMap<String, ConfigListenState>> connectionIdContext = new ConcurrentHashMap<>();
     
     /**
      * add listen.
@@ -52,11 +53,13 @@ public class ConfigChangeListenContext {
      * @param groupKey     groupKey.
      * @param connectionId connectionId.
      */
-    public synchronized void addListen(String groupKey, String md5, String connectionId) {
+    public synchronized void addListen(String groupKey, String md5, String connectionId, boolean isNamespaceTransfer) {
         // 1.add groupKeyContext
         groupKeyContext.computeIfAbsent(groupKey, k -> new HashSet<>()).add(connectionId);
         // 2.add connectionIdContext
-        connectionIdContext.computeIfAbsent(connectionId, k -> new HashMap<>(16)).put(groupKey, md5);
+        ConfigListenState listenState = new ConfigListenState(md5);
+        listenState.setNamespaceTransfer(isNamespaceTransfer);
+        connectionIdContext.computeIfAbsent(connectionId, k -> new HashMap<>(16)).put(groupKey, listenState);
     }
     
     /**
@@ -77,7 +80,7 @@ public class ConfigChangeListenContext {
         }
         
         //2.remove connectionIdContext
-        HashMap<String, String> groupKeys = connectionIdContext.get(connectionId);
+        HashMap<String, ConfigListenState> groupKeys = connectionIdContext.get(connectionId);
         if (groupKeys != null) {
             groupKeys.remove(groupKey);
         }
@@ -149,8 +152,16 @@ public class ConfigChangeListenContext {
      * @return listen group keys of the connection id, key:group key,value:md5
      */
     public synchronized Map<String, String> getListenKeys(String connectionId) {
-        HashMap<String, String> stringStringHashMap = connectionIdContext.get(connectionId);
-        return stringStringHashMap == null ? null : new HashMap<>(stringStringHashMap);
+        HashMap<String, ConfigListenState> stringStringHashMap = connectionIdContext.get(connectionId);
+        if (stringStringHashMap != null) {
+            HashMap<String, String> md5Map = new HashMap<>(stringStringHashMap.size());
+            for (Map.Entry<String, ConfigListenState> entry : stringStringHashMap.entrySet()) {
+                md5Map.put(entry.getKey(), entry.getValue().getMd5());
+            }
+            return md5Map;
+        } else {
+            return null;
+        }
     }
     
     /**
@@ -160,8 +171,18 @@ public class ConfigChangeListenContext {
      * @return md5 of the listen group key.
      */
     public String getListenKeyMd5(String connectionId, String groupKey) {
-        Map<String, String> groupKeyContexts = connectionIdContext.get(connectionId);
+        Map<String, ConfigListenState> groupKeyContexts = connectionIdContext.get(connectionId);
+        return groupKeyContexts == null ? null : groupKeyContexts.get(groupKey).getMd5();
+    }
+    
+    public ConfigListenState getConfigListenState(String connectionId, String groupKey) {
+        Map<String, ConfigListenState> groupKeyContexts = connectionIdContext.get(connectionId);
         return groupKeyContexts == null ? null : groupKeyContexts.get(groupKey);
+    }
+    
+    public synchronized HashMap<String, ConfigListenState> getConfigListenStates(String connectionId) {
+        HashMap<String, ConfigListenState> configListenStateHashMap = connectionIdContext.get(connectionId);
+        return configListenStateHashMap == null ? null : new HashMap<>(configListenStateHashMap);
     }
     
     /**

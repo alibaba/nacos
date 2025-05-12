@@ -46,7 +46,7 @@ public class ConfigDynamicMeterRefreshService {
     public void refreshTopnConfigChangeCount() {
         NacosMeterRegistryCenter.clear(TOPN_CONFIG_CHANGE_REGISTRY);
         List<Pair<String, AtomicInteger>> topnConfigChangeCount = MetricsMonitor.getConfigChangeCount()
-                .getTopNCounter(CONFIG_CHANGE_N);
+                .getCounterOfTopN(CONFIG_CHANGE_N);
         for (Pair<String, AtomicInteger> configChangeCount : topnConfigChangeCount) {
             List<Tag> tags = new ArrayList<>();
             tags.add(new ImmutableTag("config", configChangeCount.getFirst()));

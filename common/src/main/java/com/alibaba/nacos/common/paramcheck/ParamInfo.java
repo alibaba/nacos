@@ -44,6 +44,8 @@ public class ParamInfo {
     
     private Map<String, String> metadata;
     
+    private String mcpName;
+    
     public String getNamespaceShowName() {
         return namespaceShowName;
     }
@@ -122,5 +124,13 @@ public class ParamInfo {
     
     public void setMetadata(Map<String, String> metadata) {
         this.metadata = metadata;
+    }
+    
+    public String getMcpName() {
+        return mcpName;
+    }
+    
+    public void setMcpName(String mcpName) {
+        this.mcpName = mcpName;
     }
 }

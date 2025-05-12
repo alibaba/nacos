@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.auth.util;
 
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
 /**
  * Auth header util.
@@ -31,12 +31,30 @@ public class AuthHeaderUtil {
     /**
      * Add identity info to Http header.
      *
-     * @param header http header
+     * @param header     http header
+     * @param authConfig nacos auth config
      */
-    public static void addIdentityToHeader(Header header) {
-        AuthConfigs authConfigs = ApplicationUtils.getBean(AuthConfigs.class);
-        if (StringUtils.isNotBlank(authConfigs.getServerIdentityKey())) {
-            header.addParam(authConfigs.getServerIdentityKey(), authConfigs.getServerIdentityValue());
+    public static void addIdentityToHeader(Header header, NacosAuthConfig authConfig) {
+        if (!authConfig.isSupportServerIdentity()) {
+            return;
+        }
+        if (StringUtils.isNotBlank(authConfig.getServerIdentityKey())) {
+            header.addParam(authConfig.getServerIdentityKey(), authConfig.getServerIdentityValue());
+        }
+    }
+    
+    /**
+     * Add identity info to Grpc request header.
+     *
+     * @param request     grpc request
+     * @param authConfig  nacos auth config
+     */
+    public static void addIdentityToHeader(Request request, NacosAuthConfig authConfig) {
+        if (!authConfig.isSupportServerIdentity()) {
+            return;
+        }
+        if (StringUtils.isNotBlank(authConfig.getServerIdentityKey())) {
+            request.putHeader(authConfig.getServerIdentityKey(), authConfig.getServerIdentityValue());
         }
     }
     

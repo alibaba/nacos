@@ -19,10 +19,8 @@ package com.alibaba.nacos.plugin.auth.impl.token.impl;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManager;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +33,6 @@ import java.util.concurrent.TimeUnit;
  *
  * @author majorhe
  */
-@Component
 public class CachedJwtTokenManager implements TokenManager {
     
     /**
@@ -48,8 +45,11 @@ public class CachedJwtTokenManager implements TokenManager {
      */
     private volatile Map<String, TokenEntity> userMap = new ConcurrentHashMap<>(128);
     
-    @Autowired
-    private JwtTokenManager jwtTokenManager;
+    private final JwtTokenManager jwtTokenManager;
+    
+    public CachedJwtTokenManager(JwtTokenManager jwtTokenManager) {
+        this.jwtTokenManager = jwtTokenManager;
+    }
     
     @Scheduled(initialDelay = 30000, fixedDelay = 60000)
     private void cleanExpiredToken() {

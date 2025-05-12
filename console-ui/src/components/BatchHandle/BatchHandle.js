@@ -80,7 +80,7 @@ class BatchHandle extends React.Component {
         dataSource.pageSize
       }`,
       success: res => {
-        if (res.code === 200) {
+        if (res.code === 0) {
           this.setState({
             dataSourceList:
               res.data.map(obj => ({

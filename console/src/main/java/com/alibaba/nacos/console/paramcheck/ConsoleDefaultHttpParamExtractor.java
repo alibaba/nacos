@@ -20,7 +20,7 @@ import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,7 +50,6 @@ public class ConsoleDefaultHttpParamExtractor extends AbstractHttpParamExtractor
     }
     
     private String getAliasNamespaceShowName(HttpServletRequest request) {
-        String namespaceShowName = request.getParameter("namespaceName");
-        return namespaceShowName;
+        return request.getParameter("namespaceName");
     }
 }

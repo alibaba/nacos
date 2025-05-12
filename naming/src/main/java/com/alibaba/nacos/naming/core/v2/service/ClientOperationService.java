@@ -85,6 +85,8 @@ public interface ClientOperationService {
     
     }
     
+    double EPSILON = 1e-10;
+    
     /**
      * get publish info.
      *
@@ -100,7 +102,7 @@ public interface ClientOperationService {
         if (StringUtils.isNotEmpty(instance.getInstanceId())) {
             extendDatum.put(Constants.CUSTOM_INSTANCE_ID, instance.getInstanceId());
         }
-        if (Constants.DEFAULT_INSTANCE_WEIGHT != instance.getWeight()) {
+        if (Math.abs(Constants.DEFAULT_INSTANCE_WEIGHT - instance.getWeight()) >= EPSILON) {
             extendDatum.put(Constants.PUBLISH_INSTANCE_WEIGHT, instance.getWeight());
         }
         if (!instance.isEnabled()) {

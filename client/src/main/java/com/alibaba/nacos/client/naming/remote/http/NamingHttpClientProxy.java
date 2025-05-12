@@ -33,7 +33,6 @@ import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.core.NamingServerListManager;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
-import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.common.http.HttpRestResult;
@@ -42,6 +41,7 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
@@ -49,7 +49,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.apache.http.HttpStatus;
+import org.apache.hc.core5.http.HttpStatus;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -275,10 +275,10 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     @Override
     public boolean serverHealthy() {
         try {
-            String result = reqApi(UtilAndComs.nacosUrlBase + "/operator/metrics", new HashMap<>(8), HttpMethod.GET);
+            String result = reqApi(UtilAndComs.webContext + "/v3/admin/core/state/liveness", new HashMap<>(8), HttpMethod.GET);
             JsonNode json = JacksonUtils.toObj(result);
-            String serverStatus = json.get("status").asText();
-            return "UP".equals(serverStatus);
+            int statusCode = json.get("code").asInt();
+            return 0 == statusCode;
         } catch (Exception e) {
             return false;
         }

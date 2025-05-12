@@ -27,6 +27,7 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.naming.cache.NamingFuzzyWatchServiceListHolder;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
 import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
@@ -65,6 +66,9 @@ class NamingClientProxyDelegateTest {
     @Mock
     NamingGrpcClientProxy mockGrpcClient;
     
+    @Mock
+    NamingFuzzyWatchServiceListHolder namingFuzzyWatchServiceListHolder;
+    
     NamingClientProxyDelegate delegate;
     
     InstancesChangeNotifier notifier;
@@ -77,7 +81,8 @@ class NamingClientProxyDelegateTest {
         props.setProperty("serverAddr", "localhost");
         nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
         notifier = new InstancesChangeNotifier();
-        delegate = new NamingClientProxyDelegate(TEST_NAMESPACE, holder, nacosClientProperties, notifier);
+        delegate = new NamingClientProxyDelegate(TEST_NAMESPACE, holder, nacosClientProperties, notifier,
+                namingFuzzyWatchServiceListHolder);
         Field grpcClientProxyField = NamingClientProxyDelegate.class.getDeclaredField("grpcClientProxy");
         grpcClientProxyField.setAccessible(true);
         grpcClientProxyField.set(delegate, mockGrpcClient);
@@ -143,7 +148,7 @@ class NamingClientProxyDelegateTest {
         instance.setEphemeral(false);
         // when server support register persistent instance by grpc, will use grpc to register
         when(mockGrpcClient.isAbilitySupportedByServer(
-                AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC)).thenReturn(true);
+                AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC)).thenReturn(true);
         delegate.registerService(serviceName, groupName, instance);
         verify(mockGrpcClient, times(1)).registerService(serviceName, groupName, instance);
     }
@@ -197,7 +202,7 @@ class NamingClientProxyDelegateTest {
         instance.setEphemeral(false);
         // when server support deregister persistent instance by grpc, will use grpc to deregister
         when(mockGrpcClient.isAbilitySupportedByServer(
-                AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC)).thenReturn(true);
+                AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC)).thenReturn(true);
         delegate.deregisterService(serviceName, groupName, instance);
         verify(mockGrpcClient, times(1)).deregisterService(serviceName, groupName, instance);
     }

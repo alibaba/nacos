@@ -39,7 +39,7 @@ public class TestCaseUtils {
         JdbcTransactionManager transactionManager = Mockito.mock(JdbcTransactionManager.class);
         
         when(transactionManager.getTransaction(any(TransactionDefinition.class))).thenReturn(
-                new DefaultTransactionStatus(null, true, true, false, false, null));
+                new DefaultTransactionStatus(null, null, true, true, false, false, false, null));
         TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
         return transactionTemplate;
         

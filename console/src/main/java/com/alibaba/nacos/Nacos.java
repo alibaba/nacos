@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,34 +16,37 @@
 
 package com.alibaba.nacos;
 
+import com.alibaba.nacos.console.aot.NacosRuntimeHints;
 import com.alibaba.nacos.sys.filter.NacosTypeExcludeFilter;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.AutoConfigurationExcludeFilter;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.TypeExcludeFilter;
-import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.ImportRuntimeHints;
 
 /**
- * Nacos starter.
+ * Nacos Full merged starter.
  * <p>
  * Use @SpringBootApplication and @ComponentScan at the same time, using CUSTOM type filter to control module enabled.
  * </p>
  *
  * @author nacos
+ * @deprecated The old start up class will be removed, please use {@link NacosBootstrap} in nacos-bootstrap module instead.
  */
 @SpringBootApplication
+@ImportRuntimeHints(NacosRuntimeHints.class)
 @ComponentScan(basePackages = "com.alibaba.nacos", excludeFilters = {
-        @Filter(type = FilterType.CUSTOM, classes = {NacosTypeExcludeFilter.class}),
-        @Filter(type = FilterType.CUSTOM, classes = {TypeExcludeFilter.class}),
-        @Filter(type = FilterType.CUSTOM, classes = {AutoConfigurationExcludeFilter.class})})
-@ServletComponentScan
+        @ComponentScan.Filter(type = FilterType.CUSTOM, classes = {NacosTypeExcludeFilter.class}),
+        @ComponentScan.Filter(type = FilterType.CUSTOM, classes = {TypeExcludeFilter.class}),
+        @ComponentScan.Filter(type = FilterType.CUSTOM, classes = {AutoConfigurationExcludeFilter.class})})
+@Deprecated
 public class Nacos {
     
     public static void main(String[] args) {
         SpringApplication.run(Nacos.class, args);
     }
+    
 }
 

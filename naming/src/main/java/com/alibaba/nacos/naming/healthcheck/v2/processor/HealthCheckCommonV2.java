@@ -53,32 +53,32 @@ public class HealthCheckCommonV2 {
     /**
      * Re-evaluate check response time.
      *
-     * @param checkRT check response time
+     * @param checkRt check response time
      * @param task    health check task
      * @param params  health params
      */
-    public void reEvaluateCheckRT(long checkRT, HealthCheckTaskV2 task, SwitchDomain.HealthParams params) {
-        task.setCheckRtLast(checkRT);
+    public void reEvaluateCheckRt(long checkRt, HealthCheckTaskV2 task, SwitchDomain.HealthParams params) {
+        task.setCheckRtLast(checkRt);
         
-        if (checkRT > task.getCheckRtWorst()) {
-            task.setCheckRtWorst(checkRT);
+        if (checkRt > task.getCheckRtWorst()) {
+            task.setCheckRtWorst(checkRt);
         }
         
-        if (checkRT < task.getCheckRtBest()) {
-            task.setCheckRtBest(checkRT);
+        if (checkRt < task.getCheckRtBest()) {
+            task.setCheckRtBest(checkRt);
         }
         
-        checkRT = (long) ((params.getFactor() * task.getCheckRtNormalized()) + (1 - params.getFactor()) * checkRT);
+        checkRt = (long) ((params.getFactor() * task.getCheckRtNormalized()) + (1 - params.getFactor()) * checkRt);
         
-        if (checkRT > params.getMax()) {
-            checkRT = params.getMax();
+        if (checkRt > params.getMax()) {
+            checkRt = params.getMax();
         }
         
-        if (checkRT < params.getMin()) {
-            checkRT = params.getMin();
+        if (checkRt < params.getMin()) {
+            checkRt = params.getMin();
         }
         
-        task.setCheckRtNormalized(checkRT);
+        task.setCheckRtNormalized(checkRt);
     }
     
     /**

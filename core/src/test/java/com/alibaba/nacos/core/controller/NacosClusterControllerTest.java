@@ -20,7 +20,7 @@ package com.alibaba.nacos.core.controller;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.NodeState;
+import com.alibaba.nacos.api.common.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.BeforeEach;

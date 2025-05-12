@@ -18,7 +18,6 @@ package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.runtime.NacosLoadException;
 import com.alibaba.nacos.client.address.AbstractServerListManager;
 import com.alibaba.nacos.client.address.EndpointServerListProvider;
 import com.alibaba.nacos.client.address.ServerListProvider;
@@ -290,7 +289,7 @@ class NamingServerListManagerTest {
         properties.setProperty("EmptyList", "true");
         properties.setProperty("MockTest", "true");
         final NamingServerListManager serverListManager = new NamingServerListManager(properties);
-        assertThrows(NacosLoadException.class, serverListManager::start);
+        assertThrows(NacosException.class, serverListManager::start);
     }
     
     private void mockThreadInvoke(NamingServerListManager serverListManager, boolean expectedInvoked)

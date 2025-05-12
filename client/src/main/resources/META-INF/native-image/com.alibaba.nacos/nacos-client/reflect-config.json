@@ -536,13 +536,22 @@
   ]
 },
 {
+  "name":"com.alibaba.nacos.api.naming.remote.request.AbstractFuzzyWatchNotifyRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[  {"name":"getInstances","parameterTypes":[] },
+    {"name":"getType","parameterTypes":[] }]
+},
+{
   "name":"com.alibaba.nacos.api.naming.remote.request.BatchInstanceRequest",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
-    {"name":"getInstances","parameterTypes":[] },
-    {"name":"getType","parameterTypes":[] }
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"getModule","parameterTypes":[] },
+    {"name":"getServiceChangedType","parameterTypes":[] }
   ]
 },
 {
@@ -601,6 +610,28 @@
     {"name":"getCluster","parameterTypes":[] },
     {"name":"getUdpPort","parameterTypes":[] },
     {"name":"isHealthyOnly","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.naming.remote.request.FuzzyWatchNotifyChangeRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"getServiceName","parameterTypes":[] },
+    {"name":"getGroupName","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.naming.remote.request.FuzzyWatchNotifyInitRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"getServicesName","parameterTypes":[] },
+    {"name":"getPattern","parameterTypes":[] }
   ]
 },
 {

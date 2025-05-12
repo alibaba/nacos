@@ -17,9 +17,9 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.constant.PropertiesConstant;
-import com.alibaba.nacos.config.server.model.capacity.TenantCapacity;
+import com.alibaba.nacos.config.server.model.capacity.NamespaceCapacity;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.core.namespace.model.Namespace;
+import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -73,7 +73,7 @@ public class NamespaceConfigInfoServiceTest {
     public void testInjectDetailDefaultQuota() {
         
         String namespaceId = "test1234";
-        TenantCapacity tenantCapacity = new TenantCapacity();
+        NamespaceCapacity tenantCapacity = new NamespaceCapacity();
         tenantCapacity.setQuota(0);
         when(configInfoPersistService.configInfoCount(namespaceId)).thenReturn(105);
         

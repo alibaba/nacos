@@ -177,12 +177,12 @@ class HttpHealthCheckProcessorTest {
                 break;
             case HttpURLConnection.HTTP_UNAVAILABLE:
                 verify(healthCheckCommon).checkFail(healthCheckTaskV2, service, "http:" + restResult.getCode());
-                verify(healthCheckCommon).reEvaluateCheckRT(healthCheckTaskV2.getCheckRtNormalized() * 2, healthCheckTaskV2,
+                verify(healthCheckCommon).reEvaluateCheckRt(healthCheckTaskV2.getCheckRtNormalized() * 2, healthCheckTaskV2,
                         switchDomain.getHttpHealthParams());
                 break;
             case HttpURLConnection.HTTP_NOT_FOUND:
                 verify(healthCheckCommon).checkFailNow(healthCheckTaskV2, service, "http:" + restResult.getCode());
-                verify(healthCheckCommon).reEvaluateCheckRT(switchDomain.getHttpHealthParams().getMax(), healthCheckTaskV2,
+                verify(healthCheckCommon).reEvaluateCheckRt(switchDomain.getHttpHealthParams().getMax(), healthCheckTaskV2,
                         switchDomain.getHttpHealthParams());
                 break;
             default:
@@ -201,7 +201,7 @@ class HttpHealthCheckProcessorTest {
         onReceive.invoke(objects, connectException);
         
         verify(healthCheckCommon).checkFailNow(healthCheckTaskV2, service, "http:unable2connect:" + connectException.getMessage());
-        verify(healthCheckCommon).reEvaluateCheckRT(switchDomain.getHttpHealthParams().getMax(), healthCheckTaskV2,
+        verify(healthCheckCommon).reEvaluateCheckRt(switchDomain.getHttpHealthParams().getMax(), healthCheckTaskV2,
                 switchDomain.getHttpHealthParams());
     }
 }

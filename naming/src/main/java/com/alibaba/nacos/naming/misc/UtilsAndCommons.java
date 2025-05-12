@@ -51,9 +51,13 @@ public class UtilsAndCommons {
     
     public static final String NACOS_SERVER_VERSION_2 = "/v2";
     
+    public static final String NACOS_SERVER_VERSION_3 = "/v3";
+    
     public static final String DEFAULT_NACOS_NAMING_CONTEXT = NACOS_SERVER_VERSION + "/ns";
     
     public static final String DEFAULT_NACOS_NAMING_CONTEXT_V2 = NACOS_SERVER_VERSION_2 + "/ns";
+    
+    public static final String DEFAULT_NACOS_NAMING_ADMIN_CONTEXT_V3 = NACOS_SERVER_VERSION_3 + "/admin/ns";
     
     public static final String NACOS_NAMING_CONTEXT = DEFAULT_NACOS_NAMING_CONTEXT;
     
@@ -70,6 +74,24 @@ public class UtilsAndCommons {
     public static final String NACOS_NAMING_CLIENT_CONTEXT = "/client";
     
     public static final String NACOS_NAMING_OPERATOR_CONTEXT = "/operator";
+    
+    public static final String NACOS_NAMING_OPERATOR_ADMIN_CONTEXT_V3 = "/ops";
+    
+    public static final String SERVICE_CONTROLLER_V3_ADMIN_PATH = DEFAULT_NACOS_NAMING_ADMIN_CONTEXT_V3 + NACOS_NAMING_SERVICE_CONTEXT;
+    
+    public static final String INSTANCE_CONTROLLER_V3_ADMIN_PATH = DEFAULT_NACOS_NAMING_ADMIN_CONTEXT_V3 + NACOS_NAMING_INSTANCE_CONTEXT;
+    
+    public static final String CLUSTER_CONTROLLER_V3_ADMIN_PATH = DEFAULT_NACOS_NAMING_ADMIN_CONTEXT_V3 + NACOS_NAMING_CLUSTER_CONTEXT;
+    
+    public static final String HEALTH_CONTROLLER_V3_ADMIN_PATH = DEFAULT_NACOS_NAMING_ADMIN_CONTEXT_V3 + NACOS_NAMING_HEALTH_CONTEXT;
+    
+    public static final String OPERATOR_CONTROLLER_V3_ADMIN_PATH = DEFAULT_NACOS_NAMING_ADMIN_CONTEXT_V3 + NACOS_NAMING_OPERATOR_ADMIN_CONTEXT_V3;
+    
+    public static final String CLIENT_CONTROLLER_V3_ADMIN_PATH = DEFAULT_NACOS_NAMING_ADMIN_CONTEXT_V3 + NACOS_NAMING_CLIENT_CONTEXT;
+    
+    public static final String V3_CLIENT_API_PATH = NACOS_SERVER_VERSION_3 + "/client";
+    
+    public static final String INSTANCE_V3_CLIENT_API_PATH = V3_CLIENT_API_PATH + "/ns/instance";
     
     // ********************** Nacos HTTP Context ************************ //
     

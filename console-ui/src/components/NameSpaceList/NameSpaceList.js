@@ -21,6 +21,11 @@ import { getParams, setParams, request } from '../../globalLib';
 
 import './index.scss';
 import { NAME_SHOW } from '../../constants';
+import {
+  CredentialManagementRoute,
+  McpServerManagementRoute,
+  McpServerManagementRouteName,
+} from '../../layouts/menu';
 
 /**
  * 命名空间列表
@@ -63,7 +68,7 @@ class NameSpaceList extends React.Component {
           linkKey,
         },
         success: res => {
-          if (res.code === 200) {
+          if (res.code === 0) {
             window[keyName] = res.data;
             this.setState({
               [keyName]: res.data,
@@ -118,9 +123,9 @@ class NameSpaceList extends React.Component {
     } else {
       request({
         type: 'get',
-        url: 'v1/console/namespaces',
+        url: 'v3/console/core/namespace/list',
         success: res => {
-          if (res.code === 200) {
+          if (res.code === 0) {
             this.handleNameSpaces(res.data);
           } else {
             Dialog.alert({
@@ -138,7 +143,11 @@ class NameSpaceList extends React.Component {
   }
 
   handleNameSpaces(data) {
-    const nownamespace = getParams('namespace') || '';
+    const isAIpage =
+      window.location.href.includes(McpServerManagementRoute) ||
+      window.location.href.includes(CredentialManagementRoute);
+    const nownamespace =
+      getParams('namespace') || (isAIpage ? McpServerManagementRouteName : 'public');
 
     // let namespaceShowName = this._namespaceShowName || data[0].namespaceShowName || '';
     window.namespaceList = data;
@@ -154,7 +163,7 @@ class NameSpaceList extends React.Component {
     }
     window.namespaceShowName = namespaceShowName;
     window.namespaceDesc = namespaceDesc;
-    setParams('namespace', nownamespace || '');
+    setParams('namespace', nownamespace || 'public');
     localStorage.setItem('namespace', nownamespace);
     // setParams('namespaceShowName', namespaceShowName);
     this.props.setNowNameSpace &&
@@ -196,7 +205,18 @@ class NameSpaceList extends React.Component {
         />
       );
     }
-    const namespacesBtn = namespaceList.map((obj, index) => {
+    const isAIpage =
+      window.location.href.includes(McpServerManagementRoute) ||
+      window.location.href.includes(CredentialManagementRoute);
+    const AIlist = [
+      {
+        namespace: 'nacos-default-mcp',
+        namespaceShowName: 'nacos-default-mcp',
+        namespaceDesc: 'nacos-default-mcp',
+      },
+    ];
+    const _nslist = isAIpage ? AIlist : namespaceList;
+    const namespacesBtn = _nslist.map((obj, index) => {
       return (
         <div key={index} style={{ cursor: 'pointer' }}>
           {index === 0 ? '' : <span style={{ marginRight: 8, color: '#999' }}>|</span>}

@@ -16,7 +16,7 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { request } from '../../../globalLib';
+import { getParams, request } from '../../../globalLib';
 import { Button, ConfigProvider, Message, Pagination, Table } from '@alifd/next';
 import { HEALTHY_COLOR_MAPPING } from './constant';
 import EditInstanceDialog from './EditInstanceDialog';
@@ -68,8 +68,13 @@ class InstanceTable extends React.Component {
 
     if (!clusterName) return;
     const { pageSize, pageNum } = this.state;
+    const namespaceId = getParams('namespaceId');
+    const url =
+      namespaceId === null
+        ? 'v3/console/ns/instance/list'
+        : `v3/console/ns/instance/list?namespaceId=${namespaceId}`;
     request({
-      url: 'v1/ns/catalog/instances',
+      url: url,
       data: {
         serviceName,
         clusterName,
@@ -78,7 +83,14 @@ class InstanceTable extends React.Component {
         pageNo: pageNum,
       },
       beforeSend: () => this.openLoading(),
-      success: instance => this.setState({ instance }),
+      success: ({ data }) => {
+        const instance = {
+          list: data.pageItems || [],
+          count: data.totalCount || 0,
+        };
+        this.setState({ instance });
+      },
+      error: e => Message.error(e.responseText || 'error'),
       complete: () => this.closeLoading(),
     });
   }
@@ -93,7 +105,7 @@ class InstanceTable extends React.Component {
     const { clusterName, serviceName, groupName } = this.props;
     request({
       method: 'PUT',
-      url: 'v1/ns/instance',
+      url: 'v3/console/ns/instance',
       data: {
         serviceName,
         clusterName,
@@ -105,9 +117,9 @@ class InstanceTable extends React.Component {
         enabled: !enabled,
         metadata: JSON.stringify(metadata),
       },
-      dataType: 'text',
+      dataType: 'json',
       beforeSend: () => this.openLoading(),
-      success: () => {
+      success: ({ data }) => {
         const newVal = Object.assign({}, instance);
         newVal.list[index].enabled = !enabled;
         this.setState({ instance: newVal });

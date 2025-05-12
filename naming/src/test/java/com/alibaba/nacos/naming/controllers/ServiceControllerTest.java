@@ -150,7 +150,7 @@ class ServiceControllerTest extends BaseTest {
             e.printStackTrace();
             fail(e.getMessage());
         }
-        TimeUnit.MILLISECONDS.sleep(1200);
+        TimeUnit.MILLISECONDS.sleep(1200L);
         assertEquals(UpdateServiceTraceEvent.class, eventReceivedClass);
     }
     

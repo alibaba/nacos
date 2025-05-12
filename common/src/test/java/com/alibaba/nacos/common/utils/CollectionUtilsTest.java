@@ -416,31 +416,6 @@ class CollectionUtilsTest {
     }
     
     @Test
-    void testIsListEqualForNull() {
-        assertTrue(CollectionUtils.isListEqual(null, null));
-        assertFalse(CollectionUtils.isListEqual(Collections.emptyList(), null));
-        assertFalse(CollectionUtils.isListEqual(null, Collections.emptyList()));
-    }
-    
-    @Test
-    void testIsListEqualForEquals() {
-        List<String> list1 = Arrays.asList("1", "2", "3");
-        List<String> list2 = Arrays.asList("1", "2", "3");
-        assertTrue(CollectionUtils.isListEqual(list1, list1));
-        assertTrue(CollectionUtils.isListEqual(list1, list2));
-        assertTrue(CollectionUtils.isListEqual(list2, list1));
-    }
-    
-    @Test
-    void testIsListEqualForNotEquals() {
-        List<String> list1 = Arrays.asList("1", "2", "3");
-        List<String> list2 = Arrays.asList("1", "2", "3", "4");
-        List<String> list3 = Arrays.asList("1", "2", "3", "5");
-        assertFalse(CollectionUtils.isListEqual(list1, list2));
-        assertFalse(CollectionUtils.isListEqual(list2, list3));
-    }
-    
-    @Test
     void testIsMapEmpty() {
         assertTrue(CollectionUtils.isMapEmpty(null));
         assertTrue(CollectionUtils.isMapEmpty(Collections.emptyMap()));

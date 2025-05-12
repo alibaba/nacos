@@ -28,7 +28,6 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchManager;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
-import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,7 +77,6 @@ class OperatorControllerTest {
     @BeforeEach
     void setUp() {
         MockEnvironment environment = new MockEnvironment();
-        environment.setProperty(Constants.SUPPORT_UPGRADE_FROM_1X, "true");
         EnvUtil.setEnvironment(environment);
     }
     

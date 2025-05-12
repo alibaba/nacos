@@ -17,7 +17,7 @@
 package com.alibaba.nacos.auth.serveridentity;
 
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
 
 /**
  * Nacos default server identity checker.
@@ -26,16 +26,16 @@ import com.alibaba.nacos.auth.config.AuthConfigs;
  */
 public class DefaultChecker implements ServerIdentityChecker {
     
-    private AuthConfigs authConfigs;
+    private NacosAuthConfig authConfig;
     
     @Override
-    public void init(AuthConfigs authConfigs) {
-        this.authConfigs = authConfigs;
+    public void init(NacosAuthConfig authConfigs) {
+        this.authConfig = authConfigs;
     }
     
     @Override
     public ServerIdentityResult check(ServerIdentity serverIdentity, Secured secured) {
-        if (authConfigs.getServerIdentityValue().equals(serverIdentity.getIdentityValue())) {
+        if (authConfig.getServerIdentityValue().equals(serverIdentity.getIdentityValue())) {
             return ServerIdentityResult.success();
         }
         return ServerIdentityResult.noMatched();

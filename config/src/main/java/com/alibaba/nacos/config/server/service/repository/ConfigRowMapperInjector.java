@@ -309,9 +309,14 @@ public class ConfigRowMapperInjector {
             info.setGroup(rs.getString("group_id"));
             info.setTenant(rs.getString("tenant_id"));
             info.setGrayName(rs.getString("gray_name"));
-            info.setGrayRule(rs.getString("gray_rule"));
-            info.setAppName(rs.getString("app_name"));
-            
+            try {
+                info.setGrayRule(rs.getString("gray_rule"));
+            } catch (SQLException ignore) {
+            }
+            try {
+                info.setAppName(rs.getString("app_name"));
+            } catch (SQLException ignore) {
+            }
             try {
                 info.setContent(rs.getString("content"));
             } catch (SQLException ignore) {
@@ -350,8 +355,11 @@ public class ConfigRowMapperInjector {
             info.setDataId(rs.getString("data_id"));
             info.setGroup(rs.getString("group_id"));
             info.setTenant(rs.getString("tenant_id"));
-            info.setAppName(rs.getString("app_name"));
             
+            try {
+                info.setAppName(rs.getString("app_name"));
+            } catch (SQLException ignore) {
+            }
             try {
                 info.setContent(rs.getString("content"));
             } catch (SQLException ignore) {

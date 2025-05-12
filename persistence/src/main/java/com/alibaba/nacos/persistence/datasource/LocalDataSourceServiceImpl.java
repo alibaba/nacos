@@ -77,7 +77,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     
     @Override
     public synchronized void init() throws Exception {
-        if (DatasourceConfiguration.isUseExternalDB()) {
+        if (DatasourceConfiguration.isUseExternalDb()) {
             return;
         }
         if (!initialize) {

@@ -68,7 +68,7 @@ public class InternetAddressUtil {
      *
      * @return java.lang.String
      */
-    public static String localHostIP() {
+    public static String localHostIp() {
         if (PREFER_IPV6_ADDRESSES) {
             return LOCAL_HOST_IP_V6;
         }
@@ -81,8 +81,8 @@ public class InternetAddressUtil {
      * @param addr ip address
      * @return boolean
      */
-    public static boolean isIPv4(String addr) {
-        return InetAddressValidator.isIPv4Address(addr);
+    public static boolean isIpv4(String addr) {
+        return InetAddressValidator.isIpv4Address(addr);
     }
     
     /**
@@ -91,8 +91,8 @@ public class InternetAddressUtil {
      * @param addr ip address
      * @return boolean
      */
-    public static boolean isIPv6(String addr) {
-        return InetAddressValidator.isIPv6Address(removeBrackets(addr));
+    public static boolean isIpv6(String addr) {
+        return InetAddressValidator.isIpv6Address(removeBrackets(addr));
     }
     
     /**
@@ -101,8 +101,8 @@ public class InternetAddressUtil {
      * @param addr ip address str
      * @return boolean
      */
-    public static boolean isIP(String addr) {
-        return isIPv4(addr) || isIPv6(addr);
+    public static boolean isIp(String addr) {
+        return isIpv4(addr) || isIpv6(addr);
     }
     
     /**
@@ -112,7 +112,7 @@ public class InternetAddressUtil {
      * @return boolean
      */
     public static boolean containsPort(String address) {
-        return splitIPPortStr(address).length == SPLIT_IP_PORT_RESULT_LENGTH;
+        return splitIpPortStr(address).length == SPLIT_IP_PORT_RESULT_LENGTH;
     }
     
     /**
@@ -122,7 +122,7 @@ public class InternetAddressUtil {
      * @param str ip and port string
      * @return java.lang.String[]
      */
-    public static String[] splitIPPortStr(String str) {
+    public static String[] splitIpPortStr(String str) {
         if (StringUtils.isBlank(str)) {
             throw new IllegalArgumentException("ip and port string cannot be empty!");
         }
@@ -148,7 +148,7 @@ public class InternetAddressUtil {
      * @param str string containing IP address
      * @return java.lang.String
      */
-    public static String getIPFromString(String str) {
+    public static String getIpFromString(String str) {
         if (StringUtils.isBlank(str)) {
             return "";
         }
@@ -156,7 +156,7 @@ public class InternetAddressUtil {
         if (StringUtils.containsIgnoreCase(str, IPV6_START_MARK) && StringUtils.containsIgnoreCase(str,
                 IPV6_END_MARK)) {
             result = str.substring(str.indexOf(IPV6_START_MARK), (str.indexOf(IPV6_END_MARK) + 1));
-            if (!isIPv6(result)) {
+            if (!isIpv6(result)) {
                 result = "";
             }
         } else {
@@ -174,7 +174,7 @@ public class InternetAddressUtil {
      * @param ips ips
      * @return 'ok' if check passed, otherwise illegal ip
      */
-    public static String checkIPs(String... ips) {
+    public static String checkIps(String... ips) {
         
         if (ips == null || ips.length == 0) {
             
@@ -183,7 +183,7 @@ public class InternetAddressUtil {
         // illegal response
         StringBuilder illegalResponse = new StringBuilder();
         for (String ip : ips) {
-            if (InternetAddressUtil.isIP(ip)) {
+            if (InternetAddressUtil.isIp(ip)) {
                 continue;
             }
             illegalResponse.append(ip).append(",");
@@ -197,20 +197,20 @@ public class InternetAddressUtil {
     }
     
     /**
-     * Check whether checkIPs result is "ok".
+     * Check whether checkIps result is "ok".
      *
-     * @param checkIPsResult checkIPs result
+     * @param checkIpsResult checkIps result
      * @return boolean
      */
-    public static boolean checkOK(String checkIPsResult) {
-        return CHECK_OK.equals(checkIPsResult);
+    public static boolean checkOk(String checkIpsResult) {
+        return CHECK_OK.equals(checkIpsResult);
     }
     
     /**
      * remove brackets "[]".
      *
      * @param str is ipv6 address
-     * @return
+     * @return string removed brackets
      */
     public static String removeBrackets(String str) {
         if (StringUtils.isBlank(str)) {

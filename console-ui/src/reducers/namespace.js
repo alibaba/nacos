@@ -22,11 +22,11 @@ const initialState = {
 };
 
 const getNamespaces = params => dispatch =>
-  request.get('v1/console/namespaces', { params }).then(response => {
+  request.get('v3/console/core/namespace/list', { params }).then(response => {
     const { code, data } = response;
     dispatch({
       type: GET_NAMESPACES,
-      data: code === 200 ? data : [],
+      data: code === 0 ? data : [],
     });
   });
 

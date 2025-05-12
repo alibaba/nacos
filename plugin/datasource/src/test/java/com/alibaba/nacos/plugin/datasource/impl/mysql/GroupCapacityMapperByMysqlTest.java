@@ -116,7 +116,7 @@ class GroupCapacityMapperByMysqlTest {
         MapperResult mapperResult = groupCapacityMapperByMysql.insertIntoSelectByWhere(context);
         assertEquals(mapperResult.getSql(),
                 "INSERT INTO group_capacity (group_id, quota, `usage`, max_size, max_aggr_count, max_aggr_size, gmt_create,"
-                        + " gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE group_id=? AND tenant_id = ''");
+                        + " gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE group_id=? AND tenant_id = 'public'");
         assertArrayEquals(new Object[] {group, quota, maxSize, maxAggrCount, maxAggrSize, createTime, modified, group},
                 mapperResult.getParamList().toArray());
     }
@@ -167,7 +167,7 @@ class GroupCapacityMapperByMysqlTest {
     void testUpdateUsageByWhere() {
         MapperResult mapperResult = groupCapacityMapperByMysql.updateUsageByWhere(context);
         assertEquals(mapperResult.getSql(),
-                "UPDATE group_capacity SET `usage` = (SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id = ''),"
+                "UPDATE group_capacity SET `usage` = (SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id = 'public'),"
                         + " gmt_modified = ? WHERE group_id= ?");
         assertArrayEquals(new Object[] {groupId, modified, groupId}, mapperResult.getParamList().toArray());
     }

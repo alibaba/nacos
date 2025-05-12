@@ -17,8 +17,12 @@
 package com.alibaba.nacos.api.config;
 
 import com.alibaba.nacos.api.config.filter.IConfigFilter;
+import com.alibaba.nacos.api.config.listener.FuzzyWatchEventWatcher;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
+
+import java.util.Set;
+import java.util.concurrent.Future;
 
 /**
  * Config Service Interface.
@@ -160,4 +164,83 @@ public interface ConfigService {
      * @throws NacosException exception.
      */
     void shutDown() throws NacosException;
+    
+    /**
+     * Add a fuzzy listener to the configuration. After the server modifies the configuration matching the specified
+     * fixed group name, the client will utilize the incoming fuzzy listener callback. Fuzzy listeners allow for
+     * pattern-based subscription to configurations, where the fixed group name represents the group and dataId patterns
+     * specified for subscription.
+     *
+     * @param groupNamePattern The  group name pattern representing the group and dataId patterns to subscribe to.
+     * @param watcher       The fuzzy watcher to be added.
+     * @throws NacosException NacosException
+     * @since 3.0
+     */
+    void fuzzyWatch(String groupNamePattern, FuzzyWatchEventWatcher watcher) throws NacosException;
+    
+    /**
+     * Add a fuzzy listener to the configuration. After the server modifies the configuration matching the specified
+     * dataId pattern and fixed group name, the client will utilize the incoming fuzzy listener callback. Fuzzy
+     * listeners allow for pattern-based subscription to configurations.
+     *
+     * @param dataIdPattern  The pattern to match dataIds for subscription.
+     * @param groupNamePattern The pattern to match group name representing the group and dataId patterns to subscribe to.
+     * @param watcher       The fuzzy listener to be added.
+     * @throws NacosException NacosException
+     * @since 3.0
+     */
+    void fuzzyWatch(String dataIdPattern, String groupNamePattern, FuzzyWatchEventWatcher watcher)
+            throws NacosException;
+    
+    /**
+     * Add a fuzzy listener to the configuration and retrieve all configs that match the specified fixed group name.
+     * Fuzzy listeners allow for pattern-based subscription to configs, where the fixed group name represents the group
+     * and dataId patterns specified for subscription.
+     *
+     * @param groupNamePattern The  group name pattern representing the group and dataId patterns to subscribe to.
+     * @param watcher       The fuzzy watcher to be added.
+     * @return CompletableFuture containing collection of configs that match the specified fixed group name.
+     * @throws NacosException NacosException
+     * @since 3.0
+     */
+    Future<Set<String>> fuzzyWatchWithGroupKeys(String groupNamePattern,
+            FuzzyWatchEventWatcher watcher) throws NacosException;
+    
+    /**
+     * Add a fuzzy listener to the configuration and retrieve all configs that match the specified dataId pattern and
+     * fixed group name. Fuzzy listeners allow for pattern-based subscription to configs.
+     *
+     * @param dataIdPattern  The pattern to match dataIds for subscription.
+     * @param groupNamePattern The group name pattern representing the group and dataId patterns to subscribe to.
+     * @param watcher       The fuzzy watcher to be added.
+     * @return CompletableFuture containing collection of configs that match the specified dataId pattern and fixed
+     * group name.
+     * @throws NacosException NacosException
+     * @since 3.0
+     */
+    Future<Set<String>> fuzzyWatchWithGroupKeys(String dataIdPattern, String groupNamePattern,
+            FuzzyWatchEventWatcher watcher) throws NacosException;
+    
+    /**
+     * Cancel fuzzy listen and remove the event listener for a specified fixed group name.
+     *
+     * @param groupNamePattern The  group name pattern for fuzzy watch.
+     * @param watcher       The event watcher to be removed.
+     * @throws NacosException If an error occurs during the cancellation process.
+     * @since 3.0
+     */
+    void cancelFuzzyWatch(String groupNamePattern, FuzzyWatchEventWatcher watcher) throws NacosException;
+    
+    /**
+     * Cancel fuzzy listen and remove the event listener for a specified service name pattern and fixed group name.
+     *
+     * @param dataIdPattern   The pattern to match dataId for fuzzy watch.
+     * @param groupNamePattern The group name pattern for fuzzy watch.
+     * @param watcher       The event listener to be removed.
+     * @throws NacosException If an error occurs during the cancellation process.
+     * @since 3.0
+     */
+    void cancelFuzzyWatch(String dataIdPattern, String groupNamePattern, FuzzyWatchEventWatcher watcher)
+            throws NacosException;
+    
 }

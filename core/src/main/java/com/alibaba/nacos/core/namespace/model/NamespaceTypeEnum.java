@@ -30,14 +30,14 @@ public enum NamespaceTypeEnum {
     GLOBAL(0, "Global configuration"),
     
     /**
-     * Default private namespace.
+     * Custom namespace for naming and config.
      */
-    PRIVATE(1, "Default private namespace"),
+    CUSTOM(1, "Custom namespace for naming and config"),
     
     /**
-     * Custom namespace.
+     * Nacos AI module MCP type namespace.
      */
-    CUSTOM(2, "Custom namespace");
+    AI_MCP(2, "Default private namespace");
     
     /**
      * the namespace type.
@@ -61,5 +61,19 @@ public enum NamespaceTypeEnum {
     public String getDescription() {
         return description;
     }
+    
+    public static NamespaceTypeEnum getByType(String type) {
+        try {
+            int typeInt = Integer.parseInt(type);
+            for (NamespaceTypeEnum value : values()) {
+                if (value.getType() == typeInt) {
+                    return value;
+                }
+            }
+        } catch (NumberFormatException ignored) {
+        }
+        return null;
+    }
+    
 }
 

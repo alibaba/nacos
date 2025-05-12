@@ -25,8 +25,8 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.web.context.request.async.DeferredResult;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -54,9 +54,9 @@ public class WebUtils {
     
     private static final String TMP_SUFFIX = ".tmp";
     
-    private static final String X_REAL_IP = "X-Real-IP";
+    public static final String X_REAL_IP = "X-Real-IP";
     
-    private static final String X_FORWARDED_FOR = "X-Forwarded-For";
+    public static final String X_FORWARDED_FOR = "X-Forwarded-For";
     
     private static final String X_FORWARDED_FOR_SPLIT_SYMBOL = ",";
     

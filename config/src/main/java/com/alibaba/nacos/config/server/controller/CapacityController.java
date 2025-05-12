@@ -17,27 +17,30 @@
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.config.server.service.capacity.CapacityService;
-import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Capacity Management.
  *
  * @author hexu.hxy
  */
+@Deprecated
 @RestController
 @RequestMapping(Constants.CAPACITY_CONTROLLER_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
@@ -58,6 +61,7 @@ public class CapacityController {
     }
     
     @GetMapping
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/admin/cs/capacity")
     public RestResult<Capacity> getCapacity(HttpServletResponse response, @RequestParam(required = false) String group,
             @RequestParam(required = false) String tenant) {
         if (group == null && tenant == null) {
@@ -100,6 +104,7 @@ public class CapacityController {
      * Modify group or capacity of tenant, and init record when capacity information are still initial.
      */
     @PostMapping
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "POST {contextPath:nacos}/v3/admin/cs/capacity")
     public RestResult<Boolean> updateCapacity(HttpServletResponse response,
             @RequestParam(required = false) String group, @RequestParam(required = false) String tenant,
             @RequestParam(required = false) Integer quota, @RequestParam(required = false) Integer maxSize,

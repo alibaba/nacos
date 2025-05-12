@@ -34,6 +34,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -135,11 +137,14 @@ class Log4J2NacosLoggingAdapterTest {
     
     @Test
     void testGetConfigurationSourceForNonFileProtocol()
-            throws NoSuchMethodException, IOException, InvocationTargetException, IllegalAccessException {
+            throws NoSuchMethodException, IOException, InvocationTargetException, IllegalAccessException, URISyntaxException {
         Method getConfigurationSourceMethod = Log4J2NacosLoggingAdapter.class.getDeclaredMethod("getConfigurationSource", URL.class);
         getConfigurationSourceMethod.setAccessible(true);
         URL url = mock(URL.class);
+        URI uri = mock(URI.class);
         InputStream inputStream = mock(InputStream.class);
+        when(uri.toURL()).thenReturn(url);
+        when(url.toURI()).thenReturn(uri);
         when(url.openStream()).thenReturn(inputStream);
         when(url.getProtocol()).thenReturn("http");
         ConfigurationSource actual = (ConfigurationSource) getConfigurationSourceMethod.invoke(log4J2NacosLoggingAdapter, url);

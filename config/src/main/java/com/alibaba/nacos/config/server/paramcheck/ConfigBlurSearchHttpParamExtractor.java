@@ -20,7 +20,7 @@ import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,6 +37,7 @@ public class ConfigBlurSearchHttpParamExtractor extends AbstractHttpParamExtract
     public List<ParamInfo> extractParam(HttpServletRequest request) {
         String searchMode = request.getParameter("search");
         ArrayList<ParamInfo> paramInfos = new ArrayList<>();
+        // TODO might replace '*' to empty char '' and still do check.
         if (StringUtils.equals(searchMode, BLUR_SEARCH_MODE)) {
             return paramInfos;
         }

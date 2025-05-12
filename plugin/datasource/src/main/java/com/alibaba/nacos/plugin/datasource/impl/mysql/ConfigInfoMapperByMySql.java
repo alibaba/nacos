@@ -192,7 +192,7 @@ public class ConfigInfoMapperByMySql extends AbstractMapperByMysql implements Co
         
         List<Object> paramList = new ArrayList<>();
         
-        final String sql = "SELECT id,data_id,group_id,tenant_id,app_name,content,type,encrypted_data_key FROM config_info";
+        final String sql = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,type,encrypted_data_key FROM config_info";
         StringBuilder where = new StringBuilder(" WHERE ");
         where.append(" tenant_id=? ");
         paramList.add(tenant);
@@ -234,7 +234,7 @@ public class ConfigInfoMapperByMySql extends AbstractMapperByMysql implements Co
         final String[] types = (String[]) context.getWhereParameter(FieldConstant.TYPE);
         
         WhereBuilder where = new WhereBuilder(
-                "SELECT id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key,type FROM config_info");
+                "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,encrypted_data_key,type FROM config_info");
         where.like("tenant_id", tenant);
         
         if (StringUtils.isNotBlank(dataId)) {

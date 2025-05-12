@@ -31,7 +31,8 @@ set FUNCTION_MODE_INDEX=-1
 set SERVER_INDEX=-1
 set EMBEDDED_STORAGE_INDEX=-1
 set EMBEDDED_STORAGE=""
-
+set DEPLOYMENT_INDEX=-1
+set DEPLOYMENT="merged"
 
 set i=0
 for %%a in (%*) do (
@@ -39,6 +40,7 @@ for %%a in (%*) do (
     if "%%a" == "-f" ( set /a FUNCTION_MODE_INDEX=!i!+1 )
     if "%%a" == "-s" ( set /a SERVER_INDEX=!i!+1 )
     if "%%a" == "-p" ( set /a EMBEDDED_STORAGE_INDEX=!i!+1 )
+    if "%%a" == "-d" ( set /a DEPLOYMENT_INDEX=!i!+1 )
     set /a i+=1
 )
 
@@ -48,8 +50,13 @@ for %%a in (%*) do (
     if %FUNCTION_MODE_INDEX% == !i! ( set FUNCTION_MODE="%%a" )
     if %SERVER_INDEX% == !i! (set SERVER="%%a")
     if %EMBEDDED_STORAGE_INDEX% == !i! (set EMBEDDED_STORAGE="%%a")
+    if %DEPLOYMENT_INDEX% == !i! (set DEPLOYMENT="%%a")
     set /a i+=1
 )
+
+call :Process_required_config "nacos.core.auth.plugin.nacos.token.secret.key" %BASE_DIR%\conf\application.properties
+call :Process_required_config "nacos.core.auth.server.identity.key" %BASE_DIR%\conf\application.properties
+call :Process_required_config "nacos.core.auth.server.identity.value" %BASE_DIR%\conf\application.properties
 
 rem if nacos startup mode is standalone
 if %MODE% == "standalone" (
@@ -79,6 +86,7 @@ if %FUNCTION_MODE% == "naming" (
 )
 
 rem set nacos options
+set "NACOS_OPTS=%NACOS_OPTS% -Dnacos.deployment.mode=%DEPLOYMENT%"
 set "NACOS_OPTS=%NACOS_OPTS% -Dloader.path=%BASE_DIR%/plugins,%BASE_DIR%/plugins/health,%BASE_DIR%/plugins/cmdb,%BASE_DIR%/plugins/selector"
 set "NACOS_OPTS=%NACOS_OPTS% -Dnacos.home=%BASE_DIR%"
 set "NACOS_OPTS=%NACOS_OPTS% -jar %BASE_DIR%\target\%SERVER%.jar"
@@ -94,3 +102,38 @@ set COMMAND="%JAVA%" %NACOS_JVM_OPTS% %NACOS_OPTS% %NACOS_CONFIG_OPTS% %NACOS_LO
 
 rem start nacos command
 %COMMAND%
+
+pause
+
+goto :EOF
+
+:Process_required_config
+    setlocal
+    set "key_pattern=%~1"
+    set "target_file=%~2"
+    set "target_file=!target_file:"=!"
+    set "escaped_key=%key_pattern:.=\.%"
+
+    findstr /R "^%escaped_key%=[ \t]*" "%target_file%" > nul
+    if %errorlevel% == 0 (
+        set /p "input_val=%key_pattern% is missing, please input: "
+
+        set "temp_file=%TEMP%\temp_%RANDOM%.tmp"
+        set "key_pattern_with_equal=!key_pattern!="
+
+        for /f "usebackq delims=" %%a in ("!target_file!") do (
+            set "line=%%a"
+            set "line=!line: =!"
+            if "!line!"=="!key_pattern_with_equal!" (
+                echo %%a!input_val!>>"!temp_file!"
+            ) else (
+                echo %%a>>"!temp_file!"
+            )
+        )
+
+        move /Y "!temp_file!" "!target_file!" >nul
+        echo %key_pattern% Updated:
+        findstr /R "^%escaped_key%" "!target_file!"
+        echo ----------------------------------
+    )
+    endlocal

@@ -38,7 +38,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 import java.util.HashMap;
 import java.util.Map;
 

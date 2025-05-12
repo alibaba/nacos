@@ -413,7 +413,7 @@ class ConfigServerListManagerTest {
         NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         final ConfigServerListManager mgr = new ConfigServerListManager(clientProperties);
         try {
-            assertThrows(NoSuchElementException.class, mgr::start);
+            assertThrows(NacosException.class, mgr::start);
         } finally {
             mgr.shutdown();
         }

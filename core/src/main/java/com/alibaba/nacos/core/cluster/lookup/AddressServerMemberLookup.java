@@ -23,7 +23,6 @@ import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
-import com.alibaba.nacos.core.cluster.AbstractMemberLookup;
 import com.alibaba.nacos.core.cluster.MemberUtil;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.GlobalExecutor;

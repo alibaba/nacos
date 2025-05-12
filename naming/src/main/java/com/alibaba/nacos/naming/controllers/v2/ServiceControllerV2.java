@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -31,6 +32,7 @@ import com.alibaba.nacos.common.trace.event.naming.UpdateServiceTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
@@ -38,12 +40,12 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.ServiceForm;
 import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
-import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
 import com.alibaba.nacos.naming.pojo.ServiceNameView;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -64,6 +66,7 @@ import java.util.Optional;
  *
  * @author nkorange
  */
+@Deprecated
 @NacosApi
 @RestController
 @RequestMapping(UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_SERVICE_CONTEXT)
@@ -85,6 +88,7 @@ public class ServiceControllerV2 {
     @PostMapping()
     @TpsControl(pointName = "NamingServiceRegister", name = "HttpNamingServiceRegister")
     @Secured(action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "POST ${contextPath:nacos}/v3/admin/ns/service")
     public Result<String> create(ServiceForm serviceForm) throws Exception {
         serviceForm.validate();
         ServiceMetadata serviceMetadata = new ServiceMetadata();
@@ -106,6 +110,7 @@ public class ServiceControllerV2 {
     @DeleteMapping()
     @TpsControl(pointName = "NamingServiceDeregister", name = "HttpNamingServiceDeregister")
     @Secured(action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "DELETE ${contextPath:nacos}/v3/admin/ns/service")
     public Result<String> remove(
             @RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam("serviceName") String serviceName,
@@ -123,13 +128,16 @@ public class ServiceControllerV2 {
     @GetMapping()
     @TpsControl(pointName = "NamingServiceQuery", name = "HttpNamingServiceQuery")
     @Secured(action = ActionTypes.READ)
-    public Result<ServiceDetailInfo> detail(
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/service")
+    public Result<com.alibaba.nacos.naming.pojo.ServiceDetailInfo> detail(
             @RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam("serviceName") String serviceName,
             @RequestParam(value = "groupName", defaultValue = Constants.DEFAULT_GROUP) String groupName)
             throws Exception {
-        ServiceDetailInfo result = serviceOperatorV2.queryService(
+        ServiceDetailInfo serviceDetailInfo = serviceOperatorV2.queryService(
                 Service.newService(namespaceId, groupName, serviceName));
+        com.alibaba.nacos.naming.pojo.ServiceDetailInfo result = com.alibaba.nacos.naming.pojo.ServiceDetailInfo.from(
+                serviceDetailInfo);
         return Result.success(result);
     }
     
@@ -139,6 +147,7 @@ public class ServiceControllerV2 {
     @GetMapping("/list")
     @TpsControl(pointName = "NamingServiceListQuery", name = "HttpNamingServiceListQuery")
     @Secured(action = ActionTypes.READ)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/service/list")
     public Result<ServiceNameView> list(
             @RequestParam(value = "namespaceId", required = false, defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam(value = "groupName", required = false, defaultValue = Constants.DEFAULT_GROUP) String groupName,
@@ -160,6 +169,7 @@ public class ServiceControllerV2 {
     @PutMapping()
     @TpsControl(pointName = "NamingServiceUpdate", name = "HttpNamingServiceUpdate")
     @Secured(action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "PUT ${contextPath:nacos}/v3/admin/ns/service")
     public Result<String> update(ServiceForm serviceForm) throws Exception {
         serviceForm.validate();
         Map<String, String> metadata = UtilsAndCommons.parseMetadata(serviceForm.getMetadata());

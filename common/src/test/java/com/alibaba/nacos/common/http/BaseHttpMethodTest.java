@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.http;
 
-import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -27,70 +27,70 @@ class BaseHttpMethodTest {
     @Test
     void testHttpGet() {
         BaseHttpMethod method = BaseHttpMethod.GET;
-        HttpRequestBase request = method.init("http://example.com");
+        HttpUriRequestBase request = method.init("http://example.com");
         assertEquals("GET", request.getMethod());
     }
     
     @Test
     void testHttpGetLarge() {
         BaseHttpMethod method = BaseHttpMethod.GET_LARGE;
-        HttpRequestBase request = method.init("http://example.com");
+        HttpUriRequestBase request = method.init("http://example.com");
         assertEquals("GET", request.getMethod());
     }
     
     @Test
     void testHttpPost() {
         BaseHttpMethod method = BaseHttpMethod.POST;
-        HttpRequestBase request = method.init("http://example.com");
+        HttpUriRequestBase request = method.init("http://example.com");
         assertEquals("POST", request.getMethod());
     }
     
     @Test
     void testHttpPut() {
         BaseHttpMethod method = BaseHttpMethod.PUT;
-        HttpRequestBase request = method.init("http://example.com");
+        HttpUriRequestBase request = method.init("http://example.com");
         assertEquals("PUT", request.getMethod());
     }
     
     @Test
     void testHttpDelete() {
         BaseHttpMethod method = BaseHttpMethod.DELETE;
-        HttpRequestBase request = method.init("http://example.com");
+        HttpUriRequestBase request = method.init("http://example.com");
         assertEquals("DELETE", request.getMethod());
     }
     
     @Test
     void testHttpDeleteLarge() {
         BaseHttpMethod method = BaseHttpMethod.DELETE_LARGE;
-        HttpRequestBase request = method.init("http://example.com");
+        HttpUriRequestBase request = method.init("http://example.com");
         assertEquals("DELETE", request.getMethod());
     }
     
     @Test
     void testHttpHead() {
         BaseHttpMethod method = BaseHttpMethod.HEAD;
-        HttpRequestBase request = method.init("http://example.com");
+        HttpUriRequestBase request = method.init("http://example.com");
         assertEquals("HEAD", request.getMethod());
     }
     
     @Test
     void testHttpTrace() {
         BaseHttpMethod method = BaseHttpMethod.TRACE;
-        HttpRequestBase request = method.init("http://example.com");
+        HttpUriRequestBase request = method.init("http://example.com");
         assertEquals("TRACE", request.getMethod());
     }
     
     @Test
     void testHttpPatch() {
         BaseHttpMethod method = BaseHttpMethod.PATCH;
-        HttpRequestBase request = method.init("http://example.com");
+        HttpUriRequestBase request = method.init("http://example.com");
         assertEquals("PATCH", request.getMethod());
     }
     
     @Test
     void testHttpOptions() {
         BaseHttpMethod method = BaseHttpMethod.OPTIONS;
-        HttpRequestBase request = method.init("http://example.com");
+        HttpUriRequestBase request = method.init("http://example.com");
         assertEquals("TRACE", request.getMethod());
     }
     

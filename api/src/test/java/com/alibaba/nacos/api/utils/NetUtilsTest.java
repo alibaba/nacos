@@ -44,9 +44,9 @@ class NetUtilsTest {
     @Test
     void testLocalIpWithSpecifiedIp() {
         System.setProperty("com.alibaba.nacos.client.local.ip", "10.2.8.8");
-        assertEquals("10.2.8.8", NetUtils.localIP());
+        assertEquals("10.2.8.8", NetUtils.localIp());
         System.setProperty("com.alibaba.nacos.client.local.ip", "10.2.8.9");
-        assertEquals("10.2.8.8", NetUtils.localIP());
+        assertEquals("10.2.8.8", NetUtils.localIp());
     }
     
     @Test
@@ -54,14 +54,14 @@ class NetUtilsTest {
         InetAddress inetAddress = invokeGetInetAddress();
         String hostname = inetAddress.getHostName();
         System.setProperty("com.alibaba.nacos.client.local.preferHostname", "true");
-        assertEquals(hostname, NetUtils.localIP());
+        assertEquals(hostname, NetUtils.localIp());
     }
     
     @Test
     void testLocalIpWithoutPreferHostname() throws Exception {
         InetAddress inetAddress = invokeGetInetAddress();
         String ip = inetAddress.getHostAddress();
-        assertEquals(ip, NetUtils.localIP());
+        assertEquals(ip, NetUtils.localIp());
     }
     
     @Test
@@ -75,7 +75,7 @@ class NetUtilsTest {
         try {
             System.setProperty("java.net.preferIPv6Addresses", "aaa");
             InetAddress expect = InetAddress.getLocalHost();
-            assertEquals(expect.getHostAddress(), NetUtils.localIP());
+            assertEquals(expect.getHostAddress(), NetUtils.localIp());
         } finally {
             field.set(null, properties);
         }

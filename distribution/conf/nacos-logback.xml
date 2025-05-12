@@ -598,199 +598,180 @@
         </encoder>
     </appender>
     
-    <logger name="com.alibaba.nacos.address.main" additivity="false">
-        <level value="INFO"/>
+    <appender name="k8s-sync-main"
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/k8s-sync-main.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/k8s-sync-main.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>2GB</maxFileSize>
+            <maxHistory>7</maxHistory>
+            <totalSizeCap>7GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    
+    <logger name="com.alibaba.nacos.address.main" additivity="false" level="INFO">
         <appender-ref ref="nacos-address"/>
     </logger>
 
-    <logger name="com.alibaba.nacos.cmdb.main" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.cmdb.main" additivity="false" level="INFO">
         <appender-ref ref="cmdb-main"/>
     </logger>
     
-    <logger name="com.alibaba.nacos.core.remote" additivity="false">
-        <level value="DEBUG"/>
+    <logger name="com.alibaba.nacos.core.remote" additivity="false" level="DEBUG">
         <appender-ref ref="remote"/>
     </logger>
-    <logger name="com.alibaba.nacos.core.remote.push" additivity="false">
-        <level value="DEBUG"/>
+    <logger name="com.alibaba.nacos.core.remote.push" additivity="false" level="DEBUG">
         <appender-ref ref="remote-push"/>
     </logger>
     
-    <logger name="com.alibaba.nacos.core.remote.digest" additivity="false">
-        <level value="DEBUG"/>
+    <logger name="com.alibaba.nacos.core.remote.digest" additivity="false" level="DEBUG">
         <appender-ref ref="remote-digest"/>
     </logger>
 
     <!-- TPS Control-->
-    <logger name="com.alibaba.nacos.plugin.control" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.plugin.control" additivity="false" level="INFO">
         <appender-ref ref="plugin-control"/>
     </logger>
-    <logger name="com.alibaba.nacos.plugin.control.tps" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.plugin.control.tps" additivity="false" level="INFO">
         <appender-ref ref="plugin-control-tps"/>
     </logger>
 
-    <logger name="com.alibaba.nacos.plugin.control.connection" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.plugin.control.connection" additivity="false" level="INFO">
         <appender-ref ref="plugin-control-connection"/>
     </logger>
     
-    <logger name="com.alibaba.nacos.naming.main" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.naming.main" additivity="false" level="INFO">
         <appender-ref ref="async-naming-server"/>
     </logger>
-    <logger name="com.alibaba.nacos.naming.raft" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.naming.raft" additivity="false" level="INFO">
         <appender-ref ref="async-naming-raft"/>
     </logger>
-    <logger name="com.alibaba.nacos.naming.distro" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.naming.distro" additivity="false" level="INFO">
         <appender-ref ref="async-naming-distro"/>
     </logger>
-    <logger name="com.alibaba.nacos.naming.event" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.naming.event" additivity="false" level="INFO">
         <appender-ref ref="async-naming-event"/>
     </logger>
-    <logger name="com.alibaba.nacos.naming.push" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.naming.push" additivity="false" level="INFO">
         <appender-ref ref="naming-push"/>
     </logger>
-    <logger name="com.alibaba.nacos.naming.rt" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.naming.rt" additivity="false" level="INFO">
         <appender-ref ref="naming-rt"/>
     </logger>
-    <logger name="com.alibaba.nacos.naming.performance" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.naming.performance" additivity="false" level="INFO">
         <appender-ref ref="naming-performance"/>
     </logger>
 
-    <logger name="com.alibaba.nacos.config.dumpLog" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.config.dumpLog" additivity="false" level="INFO">
         <appender-ref ref="dumpFile"/>
     </logger>
-    <logger name="com.alibaba.nacos.config.pullLog" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.config.pullLog" additivity="false" level="INFO">
         <appender-ref ref="pullFile"/>
     </logger>
-    <logger name="com.alibaba.nacos.config.pullCheckLog" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.config.pullCheckLog" additivity="false" level="INFO">
         <appender-ref ref="pullCheckFile"/>
     </logger>
-    <logger name="com.alibaba.nacos.config.fatal" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.config.fatal" additivity="false" level="INFO">
         <appender-ref ref="fatalFile"/>
     </logger>
-    <logger name="com.alibaba.nacos.config.monitorLog" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.config.monitorLog" additivity="false" level="INFO">
         <appender-ref ref="memoryFile"/>
     </logger>
 
-    <logger name="com.alibaba.nacos.config.clientLog" additivity="false">
-        <level value="info"/>
+    <logger name="com.alibaba.nacos.config.clientLog" additivity="false" level="info">
         <appender-ref ref="clientLog"/>
     </logger>
 
-    <logger name="com.alibaba.nacos.config.notifyLog" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.config.notifyLog" additivity="false" level="INFO">
         <appender-ref ref="notifyLog"/>
     </logger>
 
-    <logger name="com.alibaba.nacos.config.traceLog" additivity="false">
-        <level value="info"/>
+    <logger name="com.alibaba.nacos.config.traceLog" additivity="false" level="info">
         <appender-ref ref="traceLog"/>
     </logger>
 
-    <logger name="com.alibaba.nacos.config.startLog" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.config.startLog" additivity="false" level="INFO">
         <appender-ref ref="startLog"/>
     </logger>
 
-    <logger name="com.alibaba.nacos.istio.main" additivity="false">
-        <level value="DEBUG"/>
+    <logger name="com.alibaba.nacos.istio.main" additivity="false" level="DEBUG">
         <appender-ref ref="istio-main"/>
     </logger>
 
-    <logger name="com.alibaba.nacos.core.auth" additivity="false">
-        <level value="DEBUG"/>
+    <logger name="com.alibaba.nacos.core.auth" additivity="false" level="DEBUG">
         <appender-ref ref="core-auth"/>
     </logger>
+    
+    <logger name="com.alibaba.nacos.k8s.sync.main" additivity="false">
+        <level value="DEBUG"/>
+        <appender-ref ref="k8s-sync-main"/>
+    </logger>
 
-    <logger name="com.alibaba.nacos.core.protocol.raft" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.core.protocol.raft" additivity="false" level="INFO">
         <appender-ref ref="protocol-raft"/>
     </logger>
 
-    <logger name="com.alipay.sofa.jraft" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alipay.sofa.jraft" additivity="false" level="INFO">
         <appender-ref ref="alipay-jraft"/>
     </logger>
 
-    <logger name="com.alibaba.nacos.core.protocol.distro" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.core.protocol.distro" additivity="false" level="INFO">
         <appender-ref ref="protocol-distro"/>
     </logger>
 
-    <logger name="com.alibaba.nacos.core.cluster" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.core.cluster" additivity="false" level="INFO">
         <appender-ref ref="nacos-cluster"/>
     </logger>
     
-    <logger name="com.alibaba.nacos.persistence" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.persistence" additivity="false" level="INFO">
         <appender-ref ref="nacos-persistence"/>
     </logger>
 
     <springProfile name="standalone">
-        <logger name="org.springframework">
+        <logger name="org.springframework" level="INFO">
             <appender-ref ref="CONSOLE"/>
-            <level value="INFO"/>
         </logger>
 
-        <logger name="org.apache.catalina.startup.DigesterFactory">
+        <logger name="org.apache.catalina.startup.DigesterFactory" level="INFO">
             <appender-ref ref="CONSOLE"/>
-            <level value="INFO"/>
         </logger>
 
-        <logger name="org.apache.catalina.util.LifecycleBase">
+        <logger name="org.apache.catalina.util.LifecycleBase" level="ERROR">
             <appender-ref ref="CONSOLE"/>
-            <level value="ERROR"/>
         </logger>
 
-        <logger name="org.apache.coyote.http11.Http11NioProtocol">
+        <logger name="org.apache.coyote.http11.Http11NioProtocol" level="WARN">
             <appender-ref ref="CONSOLE"/>
-            <level value="WARN"/>
         </logger>
 
-        <logger name="org.apache.tomcat.util.net.NioSelectorPool">
+        <logger name="org.apache.tomcat.util.net.NioSelectorPool" level="WARN">
             <appender-ref ref="CONSOLE"/>
-            <level value="WARN"/>
         </logger>
     </springProfile>
 
-    <logger name="com.alibaba.nacos.core.listener.StartingApplicationListener">
+    <logger name="com.alibaba.nacos.core.listener.StartingApplicationListener" level="INFO">
         <appender-ref ref="CONSOLE"/>
-        <level value="INFO"/>
     </logger>
 
-    <logger name="com.alibaba.nacos.common.notify.NotifyCenter">
+    <logger name="com.alibaba.nacos.common.notify.NotifyCenter" level="INFO">
         <appender-ref ref="CONSOLE"/>
-        <level value="INFO"/>
     </logger>
 
-    <logger name="com.alibaba.nacos.sys.file.WatchFileCenter">
+    <logger name="com.alibaba.nacos.sys.file.WatchFileCenter" level="INFO">
         <appender-ref ref="CONSOLE"/>
-        <level value="INFO"/>
     </logger>
 
-    <logger name="com.alibaba.nacos.common.executor.ThreadPoolManager">
+    <logger name="com.alibaba.nacos.common.executor.ThreadPoolManager" level="INFO">
         <appender-ref ref="CONSOLE"/>
-        <level value="INFO"/>
     </logger>
 
-    <root>
-        <level value="INFO"/>
+    <root level="INFO">
         <appender-ref ref="rootFile"/>
     </root>
 </configuration>

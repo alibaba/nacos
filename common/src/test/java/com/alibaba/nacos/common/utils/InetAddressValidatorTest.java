@@ -31,34 +31,34 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class InetAddressValidatorTest {
     
     @Test
-    void isIPv6Address() {
-        assertTrue(InetAddressValidator.isIPv6Address("2000:0000:0000:0000:0001:2345:6789:abcd"));
-        assertTrue(InetAddressValidator.isIPv6Address("2001:DB8:0:0:8:800:200C:417A"));
-        assertTrue(InetAddressValidator.isIPv6Address("2001:DB8::8:800:200C:417A"));
-        assertFalse(InetAddressValidator.isIPv6Address("2001:DB8::8:800:200C141aA"));
+    void isIpv6Address() {
+        assertTrue(InetAddressValidator.isIpv6Address("2000:0000:0000:0000:0001:2345:6789:abcd"));
+        assertTrue(InetAddressValidator.isIpv6Address("2001:DB8:0:0:8:800:200C:417A"));
+        assertTrue(InetAddressValidator.isIpv6Address("2001:DB8::8:800:200C:417A"));
+        assertFalse(InetAddressValidator.isIpv6Address("2001:DB8::8:800:200C141aA"));
     }
     
     @Test
-    void isIPv6MixedAddress() {
-        assertTrue(InetAddressValidator.isIPv6MixedAddress("1:0:0:0:0:0:172.12.55.18"));
-        assertTrue(InetAddressValidator.isIPv6MixedAddress("::172.12.55.18"));
-        assertFalse(InetAddressValidator.isIPv6MixedAddress("2001:DB8::8:800:200C141aA"));
+    void isIpv6MixedAddress() {
+        assertTrue(InetAddressValidator.isIpv6MixedAddress("1:0:0:0:0:0:172.12.55.18"));
+        assertTrue(InetAddressValidator.isIpv6MixedAddress("::172.12.55.18"));
+        assertFalse(InetAddressValidator.isIpv6MixedAddress("2001:DB8::8:800:200C141aA"));
     }
     
     @Test
-    void isIPv6IPv4MappedAddress() {
-        assertFalse(InetAddressValidator.isIPv6IPv4MappedAddress(":ffff:1.1.1.1"));
-        assertTrue(InetAddressValidator.isIPv6IPv4MappedAddress("::FFFF:192.168.1.2"));
+    void isIpv6Ipv4MappedAddress() {
+        assertFalse(InetAddressValidator.isIpv6Ipv4MappedAddress(":ffff:1.1.1.1"));
+        assertTrue(InetAddressValidator.isIpv6Ipv4MappedAddress("::FFFF:192.168.1.2"));
     }
     
     @Test
-    void isIPv4Address() {
-        assertTrue(InetAddressValidator.isIPv4Address("192.168.1.2"));
+    void isIpv4Address() {
+        assertTrue(InetAddressValidator.isIpv4Address("192.168.1.2"));
     }
     
     @Test
-    void isLinkLocalIPv6WithZoneIndex() {
-        assertTrue(InetAddressValidator.isLinkLocalIPv6WithZoneIndex("fe80::1%lo0"));
-        assertFalse(InetAddressValidator.isLinkLocalIPv6WithZoneIndex("2000:0000:0000:0000:0001:2345:6789:abcd"));
+    void isLinkLocalIpv6WithZoneIndex() {
+        assertTrue(InetAddressValidator.isLinkLocalIpv6WithZoneIndex("fe80::1%lo0"));
+        assertFalse(InetAddressValidator.isLinkLocalIpv6WithZoneIndex("2000:0000:0000:0000:0001:2345:6789:abcd"));
     }
 }

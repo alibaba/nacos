@@ -29,6 +29,12 @@
     <name>nacos-encryption-plugin ${project.version}</name>
     <url>https://nacos.io</url>
     <description>Nacos encryption plugin pom.xml file</description>
+    
+    <properties>
+        <maven.compiler.source>${client.java.version}</maven.compiler.source>
+        <maven.compiler.target>${client.java.version}</maven.compiler.target>
+    </properties>
+    
     <dependencies>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>

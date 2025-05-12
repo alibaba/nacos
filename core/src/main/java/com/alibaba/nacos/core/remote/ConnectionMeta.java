@@ -88,9 +88,9 @@ public class ConnectionMeta {
     String appName;
     
     /**
-     * tenant.
+     * namespaceId.
      */
-    String tenant;
+    String namespaceId;
     
     long firstPushQueueBlockTime = 0;
     
@@ -333,12 +333,12 @@ public class ConnectionMeta {
         this.appName = appName;
     }
     
-    public String getTenant() {
-        return tenant;
+    public String getNamespaceId() {
+        return namespaceId;
     }
     
-    public void setTenant(String tenant) {
-        this.tenant = tenant;
+    public void setNamespaceId(String namespaceId) {
+        this.namespaceId = namespaceId;
     }
     
     /**
@@ -383,6 +383,6 @@ public class ConnectionMeta {
                 + ", remoteIp='" + remoteIp + '\'' + ", remotePort=" + remotePort + ", localPort=" + localPort
                 + ", version='" + version + '\'' + ", connectionId='" + connectionId + '\'' + ", createTime="
                 + createTime + ", lastActiveTime=" + lastActiveTime + ", appName='" + appName + '\'' + ", tenant='"
-                + tenant + '\'' + ", labels=" + labels + '}';
+                + namespaceId + '\'' + ", labels=" + labels + '}';
     }
 }

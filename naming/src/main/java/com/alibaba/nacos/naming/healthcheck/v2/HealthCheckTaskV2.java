@@ -80,10 +80,10 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
         if (metadataManager == null) {
             metadataManager = ApplicationUtils.getBean(NamingMetadataManager.class);
         }
-        initCheckRT();
+        initCheckRt();
     }
     
-    private void initCheckRT() {
+    private void initCheckRt() {
         if (-1 != checkRtNormalized) {
             return;
         }
@@ -124,7 +124,7 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
             Loggers.SRV_LOG.error("[HEALTH-CHECK] error while process health check for {}", client.getClientId(), e);
         } finally {
             if (!cancelled) {
-                initCheckRT();
+                initCheckRt();
                 HealthCheckReactor.scheduleCheck(this);
                 // worst == 0 means never checked
                 if (this.getCheckRtWorst() > 0) {
@@ -155,7 +155,7 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
             try {
                 initIfNecessary();
             } finally {
-                initCheckRT();
+                initCheckRt();
                 HealthCheckReactor.scheduleCheck(this);
             }
         }

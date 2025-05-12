@@ -72,6 +72,10 @@ public class RestResult<T> implements Serializable {
         return this.code == 0 || this.code == 200;
     }
     
+    public boolean isNoRight() {
+        return this.code == 403 || this.code == 401;
+    }
+    
     @Override
     public String toString() {
         return "RestResult{" + "code=" + code + ", message='" + message + '\'' + ", data=" + data + '}';

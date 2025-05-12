@@ -25,7 +25,7 @@ import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.core.distributed.id.SnowFlowerIdGenerator;
 import com.alibaba.nacos.core.model.request.LogUpdateRequest;
-import com.alibaba.nacos.core.model.vo.IdGeneratorVO;
+import com.alibaba.nacos.api.model.response.IdGeneratorInfo;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -82,7 +82,7 @@ class CoreOpsV2ControllerTest {
         Map<String, IdGenerator> idGeneratorMap = new HashMap<>();
         idGeneratorMap.put("resource", new SnowFlowerIdGenerator());
         Mockito.when(idGeneratorManager.getGeneratorMap()).thenReturn(idGeneratorMap);
-        RestResult<List<IdGeneratorVO>> res = coreOpsV2Controller.ids();
+        RestResult<List<IdGeneratorInfo>> res = coreOpsV2Controller.ids();
         
         assertTrue(res.ok());
         assertEquals(1, res.getData().size());

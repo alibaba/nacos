@@ -43,10 +43,9 @@
             <artifactId>nacos-sys</artifactId>
             <scope>provided</scope>
         </dependency>
-        
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
-            <artifactId>nacos-config</artifactId>
+            <artifactId>nacos-core</artifactId>
             <scope>provided</scope>
         </dependency>
         

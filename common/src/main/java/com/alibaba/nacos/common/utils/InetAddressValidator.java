@@ -61,7 +61,7 @@ public class InetAddressValidator {
      * @param input ip-address to check
      * @return true if <code>input</code> is in correct IPv4 notation.
      */
-    public static boolean isIPv4Address(final String input) {
+    public static boolean isIpv4Address(final String input) {
         return IPV4_PATTERN.matcher(input).matches();
     }
     
@@ -72,7 +72,7 @@ public class InetAddressValidator {
      * @param input ip-address to check
      * @return true if <code>input</code> is in correct IPv6 notation.
      */
-    public static boolean isIPv6StdAddress(final String input) {
+    public static boolean isIpv6StdAddress(final String input) {
         return IPV6_STD_PATTERN.matcher(input).matches();
     }
     
@@ -83,7 +83,7 @@ public class InetAddressValidator {
      * @param input ip-address to check
      * @return true if <code>input</code> is in correct IPv6 (hex-compressed) notation.
      */
-    public static boolean isIPv6HexCompressedAddress(final String input) {
+    public static boolean isIpv6HexCompressedAddress(final String input) {
         return IPV6_HEX_COMPRESSED_PATTERN.matcher(input).matches();
     }
     
@@ -94,9 +94,9 @@ public class InetAddressValidator {
      * @param input ip-address to check
      * @return true if <code>input</code> is in correct IPv6 notation.
      */
-    public static boolean isIPv6Address(final String input) {
-        return isIPv6StdAddress(input) || isIPv6HexCompressedAddress(input) || isLinkLocalIPv6WithZoneIndex(input)
-                || isIPv6IPv4MappedAddress(input) || isIPv6MixedAddress(input);
+    public static boolean isIpv6Address(final String input) {
+        return isIpv6StdAddress(input) || isIpv6HexCompressedAddress(input) || isLinkLocalIpv6WithZoneIndex(input)
+                || isIpv6Ipv4MappedAddress(input) || isIpv6MixedAddress(input);
     }
     
     /**
@@ -107,7 +107,7 @@ public class InetAddressValidator {
      * @param input ip-address to check
      * @return true if <code>input</code> is in correct IPv6 (mixed-standard or mixed-compressed) notation.
      */
-    public static boolean isIPv6MixedAddress(final String input) {
+    public static boolean isIpv6MixedAddress(final String input) {
         int splitIndex = input.lastIndexOf(':');
         
         if (splitIndex == -1) {
@@ -115,7 +115,7 @@ public class InetAddressValidator {
         }
         
         //the last part is a ipv4 address
-        boolean ipv4PartValid = isIPv4Address(input.substring(splitIndex + 1));
+        boolean ipv4PartValid = isIpv4Address(input.substring(splitIndex + 1));
         
         String ipV6Part = input.substring(ZERO, splitIndex + 1);
         if (DOUBLE_COLON.equals(ipV6Part)) {
@@ -135,10 +135,10 @@ public class InetAddressValidator {
      * @param input ip-address to check
      * @return true if <code>input</code> is in correct IPv6 notation containing an IPv4 address
      */
-    public static boolean isIPv6IPv4MappedAddress(final String input) {
+    public static boolean isIpv6Ipv4MappedAddress(final String input) {
         if (input.length() > SEVEN && input.substring(ZERO, SEVEN).equalsIgnoreCase(DOUBLE_COLON_FFFF)) {
             String lowerPart = input.substring(SEVEN);
-            return isIPv4Address(lowerPart);
+            return isIpv4Address(lowerPart);
         }
         return false;
     }
@@ -150,12 +150,12 @@ public class InetAddressValidator {
      * @param input ip-address to check
      * @return true if address part of <code>input</code> is in correct IPv6 notation.
      */
-    public static boolean isLinkLocalIPv6WithZoneIndex(String input) {
+    public static boolean isLinkLocalIpv6WithZoneIndex(String input) {
         if (input.length() > FIVE && input.substring(ZERO, FIVE).equalsIgnoreCase(FE80)) {
             int lastIndex = input.lastIndexOf(PERCENT);
             if (lastIndex > ZERO && lastIndex < (input.length() - 1)) {
                 String ipPart = input.substring(ZERO, lastIndex);
-                return isIPv6StdAddress(ipPart) || isIPv6HexCompressedAddress(ipPart);
+                return isIpv6StdAddress(ipPart) || isIpv6HexCompressedAddress(ipPart);
             }
         }
         return false;

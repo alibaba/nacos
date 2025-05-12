@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.persistence.repository.embedded;
 
-import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import org.junit.jupiter.api.AfterEach;

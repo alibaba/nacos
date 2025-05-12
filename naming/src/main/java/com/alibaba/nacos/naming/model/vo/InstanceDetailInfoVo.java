@@ -23,7 +23,9 @@ import java.util.Map;
  * InstanceDetailInfoVo.
  * @author dongyafei
  * @date 2022/9/7
+ * @deprecated will be removed after v2 http api removed.
  */
+@Deprecated
 public class InstanceDetailInfoVo implements Serializable {
     
     private static final long serialVersionUID = -8983967044228959560L;

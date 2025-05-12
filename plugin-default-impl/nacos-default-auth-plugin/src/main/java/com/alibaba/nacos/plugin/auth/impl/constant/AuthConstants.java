@@ -45,6 +45,8 @@ public class AuthConstants {
     
     public static final String UPDATE_PASSWORD_ENTRY_POINT = CONSOLE_RESOURCE_NAME_PREFIX + "user/password";
     
+    public static final String LOCK_OPERATOR_POINT = "grpc/lock";
+    
     public static final String NACOS_USER_KEY = "nacosuser";
     
     public static final String TOKEN_SECRET_KEY = "nacos.core.auth.plugin.nacos.token.secret.key";
@@ -82,4 +84,13 @@ public class AuthConstants {
      * Maximum allowed password length.
      */
     public static final int MAX_PASSWORD_LENGTH = 72;
+    
+    /**
+     * Path for nacos plugin controller.
+     */
+    public static final String USER_PATH = "/v3/auth/user";
+    
+    public static final String ROLE_PATH = "/v3/auth/role";
+    
+    public static final String PERMISSION_PATH = "/v3/auth/permission";
 }

@@ -21,7 +21,7 @@ import java.io.Serializable;
 /**
  * TenantInfo.
  *
- * <p>Old name of {@link Namespace}</p>
+ * <p>Old name of {@link com.alibaba.nacos.api.model.response.Namespace}</p>
  *
  * @author Nacos
  */

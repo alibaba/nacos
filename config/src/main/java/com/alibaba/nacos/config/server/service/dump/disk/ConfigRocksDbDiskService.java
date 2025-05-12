@@ -40,7 +40,7 @@ import static com.alibaba.nacos.config.server.constant.Constants.NULL;
  *
  * @author shiyiyue
  */
-@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
+@SuppressWarnings({"PMD.ServiceOrDaoClassShouldEndWithImplRule", "PMD.LowerCamelCaseVariableNamingRule"})
 public class ConfigRocksDbDiskService implements ConfigDiskService {
     
     private static final String ROCKSDB_DATA = File.separator + "rocksdata" + File.separator;

@@ -19,7 +19,7 @@ package com.alibaba.nacos.console.controller.v2;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
-import com.alibaba.nacos.core.namespace.model.Namespace;
+import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.core.namespace.model.NamespaceTypeEnum;
 import com.alibaba.nacos.core.namespace.model.form.NamespaceForm;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;

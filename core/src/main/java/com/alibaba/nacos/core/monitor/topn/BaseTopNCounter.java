@@ -48,7 +48,7 @@ public abstract class BaseTopNCounter<T> {
      * @param topN topN
      * @return topN counter
      */
-    public List<Pair<String, AtomicInteger>> getTopNCounter(int topN) {
+    public List<Pair<String, AtomicInteger>> getCounterOfTopN(int topN) {
         if (!checkEnabled()) {
             reset();
             return Collections.emptyList();

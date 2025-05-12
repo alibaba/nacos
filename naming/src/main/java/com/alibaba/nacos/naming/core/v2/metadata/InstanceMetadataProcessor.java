@@ -108,7 +108,8 @@ public class InstanceMetadataProcessor extends RequestProcessor4CP {
         Service service = Service.newService(op.getNamespace(), op.getGroup(), op.getServiceName());
         service = ServiceManager.getInstance().getSingleton(service);
         namingMetadataManager.updateInstanceMetadata(service, op.getTag(), op.getMetadata());
-        NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, true));
+        NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service,
+                com.alibaba.nacos.api.common.Constants.ServiceChangedType.INSTANCE_CHANGED, true));
     }
     
     private void deleteInstanceMetadata(MetadataOperation<InstanceMetadata> op) {

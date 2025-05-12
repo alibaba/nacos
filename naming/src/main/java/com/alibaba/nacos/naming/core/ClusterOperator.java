@@ -30,7 +30,7 @@ public interface ClusterOperator {
      * Update cluster metadata.
      *
      * @param namespaceId     namespace id
-     * @param serviceName     service name of cluster
+     * @param serviceName     grouped service name of cluster
      * @param clusterName     cluster name
      * @param clusterMetadata cluster metadata
      * @throws NacosException exception during update metadata
@@ -38,4 +38,16 @@ public interface ClusterOperator {
     void updateClusterMetadata(String namespaceId, String serviceName, String clusterName,
             ClusterMetadata clusterMetadata) throws NacosException;
     
+    /**
+     * Update cluster metadata.
+     *
+     * @param namespaceId     namespace id
+     * @param groupName       group name of cluster
+     * @param serviceName     service name of cluster
+     * @param clusterName     cluster name
+     * @param clusterMetadata cluster metadata
+     * @throws NacosException exception during update metadata
+     */
+    void updateClusterMetadata(String namespaceId, String groupName, String serviceName, String clusterName,
+            ClusterMetadata clusterMetadata) throws NacosException;
 }

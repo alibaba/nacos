@@ -21,6 +21,8 @@ import java.lang.annotation.RetentionPolicy;
 
 /**
  * annotation for invoke source.
+ *
+ * @author liuzunfei
  */
 @Retention(RetentionPolicy.RUNTIME)
 public @interface InvokeSource {
