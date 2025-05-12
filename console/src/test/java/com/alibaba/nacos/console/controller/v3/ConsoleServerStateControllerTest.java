@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.console.controller.v3;
 
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.console.proxy.ServerStateProxy;
@@ -64,22 +65,21 @@ public class ConsoleServerStateControllerTest {
     
     @Test
     void testServerState() throws Exception {
-    
+        
         Map<String, String> state = new HashMap<>();
         state.put("state", "OK");
-    
+        
         when(serverStateProxy.getServerState()).thenReturn(state);
-    
+        
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/server/state")
                 .contentType(MediaType.APPLICATION_JSON);
-    
+        
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
-    
-        Map<String, String> result = new ObjectMapper().readValue(actualValue,
-                new TypeReference<Map<String, String>>() {
-                });
-    
+        
+        Map<String, String> result = new ObjectMapper().readValue(actualValue, new TypeReference<>() {
+        });
+        
         assertEquals("OK", result.get("state"));
     }
     
@@ -93,10 +93,24 @@ public class ConsoleServerStateControllerTest {
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         
-        Result<String> result = new ObjectMapper().readValue(actualValue, new TypeReference<Result<String>>() {
+        Result<String> result = new ObjectMapper().readValue(actualValue, new TypeReference<>() {
         });
         
         assertEquals("Test Announcement", result.getData());
+    }
+    
+    @Test
+    void testGetAnnouncementWithUnsupportedLanguage() throws Exception {
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/server/announcement")
+                .param("language", "zh-TW");
+        
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        String actualValue = response.getContentAsString();
+        
+        Result<String> result = new ObjectMapper().readValue(actualValue, new TypeReference<>() {
+        });
+        assertEquals(ErrorCode.SERVER_ERROR.getCode(), result.getCode());
+        assertEquals("Unsupported language: zh-TW", result.getMessage());
     }
     
     @Test
@@ -108,7 +122,7 @@ public class ConsoleServerStateControllerTest {
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         
-        Result<String> result = new ObjectMapper().readValue(actualValue, new TypeReference<Result<String>>() {
+        Result<String> result = new ObjectMapper().readValue(actualValue, new TypeReference<>() {
         });
         
         assertEquals("Test Guide", result.getData());
