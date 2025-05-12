@@ -209,7 +209,7 @@ class NewMcpServer extends React.Component {
           );
           // 添加服务
           const serverGroup = serviceList.find(item => item.value === values?.service);
-          const groupName = serverGroup?.groupName || values?.groupName;
+          const groupName = serverGroup ? serverGroup.groupName : values?.groupName || '';
           params.endpointSpecification = useExistService
             ? JSON.stringify(
                 {
