@@ -139,7 +139,7 @@ class ConfigImportAndExportServiceTest {
         ResponseEntity<byte[]> mock = ResponseEntity.ok().body(new byte[0]);
         when(httpClient.execute(any(ClassicHttpRequest.class),
                 any(ConfigImportAndExportService.ExportHttpClientResponseHandler.class))).thenAnswer(
-                invocation -> mock);
+                    invocation -> mock);
         ResponseEntity<byte[]> actual = service.exportConfig("dataId", "group", "namespaceId", "appName",
                 Collections.singletonList(1L));
         assertEquals(mock, actual);
@@ -149,7 +149,7 @@ class ConfigImportAndExportServiceTest {
     void exportConfigWithRequestException() throws Exception {
         when(httpClient.execute(any(ClassicHttpRequest.class),
                 any(ConfigImportAndExportService.ExportHttpClientResponseHandler.class))).thenThrow(
-                new HttpResponseException(403, "test"));
+                    new HttpResponseException(403, "test"));
         assertThrows(NacosRuntimeException.class,
                 () -> service.exportConfig("dataId", "group", "namespaceId", "appName", Collections.singletonList(1L)));
     }
@@ -158,7 +158,7 @@ class ConfigImportAndExportServiceTest {
     void exportConfigWithIoException() throws Exception {
         when(httpClient.execute(any(ClassicHttpRequest.class),
                 any(ConfigImportAndExportService.ExportHttpClientResponseHandler.class))).thenThrow(
-                new IOException("test"));
+                    new IOException("test"));
         assertThrows(NacosRuntimeException.class,
                 () -> service.exportConfig("dataId", "group", "namespaceId", "appName", Collections.singletonList(1L)),
                 "Export config to server failed.");
@@ -169,7 +169,8 @@ class ConfigImportAndExportServiceTest {
         // remove lenient warning
         memberManager.allMembers();
         ClassicHttpResponse mockResponse = Mockito.mock(ClassicHttpResponse.class);
-        when(mockResponse.getHeader("Content-Disposition")).thenReturn(new BasicHeader("Content-Disposition", "testDisposition"));
+        when(mockResponse.getHeader("Content-Disposition")).thenReturn(
+                new BasicHeader("Content-Disposition", "testDisposition"));
         ByteArrayInputStream mockInputStream = new ByteArrayInputStream("test".getBytes());
         HttpEntity mockEntity = Mockito.mock(HttpEntity.class);
         when(mockEntity.getContent()).thenReturn(mockInputStream);

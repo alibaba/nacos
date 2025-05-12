@@ -33,7 +33,7 @@ import org.springframework.mock.env.MockEnvironment;
 import java.util.Collection;
 import java.util.LinkedList;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
