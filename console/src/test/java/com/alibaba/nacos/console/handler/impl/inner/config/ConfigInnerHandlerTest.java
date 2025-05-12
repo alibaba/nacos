@@ -45,6 +45,7 @@ import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,8 +55,10 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -113,8 +116,12 @@ class ConfigInnerHandlerTest {
     
     private boolean cachedGrayCompatibleModel;
     
+    private ConfigurableEnvironment cachedEnv;
+    
     @BeforeEach
     void setUp() {
+        cachedEnv = EnvUtil.getEnvironment();
+        EnvUtil.setEnvironment(new MockEnvironment());
         cachedGrayCompatibleModel = PropertyUtil.isGrayCompatibleModel();
         configInnerHandler = new ConfigInnerHandler(configOperationService, configInfoPersistService,
                 configDetailService, namespacePersistService, configInfoBetaPersistService,
@@ -123,6 +130,7 @@ class ConfigInnerHandlerTest {
     
     @AfterEach
     void tearDown() {
+        EnvUtil.setEnvironment(cachedEnv);
         PropertyUtil.setGrayCompatibleModel(cachedGrayCompatibleModel);
     }
     
