@@ -105,7 +105,7 @@ class NewMcpServer extends React.Component {
             : false;
           initFileData['namespace'] = remoteServerConfig?.serviceRef?.namespaceId;
           initFileData['service'] = remoteServerConfig?.serviceRef?.serviceName;
-
+          initFileData['groupName'] = remoteServerConfig?.serviceRef?.groupName;
           // 通过 namespaceId 获取服务列表
           if (remoteServerConfig?.serviceRef?.namespaceId) {
             this.getServiceList(remoteServerConfig?.serviceRef?.namespaceId);
@@ -209,7 +209,7 @@ class NewMcpServer extends React.Component {
           );
           // 添加服务
           const serverGroup = serviceList.find(item => item.value === values?.service);
-
+          const groupName = serverGroup?.groupName || values?.groupName;
           params.endpointSpecification = useExistService
             ? JSON.stringify(
                 {
@@ -217,7 +217,7 @@ class NewMcpServer extends React.Component {
                   data: {
                     namespaceId: values?.namespace || '',
                     serviceName: values?.service || '',
-                    groupName: serverGroup?.groupName || '',
+                    groupName: groupName || '',
                   },
                 },
                 null,
