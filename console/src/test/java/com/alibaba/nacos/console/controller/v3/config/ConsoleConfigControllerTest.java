@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
 import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
+import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
 import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -68,19 +69,16 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * ConsoleConfigControllerTest.
- *
- * @author zhangyukun on:2024/8/20
- */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class ConsoleConfigControllerTest {
@@ -227,15 +225,13 @@ public class ConsoleConfigControllerTest {
         page.setPagesAvailable(2);
         page.setPageItems(configInfoList);
         
-        Map<String, Object> configAdvanceInfo = new HashMap<>();
-        configAdvanceInfo.put("appName", "testApp");
-        configAdvanceInfo.put("config_tags", "testTag");
-        
-        when(configProxy.getConfigList(1, 10, "testDataId", "testGroup", "public", configAdvanceInfo)).thenReturn(page);
+        when(configProxy.getConfigList(eq(1), eq(10), eq("testDataId"), eq("testGroup"), eq("public"),
+                anyMap())).thenReturn(page);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/config/list")
                 .param("dataId", "testDataId").param("groupName", "testGroup").param("appName", "testApp")
-                .param("namespaceId", "").param("configTags", "testTag").param("pageNo", "1").param("pageSize", "10");
+                .param("type", "text").param("namespaceId", "").param("configTags", "testTag").param("pageNo", "1")
+                .param("pageSize", "10");
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         
@@ -264,16 +260,14 @@ public class ConsoleConfigControllerTest {
         page.setPageNumber(1);
         page.setPagesAvailable(2);
         page.setPageItems(configInfoList);
-        Map<String, Object> configAdvanceInfo = new HashMap<>(8);
-        configAdvanceInfo.put("content", "server.port");
         
-        when(configProxy.getConfigListByContent("blur", 1, 10, "test", "test", "public", configAdvanceInfo)).thenReturn(
-                page);
+        when(configProxy.getConfigListByContent(eq("blur"), eq(1), eq(10), eq("test"), eq("test"), eq("public"),
+                anyMap())).thenReturn(page);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/config/searchDetail")
-                .param("dataId", "test").param("groupName", "test").param("appName", "").param("namespaceId", "")
-                .param("configTags", "").param("configDetail", "server.port").param("search", "blur")
-                .param("pageNo", "1").param("pageSize", "10");
+                .param("dataId", "test").param("groupName", "test").param("appName", "testApp").param("namespaceId", "")
+                .param("configTags", "testTag").param("configDetail", "server.port").param("search", "blur")
+                .param("type", "text").param("pageNo", "1").param("pageSize", "10");
         
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
@@ -288,6 +282,34 @@ public class ConsoleConfigControllerTest {
         assertEquals(configInfoList.size(), resultList.size());
         assertEquals(configInfo.getDataId(), resConfigInfo.getDataId());
         assertEquals(configInfo.getGroupName(), resConfigInfo.getGroupName());
+    }
+    
+    @Test
+    void getListeners() throws Exception {
+        ConfigListenerInfo configListenerInfo = new ConfigListenerInfo();
+        when(configProxy.getListeners(eq("test"), eq("test"), eq("public"), eq(false))).thenReturn(configListenerInfo);
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/config/listener")
+                .param("dataId", "test").param("groupName", "test").param("namespaceId", "")
+                .param("aggregation", "false");
+        MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
+        String actualValue = response.getContentAsString();
+        Result<ConfigListenerInfo> result = JacksonUtils.toObj(actualValue, new TypeReference<>() {
+        });
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+    }
+    
+    @Test
+    void getAllSubClientConfigByIp() throws Exception {
+        ConfigListenerInfo configListenerInfo = new ConfigListenerInfo();
+        when(configProxy.getAllSubClientConfigByIp(eq("127.0.0.1"), eq(true), eq("namespaceId"), eq(false))).thenReturn(
+                configListenerInfo);
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/cs/config/listener/ip")
+                .param("ip", "127.0.0.1").param("all", "true").param("aggregation", "false");
+        MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
+        String actualValue = response.getContentAsString();
+        Result<ConfigListenerInfo> result = JacksonUtils.toObj(actualValue, new TypeReference<>() {
+        });
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
     }
     
     @Test
@@ -342,7 +364,7 @@ public class ConsoleConfigControllerTest {
                         eq(requestIpApp))).thenReturn(expectedResult);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart("/v3/console/cs/config/import")
-                .file(mockFile).param("srcUser", srcUser).param("namespaceId", namespaceId)
+                .file(mockFile).param("srcUser", "").param("namespaceId", namespaceId)
                 .param("policy", policy.toString()).header("X-Real-IP", srcIp).header("X-Forwarded-For", srcIp)
                 .header("X-App-Name", requestIpApp != null ? requestIpApp : "");
         
@@ -351,7 +373,7 @@ public class ConsoleConfigControllerTest {
         
         assertEquals(200, actualStatus);
         
-        verify(configProxy).importAndPublishConfig(eq(srcUser), eq(namespaceId), eq(policy), eq(mockFile), eq(srcIp),
+        verify(configProxy).importAndPublishConfig(any(), eq(namespaceId), eq(policy), eq(mockFile), eq(srcIp),
                 eq(requestIpApp));
     }
     
@@ -380,7 +402,7 @@ public class ConsoleConfigControllerTest {
         )).thenReturn(expectedResult);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post("/v3/console/cs/config/clone")
-                .param("srcUser", "testUser").param("targetNamespaceId", "testNamespace").param("policy", "ABORT")
+                .param("srcUser", "").param("targetNamespaceId", "testNamespace").param("policy", "ABORT")
                 .content(new ObjectMapper().writeValueAsString(configBeansList)).contentType(MediaType.APPLICATION_JSON)
                 .header("X-Real-IP", "127.0.0.1").header("X-Forwarded-For", "127.0.0.1");
         
@@ -389,7 +411,7 @@ public class ConsoleConfigControllerTest {
         
         assertEquals(200, actualStatus);
         
-        verify(configProxy).cloneConfig(eq("testUser"), eq("testNamespace"),
+        verify(configProxy).cloneConfig(any(), eq("testNamespace"),
                 argThat(new ArgumentMatcher<List<SameNamespaceCloneConfigBean>>() {
                     @Override
                     public boolean matches(List<SameNamespaceCloneConfigBean> argument) {
@@ -406,8 +428,7 @@ public class ConsoleConfigControllerTest {
         String dataId = "testDataId";
         String group = "testGroup";
         String namespaceId = "testNamespaceId";
-        when(configProxy.removeBetaConfig(anyString(), anyString(), anyString(), anyString(), anyString(),
-                anyString())).thenReturn(true);
+        when(configProxy.removeBetaConfig(anyString(), anyString(), anyString(), any(), any(), any())).thenReturn(true);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.delete("/v3/console/cs/config/beta")
                 .param("dataId", dataId).param("groupName", group).param("namespaceId", namespaceId);
@@ -415,11 +436,28 @@ public class ConsoleConfigControllerTest {
         // Execute and validate response
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
-        
-        Result<Boolean> result = new ObjectMapper().readValue(actualValue, new TypeReference<Result<Boolean>>() {
+        Result<Boolean> result = new ObjectMapper().readValue(actualValue, new TypeReference<>() {
         });
-        
         assertEquals(200, response.getStatus());
+        assertTrue(result.getData());
+    }
+    
+    @Test
+    void testStopBetaFailure() throws Exception {
+        // Mock configuration
+        String dataId = "testDataId";
+        String group = "testGroup";
+        String namespaceId = "testNamespaceId";
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.delete("/v3/console/cs/config/beta")
+                .param("dataId", dataId).param("groupName", group).param("namespaceId", namespaceId);
+        
+        // Execute and validate response
+        MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
+        String actualValue = response.getContentAsString();
+        Result<Boolean> result = new ObjectMapper().readValue(actualValue, new TypeReference<>() {
+        });
+        assertEquals(200, response.getStatus());
+        assertFalse(result.getData());
     }
     
     @Test
