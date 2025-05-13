@@ -88,6 +88,13 @@ public abstract class Connection implements Requester {
         return metaInfo;
     }
     
+    /**
+     * Send request to remote.
+     *
+     * @param request request.
+     * @return response.
+     * @throws NacosException nacos exception.
+     */
     public abstract void sendRequestNoAck(Request request) throws NacosException;
     
     @Override
