@@ -26,11 +26,11 @@ import io.grpc.netty.shaded.io.netty.channel.Channel;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.Objects;
 
 /**
- * ConnectionGeneratorServiceDelegate
+ * ConnectionGeneratorServiceDelegate.
+ *
  * @author jianwei.wjw
  */
 

@@ -92,7 +92,6 @@ public abstract class Connection implements Requester {
      * Send request to remote.
      *
      * @param request request.
-     * @return response.
      * @throws NacosException nacos exception.
      */
     public abstract void sendRequestNoAck(Request request) throws NacosException;

@@ -15,6 +15,7 @@
  * limitations under the License.
  *
  */
+
 package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.core.remote.Connection;
@@ -30,9 +31,9 @@ public interface ConnectionGeneratorService {
     
     /**
      * get connection by metaInfo.
-     * @param metaInfo
-     * @param streamObserver
-     * @param channel
+     * @param metaInfo not null
+     * @param streamObserver not null
+     * @param channel not null
      * @return connection
      */
     Connection getConnection(ConnectionMeta metaInfo, StreamObserver streamObserver, Channel channel);
