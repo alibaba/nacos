@@ -105,11 +105,12 @@ public class K8sSyncServer {
         
         if (k8sSyncConfig.isOutsideCluster()) {
             apiClient = getOutsideApiClient();
-            coreV1Api = new CoreV1Api();
         } else {
-            coreV1Api = new CoreV1Api();
-            apiClient = coreV1Api.getApiClient();
+            apiClient = ClientBuilder.cluster().build();
         }
+        // set the global default api-client
+        Configuration.setDefaultApiClient(apiClient);
+        coreV1Api = new CoreV1Api();
 
         OkHttpClient httpClient = apiClient.getHttpClient().newBuilder().build();
         apiClient.setHttpClient(httpClient);
@@ -405,10 +406,10 @@ public class K8sSyncServer {
      */
     public ApiClient getOutsideApiClient() throws IOException {
         String kubeConfigPath = k8sSyncConfig.getKubeConfig();
-    
+
         // loading the out-of-cluster config, a kubeconfig from file-system
         ApiClient apiClient = ClientBuilder.kubeconfig(KubeConfig.loadKubeConfig(new FileReader(kubeConfigPath))).build();
-        
+
         // set the global default api-client to the in-cluster one from above
         Configuration.setDefaultApiClient(apiClient);
         return apiClient;
