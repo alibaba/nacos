@@ -114,7 +114,6 @@ goto :EOF
     set "target_file=!target_file:"=!"
 
     set "escaped_key=%key_pattern:.=\.%"
-    set "escaped_key_with_equal=%escaped_key%="
 
     findstr /R /C:"^%escaped_key%=.*" "%target_file%" >nul
     if %errorlevel% == 0 (
