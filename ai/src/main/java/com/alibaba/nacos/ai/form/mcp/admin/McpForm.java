@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.form.mcp;
+package com.alibaba.nacos.ai.form.mcp.admin;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -35,17 +35,15 @@ public class McpForm implements NacosForm {
     @Serial
     private static final long serialVersionUID = 1314659974972866397L;
     
-    private String mcpName;
+    private String id;
     
     private String namespaceId;
+    
+    private String version;
     
     @Override
     public void validate() throws NacosApiException {
         fillDefaultValue();
-        if (StringUtils.isEmpty(mcpName)) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'mcpName' type String is not present");
-        }
     }
     
     protected void fillDefaultValue() {
@@ -55,11 +53,11 @@ public class McpForm implements NacosForm {
     }
     
     public String getMcpName() {
-        return mcpName;
+        return id;
     }
     
     public void setMcpName(String mcpName) {
-        this.mcpName = mcpName;
+        this.id = mcpName;
     }
     
     public String getNamespaceId() {
@@ -68,5 +66,21 @@ public class McpForm implements NacosForm {
     
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Divider, ConfigProvider, Loading, Grid, Table } from '@alifd/next';
+import { Divider, ConfigProvider, Loading, Grid, Table, Button, Select, Form } from '@alifd/next';
 import { getParams, request } from '../../../globalLib';
 import PropTypes from 'prop-types';
 import ShowTools from './ShowTools';
@@ -40,11 +40,17 @@ class McpDetail extends React.Component {
   }
 
   getServerDetail = async () => {
-    const mcpname = getParams('mcpname');
+    const mcpServerId = getParams('id');
+    const version = getParams('version');
     this.setState({ loading: true });
-    const result = await request({
-      url: `v3/console/ai/mcp?mcpName=${mcpname}`,
-    });
+    const result =
+      version === null
+        ? await request({
+            url: `v3/console/ai/mcp?id=${mcpServerId}`,
+          })
+        : await request({
+            url: `v3/console/ai/mcp?id=${mcpServerId}&version=${version}`,
+          });
     this.setState({ loading: false });
 
     if (result.code == 0 && result.data) {
@@ -80,19 +86,30 @@ class McpDetail extends React.Component {
     );
   };
 
+  goToVersion = version => {
+    this.props.history.push(
+      generateUrl('/mcpServerDetail', {
+        namespace: getParams('namespace'),
+        id: getParams('id'),
+        version: version,
+      })
+    );
+    this.getServerDetail();
+  };
+
   render() {
     const localServerConfig = JSON.stringify(this.state.serverConfig?.localServerConfig, null, 2);
     const { locale = {} } = this.props;
-    const credentials = this.state.serverConfig?.credentials;
-    const credentialsTables = [];
-    if (credentials) {
-      for (const credentialsKey in credentials) {
-        credentialsTables.push({
-          id: credentialsKey,
-          name: credentialsKey,
-        });
+    const versions = this.state.serverConfig?.versionDetails
+      ? this.state.serverConfig?.versionDetails
+      : [];
+    const versionSelections = versions.map((item, _) => {
+      if (item.is_latest) {
+        return { label: item.version + ' (已发布)', value: item.version };
       }
-    }
+      return { label: item.version, value: item.version };
+    });
+
     return (
       <div>
         <Loading
@@ -105,14 +122,32 @@ class McpDetail extends React.Component {
           visible={this.state.loading}
           color={'#333'}
         >
-          <h1
-            style={{
-              position: 'relative',
-              width: '60%',
-            }}
-          >
-            {locale.mcpServerDetail}
-          </h1>
+          <Row>
+            <Col span={19}>
+              <h1
+                style={{
+                  position: 'relative',
+                  width: '60%',
+                }}
+              >
+                {locale.mcpServerDetail}
+              </h1>
+            </Col>
+            <Col span={4}>
+              <span>版本</span>
+              <Select
+                dataSource={versionSelections}
+                style={{
+                  marginLeft: 10,
+                  width: '80%',
+                }}
+                value={this.state.serverConfig?.versionDetail?.version}
+                onChange={data => {
+                  this.goToVersion(data);
+                }}
+              ></Select>
+            </Col>
+          </Row>
           <h2
             style={{
               color: '#333',
@@ -139,7 +174,7 @@ class McpDetail extends React.Component {
               list: [
                 {
                   label: locale.serverType,
-                  value: this.state.serverConfig.protocol,
+                  value: this.state.serverConfig.frontProtocol,
                 }, // 类型
                 {
                   label: locale.serverDescription,
@@ -181,11 +216,6 @@ class McpDetail extends React.Component {
               <pre>{localServerConfig}</pre>
             </>
           )}
-          <Divider></Divider>
-          <h2>{locale.credentialsName}</h2>
-          <Table dataSource={credentialsTables}>
-            <Table.Column title="Credential Id" dataIndex="id" />
-          </Table>
 
           <Divider></Divider>
           <h2>Tools</h2>

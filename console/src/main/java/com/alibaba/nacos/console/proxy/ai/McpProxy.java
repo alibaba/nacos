@@ -63,8 +63,8 @@ public class McpProxy {
      * @return detail info with {@link McpServerDetailInfo}
      * @throws NacosException any exception during handling
      */
-    public McpServerDetailInfo getMcpServer(String namespaceId, String mcpName) throws NacosException {
-        return mcpHandler.getMcpServer(namespaceId, mcpName);
+    public McpServerDetailInfo getMcpServer(String namespaceId, String mcpName, String version) throws NacosException {
+        return mcpHandler.getMcpServer(namespaceId, mcpName, version);
     }
     
     /**
@@ -96,9 +96,9 @@ public class McpProxy {
      * @param endpointSpecification mcp server endpoint specification, see {@link McpEndpointSpec}, optional
      * @throws NacosException any exception during handling
      */
-    public void updateMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
+    public void updateMcpServer(String namespaceId, String mcpName, boolean isPublish, McpServerBasicInfo serverSpecification,
             McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
-        mcpHandler.updateMcpServer(namespaceId, mcpName, serverSpecification, toolSpecification, endpointSpecification);
+        mcpHandler.updateMcpServer(namespaceId, mcpName, isPublish, serverSpecification, toolSpecification, endpointSpecification);
     }
     
     /**
@@ -108,7 +108,7 @@ public class McpProxy {
      * @param mcpName     name of mcp server
      * @throws NacosException any exception during handling
      */
-    public void deleteMcpServer(String namespaceId, String mcpName) throws NacosException {
-        mcpHandler.deleteMcpServer(namespaceId, mcpName);
+    public void deleteMcpServer(String namespaceId, String mcpName, String version) throws NacosException {
+        mcpHandler.deleteMcpServer(namespaceId, mcpName, version);
     }
 }

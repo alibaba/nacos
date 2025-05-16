@@ -143,11 +143,7 @@ class NameSpaceList extends React.Component {
   }
 
   handleNameSpaces(data) {
-    const isAIpage =
-      window.location.href.includes(McpServerManagementRoute) ||
-      window.location.href.includes(CredentialManagementRoute);
-    const nownamespace =
-      getParams('namespace') || (isAIpage ? McpServerManagementRouteName : 'public');
+    const nownamespace = getParams('namespace') || 'public';
 
     // let namespaceShowName = this._namespaceShowName || data[0].namespaceShowName || '';
     window.namespaceList = data;
@@ -205,17 +201,8 @@ class NameSpaceList extends React.Component {
         />
       );
     }
-    const isAIpage =
-      window.location.href.includes(McpServerManagementRoute) ||
-      window.location.href.includes(CredentialManagementRoute);
-    const AIlist = [
-      {
-        namespace: 'nacos-default-mcp',
-        namespaceShowName: 'nacos-default-mcp',
-        namespaceDesc: 'nacos-default-mcp',
-      },
-    ];
-    const _nslist = isAIpage ? AIlist : namespaceList;
+    const _nslist = namespaceList;
+    console.log(_nslist);
     const namespacesBtn = _nslist.map((obj, index) => {
       return (
         <div key={index} style={{ cursor: 'pointer' }}>
