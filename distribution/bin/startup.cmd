@@ -115,7 +115,7 @@ goto :EOF
 
     set "escaped_key=%key_pattern:.=\.%"
 
-    findstr /R /C:"^%escaped_key%=.*" "%target_file%" >nul
+    findstr /R /C:"^%escaped_key%[= ].*" "%target_file%" >nul
     if %errorlevel% == 0 (
         rem Check if the value of the key is empty
         for /f "usebackq tokens=1,2 delims==" %%a in ("%target_file%") do (
