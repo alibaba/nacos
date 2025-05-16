@@ -66,25 +66,11 @@ class MainLayout extends React.Component {
   }
 
   navTo(url) {
-    // 针对AI页面的跳转
-    if (url === McpServerManagementRoute) {
-      const { search } = this.props.location;
-      let urlSearchParams = new URLSearchParams(search);
-      urlSearchParams.set('namespace', McpServerManagementRouteName);
-      urlSearchParams.set('namespaceShowName', McpServerManagementRouteName);
-      this.props.history.push([url, '?', urlSearchParams.toString()].join(''));
-    } else {
-      const { search } = this.props.location;
-      let urlSearchParams = new URLSearchParams(search);
-      if (window.nownamespace === 'nacos-default-mcp') {
-        urlSearchParams.set('namespace', 'public');
-        urlSearchParams.set('namespaceShowName', 'public');
-      } else {
-        urlSearchParams.set('namespace', window.nownamespace);
-        urlSearchParams.set('namespaceShowName', window.namespaceShowName);
-      }
-      this.props.history.push([url, '?', urlSearchParams.toString()].join(''));
-    }
+    const { search } = this.props.location;
+    let urlSearchParams = new URLSearchParams(search);
+    urlSearchParams.set('namespace', window.nownamespace);
+    urlSearchParams.set('namespaceShowName', window.namespaceShowName);
+    this.props.history.push([url, '?', urlSearchParams.toString()].join(''));
   }
 
   isCurrentPath(url) {

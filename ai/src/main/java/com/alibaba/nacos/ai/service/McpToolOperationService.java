@@ -57,10 +57,10 @@ public class McpToolOperationService {
      * @param toolSpecification mcp server included tools, see {@link McpTool}, optional
      * @throws NacosException any exception during handling
      */
-    public void refreshMcpTool(String namespaceId, String mcpName, McpToolSpecification toolSpecification)
+    public void refreshMcpTool(String namespaceId, String mcpServerId, String version, McpToolSpecification toolSpecification)
             throws NacosException {
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
-        configOperationService.publishConfig(buildMcpToolConfigForm(namespaceId, mcpName, toolSpecification),
+        configOperationService.publishConfig(buildMcpToolConfigForm(namespaceId, mcpServerId, version, toolSpecification),
                 configRequestInfo, null);
     }
     
@@ -73,20 +73,20 @@ public class McpToolOperationService {
         return transferToMcpServerTool(response);
     }
     
-    public void deleteMcpTool(String namespaceId, String mcpName) throws NacosException {
-        configOperationService.deleteConfig(mcpName + Constants.MCP_SERVER_TOOL_DATA_ID_SUFFIX,
+    public void deleteMcpTool(String namespaceId, String mcpServerId, String version) throws NacosException {
+        configOperationService.deleteConfig(mcpServerId + "-" + version + Constants.MCP_SERVER_TOOL_DATA_ID_SUFFIX,
                 Constants.MCP_SERVER_TOOL_GROUP, namespaceId, null, null, "nacos", null);
     }
     
-    private ConfigFormV3 buildMcpToolConfigForm(String namespaceId, String mcpName, McpToolSpecification toolSpecification) {
+    private ConfigFormV3 buildMcpToolConfigForm(String namespaceId, String mcpServerId,String version, McpToolSpecification toolSpecification) {
         ConfigFormV3 configFormV3 = new ConfigFormV3();
         configFormV3.setGroupName(Constants.MCP_SERVER_TOOL_GROUP);
         configFormV3.setGroup(Constants.MCP_SERVER_TOOL_GROUP);
         configFormV3.setNamespaceId(namespaceId);
-        configFormV3.setDataId(mcpName + Constants.MCP_SERVER_TOOL_DATA_ID_SUFFIX);
+        configFormV3.setDataId(mcpServerId + "-" + version + Constants.MCP_SERVER_TOOL_DATA_ID_SUFFIX);
         configFormV3.setContent(JacksonUtils.toJson(toolSpecification));
         configFormV3.setType(ConfigType.JSON.getType());
-        configFormV3.setAppName(mcpName);
+        configFormV3.setAppName(mcpServerId);
         configFormV3.setSrcUser("nacos");
         return configFormV3;
     }

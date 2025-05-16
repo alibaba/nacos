@@ -17,11 +17,8 @@
 package com.alibaba.nacos.maintainer.client.ai;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
-import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
-import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
-import com.alibaba.nacos.api.ai.model.mcp.McpServerRemoteServiceConfig;
-import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
+import com.alibaba.nacos.api.ai.model.mcp.*;
+import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -156,7 +153,9 @@ public interface McpMaintainerService {
         McpServerBasicInfo serverSpec = new McpServerBasicInfo();
         serverSpec.setName(mcpName);
         serverSpec.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_STDIO);
-        serverSpec.setVersion(version);
+        ServerVersionDetail versionDetail = new ServerVersionDetail();
+        versionDetail.setVersion(version);
+        serverSpec.setVersionDetail(versionDetail);
         serverSpec.setDescription(description);
         serverSpec.setLocalServerConfig(localServerConfig);
         return createLocalMcpServer(mcpName, serverSpec, toolSpec);
@@ -251,7 +250,9 @@ public interface McpMaintainerService {
         McpServerBasicInfo serverSpec = new McpServerBasicInfo();
         serverSpec.setName(mcpName);
         serverSpec.setProtocol(protocol);
-        serverSpec.setVersion(version);
+        ServerVersionDetail detail = new ServerVersionDetail();
+        detail.setVersion(version);
+        serverSpec.setVersionDetail(detail);
         serverSpec.setDescription(description);
         serverSpec.setRemoteServerConfig(remoteServiceConfig);
         return createRemoteMcpServer(mcpName, serverSpec, toolSpec, endpointSpec);

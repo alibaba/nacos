@@ -67,14 +67,7 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -126,6 +119,8 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     private static final String CONTENT = "content";
     
     private static final String TENANT = "tenant_id";
+    
+    private static final Set<String> SYSTEM_GROUP = Set.of("mcp-server", "mcp-server-versions", "mcp-tools");
     
     private final DatabaseOperate databaseOperate;
     

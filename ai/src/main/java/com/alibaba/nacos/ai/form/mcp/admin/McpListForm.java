@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.form.mcp;
+package com.alibaba.nacos.ai.form.mcp.admin;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.api.exception.api.NacosApiException;

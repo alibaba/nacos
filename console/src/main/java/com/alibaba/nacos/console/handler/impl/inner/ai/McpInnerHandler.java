@@ -49,8 +49,8 @@ public class McpInnerHandler implements McpHandler {
     }
     
     @Override
-    public McpServerDetailInfo getMcpServer(String namespaceId, String mcpName) throws NacosException {
-        return mcpServerOperationService.getMcpServer(namespaceId, mcpName);
+    public McpServerDetailInfo getMcpServer(String namespaceId, String mcpName, String version) throws NacosException {
+        return mcpServerOperationService.getMcpServerDetail(namespaceId, mcpName, version);
     }
     
     @Override
@@ -61,14 +61,14 @@ public class McpInnerHandler implements McpHandler {
     }
     
     @Override
-    public void updateMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
+    public void updateMcpServer(String namespaceId, String mcpServerId, boolean isPublish, McpServerBasicInfo serverSpecification,
             McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
-        mcpServerOperationService.updateMcpServer(namespaceId, mcpName, serverSpecification, toolSpecification,
+        mcpServerOperationService.updateMcpServer(namespaceId, mcpServerId, isPublish, serverSpecification, toolSpecification,
                 endpointSpecification);
     }
     
     @Override
-    public void deleteMcpServer(String namespaceId, String mcpName) throws NacosException {
-        mcpServerOperationService.deleteMcpServer(namespaceId, mcpName);
+    public void deleteMcpServer(String namespaceId, String mcpServerId, String version) throws NacosException {
+        mcpServerOperationService.deleteMcpServer(namespaceId, mcpServerId, version);
     }
 }
