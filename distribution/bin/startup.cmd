@@ -112,28 +112,36 @@ goto :EOF
     set "key_pattern=%~1"
     set "target_file=%~2"
     set "target_file=!target_file:"=!"
+
     set "escaped_key=%key_pattern:.=\.%"
+    set "escaped_key_with_equal=%escaped_key%="
 
-    findstr /R "^%escaped_key%=[ \t]*" "%target_file%" > nul
+    findstr /R /C:"^%escaped_key%=.*" "%target_file%" >nul
     if %errorlevel% == 0 (
-        set /p "input_val=%key_pattern% is missing, please input: "
+        rem Check if the value of the key is empty
+        for /f "usebackq tokens=1,2 delims==" %%a in ("%target_file%") do (
+            if "%%a"=="%key_pattern%" if "%%b"=="" (
+                rem Value is empty, request input from user
+                set /p "input_val=%key_pattern% value is empty, please input: "
+                set "temp_file=%TEMP%\temp_%RANDOM%.tmp"
+                set "key_pattern_with_equal=!key_pattern!="
 
-        set "temp_file=%TEMP%\temp_%RANDOM%.tmp"
-        set "key_pattern_with_equal=!key_pattern!="
-
-        for /f "usebackq delims=" %%a in ("!target_file!") do (
-            set "line=%%a"
-            set "line=!line: =!"
-            if "!line!"=="!key_pattern_with_equal!" (
-                echo %%a!input_val!>>"!temp_file!"
-            ) else (
-                echo %%a>>"!temp_file!"
+                for /f "usebackq delims=" %%a in ("!target_file!") do (
+                    set "line=%%a"
+                    set "line=!line: =!"
+                    if "!line!"=="!key_pattern_with_equal!" (
+                        echo %%a!input_val!>>"!temp_file!"
+                    ) else (
+                        echo %%a>>"!temp_file!"
+                    )
+                )
+                move /Y "!temp_file!" "!target_file!" >nul
+                echo %key_pattern% Updated with new value:%input_val%
+                findstr /R "^%escaped_key%" "%target_file%"
+                echo ----------------------------------
+                exit /b
             )
         )
-
-        move /Y "!temp_file!" "!target_file!" >nul
-        echo %key_pattern% Updated:
-        findstr /R "^%escaped_key%" "!target_file!"
-        echo ----------------------------------
     )
+
     endlocal
