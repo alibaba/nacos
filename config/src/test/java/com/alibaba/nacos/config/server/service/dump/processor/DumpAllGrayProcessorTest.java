@@ -51,7 +51,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -148,17 +147,19 @@ class DumpAllGrayProcessorTest {
     
     @Test
     void testPaginationLogic() {
-        DumpAllGrayTask task = mock(DumpAllGrayTask.class);
         int totalConfigs = PAGE_SIZE * 2 + 50;
+        int expectedPage = (int) Math.ceil(totalConfigs * 1.0 / PAGE_SIZE);
+        System.out.println("totalConfigs: " + totalConfigs + " , expectedPage: " + expectedPage);
         when(configInfoGrayPersistService.configInfoGrayCount()).thenReturn(totalConfigs);
         
         Page<ConfigInfoGrayWrapper> pageOne = new Page<>();
         when(configInfoGrayPersistService.findAllConfigInfoGrayForDumpAll(eq(1), anyInt())).thenReturn(pageOne);
         
+        DumpAllGrayTask task = mock(DumpAllGrayTask.class);
         boolean result = dumpAllGrayProcessor.process(task);
         
         assertTrue(result);
-        verify(configInfoGrayPersistService, atLeast(2)).findAllConfigInfoGrayForDumpAll(anyInt(), anyInt());
+        verify(configInfoGrayPersistService, times(expectedPage)).findAllConfigInfoGrayForDumpAll(anyInt(), anyInt());
     }
     
     @Test
