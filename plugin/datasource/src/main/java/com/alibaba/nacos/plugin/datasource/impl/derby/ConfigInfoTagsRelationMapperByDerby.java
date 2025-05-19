@@ -113,7 +113,14 @@ public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapperByDerby i
             where.and().like("a.content", content);
         }
         if (!ArrayUtils.isEmpty(tagArr)) {
-            where.and().in("b.tag_name", tagArr);
+            where.and().start();
+            for (int i = 0; i < tagArr.length; i++) {
+                if (i != 0) {
+                    where.or();
+                }
+                where.like("b.tag_name", tagArr[i]);
+            }
+            where.end();
         }
         if (!ArrayUtils.isEmpty(types)) {
             where.and().in("a.type", types);
