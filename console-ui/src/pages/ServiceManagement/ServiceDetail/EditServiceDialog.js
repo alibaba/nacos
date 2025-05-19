@@ -88,7 +88,7 @@ class EditServiceDialog extends React.Component {
       method: isCreate ? 'POST' : 'PUT',
       url: 'v3/console/ns/service',
       data: {
-        serviceName: serviceName,
+        serviceName,
         groupName: groupName || 'DEFAULT_GROUP',
         protectThreshold,
         metadata: metadataText,

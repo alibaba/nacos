@@ -36,6 +36,7 @@ class MainLayout extends React.Component {
       visible: true,
     };
   }
+
   static displayName = 'MainLayout';
 
   static propTypes = {

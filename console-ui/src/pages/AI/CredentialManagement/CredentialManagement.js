@@ -45,6 +45,7 @@ import PageTitle from '../../../components/PageTitle';
 
 import { GLOBAL_PAGE_SIZE_LIST, LANGUAGE_KEY, LOGINPAGE_ENABLED } from '../../../constants';
 import TotalRender from '../../../components/Page/TotalRender';
+import DashboardCard from '../McpManagement/DashboardCard';
 
 @connect(
   state => ({
@@ -178,10 +179,10 @@ class CredentialManagement extends React.Component {
   changeParamsBySearchType(params) {
     if (this.state.defaultFuzzySearch) {
       if (params.dataId && params.dataId !== '') {
-        params.dataId = '*' + params.dataId + '*';
+        params.dataId = `*${params.dataId}*`;
       }
       if (params.group && params.group !== '') {
-        params.group = '*' + params.group + '*';
+        params.group = `*${params.group}*`;
       }
     }
     if (this.state.defaultFuzzySearch) {
@@ -203,13 +204,13 @@ class CredentialManagement extends React.Component {
     const prePageNo = getParams('pageNo');
     const prePageSize = getParams('pageSize');
     const credentialId = getParams('credentialId') || this.credentialId || '';
-    this.pageNo = prePageNo ? prePageNo : pageNo;
-    this.pageSize = prePageSize ? prePageSize : this.state.pageSize;
+    this.pageNo = prePageNo || pageNo;
+    this.pageSize = prePageSize || this.state.pageSize;
     const params = {
       dataId: credentialId,
       groupName: 'credentials',
-      pageNo: prePageNo ? prePageNo : pageNo,
-      pageSize: prePageSize ? prePageSize : this.state.pageSize,
+      pageNo: prePageNo || pageNo,
+      pageSize: prePageSize || this.state.pageSize,
       namespaceId: 'nacos-default-mcp',
     };
     const result = await this.props.getConfigs(params);
@@ -258,7 +259,7 @@ class CredentialManagement extends React.Component {
         this.setState({ loading: true });
         const url = `v3/console/cs/config?dataId=${record.dataId}&groupName=credentials&tenant=nacos-default-mcp`;
         request({
-          url: url,
+          url,
           type: 'delete',
           data: {
             tenant: 'nacos-default-mcp',
@@ -343,6 +344,7 @@ class CredentialManagement extends React.Component {
       `/newCredential?namespaceId=nacos-default-mcp&credentialId=${record?.dataId}&mcptype=edit`
     );
   };
+
   // 打开查看详情页
   openDetail = record => {
     this.props.history.push(
@@ -394,7 +396,7 @@ class CredentialManagement extends React.Component {
           const url =
             `v3/console/cs/config/batchDelete?&ids=${Array.from(selectedRowKeys).join(
               ','
-            )}&namespaceId=` + self.state.nownamespace_id;
+            )}&namespaceId=${self.state.nownamespace_id}`;
           request({
             url,
             type: 'delete',
@@ -488,7 +490,7 @@ class CredentialManagement extends React.Component {
                           marginLeft: 0,
                         }
                   }
-                ></Form.Item>
+                />
               </Form>
             </div>
 
@@ -522,7 +524,7 @@ class CredentialManagement extends React.Component {
                     type="primary"
                     style={{ marginRight: 10 }}
                     onClick={this.multipleSelectionDeletion}
-                    data-spm-click={`gostr=/aliyun;locaid=configsDelete`}
+                    data-spm-click={'gostr=/aliyun;locaid=configsDelete'}
                   >
                     {locale.delete}
                     {/* 删除 */}

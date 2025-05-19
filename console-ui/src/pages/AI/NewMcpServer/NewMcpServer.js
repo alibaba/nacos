@@ -18,6 +18,7 @@ import {
 } from '@alifd/next';
 import { McpServerManagementRouteName, McpServerManagementRoute } from '../../../layouts/menu';
 import ShowTools from '../McpDetail/ShowTools';
+
 const { Row, Col } = Grid;
 
 const FormItem = Form.Item;
@@ -61,6 +62,7 @@ class NewMcpServer extends React.Component {
 
   componentDidMount() {
     if (!getParams('namespace')) {
+      // eslint-disable-next-line no-unused-expressions
       this.props?.history?.push({
         pathname: McpServerManagementRoute,
       });
@@ -89,23 +91,21 @@ class NewMcpServer extends React.Component {
         const initFileData = {
           serverName: name,
           protocol,
-          description: description,
-          version: version,
-          credentials: credentials,
+          description,
+          version,
+          credentials,
         };
 
         if (localServerConfig && JSON.stringify(localServerConfig, null, 2) !== '{}') {
-          initFileData['localServerConfig'] = JSON.stringify(localServerConfig, null, 2);
+          initFileData.localServerConfig = JSON.stringify(localServerConfig, null, 2);
         }
 
         if (remoteServerConfig) {
-          initFileData['exportPath'] = remoteServerConfig?.exportPath;
-          initFileData['useExistService'] = remoteServerConfig?.serviceRef?.serviceName
-            ? true
-            : false;
-          initFileData['namespace'] = remoteServerConfig?.serviceRef?.namespaceId;
-          initFileData['service'] = remoteServerConfig?.serviceRef?.serviceName;
-          initFileData['groupName'] = remoteServerConfig?.serviceRef?.groupName || '';
+          initFileData.exportPath = remoteServerConfig?.exportPath;
+          initFileData.useExistService = !!remoteServerConfig?.serviceRef?.serviceName;
+          initFileData.namespace = remoteServerConfig?.serviceRef?.namespaceId;
+          initFileData.service = remoteServerConfig?.serviceRef?.serviceName;
+          initFileData.groupName = remoteServerConfig?.serviceRef?.groupName || '';
           // 通过 namespaceId 获取服务列表
           if (remoteServerConfig?.serviceRef?.namespaceId) {
             this.getServiceList(remoteServerConfig?.serviceRef?.namespaceId);
@@ -311,7 +311,7 @@ class NewMcpServer extends React.Component {
       withInstances: false,
       pageNo: 1,
       pageSize: 100,
-      namespaceId: namespaceId,
+      namespaceId,
     };
     const result = await request({
       url: 'v3/console/ns/service/list',
@@ -331,6 +331,7 @@ class NewMcpServer extends React.Component {
       Message.error(result.message);
     }
   };
+
   handleNamespaceChange = value => {
     this.field.reset('service');
     this.getServiceList(value);
@@ -396,7 +397,7 @@ class NewMcpServer extends React.Component {
         >
           <div>
             1. {locale.localServerTips1}{' '}
-            <a href="https://github.com/nacos-group/nacos-mcp-router" target="_blank">
+            <a href="https://github.com/nacos-group/nacos-mcp-router" target="_blank" rel="noreferrer">
               nacos-mcp-router
             </a>{' '}
             {locale.localServerTips2}
@@ -421,9 +422,9 @@ class NewMcpServer extends React.Component {
 
   getCredentials = () => {
     const self = this;
-    const url = `v3/console/cs/config/list?dataId=&groupName=credentials`;
+    const url = 'v3/console/cs/config/list?dataId=&groupName=credentials';
     request({
-      url: url,
+      url,
       type: 'get',
       data: {
         pageNo: 1,
@@ -511,7 +512,7 @@ class NewMcpServer extends React.Component {
                 props: {
                   onChange: value => {
                     this.setState({
-                      useExistService: ['mcp-sse', 'mcp-streamble'].includes(value) ? false : true,
+                      useExistService: !['mcp-sse', 'mcp-streamble'].includes(value),
                     });
                   },
                 },
@@ -543,7 +544,7 @@ class NewMcpServer extends React.Component {
                     value={this.state.useExistService ? 'useExistService' : 'useRemoteService'}
                     onChange={value => {
                       this.setState({
-                        useExistService: value === 'useExistService' ? true : false,
+                        useExistService: value === 'useExistService',
                       });
                     }}
                   >
