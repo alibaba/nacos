@@ -30,6 +30,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 
 import static com.alibaba.nacos.core.auth.AuthModuleStateBuilder.AUTH_ENABLED;
@@ -42,15 +43,20 @@ class AuthModuleStateBuilderTest {
     
     MockEnvironment environment;
     
+    ConfigurableEnvironment cachedEnvironment;
+    
     @BeforeEach
     void setUp() throws Exception {
+        cachedEnvironment = EnvUtil.getEnvironment();
         environment = new MockEnvironment();
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "111");
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "111");
         EnvUtil.setEnvironment(environment);
     }
     
     @AfterEach
     void tearDown() throws Exception {
-        EnvUtil.setEnvironment(null);
+        EnvUtil.setEnvironment(null != cachedEnvironment ? cachedEnvironment : new MockEnvironment());
         resetAuthConfig();
     }
     
