@@ -21,11 +21,6 @@ import { getParams, setParams, request } from '../../globalLib';
 
 import './index.scss';
 import { NAME_SHOW } from '../../constants';
-import {
-  CredentialManagementRoute,
-  McpServerManagementRoute,
-  McpServerManagementRouteName,
-} from '../../layouts/menu';
 
 /**
  * 命名空间列表
@@ -68,7 +63,7 @@ class NameSpaceList extends React.Component {
           linkKey,
         },
         success: res => {
-          if (res.code === 0) {
+          if (res.code === 200) {
             window[keyName] = res.data;
             this.setState({
               [keyName]: res.data,
@@ -143,7 +138,7 @@ class NameSpaceList extends React.Component {
   }
 
   handleNameSpaces(data) {
-    const nownamespace = getParams('namespace') || 'public';
+    const nownamespace = getParams('namespace') || '';
 
     // let namespaceShowName = this._namespaceShowName || data[0].namespaceShowName || '';
     window.namespaceList = data;
@@ -159,7 +154,7 @@ class NameSpaceList extends React.Component {
     }
     window.namespaceShowName = namespaceShowName;
     window.namespaceDesc = namespaceDesc;
-    setParams('namespace', nownamespace || 'public');
+    setParams('namespace', nownamespace || '');
     localStorage.setItem('namespace', nownamespace);
     // setParams('namespaceShowName', namespaceShowName);
     this.props.setNowNameSpace &&
@@ -201,9 +196,7 @@ class NameSpaceList extends React.Component {
         />
       );
     }
-    const _nslist = namespaceList;
-    console.log(_nslist);
-    const namespacesBtn = _nslist.map((obj, index) => {
+    const namespacesBtn = namespaceList.map((obj, index) => {
       return (
         <div key={index} style={{ cursor: 'pointer' }}>
           {index === 0 ? '' : <span style={{ marginRight: 8, color: '#999' }}>|</span>}

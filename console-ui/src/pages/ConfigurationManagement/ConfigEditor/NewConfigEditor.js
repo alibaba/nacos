@@ -86,6 +86,7 @@ class ConfigEditor extends React.Component {
       subscriberDataSource: [],
       openAdvancedSettings: false,
       editorClass: 'editor-normal',
+      isSystemConfig: false,
     };
     this.successDialog = React.createRef();
     this.diffEditorDialog = React.createRef();
@@ -410,6 +411,11 @@ class ConfigEditor extends React.Component {
         tagDataSource: this.state.form.config_tags,
         casMd5: md5,
       });
+      const isSystemConfig = configTags.includes('nacos.internal.config');
+      console.log(isSystemConfig);
+      this.setState({
+        isSystemConfig,
+      });
       return res;
     });
   }
@@ -543,6 +549,7 @@ class ConfigEditor extends React.Component {
                     autoWidth
                     mode="tag"
                     filterLocal
+                    disabled={this.state.isSystemConfig}
                     value={form.config_tags}
                     dataSource={tagDataSource}
                     onChange={config_tags => this.setConfigTags(config_tags)}
@@ -639,25 +646,34 @@ class ConfigEditor extends React.Component {
                 </Button>
               )}
               {isBeta && tabActiveKey !== 'production' && (
-                <Button
-                  size="large"
-                  type="primary"
-                  disabled={!betaIps || betaPublishSuccess}
-                  onClick={() => this.openDiff('publishBeta')}
-                >
-                  {locale.release}
-                </Button>
+                <>
+                  <Button
+                    size="large"
+                    type="primary"
+                    disabled={!betaIps || betaPublishSuccess}
+                    onClick={() => this.openDiff('publishBeta')}
+                  >
+                    {locale.release}
+                  </Button>
+                </>
               )}
-              <Button
-                type="primary"
-                disabled={tabActiveKey === 'production'}
-                onClick={() => this.openDiff('publish')}
-              >
-                {locale.publish}
-              </Button>
-              <Button type="normal" onClick={() => this.goBack()}>
-                {locale.back}
-              </Button>
+              <Form>
+                <Form.Item
+                  help={this.state.isSystemConfig ? '系统配置无法修改' : null}
+                  validateState={'error'}
+                >
+                  <Button
+                    type="primary"
+                    disabled={tabActiveKey === 'production' || this.state.isSystemConfig}
+                    onClick={() => this.openDiff('publish')}
+                  >
+                    {locale.publish}
+                  </Button>
+                  <Button type="normal" onClick={() => this.goBack()}>
+                    {locale.back}
+                  </Button>
+                </Form.Item>
+              </Form>
             </Col>
           </Row>
           <DiffEditorDialog

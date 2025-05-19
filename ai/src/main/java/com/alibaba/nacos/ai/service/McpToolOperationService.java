@@ -88,6 +88,7 @@ public class McpToolOperationService {
         configFormV3.setType(ConfigType.JSON.getType());
         configFormV3.setAppName(mcpServerId);
         configFormV3.setSrcUser("nacos");
+        configFormV3.setConfigTags(Constants.MCP_SERVER_CONFIG_MARK);
         return configFormV3;
     }
     

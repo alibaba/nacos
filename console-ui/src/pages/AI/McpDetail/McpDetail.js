@@ -97,18 +97,36 @@ class McpDetail extends React.Component {
     this.getServerDetail();
   };
 
+  goToToEditVersion = version => {
+    this.props.history.push(
+      generateUrl('/newMcpServer', {
+        namespace: getParams('namespace'),
+        id: getParams('id'),
+        version: this.state.serverConfig.versionDetail.version,
+        mcptype: 'edit',
+      })
+    );
+  };
+
   render() {
     const localServerConfig = JSON.stringify(this.state.serverConfig?.localServerConfig, null, 2);
     const { locale = {} } = this.props;
-    const versions = this.state.serverConfig?.versionDetails
-      ? this.state.serverConfig?.versionDetails
+    const versions = this.state.serverConfig?.allVersions
+      ? this.state.serverConfig?.allVersions
       : [];
-    const versionSelections = versions.map((item, _) => {
+
+    const versionSelections = [];
+    for (let i = 0; i < versions.length; i++) {
+      const item = versions[i];
       if (item.is_latest) {
-        return { label: item.version + ' (已发布)', value: item.version };
+        versionSelections.push({
+          label: item.version + ` (` + locale.versionIsPublished + ')',
+          value: item.version,
+        });
+      } else {
+        versionSelections.push({ label: item.version, value: item.version });
       }
-      return { label: item.version, value: item.version };
-    });
+    }
 
     return (
       <div>
@@ -123,7 +141,7 @@ class McpDetail extends React.Component {
           color={'#333'}
         >
           <Row>
-            <Col span={19}>
+            <Col span={16}>
               <h1
                 style={{
                   position: 'relative',
@@ -146,6 +164,12 @@ class McpDetail extends React.Component {
                   this.goToVersion(data);
                 }}
               ></Select>
+            </Col>
+
+            <Col span={4}>
+              <Button type={'primary'} onClick={this.goToToEditVersion}>
+                {locale.createNewVersionBasedOnCurrentVersion}
+              </Button>
             </Col>
           </Row>
           <h2
@@ -187,10 +211,6 @@ class McpDetail extends React.Component {
               this.getFormItem({
                 list: [
                   {
-                    label: locale.exportPath,
-                    value: this.state.serverConfig?.remoteServerConfig?.exportPath,
-                  }, // 暴露路径
-                  {
                     label: '服务引用',
                     value: (
                       <a
@@ -214,6 +234,21 @@ class McpDetail extends React.Component {
               <Divider></Divider>
               <h2>Local Server Config</h2>
               <pre>{localServerConfig}</pre>
+            </>
+          )}
+
+          {this.state.serverConfig?.protocol !== 'stdio' && (
+            <>
+              <Divider></Divider>
+              <h2>Endpoints</h2>
+              <Table dataSource={this.state.serverConfig.backendEndpoints}>
+                <Table.Column
+                  title={'endpoint'}
+                  cell={(value, index, record) => {
+                    return 'http://' + record.address + ':' + record.port + record.path;
+                  }}
+                ></Table.Column>
+              </Table>
             </>
           )}
 

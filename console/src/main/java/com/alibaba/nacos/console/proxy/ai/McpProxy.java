@@ -71,15 +71,14 @@ public class McpProxy {
      * Create new mcp server.
      *
      * @param namespaceId           namespace id of mcp server
-     * @param mcpName               name of mcp server
      * @param serverSpecification   mcp server specification, see {@link McpServerBasicInfo}
      * @param toolSpecification     mcp server included tools, see {@link McpToolSpecification}, optional
      * @param endpointSpecification mcp server endpoint specification, see {@link McpEndpointSpec}, optional
      * @throws NacosException any exception during handling
      */
-    public void createMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
+    public void createMcpServer(String namespaceId, McpServerBasicInfo serverSpecification,
             McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
-        mcpHandler.createMcpServer(namespaceId, mcpName, serverSpecification, toolSpecification, endpointSpecification);
+        mcpHandler.createMcpServer(namespaceId, serverSpecification, toolSpecification, endpointSpecification);
     }
     
     /**
@@ -90,25 +89,27 @@ public class McpProxy {
      * </p>
      *
      * @param namespaceId           namespace id of mcp server, used to mark which mcp server to update
-     * @param mcpName               name of mcp server, used to mark which mcp server to update
+     * @param mcpServerId           id the mcp server
+     * @param isPublish             if publish the mcp server or just save the mcp
      * @param serverSpecification   mcp server specification, see {@link McpServerBasicInfo}
      * @param toolSpecification     mcp server included tools, see {@link McpToolSpecification}, optional
      * @param endpointSpecification mcp server endpoint specification, see {@link McpEndpointSpec}, optional
      * @throws NacosException any exception during handling
      */
-    public void updateMcpServer(String namespaceId, String mcpName, boolean isPublish, McpServerBasicInfo serverSpecification,
+    public void updateMcpServer(String namespaceId, String mcpServerId, boolean isPublish, McpServerBasicInfo serverSpecification,
             McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
-        mcpHandler.updateMcpServer(namespaceId, mcpName, isPublish, serverSpecification, toolSpecification, endpointSpecification);
+        mcpHandler.updateMcpServer(namespaceId, mcpServerId, isPublish, serverSpecification, toolSpecification, endpointSpecification);
     }
     
     /**
      * Delete existed mcp server.
      *
      * @param namespaceId namespace id of mcp server
-     * @param mcpName     name of mcp server
+     * @param mcpServerId     name of mcp server
+     * @param version     version of the mcp server
      * @throws NacosException any exception during handling
      */
-    public void deleteMcpServer(String namespaceId, String mcpName, String version) throws NacosException {
-        mcpHandler.deleteMcpServer(namespaceId, mcpName, version);
+    public void deleteMcpServer(String namespaceId, String mcpServerId, String version) throws NacosException {
+        mcpHandler.deleteMcpServer(namespaceId, mcpServerId, version);
     }
 }

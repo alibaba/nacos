@@ -39,6 +39,8 @@ public class McpForm implements NacosForm {
     
     private String namespaceId;
     
+    private String name;
+    
     private String version;
     
     @Override
@@ -50,14 +52,6 @@ public class McpForm implements NacosForm {
         if (StringUtils.isEmpty(namespaceId)) {
             namespaceId = AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;
         }
-    }
-    
-    public String getMcpName() {
-        return id;
-    }
-    
-    public void setMcpName(String mcpName) {
-        this.id = mcpName;
     }
     
     public String getNamespaceId() {
@@ -82,5 +76,13 @@ public class McpForm implements NacosForm {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

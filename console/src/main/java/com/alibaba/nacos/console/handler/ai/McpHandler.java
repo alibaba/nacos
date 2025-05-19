@@ -60,13 +60,12 @@ public interface McpHandler {
      * Create new mcp server.
      *
      * @param namespaceId           namespace id of mcp server
-     * @param mcpName               name of mcp server
      * @param serverSpecification   mcp server specification, see {@link McpServerBasicInfo}
      * @param toolSpecification     mcp server included tools, see {@link McpTool}, optional
      * @param endpointSpecification mcp server endpoint specification, see {@link McpEndpointSpec}, optional
      * @throws NacosException any exception during handling
      */
-    void createMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
+    void createMcpServer(String namespaceId, McpServerBasicInfo serverSpecification,
             McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException;
     
     /**

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.bootstrap;
 
+import com.alibaba.nacos.mcpregistry.NacosMcpRegistry;
 import com.alibaba.nacos.NacosServerBasicApplication;
 import com.alibaba.nacos.NacosServerWebApplication;
 import com.alibaba.nacos.console.NacosConsole;
@@ -55,6 +56,9 @@ public class NacosBootstrap {
             case SERVER:
                 startWithoutConsole(args);
                 break;
+            case SERVER_WITH_MCP:
+                startWithMcp(args);
+                break;
             case CONSOLE:
                 startOnlyConsole(args);
                 break;
@@ -81,6 +85,14 @@ public class NacosBootstrap {
         prepareCoreContext(coreContext);
         ConfigurableApplicationContext serverWebContext = startServerWebContext(args, coreContext);
         ConfigurableApplicationContext consoleContext = startConsoleContext(args, coreContext);
+        ConfigurableApplicationContext mcpRegistryContext = startMcpRegistryContext(args, coreContext);
+    }
+    
+    private static void startWithMcp(String[] args) {
+        ConfigurableApplicationContext coreContext = startCoreContext(args);
+        prepareCoreContext(coreContext);
+        ConfigurableApplicationContext serverWebContext = startServerWebContext(args, coreContext);
+        ConfigurableApplicationContext mcpRegistryContext = startMcpRegistryContext(args, coreContext);
     }
     
     private static ConfigurableApplicationContext startCoreContext(String[] args) {
@@ -101,6 +113,13 @@ public class NacosBootstrap {
         NacosStartUpManager.start(NacosStartUp.CONSOLE_START_UP_PHASE);
         return new SpringApplicationBuilder(NacosConsole.class).parent(coreContext)
                 .banner(getBanner("nacos-console-banner.txt")).run(args);
+    }
+    
+    private static ConfigurableApplicationContext startMcpRegistryContext(String[] args,
+                                                                          ConfigurableApplicationContext coreContext) {
+        NacosStartUpManager.start(NacosStartUp.MCP_REGISTRY_START_UP_PHASE);
+        return new SpringApplicationBuilder(NacosMcpRegistry.class).parent(coreContext)
+                .banner(getBanner("nacos-mcp-registry-banner.txt")).run(args);
     }
     
     private static void startOnlyConsole(String[] args) {

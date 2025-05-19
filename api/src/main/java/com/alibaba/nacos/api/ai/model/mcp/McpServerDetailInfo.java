@@ -31,7 +31,9 @@ public class McpServerDetailInfo extends McpServerBasicInfo {
     
     private McpToolSpecification toolSpec;
     
-    private List<ServerVersionDetail> versionDetails;
+    private List<ServerVersionDetail> allVersions;
+    
+    private String namespaceId;
     
     public List<McpEndpointInfo> getBackendEndpoints() {
         return backendEndpoints;
@@ -49,11 +51,19 @@ public class McpServerDetailInfo extends McpServerBasicInfo {
         this.toolSpec = toolSpec;
     }
 
-    public List<ServerVersionDetail> getVersionDetails() {
-        return versionDetails;
+    public List<ServerVersionDetail> getAllVersions() {
+        return allVersions;
     }
 
-    public void setVersionDetails(List<ServerVersionDetail> versionDetails) {
-        this.versionDetails = versionDetails;
+    public void setAllVersions(List<ServerVersionDetail> allVersions) {
+        this.allVersions = allVersions;
+    }
+
+    public String getNamespaceId() {
+        return namespaceId;
+    }
+
+    public void setNamespaceId(String namespaceId) {
+        this.namespaceId = namespaceId;
     }
 }

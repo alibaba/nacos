@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.mcp.admin.McpDetailForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpForm;
 import com.alibaba.nacos.ai.form.mcp.admin.McpListForm;
+import com.alibaba.nacos.ai.form.mcp.admin.McpUpdateForm;
 import com.alibaba.nacos.ai.param.McpHttpParamExtractor;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.ai.utils.McpRequestUtil;
@@ -65,7 +66,8 @@ public class McpAdminController {
     /**
      * List mcp server.
      *
-     * @param mcpListForm list mcp servers request form
+     * @param mcpListForm list mcp servers request form.
+     * @param pageForm page info about the request.
      * @return mcp server list wrapper with {@link Result}
      * @throws NacosApiException if request parameter is invalid or handle error
      */
@@ -76,7 +78,7 @@ public class McpAdminController {
         mcpListForm.validate();
         pageForm.validate();
         return Result.success(
-                mcpServerOperationService.listMcpServer(mcpListForm.getNamespaceId(), mcpListForm.getMcpName(), mcpListForm.getSearch(),
+                mcpServerOperationService.listMcpServerWithPage(mcpListForm.getNamespaceId(), mcpListForm.getName(), mcpListForm.getSearch(),
                          pageForm.getPageNo(), pageForm.getPageSize()));
     }
     
@@ -91,7 +93,7 @@ public class McpAdminController {
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<McpServerDetailInfo> getMcpServer(McpForm mcpForm) throws NacosException {
         mcpForm.validate();
-        return Result.success(mcpServerOperationService.getMcpServerDetail(mcpForm.getNamespaceId(), mcpForm.getMcpName(), mcpForm.getVersion()));
+        return Result.success(mcpServerOperationService.getMcpServerDetail(mcpForm.getNamespaceId(),mcpForm.getId(), mcpForm.getName(), mcpForm.getVersion()));
     }
     
     /**
@@ -107,7 +109,7 @@ public class McpAdminController {
         McpServerBasicInfo basicInfo = McpRequestUtil.parseMcpServerBasicInfo(mcpForm);
         McpToolSpecification mcpTools = McpRequestUtil.parseMcpTools(mcpForm);
         McpEndpointSpec endpointSpec = McpRequestUtil.parseMcpEndpointSpec(basicInfo, mcpForm);
-        mcpServerOperationService.createMcpServer(mcpForm.getNamespaceId(), mcpForm.getMcpName(), basicInfo, mcpTools,
+        mcpServerOperationService.createMcpServer(mcpForm.getNamespaceId(), basicInfo, mcpTools,
                 endpointSpec);
         return Result.success("ok");
     }
@@ -124,12 +126,12 @@ public class McpAdminController {
      */
     @PutMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
-    public Result<String> updateMcpServer(McpDetailForm mcpForm) throws NacosException {
+    public Result<String> updateMcpServer(McpUpdateForm mcpForm) throws NacosException {
         mcpForm.validate();
         McpServerBasicInfo basicInfo = McpRequestUtil.parseMcpServerBasicInfo(mcpForm);
         McpToolSpecification mcpTools = McpRequestUtil.parseMcpTools(mcpForm);
         McpEndpointSpec endpointSpec = McpRequestUtil.parseMcpEndpointSpec(basicInfo, mcpForm);
-        mcpServerOperationService.updateMcpServer(mcpForm.getNamespaceId(), mcpForm.getId(),mcpForm.getNeedPublish(), basicInfo, mcpTools,
+        mcpServerOperationService.updateMcpServer(mcpForm.getNamespaceId(), mcpForm.getId(),mcpForm.getPublish(), basicInfo, mcpTools,
                 endpointSpec);
         return Result.success("ok");
     }
@@ -147,5 +149,4 @@ public class McpAdminController {
         mcpServerOperationService.deleteMcpServer(mcpForm.getNamespaceId(), mcpForm.getId(), mcpForm.getVersion());
         return Result.success("ok");
     }
-    
 }

@@ -271,7 +271,7 @@ class McpManagement extends React.Component {
     const data = {
       pageNo: prePageNo ? prePageNo : pageNo,
       pageSize: prePageSize ? prePageSize : this.state.pageSize,
-      mcpName: mcpName,
+      name: mcpName,
       search: 'blur',
     };
     this.setState({ loading: true });

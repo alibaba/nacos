@@ -53,7 +53,7 @@ public class McpRequestUtil {
                 new TypeReference<>() {
                 });
         if (StringUtils.isEmpty(result.getName())) {
-            result.setName(mcpForm.getMcpName());
+            result.setName(mcpForm.getName());
         }
         return result;
     }
