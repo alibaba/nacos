@@ -64,12 +64,12 @@ public final class WhereBuilder {
         return this;
     }
     
-    public WhereBuilder start() {
+    public WhereBuilder startParentheses() {
         where.append(" ( ");
         return this;
     }
     
-    public WhereBuilder end() {
+    public WhereBuilder endParentheses() {
         where.append(" ) ");
         return this;
     }
