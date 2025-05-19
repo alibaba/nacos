@@ -64,6 +64,16 @@ public final class WhereBuilder {
         return this;
     }
     
+    public WhereBuilder startParentheses() {
+        where.append(" ( ");
+        return this;
+    }
+    
+    public WhereBuilder endParentheses() {
+        where.append(" ) ");
+        return this;
+    }
+    
     /**
      * Build OR.
      *
