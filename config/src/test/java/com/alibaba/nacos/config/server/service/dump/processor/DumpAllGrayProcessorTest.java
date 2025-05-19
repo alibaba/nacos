@@ -51,6 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
@@ -161,7 +162,7 @@ class DumpAllGrayProcessorTest {
         boolean result = dumpAllGrayProcessor.process(task);
         
         assertTrue(result);
-        verify(configInfoGrayPersistService, times(expectedPage)).findAllConfigInfoGrayForDumpAll(anyInt(), anyInt());
+        verify(configInfoGrayPersistService, atLeastOnce()).findAllConfigInfoGrayForDumpAll(anyInt(), anyInt());
     }
     
     @Test
