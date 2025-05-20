@@ -212,7 +212,7 @@ class NameSpace extends React.Component {
   refreshNameSpace() {
     request({
       type: 'get',
-      url: 'v3/console/core/namespace',
+      url: 'v3/console/core/namespace/list',
       success: res => {
         if (res.code === 0) {
           window.namespaceList = res.data;

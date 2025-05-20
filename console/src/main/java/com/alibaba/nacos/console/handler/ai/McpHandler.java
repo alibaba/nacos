@@ -54,19 +54,18 @@ public interface McpHandler {
      * @return detail info with {@link McpServerDetailInfo}
      * @throws NacosException any exception during handling
      */
-    McpServerDetailInfo getMcpServer(String namespaceId, String mcpName, String version) throws NacosException;
+    McpServerDetailInfo getMcpServer(String namespaceId, String mcpName, String mcpId, String version) throws NacosException;
     
     /**
      * Create new mcp server.
      *
      * @param namespaceId           namespace id of mcp server
-     * @param mcpName               name of mcp server
      * @param serverSpecification   mcp server specification, see {@link McpServerBasicInfo}
      * @param toolSpecification     mcp server included tools, see {@link McpTool}, optional
      * @param endpointSpecification mcp server endpoint specification, see {@link McpEndpointSpec}, optional
      * @throws NacosException any exception during handling
      */
-    void createMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
+    void createMcpServer(String namespaceId, McpServerBasicInfo serverSpecification,
             McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException;
     
     /**
@@ -77,13 +76,12 @@ public interface McpHandler {
      * </p>
      *
      * @param namespaceId           namespace id of mcp server, used to mark which mcp server to update
-     * @param mcpName               name of mcp server, used to mark which mcp server to update
      * @param serverSpecification   mcp server specification, see {@link McpServerBasicInfo}
      * @param toolSpecification     mcp server included tools, see {@link McpTool}, optional
      * @param endpointSpecification mcp server endpoint specification, see {@link McpEndpointSpec}, optional
      * @throws NacosException any exception during handling
      */
-    void updateMcpServer(String namespaceId, String mcpName, boolean isPublish, McpServerBasicInfo serverSpecification,
+    void updateMcpServer(String namespaceId, boolean isPublish, McpServerBasicInfo serverSpecification,
             McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException;
     
     /**
@@ -93,5 +91,5 @@ public interface McpHandler {
      * @param mcpName     name of mcp server
      * @throws NacosException any exception during handling
      */
-    void deleteMcpServer(String namespaceId, String mcpName, String version) throws NacosException;
+    void deleteMcpServer(String namespaceId, String mcpName, String mcpId, String version) throws NacosException;
 }

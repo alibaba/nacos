@@ -38,6 +38,10 @@
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-server</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-mcp-regsitry-adaptor</artifactId>
+        </dependency>
     </dependencies>
     
     <profiles>

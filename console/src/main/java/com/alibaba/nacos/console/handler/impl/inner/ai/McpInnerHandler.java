@@ -45,30 +45,30 @@ public class McpInnerHandler implements McpHandler {
     @Override
     public Page<McpServerBasicInfo> listMcpServers(String namespaceId, String mcpName, String search, int pageNo,
             int pageSize) {
-        return mcpServerOperationService.listMcpServer(namespaceId, mcpName, search, pageNo, pageSize);
+        return mcpServerOperationService.listMcpServerWithPage(namespaceId, mcpName, search, pageNo, pageSize);
     }
     
     @Override
-    public McpServerDetailInfo getMcpServer(String namespaceId, String mcpName, String version) throws NacosException {
-        return mcpServerOperationService.getMcpServerDetail(namespaceId, mcpName, version);
+    public McpServerDetailInfo getMcpServer(String namespaceId, String mcpName, String mcpServerId, String version) throws NacosException {
+        return mcpServerOperationService.getMcpServerDetail(namespaceId, mcpServerId, mcpName, version);
     }
     
     @Override
-    public void createMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
+    public void createMcpServer(String namespaceId, McpServerBasicInfo serverSpecification,
             McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
-        mcpServerOperationService.createMcpServer(namespaceId, mcpName, serverSpecification, toolSpecification,
+        mcpServerOperationService.createMcpServer(namespaceId, serverSpecification, toolSpecification,
                 endpointSpecification);
     }
     
     @Override
-    public void updateMcpServer(String namespaceId, String mcpServerId, boolean isPublish, McpServerBasicInfo serverSpecification,
+    public void updateMcpServer(String namespaceId, boolean isPublish, McpServerBasicInfo serverSpecification,
             McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
-        mcpServerOperationService.updateMcpServer(namespaceId, mcpServerId, isPublish, serverSpecification, toolSpecification,
+        mcpServerOperationService.updateMcpServer(namespaceId, isPublish, serverSpecification, toolSpecification,
                 endpointSpecification);
     }
     
     @Override
-    public void deleteMcpServer(String namespaceId, String mcpServerId, String version) throws NacosException {
-        mcpServerOperationService.deleteMcpServer(namespaceId, mcpServerId, version);
+    public void deleteMcpServer(String namespaceId, String mcpName, String mcpServerId, String version) throws NacosException {
+        mcpServerOperationService.deleteMcpServer(namespaceId, mcpName, mcpServerId, version);
     }
 }

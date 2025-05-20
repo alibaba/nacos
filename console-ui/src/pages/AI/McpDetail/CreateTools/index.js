@@ -329,7 +329,9 @@ const CreateTools = React.forwardRef((props, ref) => {
 
   const validateTemplateJsonFormat = (rule, value, callback) => {
     try {
-      JSON.parse(value);
+      if (value?.length > 0) {
+        JSON.parse(value);
+      }
       callback();
     } catch (e) {
       callback(locale.templateShouldBeJson);

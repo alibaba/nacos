@@ -33,8 +33,6 @@ public class McpDetailForm extends McpForm {
     @Serial
     private static final long serialVersionUID = 8016131725604983670L;
     
-    private Boolean needPublish;
-    
     private String serverSpecification;
     
     private String toolSpecification;
@@ -73,12 +71,5 @@ public class McpDetailForm extends McpForm {
     public void setEndpointSpecification(String endpointSpecification) {
         this.endpointSpecification = endpointSpecification;
     }
-
-    public Boolean getNeedPublish() {
-        return needPublish;
-    }
-
-    public void setNeedPublish(Boolean needPublish) {
-        this.needPublish = needPublish;
-    }
+    
 }

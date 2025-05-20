@@ -679,6 +679,7 @@
         <module>maintainer-client</module>
         <module>client-basic</module>
         <module>ai</module>
+        <module>mcp-registry-adaptor</module>
     </modules>
     
     <!-- Default dependencies in all subprojects -->
@@ -908,6 +909,11 @@
             <dependency>
                 <groupId>com.alibaba.nacos</groupId>
                 <artifactId>nacos-client-basic</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.nacos</groupId>
+                <artifactId>nacos-mcp-regsitry-adaptor</artifactId>
                 <version>${project.version}</version>
             </dependency>
             

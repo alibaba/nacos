@@ -57,7 +57,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         params.put("pageNo", String.valueOf(pageNo));
         params.put("pageSize", String.valueOf(pageSize));
         params.put("search", "accurate");
-        params.put("mcpName", mcpName);
+        params.put("name", mcpName);
         return getMcpServerBasicInfoPage(params);
     }
     
@@ -67,7 +67,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         params.put("pageNo", String.valueOf(pageNo));
         params.put("pageSize", String.valueOf(pageSize));
         params.put("search", "blur");
-        params.put("mcpName", mcpName);
+        params.put("name", mcpName);
         return getMcpServerBasicInfoPage(params);
     }
     
@@ -84,7 +84,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     @Override
     public McpServerDetailInfo getMcpServerDetail(String mcpName) throws NacosException {
         Map<String, String> params = new HashMap<>(1);
-        params.put("mcpName", mcpName);
+        params.put("name", mcpName);
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.AI_MCP_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
@@ -97,7 +97,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     @Override
     public boolean createMcpServer(String mcpName, McpServerBasicInfo serverSpec, McpToolSpecification toolSpec,
             McpEndpointSpec endpointSpec) throws NacosException {
-        Map<String, String> params = buildFullParameters(mcpName, serverSpec, toolSpec, endpointSpec);
+        Map<String, String> params = buildFullParameters(serverSpec, toolSpec, endpointSpec);
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
                 .setPath(Constants.AdminApiPath.AI_MCP_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
@@ -109,7 +109,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     @Override
     public boolean updateMcpServer(String mcpName, McpServerBasicInfo serverSpec, McpToolSpecification toolSpec,
             McpEndpointSpec endpointSpec) throws NacosException {
-        Map<String, String> params = buildFullParameters(mcpName, serverSpec, toolSpec, endpointSpec);
+        Map<String, String> params = buildFullParameters(serverSpec, toolSpec, endpointSpec);
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.PUT)
                 .setPath(Constants.AdminApiPath.AI_MCP_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
@@ -118,10 +118,10 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
     
-    private Map<String, String> buildFullParameters(String mcpName, McpServerBasicInfo serverSpec,
+    private Map<String, String> buildFullParameters(McpServerBasicInfo serverSpec,
             McpToolSpecification toolSpec, McpEndpointSpec endpointSpec) {
         Map<String, String> params = new HashMap<>(4);
-        params.put("mcpName", mcpName);
+        params.put("name", serverSpec.getName());
         params.put("serverSpecification", JacksonUtils.toJson(serverSpec));
         if (null != toolSpec) {
             params.put("toolSpecification", JacksonUtils.toJson(toolSpec));
@@ -135,7 +135,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     @Override
     public boolean deleteMcpServer(String mcpName) throws NacosException {
         Map<String, String> params = new HashMap<>(1);
-        params.put("mcpName", mcpName);
+        params.put("name", mcpName);
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.DELETE)
                 .setPath(Constants.AdminApiPath.AI_MCP_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);

@@ -53,7 +53,6 @@ public class McpToolOperationService {
      * Create or Update mcp server tool. If mcp server tool already exist, will full replace it.
      *
      * @param namespaceId       namespace id of mcp server
-     * @param mcpName           name of mcp server
      * @param toolSpecification mcp server included tools, see {@link McpTool}, optional
      * @throws NacosException any exception during handling
      */
@@ -78,7 +77,8 @@ public class McpToolOperationService {
                 Constants.MCP_SERVER_TOOL_GROUP, namespaceId, null, null, "nacos", null);
     }
     
-    private ConfigFormV3 buildMcpToolConfigForm(String namespaceId, String mcpServerId,String version, McpToolSpecification toolSpecification) {
+    private ConfigFormV3 buildMcpToolConfigForm(String namespaceId, String mcpServerId, String version, 
+                                                McpToolSpecification toolSpecification) {
         ConfigFormV3 configFormV3 = new ConfigFormV3();
         configFormV3.setGroupName(Constants.MCP_SERVER_TOOL_GROUP);
         configFormV3.setGroup(Constants.MCP_SERVER_TOOL_GROUP);
@@ -88,6 +88,7 @@ public class McpToolOperationService {
         configFormV3.setType(ConfigType.JSON.getType());
         configFormV3.setAppName(mcpServerId);
         configFormV3.setSrcUser("nacos");
+        configFormV3.setConfigTags(Constants.MCP_SERVER_CONFIG_MARK);
         return configFormV3;
     }
     

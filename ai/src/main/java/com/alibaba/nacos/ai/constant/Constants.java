@@ -43,6 +43,8 @@ public class Constants {
     
     public static final String MCP_SERVER_TOOL_GROUP = "mcp-tools";
     
+    public static final String MCP_SERVER_PROTOCOL_TRANSLATOR_GROUP = "mcp-protocol-translator";
+    
     public static final String MCP_SERVER_SPEC_DATA_ID_SUFFIX = "-mcp-server.json";
     
     public static final String MCP_SERVER_VERSION_DATA_ID_SUFFIX = "-mcp-versions.json";
@@ -58,5 +60,13 @@ public class Constants {
     public static final String MCP_SERVER_ENDPOINT_PORT = "port";
     
     public static final String MCP_SERVER_ENDPOINT_METADATA_MARK = "__nacos.ai.mcp.service__";
+    
+    public static final String MCP_SERVER_CONFIG_MARK = "nacos.internal.config=mcp";
+    
+    public static final String PROTOCOL_TYPE_HTTP = "http";
+    
+    public static final String SERVER_EXPORT_PATH_KEY = "exportPath";
+    
+    public static final String MCP_SERVER_NAME_TAG_KEY_PREFIX = "mcpServerName=";
     
 }

@@ -17,7 +17,11 @@
 package com.alibaba.nacos.maintainer.client.ai;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.ai.model.mcp.*;
+import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerRemoteServiceConfig;
+import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
@@ -210,7 +214,7 @@ public interface McpMaintainerService {
      * @throws NacosException if fail to create mcp server.
      */
     default boolean createRemoteMcpServer(String mcpName, String version, String protocol,
-            McpServerRemoteServiceConfig remoteServiceConfig, McpEndpointSpec endpointSpec) throws NacosException {
+                                          McpServerRemoteServiceConfig remoteServiceConfig, McpEndpointSpec endpointSpec) throws NacosException {
         return createRemoteMcpServer(mcpName, version, null, protocol, remoteServiceConfig, endpointSpec);
     }
     
@@ -290,7 +294,7 @@ public interface McpMaintainerService {
             throw new NacosException(NacosException.INVALID_PARAM, "Mcp server specification cannot be null.");
         }
         if (AiConstants.Mcp.MCP_PROTOCOL_STDIO.equalsIgnoreCase(serverSpec.getProtocol())) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Mcp server protocol cannot be `stdio` or empty.");
+            throw new NacosException(NacosException.INVALID_PARAM, "Mcp server type cannot be `local` or empty.");
         }
         if (Objects.isNull(endpointSpec)) {
             throw new NacosException(NacosException.INVALID_PARAM, "Mcp server endpoint specification cannot be null.");

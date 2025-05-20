@@ -17,10 +17,8 @@
 package com.alibaba.nacos.ai.form.mcp.admin;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.NacosForm;
-import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.Serial;
@@ -35,9 +33,11 @@ public class McpForm implements NacosForm {
     @Serial
     private static final long serialVersionUID = 1314659974972866397L;
     
-    private String id;
+    private String mcpId;
     
     private String namespaceId;
+    
+    private String mcpName;
     
     private String version;
     
@@ -50,14 +50,6 @@ public class McpForm implements NacosForm {
         if (StringUtils.isEmpty(namespaceId)) {
             namespaceId = AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;
         }
-    }
-    
-    public String getMcpName() {
-        return id;
-    }
-    
-    public void setMcpName(String mcpName) {
-        this.id = mcpName;
     }
     
     public String getNamespaceId() {
@@ -76,11 +68,19 @@ public class McpForm implements NacosForm {
         this.version = version;
     }
 
-    public String getId() {
-        return id;
+    public String getMcpId() {
+        return mcpId;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setMcpId(String id) {
+        this.mcpId = id;
+    }
+
+    public String getMcpName() {
+        return mcpName;
+    }
+
+    public void setMcpName(String name) {
+        this.mcpName = name;
     }
 }
