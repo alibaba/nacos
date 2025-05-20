@@ -30,6 +30,8 @@ import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfigFactory;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
+import com.alibaba.nacos.common.remote.client.grpc.DefaultGrpcClientConfig;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.core.auth.NacosServerAuthConfig;
 import com.alibaba.nacos.core.cluster.Member;
@@ -160,9 +162,11 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
      */
     private RpcClient buildRpcClient(ConnectionType type, Map<String, String> labels, String memberClientKey) {
         Properties properties = EnvUtil.getProperties();
-        RpcClientTlsConfig config = RpcClientTlsConfigFactory.getInstance().createClusterConfig(properties);
-        return RpcClientFactory.createClusterClient(memberClientKey, type, EnvUtil.getAvailableProcessors(2),
-                EnvUtil.getAvailableProcessors(8), labels, config);
+        GrpcClientConfig clientConfig = DefaultGrpcClientConfig.newBuilder().buildClusterFromProperties(properties)
+                .setLabels(labels).setName(memberClientKey)
+                .setThreadPoolCoreSize(EnvUtil.getAvailableProcessors(2))
+                .setThreadPoolMaxSize(EnvUtil.getAvailableProcessors(8)).build();
+        return RpcClientFactory.createClusterClient(memberClientKey, type, clientConfig);
     }
     
     /**
