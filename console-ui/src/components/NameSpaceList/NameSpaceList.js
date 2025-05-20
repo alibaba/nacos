@@ -179,7 +179,7 @@ class NameSpaceList extends React.Component {
         value: nownamespace,
       };
       namespaceList.forEach(obj => {
-        obj.label = obj.namespaceShowName + ' ' + (obj.namespaceDesc ? obj.namespaceDesc : '');
+        obj.label = `${obj.namespaceShowName} ${obj.namespaceDesc ? obj.namespaceDesc : ''}`;
         obj.value = obj.namespace;
         if (obj.value !== undefined && obj.value === de.value) {
           de = obj;

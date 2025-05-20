@@ -19,7 +19,6 @@ package com.alibaba.nacos.console.handler.impl.remote.core;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.response.NacosMember;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.console.cluster.RemoteServerMemberManager;
 import com.alibaba.nacos.console.handler.core.ClusterHandler;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
@@ -36,12 +35,9 @@ import java.util.Collection;
 @EnabledRemoteHandler
 public class ClusterRemoteHandler implements ClusterHandler {
     
-    private final RemoteServerMemberManager memberManager;
-    
     private final NacosMaintainerClientHolder clientHolder;
     
-    public ClusterRemoteHandler(RemoteServerMemberManager memberManager, NacosMaintainerClientHolder clientHolder) {
-        this.memberManager = memberManager;
+    public ClusterRemoteHandler(NacosMaintainerClientHolder clientHolder) {
         this.clientHolder = clientHolder;
     }
     

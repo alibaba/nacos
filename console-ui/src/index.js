@@ -52,7 +52,7 @@ import PermissionsManagement from './pages/AuthorityControl/PermissionsManagemen
 import RolesManagement from './pages/AuthorityControl/RolesManagement';
 import Welcome from './pages/Welcome/Welcome';
 import SettingCenter from './pages/SettingCenter';
-import McpManagement from './pages/AI/mcpManagement/McpManagement';
+import McpManagement from './pages/AI/McpManagement/McpManagement';
 import McpDetail from './pages/AI/McpDetail';
 
 import reducers from './reducers';

@@ -174,8 +174,8 @@ public class ConfigInnerHandler implements ConfigHandler {
                 LOGGER.warn("[deleteConfigs] configInfo is null, id: {}", id);
                 continue;
             }
-            configOperationService.deleteConfig(configInfo.getDataId(), configInfo.getGroup(),
-                    configInfo.getTenant(), null, clientIp, srcUser, Constants.HTTP);
+            configOperationService.deleteConfig(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
+                    null, clientIp, srcUser, Constants.HTTP);
         }
         return true;
     }
@@ -277,14 +277,8 @@ public class ConfigInnerHandler implements ConfigHandler {
         List<Map<String, String>> unrecognizedList = new ArrayList<>();
         try {
             ZipUtils.UnZipResult unziped = ZipUtils.unzip(file.getBytes());
-            ZipUtils.ZipItem metaDataZipItem = unziped.getMetaDataItem();
             Result<Map<String, Object>> errorResult;
-            if (metaDataZipItem != null && Constants.CONFIG_EXPORT_METADATA_NEW.equals(metaDataZipItem.getItemName())) {
-                // new export
-                errorResult = parseImportDataV2(srcUser, unziped, configInfoList, unrecognizedList, namespaceId);
-            } else {
-                errorResult = parseImportData(srcUser, unziped, configInfoList, unrecognizedList, namespaceId);
-            }
+            errorResult = parseImportDataV2(srcUser, unziped, configInfoList, unrecognizedList, namespaceId);
             if (errorResult != null) {
                 return errorResult;
             }
@@ -316,75 +310,6 @@ public class ConfigInnerHandler implements ConfigHandler {
             saveResult.put("unrecognizedData", unrecognizedList);
         }
         return Result.success(saveResult);
-    }
-    
-    /**
-     * old import config.
-     *
-     * @param unziped          export file.
-     * @param configInfoList   parse file result.
-     * @param unrecognizedList unrecognized file.
-     * @param namespace        import namespace.
-     * @return error result.
-     */
-    private Result<Map<String, Object>> parseImportData(String srcUser, ZipUtils.UnZipResult unziped,
-            List<ConfigAllInfo> configInfoList, List<Map<String, String>> unrecognizedList, String namespace) {
-        ZipUtils.ZipItem metaDataZipItem = unziped.getMetaDataItem();
-        
-        Map<String, String> metaDataMap = new HashMap<>(16);
-        if (metaDataZipItem != null) {
-            // compatible all file separator
-            String metaDataStr = metaDataZipItem.getItemData().replaceAll("[\r\n]+", "|");
-            String[] metaDataArr = metaDataStr.split("\\|");
-            Map<String, Object> failedData = new HashMap<>(4);
-            for (String metaDataItem : metaDataArr) {
-                String[] metaDataItemArr = metaDataItem.split("=");
-                if (metaDataItemArr.length != 2) {
-                    failedData.put("succCount", 0);
-                    return Result.failure(ErrorCode.METADATA_ILLEGAL, failedData);
-                }
-                metaDataMap.put(metaDataItemArr[0], metaDataItemArr[1]);
-            }
-        }
-        
-        List<ZipUtils.ZipItem> itemList = unziped.getZipItemList();
-        if (itemList != null && !itemList.isEmpty()) {
-            for (ZipUtils.ZipItem item : itemList) {
-                String[] groupAdnDataId = item.getItemName().split(Constants.CONFIG_EXPORT_ITEM_FILE_SEPARATOR);
-                if (groupAdnDataId.length != 2) {
-                    Map<String, String> unrecognizedItem = new HashMap<>(2);
-                    unrecognizedItem.put("itemName", item.getItemName());
-                    unrecognizedList.add(unrecognizedItem);
-                    continue;
-                }
-                String group = groupAdnDataId[0];
-                String dataId = groupAdnDataId[1];
-                String tempDataId = dataId;
-                if (tempDataId.contains(".")) {
-                    tempDataId = tempDataId.substring(0, tempDataId.lastIndexOf(".")) + "~" + tempDataId.substring(
-                            tempDataId.lastIndexOf(".") + 1);
-                }
-                final String metaDataId = group + "." + tempDataId + ".app";
-                
-                //encrypted
-                String content = item.getItemData();
-                Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
-                content = pair.getSecond();
-                
-                ConfigAllInfo ci = new ConfigAllInfo();
-                ci.setGroup(group);
-                ci.setDataId(dataId);
-                ci.setContent(content);
-                if (metaDataMap.get(metaDataId) != null) {
-                    ci.setAppName(metaDataMap.get(metaDataId));
-                }
-                ci.setTenant(namespace);
-                ci.setEncryptedDataKey(pair.getFirst());
-                ci.setCreateUser(srcUser);
-                configInfoList.add(ci);
-            }
-        }
-        return null;
     }
     
     /**

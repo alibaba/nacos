@@ -88,7 +88,7 @@ public class McpRequestUtil {
         }
         if (StringUtils.isBlank(mcpForm.getEndpointSpecification())) {
             throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "request parameter `endpointSpecification` is required if mcp server type not `local`.");
+                    "request parameter `endpointSpecification` is required if mcp server type not `stdio`.");
         }
         return McpRequestUtil.deserializeSpec(mcpForm.getEndpointSpecification(), new TypeReference<>() {
         });

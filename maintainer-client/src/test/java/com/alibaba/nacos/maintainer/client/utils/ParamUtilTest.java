@@ -95,4 +95,32 @@ class ParamUtilTest {
             }
         });
     }
+    
+    @Test
+    void testInitMaxRetryTimesWithException() throws Throwable {
+        assertThrows(IllegalArgumentException.class, () -> {
+            Method method = ParamUtil.class.getDeclaredMethod("initMaxRetryTimes");
+            method.setAccessible(true);
+            System.setProperty("MAINTAINER.CLIENT.MAX.RETRY.TIMES", "test");
+            try {
+                method.invoke(null);
+            } catch (InvocationTargetException e) {
+                throw e.getCause();
+            }
+        });
+    }
+    
+    @Test
+    void testInitRefreshIntervalMillsWithException() throws Throwable {
+        assertThrows(IllegalArgumentException.class, () -> {
+            Method method = ParamUtil.class.getDeclaredMethod("initRefreshIntervalMills");
+            method.setAccessible(true);
+            System.setProperty("MAINTAINER.CLIENT.REFRESH.INTERVAL.MILLS", "test");
+            try {
+                method.invoke(null);
+            } catch (InvocationTargetException e) {
+                throw e.getCause();
+            }
+        });
+    }
 }

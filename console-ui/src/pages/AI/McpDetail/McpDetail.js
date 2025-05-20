@@ -4,6 +4,7 @@ import { getParams, request } from '../../../globalLib';
 import PropTypes from 'prop-types';
 import ShowTools from './ShowTools';
 import { generateUrl } from '../../../utils/nacosutil';
+
 const { Row, Col } = Grid;
 
 @ConfigProvider.config
@@ -231,7 +232,7 @@ class McpDetail extends React.Component {
           </div>
           {this.state.serverConfig?.protocol === 'stdio' && (
             <>
-              <Divider></Divider>
+              <Divider />
               <h2>Local Server Config</h2>
               <pre>{localServerConfig}</pre>
             </>
@@ -258,7 +259,7 @@ class McpDetail extends React.Component {
             locale={locale}
             serverConfig={this.state.serverConfig}
             getServerDetail={this.getServerDetail}
-            isPreview={true}
+            isPreview
           />
         </Loading>
       </div>
