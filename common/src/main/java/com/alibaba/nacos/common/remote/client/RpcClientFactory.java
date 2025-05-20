@@ -206,4 +206,26 @@ public class RpcClientFactory {
                 clientNameInner -> new GrpcClusterClient(clientNameInner, threadPoolCoreSize, threadPoolMaxSize, labels,
                         tlsConfig));
     }
+    
+    
+    /**
+     * create a cluster rpc client.
+     *
+     * @param clientName         client name.
+     * @param connectionType     client type.
+     * @param grpcClientConfig   grpc client config.
+     * @return rpc client.
+     */
+    public static RpcClient createClusterClient(String clientName, ConnectionType connectionType,
+            GrpcClientConfig grpcClientConfig) {
+        if (!ConnectionType.GRPC.equals(connectionType)) {
+            throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
+        }
+        
+        return CLIENT_MAP.computeIfAbsent(clientName, clientNameInner -> {
+            LOGGER.info("[RpcClientFactory] create a new cluster rpc client of " + clientName);
+            grpcClientConfig.setName(clientNameInner);
+            return new GrpcClusterClient(grpcClientConfig);
+        });
+    }
 }
