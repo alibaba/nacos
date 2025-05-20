@@ -17,7 +17,8 @@
 package com.alibaba.nacos.core.namespace.model;
 
 /**
- * the enum of namespace. 0 : Global configuration， 1 : Default private namespace ，2 : Custom namespace.
+ * Namespace type enum.
+ * Note: Changes to this enum may require updates to the frontend code (e.g., Namespace.js).
  *
  * @author chenglu
  * @date 2021-05-25 17:01

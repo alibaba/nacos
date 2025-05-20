@@ -181,7 +181,7 @@ public class ConfigImportAndExportService {
         return allMembers.parallelStream().findAny().orElseThrow();
     }
     
-    private static class ExportHttpClientResponseHandler
+    static class ExportHttpClientResponseHandler
             extends AbstractHttpClientResponseHandler<ResponseEntity<byte[]>> {
         
         private String contentDisposition;

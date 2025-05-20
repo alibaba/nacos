@@ -16,35 +16,32 @@
 
 package com.alibaba.nacos.maintainer.client.remote;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.Field;
 
 public class HttpClientManagerTest {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientManagerTest.class);
+    @BeforeEach
+    void setUp() throws IllegalAccessException, NoSuchFieldException {
+        Field instanceField = HttpClientManager.class.getDeclaredField("httpClientManager");
+        instanceField.setAccessible(true);
+        instanceField.set(null, null);
+    }
+    
+    @AfterEach
+    void tearDown() throws NacosException {
+        HttpClientManager.getInstance().shutdown();
+    }
     
     @Test
     public void testGetNacosRestTemplate() {
-        try {
-            HttpClientManager httpClientManager = HttpClientManager.getInstance();
-            NacosRestTemplate template = httpClientManager.getNacosRestTemplate();
-            assert template != null : "NacosRestTemplate should not be null.";
-            LOGGER.info("Successfully obtained NacosRestTemplate instance.");
-        } catch (Exception e) {
-            LOGGER.error("Failed to get NacosRestTemplate.", e);
-        }
+        HttpClientManager httpClientManager = HttpClientManager.getInstance();
+        NacosRestTemplate template = httpClientManager.getNacosRestTemplate();
+        assert template != null : "NacosRestTemplate should not be null.";
     }
-    
-    @Test
-    public void testShutdown() {
-        try {
-            HttpClientManager.shutdown(HttpClientManager.class.getName());
-            LOGGER.info("Successfully shutdown HttpClientManager.");
-        } catch (Exception e) {
-            LOGGER.error("Failed to shutdown HttpClientManager.", e);
-        }
-    }
-    
 }

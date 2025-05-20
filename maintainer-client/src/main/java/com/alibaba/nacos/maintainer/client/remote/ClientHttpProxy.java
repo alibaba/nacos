@@ -28,7 +28,6 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.lifecycle.Closeable;
-import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.tls.TlsSystemConfig;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -42,7 +41,6 @@ import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.net.HttpURLConnection;
 import java.util.Map;
 import java.util.Properties;
@@ -92,8 +90,7 @@ public class ClientHttpProxy implements Closeable {
     private void initScheduledExecutor(Properties properties) {
         executor = new ScheduledThreadPoolExecutor(1,
                 new NameThreadFactory("com.alibaba.nacos.maintainer.client.http.proxy"));
-        executor.scheduleWithFixedDelay(() -> login(properties), 0,
-                this.refreshIntervalMills, TimeUnit.MILLISECONDS);
+        executor.scheduleWithFixedDelay(() -> login(properties), 0, this.refreshIntervalMills, TimeUnit.MILLISECONDS);
     }
     
     /**
@@ -102,9 +99,6 @@ public class ClientHttpProxy implements Closeable {
      * @param properties login identity information.
      */
     public void login(Properties properties) {
-        if (clientAuthPluginManager.getAuthServiceSpiImplSet().isEmpty()) {
-            return;
-        }
         for (ClientAuthService clientAuthService : clientAuthPluginManager.getAuthServiceSpiImplSet()) {
             clientAuthService.login(properties);
         }
@@ -121,13 +115,11 @@ public class ClientHttpProxy implements Closeable {
         long endTime = System.currentTimeMillis() + ParamUtil.getReadTimeout();
         String currentServerAddr = serverListManager.getCurrentServer();
         int retryCount = maxRetry;
+        int resultCode = 0;
         NacosException requestException = null;
         while (System.currentTimeMillis() <= endTime && retryCount >= 0) {
             try {
                 HttpRestResult<String> result = executeSync(request, currentServerAddr);
-                if (!isFail(result)) {
-                    serverListManager.updateCurrentServerAddr(currentServerAddr);
-                }
                 if (result.isNoRight()) {
                     reLogin();
                 }
@@ -137,11 +129,15 @@ public class ClientHttpProxy implements Closeable {
                 throw new NacosException(result.getCode(), result.getMessage());
             } catch (NacosException nacosException) {
                 requestException = nacosException;
+                resultCode = nacosException.getErrCode();
             } catch (Exception ex) {
                 LOGGER.error("[NACOS Exception] Server address: {}, Error: {}", currentServerAddr, ex.getMessage());
+                resultCode = HttpURLConnection.HTTP_INTERNAL_ERROR;
             }
             
-            currentServerAddr = getNextServerAddress();
+            if (isFail(resultCode)) {
+                currentServerAddr = serverListManager.genNextServer();
+            }
             retryCount--;
             
             try {
@@ -165,7 +161,6 @@ public class ClientHttpProxy implements Closeable {
         long connectTimeoutMs = ParamUtil.getConnectTimeout();
         Map<String, String> paramValues = request.getParamValues();
         Map<String, String> headers = request.getHeaders();
-        File file = request.getFile();
         
         HttpClientConfig httpConfig = HttpClientConfig.builder()
                 .setReadTimeOutMillis(Long.valueOf(readTimeoutMs).intValue())
@@ -182,9 +177,7 @@ public class ClientHttpProxy implements Closeable {
             case HttpMethod.GET:
                 return nacosRestTemplate.get(url, httpConfig, httpHeaders, query, String.class);
             case HttpMethod.POST:
-                if (file != null) {
-                    return nacosRestTemplate.postFile(url, httpConfig, httpHeaders, request.getFile(), String.class);
-                } else if (StringUtils.isNotBlank(request.getBody())) {
+                if (StringUtils.isNotBlank(request.getBody())) {
                     return nacosRestTemplate.postJson(url, httpHeaders, query, request.getBody(), String.class);
                 } else {
                     return nacosRestTemplate.postForm(url, httpConfig, httpHeaders, paramValues, String.class);
@@ -199,10 +192,6 @@ public class ClientHttpProxy implements Closeable {
     }
     
     private void addAuthHeader(Header header) {
-        if (clientAuthPluginManager.getAuthServiceSpiImplSet().isEmpty()) {
-            return;
-        }
-        
         clientAuthPluginManager.getAuthServiceSpiImplSet().forEach(clientAuthService -> {
             LoginIdentityContext loginIdentityContext = clientAuthService.getLoginIdentityContext(
                     new RequestResource());
@@ -210,15 +199,6 @@ public class ClientHttpProxy implements Closeable {
                 header.addParam(key, loginIdentityContext.getParameter(key));
             }
         });
-    }
-    
-    private String getNextServerAddress() {
-        if (serverListManager.getIterator().hasNext()) {
-            return serverListManager.getIterator().next();
-        } else {
-            serverListManager.refreshCurrentServerAddr();
-            return serverListManager.getCurrentServer();
-        }
     }
     
     private String buildUrl(String serverAddr, String relativePath) {
@@ -234,23 +214,20 @@ public class ClientHttpProxy implements Closeable {
         return enableHttps ? RequestUrlConstants.HTTPS_PREFIX : RequestUrlConstants.HTTP_PREFIX;
     }
     
-    private <T extends RestResult<?>> boolean isFail(T result) {
-        return result.getCode() == HttpURLConnection.HTTP_INTERNAL_ERROR
-                || result.getCode() == HttpURLConnection.HTTP_BAD_GATEWAY
-                || result.getCode() == HttpURLConnection.HTTP_UNAVAILABLE
-                || result.getCode() == HttpURLConnection.HTTP_GATEWAY_TIMEOUT;
+    private boolean isFail(int resultCode) {
+        return resultCode == HttpURLConnection.HTTP_INTERNAL_ERROR || resultCode == HttpURLConnection.HTTP_BAD_GATEWAY
+                || resultCode == HttpURLConnection.HTTP_UNAVAILABLE
+                || resultCode == HttpURLConnection.HTTP_GATEWAY_TIMEOUT;
     }
     
     /**
      * Login again to refresh the accessToken.
      */
     public void reLogin() {
-        if (clientAuthPluginManager.getAuthServiceSpiImplSet().isEmpty()) {
-            return;
-        }
         for (ClientAuthService clientAuthService : clientAuthPluginManager.getAuthServiceSpiImplSet()) {
             try {
-                LoginIdentityContext loginIdentityContext = clientAuthService.getLoginIdentityContext(new RequestResource());
+                LoginIdentityContext loginIdentityContext = clientAuthService.getLoginIdentityContext(
+                        new RequestResource());
                 if (loginIdentityContext != null) {
                     loginIdentityContext.setParameter(NacosAuthLoginConstant.RELOGINFLAG, "true");
                 }

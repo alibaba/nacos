@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.console.controller.v3.naming;
 
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -39,11 +40,13 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -107,5 +110,21 @@ public class ConsoleInstanceControllerTest {
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("ok", result.getData());
+    }
+    
+    @Test
+    void testUpdateInstanceWithIllegalWeight() throws Exception {
+        InstanceForm instanceForm = new InstanceForm();
+        instanceForm.setServiceName("testService");
+        instanceForm.setIp("127.0.0.1");
+        instanceForm.setPort(8080);
+        instanceForm.setWeight(-1.0);
+        Instance instance = new Instance();
+        instance.setIp("127.0.0.1");
+        instance.setPort(8080);
+        instance.setWeight(-1.0);
+        
+        assertThrows(NacosApiException.class, () -> consoleInstanceController.updateInstance(instanceForm));
+        verify(instanceProxy, never()).updateInstance(any(InstanceForm.class), any(Instance.class));
     }
 }

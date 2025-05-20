@@ -242,7 +242,7 @@ class NameSpace extends React.Component {
         {namespaceDelete}
       </a>
     );
-    if (record.type === 1 || record.type === 0) {
+    if (record.type === 0) {
       _delinfo = (
         <span style={{ marginRight: 10, cursor: 'not-allowed', color: '#999' }} disabled>
           {namespaceDelete}
@@ -256,7 +256,7 @@ class NameSpace extends React.Component {
     );
 
     let _editinfo = <a onClick={this.openToEdit.bind(this, record)}>{edit}</a>;
-    if (record.type === 0 || record.type === 1) {
+    if (record.type === 0) {
       _editinfo = (
         <span style={{ marginRight: 10, cursor: 'not-allowed', color: '#999' }} disabled>
           {edit}

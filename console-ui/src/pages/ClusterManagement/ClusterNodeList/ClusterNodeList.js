@@ -104,7 +104,7 @@ class ClusterNodeList extends React.Component {
 
   leave(nodes) {
     const { locale = {} } = this.props;
-    const accessToken = JSON.parse(localStorage.token || '{}').accessToken;
+    const { accessToken } = JSON.parse(localStorage.token || '{}');
     this.openLoading();
     axios
       .post(`v3/console/core/cluster/server/leave?accessToken=${accessToken}`, nodes)

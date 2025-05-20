@@ -18,6 +18,7 @@ import {
   Switch,
 } from '@alifd/next';
 import ShowTools from '../McpDetail/ShowTools';
+
 import { McpServerManagementRoute } from '../../../layouts/menu';
 const { Row, Col } = Grid;
 
@@ -63,6 +64,7 @@ class NewMcpServer extends React.Component {
 
   componentDidMount() {
     if (!getParams('namespace')) {
+      // eslint-disable-next-line no-unused-expressions
       this.props?.history?.push({
         pathname: McpServerManagementRoute,
       });
@@ -100,7 +102,7 @@ class NewMcpServer extends React.Component {
         };
 
         if (localServerConfig && JSON.stringify(localServerConfig, null, 2) !== '{}') {
-          initFileData['localServerConfig'] = JSON.stringify(localServerConfig, null, 2);
+          initFileData.localServerConfig = JSON.stringify(localServerConfig, null, 2);
         }
 
         if (remoteServerConfig) {
@@ -199,7 +201,7 @@ class NewMcpServer extends React.Component {
           );
           // 添加服务
           const serverGroup = serviceList.find(item => item.value === values?.service);
-
+          const groupName = serverGroup ? serverGroup.groupName : values?.groupName || '';
           params.endpointSpecification = useExistService
             ? JSON.stringify(
                 {
@@ -207,7 +209,7 @@ class NewMcpServer extends React.Component {
                   data: {
                     namespaceId: values?.namespace || '',
                     serviceName: values?.service || '',
-                    groupName: serverGroup?.groupName || '',
+                    groupName: groupName || '',
                   },
                 },
                 null,
@@ -303,7 +305,7 @@ class NewMcpServer extends React.Component {
       withInstances: false,
       pageNo: 1,
       pageSize: 100,
-      namespaceId: namespaceId,
+      namespaceId,
     };
     const result = await request({
       url: 'v3/console/ns/service/list',
@@ -384,7 +386,11 @@ class NewMcpServer extends React.Component {
         >
           <div>
             1. {locale.localServerTips1}{' '}
-            <a href="https://github.com/nacos-group/nacos-mcp-router" target="_blank">
+            <a
+              href="https://github.com/nacos-group/nacos-mcp-router"
+              target="_blank"
+              rel="noreferrer"
+            >
               nacos-mcp-router
             </a>{' '}
             {locale.localServerTips2}
@@ -495,7 +501,7 @@ class NewMcpServer extends React.Component {
                 props: {
                   onChange: value => {
                     this.setState({
-                      useExistService: ['mcp-sse', 'mcp-streamble'].includes(value) ? false : true,
+                      useExistService: !['mcp-sse', 'mcp-streamble'].includes(value),
                     });
                   },
                 },
@@ -537,7 +543,7 @@ class NewMcpServer extends React.Component {
                     value={this.state.useExistService ? 'useExistService' : 'useRemoteService'}
                     onChange={value => {
                       this.setState({
-                        useExistService: value === 'useExistService' ? true : false,
+                        useExistService: value === 'useExistService',
                       });
                     }}
                   >

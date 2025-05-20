@@ -76,7 +76,7 @@ class EditClusterDialog extends React.Component {
       data: {
         serviceName: this.state.serviceName,
         groupName: this.state.groupName,
-        clusterName: clusterName,
+        clusterName,
         metadata: metadataText,
         checkPort: healthyCheckPort,
         useInstancePort4Check: useInstancePortForCheck,

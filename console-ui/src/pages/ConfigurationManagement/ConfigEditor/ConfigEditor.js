@@ -192,7 +192,7 @@ class ConfigEditor extends React.Component {
       },
       success(result) {
         if (result != null && result.code === 0) {
-          const data = result.data;
+          const { data } = result;
           self.valueMap.normal = data;
           self.field.setValue('dataId', data.dataId);
           // self.field.setValue('content', data.content);

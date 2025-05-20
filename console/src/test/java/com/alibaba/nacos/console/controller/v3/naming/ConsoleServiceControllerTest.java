@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.console.controller.v3.naming;
 
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -45,6 +46,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -94,6 +96,48 @@ public class ConsoleServiceControllerTest {
         
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals("ok", actual.getData());
+    }
+    
+    @Test
+    void testCreateServiceWithoutSelector() throws Exception {
+        ServiceForm serviceForm = new ServiceForm();
+        serviceForm.setServiceName("testService");
+        serviceForm.setNamespaceId("testNamespace");
+        serviceForm.setGroupName("testGroup");
+        serviceForm.setProtectThreshold(0.8f);
+        serviceForm.setEphemeral(true);
+        serviceForm.setMetadata("{\"key\":\"value\"}");
+        
+        Result<String> actual = consoleServiceController.createService(serviceForm);
+        verify(serviceProxy).createService(eq(serviceForm), any(ServiceMetadata.class));
+        assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
+        assertEquals("ok", actual.getData());
+    }
+    
+    @Test
+    void testCreateServiceWithoutSelectorType() throws Exception {
+        ServiceForm serviceForm = new ServiceForm();
+        serviceForm.setServiceName("testService");
+        serviceForm.setNamespaceId("testNamespace");
+        serviceForm.setGroupName("testGroup");
+        serviceForm.setProtectThreshold(0.8f);
+        serviceForm.setEphemeral(true);
+        serviceForm.setMetadata("{\"key\":\"value\"}");
+        serviceForm.setSelector("{\"expression\":\"role=admin\"}");
+        assertThrows(NacosApiException.class, () -> consoleServiceController.createService(serviceForm));
+    }
+    
+    @Test
+    void testCreateServiceNotFoundSelector() throws Exception {
+        ServiceForm serviceForm = new ServiceForm();
+        serviceForm.setServiceName("testService");
+        serviceForm.setNamespaceId("testNamespace");
+        serviceForm.setGroupName("testGroup");
+        serviceForm.setProtectThreshold(0.8f);
+        serviceForm.setEphemeral(true);
+        serviceForm.setMetadata("{\"key\":\"value\"}");
+        serviceForm.setSelector("{\"type\":\"non-exist\"}");
+        assertThrows(NacosApiException.class, () -> consoleServiceController.createService(serviceForm));
     }
     
     @Test

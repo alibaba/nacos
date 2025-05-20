@@ -345,7 +345,7 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
     }
     
     @Test
-    void testSyncWhenWatcherFail() throws NacosException {
+    void testSyncWhenWatcherFail() throws NacosException, InterruptedException {
         when(rpcTransportClient.getTenant()).thenReturn(tenant);
         
         String groupKey = GroupKey.getKeyTenant("dataIdName124", "group", tenant);
@@ -373,6 +373,8 @@ public class ConfigFuzzyWatchGroupKeyHolderTest {
         ConfigFuzzyWatchChangeNotifyRequest configFuzzyWatchChangeNotifyRequest = new ConfigFuzzyWatchChangeNotifyRequest(
                 groupKey, ADD_CONFIG);
         configFuzzyWatchGroupKeyHolder.handlerFuzzyWatchChangeNotifyRequest(configFuzzyWatchChangeNotifyRequest);
+        
+        TimeUnit.MILLISECONDS.sleep(100L);
         
         //notify 1, fail
         configFuzzyWatchContext.syncFuzzyWatchers();

@@ -40,12 +40,6 @@ public class NamingFuzzyWatchLoadEvent extends Event {
     private int code;
     
     /**
-     * Constructs a new FuzzyListenNotifyEvent.
-     */
-    public NamingFuzzyWatchLoadEvent() {
-    }
-    
-    /**
      * Constructs a new FuzzyListenNotifyEvent with the specified group, dataId, and type.
      *
      * @param code            The type of notification.

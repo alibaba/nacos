@@ -26,9 +26,6 @@ import com.alibaba.nacos.common.utils.ExceptionUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  *  Http client manager.
  *
@@ -37,8 +34,6 @@ import java.util.Map;
 public class HttpClientManager implements Closeable {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientManager.class);
-    
-    private static final Map<String, NacosRestTemplate> SINGLETON_REST = new HashMap<>(10);
     
     private static volatile HttpClientManager httpClientManager;
     
@@ -78,23 +73,4 @@ public class HttpClientManager implements Closeable {
         }
         LOGGER.info("[HttpClientManager] Completed destruction of NacosRestTemplate");
     }
-    
-    public static void shutdown(String className) throws Exception {
-        shutdownNacosSyncRest(className);
-    }
-    
-    /**
-     * Shutdown sync http client holder and remove template.
-     *
-     * @param className HttpClientFactory implement class name
-     * @throws Exception ex
-     */
-    public static void shutdownNacosSyncRest(String className) throws Exception {
-        final NacosRestTemplate nacosRestTemplate = SINGLETON_REST.get(className);
-        if (nacosRestTemplate != null) {
-            nacosRestTemplate.close();
-            SINGLETON_REST.remove(className);
-        }
-    }
-    
 }

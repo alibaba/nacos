@@ -31,7 +31,6 @@ import com.alibaba.nacos.console.handler.naming.ServiceHandler;
 import com.alibaba.nacos.naming.core.CatalogServiceV2Impl;
 import com.alibaba.nacos.naming.core.ClusterOperatorV2Impl;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
-import com.alibaba.nacos.naming.core.SubscribeManager;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
@@ -57,18 +56,14 @@ public class ServiceInnerHandler implements ServiceHandler {
     
     private final CatalogServiceV2Impl catalogServiceV2;
     
-    private final SubscribeManager subscribeManager;
-    
     private final ClusterOperatorV2Impl clusterOperatorV2;
     
     @Autowired
     public ServiceInnerHandler(ServiceOperatorV2Impl serviceOperatorV2, SelectorManager selectorManager,
-            CatalogServiceV2Impl catalogServiceV2, SubscribeManager subscribeManager,
-            ClusterOperatorV2Impl clusterOperatorV2) {
+            CatalogServiceV2Impl catalogServiceV2, ClusterOperatorV2Impl clusterOperatorV2) {
         this.serviceOperatorV2 = serviceOperatorV2;
         this.selectorManager = selectorManager;
         this.catalogServiceV2 = catalogServiceV2;
-        this.subscribeManager = subscribeManager;
         this.clusterOperatorV2 = clusterOperatorV2;
     }
     
