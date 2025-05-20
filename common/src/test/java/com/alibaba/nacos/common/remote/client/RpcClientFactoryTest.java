@@ -241,10 +241,10 @@ class RpcClientFactoryTest {
                 .setLabels(labels).build();
         GrpcClusterClient testClient = (GrpcClusterClient) RpcClientFactory.createClusterClient("testClient",
                 ConnectionType.GRPC, clientConfig);
-        GrpcClientConfig testConfig = (GrpcClientConfig) testClient.rpcClientConfig;
         assertEquals(testClient.getLabels(), labels);
         assertEquals(testClient.getConnectionType(), ConnectionType.GRPC);
         assertEquals(testClient.getName(), "testClient");
+        GrpcClientConfig testConfig = (GrpcClientConfig) testClient.rpcClientConfig;
         assertEquals(testConfig.maxInboundMessageSize(), 100000);
     }
 }
