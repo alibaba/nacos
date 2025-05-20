@@ -17,10 +17,11 @@
 
 package com.alibaba.nacos.console.controller.v3.core;
 
+import com.alibaba.nacos.api.model.response.Namespace;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.console.proxy.core.NamespaceProxy;
-import com.alibaba.nacos.api.model.response.Namespace;
+import com.alibaba.nacos.core.namespace.model.form.CreateNamespaceForm;
 import com.alibaba.nacos.core.namespace.model.form.NamespaceForm;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -40,6 +41,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -110,6 +112,18 @@ public class ConsoleNamespaceControllerTest {
     }
     
     @Test
+    void testCreateNamespace() throws Exception {
+        when(namespaceProxy.createNamespace("testNamespace", "testNamespaceName", "testDesc")).thenReturn(true);
+        CreateNamespaceForm namespaceForm = new CreateNamespaceForm();
+        namespaceForm.setCustomNamespaceId("testNamespace");
+        namespaceForm.setNamespaceName("testNamespaceName");
+        namespaceForm.setNamespaceDesc("testDesc");
+        Result<Boolean> result = consoleNamespaceController.createNamespace(namespaceForm);
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertTrue(result.getData());
+    }
+    
+    @Test
     void testUpdateNamespace() throws Exception {
         when(namespaceProxy.updateNamespace(any(NamespaceForm.class))).thenReturn(true);
         
@@ -148,5 +162,16 @@ public class ConsoleNamespaceControllerTest {
         });
         
         assertTrue(result.getData());
+    }
+    
+    @Test
+    void testCheckNamespaceIdExistForEmpty() throws Exception {
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/core/namespace/exist")
+                .param("customNamespaceId", "");
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        String actualValue = response.getContentAsString();
+        Result<Boolean> result = new ObjectMapper().readValue(actualValue, new TypeReference<Result<Boolean>>() {
+        });
+        assertFalse(result.getData());
     }
 }

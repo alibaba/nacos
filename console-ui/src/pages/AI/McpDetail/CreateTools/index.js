@@ -87,7 +87,7 @@ const CreateTools = React.forwardRef((props, ref) => {
         key: `${prefix}@@${element}`,
       };
       result.push(node);
-      args[prefix + '@@' + element] = node;
+      args[`${prefix}@@${element}`] = node;
     }
     return result;
   };
@@ -108,7 +108,7 @@ const CreateTools = React.forwardRef((props, ref) => {
       children: [],
     };
 
-    args['args'] = rootNode;
+    args.args = rootNode;
     rootNode.children = _toolParams;
     if (rootNode.children.length === 0) {
       const defaultNewArg = {
@@ -193,6 +193,7 @@ const CreateTools = React.forwardRef((props, ref) => {
 
       const invokeContext = {};
       if (values?.invokeContext?.length) {
+        // eslint-disable-next-line no-unused-expressions
         values?.invokeContext?.forEach(item => (invokeContext[item.key] = item.value));
       }
 
@@ -272,10 +273,11 @@ const CreateTools = React.forwardRef((props, ref) => {
       };
 
       if (records?.protocol !== 'stdio') {
-        params['endpointSpecification'] = endpointSpecification;
+        params.endpointSpecification = endpointSpecification;
       }
 
       if (props?.onChange) {
+        // eslint-disable-next-line no-unused-expressions
         props?.onChange(JSON.parse(toolSpecification));
         closeDialog();
       } else {
@@ -302,13 +304,12 @@ const CreateTools = React.forwardRef((props, ref) => {
       }
       await new Promise(resolve => setTimeout(resolve, 300));
       closeDialog();
+      // eslint-disable-next-line no-unused-expressions
       props?.getServerDetail();
+    } else if (type == 'edit') {
+      Message.error(result?.message || locale.editToolFailed);
     } else {
-      if (type == 'edit') {
-        Message.error(result?.message || locale.editToolFailed);
-      } else {
-        Message.error(result?.message || locale.createToolFailed);
-      }
+      Message.error(result?.message || locale.createToolFailed);
     }
   };
 
@@ -404,7 +405,7 @@ const CreateTools = React.forwardRef((props, ref) => {
       if (element.type === 'object' && element.children.length > 0) {
         arg.properties = rawDataToFiledValue(element.children);
       } else if (element.type === 'array') {
-        arg.items = rawDataToFiledValue(element.children)['items'];
+        arg.items = rawDataToFiledValue(element.children).items;
       }
       result[element.label] = arg;
     }
@@ -417,16 +418,16 @@ const CreateTools = React.forwardRef((props, ref) => {
       parentNode.children = [];
     }
     const childLen = parentNode.children.length + 1;
-    const newArgsName = 'newArg' + childLen;
+    const newArgsName = `newArg${childLen}`;
     const newNode = {
       label: newArgsName,
-      key: currentNode.key + '@@' + newArgsName,
+      key: `${currentNode.key}@@${newArgsName}`,
       type: 'string',
       description: '',
       children: [],
     };
 
-    args[currentNode.key + '@@' + newArgsName] = newNode;
+    args[`${currentNode.key}@@${newArgsName}`] = newNode;
     if (!parentNode.children) {
       parentNode.children = [];
     }
@@ -453,7 +454,7 @@ const CreateTools = React.forwardRef((props, ref) => {
         <Dialog
           v2
           title={'Tools'}
-          visible={true}
+          visible
           footer={
             isPreview ? (
               <Button type="primary" onClick={closeDialog}>
@@ -472,7 +473,7 @@ const CreateTools = React.forwardRef((props, ref) => {
           <Form field={field} {...formitemLayout} isPreview={isPreview}>
             <h3>{locale.baseData}</h3>
             {/* 名称 */}
-            <Form.Item label={locale.toolName} required isPreview={type ? true : false}>
+            <Form.Item label={locale.toolName} required isPreview={!!type}>
               <Input
                 placeholder={locale.toolName}
                 {...init('name', {
@@ -522,11 +523,7 @@ const CreateTools = React.forwardRef((props, ref) => {
             </Form.Item>
 
             {/* 入参描述 */}
-            <Form.Item
-              label={locale.toolInputSchema}
-              required
-              style={{ margin: '16px 0 0' }}
-            ></Form.Item>
+            <Form.Item label={locale.toolInputSchema} required style={{ margin: '16px 0 0' }} />
             <Form.Item label={locale.ArgumentTree} style={{ margin: '16px 0 0' }}>
               {!isPreview && (
                 <Row>
@@ -563,7 +560,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                           <Col style={{ textOverflow: 'ellipsis' }}>
                             {args[node.key].description?.length <= 25
                               ? args[node.key].description
-                              : args[node.key].description?.substring(0, 20) + '...'}
+                              : `${args[node.key].description?.substring(0, 20)}...`}
                           </Col>
                         </Row>
                       );
@@ -633,11 +630,11 @@ const CreateTools = React.forwardRef((props, ref) => {
                                 label: 'items',
                                 type: 'string',
                                 description: '',
-                                key: currentNode.key + '@@items',
+                                key: `${currentNode.key}@@items`,
                               };
                               currentNode.type = data;
                               currentNode.children = [itemNode];
-                              args[currentNode.key + '@@items'] = itemNode;
+                              args[`${currentNode.key}@@items`] = itemNode;
                               changeNodeInfo(currentNode);
                             } else if (data === 'object') {
                               currentNode.children = [];
@@ -649,7 +646,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                             }
                           }
                         }}
-                      ></Select>
+                      />
                     </Form.Item>
                   </Col>
                 </Row>

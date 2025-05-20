@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.maintainer.client.model;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,10 +36,8 @@ public class HttpRequest {
     
     private String body;
     
-    private File file;
-    
     public HttpRequest(String httpMethod, String path, Map<String, String> headers, Map<String, String> paramValues,
-            File file, String body) {
+            String body) {
         this.httpMethod = httpMethod;
         this.path = path;
         this.headers = headers;
@@ -88,14 +85,6 @@ public class HttpRequest {
         this.body = body;
     }
     
-    public File getFile() {
-        return file;
-    }
-    
-    public void setFile(File file) {
-        this.file = file;
-    }
-    
     public static class Builder {
         
         private String httpMethod;
@@ -107,10 +96,6 @@ public class HttpRequest {
         private final Map<String, String> paramValues = new HashMap<>();
         
         private String body;
-        
-        private File file;
-        
-        private long readTimeoutMs;
         
         public Builder setHttpMethod(String httpMethod) {
             this.httpMethod = httpMethod;
@@ -137,13 +122,8 @@ public class HttpRequest {
             return this;
         }
         
-        public Builder setFile(File file) {
-            this.file = file;
-            return this;
-        }
-        
         public HttpRequest build() {
-            return new HttpRequest(httpMethod, path, headers, paramValues, file, body);
+            return new HttpRequest(httpMethod, path, headers, paramValues, body);
         }
     }
 }

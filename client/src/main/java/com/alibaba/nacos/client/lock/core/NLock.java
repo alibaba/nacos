@@ -30,9 +30,6 @@ public class NLock extends LockInstance {
     
     private static final long serialVersionUID = -346054842454875524L;
     
-    public NLock() {
-    }
-    
     public NLock(String key, Long expireTimestamp) {
         super(key, expireTimestamp, LockConstants.NACOS_LOCK_TYPE);
     }
