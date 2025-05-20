@@ -32,7 +32,12 @@ import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRespo
 import com.alibaba.nacos.core.service.NamespaceOperationService;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * Plain Mcp server index implementation.
@@ -42,12 +47,13 @@ import java.util.*;
  * @author xinluo
  */
 @Service
-public class PlainMcpServerIndex implements McpServerIndex{
+public class PlainMcpServerIndex implements McpServerIndex {
 
     private final ConfigDetailService configDetailService;
+    
     private final NamespaceOperationService namespaceOperationService;
+    
     private final ConfigQueryChainService configQueryChainService;
-
 
     public PlainMcpServerIndex(NamespaceOperationService namespaceOperationService,
                                ConfigDetailService configDetailService, 
@@ -58,7 +64,7 @@ public class PlainMcpServerIndex implements McpServerIndex{
     }
     
     /**
-     * Search Mcp server by name and namespaceId
+     * Search Mcp server by name and namespaceId.
      *
      * @param namespaceId namespaceId empty for all namespaces
      * @param name        mcp server name, empty for all servers
@@ -106,12 +112,12 @@ public class PlainMcpServerIndex implements McpServerIndex{
         Page<McpServerIndexData> page = new Page<>();
         page.setPageItems(result);
         page.setTotalCount(totalCount);
-        page.setPagesAvailable(totalCount/limit + 1);
+        page.setPagesAvailable(totalCount / limit + 1);
         page.setPageNumber(offset / limit + 1);
         return page;
     }
     
-    public McpServerIndexData mapMcpServerVersionConfigToIndexData(ConfigInfo configInfo) {
+    private McpServerIndexData mapMcpServerVersionConfigToIndexData(ConfigInfo configInfo) {
         McpServerIndexData data = new McpServerIndexData();
         McpServerVersionInfo versionInfo = JacksonUtils.toObj(configInfo.getContent(), 
                 McpServerVersionInfo.class);
@@ -121,16 +127,25 @@ public class PlainMcpServerIndex implements McpServerIndex{
         return data;
     }
     
-    private Page<ConfigInfo> searchMcpServers(String namespace,String serverName, String search, 
+    private Page<ConfigInfo> searchMcpServers(String namespace, String serverName, String search, 
                                               int limit) {
         HashMap<String, Object> advanceInfo = new HashMap<>();
         if (Objects.isNull(serverName)) {
             serverName = StringUtils.EMPTY;
         }
-        advanceInfo.put("config_tags", 
-                Constants.MCP_SERVER_NAME_TAG_KEY_PREFIX + Constants.ALL_PATTERN + serverName + Constants.ALL_PATTERN);
-        return configDetailService.findConfigInfoPage(search, 1, limit, 
-                Constants.ALL_PATTERN, Constants.MCP_SERVER_VERSIONS_GROUP, namespace, advanceInfo);
+        
+        String dataId = Constants.ALL_PATTERN;
+        if (Constants.MCP_LIST_SEARCH_BLUR.equals(search)) {
+            advanceInfo.put("config_tags",
+                    Constants.MCP_SERVER_NAME_TAG_KEY_PREFIX + Constants.ALL_PATTERN + serverName + Constants.ALL_PATTERN);
+        } else {
+            advanceInfo.put("config_tags",
+                    Constants.MCP_SERVER_NAME_TAG_KEY_PREFIX +  serverName);
+            dataId = "";
+        }
+        
+        return configDetailService.findConfigInfoPage(search, 1, limit,
+                dataId, Constants.MCP_SERVER_VERSIONS_GROUP, namespace, advanceInfo);
     }
 
     /**
@@ -167,7 +182,7 @@ public class PlainMcpServerIndex implements McpServerIndex{
     }
 
     /**
-     * Get mcp server by namespaceId and servername
+     * Get mcp server by namespaceId and servername.
      *
      * @param namespaceId namespaceId
      * @param name        servername

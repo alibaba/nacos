@@ -22,8 +22,11 @@ package com.alibaba.nacos.ai.model.mcp;
  * @author xinluo
  */
 public class McpServerIndexData {
+
     private String id;
+
     private String name;
+
     private String namespaceId;
 
     public String getId() {

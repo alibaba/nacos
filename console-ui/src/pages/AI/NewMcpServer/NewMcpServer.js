@@ -18,7 +18,6 @@ import {
   Switch,
 } from '@alifd/next';
 import ShowTools from '../McpDetail/ShowTools';
-
 import { McpServerManagementRoute } from '../../../layouts/menu';
 const { Row, Col } = Grid;
 
@@ -67,7 +66,6 @@ class NewMcpServer extends React.Component {
 
   componentDidMount() {
     if (!getParams('namespace')) {
-      // eslint-disable-next-line no-unused-expressions
       this.props?.history?.push({
         pathname: McpServerManagementRoute,
       });
@@ -83,7 +81,7 @@ class NewMcpServer extends React.Component {
     const namespace = getParams('namespace') || '';
     this.getServiceList(namespace);
     if (mcpServerId && mcptype === 'edit') {
-      let url = `v3/console/ai/mcp?id=${mcpServerId}`;
+      let url = `v3/console/ai/mcp?mcpId=${mcpServerId}`;
       if (version !== '') {
         url += `&version=${version}`;
       }
@@ -123,7 +121,7 @@ class NewMcpServer extends React.Component {
         });
 
         if (localServerConfig && JSON.stringify(localServerConfig, null, 2) !== '{}') {
-          initFileData.localServerConfig = JSON.stringify(localServerConfig, null, 2);
+          initFileData['localServerConfig'] = JSON.stringify(localServerConfig, null, 2);
         }
 
         if (remoteServerConfig) {
@@ -224,7 +222,7 @@ class NewMcpServer extends React.Component {
           );
           // 添加服务
           const serverGroup = serviceList.find(item => item.value === values?.service);
-          const groupName = serverGroup ? serverGroup.groupName : values?.groupName || '';
+
           params.endpointSpecification = useExistService
             ? JSON.stringify(
                 {
@@ -232,7 +230,7 @@ class NewMcpServer extends React.Component {
                   data: {
                     namespaceId: values?.namespace || '',
                     serviceName: values?.service || '',
-                    groupName: groupName || '',
+                    groupName: serverGroup?.groupName || '',
                   },
                 },
                 null,
@@ -362,7 +360,7 @@ class NewMcpServer extends React.Component {
       withInstances: false,
       pageNo: 1,
       pageSize: 100,
-      namespaceId,
+      namespaceId: namespaceId,
     };
     const result = await request({
       url: 'v3/console/ns/service/list',
@@ -443,11 +441,7 @@ class NewMcpServer extends React.Component {
         >
           <div>
             1. {locale.localServerTips1}{' '}
-            <a
-              href="https://github.com/nacos-group/nacos-mcp-router"
-              target="_blank"
-              rel="noreferrer"
-            >
+            <a href="https://github.com/nacos-group/nacos-mcp-router" target="_blank">
               nacos-mcp-router
             </a>{' '}
             {locale.localServerTips2}
@@ -590,7 +584,11 @@ class NewMcpServer extends React.Component {
           {this.field.getValue('frontProtocol') !== 'stdio' ? (
             <>
               {/* 编辑时，隐藏 后端服务 表单项 */}
-              <FormItem label={locale.openConverter} required help={locale.restToMcpNeedHigress}>
+              <FormItem
+                label={locale.openConverter}
+                required
+                help={<>{locale.restToMcpNeedHigress}</>}
+              >
                 <Row>
                   <Switch
                     disabled={isEdit}
@@ -609,7 +607,7 @@ class NewMcpServer extends React.Component {
                     value={this.state.useExistService ? 'useExistService' : 'useRemoteService'}
                     onChange={value => {
                       this.setState({
-                        useExistService: value === 'useExistService',
+                        useExistService: value === 'useExistService' ? true : false,
                       });
                     }}
                   >

@@ -20,11 +20,15 @@ import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 
 /**
+ * NacosMcpRegistryServerDetail.
  * @author xinluo
  */
 public class NacosMcpRegistryServerDetail extends McpRegistryServerDetail {
+
     private McpEndpointSpec nacosMcpEndpointSpec;
+
     private McpToolSpecification mcpToolSpecification;
+
     private String nacosNamespaceId;
 
     public McpEndpointSpec getNacosMcpEndpointSpec() {

@@ -27,7 +27,7 @@ import com.alibaba.nacos.api.model.Page;
 public interface McpServerIndex {
 
     /**
-     * Search Mcp server by name and namespaceId
+     * Search Mcp server by name and namespaceId.
      * @param name mcp server name
      * @return MCP Server Summery
      */
@@ -41,7 +41,7 @@ public interface McpServerIndex {
     McpServerIndexData getMcpServerById(String id);
 
     /**
-     * Get mcp server by namespaceId and servername
+     * Get mcp server by namespaceId and servername.
      * @param namespaceId namespaceId
      * @param name servername
      * @return {@link McpServerIndexData}

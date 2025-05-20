@@ -21,8 +21,17 @@ import com.alibaba.nacos.ai.form.mcp.regsitryapi.GetServerForm;
 import com.alibaba.nacos.ai.form.mcp.regsitryapi.ListServerForm;
 import com.alibaba.nacos.ai.model.mcp.McpServerStorageInfo;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
-import com.alibaba.nacos.api.ai.model.mcp.*;
-import com.alibaba.nacos.api.ai.model.mcp.registry.*;
+import com.alibaba.nacos.api.ai.model.mcp.McpEndpointInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerRemoteServiceConfig;
+import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
+import com.alibaba.nacos.api.ai.model.mcp.registry.McpRegistryServer;
+import com.alibaba.nacos.api.ai.model.mcp.registry.McpRegistryServerDetail;
+import com.alibaba.nacos.api.ai.model.mcp.registry.McpRegistryServerList;
+import com.alibaba.nacos.api.ai.model.mcp.registry.NacosMcpRegistryServerDetail;
+import com.alibaba.nacos.api.ai.model.mcp.registry.Remote;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.CollectionUtils;
@@ -48,7 +57,7 @@ public class NacosMcpRegistryService {
     }
 
     /**
-     * List mcp server from mcpServerOperationService and convert the result to {@link McpRegistryServerList}
+     * List mcp server from mcpServerOperationService and convert the result to {@link McpRegistryServerList}.
      * @param listServerForm listServerParams
      * @return {@link McpRegistryServerList}
      */
@@ -104,7 +113,7 @@ public class NacosMcpRegistryService {
             List<Remote> remotes = backendEndpoints.stream().map((item) -> {
                 Remote remote = new Remote();
                 remote.setTransport_type(frontProtocol.replace("mcp-", ""));
-                remote.setUrl("%s://%s:%d%s".formatted(Constants.PROTOCOL_TYPE_HTTP, 
+                remote.setUrl(String.format("%s://%s:%d%s", Constants.PROTOCOL_TYPE_HTTP,
                         item.getAddress(), item.getPort(), item.getPath()));
                 return remote;
             }).collect(Collectors.toList());
@@ -130,12 +139,12 @@ public class NacosMcpRegistryService {
      * @throws NacosException if request parameter is invalid or handle error
      */
     public void updateMcpServer(NacosMcpRegistryServerDetail serverDetail) throws NacosException {
-        mcpServerOperationService.updateMcpServer(serverDetail.getNacosNamespaceId(), serverDetail.getId(), true,
+        mcpServerOperationService.updateMcpServer(serverDetail.getNacosNamespaceId(),  true,
                 buildMcpServerSpecification(serverDetail), serverDetail.getMcpToolSpecification(), serverDetail.getNacosMcpEndpointSpec());
     }
 
     /**
-     * A convertor convert {@link NacosMcpRegistryServerDetail} to {@link McpServerBasicInfo}
+     * A convertor convert {@link NacosMcpRegistryServerDetail} to {@link McpServerBasicInfo}.
      * @param server mcp server detail.
      * @return mcp server basic info.
      */

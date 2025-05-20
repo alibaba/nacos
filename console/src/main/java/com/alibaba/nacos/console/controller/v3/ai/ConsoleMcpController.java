@@ -78,7 +78,7 @@ public class ConsoleMcpController {
         mcpListForm.validate();
         pageForm.validate();
         return Result.success(
-                mcpProxy.listMcpServers(mcpListForm.getNamespaceId(), mcpListForm.getName(), mcpListForm.getSearch(),
+                mcpProxy.listMcpServers(mcpListForm.getNamespaceId(), mcpListForm.getMcpName(), mcpListForm.getSearch(),
                         pageForm.getPageNo(), pageForm.getPageSize()));
     }
     
@@ -93,7 +93,7 @@ public class ConsoleMcpController {
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<McpServerDetailInfo> getMcpServer(McpForm mcpForm) throws NacosException {
         mcpForm.validate();
-        return Result.success(mcpProxy.getMcpServer(mcpForm.getNamespaceId(), mcpForm.getId(), mcpForm.getVersion()));
+        return Result.success(mcpProxy.getMcpServer(mcpForm.getNamespaceId(), mcpForm.getMcpName(), mcpForm.getMcpId(), mcpForm.getVersion()));
     }
     
     /**
@@ -130,7 +130,7 @@ public class ConsoleMcpController {
         McpServerBasicInfo basicInfo = McpRequestUtil.parseMcpServerBasicInfo(mcpForm);
         McpToolSpecification mcpTools = McpRequestUtil.parseMcpTools(mcpForm);
         McpEndpointSpec endpointSpec = McpRequestUtil.parseMcpEndpointSpec(basicInfo, mcpForm);
-        mcpProxy.updateMcpServer(mcpForm.getNamespaceId(), mcpForm.getId(),mcpForm.getPublish(), basicInfo, mcpTools, endpointSpec);
+        mcpProxy.updateMcpServer(mcpForm.getNamespaceId(), mcpForm.getPublish(), basicInfo, mcpTools, endpointSpec);
         return Result.success("ok");
     }
     
@@ -144,8 +144,9 @@ public class ConsoleMcpController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
     public Result<String> deleteMcpServer(McpForm mcpForm) throws NacosException {
         mcpForm.validate();
-        mcpProxy.deleteMcpServer(mcpForm.getNamespaceId(), mcpForm.getId(), mcpForm.getVersion());
+        mcpProxy.deleteMcpServer(mcpForm.getNamespaceId(), mcpForm.getMcpName(), mcpForm.getMcpId(), mcpForm.getVersion());
         return Result.success("ok");
     }
     
 }
+

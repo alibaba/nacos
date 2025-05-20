@@ -23,7 +23,6 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.handler.ai.McpHandler;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
 import org.springframework.stereotype.Service;
@@ -50,8 +49,8 @@ public class McpInnerHandler implements McpHandler {
     }
     
     @Override
-    public McpServerDetailInfo getMcpServer(String namespaceId, String mcpServerId, String version) throws NacosException {
-        return mcpServerOperationService.getMcpServerDetail(namespaceId, mcpServerId, StringUtils.EMPTY, version);
+    public McpServerDetailInfo getMcpServer(String namespaceId, String mcpName, String mcpServerId, String version) throws NacosException {
+        return mcpServerOperationService.getMcpServerDetail(namespaceId, mcpServerId, mcpName, version);
     }
     
     @Override
@@ -62,14 +61,14 @@ public class McpInnerHandler implements McpHandler {
     }
     
     @Override
-    public void updateMcpServer(String namespaceId, String mcpServerId, boolean isPublish, McpServerBasicInfo serverSpecification,
+    public void updateMcpServer(String namespaceId, boolean isPublish, McpServerBasicInfo serverSpecification,
             McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
-        mcpServerOperationService.updateMcpServer(namespaceId, mcpServerId, isPublish, serverSpecification, toolSpecification,
+        mcpServerOperationService.updateMcpServer(namespaceId, isPublish, serverSpecification, toolSpecification,
                 endpointSpecification);
     }
     
     @Override
-    public void deleteMcpServer(String namespaceId, String mcpServerId, String version) throws NacosException {
-        mcpServerOperationService.deleteMcpServer(namespaceId, mcpServerId, version);
+    public void deleteMcpServer(String namespaceId, String mcpName, String mcpServerId, String version) throws NacosException {
+        mcpServerOperationService.deleteMcpServer(namespaceId, mcpName, mcpServerId, version);
     }
 }

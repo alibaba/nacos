@@ -785,7 +785,8 @@ const I18N_CONF = {
     ArgumentTree: '参数结构',
     templateShouldBeJson: '内容需要符合 Json 格式',
     credentialsName: 'Credentials(密钥)',
-    restToMcpNeedHigress: '存量 HTTP 服务转化为 MCP 服务需要搭配网关使用，请参考文档',
+    restToMcpNeedHigress:
+      '存量 HTTP 服务转化为 MCP 服务需要搭配网关使用，请参考文档 https://nacos.io/docs/v3.0/manual/user/mcp-template',
     createNewVersionBasedOnCurrentVersion: '编辑',
     editDraft: '编辑',
     versionIsPublished: '已发布',
@@ -886,8 +887,10 @@ const I18N_CONF = {
     CredentialRef: '可用 Credential(密钥) 集合',
     templateShouldBeJson: '配置需要符合 Json 格式',
     doNotEnter: 'MCP Server name 仅支持字母,数字,下划线(_),中划线(-)',
-    restToMcpNeedHigress: '存量 HTTP 服务转化为 MCP 服务需要搭配网关使用，请参考文档',
-    httpToMcpDoc: '通过网关提供的协议转化模版进行协议转化，详情请见文档',
+    restToMcpNeedHigress:
+      '存量 HTTP 服务转化为 MCP 服务需要搭配网关使用，请参考文档 https://nacos.io/docs/v3.0/manual/user/mcp-template',
+    httpToMcpDoc:
+      '通过网关提供的协议转化模版进行协议转化，详情请见文档 https://nacos.io/docs/v3.0/manual/user/mcp-template',
     editServerMustChangVersion: '编辑 MCP Server 必须变更版本',
     versionFormatError: 'version 必须符合 x.y.x 格式, x,y,z 都为数字',
     cannotUseExistVersion: '不能使用已经存在的版本',

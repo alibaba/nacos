@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.ai.form.mcp.regsitryapi;
 
-
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.NacosForm;
@@ -25,14 +24,19 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.http.HttpStatus;
 
 /**
- * List mcp server form
+ * List mcp server form.
  * @author xinluo
  */
 public class ListServerForm implements NacosForm {
+    
     private String namespaceId;
+     
     private int offset = 0;
+    
     private int limit = 30;
+    
     private String serverName;
+    
     private String searchMode;
 
     public int getLimit() {

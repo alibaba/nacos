@@ -17,10 +17,10 @@
 package com.alibaba.nacos.ai.form.mcp.admin;
 
 /**
- * Mcp server update form
+ * Mcp server update form.
  * @author xinluo
  */
-public class McpUpdateForm extends McpDetailForm{
+public class McpUpdateForm extends McpDetailForm {
     private Boolean publish;
     
     public Boolean getPublish() {

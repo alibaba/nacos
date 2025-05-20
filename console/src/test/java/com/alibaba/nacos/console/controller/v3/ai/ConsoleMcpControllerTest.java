@@ -89,7 +89,7 @@ class ConsoleMcpControllerTest {
     @Test
     void getMcpServer() throws Exception {
         McpServerDetailInfo mock = new McpServerDetailInfo();
-        when(mcpProxy.getMcpServer("nacos-default-mcp", "test")).thenReturn(mock);
+        when(mcpProxy.getMcpServer("nacos-default-mcp", "test", "id", "version")).thenReturn(mock);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/ai/mcp")
                 .param("namespaceId", "nacos-default-mcp").param("mcpName", "test");
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();

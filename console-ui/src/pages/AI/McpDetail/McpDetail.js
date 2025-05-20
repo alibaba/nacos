@@ -4,7 +4,6 @@ import { getParams, request } from '../../../globalLib';
 import PropTypes from 'prop-types';
 import ShowTools from './ShowTools';
 import { generateUrl } from '../../../utils/nacosutil';
-
 const { Row, Col } = Grid;
 
 @ConfigProvider.config
@@ -43,14 +42,15 @@ class McpDetail extends React.Component {
   getServerDetail = async () => {
     const mcpServerId = getParams('id');
     const version = getParams('version');
+    const namespace = getParams('namespace');
     this.setState({ loading: true });
     const result =
       version === null
         ? await request({
-            url: `v3/console/ai/mcp?id=${mcpServerId}`,
+            url: `v3/console/ai/mcp?mcpId=${mcpServerId}&namespaceId=${namespace}`,
           })
         : await request({
-            url: `v3/console/ai/mcp?id=${mcpServerId}&version=${version}`,
+            url: `v3/console/ai/mcp?mcpId=${mcpServerId}&version=${version}&namespaceId=${namespace}`,
           });
     this.setState({ loading: false });
 
@@ -232,7 +232,7 @@ class McpDetail extends React.Component {
           </div>
           {this.state.serverConfig?.protocol === 'stdio' && (
             <>
-              <Divider />
+              <Divider></Divider>
               <h2>Local Server Config</h2>
               <pre>{localServerConfig}</pre>
             </>
@@ -259,7 +259,7 @@ class McpDetail extends React.Component {
             locale={locale}
             serverConfig={this.state.serverConfig}
             getServerDetail={this.getServerDetail}
-            isPreview
+            isPreview={true}
           />
         </Loading>
       </div>

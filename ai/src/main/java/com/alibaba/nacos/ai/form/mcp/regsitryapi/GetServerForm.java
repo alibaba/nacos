@@ -20,13 +20,12 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.NacosForm;
 
 /**
- * Get mcp server form
+ * Get mcp server form.
  * @author xinluo
  */
 public class GetServerForm implements NacosForm {
     
     private String version;
-
 
     public String getVersion() {
         return version;

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
 /**
+ * McpErrorResponse.
  * @author xinluo
  */
 public class McpErrorResponse {

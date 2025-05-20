@@ -78,7 +78,7 @@ public class McpAdminController {
         mcpListForm.validate();
         pageForm.validate();
         return Result.success(
-                mcpServerOperationService.listMcpServerWithPage(mcpListForm.getNamespaceId(), mcpListForm.getName(), mcpListForm.getSearch(),
+                mcpServerOperationService.listMcpServerWithPage(mcpListForm.getNamespaceId(), mcpListForm.getMcpName(), mcpListForm.getSearch(),
                          pageForm.getPageNo(), pageForm.getPageSize()));
     }
     
@@ -93,7 +93,8 @@ public class McpAdminController {
     @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<McpServerDetailInfo> getMcpServer(McpForm mcpForm) throws NacosException {
         mcpForm.validate();
-        return Result.success(mcpServerOperationService.getMcpServerDetail(mcpForm.getNamespaceId(),mcpForm.getId(), mcpForm.getName(), mcpForm.getVersion()));
+        return Result.success(mcpServerOperationService.getMcpServerDetail(mcpForm.getNamespaceId(), mcpForm.getMcpId(), 
+                mcpForm.getMcpName(), mcpForm.getVersion()));
     }
     
     /**
@@ -131,7 +132,7 @@ public class McpAdminController {
         McpServerBasicInfo basicInfo = McpRequestUtil.parseMcpServerBasicInfo(mcpForm);
         McpToolSpecification mcpTools = McpRequestUtil.parseMcpTools(mcpForm);
         McpEndpointSpec endpointSpec = McpRequestUtil.parseMcpEndpointSpec(basicInfo, mcpForm);
-        mcpServerOperationService.updateMcpServer(mcpForm.getNamespaceId(), mcpForm.getId(),mcpForm.getPublish(), basicInfo, mcpTools,
+        mcpServerOperationService.updateMcpServer(mcpForm.getNamespaceId(), mcpForm.getPublish(), basicInfo, mcpTools,
                 endpointSpec);
         return Result.success("ok");
     }
@@ -146,7 +147,7 @@ public class McpAdminController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> deleteMcpServer(McpForm mcpForm) throws NacosException {
         mcpForm.validate();
-        mcpServerOperationService.deleteMcpServer(mcpForm.getNamespaceId(), mcpForm.getId(), mcpForm.getVersion());
+        mcpServerOperationService.deleteMcpServer(mcpForm.getNamespaceId(), mcpForm.getMcpName(), mcpForm.getMcpId(), mcpForm.getVersion());
         return Result.success("ok");
     }
 }

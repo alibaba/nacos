@@ -22,7 +22,6 @@ import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpTool;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -53,7 +52,7 @@ public class McpRequestUtil {
                 new TypeReference<>() {
                 });
         if (StringUtils.isEmpty(result.getName())) {
-            result.setName(mcpForm.getName());
+            result.setName(mcpForm.getMcpName());
         }
         return result;
     }
@@ -88,7 +87,7 @@ public class McpRequestUtil {
         }
         if (StringUtils.isBlank(mcpForm.getEndpointSpecification())) {
             throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "request parameter `endpointSpecification` is required if mcp server type not `stdio`.");
+                    "request parameter `endpointSpecification` is required if mcp server type not `local`.");
         }
         return McpRequestUtil.deserializeSpec(mcpForm.getEndpointSpecification(), new TypeReference<>() {
         });
