@@ -156,9 +156,11 @@ class ServiceList extends React.Component {
       title: prompt,
       content: promptDelete,
       onOk: () => {
+        // # issue-13267 编码名称使其符合RFC规范
+        const encodedServiceName = encodeURIComponent(service.name);
         request({
           method: 'DELETE',
-          url: `v3/console/ns/service?serviceName=${service.name}&groupName=${service.groupName}`,
+          url: `v3/console/ns/service?serviceName=${encodedServiceName}&groupName=${service.groupName}`,
           dataType: 'json',
           beforeSend: () => this.openLoading(),
           success: res => {
