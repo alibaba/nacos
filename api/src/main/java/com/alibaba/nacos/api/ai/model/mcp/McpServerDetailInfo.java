@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.ai.model.mcp;
 
+import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
+
 import java.util.List;
 
 /**
@@ -28,6 +30,10 @@ public class McpServerDetailInfo extends McpServerBasicInfo {
     private List<McpEndpointInfo> backendEndpoints;
     
     private McpToolSpecification toolSpec;
+    
+    private List<ServerVersionDetail> allVersions;
+    
+    private String namespaceId;
     
     public List<McpEndpointInfo> getBackendEndpoints() {
         return backendEndpoints;
@@ -43,5 +49,21 @@ public class McpServerDetailInfo extends McpServerBasicInfo {
     
     public void setToolSpec(McpToolSpecification toolSpec) {
         this.toolSpec = toolSpec;
+    }
+
+    public List<ServerVersionDetail> getAllVersions() {
+        return allVersions;
+    }
+
+    public void setAllVersions(List<ServerVersionDetail> allVersions) {
+        this.allVersions = allVersions;
+    }
+
+    public String getNamespaceId() {
+        return namespaceId;
+    }
+
+    public void setNamespaceId(String namespaceId) {
+        this.namespaceId = namespaceId;
     }
 }

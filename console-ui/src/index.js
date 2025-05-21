@@ -64,8 +64,6 @@ import changeNameShow from './components/NameSpaceList/show';
 import './index.scss';
 import PropTypes from 'prop-types';
 import NewMcpServer from './pages/AI/NewMcpServer';
-import CredentialManagement from './pages/AI/CredentialManagement';
-import NewCredential from './pages/AI/NewCredential';
 
 module.hot && module.hot.accept();
 
@@ -107,8 +105,6 @@ const MENU = [
   { path: '/mcpServerManagement', component: McpManagement },
   { path: '/mcpServerDetail', component: McpDetail },
   { path: '/newMcpServer', component: NewMcpServer },
-  { path: '/credentialManagement', component: CredentialManagement },
-  { path: '/newCredential', component: NewCredential },
 ];
 
 @connect(state => ({ ...state.locale, ...state.base }), {

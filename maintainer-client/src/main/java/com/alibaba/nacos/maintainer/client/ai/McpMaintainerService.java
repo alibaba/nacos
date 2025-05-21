@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerRemoteServiceConfig;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
+import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -98,7 +99,19 @@ public interface McpMaintainerService {
      * @return detail information for this mcp server
      * @throws NacosException if fail to get mcp server
      */
-    McpServerDetailInfo getMcpServerDetail(String mcpName) throws NacosException;
+    default McpServerDetailInfo getMcpServerDetail(String mcpName) throws NacosException {
+        return getMcpServerDetail(mcpName, null);
+    }
+
+    /**
+     * Get mcp server detail information from Nacos.
+     *
+     * @param mcpName the mcp server name
+     * @param version the mcp server version
+     * @return detail information for this mcp server
+     * @throws NacosException if fail to get mcp server
+     */
+    McpServerDetailInfo getMcpServerDetail(String mcpName, String version) throws NacosException;
     
     /**
      * Create new local mcp server to Nacos.
@@ -156,7 +169,9 @@ public interface McpMaintainerService {
         McpServerBasicInfo serverSpec = new McpServerBasicInfo();
         serverSpec.setName(mcpName);
         serverSpec.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_STDIO);
-        serverSpec.setVersion(version);
+        ServerVersionDetail versionDetail = new ServerVersionDetail();
+        versionDetail.setVersion(version);
+        serverSpec.setVersionDetail(versionDetail);
         serverSpec.setDescription(description);
         serverSpec.setLocalServerConfig(localServerConfig);
         return createLocalMcpServer(mcpName, serverSpec, toolSpec);
@@ -211,7 +226,7 @@ public interface McpMaintainerService {
      * @throws NacosException if fail to create mcp server.
      */
     default boolean createRemoteMcpServer(String mcpName, String version, String protocol,
-            McpServerRemoteServiceConfig remoteServiceConfig, McpEndpointSpec endpointSpec) throws NacosException {
+                                          McpServerRemoteServiceConfig remoteServiceConfig, McpEndpointSpec endpointSpec) throws NacosException {
         return createRemoteMcpServer(mcpName, version, null, protocol, remoteServiceConfig, endpointSpec);
     }
     
@@ -251,7 +266,9 @@ public interface McpMaintainerService {
         McpServerBasicInfo serverSpec = new McpServerBasicInfo();
         serverSpec.setName(mcpName);
         serverSpec.setProtocol(protocol);
-        serverSpec.setVersion(version);
+        ServerVersionDetail detail = new ServerVersionDetail();
+        detail.setVersion(version);
+        serverSpec.setVersionDetail(detail);
         serverSpec.setDescription(description);
         serverSpec.setRemoteServerConfig(remoteServiceConfig);
         return createRemoteMcpServer(mcpName, serverSpec, toolSpec, endpointSpec);
@@ -289,7 +306,7 @@ public interface McpMaintainerService {
             throw new NacosException(NacosException.INVALID_PARAM, "Mcp server specification cannot be null.");
         }
         if (AiConstants.Mcp.MCP_PROTOCOL_STDIO.equalsIgnoreCase(serverSpec.getProtocol())) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Mcp server protocol cannot be `stdio` or empty.");
+            throw new NacosException(NacosException.INVALID_PARAM, "Mcp server type cannot be `local` or empty.");
         }
         if (Objects.isNull(endpointSpec)) {
             throw new NacosException(NacosException.INVALID_PARAM, "Mcp server endpoint specification cannot be null.");

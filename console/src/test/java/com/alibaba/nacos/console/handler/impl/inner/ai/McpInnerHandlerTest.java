@@ -52,7 +52,7 @@ class McpInnerHandlerTest {
     @Test
     void listMcpServers() throws NacosException {
         Page<McpServerBasicInfo> mockPage = new Page<>();
-        when(mcpServerOperationService.listMcpServer("", "test", Constants.MCP_LIST_SEARCH_ACCURATE, 1,
+        when(mcpServerOperationService.listMcpServerWithPage("", "test", Constants.MCP_LIST_SEARCH_ACCURATE, 1,
                 100)).thenReturn(mockPage);
         Page<McpServerBasicInfo> actual = mcpInnerHandler.listMcpServers("", "test", Constants.MCP_LIST_SEARCH_ACCURATE,
                 1, 100);
@@ -62,30 +62,30 @@ class McpInnerHandlerTest {
     @Test
     void getMcpServer() throws NacosException {
         McpServerDetailInfo mock = new McpServerDetailInfo();
-        when(mcpServerOperationService.getMcpServer("", "test")).thenReturn(mock);
-        McpServerDetailInfo actual = mcpInnerHandler.getMcpServer("", "test");
+        when(mcpServerOperationService.getMcpServerDetail("", "test", "name", "version")).thenReturn(mock);
+        McpServerDetailInfo actual = mcpInnerHandler.getMcpServer("", "name", "test", "version");
         assertEquals(mock, actual);
     }
     
     @Test
     void createMcpServer() throws NacosException {
-        mcpInnerHandler.createMcpServer("", "test", new McpServerBasicInfo(), new McpToolSpecification(),
+        mcpInnerHandler.createMcpServer("", new McpServerBasicInfo(), new McpToolSpecification(),
                 new McpEndpointSpec());
-        verify(mcpServerOperationService).createMcpServer(eq(""), eq("test"), any(McpServerBasicInfo.class),
+        verify(mcpServerOperationService).createMcpServer(eq(""), any(McpServerBasicInfo.class),
                 any(McpToolSpecification.class), any(McpEndpointSpec.class));
     }
     
     @Test
     void updateMcpServer() throws NacosException {
-        mcpInnerHandler.updateMcpServer("", "test", new McpServerBasicInfo(), new McpToolSpecification(),
+        mcpInnerHandler.updateMcpServer("", true, new McpServerBasicInfo(), new McpToolSpecification(),
                 new McpEndpointSpec());
-        verify(mcpServerOperationService).updateMcpServer(eq(""), eq("test"), any(McpServerBasicInfo.class),
+        verify(mcpServerOperationService).updateMcpServer(eq(""), eq(true), any(McpServerBasicInfo.class),
                 any(McpToolSpecification.class), any(McpEndpointSpec.class));
     }
     
     @Test
     void deleteMcpServer() throws NacosException {
-        mcpInnerHandler.deleteMcpServer("", "test");
-        verify(mcpServerOperationService).deleteMcpServer("", "test");
+        mcpInnerHandler.deleteMcpServer("", "test", "id", "version");
+        verify(mcpServerOperationService).deleteMcpServer("", "test", "id", "version");
     }
 }

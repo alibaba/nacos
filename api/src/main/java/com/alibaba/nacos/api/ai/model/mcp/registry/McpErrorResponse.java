@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,20 @@
  * limitations under the License.
  */
 
-import CredentialManagement from './CredentialManagement';
+package com.alibaba.nacos.api.ai.model.mcp.registry;
 
-export default CredentialManagement;
+/**
+ * McpErrorResponse.
+ * @author xinluo
+ */
+public class McpErrorResponse {
+    private String error;
+
+    public String getError() {
+        return error;
+    }
+
+    public void setError(String error) {
+        this.error = error;
+    }
+}

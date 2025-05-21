@@ -15,17 +15,19 @@ import {
 } from '@alifd/next';
 import { formitemLayout, GetTitle, tableOperation } from './components';
 import { request } from '../../../../globalLib';
+import { object } from 'prop-types';
 
 const { Row, Col } = Grid;
 
 const CreateTools = React.forwardRef((props, ref) => {
+  // eslint-disable-next-line react/prop-types
   const { locale, showTemplates = false } = props;
   const field = Field.useField({
     parseName: true,
     values: {
       toolParams: [],
       invokeContext: [],
-      templates: [],
+      templates: '',
     },
   });
   const { init } = field;
@@ -40,24 +42,25 @@ const CreateTools = React.forwardRef((props, ref) => {
   const [currentNode, setCurrentNode] = useState({
     description: '',
     type: 'object',
+    // eslint-disable-next-line react/prop-types
     label: locale.ArgumentsList,
     key: 'args',
     children: [],
   });
-  useEffect(() => {
-    if (visible) {
-      if (field.getValue('invokeContext') && !field.getValue('invokeContext')?.length) {
-        addNewToolMetadata();
-      } else {
-        field.setValues({ invokeContext: [] });
-      }
-      if (field.getValue('templates') && !field.getValue('templates')?.length) {
-        // addNewTemplates();
-      } else {
-        field.setValues({ templates: [] });
-      }
-    }
-  }, [visible]);
+  // useEffect(() => {
+  //   if (visible) {
+  //     if (field.getValue('invokeContext') && !field.getValue('invokeContext')?.length) {
+  //       addNewToolMetadata();
+  //     } else {
+  //       field.setValues({ invokeContext: [] });
+  //     }
+  //     if (field.getValue('templates') && !field.getValue('templates')?.length) {
+  //       // addNewTemplates();
+  //     } else {
+  //       field.setValues({ templates: 'aaa' });
+  //     }
+  //   }
+  // }, [visible]);
 
   const convertPropertiesToTreeData = (properties, prefix) => {
     const keys = Object.keys(properties);
@@ -132,24 +135,17 @@ const CreateTools = React.forwardRef((props, ref) => {
       : [];
     setInvokeIdx(_invokeContext.length + 1);
 
-    const _templates = toolsMeta?.templates
-      ? Object.keys(toolsMeta?.templates).map(key => ({
-          key,
-          // 判断 toolsMeta?.templates[key] 是否是字符串
-          value:
-            typeof toolsMeta?.templates[key] === 'string'
-              ? toolsMeta?.templates[key]
-              : JSON.stringify(toolsMeta?.templates[key]),
-        }))
-      : [];
-    setTemplateIdx(_templates.length + 1);
+    let templatesStr = '';
+    if (toolsMeta?.templates !== undefined && 'json-go-template' in toolsMeta?.templates) {
+      templatesStr = JSON.stringify(toolsMeta?.templates['json-go-template']);
+    }
 
     field.setValues({
       name,
       description,
       toolParams: inputSchema?.properties ? inputSchema?.properties : {},
       invokeContext: _invokeContext,
-      templates: _templates,
+      templates: templatesStr,
       enabled: toolsMeta?.enabled,
     });
     setOkLoading(false);
@@ -202,9 +198,12 @@ const CreateTools = React.forwardRef((props, ref) => {
       }
 
       const templates = {};
-      if (values?.templates?.length) {
-        // eslint-disable-next-line no-unused-expressions
-        values?.templates?.forEach(item => (templates[item.key] = JSON.parse(item.value)));
+
+      if (values.protocol === 'http') {
+        const jsonGoTemplate = JSON.parse(values?.templates);
+        if (Object.keys(jsonGoTemplate).length > 0) {
+          templates['json-go-template'] = jsonGoTemplate;
+        }
       }
 
       const serverSpecification = JSON.stringify({
@@ -308,10 +307,10 @@ const CreateTools = React.forwardRef((props, ref) => {
       // eslint-disable-next-line no-unused-expressions
       props?.getServerDetail();
     } else if (type == 'edit') {
-        Message.error(result?.message || locale.editToolFailed);
-      } else {
-        Message.error(result?.message || locale.createToolFailed);
-      }
+      Message.error(result?.message || locale.editToolFailed);
+    } else {
+      Message.error(result?.message || locale.createToolFailed);
+    }
   };
 
   // 添加Tool 元数据
@@ -327,23 +326,12 @@ const CreateTools = React.forwardRef((props, ref) => {
   const deleteToolMetadata = index => {
     field.deleteArrayValue('invokeContext', index);
   };
-  // 添加模板 template
-  const addNewTemplates = () => {
-    setTemplateIdx(templateIdx + 1);
-    field.addArrayValue('templates', templateIdx, {
-      id: templateIdx + 1,
-      key: '',
-      value: '',
-    });
-  };
-  // 删除模板 template
-  const deleteTemplates = index => {
-    field.deleteArrayValue('templates', index);
-  };
 
   const validateTemplateJsonFormat = (rule, value, callback) => {
     try {
-      JSON.parse(value);
+      if (value?.length > 0) {
+        JSON.parse(value);
+      }
       callback();
     } catch (e) {
       callback(locale.templateShouldBeJson);
@@ -537,11 +525,7 @@ const CreateTools = React.forwardRef((props, ref) => {
             </Form.Item>
 
             {/* 入参描述 */}
-            <Form.Item
-              label={locale.toolInputSchema}
-              required
-              style={{ margin: '16px 0 0' }}
-            />
+            <Form.Item label={locale.toolInputSchema} required style={{ margin: '16px 0 0' }} />
             <Form.Item label={locale.ArgumentTree} style={{ margin: '16px 0 0' }}>
               {!isPreview && (
                 <Row>
@@ -692,47 +676,21 @@ const CreateTools = React.forwardRef((props, ref) => {
             )}
             {showTemplates ? (
               <>
-                <GetTitle
+                <Form.Item
                   label={locale.invokeTemplates}
-                  onClick={addNewTemplates}
-                  locale={locale}
-                  disabled={isPreview}
-                  required={false}
-                />
-                <Row>
-                  <Col span={20} offset={4}>
-                    <Table
-                      size="small"
-                      style={{ marginTop: '10px' }}
-                      dataSource={field.getValue('templates')}
-                    >
-                      <Table.Column
-                        title="Key"
-                        dataIndex="key"
-                        width={200}
-                        cell={(value, index, record) =>
-                          renderTableCell({ key: `templates.${index}.key` })
-                        }
-                      />
-                      <Table.Column
-                        title="Value"
-                        dataIndex="value"
-                        cell={(value, index, record) =>
-                          renderTableCell({
-                            key: `templates.${index}.value`,
-                            component: 'textArea',
-                          })
-                        }
-                      />
-                      {/* delete */}
-                      {tableOperation({
-                        onClick: deleteTemplates,
-                        locale,
-                        disabled: isPreview,
-                      })}
-                    </Table>
-                  </Col>
-                </Row>
+                  extra={locale.httpToMcpDoc}
+                  style={{ marginTop: '10px' }}
+                >
+                  <Input.TextArea
+                    aria-label="auto height"
+                    style={{ minHeight: 32 }}
+                    multiline
+                    autoHeight={{ minRows: 5, maxRows: 8 }}
+                    {...field.init('templates', {
+                      rules: [{ validator: validateTemplateJsonFormat }],
+                    })}
+                  />
+                </Form.Item>
               </>
             ) : null}
           </Form>

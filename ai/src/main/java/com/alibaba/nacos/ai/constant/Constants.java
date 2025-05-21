@@ -27,6 +27,8 @@ public class Constants {
     
     public static final String MCP_ADMIN_PATH = "/v3/admin" + MCP_PATH;
     
+    public static final String MCP_REGISTRY_PATH = "/v3/mcp-registry";
+    
     public static final String MCP_CONSOLE_PATH = "/v3/console" + MCP_PATH;
     
     public static final String MCP_LIST_SEARCH_ACCURATE = "accurate";
@@ -35,11 +37,17 @@ public class Constants {
     
     public static final String ALL_PATTERN = com.alibaba.nacos.api.common.Constants.ALL_PATTERN;
     
+    public static final String MCP_SERVER_VERSIONS_GROUP = "mcp-server-versions";
+    
     public static final String MCP_SERVER_GROUP = "mcp-server";
     
     public static final String MCP_SERVER_TOOL_GROUP = "mcp-tools";
     
+    public static final String MCP_SERVER_PROTOCOL_TRANSLATOR_GROUP = "mcp-protocol-translator";
+    
     public static final String MCP_SERVER_SPEC_DATA_ID_SUFFIX = "-mcp-server.json";
+    
+    public static final String MCP_SERVER_VERSION_DATA_ID_SUFFIX = "-mcp-versions.json";
     
     public static final String MCP_SERVER_TOOL_DATA_ID_SUFFIX = "-mcp-tools.json";
     
@@ -52,5 +60,15 @@ public class Constants {
     public static final String MCP_SERVER_ENDPOINT_PORT = "port";
     
     public static final String MCP_SERVER_ENDPOINT_METADATA_MARK = "__nacos.ai.mcp.service__";
+    
+    public static final String MCP_SERVER_CONFIG_MARK = "nacos.internal.config=mcp";
+    
+    public static final String PROTOCOL_TYPE_HTTP = "http";
+    
+    public static final String SERVER_EXPORT_PATH_KEY = "exportPath";
+    
+    public static final String MCP_SERVER_NAME_TAG_KEY_PREFIX = "mcpServerName=";
+    
+    public static final int MAX_LIST_SIZE = 100;
     
 }

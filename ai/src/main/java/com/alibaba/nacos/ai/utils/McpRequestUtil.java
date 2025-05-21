@@ -16,13 +16,12 @@
 
 package com.alibaba.nacos.ai.utils;
 
-import com.alibaba.nacos.ai.form.mcp.McpDetailForm;
+import com.alibaba.nacos.ai.form.mcp.admin.McpDetailForm;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpTool;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -54,11 +53,6 @@ public class McpRequestUtil {
                 });
         if (StringUtils.isEmpty(result.getName())) {
             result.setName(mcpForm.getMcpName());
-        }
-        if (!StringUtils.equals(mcpForm.getMcpName(), result.getName())) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR, String.format(
-                    "Mcp Name is conflicted, `%s` is in spec, but requested is `%s`, please not set name in spec or set `%s` in spec",
-                    result.getName(), mcpForm.getMcpName(), mcpForm.getMcpName()));
         }
         return result;
     }
@@ -93,7 +87,7 @@ public class McpRequestUtil {
         }
         if (StringUtils.isBlank(mcpForm.getEndpointSpecification())) {
             throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "request parameter `endpointSpecification` is required if mcp server type not `stdio`.");
+                    "request parameter `endpointSpecification` is required if mcp server type not `local`.");
         }
         return McpRequestUtil.deserializeSpec(mcpForm.getEndpointSpecification(), new TypeReference<>() {
         });

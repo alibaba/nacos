@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.form.mcp;
+package com.alibaba.nacos.ai.form.mcp.admin;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.NacosForm;
-import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.Serial;
@@ -35,17 +33,17 @@ public class McpForm implements NacosForm {
     @Serial
     private static final long serialVersionUID = 1314659974972866397L;
     
-    private String mcpName;
+    private String mcpId;
     
     private String namespaceId;
+    
+    private String mcpName;
+    
+    private String version;
     
     @Override
     public void validate() throws NacosApiException {
         fillDefaultValue();
-        if (StringUtils.isEmpty(mcpName)) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'mcpName' type String is not present");
-        }
     }
     
     protected void fillDefaultValue() {
@@ -54,19 +52,35 @@ public class McpForm implements NacosForm {
         }
     }
     
-    public String getMcpName() {
-        return mcpName;
-    }
-    
-    public void setMcpName(String mcpName) {
-        this.mcpName = mcpName;
-    }
-    
     public String getNamespaceId() {
         return namespaceId;
     }
     
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public String getMcpId() {
+        return mcpId;
+    }
+
+    public void setMcpId(String id) {
+        this.mcpId = id;
+    }
+
+    public String getMcpName() {
+        return mcpName;
+    }
+
+    public void setMcpName(String name) {
+        this.mcpName = name;
     }
 }

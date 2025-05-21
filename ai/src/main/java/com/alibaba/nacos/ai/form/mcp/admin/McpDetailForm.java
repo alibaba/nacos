@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.form.mcp;
+package com.alibaba.nacos.ai.form.mcp.admin;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -71,4 +71,5 @@ public class McpDetailForm extends McpForm {
     public void setEndpointSpecification(String endpointSpecification) {
         this.endpointSpecification = endpointSpecification;
     }
+    
 }
