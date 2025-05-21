@@ -231,7 +231,7 @@ public class McpServerOperationService {
     
     private void injectBackendEndpointRef(String namespaceId, McpServerDetailInfo detailInfo) throws NacosException {
         List<Instance> instances;
-        if (Constants.PROTOCOL_TYPE_HTTP.equals(detailInfo.getProtocol())) {
+        if (StringUtils.startsWith(detailInfo.getProtocol(), Constants.PROTOCOL_TYPE_HTTP)) {
             McpServiceRef mcpServiceRef = new McpServiceRef();
             mcpServiceRef.setServiceName(detailInfo.getName());
             mcpServiceRef.setGroupName(Constants.MCP_SERVER_PROTOCOL_TRANSLATOR_GROUP);

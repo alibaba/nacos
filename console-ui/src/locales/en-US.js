@@ -730,6 +730,7 @@ const I18N_CONF = {
     description: 'Description',
     batchDeleteSuccessfully: 'Batch delete successfully',
     batchDeleteFailed: 'Batch delete failed',
+    convertService: 'Http to Mcp',
   },
   McpDetail: {
     basicInformation: 'Basic Information',
@@ -902,6 +903,7 @@ const I18N_CONF = {
     openConverter: 'HTTP to MCP',
     createNewVersionAndSave: 'Save',
     createNewVersionAndPublish: 'Publish',
+    off: 'off',
   },
   CredentialManagement: {
     credentialManagement8: 'Credential Management',
@@ -919,6 +921,7 @@ const I18N_CONF = {
     batchDeleteSuccessfully: 'Batch Delete Successful',
     batchDeleteFailed: 'Batch Delete Failed',
     delSuccessMsg: 'Delete Successful',
+    off: 'off',
   },
   NewCredential: {
     namespace: 'Namespace',

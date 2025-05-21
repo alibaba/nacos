@@ -412,7 +412,6 @@ class ConfigEditor extends React.Component {
         casMd5: md5,
       });
       const isSystemConfig = configTags.includes('nacos.internal.config');
-      console.log(isSystemConfig);
       this.setState({
         isSystemConfig,
       });

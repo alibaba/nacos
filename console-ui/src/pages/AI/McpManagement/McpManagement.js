@@ -651,12 +651,12 @@ class McpManagement extends React.Component {
               <Table.Column
                 title={locale.mcpServerType}
                 cell={(value, index, record) => {
-                  if (record.protocol === 'http') {
+                  if ((record.protocol === 'http') | (record.protocol === 'https')) {
                     return (
                       <>
                         {record.frontProtocol}
                         <Tag type="primary" size={'small'} color="green" style={{ marginLeft: 10 }}>
-                          存量转化
+                          {locale.convertService}
                         </Tag>
                       </>
                     );

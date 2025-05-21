@@ -199,7 +199,10 @@ const CreateTools = React.forwardRef((props, ref) => {
 
       const templates = {};
 
-      if (values.protocol === 'http') {
+      if (
+        (records.protocol === 'http' || records.protocol === 'https') &&
+        values?.templates?.length > 0
+      ) {
         const jsonGoTemplate = JSON.parse(values?.templates);
         if (Object.keys(jsonGoTemplate).length > 0) {
           templates['json-go-template'] = jsonGoTemplate;
@@ -507,7 +510,6 @@ const CreateTools = React.forwardRef((props, ref) => {
             {/* 描述 */}
             <Form.Item label={locale.toolDescription} required>
               <Input.TextArea
-                isPreview={onlyEditRuntimeInfo}
                 placeholder={locale.toolDescription}
                 {...init('description', {
                   rules: [{ required: true, message: locale.toolDescriptionRequired }],
