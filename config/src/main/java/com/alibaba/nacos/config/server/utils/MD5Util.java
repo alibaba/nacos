@@ -144,7 +144,8 @@ public class MD5Util {
                 } else {
                     tenant = endValue;
                     md5 = tmpList.get(2);
-                    ifNamespaceTransfer = false;
+                    ifNamespaceTransfer = NamespaceUtil.isNeedTransferNamespace(tenant);
+                    tenant = NamespaceUtil.processNamespaceParameter(tenant);
                 }
                 ConfigListenState configListenState = new ConfigListenState(md5);
                 configListenState.setNamespaceTransfer(ifNamespaceTransfer);
