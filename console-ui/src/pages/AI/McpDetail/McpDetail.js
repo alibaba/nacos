@@ -272,13 +272,18 @@ class McpDetail extends React.Component {
             <>
               <Divider></Divider>
               <h2>Server Config</h2>
-              <Tab excessMode="dropdown" defaultActiveKey={0}>
-                {endpoints?.map(item => (
-                  <Tab.Item key={item.index} title={item.endpoint}>
-                    <pre>{JSON.stringify(item.serverConfig, null, 2)}</pre>
-                  </Tab.Item>
-                ))}
-              </Tab>
+              {endpoints?.length > 0 ? (
+                <Tab excessMode="dropdown" defaultActiveKey={0}>
+                  {endpoints?.map(item => (
+                    <Tab.Item key={item.index} title={item.endpoint}>
+                      <pre>{JSON.stringify(item.serverConfig, null, 2)}</pre>
+                    </Tab.Item>
+                  ))}
+                </Tab>
+              ) : (
+                <p>{locale.noAvailableEndpoint}</p>
+              )}
+
               {/* <Table dataSource={this.state.serverConfig.backendEndpoints}> */}
               {/*   <Table.Column */}
               {/*     title={'endpoint'} */}

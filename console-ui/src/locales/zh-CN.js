@@ -791,6 +791,7 @@ const I18N_CONF = {
     editDraft: '编辑',
     versionIsPublished: '已发布',
     versionIsDraft: '草稿',
+    noAvailableEndpoint: '无可用的endpoint',
   },
   NewMcpServer: {
     pleaseComplete: '请先完善基础配置',
