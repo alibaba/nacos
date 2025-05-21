@@ -129,7 +129,7 @@ public class PlainMcpServerIndex implements McpServerIndex {
     
     private Page<ConfigInfo> searchMcpServers(String namespace, String serverName, String search, 
                                               int limit) {
-        HashMap<String, Object> advanceInfo = new HashMap<>();
+        HashMap<String, Object> advanceInfo = new HashMap<>(1);
         if (Objects.isNull(serverName)) {
             serverName = StringUtils.EMPTY;
         }

@@ -69,4 +69,6 @@ public class Constants {
     
     public static final String MCP_SERVER_NAME_TAG_KEY_PREFIX = "mcpServerName=";
     
+    public static final int MAX_LIST_SIZE = 100;
+    
 }

@@ -51,6 +51,8 @@ public interface McpHandler {
      *
      * @param namespaceId namespace id of mcp server
      * @param mcpName     name of mcp server
+     * @param mcpId       id of mcp server
+     * @param version     version of the mcp server
      * @return detail info with {@link McpServerDetailInfo}
      * @throws NacosException any exception during handling
      */
@@ -76,6 +78,7 @@ public interface McpHandler {
      * </p>
      *
      * @param namespaceId           namespace id of mcp server, used to mark which mcp server to update
+     * @param isPublish             publish the current version to latest
      * @param serverSpecification   mcp server specification, see {@link McpServerBasicInfo}
      * @param toolSpecification     mcp server included tools, see {@link McpTool}, optional
      * @param endpointSpecification mcp server endpoint specification, see {@link McpEndpointSpec}, optional
@@ -88,6 +91,8 @@ public interface McpHandler {
      * Delete existed mcp server.
      *
      * @param namespaceId namespace id of mcp server
+     * @param mcpId       id of the mcp server
+     * @param version     version of the mcp server
      * @param mcpName     name of mcp server
      * @throws NacosException any exception during handling
      */
