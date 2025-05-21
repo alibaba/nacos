@@ -221,7 +221,8 @@ class NewMcpServer extends React.Component {
             2
           );
           // 添加服务
-          const serverGroup = serviceList.find(item => item.value === values?.service);
+          const group = values?.service.split('@@')[0];
+          const serviceName = values?.service.split('@@')[1];
 
           params.endpointSpecification = useExistService
             ? JSON.stringify(
@@ -229,8 +230,8 @@ class NewMcpServer extends React.Component {
                   type: 'REF',
                   data: {
                     namespaceId: values?.namespace || '',
-                    serviceName: values?.service || '',
-                    groupName: serverGroup?.groupName || '',
+                    serviceName: serviceName || '',
+                    groupName: group || '',
                   },
                 },
                 null,
@@ -372,7 +373,7 @@ class NewMcpServer extends React.Component {
       this.setState({
         serviceList: result.data.pageItems.map(item => ({
           label: `${item.groupName} / ${item.name}`,
-          value: item.name,
+          value: item.groupName + '@@' + item.name,
           ...item,
         })),
       });
