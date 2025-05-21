@@ -2,7 +2,7 @@
        ,--.'|                                           
    ,--,:  : |                                           Nacos Mcp Registry ${application.version}
 ,`--.'`|  ' :                       ,---.               Running in ${nacos.mode} mode, ${nacos.function.mode} function modules
-|   :  :  | |                      '   ,'\   .--.--.    Port: ${nacos.mcp-registry.port}
+|   :  :  | |                      '   ,'\   .--.--.    Port: ${nacos.ai.mcp.registry.port}
 :   |   \ | :  ,--.--.     ,---.  /   /   | /  /    '   Pid: ${pid}
 |   : '  '; | /       \   /     \.   ; ,. :|  :  /`./   
 '   ' ;.    ;.--.  .-. | /    / ''   | |: :|  :  ;_     
