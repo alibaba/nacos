@@ -164,7 +164,7 @@ These are only part of the companies using Nacos, for reference only. If you are
 ![联采科技](http://www.lckjep.com:80//theme/img/logoTop.png)
 ![南京28研究所](https://img.alicdn.com/tfs/TB1G216EsbpK1RjSZFyXXX_qFXa-325-53.jpg)
 ![凤凰网-汽车](https://p1.ifengimg.com/auto/image/2017/0922/auto_logo.png)
-![中化信息](http://www.sinochem.com/Portals/0/xinlogo.png)
+![中化信息](http://www.sinochemitech.com/zhxx/lib/images/-logo.png)
 ![一点车](https://img.alicdn.com/tfs/TB1DXerNgDqK1RjSZSyXXaxEVXa-333-103.png)
 ![明传无线](https://img.alicdn.com/tfs/TB1VfOANgHqK1RjSZFPXXcwapXa-313-40.png)
 ![妙优车](https://img.alicdn.com/tfs/TB1lvCyNhTpK1RjSZFMXXbG_VXa-130-60.png)
