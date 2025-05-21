@@ -99,7 +99,19 @@ public interface McpMaintainerService {
      * @return detail information for this mcp server
      * @throws NacosException if fail to get mcp server
      */
-    McpServerDetailInfo getMcpServerDetail(String mcpName) throws NacosException;
+    default McpServerDetailInfo getMcpServerDetail(String mcpName) throws NacosException {
+        return getMcpServerDetail(mcpName, null);
+    }
+
+    /**
+     * Get mcp server detail information from Nacos.
+     *
+     * @param mcpName the mcp server name
+     * @param version the mcp server version
+     * @return detail information for this mcp server
+     * @throws NacosException if fail to get mcp server
+     */
+    McpServerDetailInfo getMcpServerDetail(String mcpName, String version) throws NacosException;
     
     /**
      * Create new local mcp server to Nacos.

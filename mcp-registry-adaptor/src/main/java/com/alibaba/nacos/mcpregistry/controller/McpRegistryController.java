@@ -23,19 +23,15 @@ import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.registry.McpErrorResponse;
 import com.alibaba.nacos.api.ai.model.mcp.registry.McpRegistryServerDetail;
 import com.alibaba.nacos.api.ai.model.mcp.registry.McpRegistryServerList;
-import com.alibaba.nacos.api.ai.model.mcp.registry.NacosMcpRegistryServerDetail;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.mcpregistry.service.NacosMcpRegistryService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Objects;
@@ -93,22 +89,6 @@ public class McpRegistryController {
             return errorResponse;
         }
         return server;
-    }
-
-    /**
-     * Publish a new mcp server or new version mcp server.
-     * This api support additional tools specification info.
-     * If id exist in request, this api will update the exist mcp server or this api will create a new mcp server.
-     * @param serverDetail server details
-     * @throws NacosException if request parameter is invalid or handle error
-     */
-    @PostMapping(value = "/v0/publish")
-    public void publishMcpServer(@RequestBody NacosMcpRegistryServerDetail serverDetail) throws NacosException {
-        if (StringUtils.isNotEmpty(serverDetail.getId())) {
-            nacosMcpRegistryService.updateMcpServer(serverDetail);
-        } else {
-            nacosMcpRegistryService.createMcpServer(serverDetail);
-        }
     }
 
     /**
