@@ -1,5 +1,15 @@
 import React from 'react';
-import { Divider, ConfigProvider, Loading, Grid, Table, Button, Select, Form } from '@alifd/next';
+import {
+  Divider,
+  ConfigProvider,
+  Loading,
+  Grid,
+  Table,
+  Button,
+  Select,
+  Form,
+  Tab,
+} from '@alifd/next';
 import { getParams, request } from '../../../globalLib';
 import PropTypes from 'prop-types';
 import ShowTools from './ShowTools';
@@ -59,6 +69,8 @@ class McpDetail extends React.Component {
         serverConfig: result.data,
       });
     }
+
+    console.log(result.data);
   };
 
   getFormItem = params => {
@@ -127,6 +139,24 @@ class McpDetail extends React.Component {
       } else {
         versionSelections.push({ label: item.version, value: item.version });
       }
+    }
+
+    this.state?.serverConfig?.backendEndpoints;
+    const endpoints = [];
+    for (let i = 0; i < this.state?.serverConfig?.backendEndpoints?.length; i++) {
+      const item = this.state?.serverConfig?.backendEndpoints[i];
+      const endpoint = item.address + item.port + item.path;
+      const serverConfig = {
+        index: i,
+        endpoint: endpoint,
+        serverConfig: {
+          mcpServers: {},
+        },
+      };
+      serverConfig.serverConfig.mcpServers[this.state.serverConfig?.name] = {
+        url: endpoint,
+      };
+      endpoints.push(serverConfig);
     }
 
     return (
@@ -233,7 +263,7 @@ class McpDetail extends React.Component {
           {this.state.serverConfig?.protocol === 'stdio' && (
             <>
               <Divider></Divider>
-              <h2>Local Server Config</h2>
+              <h2>Server Config</h2>
               <pre>{localServerConfig}</pre>
             </>
           )}
@@ -241,15 +271,22 @@ class McpDetail extends React.Component {
           {this.state.serverConfig?.protocol !== 'stdio' && (
             <>
               <Divider></Divider>
-              <h2>Endpoints</h2>
-              <Table dataSource={this.state.serverConfig.backendEndpoints}>
-                <Table.Column
-                  title={'endpoint'}
-                  cell={(value, index, record) => {
-                    return 'http://' + record.address + ':' + record.port + record.path;
-                  }}
-                ></Table.Column>
-              </Table>
+              <h2>Server Config</h2>
+              <Tab excessMode="dropdown" defaultActiveKey={0}>
+                {endpoints?.map(item => (
+                  <Tab.Item key={item.index} title={item.endpoint}>
+                    <pre>{JSON.stringify(item.serverConfig, null, 2)}</pre>
+                  </Tab.Item>
+                ))}
+              </Tab>
+              {/* <Table dataSource={this.state.serverConfig.backendEndpoints}> */}
+              {/*   <Table.Column */}
+              {/*     title={'endpoint'} */}
+              {/*     cell={(value, index, record) => { */}
+              {/*       return 'http://' + record.address + ':' + record.port + record.path; */}
+              {/*     }} */}
+              {/*   ></Table.Column> */}
+              {/* </Table> */}
             </>
           )}
 

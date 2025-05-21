@@ -56,6 +56,7 @@ const ShowTools = props => {
 
       <Table style={{ marginTop: '20px' }} dataSource={serverConfig?.toolSpec?.tools || []}>
         <Table.Column
+          width={'15%'}
           title={locale.toolName}
           cell={(value, index, record) => {
             return <div style={{ minWidth: '100px' }}>{record.name}</div>;
