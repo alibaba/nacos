@@ -130,7 +130,10 @@ class NewMcpServer extends React.Component {
             ? true
             : false;
           initFileData['namespace'] = remoteServerConfig?.serviceRef?.namespaceId;
-          initFileData['service'] = remoteServerConfig?.serviceRef?.serviceName;
+          initFileData['service'] =
+            remoteServerConfig?.serviceRef?.groupName +
+            '@@' +
+            remoteServerConfig?.serviceRef?.serviceName;
         }
 
         this.field.setValues(initFileData);
@@ -224,6 +227,8 @@ class NewMcpServer extends React.Component {
           const group = values?.service.split('@@')[0];
           const serviceName = values?.service.split('@@')[1];
 
+          console.log(values?.service);
+
           params.endpointSpecification = useExistService
             ? JSON.stringify(
                 {
@@ -255,7 +260,7 @@ class NewMcpServer extends React.Component {
       return;
     }
 
-    params['publish'] = isPublish;
+    params['latest'] = isPublish;
     if (getParams('mcptype') === 'edit') {
       return this.editMcpServer(params);
     } else {
@@ -408,7 +413,7 @@ class NewMcpServer extends React.Component {
       );
     });
     const params = await this.handleData();
-    params['publish'] = false;
+    params['latest'] = false;
     this.openLoading();
     const result = await request({
       url: 'v3/console/ai/mcp',
@@ -472,6 +477,10 @@ class NewMcpServer extends React.Component {
       hasDraftVersion = !versions[versions.length - 1].is_latest;
     }
 
+    const currentVersionExist = versions
+      .map(item => item.version)
+      .includes(this.field.getValue('version'));
+    console.log(currentVersionExist);
     return (
       <Loading
         shape={'flower'}
@@ -639,6 +648,7 @@ class NewMcpServer extends React.Component {
                     <Col span={12}>
                       <FormItem label="service">
                         <Select
+                          isPreview={currentVersionExist}
                           {...init('service', {
                             rules: [{ required: true, message: locale.placeSelect }],
                             props: {
@@ -653,7 +663,7 @@ class NewMcpServer extends React.Component {
                   </Row>
                 </FormItem>
               ) : (
-                <FormItem label={locale.useNewService} required>
+                <FormItem label={locale.useNewService} required disabled={currentVersionExist}>
                   <Row gutter={8}>
                     <Col span={12}>
                       <FormItem label="address">
@@ -681,6 +691,7 @@ class NewMcpServer extends React.Component {
               {!this.state.restToMcpSwitch && (
                 <FormItem label={locale.exportPath} required help={locale.exportPathDesc}>
                   <Input
+                    isPreview={currentVersionExist}
                     placeholder={locale.exportPathEg}
                     {...init('exportPath', {
                       rules: [
@@ -707,6 +718,7 @@ class NewMcpServer extends React.Component {
             <>
               <FormItem label={this.LocalServerConfigLabel()} required>
                 <Input.TextArea
+                  isPreview={currentVersionExist}
                   {...init('localServerConfig', {
                     props: textAreaProps,
                     rules: [
@@ -744,6 +756,7 @@ class NewMcpServer extends React.Component {
           )}
           <FormItem label={locale.description} required>
             <Input.TextArea
+              isPreview={currentVersionExist}
               {...init('description', {
                 rules: [{ required: true, message: locale.pleaseEnter }],
                 props: descAreaProps,
@@ -755,6 +768,12 @@ class NewMcpServer extends React.Component {
             <Input
               {...init('version', { props: { placeholder: '1.0.0' }, rules: [{ required: true }] })}
             />
+            {currentVersionExist && (
+              <>
+                <p style={{ color: 'red' }}>{locale.editExistVersionMessage}</p>
+                <p style={{ color: 'red' }}>{locale.editMoreNeedNewVersion}</p>
+              </>
+            )}
           </FormItem>
 
           {getParams('mcptype') && (
@@ -764,6 +783,7 @@ class NewMcpServer extends React.Component {
                 serverConfig={this.state.serverConfig}
                 getServerDetail={this.initEditedData}
                 onChange={this.toolsChange}
+                onlyEditRuntimeInfo={currentVersionExist}
               />
             </FormItem>
           )}

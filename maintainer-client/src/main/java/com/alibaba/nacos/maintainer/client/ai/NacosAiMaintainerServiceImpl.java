@@ -47,31 +47,35 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     
     private final ClientHttpProxy clientHttpProxy;
     
+    private static final String DEFAULT_NAMESPACE = "public";
+    
     public NacosAiMaintainerServiceImpl(Properties properties) throws NacosException {
         this.clientHttpProxy = new ClientHttpProxy(properties);
         ParamUtil.initSerialization();
     }
     
     @Override
-    public Page<McpServerBasicInfo> listMcpServer(String mcpName, int pageNo, int pageSize) throws NacosException {
+    public Page<McpServerBasicInfo> listMcpServer(String namespaceId, String mcpName, int pageNo, int pageSize) throws NacosException {
         Map<String, String> params = new HashMap<>(3);
         params.put("pageNo", String.valueOf(pageNo));
         params.put("pageSize", String.valueOf(pageSize));
         params.put("search", "accurate");
         params.put("mcpName", mcpName);
+        params.put("namespaceId", namespaceId);
         return getMcpServerBasicInfoPage(params);
     }
-    
+
     @Override
-    public Page<McpServerBasicInfo> searchMcpServer(String mcpName, int pageNo, int pageSize) throws NacosException {
+    public Page<McpServerBasicInfo> searchMcpServer(String namespaceId, String mcpName, int pageNo, int pageSize) throws NacosException {
         Map<String, String> params = new HashMap<>(4);
         params.put("pageNo", String.valueOf(pageNo));
         params.put("pageSize", String.valueOf(pageSize));
         params.put("search", "blur");
         params.put("mcpName", mcpName);
+        params.put("namespaceId", namespaceId);
         return getMcpServerBasicInfoPage(params);
     }
-    
+
     private Page<McpServerBasicInfo> getMcpServerBasicInfoPage(Map<String, String> params) throws NacosException {
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.AI_MCP_ADMIN_PATH + "/list").setParamValue(params).build();
@@ -83,9 +87,11 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     }
     
     @Override
-    public McpServerDetailInfo getMcpServerDetail(String mcpName) throws NacosException {
+    public McpServerDetailInfo getMcpServerDetail(String namespaceId, String mcpName, String version) throws NacosException {
         Map<String, String> params = new HashMap<>(1);
         params.put("mcpName", mcpName);
+        params.put("version", version);
+        params.put("namespaceId", namespaceId);
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.AI_MCP_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
@@ -94,27 +100,12 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
                 });
         return result.getData();
     }
-    
+
     @Override
-    public McpServerDetailInfo getMcpServerDetail(String mcpName, String version) throws NacosException {
-        Map<String, String> params = new HashMap<>(1);
-        params.put("mcpName", mcpName);
-        if (StringUtils.isNotEmpty(version)) {
-            params.put("version", version);
-        }
-        HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.GET)
-                .setPath(Constants.AdminApiPath.AI_MCP_ADMIN_PATH).setParamValue(params).build();
-        HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
-        Result<McpServerDetailInfo> result = JacksonUtils.toObj(restResult.getData(),
-                new TypeReference<Result<McpServerDetailInfo>>() {
-                });
-        return result.getData();
-    }
-    
-    @Override
-    public boolean createMcpServer(String mcpName, McpServerBasicInfo serverSpec, McpToolSpecification toolSpec,
-            McpEndpointSpec endpointSpec) throws NacosException {
+    public boolean createMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpec, McpToolSpecification toolSpec,
+                                   McpEndpointSpec endpointSpec) throws NacosException {
         Map<String, String> params = buildFullParameters(serverSpec, toolSpec, endpointSpec);
+        params.put("namespaceId", namespaceId);
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.POST)
                 .setPath(Constants.AdminApiPath.AI_MCP_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
@@ -122,11 +113,14 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
-    
+
+
     @Override
-    public boolean updateMcpServer(String mcpName, McpServerBasicInfo serverSpec, McpToolSpecification toolSpec,
+    public boolean updateMcpServer(String namespaceId, String mcpName, boolean isLatest, McpServerBasicInfo serverSpec, McpToolSpecification toolSpec,
             McpEndpointSpec endpointSpec) throws NacosException {
         Map<String, String> params = buildFullParameters(serverSpec, toolSpec, endpointSpec);
+        params.put("latest", String.valueOf(isLatest));
+        params.put("namespaceId", namespaceId);
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.PUT)
                 .setPath(Constants.AdminApiPath.AI_MCP_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
@@ -134,7 +128,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         });
         return ErrorCode.SUCCESS.getCode().equals(result.getCode());
     }
-    
+
     private Map<String, String> buildFullParameters(McpServerBasicInfo serverSpec,
             McpToolSpecification toolSpec, McpEndpointSpec endpointSpec) {
         Map<String, String> params = new HashMap<>(4);
@@ -150,9 +144,10 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     }
     
     @Override
-    public boolean deleteMcpServer(String mcpName) throws NacosException {
+    public boolean deleteMcpServer(String namespaceId, String mcpName) throws NacosException {
         Map<String, String> params = new HashMap<>(1);
         params.put("mcpName", mcpName);
+        params.put("namespaceId", namespaceId);
         HttpRequest httpRequest = new HttpRequest.Builder().setHttpMethod(HttpMethod.DELETE)
                 .setPath(Constants.AdminApiPath.AI_MCP_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);

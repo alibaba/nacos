@@ -895,6 +895,8 @@ const I18N_CONF = {
     editServerMustChangVersion: '编辑 MCP Server 必须变更版本',
     versionFormatError: 'version 必须符合 x.y.x 格式, x,y,z 都为数字',
     cannotUseExistVersion: '不能使用已经存在的版本',
+    editExistVersionMessage: '当前正在修改已发布的版本，只能修改Tool以及参数的描述信息以及开关',
+    editMoreNeedNewVersion: '修改其他信息请使用新的版本号',
   },
 };
 

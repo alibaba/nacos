@@ -369,6 +369,8 @@ public class McpServerOperationService {
                     versionDetail.setRelease_date(formattedCurrentTime);
                     versionDetail.setIs_latest(true);
                     break;
+                } else {
+                    versionDetail.setIs_latest(false);
                 }
             }
             mcpServerVersionInfo.setVersions(versionDetails);
