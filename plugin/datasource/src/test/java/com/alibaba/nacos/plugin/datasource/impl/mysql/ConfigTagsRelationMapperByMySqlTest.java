@@ -57,7 +57,8 @@ class ConfigTagsRelationMapperByMySqlTest {
     void testFindConfigInfoLike4PageCountRows() {
         MapperResult mapperResult = configTagsRelationMapperByMySql.findConfigInfoLike4PageCountRows(context);
         assertEquals(mapperResult.getSql(), "SELECT count(*) FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id WHERE "
-                + "a.tenant_id LIKE ?  AND b.tag_name IN (?, ?, ?, ?, ?) ");
+                + "a.tenant_id LIKE ?  AND "
+                + " ( b.tag_name LIKE ?  OR b.tag_name LIKE ?  OR b.tag_name LIKE ?  OR b.tag_name LIKE ?  OR b.tag_name LIKE ?  ) ");
         List<Object> list = CollectionUtils.list(tenantId);
         list.addAll(Arrays.asList(tagArr));
         assertArrayEquals(mapperResult.getParamList().toArray(), list.toArray());
@@ -103,7 +104,9 @@ class ConfigTagsRelationMapperByMySqlTest {
         MapperResult mapperResult = configTagsRelationMapperByMySql.findConfigInfoLike4PageCountRows(context);
         assertEquals("SELECT count(*) FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id "
                 + "WHERE a.tenant_id LIKE ?  AND a.data_id LIKE ?  AND a.group_id LIKE ?  AND a.app_name = ?  "
-                + "AND a.content LIKE ?  AND b.tag_name IN (?, ?, ?, ?, ?) ", mapperResult.getSql());
+                + "AND a.content LIKE ?  AND "
+                + " ( b.tag_name LIKE ?  OR b.tag_name LIKE ? "
+                + " OR b.tag_name LIKE ?  OR b.tag_name LIKE ?  OR b.tag_name LIKE ?  ) ", mapperResult.getSql());
         List<Object> list = CollectionUtils.list(tenantId);
         list.add("dataID1");
         list.add("groupID1");
@@ -122,7 +125,8 @@ class ConfigTagsRelationMapperByMySqlTest {
         MapperResult mapperResult = configTagsRelationMapperByMySql.findConfigInfoLike4PageFetchRows(context);
         assertEquals(mapperResult.getSql(), "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content,a.type FROM config_info a LEFT JOIN"
                 + " config_tags_relation b ON a.id=b.id WHERE a.tenant_id LIKE ?  AND a.data_id LIKE ?  "
-                + "AND a.group_id LIKE ?  AND a.app_name = ?  AND a.content LIKE ?  AND b.tag_name IN (?, ?, ?, ?, ?)  LIMIT " + startRow
+                + "AND a.group_id LIKE ?  AND a.app_name = ?  AND a.content LIKE ?  AND  "
+                + "( b.tag_name LIKE ?  OR b.tag_name LIKE ?  OR b.tag_name LIKE ?  OR b.tag_name LIKE ?  OR b.tag_name LIKE ?  )  LIMIT " + startRow
                 + "," + pageSize);
         List<Object> list = CollectionUtils.list(tenantId);
         list.add("dataID1");
