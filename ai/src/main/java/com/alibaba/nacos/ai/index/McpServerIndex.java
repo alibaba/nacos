@@ -28,7 +28,11 @@ public interface McpServerIndex {
 
     /**
      * Search Mcp server by name and namespaceId.
+     * @param namespaceId namespaceId
      * @param name mcp server name
+     * @param search search mode
+     * @param offset offset to list
+     * @param limit list limit
      * @return MCP Server Summery
      */
     Page<McpServerIndexData> searchMcpServerByName(String namespaceId, String name, String search, int offset, int limit);

@@ -91,7 +91,7 @@ public class ListServerForm implements NacosForm {
                     "Parameter 'offset' must >= 0");
         }
         
-        if (limit > 100) {
+        if (limit > Constants.MAX_LIST_SIZE) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "Parameter 'limit' must <= 100");
         }
