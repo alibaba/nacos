@@ -132,7 +132,7 @@ public class McpAdminController {
         McpServerBasicInfo basicInfo = McpRequestUtil.parseMcpServerBasicInfo(mcpForm);
         McpToolSpecification mcpTools = McpRequestUtil.parseMcpTools(mcpForm);
         McpEndpointSpec endpointSpec = McpRequestUtil.parseMcpEndpointSpec(basicInfo, mcpForm);
-        mcpServerOperationService.updateMcpServer(mcpForm.getNamespaceId(), mcpForm.getPublish(), basicInfo, mcpTools,
+        mcpServerOperationService.updateMcpServer(mcpForm.getNamespaceId(), mcpForm.getLatest(), basicInfo, mcpTools,
                 endpointSpec);
         return Result.success("ok");
     }

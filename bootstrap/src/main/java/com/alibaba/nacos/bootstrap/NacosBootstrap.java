@@ -56,9 +56,6 @@ public class NacosBootstrap {
             case SERVER:
                 startWithoutConsole(args);
                 break;
-            case SERVER_WITH_MCP:
-                startWithMcp(args);
-                break;
             case CONSOLE:
                 startOnlyConsole(args);
                 break;
@@ -78,6 +75,7 @@ public class NacosBootstrap {
         ConfigurableApplicationContext coreContext = startCoreContext(args);
         prepareCoreContext(coreContext);
         ConfigurableApplicationContext webContext = startServerWebContext(args, coreContext);
+        ConfigurableApplicationContext mcpRegistryContext = startMcpRegistryContext(args, coreContext);
     }
     
     private static void startWithConsole(String[] args) {
@@ -85,13 +83,6 @@ public class NacosBootstrap {
         prepareCoreContext(coreContext);
         ConfigurableApplicationContext serverWebContext = startServerWebContext(args, coreContext);
         ConfigurableApplicationContext consoleContext = startConsoleContext(args, coreContext);
-        ConfigurableApplicationContext mcpRegistryContext = startMcpRegistryContext(args, coreContext);
-    }
-    
-    private static void startWithMcp(String[] args) {
-        ConfigurableApplicationContext coreContext = startCoreContext(args);
-        prepareCoreContext(coreContext);
-        ConfigurableApplicationContext serverWebContext = startServerWebContext(args, coreContext);
         ConfigurableApplicationContext mcpRegistryContext = startMcpRegistryContext(args, coreContext);
     }
     

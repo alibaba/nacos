@@ -28,13 +28,13 @@ public class McpUpdateForm extends McpDetailForm {
     @Serial
     private static final long serialVersionUID = 4144251088520249913L;
     
-    private Boolean publish;
+    private Boolean latest;
     
-    public Boolean getPublish() {
-        return publish;
+    public Boolean getLatest() {
+        return latest;
     }
     
-    public void setPublish(Boolean publish) {
-        this.publish = publish;
+    public void setLatest(Boolean publish) {
+        this.latest = publish;
     }
 }

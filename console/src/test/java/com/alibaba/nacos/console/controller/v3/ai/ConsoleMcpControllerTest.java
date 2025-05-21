@@ -118,7 +118,7 @@ class ConsoleMcpControllerTest {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.put("/v3/console/ai/mcp")
                 .param("namespaceId", "nacos-default-mcp").param("mcpName", "test").param("mcpId", "id")
                 .param("version", "version").param("serverSpecification", "{\"protocol\":\"stdio\"}")
-                .param("publish", "true");
+                .param("latest", "true");
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         Result<String> result = JacksonUtils.toObj(actualValue, new TypeReference<>() {

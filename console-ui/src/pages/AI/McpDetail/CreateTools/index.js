@@ -21,7 +21,7 @@ const { Row, Col } = Grid;
 
 const CreateTools = React.forwardRef((props, ref) => {
   // eslint-disable-next-line react/prop-types
-  const { locale, showTemplates = false } = props;
+  const { locale, showTemplates = false, onlyEditRuntimeInfo = false } = props;
   const field = Field.useField({
     parseName: true,
     values: {
@@ -456,6 +456,13 @@ const CreateTools = React.forwardRef((props, ref) => {
         <Dialog
           v2
           title={'Tools'}
+          footer={
+            onlyEditRuntimeInfo ? (
+              <p style={{ color: 'red' }}>{locale.editExistVersionMessage}</p>
+            ) : (
+              ''
+            )
+          }
           visible
           footer={
             isPreview ? (
@@ -473,7 +480,6 @@ const CreateTools = React.forwardRef((props, ref) => {
           style={{ width: '70%' }}
         >
           <Form field={field} {...formitemLayout} isPreview={isPreview}>
-            <h3>{locale.baseData}</h3>
             {/* 名称 */}
             <Form.Item label={locale.toolName} required isPreview={!!type}>
               <Input
@@ -501,6 +507,7 @@ const CreateTools = React.forwardRef((props, ref) => {
             {/* 描述 */}
             <Form.Item label={locale.toolDescription} required>
               <Input.TextArea
+                isPreview={onlyEditRuntimeInfo}
                 placeholder={locale.toolDescription}
                 {...init('description', {
                   rules: [{ required: true, message: locale.toolDescriptionRequired }],
@@ -527,7 +534,7 @@ const CreateTools = React.forwardRef((props, ref) => {
             {/* 入参描述 */}
             <Form.Item label={locale.toolInputSchema} required style={{ margin: '16px 0 0' }} />
             <Form.Item label={locale.ArgumentTree} style={{ margin: '16px 0 0' }}>
-              {!isPreview && (
+              {!isPreview && !onlyEditRuntimeInfo && (
                 <Row>
                   <Col style={{ marginTop: 5 }}>
                     <Button
@@ -596,6 +603,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                       asterisk={false}
                     >
                       <Input
+                        isPreview={onlyEditRuntimeInfo}
                         disabled={currentNode.key === 'args'}
                         value={currentNode.label}
                         onChange={data => {
@@ -610,6 +618,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                   <Col offset={1}>
                     <Form.Item name="args.type" label={locale.toolParamType}>
                       <Select
+                        isPreview={onlyEditRuntimeInfo}
                         disabled={currentNode.key === 'args'}
                         value={currentNode.type}
                         dataSource={[
@@ -682,6 +691,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                   style={{ marginTop: '10px' }}
                 >
                   <Input.TextArea
+                    isPreview={onlyEditRuntimeInfo}
                     aria-label="auto height"
                     style={{ minHeight: 32 }}
                     multiline
