@@ -91,7 +91,8 @@ class ConsoleMcpControllerTest {
         McpServerDetailInfo mock = new McpServerDetailInfo();
         when(mcpProxy.getMcpServer("nacos-default-mcp", "test", "id", "version")).thenReturn(mock);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/ai/mcp")
-                .param("namespaceId", "nacos-default-mcp").param("mcpName", "test");
+                .param("namespaceId", "nacos-default-mcp").param("mcpName", "test").param("mcpId", "id")
+                .param("version", "version").param("publish", "true");
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         Result<McpServerDetailInfo> result = JacksonUtils.toObj(actualValue, new TypeReference<>() {
@@ -115,8 +116,9 @@ class ConsoleMcpControllerTest {
     @Test
     void updateMcpServer() throws Exception {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.put("/v3/console/ai/mcp")
-                .param("namespaceId", "nacos-default-mcp").param("mcpName", "test")
-                .param("serverSpecification", "{\"protocol\":\"stdio\"}");
+                .param("namespaceId", "nacos-default-mcp").param("mcpName", "test").param("mcpId", "id")
+                .param("version", "version").param("serverSpecification", "{\"protocol\":\"stdio\"}")
+                .param("publish", "true");
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         Result<String> result = JacksonUtils.toObj(actualValue, new TypeReference<>() {

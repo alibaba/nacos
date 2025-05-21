@@ -63,7 +63,7 @@ class McpInnerHandlerTest {
     void getMcpServer() throws NacosException {
         McpServerDetailInfo mock = new McpServerDetailInfo();
         when(mcpServerOperationService.getMcpServerDetail("", "test", "name", "version")).thenReturn(mock);
-        McpServerDetailInfo actual = mcpInnerHandler.getMcpServer("", "test", "name", "version");
+        McpServerDetailInfo actual = mcpInnerHandler.getMcpServer("", "name", "test", "version");
         assertEquals(mock, actual);
     }
     

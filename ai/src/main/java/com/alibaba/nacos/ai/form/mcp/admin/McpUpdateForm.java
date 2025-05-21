@@ -16,11 +16,18 @@
 
 package com.alibaba.nacos.ai.form.mcp.admin;
 
+import java.io.Serial;
+
 /**
  * Mcp server update form.
+ *
  * @author xinluo
  */
 public class McpUpdateForm extends McpDetailForm {
+    
+    @Serial
+    private static final long serialVersionUID = 4144251088520249913L;
+    
     private Boolean publish;
     
     public Boolean getPublish() {
