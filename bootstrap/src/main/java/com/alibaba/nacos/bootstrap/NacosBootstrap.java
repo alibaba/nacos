@@ -75,7 +75,9 @@ public class NacosBootstrap {
         ConfigurableApplicationContext coreContext = startCoreContext(args);
         prepareCoreContext(coreContext);
         ConfigurableApplicationContext webContext = startServerWebContext(args, coreContext);
-        ConfigurableApplicationContext mcpRegistryContext = startMcpRegistryContext(args, coreContext);
+        if (isEnabledMcpRegistryApi(coreContext)) {
+            ConfigurableApplicationContext mcpRegistryContext = startMcpRegistryContext(args, coreContext);
+        }
     }
     
     private static void startWithConsole(String[] args) {
@@ -83,7 +85,9 @@ public class NacosBootstrap {
         prepareCoreContext(coreContext);
         ConfigurableApplicationContext serverWebContext = startServerWebContext(args, coreContext);
         ConfigurableApplicationContext consoleContext = startConsoleContext(args, coreContext);
-        ConfigurableApplicationContext mcpRegistryContext = startMcpRegistryContext(args, coreContext);
+        if (isEnabledMcpRegistryApi(coreContext)) {
+            ConfigurableApplicationContext mcpRegistryContext = startMcpRegistryContext(args, coreContext);
+        }
     }
     
     private static ConfigurableApplicationContext startCoreContext(String[] args) {
@@ -121,5 +125,9 @@ public class NacosBootstrap {
     
     private static Banner getBanner(String bannerFileName) {
         return new ResourceBanner(new ClassPathResource(bannerFileName));
+    }
+    
+    private static boolean isEnabledMcpRegistryApi(ConfigurableApplicationContext coreContext) {
+        return coreContext.getEnvironment().getProperty("nacos.ai.mcp.registry.enabled", Boolean.class, false);
     }
 }
