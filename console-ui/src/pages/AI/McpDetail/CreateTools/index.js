@@ -63,6 +63,9 @@ const CreateTools = React.forwardRef((props, ref) => {
   // }, [visible]);
 
   const convertPropertiesToTreeData = (properties, prefix) => {
+    if (properties == null) {
+      return [];
+    }
     const keys = Object.keys(properties);
     let result = [];
     for (let index = 0; index < keys.length; index++) {

@@ -340,7 +340,7 @@ class NewMcpServer extends React.Component {
 
   validateChart(rule, value, callback) {
     const { locale = {} } = this.props;
-    const chartReg = /^[a-zA-Z0-9_]+$/;
+    const chartReg = /^[a-zA-Z0-9_-]+$/;
 
     if (!chartReg.test(value)) {
       callback(locale.doNotEnter);
