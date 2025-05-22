@@ -23,18 +23,27 @@ const { Row, Col } = Grid;
 
 const FormItem = Form.Item;
 const { Group: RadioGroup } = Radio;
-const localServerConfigDesc = `{
-  "mcpServers":{
-  "description": "高德地图服务",
-  "command": "npx",
-  "args": [
-    "-y",
-    "@amap/amap-maps-mcp-server"
-  ],
-  "env": {
-    "AMAP_MAPS_API_KEY": "<API_KEY>" // 配置API_KEY信息
-  }
-}}`;
+const localServerConfigDesc = `示例：
+{
+    "mcpServers":
+    {
+        "amap-mcp-server":
+        {
+            "description": "高德地图服务",
+            "command": "npx",
+            "args":
+            [
+                "-y",
+                "@amap/amap-maps-mcp-server"
+            ],
+            "env":
+            {
+                "AMAP_MAPS_API_KEY": "<API_KEY>"
+            }
+        }
+    }
+}
+`;
 
 @ConfigProvider.config
 class NewMcpServer extends React.Component {
@@ -471,7 +480,7 @@ class NewMcpServer extends React.Component {
     const { init } = this.field;
     const isEdit = getParams('mcptype') && getParams('mcptype') === 'edit';
     const formItemLayout = { labelCol: { span: 3 }, wrapperCol: { span: 20 } };
-    const textAreaProps = { 'aria-label': 'auto height', autoHeight: { minRows: 12, maxRows: 20 } };
+    const textAreaProps = { 'aria-label': 'auto height', autoHeight: { minRows: 20, maxRows: 50 } };
     const descAreaProps = { 'aria-label': 'auto height', autoHeight: { minRows: 5, maxRows: 10 } };
     const currentNamespace = getParams('namespace');
 
