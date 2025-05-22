@@ -69,8 +69,6 @@ class McpDetail extends React.Component {
         serverConfig: result.data,
       });
     }
-
-    console.log(result.data);
   };
 
   getFormItem = params => {
@@ -157,6 +155,14 @@ class McpDetail extends React.Component {
         url: endpoint,
       };
       endpoints.push(serverConfig);
+    }
+
+    let restToMcpBackendProtocol = 'off';
+    if (
+      this.state?.serverConfig?.protocol === 'https' ||
+      this.state?.serverConfig?.protocol === 'http'
+    ) {
+      restToMcpBackendProtocol = this.state?.serverConfig?.protocol;
     }
 
     return (
@@ -298,6 +304,7 @@ class McpDetail extends React.Component {
           <Divider></Divider>
           <h2>Tools</h2>
           <ShowTools
+            restToMcpSwitch={restToMcpBackendProtocol}
             locale={locale}
             serverConfig={this.state.serverConfig}
             getServerDetail={this.getServerDetail}

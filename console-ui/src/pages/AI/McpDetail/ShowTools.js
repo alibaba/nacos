@@ -8,6 +8,7 @@ const ShowTools = props => {
     serverConfig = {
       protocol: '',
     },
+    restToMcpSwitch = 'off',
     locale,
     isPreview = false,
     onlyEditRuntimeInfo = false,
@@ -49,7 +50,7 @@ const ShowTools = props => {
         key={JSON.stringify(serverConfig)}
         locale={locale}
         serverConfig={serverConfig}
-        showTemplates={serverConfig?.protocol === 'http'}
+        showTemplates={restToMcpSwitch !== 'off'}
         ref={toolsRef}
         getServerDetail={getServerDetail}
         onChange={props?.onChange}

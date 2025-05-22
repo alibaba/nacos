@@ -440,7 +440,7 @@ class McpManagement extends React.Component {
 
   chooseEnv(value) {
     this.serverId = getParams('serverId') || 'center';
-    this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
+    this.tenant = getParams('namespace') || 'public'; // 为当前实例保存tenant参数
     this.props.history.push(`/newMcpServer?namespace=${this.tenant}`);
   }
 
@@ -651,12 +651,12 @@ class McpManagement extends React.Component {
               <Table.Column
                 title={locale.mcpServerType}
                 cell={(value, index, record) => {
-                  if (record.protocol === 'http') {
+                  if ((record.protocol === 'http') | (record.protocol === 'https')) {
                     return (
                       <>
                         {record.frontProtocol}
                         <Tag type="primary" size={'small'} color="green" style={{ marginLeft: 10 }}>
-                          存量转化
+                          {locale.convertService}
                         </Tag>
                       </>
                     );

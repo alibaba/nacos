@@ -56,7 +56,7 @@ class NewMcpServer extends React.Component {
       useExistService: true,
       serviceList: [],
       serverConfig: {},
-      restToMcpSwitch: true,
+      restToMcpSwitch: 'http',
       currentVersion: '',
       isLatestVersion: false,
       versionsList: [],
@@ -137,10 +137,16 @@ class NewMcpServer extends React.Component {
         }
 
         this.field.setValues(initFileData);
+
+        let restToMcpBackendProtocol = 'off';
+        if (protocol === 'https' || protocol === 'http') {
+          restToMcpBackendProtocol = protocol;
+        }
+
         this.setState({
           serverConfig: result.data,
           useExistService: true, // 编辑时 默认使用已有服务，隐藏新建服务
-          restToMcpSwitch: protocol === 'http',
+          restToMcpSwitch: restToMcpBackendProtocol,
         });
       }
     }
@@ -175,7 +181,8 @@ class NewMcpServer extends React.Component {
           return resolve({ errors });
         }
 
-        let protocol = this.state.restToMcpSwitch ? 'http' : values.frontProtocol;
+        let protocol =
+          this.state.restToMcpSwitch === 'off' ? values.frontProtocol : this.state.restToMcpSwitch;
         if (values.frontProtocol === 'stdio') {
           protocol = values.frontProtocol;
         }
@@ -224,25 +231,25 @@ class NewMcpServer extends React.Component {
             2
           );
           // 添加服务
-          const group = values?.service.split('@@')[0];
-          const serviceName = values?.service.split('@@')[1];
 
-          console.log(values?.service);
-
-          params.endpointSpecification = useExistService
-            ? JSON.stringify(
-                {
-                  type: 'REF',
-                  data: {
-                    namespaceId: values?.namespace || '',
-                    serviceName: serviceName || '',
-                    groupName: group || '',
-                  },
+          if (useExistService) {
+            const group = values?.service.split('@@')[0];
+            const serviceName = values?.service.split('@@')[1];
+            params.endpointSpecification = JSON.stringify(
+              {
+                type: 'REF',
+                data: {
+                  namespaceId: values?.namespace || '',
+                  serviceName: serviceName || '',
+                  groupName: group || '',
                 },
-                null,
-                2
-              )
-            : `{"type": "DIRECT","data":{"address":"${values?.address}","port": "${values?.port}"}}`;
+              },
+              null,
+              2
+            );
+          } else {
+            params.endpointSpecification = `{"type": "DIRECT","data":{"address":"${values?.address}","port": "${values?.port}"}}`;
+          }
         }
 
         resolve(params);
@@ -477,10 +484,10 @@ class NewMcpServer extends React.Component {
       hasDraftVersion = !versions[versions.length - 1].is_latest;
     }
 
-    const currentVersionExist = versions
+    let currentVersionExist = versions
       .map(item => item.version)
       .includes(this.field.getValue('version'));
-    console.log(currentVersionExist);
+
     return (
       <Loading
         shape={'flower'}
@@ -600,15 +607,25 @@ class NewMcpServer extends React.Component {
                 help={<>{locale.restToMcpNeedHigress}</>}
               >
                 <Row>
-                  <Switch
+                  <RadioGroup
                     disabled={isEdit}
-                    defaultChecked={this.state.restToMcpSwitch}
+                    value={this.state.restToMcpSwitch}
                     onChange={data => {
                       this.setState({
                         restToMcpSwitch: data,
                       });
                     }}
-                  ></Switch>
+                  >
+                    <Radio id={'off'} value={'off'}>
+                      {locale.off}
+                    </Radio>
+                    <Radio id={'http'} value={'http'}>
+                      http
+                    </Radio>
+                    <Radio id={'https'} value={'https'}>
+                      https
+                    </Radio>
+                  </RadioGroup>
                 </Row>
               </FormItem>
               {!isEdit && (
@@ -625,7 +642,7 @@ class NewMcpServer extends React.Component {
                     (!['mcp-sse', 'mcp-streamable'].includes(
                       this.field.getValue('frontProtocol')
                     ) ||
-                      this.state.restToMcpSwitch) && (
+                      this.state.restToMcpSwitch !== 'off') && (
                       <Radio id="useExistService" value="useExistService">
                         {locale.useExistService}
                       </Radio>
@@ -688,7 +705,7 @@ class NewMcpServer extends React.Component {
                 </FormItem>
               )}
               {/* 暴露路径 */}
-              {!this.state.restToMcpSwitch && (
+              {this.state.restToMcpSwitch === 'off' && (
                 <FormItem label={locale.exportPath} required help={locale.exportPathDesc}>
                   <Input
                     isPreview={currentVersionExist}
@@ -780,6 +797,7 @@ class NewMcpServer extends React.Component {
             <FormItem label={'Tools'} {...formItemLayout}>
               <ShowTools
                 locale={locale}
+                restToMcpSwitch={this.state.restToMcpSwitch}
                 serverConfig={this.state.serverConfig}
                 getServerDetail={this.initEditedData}
                 onChange={this.toolsChange}

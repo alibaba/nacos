@@ -725,6 +725,7 @@ const I18N_CONF = {
     description: '描述',
     batchDeleteSuccessfully: '批量删除成功',
     batchDeleteFailed: '批量删除失败',
+    convertService: '存量转化',
   },
   McpDetail: {
     basicInformation: '基本信息',
@@ -897,6 +898,7 @@ const I18N_CONF = {
     cannotUseExistVersion: '不能使用已经存在的版本',
     editExistVersionMessage: '当前正在修改已发布的版本，只能修改Tool以及参数的描述信息以及开关',
     editMoreNeedNewVersion: '修改其他信息请使用新的版本号',
+    off: '关闭',
   },
 };
 
