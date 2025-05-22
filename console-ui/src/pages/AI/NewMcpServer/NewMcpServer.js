@@ -231,23 +231,25 @@ class NewMcpServer extends React.Component {
             2
           );
           // 添加服务
-          const group = values?.service.split('@@')[0];
-          const serviceName = values?.service.split('@@')[1];
 
-          params.endpointSpecification = useExistService
-            ? JSON.stringify(
-                {
-                  type: 'REF',
-                  data: {
-                    namespaceId: values?.namespace || '',
-                    serviceName: serviceName || '',
-                    groupName: group || '',
-                  },
+          if (useExistService) {
+            const group = values?.service.split('@@')[0];
+            const serviceName = values?.service.split('@@')[1];
+            params.endpointSpecification = JSON.stringify(
+              {
+                type: 'REF',
+                data: {
+                  namespaceId: values?.namespace || '',
+                  serviceName: serviceName || '',
+                  groupName: group || '',
                 },
-                null,
-                2
-              )
-            : `{"type": "DIRECT","data":{"address":"${values?.address}","port": "${values?.port}"}}`;
+              },
+              null,
+              2
+            );
+          } else {
+            params.endpointSpecification = `{"type": "DIRECT","data":{"address":"${values?.address}","port": "${values?.port}"}}`;
+          }
         }
 
         resolve(params);
