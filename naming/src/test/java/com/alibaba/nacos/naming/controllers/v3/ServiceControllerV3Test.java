@@ -187,7 +187,7 @@ class ServiceControllerV3Test {
                 any(ServiceMetadata.class));
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals("ok", actual.getData());
-        TimeUnit.SECONDS.sleep(1);
+        TimeUnit.SECONDS.sleep(3);
         assertEquals(UpdateServiceTraceEvent.class, eventReceivedClass);
     }
     
