@@ -17,14 +17,18 @@
 package com.alibaba.nacos.core.distributed.distro.task.verify;
 
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
+import com.alibaba.nacos.common.utils.RandomUtils;
 import com.alibaba.nacos.core.distributed.distro.component.DistroCallback;
 import com.alibaba.nacos.core.distributed.distro.component.DistroTransportAgent;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecord;
 import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecordsHolder;
+import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.core.distributed.distro.DistroConfig;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Execute distro verify task.
@@ -48,23 +52,35 @@ public class DistroVerifyExecuteTask extends AbstractExecuteTask {
         this.targetServer = targetServer;
         this.resourceType = resourceType;
     }
-    
+
     @Override
     public void run() {
-        for (DistroData each : verifyData) {
-            try {
-                if (transportAgent.supportCallbackTransport()) {
-                    doSyncVerifyDataWithCallback(each);
-                } else {
-                    doSyncVerifyData(each);
-                }
-            } catch (Exception e) {
-                Loggers.DISTRO
-                        .error("[DISTRO-FAILED] verify data for type {} to {} failed.", resourceType, targetServer, e);
-            }
+        int batchSize = DistroConfig.getInstance().getVerifyBatchSize();
+        int totalSize = verifyData.size();
+        for (int i = 0; i < totalSize; i += batchSize) {
+            int end = Math.min(i + batchSize, totalSize);
+            List<DistroData> batch = verifyData.subList(i, end);
+            requestBatch(batch);
         }
     }
-    
+
+    void requestBatch(List<DistroData> batch) {
+        GlobalExecutor.DISTRO_VERIFY_EXECUTOR.schedule((() -> {
+            for (DistroData each : batch) {
+                try {
+                    if (transportAgent.supportCallbackTransport()) {
+                        doSyncVerifyDataWithCallback(each);
+                    } else {
+                        doSyncVerifyData(each);
+                    }
+                } catch (Throwable e) {
+                    Loggers.DISTRO.error("[DISTRO-FAILED] verify data for type {} to {} failed.", resourceType,
+                            targetServer, e);
+                }
+            }
+        }), RandomUtils.nextLong(0, DistroConfig.getInstance().getVerifyIntervalMillis()), TimeUnit.MILLISECONDS);
+    }
+
     private void doSyncVerifyDataWithCallback(DistroData data) {
         transportAgent.syncVerifyData(data, targetServer, new DistroVerifyCallback());
     }
