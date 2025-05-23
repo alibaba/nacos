@@ -129,9 +129,7 @@ class NewMcpServer extends React.Component {
           versionsList: allPublishedVersions,
         });
 
-        if (localServerConfig && JSON.stringify(localServerConfig, null, 2) !== '{}') {
-          initFileData['localServerConfig'] = JSON.stringify(localServerConfig, null, 2);
-        }
+        initFileData['localServerConfig'] = JSON.stringify(localServerConfig, null, 2);
 
         if (remoteServerConfig) {
           initFileData['exportPath'] = remoteServerConfig?.exportPath;

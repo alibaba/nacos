@@ -25,9 +25,20 @@ public class McpServerIndexData {
 
     private String id;
 
-    private String name;
-
     private String namespaceId;
+
+    /**
+     * Factory method for index data.
+     * @param id server id
+     * @param namespaceId namespaceId
+     * @return index
+     */
+    public static McpServerIndexData newIndexData(String id, String namespaceId) {
+        McpServerIndexData data = new McpServerIndexData();
+        data.setNamespaceId(namespaceId);
+        data.setId(id);
+        return data;
+    }
 
     public String getId() {
         return id;
@@ -35,14 +46,6 @@ public class McpServerIndexData {
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getNamespaceId() {

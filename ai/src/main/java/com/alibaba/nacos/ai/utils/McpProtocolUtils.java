@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ * Copyright 1999-2024 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +14,17 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.ai.form.mcp.admin;
+package com.alibaba.nacos.ai.utils;
 
-import java.io.Serial;
+import com.alibaba.nacos.ai.constant.Constants;
 
 /**
- * Mcp server update form.
- *
- * @author xinluo
+ * Mcp protocol related utils.
+ * @author xinluo 
  */
-public class McpUpdateForm extends McpDetailForm {
+public class McpProtocolUtils {
     
-    @Serial
-    private static final long serialVersionUID = 4144251088520249913L;
-    
-    private boolean latest = true;
-    
-    public Boolean getLatest() {
-        return latest;
-    }
-    
-    public void setLatest(Boolean publish) {
-        this.latest = publish;
+    public static boolean isProtocolNeedTranslator(String protocol) {
+        return Constants.PROTOCOL_TYPE_HTTP.equals(protocol) || Constants.PROTOCOL_TYPE_HTTPS.equals(protocol);
     }
 }
