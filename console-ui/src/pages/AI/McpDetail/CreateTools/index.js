@@ -85,6 +85,7 @@ const CreateTools = React.forwardRef((props, ref) => {
       const node = {
         label: element,
         type: arg.type,
+        arg: arg,
         description: arg.description ? arg.description : '',
         children,
         key: `${prefix}@@${element}`,
@@ -147,6 +148,7 @@ const CreateTools = React.forwardRef((props, ref) => {
       name,
       description,
       toolParams: inputSchema?.properties ? inputSchema?.properties : {},
+      required: inputSchema?.required,
       invokeContext: _invokeContext,
       templates: templatesStr,
       enabled: toolsMeta?.enabled,
@@ -233,6 +235,7 @@ const CreateTools = React.forwardRef((props, ref) => {
         inputSchema: {
           type: 'object',
           properties,
+          required: values?.required,
         },
       };
       const _toolsMetaitem = {
@@ -407,9 +410,12 @@ const CreateTools = React.forwardRef((props, ref) => {
     for (let index = 0; index < rawData.length; index++) {
       const element = rawData[index];
       let arg = {
+        ...element.arg,
         type: element.type,
-        description: element.description,
       };
+
+      arg.description = element.description;
+      arg.type = element.type;
       if (element.type === 'object' && element.children.length > 0) {
         arg.properties = rawDataToFiledValue(element.children);
       } else if (element.type === 'array') {
