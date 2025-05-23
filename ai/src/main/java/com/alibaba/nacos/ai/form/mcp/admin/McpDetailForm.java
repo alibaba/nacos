@@ -41,7 +41,7 @@ public class McpDetailForm extends McpForm {
     
     @Override
     public void validate() throws NacosApiException {
-        super.validate();
+        fillDefaultValue();
         if (StringUtils.isEmpty(serverSpecification)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter 'serverSpecification' type McpServerBasicInfo is not present");

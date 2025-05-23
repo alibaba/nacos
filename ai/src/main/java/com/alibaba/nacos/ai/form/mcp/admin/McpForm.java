@@ -17,8 +17,10 @@
 package com.alibaba.nacos.ai.form.mcp.admin;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.NacosForm;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.Serial;
@@ -44,6 +46,10 @@ public class McpForm implements NacosForm {
     @Override
     public void validate() throws NacosApiException {
         fillDefaultValue();
+        if (StringUtils.isEmpty(mcpId) && StringUtils.isEmpty(mcpName)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Required parameter 'mcpId' or 'mcpName' type String at lease one is not present");
+        }
     }
     
     protected void fillDefaultValue() {
