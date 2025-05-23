@@ -292,6 +292,11 @@ public class McpServerOperationService {
         }
 
         ServerVersionDetail versionDetail = serverSpecification.getVersionDetail();
+        if (null == versionDetail && StringUtils.isNotBlank(serverSpecification.getVersion())) {
+            versionDetail = new ServerVersionDetail();
+            versionDetail.setVersion(serverSpecification.getVersion());
+            serverSpecification.setVersionDetail(versionDetail);
+        }
         if (Objects.isNull(versionDetail) || StringUtils.isEmpty(versionDetail.getVersion())) {
             throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "Version must be specified in parameter `serverSpecification`");
@@ -309,7 +314,7 @@ public class McpServerOperationService {
         injectToolAndEndpoint(namespaceId, serverSpecification.getId(), newSpecification, 
                 toolSpecification, endpointSpecification);
 
-        McpServerVersionInfo versionInfo = buildServerVersionInfo(serverSpecification, id, versionDetail);
+        McpServerVersionInfo versionInfo = buildServerVersionInfo(newSpecification, id, versionDetail);
         
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
         configRequestInfo.setUpdateForExist(Boolean.FALSE);
@@ -355,9 +360,17 @@ public class McpServerOperationService {
         
         String mcpServerId = serverSpecification.getId();
         mcpServerId = resolveMcpServerId(namespaceId, serverSpecification.getName(), mcpServerId);
+        if (StringUtils.isEmpty(serverSpecification.getId())) {
+            serverSpecification.setId(mcpServerId);
+        }
         checkMcpServerIndex(mcpServerId);
 
         ServerVersionDetail versionDetail = serverSpecification.getVersionDetail();
+        if (null == versionDetail && StringUtils.isNotBlank(serverSpecification.getVersion())) {
+            versionDetail = new ServerVersionDetail();
+            versionDetail.setVersion(serverSpecification.getVersion());
+            serverSpecification.setVersionDetail(versionDetail);
+        }
         if (Objects.isNull(versionDetail) || StringUtils.isEmpty(versionDetail.getVersion())) {
             throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "Version must be specified in parameter `serverSpecification`");
