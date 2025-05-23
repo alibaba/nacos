@@ -55,7 +55,7 @@ public class DistroVerifyExecuteTask extends AbstractExecuteTask {
 
     @Override
     public void run() {
-        int batchSize = DistroConfig.getInstance().getVerifyBatchSize();
+        int batchSize = Math.max(DistroConfig.getInstance().getVerifyBatchSize(), 1);
         int totalSize = verifyData.size();
         for (int i = 0; i < totalSize; i += batchSize) {
             int end = Math.min(i + batchSize, totalSize);
