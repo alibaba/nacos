@@ -143,7 +143,7 @@ class McpDetail extends React.Component {
     const endpoints = [];
     for (let i = 0; i < this.state?.serverConfig?.backendEndpoints?.length; i++) {
       const item = this.state?.serverConfig?.backendEndpoints[i];
-      const endpoint = item.address + item.port + item.path;
+      const endpoint = item.address + ':' + item.port + item.path;
       const serverConfig = {
         index: i,
         endpoint: endpoint,

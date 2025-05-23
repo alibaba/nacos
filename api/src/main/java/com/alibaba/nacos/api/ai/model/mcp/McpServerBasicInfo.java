@@ -48,6 +48,8 @@ public class McpServerBasicInfo {
     
     private ServerVersionDetail versionDetail;
     
+    private String version;
+    
     /**
      * Should be set when `type` is not {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}.
      */
@@ -151,5 +153,13 @@ public class McpServerBasicInfo {
 
     public void setRepository(Repository repository) {
         this.repository = repository;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
     }
 }

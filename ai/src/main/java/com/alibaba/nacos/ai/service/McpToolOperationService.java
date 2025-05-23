@@ -17,6 +17,8 @@
 package com.alibaba.nacos.ai.service;
 
 import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.utils.McpConfigUtils;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpTool;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.config.ConfigType;
@@ -56,14 +58,15 @@ public class McpToolOperationService {
      * @param toolSpecification mcp server included tools, see {@link McpTool}, optional
      * @throws NacosException any exception during handling
      */
-    public void refreshMcpTool(String namespaceId, String mcpServerId, String version, McpToolSpecification toolSpecification)
+    public void refreshMcpTool(String namespaceId, McpServerBasicInfo serverBasicInfo, 
+                               McpToolSpecification toolSpecification)
             throws NacosException {
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
-        configOperationService.publishConfig(buildMcpToolConfigForm(namespaceId, mcpServerId, version, toolSpecification),
-                configRequestInfo, null);
+        ConfigFormV3 toolConfigForm = buildMcpToolConfigForm(namespaceId, serverBasicInfo, toolSpecification);
+        configOperationService.publishConfig(toolConfigForm, configRequestInfo, null);
     }
     
-    public McpToolSpecification getMcpTool(String namespaceId, String toolsDescriptionRef) throws NacosException {
+    public McpToolSpecification getMcpTool(String namespaceId, String toolsDescriptionRef) {
         ConfigQueryChainRequest request = buildQueryMcpToolRequest(namespaceId, toolsDescriptionRef);
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         if (ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND == response.getStatus()) {
@@ -73,20 +76,24 @@ public class McpToolOperationService {
     }
     
     public void deleteMcpTool(String namespaceId, String mcpServerId, String version) throws NacosException {
-        configOperationService.deleteConfig(mcpServerId + "-" + version + Constants.MCP_SERVER_TOOL_DATA_ID_SUFFIX,
+        configOperationService.deleteConfig(McpConfigUtils.formatServerToolSpecDataId(mcpServerId, version),
                 Constants.MCP_SERVER_TOOL_GROUP, namespaceId, null, null, "nacos", null);
     }
     
-    private ConfigFormV3 buildMcpToolConfigForm(String namespaceId, String mcpServerId, String version, 
+    private ConfigFormV3 buildMcpToolConfigForm(String namespaceId, McpServerBasicInfo mcpServerBasicInfo, 
                                                 McpToolSpecification toolSpecification) {
         ConfigFormV3 configFormV3 = new ConfigFormV3();
         configFormV3.setGroupName(Constants.MCP_SERVER_TOOL_GROUP);
         configFormV3.setGroup(Constants.MCP_SERVER_TOOL_GROUP);
         configFormV3.setNamespaceId(namespaceId);
-        configFormV3.setDataId(mcpServerId + "-" + version + Constants.MCP_SERVER_TOOL_DATA_ID_SUFFIX);
+
+        String toolSpecDataId = McpConfigUtils.formatServerToolSpecDataId(mcpServerBasicInfo.getId(), 
+                mcpServerBasicInfo.getVersionDetail().getVersion());
+        configFormV3.setDataId(toolSpecDataId);
+        
         configFormV3.setContent(JacksonUtils.toJson(toolSpecification));
         configFormV3.setType(ConfigType.JSON.getType());
-        configFormV3.setAppName(mcpServerId);
+        configFormV3.setAppName(mcpServerBasicInfo.getName());
         configFormV3.setSrcUser("nacos");
         configFormV3.setConfigTags(Constants.MCP_SERVER_CONFIG_MARK);
         return configFormV3;

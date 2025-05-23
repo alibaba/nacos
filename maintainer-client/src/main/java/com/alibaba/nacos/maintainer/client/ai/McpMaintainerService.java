@@ -69,7 +69,7 @@ public interface McpMaintainerService {
      * @throws NacosException if fail to list mcp server
      */
     default Page<McpServerBasicInfo> listMcpServer(String mcpName, int pageNo, int pageSize) throws NacosException {
-        return listMcpServer("", mcpName, pageNo, pageSize);
+        return listMcpServer("public", mcpName, pageNo, pageSize);
     }
 
     /**

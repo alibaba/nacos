@@ -485,7 +485,7 @@ const CreateTools = React.forwardRef((props, ref) => {
           onClose={closeDialog}
           style={{ width: '70%' }}
         >
-          <Form field={field} {...formitemLayout} isPreview={isPreview}>
+          <Form field={field} {...formitemLayout}>
             {/* 名称 */}
             <Form.Item label={locale.toolName} required isPreview={!!type}>
               <Input
