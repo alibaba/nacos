@@ -464,7 +464,7 @@ public class McpServerOperationService {
             serverSpecification.setToolsDescriptionRef(toolSpecDataId);
         }
         if (null != endpointSpecification) {
-            Service service = endpointOperationService.createMcpServerEndpointServiceIfNecessary(namespaceId, mcpServerId,
+            Service service = endpointOperationService.createMcpServerEndpointServiceIfNecessary(namespaceId, serverSpecification.getName(),
                     endpointSpecification);
             McpServiceRef serviceRef = new McpServiceRef();
             serviceRef.setNamespaceId(service.getNamespace());
