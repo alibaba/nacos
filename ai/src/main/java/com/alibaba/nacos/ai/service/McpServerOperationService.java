@@ -227,7 +227,7 @@ public class McpServerOperationService {
         return result;
     }
     
-    public McpServerVersionInfo getMcpServerVersionInfo(String namespaceId, 
+    private McpServerVersionInfo getMcpServerVersionInfo(String namespaceId,
                                                         String mcpServerId) throws NacosApiException {
         if (StringUtils.isEmpty(namespaceId)) {
             McpServerIndexData indexData = mcpServerIndex.getMcpServerById(mcpServerId);

@@ -93,15 +93,15 @@ public class PlainMcpServerIndex implements McpServerIndex {
         for (String ns : namespaceIdList) {
             Page<ConfigInfo> countInfo = searchMcpServers(ns, name, search, 1);
             int totalServerInNs = countInfo.getTotalCount();
-            
-            // find the first namespace which match the offset.
+            int currentNamespaceSearchedItemCount = 0;
             if (offset >= searchedItemsCount && offset <= searchedItemsCount + totalServerInNs) {
+                // find the first namespace which match the offset.
                 int currentSearchLimit = offset - searchedItemsCount + remains;
                 Page<ConfigInfo> serverInfos = searchMcpServers(ns, name, search, currentSearchLimit);
                 if (CollectionUtils.isEmpty(serverInfos.getPageItems())) {
                     continue;
                 }
-                
+                currentNamespaceSearchedItemCount = serverInfos.getPageItems().size();
                 List<McpServerIndexData> indexDataList = serverInfos.getPageItems()
                         .stream()
                         .skip(offset - searchedItemsCount)
@@ -110,22 +110,27 @@ public class PlainMcpServerIndex implements McpServerIndex {
                 remains -= indexDataList.size();
                 result.addAll(indexDataList);
             } else if (remains > 0 && remains < limit) {
+                // After match offset, follow namespace should search remains items.
                 Page<ConfigInfo> pageConfigs = searchMcpServers(ns, name, search, remains);
+                currentNamespaceSearchedItemCount = pageConfigs.getPageItems().size();
                 List<McpServerIndexData> indexDataList = pageConfigs.getPageItems().stream()
                         .map(this::mapMcpServerVersionConfigToIndexData)
                         .toList();
                 remains -= pageConfigs.getPageItems().size();
                 result.addAll(indexDataList);
+            } else {
+                // if offset is larger than current namespace totalCount, we should not search this namespace and move to next.
+                currentNamespaceSearchedItemCount = countInfo.getTotalCount();
             }
             
-            searchedItemsCount += countInfo.getPageItems().size();
+            searchedItemsCount += currentNamespaceSearchedItemCount;
             totalCount += countInfo.getTotalCount();
         }
         
         Page<McpServerIndexData> page = new Page<>();
         page.setPageItems(result);
         page.setTotalCount(totalCount);
-        page.setPagesAvailable(totalCount / limit + 1);
+        page.setPagesAvailable((int) Math.ceil((double) totalCount / (double) limit));
         page.setPageNumber(offset / limit + 1);
         return page;
     }

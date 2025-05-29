@@ -76,7 +76,9 @@ class ConfigImportAndExportServiceTest {
     @BeforeEach
     void setUp() {
         cachedEnvironment = EnvUtil.getEnvironment();
-        EnvUtil.setEnvironment(new MockEnvironment());
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty("nacos.core.auth.admin.enabled", "false");
+        EnvUtil.setEnvironment(environment);
         service = new ConfigImportAndExportService(memberManager);
         httpClientMock = Mockito.mockStatic(HttpClients.class);
         httpClientMock.when(HttpClients::createDefault).thenReturn(httpClient);
