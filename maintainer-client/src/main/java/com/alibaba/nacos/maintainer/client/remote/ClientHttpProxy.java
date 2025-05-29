@@ -166,7 +166,7 @@ public class ClientHttpProxy implements Closeable {
                 .setReadTimeOutMillis(Long.valueOf(readTimeoutMs).intValue())
                 .setConTimeOutMillis(Long.valueOf(connectTimeoutMs).intValue()).build();
         Header httpHeaders = Header.newInstance();
-        addAuthHeader(httpHeaders);
+        addAuthHeader(httpHeaders, request.getResource());
         if (headers != null) {
             httpHeaders.addAll(headers);
         }
@@ -191,10 +191,10 @@ public class ClientHttpProxy implements Closeable {
         }
     }
     
-    private void addAuthHeader(Header header) {
+    private void addAuthHeader(Header header, RequestResource resource) {
         clientAuthPluginManager.getAuthServiceSpiImplSet().forEach(clientAuthService -> {
             LoginIdentityContext loginIdentityContext = clientAuthService.getLoginIdentityContext(
-                    new RequestResource());
+                    null == resource ? new RequestResource() : resource);
             for (String key : loginIdentityContext.getAllKey()) {
                 header.addParam(key, loginIdentityContext.getParameter(key));
             }
