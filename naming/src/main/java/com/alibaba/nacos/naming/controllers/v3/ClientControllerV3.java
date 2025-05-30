@@ -67,7 +67,7 @@ public class ClientControllerV3 {
      * Query all clients.
      */
     @GetMapping("/list")
-    @Secured(resource = UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<List<String>> getClientList() {
         return Result.success(clientServiceV2Impl.getClientList());
     }
@@ -76,7 +76,7 @@ public class ClientControllerV3 {
      * Query client by clientId.
      */
     @GetMapping()
-    @Secured(resource = UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<ClientSummaryInfo> getClientDetail(@RequestParam("clientId") String clientId)
             throws NacosApiException {
         checkClientId(clientId);
@@ -87,7 +87,7 @@ public class ClientControllerV3 {
      * Query the services registered by the specified client.
      */
     @GetMapping("/publish/list")
-    @Secured(resource = UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<List<ClientServiceInfo>> getPublishedServiceList(@RequestParam("clientId") String clientId)
             throws NacosApiException {
         checkClientId(clientId);
@@ -98,7 +98,7 @@ public class ClientControllerV3 {
      * Query the services to which the specified client subscribes.
      */
     @GetMapping("/subscribe/list")
-    @Secured(resource = UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<List<ClientServiceInfo>> getSubscribeServiceList(@RequestParam("clientId") String clientId)
             throws NacosApiException {
         checkClientId(clientId);
@@ -109,7 +109,7 @@ public class ClientControllerV3 {
      * Query the clients that have registered the specified service.
      */
     @GetMapping("/service/publisher/list")
-    @Secured(resource = UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<List<ClientPublisherInfo>> getPublishedClientList(ClientServiceForm clientServiceForm)
             throws NacosApiException {
         clientServiceForm.validate();
@@ -122,7 +122,7 @@ public class ClientControllerV3 {
      * Query the clients that are subscribed to the specified service.
      */
     @GetMapping("/service/subscriber/list")
-    @Secured(resource = UtilsAndCommons.CLIENT_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<List<ClientSubscriberInfo>> getSubscribeClientList(ClientServiceForm clientServiceForm)
             throws NacosApiException {
         clientServiceForm.validate();

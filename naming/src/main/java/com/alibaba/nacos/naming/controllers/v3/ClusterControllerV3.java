@@ -54,7 +54,7 @@ public class ClusterControllerV3 {
      * Update cluster.
      */
     @PutMapping
-    @Secured(resource = UtilsAndCommons.CLUSTER_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<String> update(UpdateClusterForm updateClusterForm) throws Exception {
         updateClusterForm.validate();
         
