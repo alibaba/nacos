@@ -229,7 +229,7 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
         params.put("namespaceId", namespaceId);
         params.put("srcUser", srcUser);
         params.put("policy", policy.toString());
-        RequestResource resource = buildRequestResource(namespaceId, null, null);
+        RequestResource resource = buildRequestResource(namespaceId, StringUtils.EMPTY, StringUtils.EMPTY);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.POST)
                 .setPath(Constants.AdminApiPath.CONFIG_ADMIN_PATH + "/clone").setParamValue(params)
                 .setBody(JacksonUtils.toJson(cloneInfos)).build();
@@ -299,7 +299,7 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
     public List<ConfigBasicInfo> getConfigListByNamespace(String namespaceId) throws NacosException {
         Map<String, String> params = new HashMap<>(8);
         params.put("namespaceId", namespaceId);
-        RequestResource resource = buildRequestResource(namespaceId, null, null);
+        RequestResource resource = buildRequestResource(namespaceId, StringUtils.EMPTY, StringUtils.EMPTY);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CONFIG_HISTORY_ADMIN_PATH + "/configs").setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
@@ -341,7 +341,7 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
         params.put("all", String.valueOf(all));
         params.put("namespaceId", namespaceId);
         params.put("aggregation", String.valueOf(aggregation));
-        RequestResource resource = buildRequestResource(namespaceId, null, null);
+        RequestResource resource = buildRequestResource(namespaceId, StringUtils.EMPTY, StringUtils.EMPTY);
         HttpRequest httpRequest = buildRequestWithResource(resource).setHttpMethod(HttpMethod.GET)
                 .setPath(Constants.AdminApiPath.CONFIG_LISTENER_ADMIN_PATH).setParamValue(params).build();
         HttpRestResult<String> httpRestResult = getClientHttpProxy().executeSyncHttpRequest(httpRequest);
@@ -352,7 +352,8 @@ public class NacosConfigMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     private HttpRequest.Builder buildRequestWithResource() {
-        return new HttpRequest.Builder().setResource(RequestResource.configBuilder().build());
+        return new HttpRequest.Builder().setResource(
+                RequestResource.configBuilder().setGroup(StringUtils.EMPTY).build());
     }
     
     private HttpRequest.Builder buildRequestWithResource(RequestResource resource) {
