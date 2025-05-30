@@ -50,6 +50,8 @@ public class Constants {
     public static final String TENANT = "tenant";
 
     public static final String GROUP = "group";
+    
+    public static final String GROUP_NAME = "groupName";
 
     public static final String NAMESPACE_ID = "namespaceId";
 
