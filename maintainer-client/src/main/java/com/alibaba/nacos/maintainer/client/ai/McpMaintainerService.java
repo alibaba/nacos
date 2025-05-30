@@ -252,7 +252,7 @@ public interface McpMaintainerService {
      */
     default boolean createRemoteMcpServer(String mcpName, String version, String protocol,
             McpEndpointSpec endpointSpec) throws NacosException {
-        return createRemoteMcpServer(mcpName, version, protocol, null, endpointSpec);
+        return createRemoteMcpServer(mcpName, version, protocol, new McpServerRemoteServiceConfig(), endpointSpec);
     }
     
     /**
