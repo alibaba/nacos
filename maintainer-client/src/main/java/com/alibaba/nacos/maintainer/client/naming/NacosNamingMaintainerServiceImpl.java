@@ -528,7 +528,8 @@ public class NacosNamingMaintainerServiceImpl extends AbstractCoreMaintainerServ
     }
     
     private HttpRequest.Builder buildRequestWithResource() {
-        return new HttpRequest.Builder().setResource(RequestResource.namingBuilder().build());
+        return new HttpRequest.Builder().setResource(
+                RequestResource.namingBuilder().setResource(StringUtils.EMPTY).build());
     }
     
     private HttpRequest.Builder buildRequestWithResource(RequestResource resource) {
