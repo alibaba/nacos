@@ -73,7 +73,7 @@ public class ClientHttpProxy implements Closeable {
     
     public ClientHttpProxy(Properties properties) throws NacosException {
         initServerListManager(properties);
-        initClientAuthService();
+        initClientAuthService(properties);
         initScheduledExecutor(properties);
     }
     
@@ -82,9 +82,10 @@ public class ClientHttpProxy implements Closeable {
         serverListManager.start();
     }
     
-    private void initClientAuthService() {
+    private void initClientAuthService(Properties properties) {
         clientAuthPluginManager = new ClientAuthPluginManager();
         clientAuthPluginManager.init(serverListManager.getServerList(), nacosRestTemplate);
+        login(properties);
     }
     
     private void initScheduledExecutor(Properties properties) {
