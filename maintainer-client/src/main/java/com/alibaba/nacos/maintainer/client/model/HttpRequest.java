@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.maintainer.client.model;
 
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,13 +38,16 @@ public class HttpRequest {
     
     private String body;
     
+    private RequestResource resource;
+    
     public HttpRequest(String httpMethod, String path, Map<String, String> headers, Map<String, String> paramValues,
-            String body) {
+            String body, RequestResource resource) {
         this.httpMethod = httpMethod;
         this.path = path;
         this.headers = headers;
         this.paramValues = paramValues;
         this.body = body;
+        this.resource = resource;
     }
     
     public String getHttpMethod() {
@@ -85,6 +90,14 @@ public class HttpRequest {
         this.body = body;
     }
     
+    public RequestResource getResource() {
+        return resource;
+    }
+    
+    public void setResource(RequestResource resource) {
+        this.resource = resource;
+    }
+    
     public static class Builder {
         
         private String httpMethod;
@@ -96,6 +109,8 @@ public class HttpRequest {
         private final Map<String, String> paramValues = new HashMap<>();
         
         private String body;
+        
+        private RequestResource resource;
         
         public Builder setHttpMethod(String httpMethod) {
             this.httpMethod = httpMethod;
@@ -122,8 +137,13 @@ public class HttpRequest {
             return this;
         }
         
+        public Builder setResource(RequestResource resource) {
+            this.resource = resource;
+            return this;
+        }
+        
         public HttpRequest build() {
-            return new HttpRequest(httpMethod, path, headers, paramValues, body);
+            return new HttpRequest(httpMethod, path, headers, paramValues, body, resource);
         }
     }
 }

@@ -23,6 +23,7 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.maintainer.client.address.DefaultServerListManager;
 import com.alibaba.nacos.maintainer.client.model.HttpRequest;
 import com.alibaba.nacos.maintainer.client.utils.ParamUtil;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,6 +45,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class ClientHttpProxyTest {
+    
+    private static final RequestResource REQUEST_RESOURCE = new RequestResource();
     
     private ClientHttpProxy clientHttpProxy;
     
@@ -90,7 +93,7 @@ public class ClientHttpProxyTest {
         mockResult.setData("Success");
         when(mockNacosRestTemplate.get(anyString(), any(), any(), any(), eq(String.class))).thenReturn(mockResult);
         
-        HttpRequest request = new HttpRequest("GET", "/test", new HashMap<>(), new HashMap<>(), null);
+        HttpRequest request = new HttpRequest("GET", "/test", new HashMap<>(), new HashMap<>(), null, REQUEST_RESOURCE);
         
         HttpRestResult<String> result = clientHttpProxy.executeSyncHttpRequest(request);
         
@@ -115,7 +118,7 @@ public class ClientHttpProxyTest {
         when(mockNacosRestTemplate.get(anyString(), any(), any(), any(), eq(String.class))).thenReturn(
                 mockFailureResult).thenReturn(mockSuccessResult);
         
-        HttpRequest request = new HttpRequest("GET", "/test", new HashMap<>(), new HashMap<>(), null);
+        HttpRequest request = new HttpRequest("GET", "/test", new HashMap<>(), new HashMap<>(), null, REQUEST_RESOURCE);
         
         HttpRestResult<String> result = clientHttpProxy.executeSyncHttpRequest(request);
         
@@ -138,7 +141,7 @@ public class ClientHttpProxyTest {
         when(mockNacosRestTemplate.get(anyString(), any(), any(), any(), eq(String.class))).thenThrow(
                 new RuntimeException("Mock")).thenReturn(mockSuccessResult);
         
-        HttpRequest request = new HttpRequest("GET", "/test", new HashMap<>(), new HashMap<>(), null);
+        HttpRequest request = new HttpRequest("GET", "/test", new HashMap<>(), new HashMap<>(), null, REQUEST_RESOURCE);
         
         HttpRestResult<String> result = clientHttpProxy.executeSyncHttpRequest(request);
         
@@ -157,7 +160,7 @@ public class ClientHttpProxyTest {
         when(mockNacosRestTemplate.get(anyString(), any(), any(), any(), eq(String.class))).thenThrow(
                 new RuntimeException("Mock"));
         
-        HttpRequest request = new HttpRequest("GET", "/test", new HashMap<>(), new HashMap<>(), null);
+        HttpRequest request = new HttpRequest("GET", "/test", new HashMap<>(), new HashMap<>(), null, REQUEST_RESOURCE);
         
         assertThrows(NacosException.class, () -> clientHttpProxy.executeSyncHttpRequest(request),
                 "No available server after 3 retries, last tried server: localhost:8848");
@@ -175,7 +178,7 @@ public class ClientHttpProxyTest {
         when(mockNacosRestTemplate.get(anyString(), any(), any(), any(), eq(String.class))).thenReturn(
                 mockFailureResult);
         
-        HttpRequest request = new HttpRequest("GET", "/test", new HashMap<>(), new HashMap<>(), null);
+        HttpRequest request = new HttpRequest("GET", "/test", new HashMap<>(), new HashMap<>(), null, REQUEST_RESOURCE);
         
         Exception exception = assertThrows(NacosException.class, () -> {
             clientHttpProxy.executeSyncHttpRequest(request);
@@ -197,7 +200,7 @@ public class ClientHttpProxyTest {
         when(mockNacosRestTemplate.get(anyString(), any(), any(), any(), eq(String.class))).thenReturn(
                 mockFailureResult);
         
-        HttpRequest request = new HttpRequest("GET", "/test", new HashMap<>(), new HashMap<>(), null);
+        HttpRequest request = new HttpRequest("GET", "/test", new HashMap<>(), new HashMap<>(), null, REQUEST_RESOURCE);
         
         Exception exception = assertThrows(NacosException.class, () -> {
             clientHttpProxy.executeSyncHttpRequest(request);
@@ -222,7 +225,7 @@ public class ClientHttpProxyTest {
         when(mockNacosRestTemplate.get(anyString(), any(), any(), any(), eq(String.class))).thenReturn(
                 mockFailureResult).thenReturn(mockSuccessResult);
         
-        HttpRequest request = new HttpRequest("GET", "/test", new HashMap<>(), new HashMap<>(), null);
+        HttpRequest request = new HttpRequest("GET", "/test", new HashMap<>(), new HashMap<>(), null, REQUEST_RESOURCE);
         
         HttpRestResult<String> result = clientHttpProxy.executeSyncHttpRequest(request);
         
@@ -241,7 +244,8 @@ public class ClientHttpProxyTest {
         mockSuccessResult.setData("Success");
         when(mockNacosRestTemplate.postJson(anyString(), any(), any(), any(), eq(String.class))).thenReturn(
                 mockSuccessResult);
-        HttpRequest request = new HttpRequest("POST", "/test", new HashMap<>(), new HashMap<>(), "{\"key\":\"test\"}");
+        HttpRequest request = new HttpRequest("POST", "/test", new HashMap<>(), new HashMap<>(), "{\"key\":\"test\"}",
+                REQUEST_RESOURCE);
         HttpRestResult<String> result = clientHttpProxy.executeSyncHttpRequest(request);
         assertNotNull(result);
         assertEquals(200, result.getCode());
@@ -256,7 +260,8 @@ public class ClientHttpProxyTest {
         mockSuccessResult.setData("Success");
         when(mockNacosRestTemplate.postForm(anyString(), any(HttpClientConfig.class), any(), any(),
                 eq(String.class))).thenReturn(mockSuccessResult);
-        HttpRequest request = new HttpRequest("POST", "/test", new HashMap<>(), new HashMap<>(), null);
+        HttpRequest request = new HttpRequest("POST", "/test", new HashMap<>(), new HashMap<>(), null,
+                REQUEST_RESOURCE);
         HttpRestResult<String> result = clientHttpProxy.executeSyncHttpRequest(request);
         assertNotNull(result);
         assertEquals(200, result.getCode());
@@ -271,7 +276,7 @@ public class ClientHttpProxyTest {
         mockSuccessResult.setData("Success");
         when(mockNacosRestTemplate.putForm(anyString(), any(HttpClientConfig.class), any(), any(),
                 eq(String.class))).thenReturn(mockSuccessResult);
-        HttpRequest request = new HttpRequest("PUT", "/test", new HashMap<>(), new HashMap<>(), null);
+        HttpRequest request = new HttpRequest("PUT", "/test", new HashMap<>(), new HashMap<>(), null, REQUEST_RESOURCE);
         HttpRestResult<String> result = clientHttpProxy.executeSyncHttpRequest(request);
         assertNotNull(result);
         assertEquals(200, result.getCode());
@@ -286,7 +291,8 @@ public class ClientHttpProxyTest {
         mockSuccessResult.setData("Success");
         when(mockNacosRestTemplate.delete(anyString(), any(HttpClientConfig.class), any(), any(),
                 eq(String.class))).thenReturn(mockSuccessResult);
-        HttpRequest request = new HttpRequest("DELETE", "/test", new HashMap<>(), new HashMap<>(), null);
+        HttpRequest request = new HttpRequest("DELETE", "/test", new HashMap<>(), new HashMap<>(), null,
+                REQUEST_RESOURCE);
         HttpRestResult<String> result = clientHttpProxy.executeSyncHttpRequest(request);
         assertNotNull(result);
         assertEquals(200, result.getCode());
@@ -296,7 +302,8 @@ public class ClientHttpProxyTest {
     @Test
     void testOtherHttpMethod() throws Exception {
         when(mockServerListManager.getCurrentServer()).thenReturn("http://127.0.0.1:8848");
-        HttpRequest request = new HttpRequest("PATCH", "/test", new HashMap<>(), new HashMap<>(), null);
+        HttpRequest request = new HttpRequest("PATCH", "/test", new HashMap<>(), new HashMap<>(), null,
+                REQUEST_RESOURCE);
         assertThrows(NacosException.class, () -> clientHttpProxy.executeSyncHttpRequest(request));
         
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,51 +31,39 @@ import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import java.util.Map;
 
 /**
- * Resource Injector for naming module.
+ * AI module aliyun ram reousce injector.
  *
  * @author xiweng.yy
  */
-public class ConfigResourceInjector extends AbstractResourceInjector {
+public class AiResourceInjector extends AbstractResourceInjector {
     
     private static final String ACCESS_KEY_HEADER = "Spas-AccessKey";
     
-    private static final String DEFAULT_RESOURCE = "";
-    
     @Override
     public void doInject(RequestResource resource, RamContext context, LoginIdentityContext result) {
+        if (!context.validate()) {
+            return;
+        }
         String accessKey = context.getAccessKey();
         String secretKey = context.getSecretKey();
-        // STS 临时凭证鉴权的优先级高于 AK/SK 鉴权
         if (StsConfig.getInstance().isStsOn()) {
             StsCredential stsCredential = StsCredentialHolder.getInstance().getStsCredential();
             accessKey = stsCredential.getAccessKeyId();
             secretKey = stsCredential.getAccessKeySecret();
             result.setParameter(IdentifyConstants.SECURITY_TOKEN_HEADER, stsCredential.getSecurityToken());
         }
-        
-        if (StringUtils.isNotEmpty(accessKey) && StringUtils.isNotBlank(secretKey)) {
-            result.setParameter(ACCESS_KEY_HEADER, accessKey);
-        }
+        result.setParameter(ACCESS_KEY_HEADER, accessKey);
         String signatureKey = secretKey;
         if (StringUtils.isNotEmpty(context.getRegionId())) {
-            signatureKey = CalculateV4SigningKeyUtil
-                    .finalSigningKeyStringWithDefaultInfo(secretKey, context.getRegionId());
+            signatureKey = CalculateV4SigningKeyUtil.finalSigningKeyStringWithDefaultInfo(secretKey,
+                    context.getRegionId());
             result.setParameter(RamConstants.SIGNATURE_VERSION, RamConstants.V4);
         }
-        Map<String, String> signHeaders = SpasAdapter
-                .getSignHeaders(getResource(resource.getNamespace(), resource.getGroup()), signatureKey);
+        Map<String, String> signHeaders = SpasAdapter.getSignHeaders(buildResourceString(resource), signatureKey);
         result.setParameters(signHeaders);
     }
     
-    private String getResource(String tenant, String group) {
-        if (StringUtils.isBlank(tenant)) {
-            if (StringUtils.isBlank(group)) {
-                return DEFAULT_RESOURCE;
-            } else {
-                return group;
-            }
-        } else {
-            return tenant + "+" + group;
-        }
+    private String buildResourceString(RequestResource resource) {
+        return resource.getNamespace() + "+" + resource.getGroup();
     }
 }

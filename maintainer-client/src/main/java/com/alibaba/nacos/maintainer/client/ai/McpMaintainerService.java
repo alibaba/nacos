@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerRemoteServiceConfig;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -69,7 +70,7 @@ public interface McpMaintainerService {
      * @throws NacosException if fail to list mcp server
      */
     default Page<McpServerBasicInfo> listMcpServer(String mcpName, int pageNo, int pageSize) throws NacosException {
-        return listMcpServer("public", mcpName, pageNo, pageSize);
+        return listMcpServer(Constants.DEFAULT_NAMESPACE_ID, mcpName, pageNo, pageSize);
     }
 
     /**
@@ -105,7 +106,7 @@ public interface McpMaintainerService {
      * @throws NacosException if fail to search mcp server
      */
     default Page<McpServerBasicInfo> searchMcpServer(String mcpName, int pageNo, int pageSize) throws NacosException {
-        return searchMcpServer("public", mcpName, pageNo, pageSize);
+        return searchMcpServer(Constants.DEFAULT_NAMESPACE_ID, mcpName, pageNo, pageSize);
     }
 
     /**
@@ -140,7 +141,7 @@ public interface McpMaintainerService {
      * @throws NacosException if fail to get mcp server
      */
     default McpServerDetailInfo getMcpServerDetail(String mcpName, String version) throws NacosException {
-        return getMcpServerDetail("public", mcpName, version);
+        return getMcpServerDetail(Constants.DEFAULT_NAMESPACE_ID, mcpName, version);
     }
 
     /**
@@ -252,7 +253,7 @@ public interface McpMaintainerService {
      */
     default boolean createRemoteMcpServer(String mcpName, String version, String protocol,
             McpEndpointSpec endpointSpec) throws NacosException {
-        return createRemoteMcpServer(mcpName, version, protocol, null, endpointSpec);
+        return createRemoteMcpServer(mcpName, version, protocol, new McpServerRemoteServiceConfig(), endpointSpec);
     }
     
     /**
@@ -368,7 +369,7 @@ public interface McpMaintainerService {
      */
     default boolean createMcpServer(String mcpName, McpServerBasicInfo serverSpec, McpToolSpecification toolSpec,
             McpEndpointSpec endpointSpec) throws NacosException {
-        return createMcpServer("public", mcpName, serverSpec, toolSpec, endpointSpec);
+        return createMcpServer(Constants.DEFAULT_NAMESPACE_ID, mcpName, serverSpec, toolSpec, endpointSpec);
     }
 
     /**
@@ -400,7 +401,7 @@ public interface McpMaintainerService {
      */
     default boolean updateMcpServer(String mcpName, boolean isLatest, McpServerBasicInfo serverSpec, McpToolSpecification toolSpec,
                             McpEndpointSpec endpointSpec) throws NacosException {
-        return updateMcpServer("public", mcpName, isLatest, serverSpec, toolSpec, endpointSpec);
+        return updateMcpServer(Constants.DEFAULT_NAMESPACE_ID, mcpName, isLatest, serverSpec, toolSpec, endpointSpec);
     }
 
     /**
@@ -447,7 +448,7 @@ public interface McpMaintainerService {
      * @throws NacosException if fail to delete mcp server.
      */
     default boolean deleteMcpServer(String mcpName) throws NacosException {
-        return deleteMcpServer("public", mcpName);
+        return deleteMcpServer(Constants.DEFAULT_NAMESPACE_ID, mcpName);
     }
 
     /**
