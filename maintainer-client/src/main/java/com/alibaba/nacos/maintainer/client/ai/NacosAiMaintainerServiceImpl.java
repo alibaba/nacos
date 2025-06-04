@@ -60,7 +60,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;
         }
-        Map<String, String> params = new HashMap<>(3);
+        Map<String, String> params = new HashMap<>(8);
         params.put("pageNo", String.valueOf(pageNo));
         params.put("pageSize", String.valueOf(pageSize));
         params.put("search", "accurate");
@@ -76,7 +76,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;
         }
-        Map<String, String> params = new HashMap<>(4);
+        Map<String, String> params = new HashMap<>(8);
         params.put("pageNo", String.valueOf(pageNo));
         params.put("pageSize", String.valueOf(pageSize));
         params.put("search", "blur");
@@ -98,13 +98,14 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     }
     
     @Override
-    public McpServerDetailInfo getMcpServerDetail(String namespaceId, String mcpName, String version)
+    public McpServerDetailInfo getMcpServerDetail(String namespaceId, String mcpName, String mcpId, String version)
             throws NacosException {
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;
         }
-        Map<String, String> params = new HashMap<>(1);
+        Map<String, String> params = new HashMap<>(4);
         params.put("mcpName", mcpName);
+        params.put("mcpId", mcpId);
         params.put("version", version);
         params.put("namespaceId", namespaceId);
         RequestResource resource = buildRequestResource(namespaceId, mcpName);
@@ -167,12 +168,14 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     }
     
     @Override
-    public boolean deleteMcpServer(String namespaceId, String mcpName) throws NacosException {
+    public boolean deleteMcpServer(String namespaceId, String mcpName, String mcpId, String version) throws NacosException {
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;
         }
-        Map<String, String> params = new HashMap<>(1);
+        Map<String, String> params = new HashMap<>(4);
         params.put("mcpName", mcpName);
+        params.put("mcpId", mcpId);
+        params.put("version", version);
         params.put("namespaceId", namespaceId);
         RequestResource resource = buildRequestResource(namespaceId, mcpName);
         HttpRequest httpRequest = buildHttpRequestBuilder(resource).setHttpMethod(HttpMethod.DELETE)

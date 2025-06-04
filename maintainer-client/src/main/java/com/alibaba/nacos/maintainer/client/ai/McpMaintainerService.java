@@ -141,7 +141,7 @@ public interface McpMaintainerService {
      * @throws NacosException if fail to get mcp server
      */
     default McpServerDetailInfo getMcpServerDetail(String mcpName, String version) throws NacosException {
-        return getMcpServerDetail(Constants.DEFAULT_NAMESPACE_ID, mcpName, version);
+        return getMcpServerDetail(Constants.DEFAULT_NAMESPACE_ID, mcpName, null, version);
     }
 
     /**
@@ -149,11 +149,13 @@ public interface McpMaintainerService {
      *
      * @param namespaceId namespaceId
      * @param mcpName the mcp server name
+     * @param mcpId the mcp server id
      * @param version the mcp server version
      * @return detail information for this mcp server
      * @throws NacosException if fail to get mcp server
      */
-    McpServerDetailInfo getMcpServerDetail(String namespaceId, String mcpName, String version) throws NacosException;
+    McpServerDetailInfo getMcpServerDetail(String namespaceId, String mcpName, String mcpId, String version)
+            throws NacosException;
     
     /**
      * Create new local mcp server to Nacos.
@@ -448,7 +450,7 @@ public interface McpMaintainerService {
      * @throws NacosException if fail to delete mcp server.
      */
     default boolean deleteMcpServer(String mcpName) throws NacosException {
-        return deleteMcpServer(Constants.DEFAULT_NAMESPACE_ID, mcpName);
+        return deleteMcpServer(Constants.DEFAULT_NAMESPACE_ID, mcpName, null, null);
     }
 
     /**
@@ -456,8 +458,10 @@ public interface McpMaintainerService {
      *
      * @param namespaceId namespaceId
      * @param mcpName mcp server name of the new mcp server
+     * @param mcpId mcp server id of the new mcp server
+     * @param version mcp version of the new mcp server
      * @return {@code true} if delete success, {@code false} otherwise
      * @throws NacosException if fail to delete mcp server.
      */
-    boolean deleteMcpServer(String namespaceId, String mcpName) throws NacosException;
+    boolean deleteMcpServer(String namespaceId, String mcpName, String mcpId, String version) throws NacosException;
 }
