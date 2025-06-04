@@ -51,7 +51,7 @@ class McpRemoteHandlerTest extends AbstractRemoteHandlerTest {
     @Test
     void listMcpServersForBlur() throws NacosException {
         Page<McpServerBasicInfo> mockPage = new Page<>();
-        when(aiMaintainerService.searchMcpServer("", 1, 100)).thenReturn(mockPage);
+        when(aiMaintainerService.searchMcpServer("", "", 1, 100)).thenReturn(mockPage);
         Page<McpServerBasicInfo> actual = mcpRemoteHandler.listMcpServers("", "", Constants.MCP_LIST_SEARCH_BLUR, 1,
                 100);
         assertEquals(mockPage, actual);
@@ -60,7 +60,7 @@ class McpRemoteHandlerTest extends AbstractRemoteHandlerTest {
     @Test
     void listMcpServersForAccurate() throws NacosException {
         Page<McpServerBasicInfo> mockPage = new Page<>();
-        when(aiMaintainerService.listMcpServer("", 1, 100)).thenReturn(mockPage);
+        when(aiMaintainerService.listMcpServer("", "", 1, 100)).thenReturn(mockPage);
         Page<McpServerBasicInfo> actual = mcpRemoteHandler.listMcpServers("", "", Constants.MCP_LIST_SEARCH_ACCURATE, 1,
                 100);
         assertEquals(mockPage, actual);
@@ -69,7 +69,7 @@ class McpRemoteHandlerTest extends AbstractRemoteHandlerTest {
     @Test
     void getMcpServer() throws NacosException {
         McpServerDetailInfo mock = new McpServerDetailInfo();
-        when(aiMaintainerService.getMcpServerDetail("test")).thenReturn(mock);
+        when(aiMaintainerService.getMcpServerDetail("", "test", "id", "version")).thenReturn(mock);
         McpServerDetailInfo actual = mcpRemoteHandler.getMcpServer("", "test", "id", "version");
         assertEquals(mock, actual);
     }
@@ -96,6 +96,6 @@ class McpRemoteHandlerTest extends AbstractRemoteHandlerTest {
     @Test
     void deleteMcpServer() throws NacosException {
         mcpRemoteHandler.deleteMcpServer("", "test", "id", "version");
-        verify(aiMaintainerService).deleteMcpServer("test");
+        verify(aiMaintainerService).deleteMcpServer("", "test", "id", "version");
     }
 }

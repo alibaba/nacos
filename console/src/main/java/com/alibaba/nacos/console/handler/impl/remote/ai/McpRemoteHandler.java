@@ -47,15 +47,15 @@ public class McpRemoteHandler implements McpHandler {
     public Page<McpServerBasicInfo> listMcpServers(String namespaceId, String mcpName, String search, int pageNo,
             int pageSize) throws NacosException {
         if (Constants.MCP_LIST_SEARCH_ACCURATE.equalsIgnoreCase(search)) {
-            return clientHolder.getAiMaintainerService().listMcpServer(mcpName, pageNo, pageSize);
+            return clientHolder.getAiMaintainerService().listMcpServer(namespaceId, mcpName, pageNo, pageSize);
         } else {
-            return clientHolder.getAiMaintainerService().searchMcpServer(mcpName, pageNo, pageSize);
+            return clientHolder.getAiMaintainerService().searchMcpServer(namespaceId, mcpName, pageNo, pageSize);
         }
     }
     
     @Override
     public McpServerDetailInfo getMcpServer(String namespaceId, String mcpName, String mcpId, String version) throws NacosException {
-        return clientHolder.getAiMaintainerService().getMcpServerDetail(mcpName);
+        return clientHolder.getAiMaintainerService().getMcpServerDetail(namespaceId, mcpName, mcpId, version);
     }
     
     @Override
@@ -74,6 +74,6 @@ public class McpRemoteHandler implements McpHandler {
     
     @Override
     public void deleteMcpServer(String namespaceId, String mcpName, String mcpId, String version) throws NacosException {
-        clientHolder.getAiMaintainerService().deleteMcpServer(mcpName);
+        clientHolder.getAiMaintainerService().deleteMcpServer(namespaceId, mcpName, mcpId, version);
     }
 }
