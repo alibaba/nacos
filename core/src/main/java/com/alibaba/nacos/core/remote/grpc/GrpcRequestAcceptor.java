@@ -55,6 +55,8 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
     
+    private static final String DEFAULT_APP_NAME = "-";
+    
     @Autowired
     RequestHandlerRegistry requestHandlerRegistry;
     
@@ -231,7 +233,7 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         requestContext.getBasicContext().setRequestProtocol(BasicContext.GRPC_PROTOCOL);
         requestContext.getBasicContext().setRequestTarget(request.getClass().getSimpleName());
         String app = connection.getMetaInfo().getAppName();
-        if (StringUtils.isBlank(app)) {
+        if (StringUtils.isBlank(app) || StringUtils.equals(DEFAULT_APP_NAME, app)) {
             app = request.getHeader(HttpHeaderConsts.APP_FILED, "unknown");
         }
         requestContext.getBasicContext().setApp(app);
