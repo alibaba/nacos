@@ -411,10 +411,12 @@ class ConfigEditor extends React.Component {
         tagDataSource: this.state.form.config_tags,
         casMd5: md5,
       });
-      const isSystemConfig = configTags.includes('nacos.internal.config');
-      this.setState({
-        isSystemConfig,
-      });
+      if (configTags) {
+        const isSystemConfig = configTags.includes('nacos.internal.config');
+        this.setState({
+          isSystemConfig,
+        });
+      }
       return res;
     });
   }
