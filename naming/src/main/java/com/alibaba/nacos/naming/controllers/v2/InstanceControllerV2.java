@@ -26,6 +26,7 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.pojo.builder.InstanceBuilder;
+import com.alibaba.nacos.api.naming.pojo.maintainer.InstanceMetadataBatchResult;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
@@ -37,6 +38,7 @@ import com.alibaba.nacos.common.trace.event.naming.UpdateInstanceTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
 import com.alibaba.nacos.naming.core.InstancePatchObject;
@@ -48,7 +50,6 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.InstanceForm;
 import com.alibaba.nacos.naming.model.form.InstanceMetadataBatchOperationForm;
 import com.alibaba.nacos.naming.model.vo.InstanceDetailInfoVo;
-import com.alibaba.nacos.naming.model.vo.InstanceMetadataBatchOperationVo;
 import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
 import com.alibaba.nacos.naming.paramcheck.NamingInstanceBeatHttpParamExtractor;
 import com.alibaba.nacos.naming.paramcheck.NamingInstanceListHttpParamExtractor;
@@ -59,6 +60,7 @@ import com.alibaba.nacos.naming.pojo.instance.BeatInfoInstanceBuilder;
 import com.alibaba.nacos.naming.utils.NamingRequestUtil;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -88,6 +90,7 @@ import static com.alibaba.nacos.naming.misc.UtilsAndCommons.DEFAULT_CLUSTER_NAME
  *
  * @author hujun
  */
+@Deprecated
 @NacosApi
 @RestController
 @RequestMapping(UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT)
@@ -107,6 +110,7 @@ public class InstanceControllerV2 {
     @PostMapping
     @TpsControl(pointName = "NamingInstanceRegister", name = "HttpNamingInstanceRegister")
     @Secured(action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "POST ${contextPath:nacos}/v3/admin/ns/instance")
     public Result<String> register(InstanceForm instanceForm) throws NacosException {
         // check param
         instanceForm.validate();
@@ -129,6 +133,7 @@ public class InstanceControllerV2 {
     @DeleteMapping
     @TpsControl(pointName = "NamingInstanceDeregister", name = "HttpNamingInstanceDeregister")
     @Secured(action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "DELETE ${contextPath:nacos}/v3/admin/ns/instance")
     public Result<String> deregister(InstanceForm instanceForm) throws NacosException {
         // check param
         instanceForm.validate();
@@ -151,6 +156,7 @@ public class InstanceControllerV2 {
     @PutMapping
     @TpsControl(pointName = "NamingInstanceUpdate", name = "HttpNamingInstanceUpdate")
     @Secured(action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "PUT ${contextPath:nacos}/v3/admin/ns/instance")
     public Result<String> update(InstanceForm instanceForm) throws NacosException {
         // check param
         instanceForm.validate();
@@ -174,7 +180,8 @@ public class InstanceControllerV2 {
     @TpsControl(pointName = "NamingInstanceMetadataUpdate", name = "HttpNamingInstanceMetadataBatchUpdate")
     @Secured(action = ActionTypes.WRITE)
     @ExtractorManager.Extractor(httpExtractor = NamingInstanceMetadataBatchHttpParamExtractor.class)
-    public Result<InstanceMetadataBatchOperationVo> batchUpdateInstanceMetadata(InstanceMetadataBatchOperationForm form)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "PUT ${contextPath:nacos}/v3/admin/ns/instance/metadata/batch")
+    public Result<InstanceMetadataBatchResult> batchUpdateInstanceMetadata(InstanceMetadataBatchOperationForm form)
             throws NacosException {
         form.validate();
         
@@ -187,7 +194,7 @@ public class InstanceControllerV2 {
                 instanceOperationInfo, targetMetadata);
         
         ArrayList<String> ipList = new ArrayList<>(operatedInstances);
-        return Result.success(new InstanceMetadataBatchOperationVo(ipList));
+        return Result.success(new InstanceMetadataBatchResult(ipList));
     }
     
     /**
@@ -198,7 +205,8 @@ public class InstanceControllerV2 {
     @TpsControl(pointName = "NamingInstanceMetadataUpdate", name = "HttpNamingInstanceMetadataBatchUpdate")
     @Secured(action = ActionTypes.WRITE)
     @ExtractorManager.Extractor(httpExtractor = NamingInstanceMetadataBatchHttpParamExtractor.class)
-    public Result<InstanceMetadataBatchOperationVo> batchDeleteInstanceMetadata(InstanceMetadataBatchOperationForm form)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "DELETE ${contextPath:nacos}/v3/admin/ns/instance/metadata/batch")
+    public Result<InstanceMetadataBatchResult> batchDeleteInstanceMetadata(InstanceMetadataBatchOperationForm form)
             throws NacosException {
         form.validate();
         List<Instance> targetInstances = parseBatchInstances(form.getInstances());
@@ -208,7 +216,7 @@ public class InstanceControllerV2 {
         List<String> operatedInstances = instanceServiceV2.batchDeleteMetadata(form.getNamespaceId(),
                 instanceOperationInfo, targetMetadata);
         ArrayList<String> ipList = new ArrayList<>(operatedInstances);
-        return Result.success(new InstanceMetadataBatchOperationVo(ipList));
+        return Result.success(new InstanceMetadataBatchResult(ipList));
     }
     
     private InstanceOperationInfo buildOperationInfo(String serviceName, String consistencyType,
@@ -250,6 +258,7 @@ public class InstanceControllerV2 {
     @CanDistro
     @PatchMapping
     @Secured(action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "PUT ${contextPath:nacos}/v3/admin/ns/instance/partial")
     public String patch(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName, @RequestParam String ip,
             @RequestParam(defaultValue = UtilsAndCommons.DEFAULT_CLUSTER_NAME) String cluster,
@@ -290,6 +299,7 @@ public class InstanceControllerV2 {
     @TpsControl(pointName = "NamingServiceSubscribe", name = "HttpNamingServiceSubscribe")
     @Secured(action = ActionTypes.READ)
     @ExtractorManager.Extractor(httpExtractor = NamingInstanceListHttpParamExtractor.class)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/instance/list")
     public Result<ServiceInfo> list(
             @RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam(value = "groupName", defaultValue = Constants.DEFAULT_GROUP) String groupName,
@@ -300,7 +310,8 @@ public class InstanceControllerV2 {
             @RequestParam(value = "healthyOnly", defaultValue = "false") Boolean healthyOnly,
             @RequestParam(value = "app", defaultValue = StringUtils.EMPTY) String app,
             @RequestHeader(value = HttpHeaderConsts.USER_AGENT_HEADER, required = false) String userAgent,
-            @RequestHeader(value = HttpHeaderConsts.CLIENT_VERSION_HEADER, required = false) String clientVersion) {
+            @RequestHeader(value = HttpHeaderConsts.CLIENT_VERSION_HEADER, required = false) String clientVersion)
+            throws Exception {
         if (StringUtils.isEmpty(userAgent)) {
             userAgent = StringUtils.defaultIfEmpty(clientVersion, StringUtils.EMPTY);
         }
@@ -325,6 +336,7 @@ public class InstanceControllerV2 {
     @GetMapping
     @TpsControl(pointName = "NamingInstanceQuery", name = "HttpNamingInstanceQuery")
     @Secured(action = ActionTypes.READ)
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET ${contextPath:nacos}/v3/admin/ns/instance")
     public Result<InstanceDetailInfoVo> detail(
             @RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam(value = "groupName", defaultValue = Constants.DEFAULT_GROUP) String groupName,
@@ -365,6 +377,7 @@ public class InstanceControllerV2 {
     @TpsControl(pointName = "HttpHealthCheck", name = "HttpHealthCheck")
     @Secured(action = ActionTypes.WRITE)
     @ExtractorManager.Extractor(httpExtractor = NamingInstanceBeatHttpParamExtractor.class)
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public ObjectNode beat(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName, @RequestParam(defaultValue = StringUtils.EMPTY) String ip,
             @RequestParam(defaultValue = UtilsAndCommons.DEFAULT_CLUSTER_NAME) String clusterName,
@@ -409,6 +422,7 @@ public class InstanceControllerV2 {
      * @throws NacosException any error during handle
      */
     @RequestMapping("/statuses/{key}")
+    @Compatibility(apiType = ApiType.ADMIN_API)
     public ObjectNode listWithHealthStatus(@PathVariable String key) throws NacosException {
         
         String serviceName;

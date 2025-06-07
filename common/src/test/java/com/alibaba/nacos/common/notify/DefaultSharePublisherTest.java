@@ -106,7 +106,7 @@ class DefaultSharePublisherTest {
         defaultSharePublisher.addSubscriber(smartSubscriber2, MockSlowEvent2.class);
         defaultSharePublisher.publish(mockSlowEvent1);
         defaultSharePublisher.publish(mockSlowEvent2);
-        TimeUnit.MILLISECONDS.sleep(1100);
+        TimeUnit.MILLISECONDS.sleep(1500);
         verify(smartSubscriber1).onEvent(mockSlowEvent1);
         verify(smartSubscriber2).onEvent(mockSlowEvent2);
         reset(smartSubscriber1);

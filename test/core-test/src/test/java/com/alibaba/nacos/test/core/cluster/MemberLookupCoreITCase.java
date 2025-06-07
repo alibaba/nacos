@@ -34,7 +34,6 @@ import org.junit.jupiter.api.MethodOrderer.MethodName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.core.env.StandardEnvironment;
-import org.springframework.mock.web.MockServletContext;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -79,7 +78,7 @@ class MemberLookupCoreITCase {
                 false);
         
         try {
-            memberManager = new ServerMemberManager(new MockServletContext());
+            memberManager = new ServerMemberManager();
         } catch (Exception e) {
             e.printStackTrace();
         }

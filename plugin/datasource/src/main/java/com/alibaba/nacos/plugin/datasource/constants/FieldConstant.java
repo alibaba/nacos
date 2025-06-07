@@ -43,6 +43,8 @@ public class FieldConstant {
     public static final String PAGE_SIZE = "pageSize";
     
     public static final String ID = "id";
+
+    public static final String NID = "nid";
     
     public static final String START_TIME = "startTime";
     
@@ -99,4 +101,10 @@ public class FieldConstant {
     public static final String USAGE = "usage";
     
     public static final String LIMIT_SIZE = "limitSize";
+    
+    public static final String TARGET_ID = "targetId";
+    
+    public static final String TARGET_TENANT = "targetTenant";
+    
+    public static final String SRC_TENANT = "srcTenant";
 }

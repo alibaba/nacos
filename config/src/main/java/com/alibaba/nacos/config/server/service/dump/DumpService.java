@@ -24,6 +24,7 @@ import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
+import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.service.dump.processor.DumpAllGrayProcessor;
 import com.alibaba.nacos.config.server.service.dump.processor.DumpAllProcessor;
@@ -76,6 +77,8 @@ public abstract class DumpService {
     
     protected ConfigInfoGrayPersistService configInfoGrayPersistService;
     
+    protected ConfigMigrateService configMigrateService;
+    
     protected final ServerMemberManager memberManager;
     
     /**
@@ -105,12 +108,15 @@ public abstract class DumpService {
     public DumpService(ConfigInfoPersistService configInfoPersistService,
             NamespacePersistService namespacePersistService,
             HistoryConfigInfoPersistService historyConfigInfoPersistService,
-            ConfigInfoGrayPersistService configInfoGrayPersistService, ServerMemberManager memberManager) {
+            ConfigInfoGrayPersistService configInfoGrayPersistService,
+            ServerMemberManager memberManager,
+            ConfigMigrateService configMigrateService) {
         this.configInfoPersistService = configInfoPersistService;
         this.configInfoGrayPersistService = configInfoGrayPersistService;
         this.namespacePersistService = namespacePersistService;
         this.historyConfigInfoPersistService = historyConfigInfoPersistService;
         this.memberManager = memberManager;
+        this.configMigrateService = configMigrateService;
         this.processor = new DumpProcessor(this.configInfoPersistService, this.configInfoGrayPersistService);
         this.dumpAllProcessor = new DumpAllProcessor(this.configInfoPersistService);
         this.dumpAllGrayProcessor = new DumpAllGrayProcessor(this.configInfoGrayPersistService);
@@ -121,6 +127,7 @@ public abstract class DumpService {
         this.dumpAllTaskMgr.setDefaultTaskProcessor(dumpAllProcessor);
         
         this.dumpAllTaskMgr.addProcessor(DumpAllTask.TASK_ID, dumpAllProcessor);
+        this.dumpAllTaskMgr.addProcessor(DumpAllGrayTask.TASK_ID, dumpAllGrayProcessor);
         DynamicDataSource.getInstance().getDataSource();
         
         NotifyCenter.registerSubscriber(new Subscriber() {
@@ -142,7 +149,7 @@ public abstract class DumpService {
         if (event instanceof ConfigDataChangeEvent) {
             ConfigDataChangeEvent evt = (ConfigDataChangeEvent) event;
             DumpRequest dumpRequest = DumpRequest.create(evt.dataId, evt.group, evt.tenant, evt.lastModifiedTs,
-                    NetUtils.localIP());
+                    NetUtils.localIp());
             dumpRequest.setGrayName(evt.grayName);
             DumpService.this.dump(dumpRequest);
         }
@@ -215,11 +222,7 @@ public abstract class DumpService {
             
             try {
                 dumpAllConfigInfoOnStartup(dumpAllProcessor);
-                
-                LogUtil.DEFAULT_LOG.info("start clear all config-info-gray.");
-                ConfigDiskServiceFactory.getInstance().clearAllGray();
-                dumpAllGrayProcessor.process(new DumpAllGrayTask());
-                
+                dumpAllGrayConfigInfoOnStartup(dumpAllGrayProcessor);
             } catch (Exception e) {
                 LogUtil.FATAL_LOG.error(
                         "Nacos Server did not start because dumpservice bean construction failure :\n" + e);
@@ -240,11 +243,12 @@ public abstract class DumpService {
                 
                 ConfigExecutor.scheduleConfigChangeTask(
                         new DumpChangeConfigWorker(this.configInfoPersistService, this.historyConfigInfoPersistService,
+                                this.configMigrateService,
                                 currentTime), random.nextInt((int) PropertyUtil.getDumpChangeWorkerInterval()),
                         TimeUnit.MILLISECONDS);
                 ConfigExecutor.scheduleConfigChangeTask(
                         new DumpChangeGrayConfigWorker(this.configInfoGrayPersistService, currentTime,
-                                this.historyConfigInfoPersistService),
+                                this.historyConfigInfoPersistService, this.configMigrateService),
                         random.nextInt((int) PropertyUtil.getDumpChangeWorkerInterval()), TimeUnit.MILLISECONDS);
             }
             
@@ -266,6 +270,17 @@ public abstract class DumpService {
             dumpAllProcessor.process(new DumpAllTask(true));
         } catch (Exception e) {
             LogUtil.FATAL_LOG.error("dump config fail" + e.getMessage());
+            throw e;
+        }
+    }
+    
+    private void dumpAllGrayConfigInfoOnStartup(DumpAllGrayProcessor dumpAllGrayProcessor) {
+        try {
+            LogUtil.DEFAULT_LOG.info("start to clear all gray-config-info on startup.");
+            ConfigDiskServiceFactory.getInstance().clearAllGray();
+            dumpAllGrayProcessor.process(new DumpAllGrayTask());
+        } catch (Exception e) {
+            LogUtil.FATAL_LOG.error("failed to dump all gray-config-info on startup." + e.getMessage());
             throw e;
         }
     }

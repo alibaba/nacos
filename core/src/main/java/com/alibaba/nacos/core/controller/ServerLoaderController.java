@@ -29,6 +29,7 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtil;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.core.ServerLoaderInfoRequestHandler;
@@ -36,6 +37,7 @@ import com.alibaba.nacos.core.remote.core.ServerReloaderRequestHandler;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.RemoteUtils;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -44,7 +46,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -64,6 +66,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @RestController
 @RequestMapping(Commons.NACOS_CORE_CONTEXT_V2 + "/loader")
+@Deprecated
+@SuppressWarnings("PMD.MethodTooLongRule")
 public class ServerLoaderController {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ServerLoaderController.class);
@@ -107,6 +111,7 @@ public class ServerLoaderController {
      */
     @Secured(resource = Commons.NACOS_CORE_CONTEXT_V2 + "/loader", action = ActionTypes.READ)
     @GetMapping("/current")
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/admin/core/loader/current")
     public ResponseEntity<Map<String, Connection>> currentClients() {
         Map<String, Connection> stringConnectionMap = connectionManager.currentClients();
         return ResponseEntity.ok().body(stringConnectionMap);
@@ -119,6 +124,7 @@ public class ServerLoaderController {
      */
     @Secured(resource = Commons.NACOS_CORE_CONTEXT_V2 + "/loader", action = ActionTypes.WRITE)
     @GetMapping("/reloadCurrent")
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/admin/core/loader/reloadCurrent")
     public ResponseEntity<String> reloadCount(@RequestParam Integer count,
             @RequestParam(value = "redirectAddress", required = false) String redirectAddress) {
         connectionManager.loadCount(count, redirectAddress);
@@ -126,13 +132,14 @@ public class ServerLoaderController {
     }
     
     /**
-     * According to the total number of sdk connections of all nodes in the nacos cluster,
-     * intelligently balance the number of sdk connections of each node in the nacos cluster.
+     * According to the total number of sdk connections of all nodes in the nacos cluster, intelligently balance the
+     * number of sdk connections of each node in the nacos cluster.
      *
      * @return state json.
      */
     @Secured(resource = Commons.NACOS_CORE_CONTEXT_V2 + "/loader", action = ActionTypes.WRITE)
     @GetMapping("/smartReloadCluster")
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/admin/core/loader/smartReloadCluster")
     public ResponseEntity<String> smartReload(HttpServletRequest request,
             @RequestParam(value = "loaderFactor", required = false) String loaderFactorStr,
             @RequestParam(value = "force", required = false) String force) {
@@ -243,6 +250,7 @@ public class ServerLoaderController {
      */
     @Secured(resource = Commons.NACOS_CORE_CONTEXT_V2 + "/loader", action = ActionTypes.WRITE)
     @GetMapping("/reloadClient")
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/admin/core/loader/reloadClient")
     public ResponseEntity<String> reloadSingle(@RequestParam String connectionId,
             @RequestParam(value = "redirectAddress", required = false) String redirectAddress) {
         connectionManager.loadSingle(connectionId, redirectAddress);
@@ -256,6 +264,7 @@ public class ServerLoaderController {
      */
     @Secured(resource = Commons.NACOS_CORE_CONTEXT_V2 + "/loader", action = ActionTypes.READ)
     @GetMapping("/cluster")
+    @Compatibility(apiType = ApiType.ADMIN_API, alternatives = "GET {contextPath:nacos}/v3/admin/core/loader/cluster")
     public ResponseEntity<Map<String, Object>> loaderMetrics() {
         
         Map<String, Object> serverLoadMetrics = getServerLoadMetrics();
@@ -313,8 +322,8 @@ public class ServerLoaderController {
         }
         
         try {
-            ServerLoaderInfoResponse handle = serverLoaderInfoRequestHandler
-                    .handle(new ServerLoaderInfoRequest(), new RequestMeta());
+            ServerLoaderInfoResponse handle = serverLoaderInfoRequestHandler.handle(new ServerLoaderInfoRequest(),
+                    new RequestMeta());
             ServerLoaderMetrics metrics = new ServerLoaderMetrics();
             metrics.setAddress(serverMemberManager.getSelf().getAddress());
             metrics.setMetric(handle.getLoaderMetrics());

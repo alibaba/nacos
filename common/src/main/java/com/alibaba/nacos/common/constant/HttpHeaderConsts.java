@@ -27,6 +27,7 @@ public interface HttpHeaderConsts {
     String USER_AGENT_HEADER = "User-Agent";
     String REQUEST_SOURCE_HEADER = "Request-Source";
     String CONTENT_TYPE = "Content-Type";
+    String CONTENT_DISPOSITION = "Content-Disposition";
     String CONTENT_LENGTH = "Content-Length";
     String ACCEPT_CHARSET = "Accept-Charset";
     String ACCEPT_ENCODING = "Accept-Encoding";
@@ -36,5 +37,4 @@ public interface HttpHeaderConsts {
     String REQUEST_MODULE = "Request-Module";
     String APP_FILED = "app";
     String CLIENT_IP = "clientIp";
-    
 }

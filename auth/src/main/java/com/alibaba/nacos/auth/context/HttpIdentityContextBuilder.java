@@ -16,14 +16,14 @@
 
 package com.alibaba.nacos.auth.context;
 
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Optional;
@@ -40,10 +40,10 @@ public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpSe
     
     private static final String X_FORWARDED_FOR_SPLIT_SYMBOL = ",";
     
-    private final AuthConfigs authConfigs;
+    private final NacosAuthConfig authConfig;
     
-    public HttpIdentityContextBuilder(AuthConfigs authConfigs) {
-        this.authConfigs = authConfigs;
+    public HttpIdentityContextBuilder(NacosAuthConfig authConfig) {
+        this.authConfig = authConfig;
     }
     
     /**
@@ -57,7 +57,7 @@ public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpSe
         IdentityContext result = new IdentityContext();
         getRemoteIp(request, result);
         Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
-                .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
+                .findAuthServiceSpiImpl(authConfig.getNacosAuthSystemType());
         if (!authPluginService.isPresent()) {
             return result;
         }

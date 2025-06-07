@@ -19,8 +19,8 @@ package com.alibaba.nacos.auth.parser.http;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
+import jakarta.servlet.http.HttpServletRequest;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Properties;
 
 /**
@@ -41,7 +41,10 @@ public class ConfigHttpResourceParser extends AbstractHttpResourceParser {
     
     @Override
     protected String getGroup(HttpServletRequest request) {
-        String groupName = request.getParameter(com.alibaba.nacos.api.common.Constants.GROUP);
+        String groupName = request.getParameter(Constants.GROUP_NAME);
+        if (StringUtils.isBlank(groupName)) {
+            groupName = request.getParameter(com.alibaba.nacos.api.common.Constants.GROUP);
+        }
         return StringUtils.isBlank(groupName) ? StringUtils.EMPTY : groupName;
     }
     

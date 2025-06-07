@@ -27,8 +27,6 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.security.core.Authentication;
 
-import java.lang.reflect.Field;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -58,8 +56,7 @@ class CachedJwtTokenManagerTest {
     
     @BeforeEach
     void setUp() throws Exception {
-        cachedJwtTokenManager = new CachedJwtTokenManager();
-        injectObject("jwtTokenManager", jwtTokenManager);
+        cachedJwtTokenManager = new CachedJwtTokenManager(jwtTokenManager);
         when(jwtTokenManager.getTokenValidityInSeconds()).thenReturn(100L);
         when(jwtTokenManager.getTokenTtlInSeconds(anyString())).thenReturn(100L);
         when(jwtTokenManager.getExpiredTimeInSeconds(anyString())).thenReturn(System.currentTimeMillis());
@@ -104,9 +101,4 @@ class CachedJwtTokenManagerTest {
         assertTrue(cachedJwtTokenManager.getTokenValidityInSeconds() > 0);
     }
     
-    private void injectObject(String fieldName, Object value) throws NoSuchFieldException, IllegalAccessException {
-        Field field = CachedJwtTokenManager.class.getDeclaredField(fieldName);
-        field.setAccessible(true);
-        field.set(cachedJwtTokenManager, value);
-    }
 }

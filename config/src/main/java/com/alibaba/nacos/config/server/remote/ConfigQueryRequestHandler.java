@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.config.server.model.ConfigCacheGray;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
@@ -44,6 +45,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.net.URLEncoder;
+
 import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
 import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
 import static com.alibaba.nacos.config.server.utils.RequestUtil.CLIENT_APPNAME_HEADER;
@@ -71,6 +73,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
     @ExtractorManager.Extractor(rpcExtractor = ConfigRequestParamExtractor.class)
     public ConfigQueryResponse handle(ConfigQueryRequest request, RequestMeta meta) throws NacosException {
         try {
+            request.setTenant(NamespaceUtil.processNamespaceParameter(request.getTenant()));
             String dataId = request.getDataId();
             String group = request.getGroup();
             String tenant = request.getTenant();
@@ -80,7 +83,8 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
             String requestIpApp = meta.getLabels().get(CLIENT_APPNAME_HEADER);
             String clientIp = meta.getClientIp();
             
-            ConfigQueryChainRequest chainRequest = ConfigChainRequestExtractorService.getExtractor().extract(request, meta);
+            ConfigQueryChainRequest chainRequest = ConfigChainRequestExtractorService.getExtractor()
+                    .extract(request, meta);
             ConfigQueryChainResponse chainResponse = configQueryChainService.handle(chainRequest);
             
             if (ResponseCode.FAIL.getCode() == chainResponse.getResultCode()) {
@@ -88,7 +92,8 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
             }
             
             if (chainResponse.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
-                return handlerConfigNotFound(request.getDataId(), request.getGroup(), request.getTenant(), requestIpApp, clientIp, notify);
+                return handlerConfigNotFound(request.getDataId(), request.getGroup(), request.getTenant(), requestIpApp,
+                        clientIp, notify);
             }
             
             if (chainResponse.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_QUERY_CONFLICT) {
@@ -114,6 +119,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
             response.setMd5(chainResponse.getMd5());
             response.setEncryptedDataKey(chainResponse.getEncryptedDataKey());
             response.setContent(chainResponse.getContent());
+            response.setContentType(chainResponse.getConfigType());
             response.setLastModified(chainResponse.getLastModified());
             
             String pullType = ConfigTraceService.PULL_TYPE_OK;
@@ -125,10 +131,11 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
             }
             
             String pullEvent = resolvePullEventType(chainResponse, request.getTag());
-            LogUtil.PULL_CHECK_LOG.warn("{}|{}|{}|{}", groupKey, clientIp, response.getMd5(), TimeUtils.getCurrentTimeStr());
-            final long delayed = notify ? -1 : System.currentTimeMillis() - response.getLastModified();
-            ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, response.getLastModified(), pullEvent, pullType,
-                    delayed, clientIp, notify, "grpc");
+            LogUtil.PULL_CHECK_LOG.warn("{}|{}|{}|{}", groupKey, clientIp, response.getMd5(),
+                    TimeUtils.getCurrentTimeStr());
+            final long delayed = System.currentTimeMillis() - response.getLastModified();
+            ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, response.getLastModified(), pullEvent,
+                    pullType, delayed, clientIp, notify, "grpc");
             
             return response;
             

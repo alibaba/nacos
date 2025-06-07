@@ -118,9 +118,9 @@ class NameSpaceList extends React.Component {
     } else {
       request({
         type: 'get',
-        url: 'v1/console/namespaces',
+        url: 'v3/console/core/namespace/list',
         success: res => {
-          if (res.code === 200) {
+          if (res.code === 0) {
             this.handleNameSpaces(res.data);
           } else {
             Dialog.alert({
@@ -179,7 +179,7 @@ class NameSpaceList extends React.Component {
         value: nownamespace,
       };
       namespaceList.forEach(obj => {
-        obj.label = obj.namespaceShowName + ' ' + (obj.namespaceDesc ? obj.namespaceDesc : '');
+        obj.label = `${obj.namespaceShowName} ${obj.namespaceDesc ? obj.namespaceDesc : ''}`;
         obj.value = obj.namespace;
         if (obj.value !== undefined && obj.value === de.value) {
           de = obj;

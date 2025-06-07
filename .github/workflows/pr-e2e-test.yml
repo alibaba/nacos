@@ -26,23 +26,23 @@ jobs:
     strategy:
       matrix:
         base-image: ["ubuntu"]
-        java-version: ["8"]
+        java-version: ["17"]
     outputs:
       version-json: ${{ steps.show_versions.outputs.version-json }}
     steps:
       - name: 'Download artifact'
-        uses: actions/github-script@v3.1.0
+        uses: actions/github-script@v6
         with:
           script: |
-            var artifacts = await github.actions.listWorkflowRunArtifacts({
+            let artifacts = await github.rest.actions.listWorkflowRunArtifacts({
                owner: context.repo.owner,
                repo: context.repo.repo,
                run_id: ${{ github.event.workflow_run.id }},
             });
-            var matchArtifactNacos = artifacts.data.artifacts.filter((artifact) => {
+            let matchArtifactNacos = artifacts.data.artifacts.filter((artifact) => {
                return artifact.name == "nacos"
             })[0];
-            var download = await github.actions.downloadArtifact({
+            let download = await github.rest.actions.downloadArtifact({
                owner: context.repo.owner,
                repo: context.repo.repo,
                artifact_id: matchArtifactNacos.id,
@@ -157,7 +157,7 @@ jobs:
                 branch: main
               repoType: git
               retries: 3
-              url: https://ghproxy.com/https://github.com/nacos-group/nacos-e2e.git
+              url: https://github.com/nacos-group/nacos-e2e.git
               values:
                 namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
                 global:
@@ -226,7 +226,7 @@ jobs:
               RESOURCE_REQUIRE:
                 cpu: 2
                 memory: 2Gi
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         name: Upload test log
         with:
@@ -278,7 +278,7 @@ jobs:
               RESOURCE_REQUIRE:
                 cpu: 2
                 memory: 2Gi
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         name: Upload test log
         with:
@@ -333,7 +333,7 @@ jobs:
               RESOURCE_REQUIRE:
                 cpu: 2
                 memory: 2Gi
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         name: Upload test log
         with:
@@ -386,7 +386,7 @@ jobs:
               RESOURCE_REQUIRE:
                 cpu: 2
                 memory: 2Gi
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         name: Upload test log
         with:
@@ -437,7 +437,7 @@ jobs:
               RESOURCE_REQUIRE:
                 cpu: 2
                 memory: 2Gi
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         name: Upload test log
         with:
@@ -490,7 +490,7 @@ jobs:
               RESOURCE_REQUIRE:
                 cpu: 2
                 memory: 2Gi
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         name: Upload test log
         with:
@@ -529,19 +529,19 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: 'Download artifact'
-        uses: actions/github-script@v3.1.0
+        uses: actions/github-script@v6
         with:
           script: |
-            var artifacts = await github.actions.listWorkflowRunArtifacts({
+            let artifacts = await github.rest.actions.listWorkflowRunArtifacts({
                owner: context.repo.owner,
                repo: context.repo.repo,
                run_id: ${{ github.event.workflow_run.id }},
             });
             
-            var matchArtifactPR = artifacts.data.artifacts.filter((artifact) => {
+            let matchArtifactPR = artifacts.data.artifacts.filter((artifact) => {
                return artifact.name == "pr"
             })[0];
-            var download = await github.actions.downloadArtifact({
+            let download = await github.rest.actions.downloadArtifact({
                owner: context.repo.owner,
                repo: context.repo.repo,
                artifact_id: matchArtifactPR.id,

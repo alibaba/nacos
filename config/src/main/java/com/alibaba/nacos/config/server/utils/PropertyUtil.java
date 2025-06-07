@@ -60,6 +60,10 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
      */
     private static boolean grayCompatibleModel = true;
     
+    public static final ThreadLocal<Boolean> GRAY_MIGRATE_FLAG = ThreadLocal.withInitial(() -> false);
+    
+    public static final ThreadLocal<Boolean> CONFIG_MIGRATE_FLAG = ThreadLocal.withInitial(() -> false);
+    
     /**
      * Whether to enable the limit check function of capacity management, including the upper limit of configuration
      * number, configuration content size limit, etc.
@@ -107,12 +111,12 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     private static int correctUsageDelay = 10 * 60;
     
     private static boolean dumpChangeOn = true;
-
+    
     /**
      * The number of days to retain the configuration history, the default is 30 days.
      */
     private static int configRententionDays = 30;
-
+    
     /**
      * dumpChangeWorkerInterval, default 30 seconds.
      */
@@ -240,6 +244,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     
     /**
      * control whether persist beta and tag to old model.
+     *
      * @return
      */
     public static boolean isGrayCompatibleModel() {
@@ -265,13 +270,13 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     public static void setCorrectUsageDelay(int correctUsageDelay) {
         PropertyUtil.correctUsageDelay = correctUsageDelay;
     }
-
+    
     public static int getConfigRententionDays() {
         return configRententionDays;
     }
-
+    
     private void setConfigRententionDays() {
-        String val =  getProperty(PropertiesConstant.CONFIG_RENTENTION_DAYS);
+        String val = getProperty(PropertiesConstant.CONFIG_RENTENTION_DAYS);
         if (null != val) {
             int tmp = 0;
             try {
@@ -284,7 +289,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
             }
         }
     }
-
+    
     public static boolean isStandaloneMode() {
         return EnvUtil.getStandaloneMode();
     }
@@ -380,17 +385,17 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     }
     
     static int initAllDumpPageSize() {
-        long memLimitMB = getMemLimitMB();
+        long memLimitMb = getMemLimitMb();
         
         //512MB->50 Page Size
-        int pageSize = (int) ((float) memLimitMB / PAGE_MEMORY_DIVIDE_MB) * MIN_DUMP_PAGE;
+        int pageSize = (int) ((float) memLimitMb / PAGE_MEMORY_DIVIDE_MB) * MIN_DUMP_PAGE;
         pageSize = Math.max(pageSize, MIN_DUMP_PAGE);
         pageSize = Math.min(pageSize, MAX_DUMP_PAGE);
-        LOGGER.info("All dump page size is set to {} according to mem limit {} MB", pageSize, memLimitMB);
+        LOGGER.info("All dump page size is set to {} according to mem limit {} MB", pageSize, memLimitMb);
         return pageSize;
     }
     
-    public static long getMemLimitMB() {
+    public static long getMemLimitMb() {
         Optional<Long> memoryLimit = findMemoryLimitFromFile();
         if (memoryLimit.isPresent()) {
             return memoryLimit.get();

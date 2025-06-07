@@ -88,7 +88,7 @@ class NacosStateMachine extends StateMachineAdapter {
         this.server = server;
         this.processor = processor;
         this.groupId = processor.group();
-        adapterToJRaftSnapshot(processor.loadSnapshotOperate());
+        adapterToJraftSnapshot(processor.loadSnapshotOperate());
     }
     
     @Override
@@ -248,7 +248,7 @@ class NacosStateMachine extends StateMachineAdapter {
         return term;
     }
     
-    private void adapterToJRaftSnapshot(Collection<SnapshotOperation> userOperates) {
+    private void adapterToJraftSnapshot(Collection<SnapshotOperation> userOperates) {
         List<JSnapshotOperation> tmp = new ArrayList<>();
         
         for (SnapshotOperation item : userOperates) {

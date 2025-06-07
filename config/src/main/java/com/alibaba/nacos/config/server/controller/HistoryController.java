@@ -23,11 +23,13 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
-import com.alibaba.nacos.core.paramcheck.ExtractorManager;
-import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.service.HistoryService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import org.springframework.ui.ModelMap;
@@ -43,6 +45,7 @@ import java.util.List;
  *
  * @author Nacos
  */
+@Deprecated
 @RestController
 @RequestMapping(Constants.HISTORY_CONTROLLER_PATH)
 @ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
@@ -69,12 +72,14 @@ public class HistoryController {
      */
     @GetMapping(params = "search=accurate")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/cs/history/list")
     public Page<ConfigHistoryInfo> listConfigHistory(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "pageNo", required = false) Integer pageNo,
             @RequestParam(value = "pageSize", required = false) Integer pageSize, ModelMap modelMap) {
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         pageNo = null == pageNo ? 1 : pageNo;
         pageSize = null == pageSize ? 100 : pageSize;
         pageSize = Math.min(500, pageSize);
@@ -94,13 +99,15 @@ public class HistoryController {
      */
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/cs/history")
     public ConfigHistoryInfo getConfigHistoryInfo(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam("nid") Long nid) throws AccessException {
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         return historyService.getConfigHistoryInfo(dataId, group, tenant, nid);
     }
-    
+
     /**
      * Query previous config history information. notes:
      *
@@ -114,10 +121,12 @@ public class HistoryController {
      */
     @GetMapping(value = "/previous")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/cs/history/previous")
     public ConfigHistoryInfo getPreviousConfigHistoryInfo(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam("id") Long id) throws AccessException {
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         return historyService.getPreviousConfigHistoryInfo(dataId, group, tenant, id);
     }
     
@@ -130,6 +139,7 @@ public class HistoryController {
      */
     @GetMapping(value = "/configs")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/cs/history/configs")
     public List<ConfigInfoWrapper> getDataIds(@RequestParam("tenant") String tenant) {
         // check tenant
         ParamUtils.checkTenant(tenant);

@@ -152,6 +152,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         if (!paramCheckResponse.isSuccess()) {
             return paramCheckResponse;
         }
+
         paramCheckResponse.setSuccess(true);
         return paramCheckResponse;
     }
@@ -429,4 +430,5 @@ public class DefaultParamChecker extends AbstractParamChecker {
         paramCheckResponse.setSuccess(true);
         return paramCheckResponse;
     }
+    
 }

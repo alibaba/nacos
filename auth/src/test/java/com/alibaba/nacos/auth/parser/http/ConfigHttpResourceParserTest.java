@@ -29,7 +29,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -100,7 +100,7 @@ class ConfigHttpResourceParserTest {
         Mockito.when(request.getParameter(eq(Constants.GROUP))).thenReturn("testG");
         Mockito.when(request.getParameter(eq(Constants.DATA_ID))).thenReturn("testD");
         Resource actual = resourceParser.parse(request, secured);
-        assertEquals(StringUtils.EMPTY, actual.getNamespaceId());
+        assertEquals(Constants.DEFAULT_NAMESPACE_ID, actual.getNamespaceId());
         assertEquals("testG", actual.getGroup());
         assertEquals("testD", actual.getName());
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());

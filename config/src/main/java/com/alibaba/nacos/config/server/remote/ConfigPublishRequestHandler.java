@@ -25,8 +25,10 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.exception.ConfigAlreadyExistsException;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
@@ -40,6 +42,8 @@ import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import org.springframework.stereotype.Component;
+
+import static com.alibaba.nacos.config.server.constant.Constants.RPC;
 
 /**
  * request handler to publish config.
@@ -66,7 +70,8 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
             String dataId = request.getDataId();
             String group = request.getGroup();
             String content = request.getContent();
-            final String tenant = request.getTenant();
+            final boolean namespaceTransferred = NamespaceUtil.isNeedTransferNamespace(request.getTenant());
+            final String tenant = NamespaceUtil.processNamespaceParameter(request.getTenant());
             
             final String srcIp = meta.getClientIp();
             final String tag = request.getAdditionParam("tag");
@@ -100,9 +105,11 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
             
             ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
             configRequestInfo.setSrcIp(srcIp);
+            configRequestInfo.setSrcType(RPC);
             configRequestInfo.setRequestIpApp(meta.getLabels().get(Constants.APPNAME));
             configRequestInfo.setBetaIps(request.getAdditionParam("betaIps"));
             configRequestInfo.setCasMd5(request.getCasMd5());
+            configRequestInfo.setNamespaceTransferred(namespaceTransferred);
             
             String encryptedDataKeyFinal = null;
             if (StringUtils.isNotBlank(encryptedDataKey)) {
@@ -116,9 +123,9 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
             try {
                 configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal);
                 return ConfigPublishResponse.buildSuccessResponse();
-            } catch (NacosApiException nacosApiException) {
+            } catch (NacosApiException | ConfigAlreadyExistsException ex) {
                 return ConfigPublishResponse.buildFailResponse(ResponseCode.FAIL.getCode(),
-                        nacosApiException.getErrMsg());
+                        ex.getErrMsg());
             }
             
         } catch (Exception e) {

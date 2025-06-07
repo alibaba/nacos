@@ -45,6 +45,7 @@ import com.alibaba.nacos.naming.core.v2.client.ClientSyncData;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.PersistentIpPortClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
+import com.alibaba.nacos.naming.core.v2.event.metadata.MetadataEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.ClientOperationService;
@@ -223,8 +224,8 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
     }
     
     private boolean instanceAndServiceExist(InstanceStoreRequest instanceRequest) {
-        return clientManager.contains(instanceRequest.getClientId()) && clientManager
-                .getClient(instanceRequest.getClientId()).getAllPublishedService().contains(instanceRequest.service);
+        return clientManager.contains(instanceRequest.getClientId()) && clientManager.getClient(
+                instanceRequest.getClientId()).getAllPublishedService().contains(instanceRequest.service);
     }
     
     private void onInstanceRegister(Service service, Instance instance, String clientId) {
@@ -237,6 +238,8 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         client.addServiceInstance(singleton, instancePublishInfo);
         client.setLastUpdatedTime();
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientRegisterServiceEvent(singleton, clientId));
+        NotifyCenter.publishEvent(
+                new MetadataEvent.InstanceMetadataEvent(singleton, instancePublishInfo.getMetadataId(), false));
     }
     
     private void onInstanceDeregister(Service service, String clientId) {
@@ -246,12 +249,16 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
             Loggers.RAFT.warn("client not exist onInstanceDeregister, clientId : {} ", clientId);
             return;
         }
-        client.removeServiceInstance(singleton);
+        final InstancePublishInfo removedInstance = client.removeServiceInstance(singleton);
         client.setLastUpdatedTime();
         if (client.getAllPublishedService().isEmpty()) {
             clientManager.clientDisconnected(clientId);
         }
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientDeregisterServiceEvent(singleton, clientId));
+        if (null != removedInstance) {
+            NotifyCenter.publishEvent(
+                    new MetadataEvent.InstanceMetadataEvent(singleton, removedInstance.getMetadataId(), true));
+        }
     }
     
     @Override
@@ -264,7 +271,7 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         return Constants.NAMING_PERSISTENT_SERVICE_GROUP_V2;
     }
     
-    protected static class InstanceStoreRequest implements Serializable {
+    public static class InstanceStoreRequest implements Serializable {
         
         private static final long serialVersionUID = -9077205657156890549L;
         
@@ -333,8 +340,8 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
             final Checksum checksum = new CRC64();
             byte[] snapshotBytes = DiskUtils.decompress(sourceFile, checksum);
             LocalFileMeta fileMeta = reader.getFileMeta(SNAPSHOT_ARCHIVE);
-            if (fileMeta.getFileMeta().containsKey(CHECK_SUM_KEY) && !Objects
-                    .equals(Long.toHexString(checksum.getValue()), fileMeta.get(CHECK_SUM_KEY))) {
+            if (fileMeta.getFileMeta().containsKey(CHECK_SUM_KEY) && !Objects.equals(
+                    Long.toHexString(checksum.getValue()), fileMeta.get(CHECK_SUM_KEY))) {
                 throw new IllegalArgumentException("Snapshot checksum failed");
             }
             loadSnapshot(snapshotBytes);
@@ -368,7 +375,7 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
             // remove dead client
             removeDeadClient(newData.keySet(), oldClientIds);
         }
-
+        
         /**
          * update instance info for client.
          *
@@ -399,13 +406,15 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
                     InstancePublishInfo oldInstanceInfo = client.getInstancePublishInfo(singleton);
                     if (oldInstanceInfo != null && !newInstanceInfo.equals(oldInstanceInfo)) {
                         client.putServiceInstance(singleton, newInstanceInfo);
-                        NotifyCenter.publishEvent(new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
+                        NotifyCenter.publishEvent(
+                                new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
                         Loggers.RAFT.info("[SNAPSHOT-DATA-UPDATE] service={}, instance={}", service, newInstanceInfo);
                     }
                 } else {
                     // add
                     client.putServiceInstance(singleton, newInstanceInfo);
-                    NotifyCenter.publishEvent(new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
+                    NotifyCenter.publishEvent(
+                            new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
                     Loggers.RAFT.info("[SNAPSHOT-DATA-ADD] service={}, instance={}", service, newInstanceInfo);
                 }
             }
@@ -415,12 +424,13 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
                     InstancePublishInfo oldInfo = client.getInstancePublishInfo(service);
                     // metric ip count decrement
                     client.removeServiceInstance(service);
-                    NotifyCenter.publishEvent(new ClientOperationEvent.ClientDeregisterServiceEvent(service, client.getClientId()));
+                    NotifyCenter.publishEvent(
+                            new ClientOperationEvent.ClientDeregisterServiceEvent(service, client.getClientId()));
                     Loggers.RAFT.info("[SNAPSHOT-DATA-REMOVE] service={}, instance={}", service, oldInfo);
                 }
             }
         }
-
+        
         /**
          * remove certain client which has dead.
          *
@@ -444,7 +454,9 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
                                 InstancePublishInfo oldInfo = client.getInstancePublishInfo(service);
                                 // metric ip count decrement
                                 client.removeServiceInstance(service);
-                                NotifyCenter.publishEvent(new ClientOperationEvent.ClientDeregisterServiceEvent(singleton, client.getClientId()));
+                                NotifyCenter.publishEvent(
+                                        new ClientOperationEvent.ClientDeregisterServiceEvent(singleton,
+                                                client.getClientId()));
                                 Loggers.RAFT.info("[SNAPSHOT-DATA-REMOVE] service={}, instance={}", singleton, oldInfo);
                             }
                         }

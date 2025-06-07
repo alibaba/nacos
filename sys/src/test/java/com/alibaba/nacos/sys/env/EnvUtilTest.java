@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.plugin.environment.CustomEnvironmentPluginManager;
 import com.alibaba.nacos.plugin.environment.spi.CustomEnvironmentPluginService;
 import com.alibaba.nacos.sys.utils.DiskUtils;
+import com.alibaba.nacos.sys.utils.InetUtils;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -197,7 +198,8 @@ class EnvUtilTest {
         System.setProperty(NACOS_SERVER_IP, "1.1.1.1");
         System.setProperty(Constants.AUTO_REFRESH_TIME, "100");
         try {
-            assertEquals("1.1.1.1:8848", EnvUtil.getLocalAddress());
+            EnvUtil.setLocalAddress(null);
+            assertEquals(InetUtils.getSelfIP() + ":8848", EnvUtil.getLocalAddress());
             EnvUtil.setLocalAddress("testLocalAddress:8848");
             assertEquals("testLocalAddress:8848", EnvUtil.getLocalAddress());
         } finally {
@@ -227,6 +229,7 @@ class EnvUtilTest {
     
     @Test
     void testGetStandaloneMode() {
+        EnvUtil.setIsStandalone(false);
         assertFalse(EnvUtil.getStandaloneMode());
         EnvUtil.setIsStandalone(true);
         assertTrue(EnvUtil.getStandaloneMode());

@@ -114,7 +114,7 @@ class ConfigInfoMapperByDerbyTest {
     void testGetTenantIdList() {
         MapperResult mapperResult = configInfoMapperByDerby.getTenantIdList(context);
         assertEquals(mapperResult.getSql(),
-                "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id OFFSET " + startRow + " ROWS FETCH NEXT "
+                "SELECT tenant_id FROM config_info WHERE tenant_id != 'public' GROUP BY tenant_id OFFSET " + startRow + " ROWS FETCH NEXT "
                         + pageSize + " ROWS ONLY");
         assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
     }
@@ -123,7 +123,7 @@ class ConfigInfoMapperByDerbyTest {
     void testGetGroupIdList() {
         MapperResult mapperResult = configInfoMapperByDerby.getGroupIdList(context);
         assertEquals(mapperResult.getSql(),
-                "SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize
+                "SELECT group_id FROM config_info WHERE tenant_id ='public' GROUP BY group_id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize
                         + " ROWS ONLY");
         assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
     }
@@ -221,7 +221,7 @@ class ConfigInfoMapperByDerbyTest {
     @Test
     void testFindConfigInfoBaseLikeCountRows() {
         MapperResult mapperResult = configInfoMapperByDerby.findConfigInfoBaseLikeCountRows(context);
-        assertEquals("SELECT count(*) FROM config_info WHERE  1=1 AND tenant_id='' ", mapperResult.getSql());
+        assertEquals("SELECT count(*) FROM config_info WHERE  1=1 AND tenant_id='public' ", mapperResult.getSql());
         assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
     }
     
@@ -229,7 +229,7 @@ class ConfigInfoMapperByDerbyTest {
     void testFindConfigInfoBaseLikeFetchRows() {
         MapperResult mapperResult = configInfoMapperByDerby.findConfigInfoBaseLikeFetchRows(context);
         assertEquals(mapperResult.getSql(),
-                "SELECT id,data_id,group_id,tenant_id,content FROM config_info WHERE  1=1 AND tenant_id=''  " + "OFFSET " + startRow
+                "SELECT id,data_id,group_id,tenant_id,content FROM config_info WHERE  1=1 AND tenant_id='public'  " + "OFFSET " + startRow
                         + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY");
         assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
     }
@@ -245,7 +245,7 @@ class ConfigInfoMapperByDerbyTest {
     void testFindConfigInfo4PageFetchRows() {
         MapperResult mapperResult = configInfoMapperByDerby.findConfigInfo4PageFetchRows(context);
         assertEquals(mapperResult.getSql(),
-                "SELECT id,data_id,group_id,tenant_id,app_name,content,type FROM config_info WHERE  tenant_id=?  AND app_name=? "
+                "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,type FROM config_info WHERE  tenant_id=?  AND app_name=? "
                         + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY");
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
     }
@@ -270,7 +270,7 @@ class ConfigInfoMapperByDerbyTest {
     @Test
     void testFindConfigInfoLike4PageFetchRows() {
         MapperResult mapperResult = configInfoMapperByDerby.findConfigInfoLike4PageFetchRows(context);
-        assertEquals(mapperResult.getSql(), "SELECT id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key,type FROM config_info "
+        assertEquals(mapperResult.getSql(), "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,encrypted_data_key,type FROM config_info "
                 + "WHERE tenant_id LIKE ?  AND app_name = ?  OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY");
         assertArrayEquals(new Object[] {tenantId, appName}, mapperResult.getParamList().toArray());
     }

@@ -59,7 +59,7 @@ class LocalDataSourceServiceImplTest {
     
     @BeforeEach
     void setUp() {
-        DatasourceConfiguration.setUseExternalDB(false);
+        DatasourceConfiguration.setUseExternalDb(false);
         service = new LocalDataSourceServiceImpl();
         ReflectionTestUtils.setField(service, "jt", jt);
         ReflectionTestUtils.setField(service, "tjt", tjt);
@@ -68,12 +68,12 @@ class LocalDataSourceServiceImplTest {
     @Test
     void testInitWhenUseExternalDB() throws Exception {
         try {
-            DatasourceConfiguration.setUseExternalDB(true);
+            DatasourceConfiguration.setUseExternalDb(true);
             EnvUtil.setEnvironment(null);
             LocalDataSourceServiceImpl service1 = new LocalDataSourceServiceImpl();
             assertDoesNotThrow(service1::init);
         } finally {
-            DatasourceConfiguration.setUseExternalDB(false);
+            DatasourceConfiguration.setUseExternalDb(false);
         }
     }
     

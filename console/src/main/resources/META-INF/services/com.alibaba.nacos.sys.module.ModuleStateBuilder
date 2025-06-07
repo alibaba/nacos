@@ -15,3 +15,4 @@
 #
 
 com.alibaba.nacos.console.config.ConsoleModuleStateBuilder
+com.alibaba.nacos.console.config.ConsoleAuthModuleStateBuilder

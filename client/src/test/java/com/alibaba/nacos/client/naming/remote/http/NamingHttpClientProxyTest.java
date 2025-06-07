@@ -66,7 +66,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-// todo  remove strictness lenient
 @MockitoSettings(strictness = Strictness.LENIENT)
 class NamingHttpClientProxyTest {
     
@@ -370,7 +369,7 @@ class NamingHttpClientProxyTest {
         //given
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
         HttpRestResult<Object> a = new HttpRestResult<Object>();
-        a.setData("{\"status\":\"UP\"}");
+        a.setData("{\"code\":0,\"message\":\"success\",\"data\":\"ok\"}");
         a.setCode(200);
         when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any())).thenReturn(a);
         
@@ -381,7 +380,7 @@ class NamingHttpClientProxyTest {
         //when
         boolean serverHealthy = clientProxy.serverHealthy();
         //then
-        verify(nacosRestTemplate, times(1)).exchangeForm(endsWith("/operator/metrics"), any(), any(), any(),
+        verify(nacosRestTemplate, times(1)).exchangeForm(endsWith("/v3/admin/core/state/liveness"), any(), any(), any(),
                 eq(HttpMethod.GET), any());
         assertTrue(serverHealthy);
     }

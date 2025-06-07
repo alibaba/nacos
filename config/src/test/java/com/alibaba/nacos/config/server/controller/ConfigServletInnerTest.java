@@ -25,6 +25,7 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.ApiVersionEnum;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigCacheGray;
+import com.alibaba.nacos.config.server.model.ConfigListenState;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.model.gray.ConfigGrayPersistInfo;
 import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
@@ -54,15 +55,12 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import javax.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG;
 import static com.alibaba.nacos.config.server.constant.Constants.CONTENT_MD5;
-import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_GBK;
 import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
 import static com.alibaba.nacos.config.server.utils.RequestUtil.CLIENT_APPNAME_HEADER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -127,12 +125,12 @@ class ConfigServletInnerTest {
     @Test
     void testDoPollingConfig() throws Exception {
         
-        Map<String, String> clientMd5Map = new HashMap<>();
+        Map<String, ConfigListenState> clientMd5Map = new HashMap<>();
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
-        List<String> changedGroups = new ArrayList<>();
-        changedGroups.add("1");
-        changedGroups.add("2");
+        HashMap<String, ConfigListenState> changedGroups = new HashMap<>();
+        changedGroups.put("1", new ConfigListenState("testMd51"));
+        changedGroups.put("2", new ConfigListenState("testMd52"));
         
         md5UtilMockedStatic.when(() -> MD5Util.compareMd5(request, response, clientMd5Map)).thenReturn(changedGroups);
         md5UtilMockedStatic.when(() -> MD5Util.compareMd5OldResult(changedGroups)).thenReturn("test-old");
@@ -184,8 +182,7 @@ class ConfigServletInnerTest {
     private void mockGray4Beta(CacheItem cacheItem, String content, String betaIps, String dataKey) {
         cacheItem.initConfigGrayIfEmpty(BetaGrayRule.TYPE_BETA);
         ConfigCacheGray configCacheGray = cacheItem.getConfigCacheGray().get(BetaGrayRule.TYPE_BETA);
-        configCacheGray.setMd5Utf8(MD5Utils.md5Hex(content, ENCODE_UTF8));
-        configCacheGray.setMd5Gbk(MD5Utils.md5Hex(content, ENCODE_GBK));
+        configCacheGray.setMd5(MD5Utils.md5Hex(content, ENCODE_UTF8));
         configCacheGray.setEncryptedDataKey(dataKey);
         ConfigGrayPersistInfo configGrayPersistInfo = new ConfigGrayPersistInfo(BetaGrayRule.TYPE_BETA,
                 BetaGrayRule.VERSION, betaIps, -1000);
@@ -196,8 +193,7 @@ class ConfigServletInnerTest {
     private void mockGray4Tag(CacheItem cacheItem, String content, String tagValue, String dataKey, long ts) {
         cacheItem.initConfigGrayIfEmpty(TagGrayRule.TYPE_TAG + "_" + tagValue);
         ConfigCacheGray configCacheGray = cacheItem.getConfigCacheGray().get(TagGrayRule.TYPE_TAG + "_" + tagValue);
-        configCacheGray.setMd5Utf8(MD5Utils.md5Hex(content, ENCODE_UTF8));
-        configCacheGray.setMd5Gbk(MD5Utils.md5Hex(content, ENCODE_GBK));
+        configCacheGray.setMd5(MD5Utils.md5Hex(content, ENCODE_UTF8));
         configCacheGray.setLastModifiedTs(ts);
         configCacheGray.setEncryptedDataKey(dataKey);
         ConfigGrayPersistInfo configGrayPersistInfo = new ConfigGrayPersistInfo(TagGrayRule.TYPE_TAG,
@@ -295,7 +291,7 @@ class ConfigServletInnerTest {
         CacheItem cacheItem = new CacheItem("test");
         String md5 = "md5wertyui";
         final String content = "content345678";
-        cacheItem.getConfigCache().setMd5Utf8(md5);
+        cacheItem.getConfigCache().setMd5(md5);
         long ts = System.currentTimeMillis();
         cacheItem.getConfigCache().setLastModifiedTs(ts);
         cacheItem.getConfigCache().setEncryptedDataKey("key2345678");
@@ -330,7 +326,7 @@ class ConfigServletInnerTest {
         CacheItem cacheItem = new CacheItem("test");
         String md5 = "md5wertyui";
         final String content = "content345678";
-        cacheItem.getConfigCache().setMd5Utf8(md5);
+        cacheItem.getConfigCache().setMd5(md5);
         long ts = System.currentTimeMillis();
         cacheItem.getConfigCache().setLastModifiedTs(ts);
         cacheItem.getConfigCache().setEncryptedDataKey("key2345678");

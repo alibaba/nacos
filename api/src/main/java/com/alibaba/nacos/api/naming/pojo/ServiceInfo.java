@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * ServiceInfo.
+ * Service Information with instances and without cluster information, used in data pushing and cached for nacos-client.
  *
  * @author nkorange
  * @author shizhengxing
@@ -36,7 +36,7 @@ import java.util.List;
 public class ServiceInfo {
     
     /**
-     * file name pattern: groupName@@name@clusters.
+     * file name pattern: groupName@@name@@clusters.
      */
     private static final int GROUP_POSITION = 0;
     
@@ -67,23 +67,23 @@ public class ServiceInfo {
     
     private String checksum = "";
     
-    private volatile boolean allIPs = false;
+    private volatile boolean allIps = false;
     
     private volatile boolean reachProtectionThreshold = false;
     
     public ServiceInfo() {
     }
     
-    public boolean isAllIPs() {
-        return allIPs;
+    public boolean isAllIps() {
+        return allIps;
     }
     
-    public void setAllIPs(boolean allIPs) {
-        this.allIPs = allIPs;
+    public void setAllIps(boolean allIps) {
+        this.allIps = allIps;
     }
     
     /**
-     * There is only one form of the key:groupName@@name@clusters. This constructor used by DiskCache.read(String) and
+     * There is only one form of the key:groupName@@name@@clusters. This constructor used by DiskCache.read(String) and
      * FailoverReactor.FailoverFileReader,you should know that 'groupName' must not be null,and 'clusters' can be null.
      */
     public ServiceInfo(final String key) {
@@ -180,7 +180,7 @@ public class ServiceInfo {
      * @return true if validate, otherwise false
      */
     public boolean validate() {
-        if (isAllIPs()) {
+        if (isAllIps()) {
             return true;
         }
         
@@ -215,14 +215,17 @@ public class ServiceInfo {
     
     @JsonIgnore
     public static String getKey(String name, String clusters) {
-        
         if (!isEmpty(clusters)) {
             return name + Constants.SERVICE_INFO_SPLITER + clusters;
         }
-        
         return name;
     }
-    
+
+    @JsonIgnore
+    public String getKeyWithoutClusters() {
+        return getGroupedServiceName();
+    }
+
     @JsonIgnore
     public String getKeyEncoded() {
         String serviceName = getGroupedServiceName();

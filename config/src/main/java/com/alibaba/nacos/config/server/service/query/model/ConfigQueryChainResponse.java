@@ -32,6 +32,8 @@ public class ConfigQueryChainResponse {
     
     private String contentType;
     
+    private String configType;
+    
     private String encryptedDataKey;
     
     private String md5;
@@ -87,6 +89,14 @@ public class ConfigQueryChainResponse {
     
     public void setContentType(String contentType) {
         this.contentType = contentType;
+    }
+    
+    public String getConfigType() {
+        return configType;
+    }
+    
+    public void setConfigType(String configType) {
+        this.configType = configType;
     }
     
     public String getEncryptedDataKey() {

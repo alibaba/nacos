@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.query.handler;
 
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
@@ -47,6 +48,8 @@ public class ConfigChainEntryHandler extends AbstractConfigQueryHandler {
     
     @Override
     public ConfigQueryChainResponse handle(ConfigQueryChainRequest request) throws IOException {
+    
+        request.setTenant(NamespaceUtil.processNamespaceParameter(request.getTenant()));
         String groupKey = GroupKey2.getKey(request.getDataId(), request.getGroup(), request.getTenant());
         int lockResult = ConfigCacheService.tryConfigReadLock(groupKey);
         CacheItem cacheItem = ConfigCacheService.getContentCache(groupKey);
@@ -78,9 +81,4 @@ public class ConfigChainEntryHandler extends AbstractConfigQueryHandler {
     public static CacheItem getThreadLocalCacheItem() {
         return CACHE_ITEM_THREAD_LOCAL.get();
     }
-    
-    public static void removeThreadLocalCacheItem() {
-        CACHE_ITEM_THREAD_LOCAL.remove();
-    }
-    
 }

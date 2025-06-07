@@ -55,7 +55,7 @@ class NJdbcExceptionTest {
         String msg = "test msg";
         String originExceptionName = "OriginException";
         NJdbcException exception = new NJdbcException(msg, cause, originExceptionName);
-        assertEquals("test msg; nested exception is java.lang.IllegalStateException: IllegalStateException", exception.getMessage());
+        assertEquals("test msg", exception.getMessage());
         assertSame(cause, exception.getCause());
         assertEquals(originExceptionName, exception.getOriginExceptionName());
     }
@@ -64,7 +64,7 @@ class NJdbcExceptionTest {
     public void testConstructorWithMessageAndCause() {
         String msg = "test msg";
         NJdbcException exception = new NJdbcException(msg, cause);
-        assertEquals("test msg; nested exception is java.lang.IllegalStateException: IllegalStateException", exception.getMessage());
+        assertEquals("test msg", exception.getMessage());
         assertSame(cause, exception.getCause());
         assertNull(exception.getOriginExceptionName());
     }
@@ -72,7 +72,7 @@ class NJdbcExceptionTest {
     @Test
     public void testConstructorWithCause() {
         NJdbcException exception = new NJdbcException(cause);
-        assertEquals("; nested exception is java.lang.IllegalStateException: IllegalStateException", exception.getMessage());
+        assertEquals("", exception.getMessage());
         assertSame(cause, exception.getCause());
         assertNull(exception.getOriginExceptionName());
     }

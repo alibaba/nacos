@@ -45,7 +45,7 @@ class HistoryDetail extends React.Component {
     this.group = getParams('group') || 'DEFAULT_GROUP';
     this.serverId = getParams('serverId') || 'center';
     this.nid = getParams('nid') || '123509854';
-    this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
+    this.tenant = getParams('namespace') || 'public'; // 为当前实例保存tenant参数
     // this.params = window.location.hash.split('?')[1]||'';
   }
 
@@ -63,13 +63,13 @@ class HistoryDetail extends React.Component {
     const { locale = {} } = this.props;
     const self = this;
     request({
-      url: `v1/cs/history?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`,
+      url: `v3/console/cs/history?dataId=${this.dataId}&groupName=${this.group}&nid=${this.nid}`,
       success(result) {
         if (result != null) {
-          const data = result;
+          const data = result && result.data;
+          if (!data) return;
           const extInfo = data.extInfo ? JSON.parse(data.extInfo) : {};
           const grayRule = extInfo.gray_rule ? JSON.parse(extInfo.gray_rule) : {};
-
           self.field.setValue('dataId', data.dataId);
           self.field.setValue('content', data.content);
           self.field.setValue('appName', self.inApp ? self.edasAppName : data.appName);
@@ -77,7 +77,7 @@ class HistoryDetail extends React.Component {
           self.field.setValue('srcUser', data.srcUser);
           self.field.setValue('srcIp', data.srcIp);
           self.field.setValue('opType', data.opType.trim());
-          self.field.setValue('group', data.group);
+          self.field.setValue('group', data.groupName);
           self.field.setValue('md5', data.md5);
           self.setState({
             currentPublishType: data.publishType,

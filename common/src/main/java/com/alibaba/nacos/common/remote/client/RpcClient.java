@@ -236,6 +236,7 @@ public abstract class RpcClient implements Closeable {
     /**
      * Start this client.
      */
+    @SuppressWarnings("PMD.MethodTooLongRule")
     public final void start() throws NacosException {
         
         boolean success = rpcClientStatus.compareAndSet(RpcClientStatus.INITIALIZED, RpcClientStatus.STARTING);
@@ -288,9 +289,9 @@ public abstract class RpcClient implements Closeable {
                                     break;
                                 }
                                 
-                                boolean statusFLowSuccess = RpcClient.this.rpcClientStatus
+                                boolean statusFlowSuccess = RpcClient.this.rpcClientStatus
                                         .compareAndSet(rpcClientStatus, RpcClientStatus.UNHEALTHY);
-                                if (statusFLowSuccess) {
+                                if (statusFlowSuccess) {
                                     reconnectContext = new ReconnectContext(null, false);
                                 } else {
                                     continue;
@@ -470,6 +471,7 @@ public abstract class RpcClient implements Closeable {
     /**
      * switch server .
      */
+    @SuppressWarnings("PMD.MethodTooLongRule")
     protected void reconnect(final ServerInfo recommendServerInfo, boolean onRequestFail) {
         
         try {
@@ -902,7 +904,7 @@ public abstract class RpcClient implements Closeable {
         if (matcher.find()) {
             serverAddress = matcher.group(1);
         }
-        String[] ipPortTuple = InternetAddressUtil.splitIPPortStr(serverAddress);
+        String[] ipPortTuple = InternetAddressUtil.splitIpPortStr(serverAddress);
         int defaultPort = Integer.parseInt(System.getProperty("nacos.server.port", "8848"));
         String serverPort = CollectionUtils.getOrDefault(ipPortTuple, 1, Integer.toString(defaultPort));
         

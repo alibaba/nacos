@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.naming.remote.gprc.redo;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.naming.cache.NamingFuzzyWatchServiceListHolder;
 import com.alibaba.nacos.client.naming.remote.TestConnection;
 import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.BatchInstanceRedoData;
@@ -56,13 +57,16 @@ class NamingGrpcRedoServiceTest {
     @Mock
     private NamingGrpcClientProxy clientProxy;
     
+    @Mock
+    private NamingFuzzyWatchServiceListHolder namingFuzzyWatchServiceListHolder;
+    
     private NamingGrpcRedoService redoService;
     
     @BeforeEach
     void setUp() throws Exception {
         Properties prop = new Properties();
         NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
-        redoService = new NamingGrpcRedoService(clientProxy, nacosClientProperties);
+        redoService = new NamingGrpcRedoService(clientProxy, namingFuzzyWatchServiceListHolder, nacosClientProperties);
         ScheduledExecutorService redoExecutor = (ScheduledExecutorService) ReflectUtils.getFieldValue(redoService,
                 "redoExecutor");
         redoExecutor.shutdownNow();
@@ -95,7 +99,7 @@ class NamingGrpcRedoServiceTest {
         prop.setProperty(PropertyKeyConst.REDO_DELAY_THREAD_COUNT, "2");
         NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         
-        NamingGrpcRedoService redoService = new NamingGrpcRedoService(clientProxy, nacosClientProperties);
+        NamingGrpcRedoService redoService = new NamingGrpcRedoService(clientProxy, namingFuzzyWatchServiceListHolder, nacosClientProperties);
         
         Field redoThreadCountField = NamingGrpcRedoService.class.getDeclaredField("redoThreadCount");
         redoThreadCountField.setAccessible(true);

@@ -46,6 +46,18 @@ const configurationMenu = {
     },
   ],
 };
+
+export const McpServerManagementRoute = '/mcpServerManagement';
+const AiControlMenu = {
+  key: 'AiManagementVirtual',
+  badge: 'new',
+  children: [
+    {
+      key: 'mcpList',
+      url: McpServerManagementRoute,
+    },
+  ],
+};
 /**
  * 权限控制相关
  */
@@ -94,6 +106,7 @@ export default function(model) {
   } else {
     result.push(configurationMenu, serviceDiscoveryMenu);
   }
+  result.push(AiControlMenu);
   if (globalAdmin) {
     result.push(authorityControlMenu);
   }

@@ -18,15 +18,14 @@ package com.alibaba.nacos.common.http;
 
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.StringUtils;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpHead;
-import org.apache.http.client.methods.HttpPatch;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.client.methods.HttpTrace;
+import org.apache.hc.client5.http.classic.methods.HttpDelete;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpHead;
+import org.apache.hc.client5.http.classic.methods.HttpPatch;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.classic.methods.HttpPut;
+import org.apache.hc.client5.http.classic.methods.HttpTrace;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
 
 import java.net.URI;
 
@@ -42,14 +41,14 @@ public enum BaseHttpMethod {
      */
     GET(HttpMethod.GET) {
         @Override
-        protected HttpRequestBase createRequest(String url) {
+        protected HttpUriRequestBase createRequest(String url) {
             return new HttpGet(url);
         }
     },
     
     GET_LARGE(HttpMethod.GET_LARGE) {
         @Override
-        protected HttpRequestBase createRequest(String url) {
+        protected HttpUriRequestBase createRequest(String url) {
             return new HttpGetWithEntity(url);
         }
     },
@@ -59,7 +58,7 @@ public enum BaseHttpMethod {
      */
     POST(HttpMethod.POST) {
         @Override
-        protected HttpRequestBase createRequest(String url) {
+        protected HttpUriRequestBase createRequest(String url) {
             return new HttpPost(url);
         }
     },
@@ -69,7 +68,7 @@ public enum BaseHttpMethod {
      */
     PUT(HttpMethod.PUT) {
         @Override
-        protected HttpRequestBase createRequest(String url) {
+        protected HttpUriRequestBase createRequest(String url) {
             return new HttpPut(url);
         }
     },
@@ -79,7 +78,7 @@ public enum BaseHttpMethod {
      */
     DELETE(HttpMethod.DELETE) {
         @Override
-        protected HttpRequestBase createRequest(String url) {
+        protected HttpUriRequestBase createRequest(String url) {
             return new HttpDelete(url);
         }
     },
@@ -89,7 +88,7 @@ public enum BaseHttpMethod {
      */
     DELETE_LARGE(HttpMethod.DELETE_LARGE) {
         @Override
-        protected HttpRequestBase createRequest(String url) {
+        protected HttpUriRequestBase createRequest(String url) {
             return new HttpDeleteWithEntity(url);
         }
     },
@@ -99,7 +98,7 @@ public enum BaseHttpMethod {
      */
     HEAD(HttpMethod.HEAD) {
         @Override
-        protected HttpRequestBase createRequest(String url) {
+        protected HttpUriRequestBase createRequest(String url) {
             return new HttpHead(url);
         }
     },
@@ -109,7 +108,7 @@ public enum BaseHttpMethod {
      */
     TRACE(HttpMethod.TRACE) {
         @Override
-        protected HttpRequestBase createRequest(String url) {
+        protected HttpUriRequestBase createRequest(String url) {
             return new HttpTrace(url);
         }
     },
@@ -119,7 +118,7 @@ public enum BaseHttpMethod {
      */
     PATCH(HttpMethod.PATCH) {
         @Override
-        protected HttpRequestBase createRequest(String url) {
+        protected HttpUriRequestBase createRequest(String url) {
             return new HttpPatch(url);
         }
     },
@@ -129,7 +128,7 @@ public enum BaseHttpMethod {
      */
     OPTIONS(HttpMethod.OPTIONS) {
         @Override
-        protected HttpRequestBase createRequest(String url) {
+        protected HttpUriRequestBase createRequest(String url) {
             return new HttpTrace(url);
         }
     };
@@ -140,11 +139,11 @@ public enum BaseHttpMethod {
         this.name = name;
     }
     
-    public HttpRequestBase init(String url) {
+    public HttpUriRequestBase init(String url) {
         return createRequest(url);
     }
     
-    protected HttpRequestBase createRequest(String url) {
+    protected HttpUriRequestBase createRequest(String url) {
         throw new UnsupportedOperationException();
     }
     
@@ -170,18 +169,12 @@ public enum BaseHttpMethod {
      * placed in the body.
      * </p>
      */
-    public static class HttpGetWithEntity extends HttpEntityEnclosingRequestBase {
+    public static class HttpGetWithEntity extends HttpUriRequestBase {
         
         public static final String METHOD_NAME = "GET";
         
         public HttpGetWithEntity(String url) {
-            super();
-            setURI(URI.create(url));
-        }
-        
-        @Override
-        public String getMethod() {
-            return METHOD_NAME;
+            super(METHOD_NAME, URI.create(url));
         }
     }
     
@@ -192,18 +185,12 @@ public enum BaseHttpMethod {
      * placed in the body.
      * </p>
      */
-    public static class HttpDeleteWithEntity extends HttpEntityEnclosingRequestBase {
+    public static class HttpDeleteWithEntity extends HttpUriRequestBase {
         
         public static final String METHOD_NAME = "DELETE";
         
         public HttpDeleteWithEntity(String url) {
-            super();
-            setURI(URI.create(url));
-        }
-        
-        @Override
-        public String getMethod() {
-            return METHOD_NAME;
+            super(METHOD_NAME, URI.create(url));
         }
     }
     

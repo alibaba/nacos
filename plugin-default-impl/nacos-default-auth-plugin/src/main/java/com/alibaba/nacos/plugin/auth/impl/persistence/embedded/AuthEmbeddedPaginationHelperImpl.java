@@ -18,7 +18,7 @@ package com.alibaba.nacos.plugin.auth.impl.persistence.embedded;
 
 import com.alibaba.nacos.plugin.auth.impl.persistence.handler.PageHandlerAdapterFactory;
 import com.alibaba.nacos.plugin.auth.impl.model.OffsetFetchResult;
-import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.plugin.auth.impl.persistence.AuthPaginationHelper;

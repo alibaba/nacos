@@ -17,13 +17,16 @@
 
 package com.alibaba.nacos.core.config;
 
+import com.alibaba.nacos.core.auth.AuthModuleStateBuilder;
 import com.alibaba.nacos.core.distributed.distro.DistroConstants;
 import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
+import com.alibaba.nacos.sys.env.DeploymentType;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.module.ModuleStateHolder;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.lang.reflect.Constructor;
@@ -39,23 +42,36 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class ModuleStateClusterTest {
     
-    private ConfigurableEnvironment environment;
+    private MockEnvironment environment;
     
     private ModuleStateHolder moduleStateHolder;
     
     @BeforeEach
-    void setUp() throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    void setUp()
+            throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         environment = new MockEnvironment();
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "nacos");
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "111");
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "111");
         EnvUtil.setEnvironment(environment);
         EnvUtil.setIsStandalone(false);
+        EnvUtil.setDeploymentType(DeploymentType.MERGED);
         Constructor<ModuleStateHolder> constructor = ModuleStateHolder.class.getDeclaredConstructor();
         constructor.setAccessible(true);
         moduleStateHolder = constructor.newInstance();
+    }
+    
+    @AfterEach
+    void tearDown() {
+        EnvUtil.setEnvironment(null);
+        EnvUtil.setIsStandalone(null);
+        EnvUtil.setDeploymentType(null);
     }
     
     @Test
     void testStandaloneBuilder() {
         assertTrue(moduleStateHolder.getModuleState(DistroConstants.DISTRO_MODULE).isPresent());
         assertTrue(moduleStateHolder.getModuleState(RaftSysConstants.RAFT_STATE).isPresent());
+        assertTrue(moduleStateHolder.getModuleState(AuthModuleStateBuilder.AUTH_MODULE).isPresent());
     }
 }

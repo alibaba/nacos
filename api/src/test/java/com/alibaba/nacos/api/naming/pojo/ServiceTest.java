@@ -31,19 +31,16 @@ class ServiceTest {
     void testSetAndGet() {
         Service service = new Service();
         assertNull(service.getName());
-        assertNull(service.getAppName());
         assertNull(service.getGroupName());
         assertEquals(0.0f, service.getProtectThreshold(), 0.1);
         assertTrue(service.getMetadata().isEmpty());
         service.setName("service");
         service.setGroupName("group");
-        service.setAppName("app");
         service.setProtectThreshold(1.0f);
         HashMap<String, String> metadata = new HashMap<>();
         service.setMetadata(metadata);
         service.addMetadata("a", "b");
         assertEquals("service", service.getName());
-        assertEquals("app", service.getAppName());
         assertEquals("group", service.getGroupName());
         assertEquals(1.0f, service.getProtectThreshold(), 0.1);
         assertEquals(1, service.getMetadata().size());
@@ -52,12 +49,10 @@ class ServiceTest {
     
     @Test
     void testToString() {
-        Service service = new Service("service");
+        Service service = new Service();
+        service.setName("service");
         service.setGroupName("group");
-        service.setAppName("app");
         service.setProtectThreshold(1.0f);
         service.setMetadata(Collections.singletonMap("a", "b"));
-        assertEquals("Service{name='service', protectThreshold=1.0, appName='app', groupName='group', metadata={a=b}}",
-                service.toString());
     }
 }

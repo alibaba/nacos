@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.auth.annotation;
 
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.auth.parser.DefaultResourceParser;
 import com.alibaba.nacos.auth.parser.ResourceParser;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -70,4 +71,12 @@ public @interface Secured {
      * @return tags
      */
     String[] tags() default {};
+    
+    /**
+     * The type of API. Distinguishing between ADMIN_API and OPEN_API.
+     *
+     * @return the type of the API
+     */
+    ApiType apiType() default ApiType.OPEN_API;
+    
 }

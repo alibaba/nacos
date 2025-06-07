@@ -18,7 +18,7 @@ package com.alibaba.nacos.plugin.auth.impl.token.impl;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -35,7 +35,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -46,7 +45,6 @@ import java.util.concurrent.TimeUnit;
  * @author wfnuser
  * @author nkorange
  */
-@Component
 public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> implements TokenManager {
     
     private static final String AUTH_DISABLED_TOKEN = "AUTH_DISABLED";
@@ -70,16 +68,16 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
         this.tokenValidityInSeconds = EnvUtil.getProperty(AuthConstants.TOKEN_EXPIRE_SECONDS, Long.class,
                 AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS);
         
-        String encodedSecretKey = EnvUtil
-                .getProperty(AuthConstants.TOKEN_SECRET_KEY, AuthConstants.DEFAULT_TOKEN_SECRET_KEY);
+        String encodedSecretKey = EnvUtil.getProperty(AuthConstants.TOKEN_SECRET_KEY,
+                AuthConstants.DEFAULT_TOKEN_SECRET_KEY);
         try {
             this.jwtParser = new NacosJwtParser(encodedSecretKey);
         } catch (Exception e) {
             this.jwtParser = null;
-            if (authConfigs.isAuthEnabled()) {
+            if (authConfigs.isAuthEnabled() || authConfigs.isConsoleAuthEnabled()) {
                 throw new IllegalArgumentException(
                         "the length of secret key must great than or equal 32 bytes; And the secret key  must be encoded by base64."
-                                + "Please see https://nacos.io/zh-cn/docs/v2/guide/user/auth.html", e);
+                                + "Please see https://nacos.io/docs/latest/manual/admin/auth/", e);
             }
         }
         
@@ -175,7 +173,7 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
     private void checkJwtParser() {
         if (null == jwtParser) {
             throw new NacosRuntimeException(NacosException.INVALID_PARAM,
-                    "Please config `nacos.core.auth.plugin.nacos.token.secret.key`, detail see https://nacos.io/zh-cn/docs/v2/guide/user/auth.html");
+                    "Please config `nacos.core.auth.plugin.nacos.token.secret.key`, detail see https://nacos.io/docs/latest/manual/admin/auth/");
         }
     }
 }

@@ -75,7 +75,27 @@ public abstract class AbstractSelectorWrapper<S extends Selector<?, ?>, E, T ext
         }
         E newEvent = buildListenerEvent(event);
         if (isCallable(newEvent)) {
-            listener.invoke(newEvent);
+            // lock listener to make sure isInvoked is thread safe.
+            synchronized (listener) {
+                listener.invoke(newEvent);
+            }
+        }
+    }
+    
+    /**
+     * Notify listener If the listener is not invoked.
+     *
+     * @param event original event
+     */
+    public void notifyIfListenerIfNotNotified(T event) {
+        if (!isSelectable(event)) {
+            return;
+        }
+        E newEvent = buildListenerEvent(event);
+        synchronized (listener) {
+            if (!listener.isInvoked()) {
+                listener.invoke(newEvent);
+            }
         }
     }
     

@@ -96,14 +96,14 @@ class GroupCapacityPersistServiceTest {
         
         List<GroupCapacity> list = new ArrayList<>();
         GroupCapacity groupCapacity = new GroupCapacity();
-        groupCapacity.setGroup("test");
+        groupCapacity.setGroupName("test");
         list.add(groupCapacity);
         
         String groupId = "testId";
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {groupId}), any(RowMapper.class))).thenReturn(list);
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(new Object[] {groupId}))).thenReturn(list);
         GroupCapacity ret = service.getGroupCapacity(groupId);
         
-        assertEquals(groupCapacity.getGroup(), ret.getGroup());
+        assertEquals(groupCapacity.getGroupName(), ret.getGroupName());
     }
     
     @Test
@@ -115,7 +115,7 @@ class GroupCapacityPersistServiceTest {
         list.add(groupCapacity);
         
         String groupId = GroupCapacityPersistService.CLUSTER;
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {groupId}), any(RowMapper.class))).thenReturn(list);
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(new Object[] {groupId}))).thenReturn(list);
         Capacity ret = service.getClusterCapacity();
         
         assertEquals(groupCapacity.getId(), ret.getId());
@@ -128,10 +128,10 @@ class GroupCapacityPersistServiceTest {
         // when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test3"))).thenReturn(1);
         
         GroupCapacity capacity = new GroupCapacity();
-        capacity.setGroup(GroupCapacityPersistService.CLUSTER);
+        capacity.setGroupName(GroupCapacityPersistService.CLUSTER);
         assertTrue(service.insertGroupCapacity(capacity));
         
-        capacity.setGroup("test");
+        capacity.setGroupName("test");
         doReturn(1).when(jdbcTemplate)
                 .update(anyString(), eq("test"), eq(null), eq(null), eq(null), eq(null), eq(null), eq(null), eq("test"));
         
@@ -149,10 +149,10 @@ class GroupCapacityPersistServiceTest {
         list.add(groupCapacity);
         
         String groupId = GroupCapacityPersistService.CLUSTER;
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {groupId}), any(RowMapper.class))).thenReturn(list);
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class),  eq(new Object[] {groupId}))).thenReturn(list);
         assertEquals(groupCapacity.getUsage().intValue(), service.getClusterUsage());
         
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {groupId}), any(RowMapper.class))).thenReturn(new ArrayList<>());
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(new Object[] {groupId}))).thenReturn(new ArrayList<>());
         when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class))).thenReturn(20);
         assertEquals(20, service.getClusterUsage());
     }
@@ -162,7 +162,7 @@ class GroupCapacityPersistServiceTest {
         GroupCapacity groupCapacity = new GroupCapacity();
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         groupCapacity.setGmtModified(timestamp);
-        groupCapacity.setGroup("test");
+        groupCapacity.setGroupName("test");
         groupCapacity.setQuota(1);
         when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test"), eq(1))).thenReturn(1);
         
@@ -184,7 +184,7 @@ class GroupCapacityPersistServiceTest {
         GroupCapacity groupCapacity = new GroupCapacity();
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         groupCapacity.setGmtModified(timestamp);
-        groupCapacity.setGroup("test2");
+        groupCapacity.setGroupName("test2");
         when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test2"))).thenReturn(1);
         
         assertTrue(service.incrementUsageWithQuotaLimit(groupCapacity));
@@ -205,7 +205,7 @@ class GroupCapacityPersistServiceTest {
         GroupCapacity groupCapacity = new GroupCapacity();
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         groupCapacity.setGmtModified(timestamp);
-        groupCapacity.setGroup("test3");
+        groupCapacity.setGroupName("test3");
         when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test3"))).thenReturn(1);
         
         assertTrue(service.incrementUsage(groupCapacity));
@@ -225,7 +225,7 @@ class GroupCapacityPersistServiceTest {
         GroupCapacity groupCapacity = new GroupCapacity();
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         groupCapacity.setGmtModified(timestamp);
-        groupCapacity.setGroup("test4");
+        groupCapacity.setGroupName("test4");
         when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test4"))).thenReturn(1);
         
         assertTrue(service.decrementUsage(groupCapacity));
@@ -307,7 +307,7 @@ class GroupCapacityPersistServiceTest {
         assertEquals(maxSize, groupCapacity.getMaxSize().intValue());
         assertEquals(maxAggrCount, groupCapacity.getMaxAggrCount().intValue());
         assertEquals(maxAggrSize, groupCapacity.getMaxAggrSize().intValue());
-        assertEquals(group, groupCapacity.getGroup());
+        assertEquals(group, groupCapacity.getGroupName());
     }
     
     @Test
@@ -372,7 +372,7 @@ class GroupCapacityPersistServiceTest {
         
         List<GroupCapacity> list = new ArrayList<>();
         GroupCapacity groupCapacity = new GroupCapacity();
-        groupCapacity.setGroup("test");
+        groupCapacity.setGroupName("test");
         list.add(groupCapacity);
         long lastId = 1;
         int pageSize = 1;
@@ -381,7 +381,7 @@ class GroupCapacityPersistServiceTest {
         List<GroupCapacity> ret = service.getCapacityList4CorrectUsage(lastId, pageSize);
         
         assertEquals(list.size(), ret.size());
-        assertEquals(groupCapacity.getGroup(), ret.get(0).getGroup());
+        assertEquals(groupCapacity.getGroupName(), ret.get(0).getGroupName());
         
         //mock get connection fail
         when(jdbcTemplate.query(anyString(), eq(new Object[] {lastId, pageSize}), any(RowMapper.class))).thenThrow(

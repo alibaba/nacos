@@ -19,23 +19,25 @@ package com.alibaba.nacos.config.server.model.form;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.api.model.NacosForm;
 import org.springframework.http.HttpStatus;
-
-import java.io.Serializable;
-import java.util.Objects;
 
 /**
  * ConfigForm.
  *
  * @author dongyafei
- * @date 2022/7/24
+ * @author xiweng.yy
  */
-public class ConfigForm implements Serializable {
+public class ConfigForm implements NacosForm, Cloneable {
     
     private static final long serialVersionUID = 4124932564086863921L;
     
     private String dataId;
     
+    /**
+     * Deprecated, please use {@link ConfigFormV3#groupName} replaced.
+     */
+    @Deprecated
     private String group;
     
     private String namespaceId = StringUtils.EMPTY;
@@ -88,6 +90,30 @@ public class ConfigForm implements Serializable {
         this.effect = effect;
         this.type = type;
         this.schema = schema;
+    }
+    
+    @Override
+    public ConfigForm clone() {
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId(this.dataId);
+        configForm.setGroup(this.group);
+        configForm.setNamespaceId(this.namespaceId);
+        configForm.setContent(this.content);
+        configForm.setTag(this.tag);
+        configForm.setAppName(this.appName);
+        configForm.setSrcUser(this.srcUser);
+        configForm.setConfigTags(this.configTags);
+        configForm.setDesc(this.desc);
+        configForm.setUse(this.use);
+        configForm.setEffect(this.effect);
+        configForm.setType(this.type);
+        configForm.setSchema(this.schema);
+        configForm.setEncryptedDataKey(this.encryptedDataKey);
+        configForm.setGrayName(this.grayName);
+        configForm.setGrayRuleExp(this.grayRuleExp);
+        configForm.setGrayVersion(this.grayVersion);
+        configForm.setGrayPriority(this.grayPriority);
+        return configForm;
     }
     
     public String getDataId() {
@@ -235,47 +261,6 @@ public class ConfigForm implements Serializable {
     }
     
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        ConfigForm configForm = (ConfigForm) o;
-        return dataId.equals(configForm.dataId) && group.equals(configForm.group) && Objects.equals(namespaceId, configForm.namespaceId)
-                && content.equals(configForm.content) && Objects.equals(tag, configForm.tag) && Objects
-                .equals(appName, configForm.appName) && Objects.equals(srcUser, configForm.srcUser) && Objects
-                .equals(configTags, configForm.configTags) && Objects.equals(desc, configForm.desc) && Objects
-                .equals(use, configForm.use) && Objects.equals(effect, configForm.effect) && Objects
-                .equals(type, configForm.type) && Objects.equals(schema, configForm.schema) && Objects
-                .equals(encryptedDataKey, configForm.encryptedDataKey) && Objects
-                .equals(grayName, configForm.grayName) && Objects.equals(grayVersion, configForm.grayVersion) && Objects
-                .equals(grayPriority, configForm.grayPriority);
-    }
-    
-    @Override
-    public int hashCode() {
-        return Objects.hash(dataId, group, namespaceId, content, tag, appName, srcUser, configTags, desc, use, effect, type,
-                schema, encryptedDataKey, grayName, grayVersion, grayPriority);
-    }
-    
-    @Override
-    public String toString() {
-        return "ConfigVo{" + "dataId='" + dataId + '\'' + ", group='" + group + '\'' + ", namespaceId='" + namespaceId + '\''
-                + ", content='" + content + '\'' + ", tag='" + tag + '\'' + ", appName='" + appName + '\''
-                + ", srcUser='" + srcUser + '\'' + ", configTags='" + configTags + '\'' + ", desc='" + desc + '\''
-                + ", use='" + use + '\'' + ", effect='" + effect + '\'' + ", type='" + type + '\'' + ", schema='"
-                + schema + '\'' + "encryptedDataKey" + encryptedDataKey + '\'' + ", grayName='" + grayName + '\''
-                + ", grayRule='" + grayRuleExp + '\'' + ", grayVersion='" + grayVersion + '\'' + ", grayPriority="
-                + grayPriority + '}';
-    }
-    
-    /**
-     * Validate.
-     *
-     * @throws NacosApiException NacosApiException.
-     */
     public void validate() throws NacosApiException {
         if (StringUtils.isBlank(dataId)) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
@@ -283,7 +268,17 @@ public class ConfigForm implements Serializable {
         } else if (StringUtils.isBlank(group)) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
                     "Required parameter 'group' type String is not present");
-        } else if (StringUtils.isBlank(content)) {
+        }
+    }
+    
+    /**
+     * Validate form parameter and include validate `content` parameters.
+     *
+     * @throws NacosApiException NacosApiException
+     */
+    public void validateWithContent() throws NacosApiException {
+        validate();
+        if (StringUtils.isBlank(content)) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
                     "Required parameter 'content' type String is not present");
         }

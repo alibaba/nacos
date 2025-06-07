@@ -144,9 +144,19 @@ public class NacosException extends Exception {
     public static final int CONFLICT = 409;
     
     /**
+     * config already exists（配置已存在）.
+     */
+    public static final int CONFIG_ALREADY_EXISTS = 410;
+    
+    /**
      * server error（server异常，如超时）.
      */
     public static final int SERVER_ERROR = 500;
+    
+    /**
+     * server not implemented（server不支持该请求，可能该版本未实现功能，或请求了错误的API）.
+     */
+    public static final int SERVER_NOT_IMPLEMENTED = 501;
     
     /**
      * client error（client异常，返回给服务端）.

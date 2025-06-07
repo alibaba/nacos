@@ -45,6 +45,8 @@ public class SdkClientAbilities extends AbstractAbilityRegistry {
          *
          */
         // put ability here, which you want current client supports
+        supportedAbilities.put(AbilityKey.SDK_CLIENT_FUZZY_WATCH, true);
+        supportedAbilities.put(AbilityKey.SDK_CLIENT_DISTRIBUTED_LOCK, true);
     }
     
     /**.

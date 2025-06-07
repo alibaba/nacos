@@ -17,7 +17,7 @@
 package com.alibaba.nacos.config.server.service.capacity;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.config.server.model.capacity.TenantCapacity;
+import com.alibaba.nacos.config.server.model.capacity.NamespaceCapacity;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
@@ -82,16 +82,16 @@ class TenantCapacityPersistServiceTest {
     @Test
     void testGetTenantCapacity() {
         
-        List<TenantCapacity> list = new ArrayList<>();
-        TenantCapacity tenantCapacity = new TenantCapacity();
-        tenantCapacity.setTenant("test");
+        List<NamespaceCapacity> list = new ArrayList<>();
+        NamespaceCapacity tenantCapacity = new NamespaceCapacity();
+        tenantCapacity.setNamespaceId("test");
         list.add(tenantCapacity);
         
         String tenantId = "testId";
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {tenantId}), any(RowMapper.class))).thenReturn(list);
-        TenantCapacity ret = service.getTenantCapacity(tenantId);
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(new Object[] {tenantId}))).thenReturn(list);
+        NamespaceCapacity ret = service.getTenantCapacity(tenantId);
         
-        assertEquals(tenantCapacity.getTenant(), ret.getTenant());
+        assertEquals(tenantCapacity.getNamespaceId(), ret.getNamespaceId());
     }
     
     @Test
@@ -100,8 +100,8 @@ class TenantCapacityPersistServiceTest {
         when(jdbcTemplate.update(anyString(), eq("test"), eq(null), eq(null), eq(null), eq(null), eq(null), eq(null),
                 eq("test"))).thenReturn(1);
         
-        TenantCapacity capacity = new TenantCapacity();
-        capacity.setTenant("test");
+        NamespaceCapacity capacity = new NamespaceCapacity();
+        capacity.setNamespaceId("test");
         assertTrue(service.insertTenantCapacity(capacity));
         
         //mock get connection fail
@@ -118,10 +118,10 @@ class TenantCapacityPersistServiceTest {
     @Test
     void testIncrementUsageWithDefaultQuotaLimit() {
         
-        TenantCapacity tenantCapacity = new TenantCapacity();
+        NamespaceCapacity tenantCapacity = new NamespaceCapacity();
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         tenantCapacity.setGmtModified(timestamp);
-        tenantCapacity.setTenant("test");
+        tenantCapacity.setNamespaceId("test");
         tenantCapacity.setQuota(1);
         when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test"), eq(1))).thenReturn(1);
         
@@ -141,10 +141,10 @@ class TenantCapacityPersistServiceTest {
     @Test
     void testIncrementUsageWithQuotaLimit() {
         
-        TenantCapacity tenantCapacity = new TenantCapacity();
+        NamespaceCapacity tenantCapacity = new NamespaceCapacity();
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         tenantCapacity.setGmtModified(timestamp);
-        tenantCapacity.setTenant("test2");
+        tenantCapacity.setNamespaceId("test2");
         when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test2"))).thenReturn(1);
         
         assertTrue(service.incrementUsageWithQuotaLimit(tenantCapacity));
@@ -162,10 +162,10 @@ class TenantCapacityPersistServiceTest {
     @Test
     void testIncrementUsage() {
         
-        TenantCapacity tenantCapacity = new TenantCapacity();
+        NamespaceCapacity tenantCapacity = new NamespaceCapacity();
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         tenantCapacity.setGmtModified(timestamp);
-        tenantCapacity.setTenant("test3");
+        tenantCapacity.setNamespaceId("test3");
         when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test3"))).thenReturn(1);
         
         assertTrue(service.incrementUsage(tenantCapacity));
@@ -183,10 +183,10 @@ class TenantCapacityPersistServiceTest {
     @Test
     void testDecrementUsage() {
         
-        TenantCapacity tenantCapacity = new TenantCapacity();
+        NamespaceCapacity tenantCapacity = new NamespaceCapacity();
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         tenantCapacity.setGmtModified(timestamp);
-        tenantCapacity.setTenant("test4");
+        tenantCapacity.setNamespaceId("test4");
         when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test4"))).thenReturn(1);
         
         assertTrue(service.decrementUsage(tenantCapacity));
@@ -290,18 +290,18 @@ class TenantCapacityPersistServiceTest {
     @Test
     void testGetCapacityList4CorrectUsage() {
         
-        List<TenantCapacity> list = new ArrayList<>();
-        TenantCapacity tenantCapacity = new TenantCapacity();
-        tenantCapacity.setTenant("test");
+        List<NamespaceCapacity> list = new ArrayList<>();
+        NamespaceCapacity tenantCapacity = new NamespaceCapacity();
+        tenantCapacity.setNamespaceId("test");
         list.add(tenantCapacity);
         long lastId = 1;
         int pageSize = 1;
         
         when(jdbcTemplate.query(anyString(), eq(new Object[] {lastId, pageSize}), any(RowMapper.class))).thenReturn(list);
-        List<TenantCapacity> ret = service.getCapacityList4CorrectUsage(lastId, pageSize);
+        List<NamespaceCapacity> ret = service.getCapacityList4CorrectUsage(lastId, pageSize);
         
         assertEquals(list.size(), ret.size());
-        assertEquals(tenantCapacity.getTenant(), ret.get(0).getTenant());
+        assertEquals(tenantCapacity.getNamespaceId(), ret.get(0).getNamespaceId());
         
         //mock get connection fail
         when(jdbcTemplate.query(anyString(), eq(new Object[] {lastId, pageSize}), any(RowMapper.class))).thenThrow(
@@ -347,12 +347,12 @@ class TenantCapacityPersistServiceTest {
         String tenant = "testTeat";
         Mockito.when(rs.getString(eq("tenant_id"))).thenReturn(tenant);
         
-        TenantCapacity groupCapacity = groupCapacityRowMapper.mapRow(rs, 1);
+        NamespaceCapacity groupCapacity = groupCapacityRowMapper.mapRow(rs, 1);
         assertEquals(quota, groupCapacity.getQuota().intValue());
         assertEquals(usage, groupCapacity.getUsage().intValue());
         assertEquals(maxSize, groupCapacity.getMaxSize().intValue());
         assertEquals(maxAggrCount, groupCapacity.getMaxAggrCount().intValue());
         assertEquals(maxAggrSize, groupCapacity.getMaxAggrSize().intValue());
-        assertEquals(tenant, groupCapacity.getTenant());
+        assertEquals(tenant, groupCapacity.getNamespaceId());
     }
 }

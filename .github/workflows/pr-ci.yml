@@ -2,7 +2,7 @@ name: PR-CI
 
 on:
   pull_request:
-    branches: [ develop, v1.x-develop ]
+    branches: [ develop, v2.x-develop ]
 
 jobs:
   dist-tar:
@@ -16,12 +16,12 @@ jobs:
       - uses: actions/setup-java@v3
         with:
           distribution: "temurin"
-          java-version: "8"
+          java-version: "17"
           cache: "maven"
       - name: Build distribution tar
         run: |
           mvn -Prelease-nacos -DskipTests clean install -U -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         name: Upload distribution tar
         with:
           name: nacos
@@ -30,7 +30,7 @@ jobs:
         run: |
           mkdir -p ./pr
           echo ${{ github.event.pull_request.number }} > ./pr/pr.txt
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         name: Upload PR number
         with:
           name: pr

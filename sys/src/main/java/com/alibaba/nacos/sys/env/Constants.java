@@ -79,5 +79,15 @@ public interface Constants {
     
     String AVAILABLE_PROCESSORS_BASIC = "nacos.core.sys.basic.processors";
     
-    String SUPPORT_UPGRADE_FROM_1X = "nacos.core.support.upgrade.from.1x";
+    String NACOS_DEPLOYMENT_TYPE = "nacos.deployment.type";
+    
+    String NACOS_DEPLOYMENT_TYPE_MERGED = "merged";
+    
+    String NACOS_DEPLOYMENT_TYPE_SERVER = "server";
+    
+    String NACOS_DEPLOYMENT_TYPE_CONSOLE = "console";
+    
+    String NACOS_DEPLOYMENT_TYPE_SERVER_WITH_MCP = "serverWithMcp";
+    
+    String NACOS_DUPLICATE_BEAN_ENHANCEMENT_ENABLED = "nacos.sys.duplicate.bean.enhancement.enabled";
 }

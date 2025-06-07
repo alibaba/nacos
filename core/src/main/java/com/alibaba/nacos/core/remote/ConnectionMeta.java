@@ -88,15 +88,17 @@ public class ConnectionMeta {
     String appName;
     
     /**
-     * tenant.
+     * namespaceId.
      */
-    String tenant;
+    String namespaceId;
     
     long firstPushQueueBlockTime = 0;
     
     long lastPushQueueBlockTime = 0;
     
     protected Map<String, String> labels = new HashMap<>();
+    
+    boolean tlsProtected = false;
     
     public String getLabel(String labelKey) {
         return labels.get(labelKey);
@@ -331,12 +333,12 @@ public class ConnectionMeta {
         this.appName = appName;
     }
     
-    public String getTenant() {
-        return tenant;
+    public String getNamespaceId() {
+        return namespaceId;
     }
     
-    public void setTenant(String tenant) {
-        this.tenant = tenant;
+    public void setNamespaceId(String namespaceId) {
+        this.namespaceId = namespaceId;
     }
     
     /**
@@ -358,6 +360,14 @@ public class ConnectionMeta {
         this.lastPushQueueBlockTime = 0;
     }
     
+    public boolean isTlsProtected() {
+        return tlsProtected;
+    }
+    
+    public void setTlsProtected(boolean tlsProtected) {
+        this.tlsProtected = tlsProtected;
+    }
+    
     /**
      * check block greater than the specific time.
      * @param timeMillsSeconds check times.
@@ -373,6 +383,6 @@ public class ConnectionMeta {
                 + ", remoteIp='" + remoteIp + '\'' + ", remotePort=" + remotePort + ", localPort=" + localPort
                 + ", version='" + version + '\'' + ", connectionId='" + connectionId + '\'' + ", createTime="
                 + createTime + ", lastActiveTime=" + lastActiveTime + ", appName='" + appName + '\'' + ", tenant='"
-                + tenant + '\'' + ", labels=" + labels + '}';
+                + namespaceId + '\'' + ", labels=" + labels + '}';
     }
 }

@@ -57,6 +57,8 @@ public class ServiceInfoHolder implements Closeable {
     
     private String notifierEventScope;
     
+    private boolean enableClientMetrics = true;
+    
     public ServiceInfoHolder(String namespace, String notifierEventScope, NacosClientProperties properties) {
         cacheDir = CacheDirUtil.initCacheDir(namespace, properties);
         instancesDiffer = new InstancesDiffer();
@@ -68,6 +70,8 @@ public class ServiceInfoHolder implements Closeable {
         this.failoverReactor = new FailoverReactor(this, notifierEventScope);
         this.pushEmptyProtection = isPushEmptyProtect(properties);
         this.notifierEventScope = notifierEventScope;
+        this.enableClientMetrics = Boolean.parseBoolean(
+                properties.getProperty(PropertyKeyConst.ENABLE_CLIENT_METRICS, "true"));
     }
     
     private boolean isLoadCacheAtStart(NacosClientProperties properties) {
@@ -94,9 +98,8 @@ public class ServiceInfoHolder implements Closeable {
         return serviceInfoMap;
     }
     
-    public ServiceInfo getServiceInfo(final String serviceName, final String groupName, final String clusters) {
-        String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
-        String key = ServiceInfo.getKey(groupedServiceName, clusters);
+    public ServiceInfo getServiceInfo(final String serviceName, final String groupName) {
+        String key = NamingUtils.getGroupedName(serviceName, groupName);
         return serviceInfoMap.get(key);
     }
     
@@ -119,27 +122,35 @@ public class ServiceInfoHolder implements Closeable {
      * @return service info
      */
     public ServiceInfo processServiceInfo(ServiceInfo serviceInfo) {
-        String serviceKey = serviceInfo.getKey();
+        String serviceKey = serviceInfo.getKeyWithoutClusters();
         if (serviceKey == null) {
             NAMING_LOGGER.warn("process service info but serviceKey is null, service host: {}",
                     JacksonUtils.toJson(serviceInfo.getHosts()));
             return null;
         }
-        ServiceInfo oldService = serviceInfoMap.get(serviceInfo.getKey());
+        ServiceInfo oldService = serviceInfoMap.get(serviceKey);
         if (isEmptyOrErrorPush(serviceInfo)) {
             //empty or error push, just ignore
             NAMING_LOGGER.warn("process service info but found empty or error push, serviceKey: {}, "
                     + "pushEmptyProtection: {}, hosts: {}", serviceKey, pushEmptyProtection, serviceInfo.getHosts());
             return oldService;
         }
-        serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
+        serviceInfoMap.put(serviceKey, serviceInfo);
         InstancesDiff diff = getServiceInfoDiff(oldService, serviceInfo);
         if (StringUtils.isBlank(serviceInfo.getJsonFromServer())) {
             serviceInfo.setJsonFromServer(JacksonUtils.toJson(serviceInfo));
         }
-        MetricsMonitor.getServiceInfoMapSizeMonitor().set(serviceInfoMap.size());
+        
+        if (enableClientMetrics) {
+            try {
+                MetricsMonitor.getServiceInfoMapSizeMonitor().set(serviceInfoMap.size());
+            } catch (Throwable t) {
+                NAMING_LOGGER.error("Failed to update metrics for service info map size", t);
+            }
+        }
+        
         if (diff.hasDifferent()) {
-            NAMING_LOGGER.info("current ips:({}) service: {} -> {}", serviceInfo.ipCount(), serviceInfo.getKey(),
+            NAMING_LOGGER.info("current ips:({}) service: {} -> {}", serviceInfo.ipCount(), serviceKey,
                     JacksonUtils.toJson(serviceInfo.getHosts()));
             
             if (!failoverReactor.isFailoverSwitch(serviceKey)) {
@@ -168,9 +179,8 @@ public class ServiceInfoHolder implements Closeable {
         return failoverReactor.isFailoverSwitch();
     }
     
-    public ServiceInfo getFailoverServiceInfo(final String serviceName, final String groupName, final String clusters) {
-        String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
-        String key = ServiceInfo.getKey(groupedServiceName, clusters);
+    public ServiceInfo getFailoverServiceInfo(final String serviceName, final String groupName) {
+        String key = NamingUtils.getGroupedName(serviceName, groupName);
         return failoverReactor.getService(key);
     }
     
