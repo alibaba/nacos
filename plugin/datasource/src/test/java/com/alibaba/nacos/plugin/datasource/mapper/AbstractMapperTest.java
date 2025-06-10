@@ -23,6 +23,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -67,11 +69,23 @@ class AbstractMapperTest {
         String sql = abstractMapper.insert(Arrays.asList("id", "name"));
         assertEquals("INSERT INTO tenant_info(id, name) VALUES(?,?)", sql);
     }
+
+    @Test
+    void testInsertContainsAt() {
+        String sql = abstractMapper.insert(Arrays.asList("created_at@NOW()", "name"));
+        assertEquals("INSERT INTO tenant_info(created_at, name) VALUES(NOW(3),?)", sql);
+    }
     
     @Test
     void testUpdate() {
         String sql = abstractMapper.update(Arrays.asList("id", "name"), Arrays.asList("id"));
         assertEquals("UPDATE tenant_info SET id = ?,name = ? WHERE id = ?", sql);
+    }
+
+    @Test
+    void testUpdateContainsAt() {
+        String sql = abstractMapper.update(Arrays.asList("create_at@NOW()", "update_at@NOW()"), Arrays.asList("id", "name"));
+        assertEquals("UPDATE tenant_info SET create_at = NOW(3),update_at = NOW(3) WHERE id = ? AND name = ?", sql);
     }
 
     @Test

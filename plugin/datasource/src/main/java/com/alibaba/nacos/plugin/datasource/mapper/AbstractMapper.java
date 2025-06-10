@@ -19,6 +19,7 @@ package com.alibaba.nacos.plugin.datasource.mapper;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 
 import java.util.List;
+import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 /**
@@ -48,63 +49,35 @@ public abstract class AbstractMapper implements Mapper {
 
     @Override
     public String insert(List<String> columns) {
-        StringBuilder sql = new StringBuilder();
-        String method = "INSERT INTO ";
-        sql.append(method);
-        sql.append(getTableName());
+        StringJoiner columnJoiner = new StringJoiner(", ", "(", ")");
+        StringJoiner valueJoiner = new StringJoiner(",", "(", ")");
 
-        int size = columns.size();
-        sql.append("(");
-        for (int i = 0; i < size; i++) {
-            sql.append(columns.get(i).split("@")[0]);
-            if (i != columns.size() - 1) {
-                sql.append(", ");
-            }
+        for (String col : columns) {
+            String[] parts = col.split("@", 2); // 最多分割成两部分
+            columnJoiner.add(parts[0]);
+            valueJoiner.add(parts.length > 1 ? getFunction(parts[1]) : "?");
         }
-        sql.append(") ");
 
-        sql.append("VALUES");
-        sql.append("(");
-        for (int i = 0; i < size; i++) {
-            String[] parts = columns.get(i).split("@");
-            if (parts.length == 2) {
-                sql.append(getFunction(parts[1]));
-            } else {
-                sql.append("?");
-            }
-            if (i != columns.size() - 1) {
-                sql.append(",");
-            }
-        }
-        sql.append(")");
-        return sql.toString();
+        return "INSERT INTO " + getTableName() + columnJoiner + " VALUES" + valueJoiner;
     }
 
     @Override
     public String update(List<String> columns, List<String> where) {
-        StringBuilder sql = new StringBuilder();
-        String method = "UPDATE ";
-        sql.append(method);
-        sql.append(getTableName()).append(" ").append("SET ");
-
-        for (int i = 0; i < columns.size(); i++) {
-            String[] parts = columns.get(i).split("@");
-            String column = parts[0];
-            if (parts.length == 2) {
-                sql.append(column).append(" = ").append(getFunction(parts[1]));
-            } else {
-                sql.append(column).append(" = ").append("?");
-            }
-            if (i != columns.size() - 1) {
-                sql.append(",");
-            }
+        StringJoiner setJoiner = new StringJoiner(",");
+        for (String col : columns) {
+            String[] parts = col.split("@", 2);
+            String value = parts.length > 1 ? getFunction(parts[1]) : "?";
+            setJoiner.add(parts[0] + " = " + value);
         }
 
-        if (CollectionUtils.isEmpty(where)) {
-            return sql.toString();
-        }
+        StringBuilder sql = new StringBuilder("UPDATE ")
+                .append(getTableName())
+                .append(" SET ")
+                .append(setJoiner);
 
-        appendWhereClause(where, sql);
+        if (CollectionUtils.isNotEmpty(where)) {
+            appendWhereClause(where, sql);
+        }
 
         return sql.toString();
     }
