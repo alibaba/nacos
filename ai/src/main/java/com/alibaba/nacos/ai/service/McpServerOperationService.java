@@ -341,7 +341,6 @@ public class McpServerOperationService {
         if (StringUtils.isEmpty(serverSpecification.getId())) {
             serverSpecification.setId(mcpServerId);
         }
-        checkMcpServerIndex(mcpServerId);
         
         ServerVersionDetail versionDetail = serverSpecification.getVersionDetail();
         if (null == versionDetail && StringUtils.isNotBlank(serverSpecification.getVersion())) {
@@ -353,6 +352,7 @@ public class McpServerOperationService {
             throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "Version must be specified in parameter `serverSpecification`");
         }
+        final McpServerVersionInfo mcpServerVersionInfo = getMcpServerVersionInfo(namespaceId, mcpServerId);
         
         String updateVersion = versionDetail.getVersion();
         McpServerStorageInfo newSpecification = new McpServerStorageInfo();
@@ -362,7 +362,6 @@ public class McpServerOperationService {
         ConfigForm configForm = buildMcpConfigForm(namespaceId, mcpServerId, updateVersion, newSpecification);
         configOperationService.publishConfig(configForm, new ConfigRequestInfo(), null);
         
-        McpServerVersionInfo mcpServerVersionInfo = getMcpServerVersionInfo(namespaceId, mcpServerId);
         List<ServerVersionDetail> versionDetails = mcpServerVersionInfo.getVersionDetails();
         Set<String> versionSet = versionDetails.stream().map(ServerVersionDetail::getVersion)
                 .collect(Collectors.toSet());
@@ -420,8 +419,6 @@ public class McpServerOperationService {
                     .collect(Collectors.toList());
         }
         
-        McpServerIndexData indexData = mcpServerIndex.getMcpServerById(mcpServerId);
-        namespaceId = indexData.getNamespaceId();
         for (String versionNeedDelete : versionsNeedDelete) {
             toolOperationService.deleteMcpTool(namespaceId, mcpServerId, versionNeedDelete);
             endpointOperationService.deleteMcpServerEndpointService(namespaceId, mcpServerVersionInfo.getName());
@@ -529,13 +526,5 @@ public class McpServerOperationService {
         }
         
         return null;
-    }
-    
-    private void checkMcpServerIndex(String mcpServerId) throws NacosApiException {
-        McpServerIndexData indexData = mcpServerIndex.getMcpServerById(mcpServerId);
-        if (Objects.isNull(indexData)) {
-            throw new NacosApiException(NacosApiException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                    String.format("mcp server `%s` not found", mcpServerId));
-        }
     }
 }

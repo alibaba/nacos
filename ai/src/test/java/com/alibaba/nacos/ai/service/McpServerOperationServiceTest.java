@@ -427,7 +427,6 @@ class McpServerOperationServiceTest {
     void updateMcpServerByIdWithoutVersion() {
         String id = mockId();
         McpServerBasicInfo mockServerBasicInfo = mockServerVersionInfo(id);
-        when(mcpServerIndex.getMcpServerById(id)).thenReturn(mockIndexData(id).getPageItems().get(0));
         mockServerBasicInfo.setVersionDetail(null);
         mockServerBasicInfo.setVersion(null);
         assertThrows(NacosApiException.class,
@@ -439,7 +438,6 @@ class McpServerOperationServiceTest {
     void updateMcpServerByIdWithOldSpec() throws NacosException {
         String id = mockId();
         McpServerVersionInfo mockServerBasicInfo = mockServerVersionInfo(id);
-        when(mcpServerIndex.getMcpServerById(id)).thenReturn(mockIndexData(id).getPageItems().get(0));
         mockServerBasicInfo.setVersionDetail(null);
         mockServerBasicInfo.setVersion("1.0.0");
         ConfigQueryChainResponse response = mockConfigQueryChainResponse(mockServerBasicInfo);
@@ -454,7 +452,6 @@ class McpServerOperationServiceTest {
     void updateMcpServerByIdWithNewSpec() throws NacosException {
         String id = mockId();
         McpServerVersionInfo mockServerBasicInfo = mockServerVersionInfo(id);
-        when(mcpServerIndex.getMcpServerById(id)).thenReturn(mockIndexData(id).getPageItems().get(0));
         mockServerBasicInfo.setVersionDetail(mockVersion("9.9.9"));
         mockServerBasicInfo.setVersion(null);
         ConfigQueryChainResponse response = mockConfigQueryChainResponse(mockServerBasicInfo);
@@ -469,7 +466,6 @@ class McpServerOperationServiceTest {
     void updateMcpServerByIdNewVersion() throws NacosException {
         String id = mockId();
         McpServerVersionInfo mockServerBasicInfo = mockServerVersionInfo(id);
-        when(mcpServerIndex.getMcpServerById(id)).thenReturn(mockIndexData(id).getPageItems().get(0));
         mockServerBasicInfo.setVersionDetail(mockVersion("1.0.1"));
         mockServerBasicInfo.setVersion(null);
         ConfigQueryChainResponse response = mockConfigQueryChainResponse(mockServerBasicInfo);
@@ -494,7 +490,6 @@ class McpServerOperationServiceTest {
         McpServerVersionInfo mockServerBasicInfo = mockServerVersionInfo(null);
         when(mcpServerIndex.getMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName")).thenReturn(
                 mockIndexData(id).getPageItems().get(0));
-        when(mcpServerIndex.getMcpServerById(id)).thenReturn(mockIndexData(id).getPageItems().get(0));
         mockServerBasicInfo.setVersionDetail(mockVersion("9.9.9"));
         ConfigQueryChainResponse response = mockConfigQueryChainResponse(mockServerBasicInfo);
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(response);
@@ -518,7 +513,6 @@ class McpServerOperationServiceTest {
         String id = mockId();
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(
                 mockConfigQueryChainResponse(mockServerVersionInfo(id)));
-        when(mcpServerIndex.getMcpServerById(id)).thenReturn(mockIndexData(id).getPageItems().get(0));
         serverOperationService.deleteMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, id, null);
         verify(endpointOperationService, times(2)).deleteMcpServerEndpointService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
                 "mcpName");
@@ -541,7 +535,6 @@ class McpServerOperationServiceTest {
                 mockIndexData(id).getPageItems().get(0));
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(
                 mockConfigQueryChainResponse(mockServerBasicInfo));
-        when(mcpServerIndex.getMcpServerById(id)).thenReturn(mockIndexData(id).getPageItems().get(0));
         serverOperationService.deleteMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", null, null);
         verify(endpointOperationService, times(2)).deleteMcpServerEndpointService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
                 "mcpName");
@@ -561,7 +554,6 @@ class McpServerOperationServiceTest {
         String id = mockId();
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(
                 mockConfigQueryChainResponse(mockServerVersionInfo(id)));
-        when(mcpServerIndex.getMcpServerById(id)).thenReturn(mockIndexData(id).getPageItems().get(0));
         serverOperationService.deleteMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, id, "1.0.0");
         verify(endpointOperationService).deleteMcpServerEndpointService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
                 "mcpName");

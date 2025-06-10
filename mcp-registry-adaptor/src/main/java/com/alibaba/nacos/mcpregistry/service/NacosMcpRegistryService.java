@@ -17,8 +17,6 @@
 package com.alibaba.nacos.mcpregistry.service;
 
 import com.alibaba.nacos.ai.constant.Constants;
-import com.alibaba.nacos.ai.form.mcp.regsitryapi.GetServerForm;
-import com.alibaba.nacos.ai.form.mcp.regsitryapi.ListServerForm;
 import com.alibaba.nacos.ai.index.McpServerIndex;
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.ai.model.mcp.McpServerStorageInfo;
@@ -35,11 +33,15 @@ import com.alibaba.nacos.api.ai.model.mcp.registry.McpRegistryServerList;
 import com.alibaba.nacos.api.ai.model.mcp.registry.NacosMcpRegistryServerDetail;
 import com.alibaba.nacos.api.ai.model.mcp.registry.Remote;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.response.Namespace;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
+import com.alibaba.nacos.mcpregistry.form.GetServerForm;
+import com.alibaba.nacos.mcpregistry.form.ListServerForm;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
@@ -84,7 +86,8 @@ public class NacosMcpRegistryService {
         String namespaceId = listServerForm.getNamespaceId();
         String serverName = listServerForm.getServerName();
         Collection<String> namespaceIdList =
-                StringUtils.isNotEmpty(namespaceId) ? Collections.singletonList(namespaceId) : fetchOrderedNamespaceList();
+                StringUtils.isNotEmpty(namespaceId) ? Collections.singletonList(namespaceId)
+                        : fetchOrderedNamespaceList();
         
         Page<McpServerBasicInfo> servers = listMcpServerByNamespaceList(namespaceIdList, serverName, offset, limit);
         
@@ -199,7 +202,12 @@ public class NacosMcpRegistryService {
      * @throws NacosException if request parameter is invalid or handle error
      */
     public void updateMcpServer(NacosMcpRegistryServerDetail serverDetail) throws NacosException {
-        mcpServerOperationService.updateMcpServer(serverDetail.getNacosNamespaceId(), true,
+        McpServerIndexData indexData = mcpServerIndex.getMcpServerById(serverDetail.getId());
+        if (Objects.isNull(indexData)) {
+            throw new NacosApiException(NacosApiException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                    String.format("mcp server `%s` not found", serverDetail.getId()));
+        }
+        mcpServerOperationService.updateMcpServer(indexData.getNamespaceId(), true,
                 buildMcpServerSpecification(serverDetail), serverDetail.getMcpToolSpecification(),
                 serverDetail.getNacosMcpEndpointSpec());
     }
