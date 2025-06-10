@@ -30,12 +30,14 @@ import java.util.stream.Collectors;
 
 public abstract class AbstractMapper implements Mapper {
 
+    private static final String COLUMN_SEPARATOR = "@";
+
     @Override
     public String select(List<String> columns, List<String> where) {
         StringBuilder sql = new StringBuilder();
         String method = "SELECT ";
         sql.append(method);
-        sql.append(columns.stream().collect(Collectors.joining(",")));
+        sql.append(String.join(",", columns));
         sql.append(" FROM ");
         sql.append(getTableName());
 
@@ -53,7 +55,7 @@ public abstract class AbstractMapper implements Mapper {
         StringJoiner valueJoiner = new StringJoiner(",", "(", ")");
 
         for (String col : columns) {
-            String[] parts = col.split("@", 2); // 最多分割成两部分
+            String[] parts = col.split(COLUMN_SEPARATOR, 2);
             columnJoiner.add(parts[0]);
             valueJoiner.add(parts.length > 1 ? getFunction(parts[1]) : "?");
         }
@@ -65,7 +67,7 @@ public abstract class AbstractMapper implements Mapper {
     public String update(List<String> columns, List<String> where) {
         StringJoiner setJoiner = new StringJoiner(",");
         for (String col : columns) {
-            String[] parts = col.split("@", 2);
+            String[] parts = col.split(COLUMN_SEPARATOR, 2);
             String value = parts.length > 1 ? getFunction(parts[1]) : "?";
             setJoiner.add(parts[0] + " = " + value);
         }
