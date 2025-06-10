@@ -790,7 +790,7 @@ class NewMcpServer extends React.Component {
           {/* 服务版本 */}
           <FormItem label={locale.serverVersion} required>
             <Input
-              {...init('version', { props: { placeholder: '1.0.0' }, rules: [{ required: true }] })}
+              {...init('version', { props: { placeholder: 'e.g. 1.0.0' }, rules: [{ required: true }] })}
             />
             {currentVersionExist && (
               <>
