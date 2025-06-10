@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.mcpregistry.controller;
 
-import com.alibaba.nacos.ai.form.mcp.regsitryapi.GetServerForm;
-import com.alibaba.nacos.ai.form.mcp.regsitryapi.ListServerForm;
+import com.alibaba.nacos.mcpregistry.form.GetServerForm;
+import com.alibaba.nacos.mcpregistry.form.ListServerForm;
 import com.alibaba.nacos.ai.param.McpHttpParamExtractor;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.registry.McpErrorResponse;
@@ -80,6 +80,7 @@ public class McpRegistryController {
     @GetMapping(value = "/v0/servers/{id}")
     public Object getServer(@PathVariable String id, GetServerForm getServerForm, HttpServletResponse response)
             throws NacosException {
+        getServerForm.validate();
         McpRegistryServerDetail server = nacosMcpRegistryService.getServer(id, getServerForm);
         if (Objects.isNull(server)) {
             response.setStatus(404);
@@ -101,6 +102,7 @@ public class McpRegistryController {
      */
     @GetMapping(value = "/v0/servers/{id}/tools")
     public McpToolSpecification getMcpServerToolsInfo(@PathVariable String id, GetServerForm getServerForm) throws NacosException {
+        getServerForm.validate();
         return nacosMcpRegistryService.getTools(id, getServerForm.getVersion());
     }
 }
