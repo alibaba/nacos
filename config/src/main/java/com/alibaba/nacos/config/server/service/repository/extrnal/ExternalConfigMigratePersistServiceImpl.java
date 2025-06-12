@@ -402,7 +402,6 @@ public class ExternalConfigMigratePersistServiceImpl implements ConfigMigratePer
      */
     public void updateConfigInfoAtomic(final ConfigInfo configInfo, final String srcIp, final String srcUser,
             Map<String, Object> configAdvanceInfo, long lastModified) {
-        System.out.println("hahaha+" + lastModified);
         String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
         String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
