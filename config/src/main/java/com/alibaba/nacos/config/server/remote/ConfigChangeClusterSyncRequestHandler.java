@@ -138,7 +138,12 @@ public class ConfigChangeClusterSyncRequestHandler
         }
         final String ignoreCheckVersion = "3.0.0";
         try {
-            String version = meta.getClientVersion().split("Nacos-Java-Client:v")[1];
+            String version = null;
+            if (meta.getClientVersion().split("Nacos-Server:v").length > 1) {
+                version = meta.getClientVersion().split("Nacos-Server:v")[1];
+            } else {
+                version = meta.getClientVersion().split("Nacos-Java-Client:v")[1];
+            }
             if (VersionUtils.compareVersion(version, ignoreCheckVersion) >= 0) {
                 return false;
             }

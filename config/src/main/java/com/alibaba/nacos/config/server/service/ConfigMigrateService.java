@@ -847,9 +847,6 @@ public class ConfigMigrateService {
         }
         ConfigInfoWrapper targetConfigInfoWrapper = configInfoPersistService.findConfigInfo(configForm.getDataId(),
                 configForm.getGroup(), "");
-        if (!configRequestInfo.isNamespaceTransferred() && targetConfigInfoWrapper == null) {
-            return;
-        }
         configForm.setNamespaceId(StringUtils.EMPTY);
         configForm.setSrcUser(NAMESPACE_MIGRATE_SRC_USER);
         Map<String, Object> configAdvanceInfo = getConfigAdvanceInfo(configForm);
@@ -919,9 +916,6 @@ public class ConfigMigrateService {
         ConfigInfoGrayWrapper targetConfigInfoGrayWrapper = configInfoGrayPersistService.findConfigInfo4Gray(
                 configForm.getDataId(), configForm.getGroup(), "",
                 configForm.getGrayName());
-        if (!configRequestInfo.isNamespaceTransferred() && targetConfigInfoGrayWrapper == null) {
-            return;
-        }
         configForm.setNamespaceId(StringUtils.EMPTY);
         configForm.setSrcUser(NAMESPACE_MIGRATE_SRC_USER);
         Map<String, Object> configAdvanceInfo = getConfigAdvanceInfo(configForm);
