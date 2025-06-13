@@ -86,7 +86,6 @@ public class ConfigChangeClusterSyncRequestHandler
      * if notified from old server,try to migrate and transfer gray model.
      *
      * @param configChangeSyncRequest request.
-     * @return
      */
     private void checkCompatity(ConfigChangeClusterSyncRequest configChangeSyncRequest, RequestMeta meta) {
         if (PropertyUtil.isGrayCompatibleModel() && StringUtils.isBlank(configChangeSyncRequest.getGrayName())) {
@@ -137,8 +136,15 @@ public class ConfigChangeClusterSyncRequestHandler
             return false;
         }
         final String ignoreCheckVersion = "3.0.0";
+        final String clusterVersionPrefixNew = "Nacos-Server:v";
+        final String clusterVersionPrefixOld = "Nacos-Java-Client:v";
         try {
-            String version = meta.getClientVersion().split("Nacos-Java-Client:v")[1];
+            String version = null;
+            if (meta.getClientVersion().split(clusterVersionPrefixNew).length > 1) {
+                version = meta.getClientVersion().split(clusterVersionPrefixNew)[1];
+            } else {
+                version = meta.getClientVersion().split(clusterVersionPrefixOld)[1];
+            }
             if (VersionUtils.compareVersion(version, ignoreCheckVersion) >= 0) {
                 return false;
             }
