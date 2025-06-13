@@ -188,7 +188,6 @@ class CatalogServiceV2ImplTest {
         ServiceManager.getInstance().getSingleton(Service.newService("CatalogService", "CatalogService", "2"));
         ServiceManager.getInstance().getSingleton(Service.newService("CatalogService", "CatalogService", "3"));
         Page<ServiceView> result = catalogServiceV2Impl.listService("CatalogService", "", "", 2, 1, false);
-        
         assertNotNull(result);
         assertEquals(3, result.getTotalCount(), "Total service count should be 3");
         assertEquals(2, result.getPageNumber(), "Current page number should be 2");
