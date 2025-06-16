@@ -254,11 +254,11 @@ public class ExternalConfigMigratePersistServiceImpl implements ConfigMigratePer
                                             + ",tenant=" + tenant + ",grayName=" + grayName);
                         }
                     } else if (sourceConfigInfoGrayWrapper.getLastModified()
-                            > targetConfigInfoGrayWrapper.getLastModified()) {
+                            >= targetConfigInfoGrayWrapper.getLastModified()) {
                         sourceConfigInfoGrayWrapper.setTenant(targetTenant);
                         updateConfigInfo4GrayWithoutHistory(sourceConfigInfoGrayWrapper,
                                 sourceConfigInfoGrayWrapper.getGrayName(), sourceConfigInfoGrayWrapper.getGrayRule(),
-                                null, srcUser, targetConfigInfoGrayWrapper.getLastModified());
+                                null, srcUser, targetConfigInfoGrayWrapper.getLastModified(), targetConfigInfoGrayWrapper.getMd5());
                         ConfigInfoGrayWrapper configInfoGrayWrapper = configInfoGrayPersistService.findConfigInfo4Gray(
                                 dataId, group, tenant, grayName);
                         if (!StringUtils.equals(configInfoGrayWrapper.getMd5(), sourceConfigInfoGrayWrapper.getMd5())
@@ -313,7 +313,7 @@ public class ExternalConfigMigratePersistServiceImpl implements ConfigMigratePer
      * @param srcUser    the src user
      */
     public void updateConfigInfo4GrayWithoutHistory(ConfigInfo configInfo, String grayName, String grayRule,
-            String srcIp, String srcUser, long lastModified) {
+            String srcIp, String srcUser, long lastModified, final String targetMd5) {
         String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
         String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         String grayNameTmp = StringUtils.isBlank(grayName) ? StringUtils.EMPTY : grayName.trim();
@@ -325,9 +325,9 @@ public class ExternalConfigMigratePersistServiceImpl implements ConfigMigratePer
                     TableConstant.CONFIG_INFO_GRAY);
             jt.update(configInfoGrayMapper.update(
                             Arrays.asList("content", "encrypted_data_key", "md5", "src_ip", "src_user", "gmt_modified@NOW()",
-                                    "app_name", "gray_rule"), Arrays.asList("data_id", "group_id", "tenant_id", "gray_name", "gmt_modified")),
+                                    "app_name", "gray_rule"), Arrays.asList("data_id", "group_id", "tenant_id", "gray_name", "gmt_modified", "md5")),
                     configInfo.getContent(), configInfo.getEncryptedDataKey(), md5, srcIp, srcUser, appNameTmp,
-                    grayRuleTmp, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, grayNameTmp, modifiedTime);
+                    grayRuleTmp, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, grayNameTmp, modifiedTime, targetMd5);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;
@@ -368,9 +368,10 @@ public class ExternalConfigMigratePersistServiceImpl implements ConfigMigratePer
                                     "syncConfig failed, sourceConfigInfo has been updated,dataId=" + dataId + ",group="
                                             + group + ",tenant=" + tenant);
                         }
-                    } else if (sourceConfigInfoWrapper.getLastModified() > targetConfigInfoWrapper.getLastModified()) {
+                    } else if (sourceConfigInfoWrapper.getLastModified() >= targetConfigInfoWrapper.getLastModified()) {
                         sourceConfigInfoWrapper.setTenant(targetTenant);
-                        updateConfigInfoAtomic(sourceConfigInfoWrapper, null, srcUser, null, targetConfigInfoWrapper.getLastModified());
+                        updateConfigInfoAtomic(sourceConfigInfoWrapper, null, srcUser, null, targetConfigInfoWrapper.getLastModified(),
+                                 targetConfigInfoWrapper.getMd5());
                         ConfigInfoWrapper configInfoWrapper = configInfoPersistService.findConfigInfo(dataId, group,
                                 tenant);
                         if (!StringUtils.equals(configInfoWrapper.getMd5(), sourceConfigInfoWrapper.getMd5())) {
@@ -401,7 +402,7 @@ public class ExternalConfigMigratePersistServiceImpl implements ConfigMigratePer
      * @param lastModified      the last modified
      */
     public void updateConfigInfoAtomic(final ConfigInfo configInfo, final String srcIp, final String srcUser,
-            Map<String, Object> configAdvanceInfo, long lastModified) {
+            Map<String, Object> configAdvanceInfo, long lastModified, final String targetMd5) {
         String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
         String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
@@ -419,9 +420,9 @@ public class ExternalConfigMigratePersistServiceImpl implements ConfigMigratePer
             jt.update(configInfoMapper.update(
                             Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified@NOW()", "app_name", "c_desc",
                                     "c_use", "effect", "type", "c_schema", "encrypted_data_key"),
-                            Arrays.asList("data_id", "group_id", "tenant_id", "gmt_modified")), configInfo.getContent(), md5Tmp, srcIp, srcUser,
-                    appNameTmp, desc, use, effect, type, schema, encryptedDataKey, configInfo.getDataId(),
-                    configInfo.getGroup(), tenantTmp, modifiedTime);
+                            Arrays.asList("data_id", "group_id", "tenant_id", "gmt_modified", "md5")), configInfo.getContent(), md5Tmp, srcIp,
+                    srcUser, appNameTmp, desc, use, effect, type, schema, encryptedDataKey, configInfo.getDataId(),
+                    configInfo.getGroup(), tenantTmp, modifiedTime, targetMd5);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;
