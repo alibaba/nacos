@@ -335,7 +335,7 @@ public class ConfigMigrateService {
                 changedConfigInfoGrayWrapper.getGrayName());
         try {
             GRAY_MIGRATE_FLAG.set(true);
-            if (StringUtils.equals(targetConfigInfoGrayWrapper.getSrcUser(), NAMESPACE_MIGRATE_SRC_USER)) {
+            if (StringUtils.equals(changedConfigInfoGrayWrapper.getSrcUser(), NAMESPACE_MIGRATE_SRC_USER)) {
                 if (targetConfigInfoGrayWrapper == null) {
                     configInfoGrayPersistService.removeConfigInfoGray(changedConfigInfoGrayWrapper.getDataId(),
                             changedConfigInfoGrayWrapper.getGroup(), tenant, changedConfigInfoGrayWrapper.getGrayName(),
@@ -343,7 +343,7 @@ public class ConfigMigrateService {
                 } else if (!targetConfigInfoGrayWrapper.getMd5().equals(changedConfigInfoGrayWrapper.getMd5())
                         || targetConfigInfoGrayWrapper.getGrayRule()
                         .equals(changedConfigInfoGrayWrapper.getGrayRule())) {
-                    if (targetConfigInfoGrayWrapper.getLastModified() > changedConfigInfoGrayWrapper.getLastModified()
+                    if (targetConfigInfoGrayWrapper.getLastModified() >= changedConfigInfoGrayWrapper.getLastModified()
                             || !StringUtils.equals(targetConfigInfoGrayWrapper.getSrcUser(),
                             NAMESPACE_MIGRATE_SRC_USER)) {
                         targetConfigInfoGrayWrapper.setTenant(tenant);
@@ -361,12 +361,17 @@ public class ConfigMigrateService {
                 } else if (!targetConfigInfoGrayWrapper.getMd5().equals(changedConfigInfoGrayWrapper.getMd5())
                         || targetConfigInfoGrayWrapper.getGrayRule()
                         .equals(changedConfigInfoGrayWrapper.getGrayRule())) {
-                    if (targetConfigInfoGrayWrapper.getLastModified() > changedConfigInfoGrayWrapper.getLastModified()
+                    if (targetConfigInfoGrayWrapper.getLastModified() >= changedConfigInfoGrayWrapper.getLastModified()
                             && !StringUtils.equals(targetConfigInfoGrayWrapper.getSrcUser(),
                             NAMESPACE_MIGRATE_SRC_USER)) {
                         targetConfigInfoGrayWrapper.setTenant(tenant);
                         configInfoGrayPersistService.updateConfigInfo4Gray(targetConfigInfoGrayWrapper,
                                 targetConfigInfoGrayWrapper.getGrayName(), targetConfigInfoGrayWrapper.getGrayRule(),
+                                null, NAMESPACE_MIGRATE_SRC_USER);
+                    } else if (targetConfigInfoGrayWrapper.getLastModified() < changedConfigInfoGrayWrapper.getLastModified()) {
+                        changedConfigInfoGrayWrapper.setTenant(targetTenant);
+                        configInfoGrayPersistService.updateConfigInfo4Gray(changedConfigInfoGrayWrapper,
+                                changedConfigInfoGrayWrapper.getGrayName(), changedConfigInfoGrayWrapper.getGrayRule(),
                                 null, NAMESPACE_MIGRATE_SRC_USER);
                     }
                 }
@@ -404,7 +409,7 @@ public class ConfigMigrateService {
                     configInfoPersistService.removeConfigInfo(changedConfigAllInfo.getDataId(),
                             changedConfigAllInfo.getGroup(), tenant, null, NAMESPACE_MIGRATE_SRC_USER);
                 } else if (!targetConfigAllInfo.getMd5().equals(changedConfigAllInfo.getMd5())) {
-                    if (targetConfigAllInfo.getModifyTime() > changedConfigAllInfo.getModifyTime()
+                    if (targetConfigAllInfo.getModifyTime() >= changedConfigAllInfo.getModifyTime()
                             || !StringUtils.equals(targetConfigAllInfo.getCreateUser(), NAMESPACE_MIGRATE_SRC_USER)) {
                         targetConfigAllInfo.setTenant(tenant);
                         configInfoPersistService.updateConfigInfo(targetConfigAllInfo, null, NAMESPACE_MIGRATE_SRC_USER,
@@ -417,7 +422,7 @@ public class ConfigMigrateService {
                     configInfoPersistService.addConfigInfo(null, NAMESPACE_MIGRATE_SRC_USER, changedConfigAllInfo,
                             null);
                 } else if (!targetConfigAllInfo.getMd5().equals(changedConfigAllInfo.getMd5())) {
-                    if (targetConfigAllInfo.getModifyTime() > changedConfigAllInfo.getModifyTime()
+                    if (targetConfigAllInfo.getModifyTime() >= changedConfigAllInfo.getModifyTime()
                             && !StringUtils.equals(targetConfigAllInfo.getCreateUser(), NAMESPACE_MIGRATE_SRC_USER)) {
                         targetConfigAllInfo.setTenant(tenant);
                         configInfoPersistService.updateConfigInfo(targetConfigAllInfo, null, NAMESPACE_MIGRATE_SRC_USER,
@@ -462,7 +467,7 @@ public class ConfigMigrateService {
         try {
             GRAY_MIGRATE_FLAG.set(true);
             if (targetConfigInfoGrayStateWrapper.getLastModified()
-                    < deletedConfigInfoGrayStateWrapper.getLastModified()) {
+                    <= deletedConfigInfoGrayStateWrapper.getLastModified()) {
                 configInfoGrayPersistService.removeConfigInfoGray(deletedConfigInfoGrayStateWrapper.getDataId(),
                         deletedConfigInfoGrayStateWrapper.getGroup(), targetTenant,
                         deletedConfigInfoGrayStateWrapper.getGrayName(), null, NAMESPACE_MIGRATE_SRC_USER);
@@ -496,7 +501,7 @@ public class ConfigMigrateService {
         }
         try {
             CONFIG_MIGRATE_FLAG.set(true);
-            if (targetConfigInfoStateWrapper.getLastModified() < deletedConfigInfoStateWrapper.getLastModified()) {
+            if (targetConfigInfoStateWrapper.getLastModified() <= deletedConfigInfoStateWrapper.getLastModified()) {
                 configInfoPersistService.removeConfigInfo(deletedConfigInfoStateWrapper.getDataId(),
                         deletedConfigInfoStateWrapper.getGroup(), targetTenant, null, NAMESPACE_MIGRATE_SRC_USER);
             }
