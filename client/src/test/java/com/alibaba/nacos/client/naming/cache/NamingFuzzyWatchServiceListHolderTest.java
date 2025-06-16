@@ -107,20 +107,20 @@ public class NamingFuzzyWatchServiceListHolderTest {
                 connection);
         Assertions.assertNotNull(response);
         Thread.sleep(100L);
-        Assertions.assertTrue(watcherFlag.get() == 1);
+        Assertions.assertEquals(1, watcherFlag.get());
         
         Response duplicatedResponse = namingFuzzyWatchNotifyRequestHandler.requestReply(
                 namingFuzzyWatchChangeNotifyRequest, connection);
         Assertions.assertNotNull(duplicatedResponse);
         Thread.sleep(100L);
-        Assertions.assertTrue(watcherFlag.get() == 1);
+        Assertions.assertEquals(1, watcherFlag.get());
         
         namingFuzzyWatchChangeNotifyRequest.setChangedType(DELETE_SERVICE);
         Response deleteResponse = namingFuzzyWatchNotifyRequestHandler.requestReply(namingFuzzyWatchChangeNotifyRequest,
                 connection);
         Assertions.assertNotNull(deleteResponse);
         Thread.sleep(100L);
-        Assertions.assertTrue(watcherFlag.get() == 2);
+        Assertions.assertEquals(2, watcherFlag.get());
         
     }
     
@@ -152,11 +152,11 @@ public class NamingFuzzyWatchServiceListHolderTest {
                 connection);
         Assertions.assertNotNull(responseInitNotify);
         Thread.sleep(100L);
-        Assertions.assertTrue(watcherFlag.get() == 2);
+        Assertions.assertEquals(2, watcherFlag.get());
         try {
             Future<ListView<String>> newFuture = namingFuzzyWatchContext.createNewFuture();
             newFuture.get(100L, TimeUnit.MILLISECONDS);
-            Assertions.assertTrue(false);
+            Assertions.fail();
         } catch (TimeoutException timeoutException) {
             Assertions.assertTrue(true);
         } catch (ExecutionException e) {
@@ -170,7 +170,7 @@ public class NamingFuzzyWatchServiceListHolderTest {
         
         Assertions.assertNotNull(responseInitNotifyFinish);
         Thread.sleep(100L);
-        Assertions.assertTrue(watcherFlag.get() == 2);
+        Assertions.assertEquals(2, watcherFlag.get());
         try {
             Future<ListView<String>> newFuture = namingFuzzyWatchContext.createNewFuture();
             ListView<String> stringListView = newFuture.get();
@@ -181,12 +181,12 @@ public class NamingFuzzyWatchServiceListHolderTest {
             Assertions.assertTrue(newFuture.isDone());
             try {
                 newFuture.cancel(true);
-                Assertions.assertTrue(false);
+                Assertions.fail();
             } catch (UnsupportedOperationException unsupportedOperationException) {
                 Assertions.assertTrue(true);
             }
         } catch (Exception timeoutException) {
-            Assertions.assertTrue(false);
+            Assertions.fail();
         }
         
         namingFuzzyWatchServiceListHolder.registerFuzzyWatcher(generatePattern, new AbstractFuzzyWatchEventWatcher() {
@@ -227,22 +227,22 @@ public class NamingFuzzyWatchServiceListHolderTest {
         NamingFuzzyWatchLoadEvent namingFuzzyWatchLoadEvent = NamingFuzzyWatchLoadEvent.buildEvent(
                 FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode(), generatePattern, eventScope);
         namingFuzzyWatchServiceListHolder.onEvent(namingFuzzyWatchLoadEvent);
-        Assertions.assertTrue(watcherPatternOverFlag.get() == 1);
-        Assertions.assertTrue(watcherServiceOverFlag.get() == 0);
+        Assertions.assertEquals(1, watcherPatternOverFlag.get());
+        Assertions.assertEquals(0, watcherServiceOverFlag.get());
         
         NamingFuzzyWatchLoadEvent namingFuzzyWatchLoadEventDup = NamingFuzzyWatchLoadEvent.buildEvent(
                 FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getCode(), generatePattern, eventScope);
         namingFuzzyWatchServiceListHolder.onEvent(namingFuzzyWatchLoadEventDup);
-        Assertions.assertTrue(watcherPatternOverFlag.get() == 1);
-        Assertions.assertTrue(watcherServiceOverFlag.get() == 0);
+        Assertions.assertEquals(1, watcherPatternOverFlag.get());
+        Assertions.assertEquals(0, watcherServiceOverFlag.get());
         NamingFuzzyWatchContext namingFuzzyWatchContext = namingFuzzyWatchServiceListHolder.getFuzzyWatchContext(
                 generatePattern);
         namingFuzzyWatchContext.clearOverLimitTs();
         NamingFuzzyWatchLoadEvent namingFuzzyWatchLoadEvent2 = NamingFuzzyWatchLoadEvent.buildEvent(
                 FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getCode(), generatePattern, eventScope);
         namingFuzzyWatchServiceListHolder.onEvent(namingFuzzyWatchLoadEvent2);
-        Assertions.assertTrue(watcherPatternOverFlag.get() == 1);
-        Assertions.assertTrue(watcherServiceOverFlag.get() == 1);
+        Assertions.assertEquals(1, watcherPatternOverFlag.get());
+        Assertions.assertEquals(1, watcherServiceOverFlag.get());
     }
     
     @Test
@@ -289,8 +289,8 @@ public class NamingFuzzyWatchServiceListHolderTest {
                 new NacosException(FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode(), FUZZY_WATCH_PATTERN_OVER_LIMIT.getMsg()));
         namingFuzzyWatchServiceListHolder.executeNamingFuzzyWatch();
         Thread.sleep(100L);
-        Assertions.assertTrue(watcherPatternOverFlag.get() == 1);
-        Assertions.assertTrue(watcherServiceOverFlag.get() == 0);
+        Assertions.assertEquals(1, watcherPatternOverFlag.get());
+        Assertions.assertEquals(0, watcherServiceOverFlag.get());
         
         namingFuzzyWatchContext.clearOverLimitTs();
         //check over fuzzy watch service count
@@ -299,8 +299,8 @@ public class NamingFuzzyWatchServiceListHolderTest {
                         FUZZY_WATCH_PATTERN_MATCH_COUNT_OVER_LIMIT.getMsg()));
         namingFuzzyWatchServiceListHolder.executeNamingFuzzyWatch();
         Thread.sleep(100L);
-        Assertions.assertTrue(watcherPatternOverFlag.get() == 1);
-        Assertions.assertTrue(watcherServiceOverFlag.get() == 1);
+        Assertions.assertEquals(1, watcherPatternOverFlag.get());
+        Assertions.assertEquals(1, watcherServiceOverFlag.get());
         
         when(namingGrpcClientProxy.fuzzyWatchRequest(any(NamingFuzzyWatchRequest.class))).thenThrow(
                 new NacosException(500, "unknow"));
@@ -311,7 +311,7 @@ public class NamingFuzzyWatchServiceListHolderTest {
         when(namingGrpcClientProxy.fuzzyWatchRequest(any(NamingFuzzyWatchRequest.class))).thenReturn(
                 NamingFuzzyWatchResponse.buildSuccessResponse());
         namingFuzzyWatchServiceListHolder.executeNamingFuzzyWatch();
-        Assertions.assertTrue(namingFuzzyWatchServiceListHolder.getFuzzyWatchContext(generatePattern) == null);
+        Assertions.assertNull(namingFuzzyWatchServiceListHolder.getFuzzyWatchContext(generatePattern));
         
     }
     
