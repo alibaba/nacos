@@ -288,7 +288,7 @@ public class NamingFuzzyWatchServiceListHolderTest {
         when(namingGrpcClientProxy.fuzzyWatchRequest(any(NamingFuzzyWatchRequest.class))).thenThrow(
                 new NacosException(FUZZY_WATCH_PATTERN_OVER_LIMIT.getCode(), FUZZY_WATCH_PATTERN_OVER_LIMIT.getMsg()));
         namingFuzzyWatchServiceListHolder.executeNamingFuzzyWatch();
-        Thread.sleep(100L);
+        Thread.sleep(1000L);
         Assertions.assertEquals(1, watcherPatternOverFlag.get());
         Assertions.assertEquals(0, watcherServiceOverFlag.get());
         
