@@ -259,8 +259,13 @@ public class K8sSyncServer {
 
         // Wait until the cache of each informer has been fully synced before proceeding.
         // This ensures that the local cache contains the latest and complete resource data.
+        long timeout = 30000L;
+        long startTime = System.currentTimeMillis();
         for (SharedIndexInformer<?> informer : Arrays.asList(serviceInformer, endpointInformer)) {
             while (!informer.hasSynced()) {
+                if (System.currentTimeMillis() - startTime > timeout) {
+                    throw new RuntimeException("Informer sync timed out");
+                }
                 Thread.sleep(100L);
             }
         }
