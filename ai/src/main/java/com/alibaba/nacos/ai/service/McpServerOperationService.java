@@ -280,7 +280,7 @@ public class McpServerOperationService {
                     "Version must be specified in parameter `serverSpecification`");
         }
         
-        String id = UUID.randomUUID().toString();
+        String id = StringUtils.isEmpty(serverSpecification.getId()) ? UUID.randomUUID().toString() : serverSpecification.getId();
         serverSpecification.setId(id);
         ZonedDateTime currentTime = ZonedDateTime.now(ZoneOffset.UTC);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(Constants.RELEASE_DATE_FORMAT);
