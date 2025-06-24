@@ -19,6 +19,7 @@ package com.alibaba.nacos.k8s.sync;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
@@ -100,7 +101,7 @@ public class K8sSyncServer {
      * @throws IOException io exception
      */
     @SuppressWarnings("PMD.MethodTooLongRule")
-    public void startInformer() throws IOException, InterruptedException {
+    public void startInformer() throws IOException {
         ApiClient apiClient;
         CoreV1Api coreV1Api;
         
@@ -266,7 +267,7 @@ public class K8sSyncServer {
                 if (System.currentTimeMillis() - startTime > timeout) {
                     throw new RuntimeException("Informer sync timed out");
                 }
-                Thread.sleep(100L);
+                ThreadUtils.sleep(100L);
             }
         }
     }
