@@ -143,6 +143,19 @@ public interface McpMaintainerService {
     default McpServerDetailInfo getMcpServerDetail(String mcpName, String version) throws NacosException {
         return getMcpServerDetail(Constants.DEFAULT_NAMESPACE_ID, mcpName, null, version);
     }
+    
+    /**
+     * Gets mcp server detail.
+     *
+     * @param namespaceId the namespace id
+     * @param mcpName     the mcp name
+     * @param version     the version
+     * @return the mcp server detail
+     * @throws NacosException the nacos exception
+     */
+    default McpServerDetailInfo getMcpServerDetail(String namespaceId, String mcpName, String version) throws NacosException {
+        return getMcpServerDetail(namespaceId, mcpName, null, version);
+    }
 
     /**
      * Get mcp server detail information from Nacos.
