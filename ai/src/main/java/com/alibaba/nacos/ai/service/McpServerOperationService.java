@@ -279,8 +279,24 @@ public class McpServerOperationService {
             throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "Version must be specified in parameter `serverSpecification`");
         }
-        
-        String id = UUID.randomUUID().toString();
+        String id;
+        String customMcpId = serverSpecification.getId();
+
+        if (StringUtils.isEmpty(customMcpId)) {
+            id = UUID.randomUUID().toString();
+        }else {
+            if (!StringUtils.isUUIDString(customMcpId)) {
+                throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                        "parameter `serverSpecification.id` is not match uuid pattern,  must obey uuid pattern");
+            }
+            if (mcpServerIndex.getMcpServerById(serverSpecification.getId()) != null) {
+                throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
+                        "parameter `serverSpecification.id` conflict with exist mcp server id");
+            }
+
+            id = customMcpId;
+        }
+
         serverSpecification.setId(id);
         ZonedDateTime currentTime = ZonedDateTime.now(ZoneOffset.UTC);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(Constants.RELEASE_DATE_FORMAT);

@@ -82,4 +82,14 @@ class StringUtilsTest {
         collection.add("bar");
         assertEquals("foo,bar", join(collection, ","));
     }
+
+    @Test
+    void testUUIDPattern() {
+        // match 8-4-4-4-12 uuid pattern
+        assertTrue(StringUtils.isUUIDString("123e4567-e89b-12d3-a456-426655440000"));
+        // not match 8-4-4-4-12 uuid pattern
+        assertFalse(StringUtils.isUUIDString("123e54567-e89b5-12d35-a4565-426655440000"));
+        // not match hexadecimal and '-' char
+        assertFalse(StringUtils.isUUIDString("@23e4567+e89b-12d3-a456-426655440000"));
+    }
 }

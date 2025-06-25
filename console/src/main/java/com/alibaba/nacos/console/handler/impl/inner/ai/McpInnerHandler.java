@@ -54,9 +54,9 @@ public class McpInnerHandler implements McpHandler {
     }
     
     @Override
-    public void createMcpServer(String namespaceId, McpServerBasicInfo serverSpecification,
+    public String createMcpServer(String namespaceId, McpServerBasicInfo serverSpecification,
             McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
-        mcpServerOperationService.createMcpServer(namespaceId, serverSpecification, toolSpecification,
+        return mcpServerOperationService.createMcpServer(namespaceId, serverSpecification, toolSpecification,
                 endpointSpecification);
     }
     

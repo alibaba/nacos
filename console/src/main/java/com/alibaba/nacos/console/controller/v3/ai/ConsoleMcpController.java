@@ -109,8 +109,8 @@ public class ConsoleMcpController {
         McpServerBasicInfo basicInfo = McpRequestUtil.parseMcpServerBasicInfo(mcpForm);
         McpToolSpecification mcpTools = McpRequestUtil.parseMcpTools(mcpForm);
         McpEndpointSpec endpointSpec = McpRequestUtil.parseMcpEndpointSpec(basicInfo, mcpForm);
-        mcpProxy.createMcpServer(mcpForm.getNamespaceId(), basicInfo, mcpTools, endpointSpec);
-        return Result.success("ok");
+        String mcpId = mcpProxy.createMcpServer(mcpForm.getNamespaceId(), basicInfo, mcpTools, endpointSpec);
+        return Result.success(mcpId);
     }
     
     /**

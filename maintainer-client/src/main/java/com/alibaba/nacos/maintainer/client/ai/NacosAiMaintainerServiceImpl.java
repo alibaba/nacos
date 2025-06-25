@@ -119,7 +119,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
     }
     
     @Override
-    public boolean createMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpec,
+    public String createMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpec,
             McpToolSpecification toolSpec, McpEndpointSpec endpointSpec) throws NacosException {
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;
@@ -132,7 +132,7 @@ public class NacosAiMaintainerServiceImpl implements AiMaintainerService {
         HttpRestResult<String> restResult = clientHttpProxy.executeSyncHttpRequest(httpRequest);
         Result<String> result = JacksonUtils.toObj(restResult.getData(), new TypeReference<Result<String>>() {
         });
-        return ErrorCode.SUCCESS.getCode().equals(result.getCode());
+        return result.getData();
     }
     
     @Override
