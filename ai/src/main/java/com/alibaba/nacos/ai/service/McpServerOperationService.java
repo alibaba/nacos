@@ -285,7 +285,7 @@ public class McpServerOperationService {
         if (StringUtils.isEmpty(customMcpId)) {
             id = UUID.randomUUID().toString();
         }else {
-            if (!StringUtils.isUUIDString(customMcpId)) {
+            if (!StringUtils.isUuidString(customMcpId)) {
                 throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
                         "parameter `serverSpecification.id` is not match uuid pattern,  must obey uuid pattern");
             }

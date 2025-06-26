@@ -813,7 +813,7 @@ public class StringUtils {
         return new String(chars);
     }
 
-    public static boolean isUUIDString(String str) {
+    public static boolean isUuidString(String str) {
         return UUID_PATTERN.matcher(str).matches();
     }
 }
