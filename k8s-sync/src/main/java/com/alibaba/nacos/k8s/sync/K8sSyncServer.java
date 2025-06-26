@@ -43,9 +43,10 @@ import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.KubeConfig;
 import okhttp3.OkHttpClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
@@ -77,7 +78,7 @@ public class K8sSyncServer {
      *
      * @throws IOException io exception
      */
-    @PostConstruct
+    @EventListener(ApplicationReadyEvent.class)
     public void start() throws IOException {
         if (!k8sSyncConfig.isEnabled()) {
             Loggers.MAIN.info("The Nacos k8s-sync is disabled.");
