@@ -17,6 +17,7 @@
 package com.alibaba.nacos;
 
 import com.alibaba.nacos.server.NacosNormalBeanTypeFilter;
+import com.alibaba.nacos.sys.filter.NacosTypeExcludeFilter;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.ldap.LdapAutoConfiguration;
@@ -34,7 +35,8 @@ import org.springframework.context.annotation.PropertySource;
 @ComponentScan(basePackages = "com.alibaba.nacos", excludeFilters = {
         @Filter(type = FilterType.REGEX, pattern = "com\\.alibaba\\.nacos\\.console.*"),
         @Filter(type = FilterType.REGEX, pattern = "com\\.alibaba\\.nacos\\.plugin\\.auth\\.impl.*"),
-        @Filter(type = FilterType.CUSTOM, classes = {NacosNormalBeanTypeFilter.class})})
+        @Filter(type = FilterType.REGEX, pattern = "com\\.alibaba\\.nacos\\.mcpregistry.*"),
+        @Filter(type = FilterType.CUSTOM, classes = {NacosTypeExcludeFilter.class, NacosNormalBeanTypeFilter.class})})
 @PropertySource("classpath:nacos-server.properties")
 public class NacosServerWebApplication {
     

@@ -14,51 +14,41 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.console.handler.impl.remote.naming;
+package com.alibaba.nacos.console.handler.impl.noop.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
-import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
-import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
 import com.alibaba.nacos.console.handler.naming.InstanceHandler;
-import com.alibaba.nacos.core.utils.PageUtil;
 import com.alibaba.nacos.naming.model.form.InstanceForm;
-import org.springframework.context.annotation.Conditional;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 /**
- * Remote Implementation of InstanceHandler that handles instance-related operations.
+ * Noop Implementation of InstanceHandler that handles instance-related operations.
+ * Used when `naming` module is disabled(functionMode is `config`)
  *
  * @author xiweng.yy
  */
 @Service
-@EnabledRemoteHandler
-@Conditional(ConditionFunctionEnabled.ConditionNamingEnabled.class)
-public class InstanceRemoteHandler implements InstanceHandler {
+@ConditionalOnMissingBean(value = InstanceHandler.class, ignored = InstanceNoopHandler.class)
+public class InstanceNoopHandler implements InstanceHandler {
     
-    private final NacosMaintainerClientHolder clientHolder;
-    
-    public InstanceRemoteHandler(NacosMaintainerClientHolder clientHolder) {
-        this.clientHolder = clientHolder;
-    }
+    private static final String MCP_NOT_ENABLED_MESSAGE = "Current functionMode is `config`, naming module is disabled.";
     
     @Override
     public Page<? extends Instance> listInstances(String namespaceId, String serviceNameWithoutGroup, String groupName,
             String clusterName, int page, int pageSize) throws NacosException {
-        List<Instance> instances = clientHolder.getNamingMaintainerService()
-                .listInstances(namespaceId, groupName, serviceNameWithoutGroup, clusterName, false);
-        return PageUtil.subPage(instances, page, pageSize);
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
+                MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
     public void updateInstance(InstanceForm instanceForm, Instance instance) throws NacosException {
-        clientHolder.getNamingMaintainerService()
-                .updateInstance(instanceForm.getNamespaceId(), instanceForm.getGroupName(),
-                        instanceForm.getServiceName(), instance);
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
+                MCP_NOT_ENABLED_MESSAGE);
     }
 }
 

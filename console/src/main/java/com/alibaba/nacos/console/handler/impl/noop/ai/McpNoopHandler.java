@@ -14,64 +14,64 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.console.handler.impl.inner.ai;
+package com.alibaba.nacos.console.handler.impl.noop.ai;
 
-import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.console.handler.ai.McpHandler;
-import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
-import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
-import org.springframework.context.annotation.Conditional;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.stereotype.Service;
 
 /**
- * Inner implementation of Mcp handler.
+ * Noop implementation of Mcp handler.
+ * Used when `naming` or `config` module are not enabled.
  *
  * @author xiweng.yy
  */
 @Service
-@EnabledInnerHandler
-@Conditional(ConditionFunctionEnabled.ConditionAiEnabled.class)
-public class McpInnerHandler implements McpHandler {
+@ConditionalOnMissingBean(value = McpHandler.class, ignored = McpNoopHandler.class)
+public class McpNoopHandler implements McpHandler {
     
-    private final McpServerOperationService mcpServerOperationService;
-    
-    public McpInnerHandler(McpServerOperationService mcpServerOperationService) {
-        this.mcpServerOperationService = mcpServerOperationService;
-    }
+    private static final String MCP_NOT_ENABLED_MESSAGE = "Nacos AI MCP module and API required both `naming` and `config` module.";
     
     @Override
     public Page<McpServerBasicInfo> listMcpServers(String namespaceId, String mcpName, String search, int pageNo,
-            int pageSize) {
-        return mcpServerOperationService.listMcpServerWithPage(namespaceId, mcpName, search, pageNo, pageSize);
+            int pageSize) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
+                MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public McpServerDetailInfo getMcpServer(String namespaceId, String mcpName, String mcpServerId, String version) throws NacosException {
-        return mcpServerOperationService.getMcpServerDetail(namespaceId, mcpServerId, mcpName, version);
+    public McpServerDetailInfo getMcpServer(String namespaceId, String mcpName, String mcpId, String version)
+            throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
+                MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
     public void createMcpServer(String namespaceId, McpServerBasicInfo serverSpecification,
             McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
-        mcpServerOperationService.createMcpServer(namespaceId, serverSpecification, toolSpecification,
-                endpointSpecification);
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
+                MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
     public void updateMcpServer(String namespaceId, boolean isPublish, McpServerBasicInfo serverSpecification,
             McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
-        mcpServerOperationService.updateMcpServer(namespaceId, isPublish, serverSpecification, toolSpecification,
-                endpointSpecification);
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
+                MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
-    public void deleteMcpServer(String namespaceId, String mcpName, String mcpServerId, String version) throws NacosException {
-        mcpServerOperationService.deleteMcpServer(namespaceId, mcpName, mcpServerId, version);
+    public void deleteMcpServer(String namespaceId, String mcpName, String mcpId, String version)
+            throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
+                MCP_NOT_ENABLED_MESSAGE);
     }
 }

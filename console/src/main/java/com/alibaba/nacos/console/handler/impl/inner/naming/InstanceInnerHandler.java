@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.trace.event.naming.UpdateInstanceTraceEvent;
+import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
 import com.alibaba.nacos.console.handler.naming.InstanceHandler;
 import com.alibaba.nacos.core.utils.PageUtil;
@@ -28,6 +29,7 @@ import com.alibaba.nacos.naming.core.CatalogService;
 import com.alibaba.nacos.naming.core.CatalogServiceV2Impl;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
 import com.alibaba.nacos.naming.model.form.InstanceForm;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -39,6 +41,7 @@ import java.util.List;
  */
 @Service
 @EnabledInnerHandler
+@Conditional(ConditionFunctionEnabled.ConditionNamingEnabled.class)
 public class InstanceInnerHandler implements InstanceHandler {
     
     private final CatalogService catalogService;

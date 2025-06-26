@@ -14,60 +14,58 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.console.handler.impl.remote.config;
+package com.alibaba.nacos.console.handler.impl.noop.config;
 
 import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigHistoryBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.console.handler.config.HistoryHandler;
-import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
-import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
-import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
-import org.springframework.context.annotation.Conditional;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 /**
- * Remote Implementation of HistoryHandler for handling internal configuration operations.
+ * Noop Implementation of HistoryHandler for handling internal configuration operations.
+ * Used when `config` module is disabled(functionMode is `naming`)
  *
  * @author xiweng.yy
  */
 @Service
-@EnabledRemoteHandler
-@Conditional(ConditionFunctionEnabled.ConditionConfigEnabled.class)
-public class HistoryRemoteHandler implements HistoryHandler {
+@ConditionalOnMissingBean(value = HistoryHandler.class, ignored = HistoryNoopHandler.class)
+public class HistoryNoopHandler implements HistoryHandler {
     
-    private final NacosMaintainerClientHolder clientHolder;
-    
-    public HistoryRemoteHandler(NacosMaintainerClientHolder clientHolder) {
-        this.clientHolder = clientHolder;
-    }
+    private static final String MCP_NOT_ENABLED_MESSAGE = "Current functionMode is `naming`, config module is disabled.";
     
     @Override
     public ConfigHistoryDetailInfo getConfigHistoryInfo(String dataId, String group, String namespaceId, Long nid)
             throws NacosException {
-        return clientHolder.getConfigMaintainerService().getConfigHistoryInfo(dataId, group, namespaceId, nid);
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
+                MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
     public Page<ConfigHistoryBasicInfo> listConfigHistory(String dataId, String group, String namespaceId,
             Integer pageNo, Integer pageSize) throws NacosException {
-        return clientHolder.getConfigMaintainerService()
-                .listConfigHistory(dataId, group, namespaceId, pageNo, pageSize);
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
+                MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
     public ConfigHistoryDetailInfo getPreviousConfigHistoryInfo(String dataId, String group, String namespaceId,
             Long id) throws NacosException {
-        return clientHolder.getConfigMaintainerService().getPreviousConfigHistoryInfo(dataId, group, namespaceId, id);
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
+                MCP_NOT_ENABLED_MESSAGE);
     }
     
     @Override
     public List<ConfigBasicInfo> getConfigsByTenant(String namespaceId) throws NacosException {
-        return clientHolder.getConfigMaintainerService().getConfigListByNamespace(namespaceId);
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
+                MCP_NOT_ENABLED_MESSAGE);
     }
     
 }

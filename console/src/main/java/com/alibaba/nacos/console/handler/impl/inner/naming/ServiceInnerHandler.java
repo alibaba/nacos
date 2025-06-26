@@ -26,6 +26,7 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.trace.event.naming.DeregisterServiceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.RegisterServiceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.UpdateServiceTraceEvent;
+import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
 import com.alibaba.nacos.console.handler.naming.ServiceHandler;
 import com.alibaba.nacos.naming.core.CatalogServiceV2Impl;
@@ -38,6 +39,7 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.model.form.ServiceForm;
 import com.alibaba.nacos.naming.selector.SelectorManager;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Conditional;
 
 import java.util.List;
 
@@ -48,6 +50,7 @@ import java.util.List;
  */
 @org.springframework.stereotype.Service
 @EnabledInnerHandler
+@Conditional(ConditionFunctionEnabled.ConditionNamingEnabled.class)
 public class ServiceInnerHandler implements ServiceHandler {
     
     private final ServiceOperatorV2Impl serviceOperatorV2;
