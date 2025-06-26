@@ -84,7 +84,7 @@ class StringUtilsTest {
     }
 
     @Test
-    void testUUIDPattern() {
+    void testUuidPattern() {
         // match 8-4-4-4-12 uuid pattern
         assertTrue(StringUtils.isUuidString("123e4567-e89b-12d3-a456-426655440000"));
         // not match 8-4-4-4-12 uuid pattern
