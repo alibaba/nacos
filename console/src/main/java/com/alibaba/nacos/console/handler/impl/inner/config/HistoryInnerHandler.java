@@ -28,8 +28,10 @@ import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.HistoryService;
 import com.alibaba.nacos.config.server.utils.ResponseUtil;
 import com.alibaba.nacos.console.handler.config.HistoryHandler;
+import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -44,6 +46,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @EnabledInnerHandler
+@Conditional(ConditionFunctionEnabled.ConditionConfigEnabled.class)
 public class HistoryInnerHandler implements HistoryHandler {
     
     private final HistoryService historyService;

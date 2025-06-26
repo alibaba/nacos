@@ -231,6 +231,11 @@ public enum ErrorCode {
     API_DEPRECATED(40000, "API deprecated."),
     
     /**
+     * The `functionMode` of API is disabled.
+     */
+    API_FUNCTION_DISABLED(40001, "API function disabled."),
+    
+    /**
      * Config use 100001 ~ 100999.
      **/
     METADATA_ILLEGAL(100002, "Imported metadata is invalid"),
