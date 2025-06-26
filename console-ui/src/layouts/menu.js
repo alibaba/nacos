@@ -105,8 +105,8 @@ export default function(model) {
     result.push(configurationMenu);
   } else {
     result.push(configurationMenu, serviceDiscoveryMenu);
+    result.push(AiControlMenu);
   }
-  result.push(AiControlMenu);
   if (globalAdmin) {
     result.push(authorityControlMenu);
   }

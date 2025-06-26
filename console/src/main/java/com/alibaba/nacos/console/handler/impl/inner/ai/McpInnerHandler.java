@@ -24,7 +24,9 @@ import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.McpHandler;
+import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
 
 /**
@@ -34,6 +36,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @EnabledInnerHandler
+@Conditional(ConditionFunctionEnabled.ConditionAiEnabled.class)
 public class McpInnerHandler implements McpHandler {
     
     private final McpServerOperationService mcpServerOperationService;

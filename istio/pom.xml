@@ -76,6 +76,12 @@
             <artifactId>api</artifactId>
             <version>0.1.27</version>
         </dependency>
+        
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     
 

@@ -56,6 +56,7 @@ import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.console.handler.config.ConfigHandler;
+import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
@@ -63,6 +64,7 @@ import com.alibaba.nacos.sys.utils.InetUtils;
 import jakarta.servlet.ServletException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -88,6 +90,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @EnabledInnerHandler
+@Conditional(ConditionFunctionEnabled.ConditionConfigEnabled.class)
 public class ConfigInnerHandler implements ConfigHandler {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigInnerHandler.class);
