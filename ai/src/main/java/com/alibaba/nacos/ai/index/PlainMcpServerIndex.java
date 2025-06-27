@@ -78,14 +78,15 @@ public class PlainMcpServerIndex implements McpServerIndex {
     
     private Page<McpServerIndexData> searchMcpServerByName0(String namespaceId, String name, String search, int offset,
             int limit) {
-        Page<ConfigInfo> serverInfos = searchMcpServers(namespaceId, name, search, limit);
-        List<McpServerIndexData> indexDataList = serverInfos.getPageItems().stream().skip(offset)
+        int pageNo = offset / limit + 1;
+        Page<ConfigInfo> serverInfos = searchMcpServers(namespaceId, name, search, pageNo, limit);
+        List<McpServerIndexData> indexDataList = serverInfos.getPageItems().stream()
                 .map(this::mapMcpServerVersionConfigToIndexData).toList();
         Page<McpServerIndexData> result = new Page<>();
         result.setPageItems(indexDataList);
         result.setTotalCount(serverInfos.getTotalCount());
         result.setPagesAvailable((int) Math.ceil((double) serverInfos.getTotalCount() / (double) limit));
-        result.setPageNumber(offset / limit + 1);
+        result.setPageNumber(pageNo);
         return result;
     }
     
@@ -97,7 +98,8 @@ public class PlainMcpServerIndex implements McpServerIndex {
         return data;
     }
     
-    private Page<ConfigInfo> searchMcpServers(String namespace, String serverName, String search, int limit) {
+    private Page<ConfigInfo> searchMcpServers(String namespace, String serverName, String search, int pageNo,
+            int limit) {
         HashMap<String, Object> advanceInfo = new HashMap<>(1);
         if (Objects.isNull(serverName)) {
             serverName = StringUtils.EMPTY;
@@ -114,8 +116,8 @@ public class PlainMcpServerIndex implements McpServerIndex {
             dataId = null;
         }
         
-        return configDetailService.findConfigInfoPage(search, 1, limit, dataId, Constants.MCP_SERVER_VERSIONS_GROUP,
-                namespace, advanceInfo);
+        return configDetailService.findConfigInfoPage(search, pageNo, limit, dataId,
+                Constants.MCP_SERVER_VERSIONS_GROUP, namespace, advanceInfo);
     }
     
     /**
