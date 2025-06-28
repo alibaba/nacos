@@ -172,7 +172,7 @@ public class CatalogServiceV2Impl implements CatalogService {
         serviceViews.setTotalCount(page.getTotalCount());
         serviceViews.setPageNumber(page.getPageNumber());
         serviceViews.setPagesAvailable(page.getPagesAvailable());
-        for (Service each : services) {
+        for (Service each : page.getPageItems()) {
             ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(each).orElseGet(ServiceMetadata::new);
             ServiceView serviceView = new ServiceView();
             serviceView.setName(each.getName());

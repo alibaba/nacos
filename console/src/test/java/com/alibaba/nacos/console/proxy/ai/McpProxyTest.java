@@ -60,13 +60,13 @@ public class McpProxyTest {
     @Test
     public void getMcpServer() throws NacosException {
         McpServerDetailInfo expectedInfo = new McpServerDetailInfo();
-        when(mcpHandler.getMcpServer(NAMESPACE_ID, MCP_NAME)).thenReturn(expectedInfo);
+        when(mcpHandler.getMcpServer(NAMESPACE_ID, MCP_NAME, "id", "version")).thenReturn(expectedInfo);
         
-        McpServerDetailInfo result = mcpProxy.getMcpServer(NAMESPACE_ID, MCP_NAME);
+        McpServerDetailInfo result = mcpProxy.getMcpServer(NAMESPACE_ID, MCP_NAME, "id", "version");
         
         assertNotNull(result);
         assertEquals(expectedInfo, result);
-        verify(mcpHandler, times(1)).getMcpServer(NAMESPACE_ID, MCP_NAME);
+        verify(mcpHandler, times(1)).getMcpServer(NAMESPACE_ID, MCP_NAME, "id", "version");
     }
     
     @Test
@@ -100,14 +100,14 @@ public class McpProxyTest {
         McpEndpointSpec endpointSpecification = new McpEndpointSpec();
         
         doNothing().when(mcpHandler)
-                .createMcpServer(NAMESPACE_ID, MCP_NAME, serverSpecification, toolSpecification, endpointSpecification);
+                .createMcpServer(NAMESPACE_ID, serverSpecification, toolSpecification, endpointSpecification);
         
         assertDoesNotThrow(() -> {
-            mcpProxy.createMcpServer(NAMESPACE_ID, MCP_NAME, serverSpecification, toolSpecification,
+            mcpProxy.createMcpServer(NAMESPACE_ID, serverSpecification, toolSpecification,
                     endpointSpecification);
         });
         
-        verify(mcpHandler, times(1)).createMcpServer(NAMESPACE_ID, MCP_NAME, serverSpecification, toolSpecification,
+        verify(mcpHandler, times(1)).createMcpServer(NAMESPACE_ID, serverSpecification, toolSpecification,
                 endpointSpecification);
     }
     
@@ -118,15 +118,15 @@ public class McpProxyTest {
         McpEndpointSpec endpointSpecification = new McpEndpointSpec();
         
         doNothing().when(mcpHandler)
-                .updateMcpServer(NAMESPACE_ID, MCP_NAME, serverSpecification, toolSpecification, endpointSpecification);
+                .updateMcpServer(NAMESPACE_ID, true, serverSpecification, toolSpecification, endpointSpecification);
         
-        mcpProxy.updateMcpServer(NAMESPACE_ID, MCP_NAME, serverSpecification, toolSpecification, endpointSpecification);
+        mcpProxy.updateMcpServer(NAMESPACE_ID, true, serverSpecification, toolSpecification, endpointSpecification);
     }
     
     @Test
     public void deleteMcpServer() throws NacosException {
-        doNothing().when(mcpHandler).deleteMcpServer(NAMESPACE_ID, MCP_NAME);
-        mcpProxy.deleteMcpServer(NAMESPACE_ID, MCP_NAME);
-        verify(mcpHandler).deleteMcpServer(NAMESPACE_ID, MCP_NAME);
+        doNothing().when(mcpHandler).deleteMcpServer(NAMESPACE_ID, MCP_NAME, "id", "version");
+        mcpProxy.deleteMcpServer(NAMESPACE_ID, MCP_NAME, "id", "version");
+        verify(mcpHandler).deleteMcpServer(NAMESPACE_ID, MCP_NAME, "id", "version");
     }
 }

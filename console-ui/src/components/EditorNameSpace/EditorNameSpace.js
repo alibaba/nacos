@@ -94,7 +94,6 @@ class EditorNameSpace extends React.Component {
   handleSubmit() {
     const { locale = {} } = this.props;
     this.field.validate((errors, values) => {
-      console.log(values);
       if (errors) {
         return;
       }
@@ -133,7 +132,7 @@ class EditorNameSpace extends React.Component {
     setTimeout(() => {
       request({
         type: 'get',
-        url: 'v3/console/core/namespace',
+        url: 'v3/console/core/namespace/list',
         success: res => {
           if (res.code === 0) {
             window.namespaceList = res.data;

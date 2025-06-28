@@ -8,8 +8,10 @@ const ShowTools = props => {
     serverConfig = {
       protocol: '',
     },
+    restToMcpSwitch = 'off',
     locale,
     isPreview = false,
+    onlyEditRuntimeInfo = false,
   } = props;
   const toolsRef = useRef(null);
   const getServerDetail = () => {
@@ -38,7 +40,7 @@ const ShowTools = props => {
 
   return (
     <div>
-      {!isPreview && (
+      {!isPreview && !onlyEditRuntimeInfo && (
         <Button type="primary" onClick={openDialog}>
           {locale.newMcpTool}
         </Button>
@@ -48,14 +50,16 @@ const ShowTools = props => {
         key={JSON.stringify(serverConfig)}
         locale={locale}
         serverConfig={serverConfig}
-        showTemplates={serverConfig?.protocol === 'http'}
+        showTemplates={restToMcpSwitch !== 'off'}
         ref={toolsRef}
         getServerDetail={getServerDetail}
         onChange={props?.onChange}
+        onlyEditRuntimeInfo={onlyEditRuntimeInfo}
       />
 
       <Table style={{ marginTop: '20px' }} dataSource={serverConfig?.toolSpec?.tools || []}>
         <Table.Column
+          width={'15%'}
           title={locale.toolName}
           cell={(value, index, record) => {
             return <div style={{ minWidth: '100px' }}>{record.name}</div>;
@@ -106,14 +110,18 @@ const ShowTools = props => {
                   {locale.operationToolEdit}
                   {/* 编辑 */}
                 </a>
-                <span style={{ margin: '0 5px' }}>|</span>
-                <DeleteTool
-                  record={record}
-                  locale={locale}
-                  serverConfig={serverConfig}
-                  getServerDetail={getServerDetail}
-                  onChange={props?.onChange}
-                />
+                {!onlyEditRuntimeInfo && (
+                  <>
+                    <span style={{ margin: '0 5px' }}>|</span>
+                    <DeleteTool
+                      record={record}
+                      locale={locale}
+                      serverConfig={serverConfig}
+                      getServerDetail={getServerDetail}
+                      onChange={props?.onChange}
+                    />
+                  </>
+                )}
               </div>
             );
           }}

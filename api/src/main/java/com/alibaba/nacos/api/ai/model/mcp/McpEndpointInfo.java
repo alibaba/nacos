@@ -27,6 +27,8 @@ public class McpEndpointInfo {
     
     private int port;
     
+    private String path;
+    
     public String getAddress() {
         return address;
     }
@@ -41,5 +43,13 @@ public class McpEndpointInfo {
     
     public void setPort(int port) {
         this.port = port;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
     }
 }

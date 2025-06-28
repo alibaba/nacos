@@ -124,7 +124,7 @@ class ImportDialog extends React.Component {
         style={{ marginRight: 5 }}
         triggerType="hover"
       >
-        <a href={window._getLink && window._getLink('knowDataid')} target="_blank">
+        <a href={window._getLink && window._getLink('knowDataid')} target="_blank" rel="noreferrer">
           {locale.zipFileFormat}
         </a>
       </Balloon>

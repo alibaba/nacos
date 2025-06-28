@@ -104,12 +104,10 @@ class NacosAiMaintainerServiceImplTest {
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         McpServerDetailInfo mcpServerDetailInfo = new McpServerDetailInfo();
         mcpServerDetailInfo.setName("test");
-        mcpServerDetailInfo.setVersion("1.0.0");
         mockRestResult.setData(JacksonUtils.toJson(Result.success(mcpServerDetailInfo)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
         McpServerDetailInfo actual = aiMaintainerService.getMcpServerDetail("test");
         assertEquals(mcpServerDetailInfo.getName(), actual.getName());
-        assertEquals(mcpServerDetailInfo.getVersion(), actual.getVersion());
     }
     
     @Test

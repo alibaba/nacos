@@ -15,25 +15,35 @@ import {
   Select,
   Radio,
   ConfigProvider,
+  Switch,
 } from '@alifd/next';
-import { McpServerManagementRouteName, McpServerManagementRoute } from '../../../layouts/menu';
 import ShowTools from '../McpDetail/ShowTools';
+import { McpServerManagementRoute } from '../../../layouts/menu';
 const { Row, Col } = Grid;
 
 const FormItem = Form.Item;
 const { Group: RadioGroup } = Radio;
-const localServerConfigDesc = `示例：{
-  "mcpServers":{
-  "description": "高德地图服务",
-  "command": "npx",
-  "args": [
-    "-y",
-    "@amap/amap-maps-mcp-server"
-  ],
-  "env": {
-    "AMAP_MAPS_API_KEY": "<API_KEY>" // 配置API_KEY信息
-  }
-}}`;
+const localServerConfigDesc = `示例：
+{
+    "mcpServers":
+    {
+        "amap-mcp-server":
+        {
+            "description": "高德地图服务",
+            "command": "npx",
+            "args":
+            [
+                "-y",
+                "@amap/amap-maps-mcp-server"
+            ],
+            "env":
+            {
+                "AMAP_MAPS_API_KEY": "<API_KEY>"
+            }
+        }
+    }
+}
+`;
 
 @ConfigProvider.config
 class NewMcpServer extends React.Component {
@@ -55,7 +65,11 @@ class NewMcpServer extends React.Component {
       useExistService: true,
       serviceList: [],
       serverConfig: {},
-      credentials: {},
+      restToMcpSwitch: 'http',
+      currentVersion: '',
+      isLatestVersion: false,
+      versionsList: [],
+      isInputError: false,
     };
   }
 
@@ -66,37 +80,56 @@ class NewMcpServer extends React.Component {
       });
     }
     this.initEditedData();
-    this.getNamespaces();
   }
 
   // 编辑数据 初始化
   initEditedData = async () => {
-    const mcpname = getParams('mcpname') || '';
+    const mcpServerId = getParams('id') || '';
+    const version = getParams('version') || '';
     const mcptype = getParams('mcptype') || '';
-    if (mcpname && mcptype === 'edit') {
-      const result = await request({ url: `v3/console/ai/mcp?mcpName=${mcpname}` });
+    const namespace = getParams('namespace') || '';
+    this.getServiceList(namespace);
+    if (mcpServerId && mcptype === 'edit') {
+      let url = `v3/console/ai/mcp?mcpId=${mcpServerId}`;
+      if (version !== '') {
+        url += `&version=${version}`;
+      }
+      const result = await request({ url: url });
       if (result.code === 0 && result.data) {
         const {
           description = '',
           name = '',
-          version = '',
+          versionDetail = '',
           protocol = '',
+          frontProtocol = '',
           localServerConfig = {},
           remoteServerConfig = {},
-          credentials = {},
+          allVersions = [],
         } = result.data;
 
         const initFileData = {
           serverName: name,
           protocol,
+          frontProtocol,
           description: description,
-          version: version,
-          credentials: credentials,
+          version: versionDetail.version,
         };
 
-        if (localServerConfig && JSON.stringify(localServerConfig, null, 2) !== '{}') {
-          initFileData['localServerConfig'] = JSON.stringify(localServerConfig, null, 2);
+        const allPublishedVersions = [];
+        for (let i = 0; i < allVersions.length; i++) {
+          if (i === allVersions.length - 1 && !allVersions[i].is_latest) {
+            break;
+          }
+          allPublishedVersions.push(allVersions[i].version);
         }
+
+        this.setState({
+          currentVersion: versionDetail.version,
+          isLatestVersion: versionDetail.is_latest,
+          versionsList: allPublishedVersions,
+        });
+
+        initFileData['localServerConfig'] = JSON.stringify(localServerConfig, null, 2);
 
         if (remoteServerConfig) {
           initFileData['exportPath'] = remoteServerConfig?.exportPath;
@@ -104,45 +137,26 @@ class NewMcpServer extends React.Component {
             ? true
             : false;
           initFileData['namespace'] = remoteServerConfig?.serviceRef?.namespaceId;
-          initFileData['service'] = remoteServerConfig?.serviceRef?.serviceName;
-          initFileData['groupName'] = remoteServerConfig?.serviceRef?.groupName || '';
-          // 通过 namespaceId 获取服务列表
-          if (remoteServerConfig?.serviceRef?.namespaceId) {
-            this.getServiceList(remoteServerConfig?.serviceRef?.namespaceId);
-          }
+          initFileData['service'] =
+            remoteServerConfig?.serviceRef?.groupName +
+            '@@' +
+            remoteServerConfig?.serviceRef?.serviceName;
         }
 
         this.field.setValues(initFileData);
+
+        let restToMcpBackendProtocol = 'off';
+        if (protocol === 'https' || protocol === 'http') {
+          restToMcpBackendProtocol = protocol;
+        }
+
         this.setState({
           serverConfig: result.data,
           useExistService: true, // 编辑时 默认使用已有服务，隐藏新建服务
+          restToMcpSwitch: restToMcpBackendProtocol,
         });
       }
     }
-    this.getCredentials();
-  };
-
-  // 获取服务组列表
-  getNamespaces = () => {
-    request({
-      type: 'get',
-      url: 'v3/console/core/namespace/list',
-      data: {
-        pageNo: 1,
-        pageSize: 1000,
-      },
-      success: res => {
-        if (res.code == 0 && res.data) {
-          this.setState({
-            namespaceSelects: res.data?.map(item => ({
-              ...item,
-              label: item.namespaceShowName,
-              value: item.namespace,
-            })),
-          });
-        }
-      },
-    });
   };
 
   goList() {
@@ -168,18 +182,31 @@ class NewMcpServer extends React.Component {
     return new Promise((resolve, reject) => {
       this.field.validate((errors, values) => {
         if (errors) {
+          this.setState({
+            isInputError: true,
+          });
           return resolve({ errors });
         }
+
+        let protocol =
+          this.state.restToMcpSwitch === 'off' ? values.frontProtocol : this.state.restToMcpSwitch;
+        if (values.frontProtocol === 'stdio') {
+          protocol = values.frontProtocol;
+        }
+        const mcpServerId = getParams('id') || '';
         const params = {
-          mcpName: values?.serverName,
+          id: mcpServerId,
           serverSpecification: JSON.stringify(
             {
-              protocol: values?.protocol,
+              protocol: protocol,
+              frontProtocol: values?.frontProtocol,
               name: values?.serverName,
+              id: mcpServerId,
               description: values?.description || '',
-              version: values?.version || '1.0.0',
+              versionDetail: {
+                version: values?.version || '1.0.0',
+              },
               enabled: true,
-              credentials: values?.credentials,
               localServerConfig: values?.localServerConfig
                 ? JSON.parse(values?.localServerConfig)
                 : '{}',
@@ -190,40 +217,46 @@ class NewMcpServer extends React.Component {
           toolSpecification: JSON.stringify(this.state?.serverConfig?.toolSpec || {}),
         };
 
-        if (values?.protocol !== 'stdio') {
+        if (values?.frontProtocol !== 'stdio') {
           // 获取服务组
           params.serverSpecification = JSON.stringify(
             {
-              protocol: values?.protocol,
+              protocol: protocol,
+              frontProtocol: values?.frontProtocol,
               name: values?.serverName,
+              id: mcpServerId,
               description: values?.description || '',
-              version: values?.version || '1.0.0',
+              versionDetail: {
+                version: values?.version || '1.0.0',
+              },
               enabled: true,
               remoteServerConfig: {
                 exportPath: values?.exportPath || '',
               },
-              credentials: values?.credentials,
             },
             null,
             2
           );
           // 添加服务
-          const serverGroup = serviceList.find(item => item.value === values?.service);
-          const groupName = serverGroup ? serverGroup.groupName : values?.groupName || '';
-          params.endpointSpecification = useExistService
-            ? JSON.stringify(
-                {
-                  type: 'REF',
-                  data: {
-                    namespaceId: values?.namespace || '',
-                    serviceName: values?.service || '',
-                    groupName: groupName || '',
-                  },
+
+          if (useExistService) {
+            const group = values?.service.split('@@')[0];
+            const serviceName = values?.service.split('@@')[1];
+            params.endpointSpecification = JSON.stringify(
+              {
+                type: 'REF',
+                data: {
+                  namespaceId: values?.namespace || '',
+                  serviceName: serviceName || '',
+                  groupName: group || '',
                 },
-                null,
-                2
-              )
-            : `{"type": "DIRECT","data":{"address":"${values?.address}","port": "${values?.port}"}}`;
+              },
+              null,
+              2
+            );
+          } else {
+            params.endpointSpecification = `{"type": "DIRECT","data":{"address":"${values?.address}","port": "${values?.port}"}}`;
+          }
         }
 
         resolve(params);
@@ -231,8 +264,17 @@ class NewMcpServer extends React.Component {
     });
   };
 
-  publishConfig = async () => {
+  publishConfig = async isPublish => {
+    if (this.state.isInputError) {
+      return;
+    }
+
     const params = await this.handleData();
+    if (params.errors) {
+      return;
+    }
+
+    params['latest'] = isPublish;
     if (getParams('mcptype') === 'edit') {
       return this.editMcpServer(params);
     } else {
@@ -296,14 +338,41 @@ class NewMcpServer extends React.Component {
 
   validateChart(rule, value, callback) {
     const { locale = {} } = this.props;
-    const chartReg = /[@#\$%\^&\*\s]+/g;
+    const chartReg = /^[a-zA-Z0-9_-]+$/;
 
-    if (chartReg.test(value)) {
+    if (!chartReg.test(value)) {
       callback(locale.doNotEnter);
+      this.setState({
+        isInputError: true,
+      });
     } else {
       callback();
+      this.setState({
+        isInputError: false,
+      });
     }
   }
+  //
+  // validateVersion = (rule, value, callback) => {
+  //   const { locale = {} } = this.props;
+  //   const versionReg = /^[0-9]+\.[0-9]+\.[0-9]+$/;
+  //   if (!versionReg.test(value)) {
+  //     callback(locale.versionFormatError);
+  //     this.setState({
+  //       isInputError: true,
+  //     })
+  //   } else if (this.state.versionsList.includes(value)) {
+  //     callback(locale.cannotUseExistVersion);
+  //     this.setState({
+  //       isInputError: true,
+  //     })
+  //   } else {
+  //     callback()
+  //     this.setState({
+  //       isInputError: false,
+  //     })
+  //   }
+  // }
 
   getServiceList = async namespaceId => {
     const data = {
@@ -323,17 +392,13 @@ class NewMcpServer extends React.Component {
       this.setState({
         serviceList: result.data.pageItems.map(item => ({
           label: `${item.groupName} / ${item.name}`,
-          value: item.name,
+          value: item.groupName + '@@' + item.name,
           ...item,
         })),
       });
     } else {
       Message.error(result.message);
     }
-  };
-  handleNamespaceChange = value => {
-    this.field.reset('service');
-    this.getServiceList(value);
   };
 
   toolsChange = async (_toolSpec = {}, cb = () => {}) => {
@@ -362,7 +427,7 @@ class NewMcpServer extends React.Component {
       );
     });
     const params = await this.handleData();
-
+    params['latest'] = false;
     this.openLoading();
     const result = await request({
       url: 'v3/console/ai/mcp',
@@ -408,47 +473,27 @@ class NewMcpServer extends React.Component {
     );
   };
 
-  handleCredentialChange = value => {
-    const result = {};
-    for (const credentialId in value) {
-      const key = value[credentialId];
-      result[key] = {
-        ref: key,
-      };
-    }
-    this.field.setValue('credentials', result);
-  };
-
-  getCredentials = () => {
-    const self = this;
-    const url = `v3/console/cs/config/list?dataId=&groupName=credentials`;
-    request({
-      url: url,
-      type: 'get',
-      data: {
-        pageNo: 1,
-        pageSize: 1000,
-      },
-      success(result) {
-        if (result.code === 0) {
-          self.setState({
-            credentials: result.data.pageItems.map(item => ({
-              label: item.dataId,
-              value: item.dataId,
-            })),
-          });
-        }
-      },
-    });
-  };
-
   render() {
     const { locale = {} } = this.props;
     const { init } = this.field;
     const isEdit = getParams('mcptype') && getParams('mcptype') === 'edit';
     const formItemLayout = { labelCol: { span: 3 }, wrapperCol: { span: 20 } };
-    const textAreaProps = { 'aria-label': 'auto height', autoHeight: { minRows: 12, maxRows: 20 } };
+    const textAreaProps = { 'aria-label': 'auto height', autoHeight: { minRows: 20, maxRows: 50 } };
     const descAreaProps = { 'aria-label': 'auto height', autoHeight: { minRows: 5, maxRows: 10 } };
+    const currentNamespace = getParams('namespace');
+
+    const versions = this.state.serverConfig?.allVersions
+      ? this.state.serverConfig?.allVersions
+      : [];
+
+    let hasDraftVersion = false;
+    if (versions.length > 0) {
+      hasDraftVersion = !versions[versions.length - 1].is_latest;
+    }
+
+    let currentVersionExist = versions
+      .map(item => item.version)
+      .includes(this.field.getValue('version'));
 
     return (
       <Loading
@@ -459,19 +504,48 @@ class NewMcpServer extends React.Component {
         color={'#333'}
       >
         <Row>
-          <Col span={19}>
+          <Col span={16}>
             <h1>
               {!getParams('mcptype') && locale.addNewMcpServer}
               {getParams('mcptype') && (isEdit ? locale.editService : locale.viewService)}
             </h1>
           </Col>
-          <Col span={4}>
+          <Col span={8}>
             <FormItem label=" ">
               <div style={{ textAlign: 'right' }}>
-                <Button type={'primary'} style={{ marginRight: 10 }} onClick={this.publishConfig}>
-                  {isEdit ? locale.updateExit : locale.escExit}
-                </Button>
+                {isEdit ? (
+                  <>
+                    <Button
+                      type="primary"
+                      onClick={() => {
+                        this.publishConfig(false);
+                      }}
+                      style={{ marginRight: 10 }}
+                    >
+                      {locale.createNewVersionAndSave}
+                    </Button>
 
+                    <Button
+                      type="primary"
+                      onClick={() => {
+                        this.publishConfig(true);
+                      }}
+                      style={{ marginRight: 10 }}
+                    >
+                      {locale.createNewVersionAndPublish}
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    type={'primary'}
+                    style={{ marginRight: 10 }}
+                    onClick={() => {
+                      this.publishConfig(true);
+                    }}
+                  >
+                    {locale.escExit}
+                  </Button>
+                )}
                 <Button type={'normal'} onClick={this.goList.bind(this)}>
                   {locale.release}
                 </Button>
@@ -481,7 +555,7 @@ class NewMcpServer extends React.Component {
         </Row>
         <Form className="new-config-form" field={this.field} {...formItemLayout}>
           <Form.Item label={locale.namespace}>
-            <p>{this.tenant ? this.tenant : McpServerManagementRouteName}</p>
+            <p>{this.tenant ? this.tenant : 'public'}</p>
           </Form.Item>
           <FormItem label={locale.serverName} required>
             <Input
@@ -504,14 +578,14 @@ class NewMcpServer extends React.Component {
             />
           </FormItem>
           {/* 协议类型 */}
-          <FormItem label={locale.serverType} help={isEdit ? null : locale.serverTypeDesc} required>
+          <FormItem label={locale.serverType} required>
             <RadioGroup
-              {...init('protocol', {
+              {...init('frontProtocol', {
                 initValue: 'stdio',
                 props: {
                   onChange: value => {
                     this.setState({
-                      useExistService: ['mcp-sse', 'mcp-streamble'].includes(value) ? false : true,
+                      useExistService: ['mcp-sse', 'mcp-streamable'].includes(value) ? false : true,
                     });
                   },
                 },
@@ -519,24 +593,48 @@ class NewMcpServer extends React.Component {
               disabled={isEdit}
             >
               <Row>
-                {['stdio', 'mcp-sse', 'mcp-streamble'].map(item => (
-                  <Radio key={item} id={item} value={item}>
-                    {item.charAt(0).toUpperCase() + item.slice(1)}
-                  </Radio>
-                ))}
-              </Row>
-              <Row>
-                {['http', 'dubbo'].map(item => (
-                  <Radio key={item} id={item} value={item}>
-                    {item.charAt(0).toUpperCase() + item.slice(1)}
-                  </Radio>
-                ))}
+                <Radio key={'stdio'} id={'stdio'} value={'stdio'}>
+                  stdio
+                </Radio>
+                <Radio key={'mcp-sse'} id={'mcp-sse'} value={'mcp-sse'}>
+                  sse
+                </Radio>
+                <Radio key={'mcp-streamable'} id={'mcp-streamable'} value={'mcp-streamable'}>
+                  streamable
+                </Radio>
               </Row>
             </RadioGroup>
           </FormItem>
-          {this.field.getValue('protocol') !== 'stdio' ? (
+          {this.field.getValue('frontProtocol') !== 'stdio' ? (
             <>
               {/* 编辑时，隐藏 后端服务 表单项 */}
+              <FormItem
+                label={locale.openConverter}
+                required
+                help={<>{locale.restToMcpNeedHigress}</>}
+              >
+                <Row>
+                  <RadioGroup
+                    disabled={isEdit}
+                    value={this.state.restToMcpSwitch}
+                    onChange={data => {
+                      this.setState({
+                        restToMcpSwitch: data,
+                      });
+                    }}
+                  >
+                    <Radio id={'off'} value={'off'}>
+                      {locale.off}
+                    </Radio>
+                    <Radio id={'http'} value={'http'}>
+                      http
+                    </Radio>
+                    <Radio id={'https'} value={'https'}>
+                      https
+                    </Radio>
+                  </RadioGroup>
+                </Row>
+              </FormItem>
               {!isEdit && (
                 <FormItem label={locale.backendService}>
                   <RadioGroup
@@ -547,8 +645,11 @@ class NewMcpServer extends React.Component {
                       });
                     }}
                   >
-                    {// mcp-sse 和 mcp-streamble 不使用已有服务
-                    !['mcp-sse', 'mcp-streamble'].includes(this.field.getValue('protocol')) && (
+                    {// mcp-sse 和 mcp-streamable 不使用已有服务
+                    (!['mcp-sse', 'mcp-streamable'].includes(
+                      this.field.getValue('frontProtocol')
+                    ) ||
+                      this.state.restToMcpSwitch !== 'off') && (
                       <Radio id="useExistService" value="useExistService">
                         {locale.useExistService}
                       </Radio>
@@ -563,24 +664,15 @@ class NewMcpServer extends React.Component {
               {this.state.useExistService ? (
                 <FormItem label={locale.serviceRef} required>
                   <Row gutter={8}>
-                    <Col span={12}>
+                    <Col span={4}>
                       <FormItem label="namespace">
-                        <Select
-                          {...init('namespace', {
-                            rules: [{ required: true, message: locale.placeSelect }],
-                            props: {
-                              placeholder: 'namespace',
-                              dataSource: this.state.namespaceSelects,
-                              onChange: this.handleNamespaceChange,
-                              style: { width: '100%' },
-                            },
-                          })}
-                        />
+                        <p>{currentNamespace}</p>
                       </FormItem>
                     </Col>
                     <Col span={12}>
                       <FormItem label="service">
                         <Select
+                          isPreview={currentVersionExist}
                           {...init('service', {
                             rules: [{ required: true, message: locale.placeSelect }],
                             props: {
@@ -595,7 +687,7 @@ class NewMcpServer extends React.Component {
                   </Row>
                 </FormItem>
               ) : (
-                <FormItem label={locale.useNewService} required>
+                <FormItem label={locale.useNewService} required disabled={currentVersionExist}>
                   <Row gutter={8}>
                     <Col span={12}>
                       <FormItem label="address">
@@ -620,47 +712,37 @@ class NewMcpServer extends React.Component {
                 </FormItem>
               )}
               {/* 暴露路径 */}
-              <FormItem label={locale.exportPath} required help={locale.exportPathDesc}>
-                <Input
-                  placeholder={locale.exportPathEg}
-                  {...init('exportPath', {
-                    rules: [
-                      {
-                        required: true,
-                        message: locale.pleaseEnter,
-                      },
-                    ],
-                  })}
-                  maxLength={255}
-                  addonTextBefore={
-                    this.state.addonBefore ? (
-                      <div style={{ minWidth: 100, color: '#373D41' }}>
-                        {this.state.addonBefore}
-                      </div>
-                    ) : null
-                  }
-                />
-              </FormItem>
-              <FormItem label={locale.CredentialRef}>
-                <Select
-                  mode="multiple"
-                  showSearch
-                  onChange={this.handleCredentialChange}
-                  defaultValue={
-                    this.field.getValue('credentials')
-                      ? Object.keys(this.field.getValue('credentials'))
-                      : []
-                  }
-                  dataSource={this.state.credentials}
-                  style={{ width: '100%', marginRight: 8 }}
-                />
-              </FormItem>
+              {this.state.restToMcpSwitch === 'off' && (
+                <FormItem label={locale.exportPath} required help={locale.exportPathDesc}>
+                  <Input
+                    isPreview={currentVersionExist}
+                    placeholder={locale.exportPathEg}
+                    {...init('exportPath', {
+                      rules: [
+                        {
+                          required: true,
+                          message: locale.pleaseEnter,
+                        },
+                      ],
+                    })}
+                    maxLength={255}
+                    addonTextBefore={
+                      this.state.addonBefore ? (
+                        <div style={{ minWidth: 100, color: '#373D41' }}>
+                          {this.state.addonBefore}
+                        </div>
+                      ) : null
+                    }
+                  />
+                </FormItem>
+              )}
             </>
           ) : (
             // Local Server 配置
             <>
               <FormItem label={this.LocalServerConfigLabel()} required>
                 <Input.TextArea
+                  isPreview={currentVersionExist}
                   {...init('localServerConfig', {
                     props: textAreaProps,
                     rules: [
@@ -671,10 +753,21 @@ class NewMcpServer extends React.Component {
                       {
                         validator: (rule, value, callback) => {
                           try {
-                            JSON.parse(value);
+                            if (value?.length > 0) {
+                              const parsedValue = JSON.parse(value);
+                              if (parsedValue['description']) {
+                                this.field.setValue('description', parsedValue['description']);
+                              }
+                            }
                             callback();
+                            this.setState({
+                              isInputError: false,
+                            });
                           } catch (e) {
                             callback(locale.localServerConfigError);
+                            this.setState({
+                              isInputError: true,
+                            });
                           }
                         },
                       },
@@ -687,6 +780,7 @@ class NewMcpServer extends React.Component {
           )}
           <FormItem label={locale.description} required>
             <Input.TextArea
+              isPreview={currentVersionExist}
               {...init('description', {
                 rules: [{ required: true, message: locale.pleaseEnter }],
                 props: descAreaProps,
@@ -694,17 +788,27 @@ class NewMcpServer extends React.Component {
             />
           </FormItem>
           {/* 服务版本 */}
-          <FormItem label={locale.serverVersion}>
-            <Input {...init('version', { props: { placeholder: '1.0.0' } })} />
+          <FormItem label={locale.serverVersion} required>
+            <Input
+              {...init('version', { props: { placeholder: 'e.g. 1.0.0' }, rules: [{ required: true }] })}
+            />
+            {currentVersionExist && (
+              <>
+                <p style={{ color: 'red' }}>{locale.editExistVersionMessage}</p>
+                <p style={{ color: 'red' }}>{locale.editMoreNeedNewVersion}</p>
+              </>
+            )}
           </FormItem>
 
           {getParams('mcptype') && (
             <FormItem label={'Tools'} {...formItemLayout}>
               <ShowTools
                 locale={locale}
+                restToMcpSwitch={this.state.restToMcpSwitch}
                 serverConfig={this.state.serverConfig}
                 getServerDetail={this.initEditedData}
                 onChange={this.toolsChange}
+                onlyEditRuntimeInfo={currentVersionExist}
               />
             </FormItem>
           )}

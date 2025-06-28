@@ -74,7 +74,7 @@ class InstanceTable extends React.Component {
         ? 'v3/console/ns/instance/list'
         : `v3/console/ns/instance/list?namespaceId=${namespaceId}`;
     request({
-      url: url,
+      url,
       data: {
         serviceName,
         clusterName,

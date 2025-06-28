@@ -16,10 +16,6 @@
 
 package com.alibaba.nacos.config.server.aspect;
 
-import com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse;
-import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
-import com.alibaba.nacos.api.remote.response.ResponseCode;
-import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.configuration.ConfigChangeConfigs;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
@@ -227,20 +223,19 @@ public class ConfigChangeAspect {
             }
             // prevent execute next before plugins service
             if (!configChangeResponse.isSuccess()) {
-                retVal = wrapErrorResp(configChangeResponse);
+                retVal = false;
                 break;
             }
         }
         
         try {
-            // if validate failed,skipped directly
             if (configChangeResponse.isSuccess()) {
                 retVal = pjp.proceed(args);
             }
         } catch (Throwable e) {
-            LOGGER.warn("config change join point failed {}", e.getMessage());
-            configChangeResponse.setMsg("config change join point fail" + e.getMessage());
-            retVal = wrapErrorResp(configChangeResponse);
+            LOGGER.warn("Config change join point execution failed. Error details: {}", e.getMessage());
+            configChangeResponse.setMsg("Config change join point failed: " + e.getMessage());
+            retVal = false;
         }
         
         // after plugin service execute
@@ -279,32 +274,5 @@ public class ConfigChangeAspect {
         Properties serviceConfigProperties = configChangeConfigs
                 .getPluginProperties(configChangePluginService.getServiceType());
         return Boolean.parseBoolean(serviceConfigProperties.getProperty(ENABLED));
-    }
-    
-    private Object wrapErrorResp(ConfigChangeResponse configChangeResponse) {
-        Object retVal = null;
-        switch (configChangeResponse.getResponseType()) {
-            // some of controller didn't design error msg resp
-            case IMPORT_BY_HTTP:
-            case REMOVE_BATCH_HTTP:
-            case REMOVE_BY_HTTP:
-            case PUBLISH_BY_HTTP: {
-                retVal = RestResultUtils.failed(configChangeResponse.getMsg());
-                break;
-            }
-            case PUBLISH_BY_RPC: {
-                retVal = ConfigPublishResponse
-                        .buildFailResponse(ResponseCode.FAIL.getCode(), configChangeResponse.getMsg());
-                break;
-            }
-            case REMOVE_BY_RPC: {
-                retVal = ConfigRemoveResponse.buildFailResponse(configChangeResponse.getMsg());
-                break;
-            }
-            default: {
-                // ignore
-            }
-        }
-        return retVal;
     }
 }

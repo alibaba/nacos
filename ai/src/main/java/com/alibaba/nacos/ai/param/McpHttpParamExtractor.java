@@ -36,6 +36,7 @@ public class McpHttpParamExtractor extends AbstractHttpParamExtractor {
         ParamInfo paramInfo = new ParamInfo();
         paramInfo.setNamespaceId(request.getParameter("namespaceId"));
         paramInfo.setMcpName(request.getParameter("mcpName"));
+        paramInfo.setMcpId(request.getParameter("mcpId"));
         return Collections.singletonList(paramInfo);
     }
 }

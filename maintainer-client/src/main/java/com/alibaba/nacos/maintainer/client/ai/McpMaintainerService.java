@@ -22,6 +22,8 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerRemoteServiceConfig;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
+import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -67,7 +69,21 @@ public interface McpMaintainerService {
      * @return paged mcp Server list
      * @throws NacosException if fail to list mcp server
      */
-    Page<McpServerBasicInfo> listMcpServer(String mcpName, int pageNo, int pageSize) throws NacosException;
+    default Page<McpServerBasicInfo> listMcpServer(String mcpName, int pageNo, int pageSize) throws NacosException {
+        return listMcpServer(Constants.DEFAULT_NAMESPACE_ID, mcpName, pageNo, pageSize);
+    }
+
+    /**
+     * List Mcp Servers in Nacos with page.
+     *
+     * @param namespaceId namespaceId
+     * @param mcpName  mcpName pattern, if empty string or null, will list all Mcp Servers.
+     * @param pageNo   the page number of mcp Servers
+     * @param pageSize the size of each page
+     * @return paged mcp Server list
+     * @throws NacosException if fail to list mcp server
+     */
+    Page<McpServerBasicInfo> listMcpServer(String namespaceId, String mcpName, int pageNo, int pageSize) throws NacosException;
     
     /**
      * Blur search first 100 Mcp Servers in Nacos with mcp name pattern.
@@ -89,7 +105,21 @@ public interface McpMaintainerService {
      * @return paged mcp Server list matched input mcpName pattern.
      * @throws NacosException if fail to search mcp server
      */
-    Page<McpServerBasicInfo> searchMcpServer(String mcpName, int pageNo, int pageSize) throws NacosException;
+    default Page<McpServerBasicInfo> searchMcpServer(String mcpName, int pageNo, int pageSize) throws NacosException {
+        return searchMcpServer(Constants.DEFAULT_NAMESPACE_ID, mcpName, pageNo, pageSize);
+    }
+
+    /**
+     * Blur search first 100 Mcp Servers in Nacos with mcp name pattern.
+     * 
+     * @param namespaceId namespaceId
+     * @param mcpName  mcpName pattern, if empty string or null, will list all Mcp Servers.
+     * @param pageNo   the page number of mcp Servers
+     * @param pageSize the size of each page
+     * @return paged mcp Server list matched input mcpName pattern.
+     * @throws NacosException if fail to search mcp server
+     */
+    Page<McpServerBasicInfo> searchMcpServer(String namespaceId, String mcpName, int pageNo, int pageSize) throws NacosException;
     
     /**
      * Get mcp server detail information from Nacos.
@@ -98,7 +128,47 @@ public interface McpMaintainerService {
      * @return detail information for this mcp server
      * @throws NacosException if fail to get mcp server
      */
-    McpServerDetailInfo getMcpServerDetail(String mcpName) throws NacosException;
+    default McpServerDetailInfo getMcpServerDetail(String mcpName) throws NacosException {
+        return getMcpServerDetail(mcpName, null);
+    }
+
+    /**
+     * Get mcp server detail information from Nacos.
+     *
+     * @param mcpName the mcp server name
+     * @param version the mcp server version
+     * @return detail information for this mcp server
+     * @throws NacosException if fail to get mcp server
+     */
+    default McpServerDetailInfo getMcpServerDetail(String mcpName, String version) throws NacosException {
+        return getMcpServerDetail(Constants.DEFAULT_NAMESPACE_ID, mcpName, null, version);
+    }
+    
+    /**
+     * Gets mcp server detail.
+     *
+     * @param namespaceId the namespace id
+     * @param mcpName     the mcp name
+     * @param version     the version
+     * @return the mcp server detail
+     * @throws NacosException the nacos exception
+     */
+    default McpServerDetailInfo getMcpServerDetail(String namespaceId, String mcpName, String version) throws NacosException {
+        return getMcpServerDetail(namespaceId, mcpName, null, version);
+    }
+
+    /**
+     * Get mcp server detail information from Nacos.
+     *
+     * @param namespaceId namespaceId
+     * @param mcpName the mcp server name
+     * @param mcpId the mcp server id
+     * @param version the mcp server version
+     * @return detail information for this mcp server
+     * @throws NacosException if fail to get mcp server
+     */
+    McpServerDetailInfo getMcpServerDetail(String namespaceId, String mcpName, String mcpId, String version)
+            throws NacosException;
     
     /**
      * Create new local mcp server to Nacos.
@@ -156,7 +226,9 @@ public interface McpMaintainerService {
         McpServerBasicInfo serverSpec = new McpServerBasicInfo();
         serverSpec.setName(mcpName);
         serverSpec.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_STDIO);
-        serverSpec.setVersion(version);
+        ServerVersionDetail versionDetail = new ServerVersionDetail();
+        versionDetail.setVersion(version);
+        serverSpec.setVersionDetail(versionDetail);
         serverSpec.setDescription(description);
         serverSpec.setLocalServerConfig(localServerConfig);
         return createLocalMcpServer(mcpName, serverSpec, toolSpec);
@@ -196,7 +268,7 @@ public interface McpMaintainerService {
      */
     default boolean createRemoteMcpServer(String mcpName, String version, String protocol,
             McpEndpointSpec endpointSpec) throws NacosException {
-        return createRemoteMcpServer(mcpName, version, protocol, null, endpointSpec);
+        return createRemoteMcpServer(mcpName, version, protocol, new McpServerRemoteServiceConfig(), endpointSpec);
     }
     
     /**
@@ -211,7 +283,7 @@ public interface McpMaintainerService {
      * @throws NacosException if fail to create mcp server.
      */
     default boolean createRemoteMcpServer(String mcpName, String version, String protocol,
-            McpServerRemoteServiceConfig remoteServiceConfig, McpEndpointSpec endpointSpec) throws NacosException {
+                                          McpServerRemoteServiceConfig remoteServiceConfig, McpEndpointSpec endpointSpec) throws NacosException {
         return createRemoteMcpServer(mcpName, version, null, protocol, remoteServiceConfig, endpointSpec);
     }
     
@@ -251,7 +323,9 @@ public interface McpMaintainerService {
         McpServerBasicInfo serverSpec = new McpServerBasicInfo();
         serverSpec.setName(mcpName);
         serverSpec.setProtocol(protocol);
-        serverSpec.setVersion(version);
+        ServerVersionDetail detail = new ServerVersionDetail();
+        detail.setVersion(version);
+        serverSpec.setVersionDetail(detail);
         serverSpec.setDescription(description);
         serverSpec.setRemoteServerConfig(remoteServiceConfig);
         return createRemoteMcpServer(mcpName, serverSpec, toolSpec, endpointSpec);
@@ -289,7 +363,7 @@ public interface McpMaintainerService {
             throw new NacosException(NacosException.INVALID_PARAM, "Mcp server specification cannot be null.");
         }
         if (AiConstants.Mcp.MCP_PROTOCOL_STDIO.equalsIgnoreCase(serverSpec.getProtocol())) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Mcp server protocol cannot be `stdio` or empty.");
+            throw new NacosException(NacosException.INVALID_PARAM, "Mcp server type cannot be `local` or empty.");
         }
         if (Objects.isNull(endpointSpec)) {
             throw new NacosException(NacosException.INVALID_PARAM, "Mcp server endpoint specification cannot be null.");
@@ -308,8 +382,58 @@ public interface McpMaintainerService {
      * @return {@code true} if create success, {@code false} otherwise
      * @throws NacosException if fail to create mcp server.
      */
-    boolean createMcpServer(String mcpName, McpServerBasicInfo serverSpec, McpToolSpecification toolSpec,
-            McpEndpointSpec endpointSpec) throws NacosException;
+    default boolean createMcpServer(String mcpName, McpServerBasicInfo serverSpec, McpToolSpecification toolSpec,
+            McpEndpointSpec endpointSpec) throws NacosException {
+        return createMcpServer(Constants.DEFAULT_NAMESPACE_ID, mcpName, serverSpec, toolSpec, endpointSpec);
+    }
+
+    /**
+     * Create new mcp server to Nacos.
+     *
+     * @param namespaceId namespaceId
+     * @param mcpName      mcp server name of the new mcp server
+     * @param serverSpec   mcp server specification, see {@link McpServerBasicInfo}
+     * @param toolSpec     mcp server tools specification, see {@link McpToolSpecification}, nullable.
+     * @param endpointSpec mcp server endpoint specification, see {@link McpEndpointSpec}, nullable if `type` is
+     *                     {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}.
+     * @return {@code true} if create success, {@code false} otherwise
+     * @throws NacosException if fail to create mcp server.
+     */
+    boolean createMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpec, McpToolSpecification toolSpec,
+                            McpEndpointSpec endpointSpec) throws NacosException;
+
+    /**
+     * Create new mcp server to Nacos.
+     *
+     * @param mcpName      mcp server name of the new mcp server
+     * @param isLatest     publish current version to latest
+     * @param serverSpec   mcp server specification, see {@link McpServerBasicInfo}
+     * @param toolSpec     mcp server tools specification, see {@link McpToolSpecification}, nullable.
+     * @param endpointSpec mcp server endpoint specification, see {@link McpEndpointSpec}, nullable if `type` is
+     *                     {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}.
+     * @return {@code true} if create success, {@code false} otherwise
+     * @throws NacosException if fail to create mcp server.
+     */
+    default boolean updateMcpServer(String mcpName, boolean isLatest, McpServerBasicInfo serverSpec, McpToolSpecification toolSpec,
+                            McpEndpointSpec endpointSpec) throws NacosException {
+        return updateMcpServer(Constants.DEFAULT_NAMESPACE_ID, mcpName, isLatest, serverSpec, toolSpec, endpointSpec);
+    }
+
+    /**
+     * Create new mcp server to Nacos.
+     * 
+     * @param namespaceId namespaceId
+     * @param mcpName      mcp server name of the new mcp server
+     * @param isLatest     publish current version to latest
+     * @param serverSpec   mcp server specification, see {@link McpServerBasicInfo}
+     * @param toolSpec     mcp server tools specification, see {@link McpToolSpecification}, nullable.
+     * @param endpointSpec mcp server endpoint specification, see {@link McpEndpointSpec}, nullable if `type` is
+     *                     {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}.
+     * @return {@code true} if create success, {@code false} otherwise
+     * @throws NacosException if fail to create mcp server.
+     */
+    boolean updateMcpServer(String namespaceId, String mcpName, boolean isLatest, McpServerBasicInfo serverSpec, McpToolSpecification toolSpec,
+                            McpEndpointSpec endpointSpec) throws NacosException;
     
     /**
      * Update existed mcp server to Nacos.
@@ -326,8 +450,10 @@ public interface McpMaintainerService {
      * @return {@code true} if update success, {@code false} otherwise
      * @throws NacosException if fail to update mcp server.
      */
-    boolean updateMcpServer(String mcpName, McpServerBasicInfo serverSpec, McpToolSpecification toolSpec,
-            McpEndpointSpec endpointSpec) throws NacosException;
+    default boolean updateMcpServer(String mcpName, McpServerBasicInfo serverSpec, McpToolSpecification toolSpec,
+            McpEndpointSpec endpointSpec) throws NacosException {
+        return updateMcpServer(mcpName, true, serverSpec, toolSpec, endpointSpec);
+    }
     
     /**
      * Delete existed mcp server from Nacos.
@@ -336,5 +462,19 @@ public interface McpMaintainerService {
      * @return {@code true} if delete success, {@code false} otherwise
      * @throws NacosException if fail to delete mcp server.
      */
-    boolean deleteMcpServer(String mcpName) throws NacosException;
+    default boolean deleteMcpServer(String mcpName) throws NacosException {
+        return deleteMcpServer(Constants.DEFAULT_NAMESPACE_ID, mcpName, null, null);
+    }
+
+    /**
+     * Delete existed mcp server from Nacos.
+     *
+     * @param namespaceId namespaceId
+     * @param mcpName mcp server name of the new mcp server
+     * @param mcpId mcp server id of the new mcp server
+     * @param version mcp version of the new mcp server
+     * @return {@code true} if delete success, {@code false} otherwise
+     * @throws NacosException if fail to delete mcp server.
+     */
+    boolean deleteMcpServer(String namespaceId, String mcpName, String mcpId, String version) throws NacosException;
 }

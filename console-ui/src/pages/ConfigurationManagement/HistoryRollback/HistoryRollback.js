@@ -123,7 +123,7 @@ class HistoryRollback extends React.Component {
       url: `v3/console/cs/history/list?dataId=${this.state.dataId}&groupName=${this.state.group}&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
       success(res) {
         if (res != null) {
-          const data = res.data;
+          const { data } = res;
           self.setState({
             dataSource: data.pageItems || [],
             total: data.totalCount,

@@ -15,16 +15,19 @@ import {
 } from '@alifd/next';
 import { formitemLayout, GetTitle, tableOperation } from './components';
 import { request } from '../../../../globalLib';
+import { object } from 'prop-types';
+
 const { Row, Col } = Grid;
 
 const CreateTools = React.forwardRef((props, ref) => {
-  const { locale, showTemplates = false } = props;
+  // eslint-disable-next-line react/prop-types
+  const { locale, showTemplates = false, onlyEditRuntimeInfo = false } = props;
   const field = Field.useField({
     parseName: true,
     values: {
       toolParams: [],
       invokeContext: [],
-      templates: [],
+      templates: '',
     },
   });
   const { init } = field;
@@ -39,26 +42,30 @@ const CreateTools = React.forwardRef((props, ref) => {
   const [currentNode, setCurrentNode] = useState({
     description: '',
     type: 'object',
+    // eslint-disable-next-line react/prop-types
     label: locale.ArgumentsList,
     key: 'args',
     children: [],
   });
-  useEffect(() => {
-    if (visible) {
-      if (field.getValue('invokeContext') && !field.getValue('invokeContext')?.length) {
-        addNewToolMetadata();
-      } else {
-        field.setValues({ invokeContext: [] });
-      }
-      if (field.getValue('templates') && !field.getValue('templates')?.length) {
-        // addNewTemplates();
-      } else {
-        field.setValues({ templates: [] });
-      }
-    }
-  }, [visible]);
+  // useEffect(() => {
+  //   if (visible) {
+  //     if (field.getValue('invokeContext') && !field.getValue('invokeContext')?.length) {
+  //       addNewToolMetadata();
+  //     } else {
+  //       field.setValues({ invokeContext: [] });
+  //     }
+  //     if (field.getValue('templates') && !field.getValue('templates')?.length) {
+  //       // addNewTemplates();
+  //     } else {
+  //       field.setValues({ templates: 'aaa' });
+  //     }
+  //   }
+  // }, [visible]);
 
   const convertPropertiesToTreeData = (properties, prefix) => {
+    if (properties == null) {
+      return [];
+    }
     const keys = Object.keys(properties);
     let result = [];
     for (let index = 0; index < keys.length; index++) {
@@ -66,24 +73,25 @@ const CreateTools = React.forwardRef((props, ref) => {
       const arg = properties[element];
       let children = [];
       if (arg.type === 'object') {
-        children = convertPropertiesToTreeData(arg.properties, prefix + '@@' + element);
+        children = convertPropertiesToTreeData(arg.properties, `${prefix}@@${element}`);
       } else if (arg.type === 'array') {
         children = convertPropertiesToTreeData(
           {
             items: arg.items,
           },
-          prefix + '@@' + element
+          `${prefix}@@${element}`
         );
       }
       const node = {
         label: element,
         type: arg.type,
+        arg: arg,
         description: arg.description ? arg.description : '',
-        children: children,
-        key: prefix + '@@' + element,
+        children,
+        key: `${prefix}@@${element}`,
       };
       result.push(node);
-      args[prefix + '@@' + element] = node;
+      args[`${prefix}@@${element}`] = node;
     }
     return result;
   };
@@ -104,7 +112,7 @@ const CreateTools = React.forwardRef((props, ref) => {
       children: [],
     };
 
-    args['args'] = rootNode;
+    args.args = rootNode;
     rootNode.children = _toolParams;
     if (rootNode.children.length === 0) {
       const defaultNewArg = {
@@ -131,24 +139,18 @@ const CreateTools = React.forwardRef((props, ref) => {
       : [];
     setInvokeIdx(_invokeContext.length + 1);
 
-    const _templates = toolsMeta?.templates
-      ? Object.keys(toolsMeta?.templates).map(key => ({
-          key,
-          // 判断 toolsMeta?.templates[key] 是否是字符串
-          value:
-            typeof toolsMeta?.templates[key] === 'string'
-              ? toolsMeta?.templates[key]
-              : JSON.stringify(toolsMeta?.templates[key]),
-        }))
-      : [];
-    setTemplateIdx(_templates.length + 1);
+    let templatesStr = '';
+    if (toolsMeta?.templates !== undefined && 'json-go-template' in toolsMeta?.templates) {
+      templatesStr = JSON.stringify(toolsMeta?.templates['json-go-template']);
+    }
 
     field.setValues({
       name,
       description,
       toolParams: inputSchema?.properties ? inputSchema?.properties : {},
+      required: inputSchema?.required,
       invokeContext: _invokeContext,
-      templates: _templates,
+      templates: templatesStr,
       enabled: toolsMeta?.enabled,
     });
     setOkLoading(false);
@@ -196,12 +198,20 @@ const CreateTools = React.forwardRef((props, ref) => {
 
       const invokeContext = {};
       if (values?.invokeContext?.length) {
+        // eslint-disable-next-line no-unused-expressions
         values?.invokeContext?.forEach(item => (invokeContext[item.key] = item.value));
       }
 
       const templates = {};
-      if (values?.templates?.length) {
-        values?.templates?.forEach(item => (templates[item.key] = JSON.parse(item.value)));
+
+      if (
+        (records.protocol === 'http' || records.protocol === 'https') &&
+        values?.templates?.length > 0
+      ) {
+        const jsonGoTemplate = JSON.parse(values?.templates);
+        if (Object.keys(jsonGoTemplate).length > 0) {
+          templates['json-go-template'] = jsonGoTemplate;
+        }
       }
 
       const serverSpecification = JSON.stringify({
@@ -225,6 +235,7 @@ const CreateTools = React.forwardRef((props, ref) => {
         inputSchema: {
           type: 'object',
           properties,
+          required: values?.required,
         },
       };
       const _toolsMetaitem = {
@@ -271,10 +282,11 @@ const CreateTools = React.forwardRef((props, ref) => {
       };
 
       if (records?.protocol !== 'stdio') {
-        params['endpointSpecification'] = endpointSpecification;
+        params.endpointSpecification = endpointSpecification;
       }
 
       if (props?.onChange) {
+        // eslint-disable-next-line no-unused-expressions
         props?.onChange(JSON.parse(toolSpecification));
         closeDialog();
       } else {
@@ -301,13 +313,12 @@ const CreateTools = React.forwardRef((props, ref) => {
       }
       await new Promise(resolve => setTimeout(resolve, 300));
       closeDialog();
+      // eslint-disable-next-line no-unused-expressions
       props?.getServerDetail();
+    } else if (type == 'edit') {
+      Message.error(result?.message || locale.editToolFailed);
     } else {
-      if (type == 'edit') {
-        Message.error(result?.message || locale.editToolFailed);
-      } else {
-        Message.error(result?.message || locale.createToolFailed);
-      }
+      Message.error(result?.message || locale.createToolFailed);
     }
   };
 
@@ -324,23 +335,12 @@ const CreateTools = React.forwardRef((props, ref) => {
   const deleteToolMetadata = index => {
     field.deleteArrayValue('invokeContext', index);
   };
-  // 添加模板 template
-  const addNewTemplates = () => {
-    setTemplateIdx(templateIdx + 1);
-    field.addArrayValue('templates', templateIdx, {
-      id: templateIdx + 1,
-      key: '',
-      value: '',
-    });
-  };
-  // 删除模板 template
-  const deleteTemplates = index => {
-    field.deleteArrayValue('templates', index);
-  };
 
   const validateTemplateJsonFormat = (rule, value, callback) => {
     try {
-      JSON.parse(value);
+      if (value?.length > 0) {
+        JSON.parse(value);
+      }
       callback();
     } catch (e) {
       callback(locale.templateShouldBeJson);
@@ -410,13 +410,16 @@ const CreateTools = React.forwardRef((props, ref) => {
     for (let index = 0; index < rawData.length; index++) {
       const element = rawData[index];
       let arg = {
+        ...element.arg,
         type: element.type,
-        description: element.description,
       };
+
+      arg.description = element.description;
+      arg.type = element.type;
       if (element.type === 'object' && element.children.length > 0) {
         arg.properties = rawDataToFiledValue(element.children);
       } else if (element.type === 'array') {
-        arg.items = rawDataToFiledValue(element.children)['items'];
+        arg.items = rawDataToFiledValue(element.children).items;
       }
       result[element.label] = arg;
     }
@@ -429,16 +432,16 @@ const CreateTools = React.forwardRef((props, ref) => {
       parentNode.children = [];
     }
     const childLen = parentNode.children.length + 1;
-    const newArgsName = 'newArg' + childLen;
+    const newArgsName = `newArg${childLen}`;
     const newNode = {
       label: newArgsName,
-      key: currentNode.key + '@@' + newArgsName,
+      key: `${currentNode.key}@@${newArgsName}`,
       type: 'string',
       description: '',
       children: [],
     };
 
-    args[currentNode.key + '@@' + newArgsName] = newNode;
+    args[`${currentNode.key}@@${newArgsName}`] = newNode;
     if (!parentNode.children) {
       parentNode.children = [];
     }
@@ -465,7 +468,14 @@ const CreateTools = React.forwardRef((props, ref) => {
         <Dialog
           v2
           title={'Tools'}
-          visible={true}
+          footer={
+            onlyEditRuntimeInfo ? (
+              <p style={{ color: 'red' }}>{locale.editExistVersionMessage}</p>
+            ) : (
+              ''
+            )
+          }
+          visible
           footer={
             isPreview ? (
               <Button type="primary" onClick={closeDialog}>
@@ -481,10 +491,9 @@ const CreateTools = React.forwardRef((props, ref) => {
           onClose={closeDialog}
           style={{ width: '70%' }}
         >
-          <Form field={field} {...formitemLayout} isPreview={isPreview}>
-            <h3>{locale.baseData}</h3>
+          <Form field={field} {...formitemLayout}>
             {/* 名称 */}
-            <Form.Item label={locale.toolName} required isPreview={type ? true : false}>
+            <Form.Item label={locale.toolName} required isPreview={!!type}>
               <Input
                 placeholder={locale.toolName}
                 {...init('name', {
@@ -534,13 +543,9 @@ const CreateTools = React.forwardRef((props, ref) => {
             </Form.Item>
 
             {/* 入参描述 */}
-            <Form.Item
-              label={locale.toolInputSchema}
-              required
-              style={{ margin: '16px 0 0' }}
-            ></Form.Item>
+            <Form.Item label={locale.toolInputSchema} required style={{ margin: '16px 0 0' }} />
             <Form.Item label={locale.ArgumentTree} style={{ margin: '16px 0 0' }}>
-              {!isPreview && (
+              {!isPreview && !onlyEditRuntimeInfo && (
                 <Row>
                   <Col style={{ marginTop: 5 }}>
                     <Button
@@ -575,7 +580,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                           <Col style={{ textOverflow: 'ellipsis' }}>
                             {args[node.key].description?.length <= 25
                               ? args[node.key].description
-                              : args[node.key].description?.substring(0, 20) + '...'}
+                              : `${args[node.key].description?.substring(0, 20)}...`}
                           </Col>
                         </Row>
                       );
@@ -609,6 +614,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                       asterisk={false}
                     >
                       <Input
+                        isPreview={onlyEditRuntimeInfo}
                         disabled={currentNode.key === 'args'}
                         value={currentNode.label}
                         onChange={data => {
@@ -623,6 +629,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                   <Col offset={1}>
                     <Form.Item name="args.type" label={locale.toolParamType}>
                       <Select
+                        isPreview={onlyEditRuntimeInfo}
                         disabled={currentNode.key === 'args'}
                         value={currentNode.type}
                         dataSource={[
@@ -645,11 +652,11 @@ const CreateTools = React.forwardRef((props, ref) => {
                                 label: 'items',
                                 type: 'string',
                                 description: '',
-                                key: currentNode.key + '@@items',
+                                key: `${currentNode.key}@@items`,
                               };
                               currentNode.type = data;
                               currentNode.children = [itemNode];
-                              args[currentNode.key + '@@items'] = itemNode;
+                              args[`${currentNode.key}@@items`] = itemNode;
                               changeNodeInfo(currentNode);
                             } else if (data === 'object') {
                               currentNode.children = [];
@@ -661,7 +668,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                             }
                           }
                         }}
-                      ></Select>
+                      />
                     </Form.Item>
                   </Col>
                 </Row>
@@ -689,47 +696,22 @@ const CreateTools = React.forwardRef((props, ref) => {
             )}
             {showTemplates ? (
               <>
-                <GetTitle
+                <Form.Item
                   label={locale.invokeTemplates}
-                  onClick={addNewTemplates}
-                  locale={locale}
-                  disabled={isPreview}
-                  required={false}
-                />
-                <Row>
-                  <Col span={20} offset={4}>
-                    <Table
-                      size="small"
-                      style={{ marginTop: '10px' }}
-                      dataSource={field.getValue('templates')}
-                    >
-                      <Table.Column
-                        title="Key"
-                        dataIndex="key"
-                        width={200}
-                        cell={(value, index, record) =>
-                          renderTableCell({ key: `templates.${index}.key` })
-                        }
-                      />
-                      <Table.Column
-                        title="Value"
-                        dataIndex="value"
-                        cell={(value, index, record) =>
-                          renderTableCell({
-                            key: `templates.${index}.value`,
-                            component: 'textArea',
-                          })
-                        }
-                      />
-                      {/* delete */}
-                      {tableOperation({
-                        onClick: deleteTemplates,
-                        locale,
-                        disabled: isPreview,
-                      })}
-                    </Table>
-                  </Col>
-                </Row>
+                  extra={locale.httpToMcpDoc}
+                  style={{ marginTop: '10px' }}
+                >
+                  <Input.TextArea
+                    isPreview={onlyEditRuntimeInfo}
+                    aria-label="auto height"
+                    style={{ minHeight: 32 }}
+                    multiline
+                    autoHeight={{ minRows: 5, maxRows: 8 }}
+                    {...field.init('templates', {
+                      rules: [{ validator: validateTemplateJsonFormat }],
+                    })}
+                  />
+                </Form.Item>
               </>
             ) : null}
           </Form>

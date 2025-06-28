@@ -1,5 +1,15 @@
 import React from 'react';
-import { Divider, ConfigProvider, Loading, Grid, Table } from '@alifd/next';
+import {
+  Divider,
+  ConfigProvider,
+  Loading,
+  Grid,
+  Table,
+  Button,
+  Select,
+  Form,
+  Tab,
+} from '@alifd/next';
 import { getParams, request } from '../../../globalLib';
 import PropTypes from 'prop-types';
 import ShowTools from './ShowTools';
@@ -40,11 +50,18 @@ class McpDetail extends React.Component {
   }
 
   getServerDetail = async () => {
-    const mcpname = getParams('mcpname');
+    const mcpServerId = getParams('id');
+    const version = getParams('version');
+    const namespace = getParams('namespace');
     this.setState({ loading: true });
-    const result = await request({
-      url: `v3/console/ai/mcp?mcpName=${mcpname}`,
-    });
+    const result =
+      version === null
+        ? await request({
+            url: `v3/console/ai/mcp?mcpId=${mcpServerId}&namespaceId=${namespace}`,
+          })
+        : await request({
+            url: `v3/console/ai/mcp?mcpId=${mcpServerId}&version=${version}&namespaceId=${namespace}`,
+          });
     this.setState({ loading: false });
 
     if (result.code == 0 && result.data) {
@@ -80,19 +97,74 @@ class McpDetail extends React.Component {
     );
   };
 
+  goToVersion = version => {
+    this.props.history.push(
+      generateUrl('/mcpServerDetail', {
+        namespace: getParams('namespace'),
+        id: getParams('id'),
+        version: version,
+      })
+    );
+    this.getServerDetail();
+  };
+
+  goToToEditVersion = version => {
+    this.props.history.push(
+      generateUrl('/newMcpServer', {
+        namespace: getParams('namespace'),
+        id: getParams('id'),
+        version: this.state.serverConfig.versionDetail.version,
+        mcptype: 'edit',
+      })
+    );
+  };
+
   render() {
     const localServerConfig = JSON.stringify(this.state.serverConfig?.localServerConfig, null, 2);
     const { locale = {} } = this.props;
-    const credentials = this.state.serverConfig?.credentials;
-    const credentialsTables = [];
-    if (credentials) {
-      for (const credentialsKey in credentials) {
-        credentialsTables.push({
-          id: credentialsKey,
-          name: credentialsKey,
+    const versions = this.state.serverConfig?.allVersions
+      ? this.state.serverConfig?.allVersions
+      : [];
+
+    const versionSelections = [];
+    for (let i = 0; i < versions.length; i++) {
+      const item = versions[i];
+      if (item.is_latest) {
+        versionSelections.push({
+          label: item.version + ` (` + locale.versionIsPublished + ')',
+          value: item.version,
         });
+      } else {
+        versionSelections.push({ label: item.version, value: item.version });
       }
     }
+
+    this.state?.serverConfig?.backendEndpoints;
+    const endpoints = [];
+    for (let i = 0; i < this.state?.serverConfig?.backendEndpoints?.length; i++) {
+      const item = this.state?.serverConfig?.backendEndpoints[i];
+      const endpoint = item.address + ':' + item.port + item.path;
+      const serverConfig = {
+        index: i,
+        endpoint: endpoint,
+        serverConfig: {
+          mcpServers: {},
+        },
+      };
+      serverConfig.serverConfig.mcpServers[this.state.serverConfig?.name] = {
+        url: endpoint,
+      };
+      endpoints.push(serverConfig);
+    }
+
+    let restToMcpBackendProtocol = 'off';
+    if (
+      this.state?.serverConfig?.protocol === 'https' ||
+      this.state?.serverConfig?.protocol === 'http'
+    ) {
+      restToMcpBackendProtocol = this.state?.serverConfig?.protocol;
+    }
+
     return (
       <div>
         <Loading
@@ -105,14 +177,38 @@ class McpDetail extends React.Component {
           visible={this.state.loading}
           color={'#333'}
         >
-          <h1
-            style={{
-              position: 'relative',
-              width: '60%',
-            }}
-          >
-            {locale.mcpServerDetail}
-          </h1>
+          <Row>
+            <Col span={16}>
+              <h1
+                style={{
+                  position: 'relative',
+                  width: '60%',
+                }}
+              >
+                {locale.mcpServerDetail}
+              </h1>
+            </Col>
+            <Col span={4}>
+              <span>版本</span>
+              <Select
+                dataSource={versionSelections}
+                style={{
+                  marginLeft: 10,
+                  width: '80%',
+                }}
+                value={this.state.serverConfig?.versionDetail?.version}
+                onChange={data => {
+                  this.goToVersion(data);
+                }}
+              ></Select>
+            </Col>
+
+            <Col span={4}>
+              <Button type={'primary'} onClick={this.goToToEditVersion}>
+                {locale.createNewVersionBasedOnCurrentVersion}
+              </Button>
+            </Col>
+          </Row>
           <h2
             style={{
               color: '#333',
@@ -139,7 +235,7 @@ class McpDetail extends React.Component {
               list: [
                 {
                   label: locale.serverType,
-                  value: this.state.serverConfig.protocol,
+                  value: this.state.serverConfig.frontProtocol,
                 }, // 类型
                 {
                   label: locale.serverDescription,
@@ -151,10 +247,6 @@ class McpDetail extends React.Component {
             {this.state.serverConfig?.protocol !== 'stdio' &&
               this.getFormItem({
                 list: [
-                  {
-                    label: locale.exportPath,
-                    value: this.state.serverConfig?.remoteServerConfig?.exportPath,
-                  }, // 暴露路径
                   {
                     label: '服务引用',
                     value: (
@@ -177,19 +269,42 @@ class McpDetail extends React.Component {
           {this.state.serverConfig?.protocol === 'stdio' && (
             <>
               <Divider></Divider>
-              <h2>Local Server Config</h2>
+              <h2>Server Config</h2>
               <pre>{localServerConfig}</pre>
             </>
           )}
-          <Divider></Divider>
-          <h2>{locale.credentialsName}</h2>
-          <Table dataSource={credentialsTables}>
-            <Table.Column title="Credential Id" dataIndex="id" />
-          </Table>
+
+          {this.state.serverConfig?.protocol !== 'stdio' && (
+            <>
+              <Divider></Divider>
+              <h2>Server Config</h2>
+              {endpoints?.length > 0 ? (
+                <Tab excessMode="dropdown" defaultActiveKey={0}>
+                  {endpoints?.map(item => (
+                    <Tab.Item key={item.index} title={item.endpoint}>
+                      <pre>{JSON.stringify(item.serverConfig, null, 2)}</pre>
+                    </Tab.Item>
+                  ))}
+                </Tab>
+              ) : (
+                <p>{locale.noAvailableEndpoint}</p>
+              )}
+
+              {/* <Table dataSource={this.state.serverConfig.backendEndpoints}> */}
+              {/*   <Table.Column */}
+              {/*     title={'endpoint'} */}
+              {/*     cell={(value, index, record) => { */}
+              {/*       return 'http://' + record.address + ':' + record.port + record.path; */}
+              {/*     }} */}
+              {/*   ></Table.Column> */}
+              {/* </Table> */}
+            </>
+          )}
 
           <Divider></Divider>
           <h2>Tools</h2>
           <ShowTools
+            restToMcpSwitch={restToMcpBackendProtocol}
             locale={locale}
             serverConfig={this.state.serverConfig}
             getServerDetail={this.getServerDetail}

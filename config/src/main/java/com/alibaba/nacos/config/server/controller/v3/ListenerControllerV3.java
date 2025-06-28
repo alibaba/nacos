@@ -58,7 +58,7 @@ public class ListenerControllerV3 {
      * Get subscribe information from client side.
      */
     @GetMapping
-    @Secured(resource = Constants.LISTENER_CONTROLLER_V3_ADMIN_PATH, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<ConfigListenerInfo> getAllSubClientConfigByIp(@RequestParam("ip") String ip,
             @RequestParam(value = "all", required = false) boolean all,
             @RequestParam(value = "namespaceId", required = false) String namespaceId,

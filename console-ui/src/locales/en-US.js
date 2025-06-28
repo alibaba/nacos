@@ -730,6 +730,7 @@ const I18N_CONF = {
     description: 'Description',
     batchDeleteSuccessfully: 'Batch delete successfully',
     batchDeleteFailed: 'Batch delete failed',
+    convertService: 'Http to Mcp',
   },
   McpDetail: {
     basicInformation: 'Basic Information',
@@ -790,6 +791,13 @@ const I18N_CONF = {
     ArgumentTree: 'Argument Tree',
     templateShouldBeJson: 'template should match json format',
     credentialsName: 'Credentials',
+    restToMcpNeedHigress:
+      'The existing HTTP services need to be converted to MCP services with the use of a gateway. Please refer to the documentation. https://nacos.io/docs/v3.0/manual/user/mcp-template',
+    createNewVersionBasedOnCurrentVersion: 'edit',
+    editDraft: 'edit',
+    versionIsPublished: 'published',
+    versionIsDraft: 'draft',
+    noAvailableEndpoint: 'no available endpoint',
   },
   NewMcpServer: {
     pleaseComplete: 'Please complete the basic configuration first',
@@ -883,6 +891,19 @@ const I18N_CONF = {
     ArgumentTree: 'Argument Tree',
     templateShouldBeJson: 'template should match json format',
     credentialsName: 'Credentials',
+    doNotEnter: 'MCP Server name only support number, _, -',
+    restToMcpNeedHigress:
+      'Converting existing HTTP services to MCP services requires the use of a gateway. Please refer to the documentation. https://nacos.io/docs/v3.0/manual/user/mcp-template',
+    httpToMcpDoc:
+      'Protocol transformation is performed using the conversion template provided by the gateway. For more details, please refer to the documentation. https://nacos.io/docs/v3.0/manual/user/mcp-template',
+    editServerMustChangVersion: 'edit MCP Server must change version',
+    editExistVersionMessage:
+      'The currently published version is being modified; only the descriptions of the Tool and parameters, as well as the toggle switches, can be changed.',
+    editMoreNeedNewVersion: 'Please use a new version number to modify other information.',
+    openConverter: 'HTTP to MCP',
+    createNewVersionAndSave: 'Save',
+    createNewVersionAndPublish: 'Publish',
+    off: 'off',
   },
   CredentialManagement: {
     credentialManagement8: 'Credential Management',
@@ -900,6 +921,7 @@ const I18N_CONF = {
     batchDeleteSuccessfully: 'Batch Delete Successful',
     batchDeleteFailed: 'Batch Delete Failed',
     delSuccessMsg: 'Delete Successful',
+    off: 'off',
   },
   NewCredential: {
     namespace: 'Namespace',

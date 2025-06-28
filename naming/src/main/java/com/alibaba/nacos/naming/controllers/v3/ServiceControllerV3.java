@@ -92,7 +92,7 @@ public class ServiceControllerV3 {
      */
     @PostMapping()
     @TpsControl(pointName = "NamingServiceRegister", name = "HttpNamingServiceRegister")
-    @Secured(resource = UtilsAndCommons.SERVICE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<String> create(ServiceForm serviceForm) throws Exception {
         serviceForm.validate();
         ServiceMetadata serviceMetadata = new ServiceMetadata();
@@ -114,7 +114,7 @@ public class ServiceControllerV3 {
      */
     @DeleteMapping()
     @TpsControl(pointName = "NamingServiceDeregister", name = "HttpNamingServiceDeregister")
-    @Secured(resource = UtilsAndCommons.SERVICE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<String> remove(ServiceForm serviceForm) throws Exception {
         serviceForm.validate();
         String namespaceId = serviceForm.getNamespaceId();
@@ -132,7 +132,7 @@ public class ServiceControllerV3 {
      */
     @GetMapping()
     @TpsControl(pointName = "NamingServiceQuery", name = "HttpNamingServiceQuery")
-    @Secured(resource = UtilsAndCommons.SERVICE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<ServiceDetailInfo> detail(ServiceForm serviceForm) throws Exception {
         serviceForm.validate();
         ServiceDetailInfo result = serviceOperatorV2.queryService(
@@ -156,7 +156,7 @@ public class ServiceControllerV3 {
      */
     @GetMapping("/list")
     @TpsControl(pointName = "NamingServiceListQuery", name = "HttpNamingServiceListQuery")
-    @Secured(resource = UtilsAndCommons.SERVICE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<Object> list(ServiceListForm serviceListForm, PageForm pageForm) throws Exception {
         serviceListForm.validate();
         pageForm.validate();
@@ -181,7 +181,7 @@ public class ServiceControllerV3 {
      */
     @PutMapping()
     @TpsControl(pointName = "NamingServiceUpdate", name = "HttpNamingServiceUpdate")
-    @Secured(resource = UtilsAndCommons.SERVICE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<String> update(ServiceForm serviceForm) throws Exception {
         serviceForm.validate();
         Map<String, String> metadata = UtilsAndCommons.parseMetadata(serviceForm.getMetadata());
@@ -223,7 +223,7 @@ public class ServiceControllerV3 {
      * get subscriber list.
      */
     @GetMapping("/subscribers")
-    @Secured(resource = UtilsAndCommons.SERVICE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<Page<SubscriberInfo>> subscribers(ServiceForm serviceForm, PageForm pageForm,
             AggregationForm aggregationForm) throws Exception {
         serviceForm.validate();
@@ -242,7 +242,7 @@ public class ServiceControllerV3 {
      * Get all {@link Selector} types.
      */
     @GetMapping("/selector/types")
-    @Secured(resource = UtilsAndCommons.SERVICE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<List<String>> listSelectorTypes() {
         return Result.success(selectorManager.getAllSelectorTypes());
     }

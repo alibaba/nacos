@@ -272,6 +272,7 @@ class McpManagement extends React.Component {
       pageNo: prePageNo ? prePageNo : pageNo,
       pageSize: prePageSize ? prePageSize : this.state.pageSize,
       mcpName: mcpName,
+      search: 'blur',
     };
     this.setState({ loading: true });
     const result = await request({
@@ -333,7 +334,7 @@ class McpManagement extends React.Component {
       onOk: () => {
         this.setState({ loading: true });
         request({
-          url: `v3/console/ai/mcp?mcpName=${record.name}`,
+          url: `v3/console/ai/mcp?mcpId=${record.id}`,
           type: 'delete',
           success: res => {
             // 删除成功
@@ -439,19 +440,19 @@ class McpManagement extends React.Component {
 
   chooseEnv(value) {
     this.serverId = getParams('serverId') || 'center';
-    this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
+    this.tenant = getParams('namespace') || 'public'; // 为当前实例保存tenant参数
     this.props.history.push(`/newMcpServer?namespace=${this.tenant}`);
   }
 
   editDetail = record => {
     // 判断是否有编辑权限
     const ns = getParams('namespace') || 'public';
-    this.props.history.push(`/newMcpServer?namespace=${ns}&mcpname=${record?.name}&mcptype=edit`);
+    this.props.history.push(`/newMcpServer?namespace=${ns}&id=${record?.id}&mcptype=edit`);
   };
   // 打开查看详情页
   openDetail = record => {
     const ns = getParams('namespace') || 'public';
-    this.props.history.push(`/mcpServerDetail?namespace=${ns}&mcpname=${record?.name}`);
+    this.props.history.push(`/mcpServerDetail?namespace=${ns}&id=${record?.id}`);
   };
 
   setNowNameSpace(name, id, desc) {
@@ -491,8 +492,7 @@ class McpManagement extends React.Component {
             <Table dataSource={selectedRows}>
               <Table.Column title="MCP Server" dataIndex="name" />
               <Table.Column title={locale.description} dataIndex="description" />
-              <Table.Column title={locale.mcpServerType} dataIndex="protocol" />
-              <Table.Column title={locale.mcpServerVersion} dataIndex="version" />
+              <Table.Column title={locale.mcpServerType} dataIndex="frontProtocol" />
             </Table>
           </div>
         ),
@@ -504,7 +504,7 @@ class McpManagement extends React.Component {
                 url: `v3/console/ai/mcp`,
                 type: 'delete',
                 data: {
-                  mcpName: item.name,
+                  mcpId: item.id,
                 },
               })
             )
@@ -651,13 +651,23 @@ class McpManagement extends React.Component {
               <Table.Column
                 title={locale.mcpServerType}
                 cell={(value, index, record) => {
-                  return record.protocol || '--';
+                  if ((record.protocol === 'http') | (record.protocol === 'https')) {
+                    return (
+                      <>
+                        {record.frontProtocol}
+                        <Tag type="primary" size={'small'} color="green" style={{ marginLeft: 10 }}>
+                          {locale.convertService}
+                        </Tag>
+                      </>
+                    );
+                  }
+                  return record.frontProtocol || '--';
                 }}
               />
               <Table.Column
                 title={locale.mcpServerVersion}
                 cell={(value, index, record) => {
-                  return record.version || '--';
+                  return record?.versionDetail?.version || '--';
                 }}
               />
               <Table.Column title={locale.operation} cell={this.renderCol.bind(this)} />

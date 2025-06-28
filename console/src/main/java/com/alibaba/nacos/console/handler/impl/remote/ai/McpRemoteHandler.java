@@ -24,8 +24,10 @@ import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.ai.McpHandler;
+import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
 
 /**
@@ -35,6 +37,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @EnabledRemoteHandler
+@Conditional(ConditionFunctionEnabled.ConditionAiEnabled.class)
 public class McpRemoteHandler implements McpHandler {
     
     private final NacosMaintainerClientHolder clientHolder;
@@ -47,33 +50,33 @@ public class McpRemoteHandler implements McpHandler {
     public Page<McpServerBasicInfo> listMcpServers(String namespaceId, String mcpName, String search, int pageNo,
             int pageSize) throws NacosException {
         if (Constants.MCP_LIST_SEARCH_ACCURATE.equalsIgnoreCase(search)) {
-            return clientHolder.getAiMaintainerService().listMcpServer(mcpName, pageNo, pageSize);
+            return clientHolder.getAiMaintainerService().listMcpServer(namespaceId, mcpName, pageNo, pageSize);
         } else {
-            return clientHolder.getAiMaintainerService().searchMcpServer(mcpName, pageNo, pageSize);
+            return clientHolder.getAiMaintainerService().searchMcpServer(namespaceId, mcpName, pageNo, pageSize);
         }
     }
     
     @Override
-    public McpServerDetailInfo getMcpServer(String namespaceId, String mcpName) throws NacosException {
-        return clientHolder.getAiMaintainerService().getMcpServerDetail(mcpName);
+    public McpServerDetailInfo getMcpServer(String namespaceId, String mcpName, String mcpId, String version) throws NacosException {
+        return clientHolder.getAiMaintainerService().getMcpServerDetail(namespaceId, mcpName, mcpId, version);
     }
     
     @Override
-    public void createMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
+    public void createMcpServer(String namespaceId, McpServerBasicInfo serverSpecification,
             McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
         clientHolder.getAiMaintainerService()
-                .createMcpServer(mcpName, serverSpecification, toolSpecification, endpointSpecification);
+                .createMcpServer(serverSpecification.getName(), serverSpecification, toolSpecification, endpointSpecification);
     }
     
     @Override
-    public void updateMcpServer(String namespaceId, String mcpName, McpServerBasicInfo serverSpecification,
+    public void updateMcpServer(String namespaceId, boolean isPublish, McpServerBasicInfo serverSpecification,
             McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
         clientHolder.getAiMaintainerService()
-                .updateMcpServer(mcpName, serverSpecification, toolSpecification, endpointSpecification);
+                .updateMcpServer(serverSpecification.getName(), serverSpecification, toolSpecification, endpointSpecification);
     }
     
     @Override
-    public void deleteMcpServer(String namespaceId, String mcpName) throws NacosException {
-        clientHolder.getAiMaintainerService().deleteMcpServer(mcpName);
+    public void deleteMcpServer(String namespaceId, String mcpName, String mcpId, String version) throws NacosException {
+        clientHolder.getAiMaintainerService().deleteMcpServer(namespaceId, mcpName, mcpId, version);
     }
 }

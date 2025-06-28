@@ -88,7 +88,7 @@
     </issueManagement>
     
     <properties>
-        <revision>3.0.0</revision>
+        <revision>3.0.2</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Compiler settings properties -->
@@ -118,7 +118,7 @@
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
         <soptbugs-maven-plugin.version>4.8.6.2</soptbugs-maven-plugin.version>
         <sonar-maven-plugin.version>3.0.2</sonar-maven-plugin.version>
-        <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
+        <maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
         <maven-failsafe-plugin.version>3.2.5</maven-failsafe-plugin.version>
         <maven-assembly-plugin.version>3.0.0</maven-assembly-plugin.version>
         <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
@@ -679,6 +679,7 @@
         <module>maintainer-client</module>
         <module>client-basic</module>
         <module>ai</module>
+        <module>mcp-registry-adaptor</module>
     </modules>
     
     <!-- Default dependencies in all subprojects -->
@@ -908,6 +909,11 @@
             <dependency>
                 <groupId>com.alibaba.nacos</groupId>
                 <artifactId>nacos-client-basic</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.nacos</groupId>
+                <artifactId>nacos-mcp-regsitry-adaptor</artifactId>
                 <version>${project.version}</version>
             </dependency>
             

@@ -885,6 +885,9 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         
         if (StringUtils.isNotBlank(configTags)) {
             String[] tagArr = configTags.split(",");
+            for (int i = 0; i < tagArr.length; i++) {
+                tagArr[i] = generateLikeArgument(tagArr[i]);
+            }
             context.putWhereParameter(FieldConstant.TAG_ARR, tagArr);
             ConfigTagsRelationMapper configTagsRelationMapper = mapperManager.findMapper(
                     dataSourceService.getDataSourceType(), TableConstant.CONFIG_TAGS_RELATION);

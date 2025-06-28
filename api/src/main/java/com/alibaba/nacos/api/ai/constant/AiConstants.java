@@ -25,7 +25,7 @@ public class AiConstants {
     
     public static class Mcp {
         
-        public static final String MCP_DEFAULT_NAMESPACE = "nacos-default-mcp";
+        public static final String MCP_DEFAULT_NAMESPACE = "public";
         
         public static final String MCP_PROTOCOL_STDIO = "stdio";
         

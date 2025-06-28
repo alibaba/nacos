@@ -217,7 +217,13 @@ public class ConfigController {
         configRequestInfo.setCasMd5(request.getHeader("casMd5"));
         configRequestInfo.setNamespaceTransferred(namespaceTransferred);
         
-        return configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal);
+        boolean publishResult = false;
+        try {
+            publishResult = configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal);
+        } catch (NacosException e) {
+            response.setStatus(e.getErrCode());
+        }
+        return publishResult;
     }
     
     /**

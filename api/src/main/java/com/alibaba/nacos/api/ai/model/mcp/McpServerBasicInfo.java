@@ -17,8 +17,9 @@
 package com.alibaba.nacos.api.ai.model.mcp;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.mcp.registry.Repository;
+import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -29,6 +30,8 @@ import java.util.Map;
  */
 public class McpServerBasicInfo {
     
+    private String id;
+    
     private String name;
     
     /**
@@ -37,7 +40,13 @@ public class McpServerBasicInfo {
      */
     private String protocol;
     
+    private String frontProtocol;
+    
     private String description;
+    
+    private Repository repository;
+    
+    private ServerVersionDetail versionDetail;
     
     private String version;
     
@@ -50,8 +59,6 @@ public class McpServerBasicInfo {
      * Should be set when `type` is {@link AiConstants.Mcp#MCP_PROTOCOL_STDIO}.
      */
     private Map<String, Object> localServerConfig;
-    
-    private Map<String, AiCredential> credentials = new HashMap<>(1);
     
     private boolean enabled = true;
     
@@ -84,14 +91,6 @@ public class McpServerBasicInfo {
         this.description = description;
     }
     
-    public String getVersion() {
-        return version;
-    }
-    
-    public void setVersion(String version) {
-        this.version = version;
-    }
-    
     public McpServerRemoteServiceConfig getRemoteServerConfig() {
         return remoteServerConfig;
     }
@@ -107,15 +106,15 @@ public class McpServerBasicInfo {
     public void setLocalServerConfig(Map<String, Object> localServerConfig) {
         this.localServerConfig = localServerConfig;
     }
-    
-    public Map<String, AiCredential> getCredentials() {
-        return credentials;
+
+    public String getFrontProtocol() {
+        return frontProtocol;
     }
-    
-    public void setCredentials(Map<String, AiCredential> credentials) {
-        this.credentials = credentials;
+
+    public void setFrontProtocol(String frontProtocol) {
+        this.frontProtocol = frontProtocol;
     }
-    
+
     public boolean isEnabled() {
         return enabled;
     }
@@ -130,5 +129,37 @@ public class McpServerBasicInfo {
     
     public void setCapabilities(List<McpCapability> capabilities) {
         this.capabilities = capabilities;
+    }
+
+    public ServerVersionDetail getVersionDetail() {
+        return versionDetail;
+    }
+
+    public void setVersionDetail(ServerVersionDetail versionDetail) {
+        this.versionDetail = versionDetail;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public Repository getRepository() {
+        return repository;
+    }
+
+    public void setRepository(Repository repository) {
+        this.repository = repository;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
     }
 }
