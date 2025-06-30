@@ -71,7 +71,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
     
     @Override
     public StreamObserver<Payload> requestBiStream(StreamObserver<Payload> responseObserver) {
-        StreamObserver<Payload> streamObserver = new StreamObserver<>() {
+        StreamObserver<Payload> streamObserver = new StreamObserver<Payload>() {
             final String connectionId = GrpcServerConstants.CONTEXT_KEY_CONN_ID.get();
             
             final Integer localPort = GrpcServerConstants.CONTEXT_KEY_CONN_LOCAL_PORT.get();
