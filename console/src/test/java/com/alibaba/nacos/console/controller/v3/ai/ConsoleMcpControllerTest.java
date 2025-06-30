@@ -41,7 +41,10 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -102,15 +105,18 @@ class ConsoleMcpControllerTest {
     
     @Test
     void createMcpServer() throws Exception {
+        String mcpId = UUID.randomUUID().toString();
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post("/v3/console/ai/mcp")
                 .param("namespaceId", "nacos-default-mcp").param("mcpName", "test")
-                .param("serverSpecification", "{\"protocol\":\"stdio\"}");
+                .param("serverSpecification", "{\"id\":\"" + mcpId + "\",\"protocol\":\"stdio\"}");
+        when(mcpProxy.createMcpServer(any(),
+                any(McpServerBasicInfo.class), any(), any())).thenReturn(mcpId);
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         Result<String> result = JacksonUtils.toObj(actualValue, new TypeReference<>() {
         });
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
-        assertEquals("ok", result.getData());
+        assertEquals(mcpId, result.getData());
     }
     
     @Test
