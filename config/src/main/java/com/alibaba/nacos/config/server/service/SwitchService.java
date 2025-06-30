@@ -68,7 +68,7 @@ public class SwitchService {
         FATAL_LOG.warn("[switch-config] {}", config);
         
         Map<String, String> map = new HashMap<>(30);
-        try (StringReader reader = new StringReader(config)) { // 리더를 try-with-resources로 감쌈
+        try (StringReader reader = new StringReader(config)) {
             for (String line : IoUtils.readLines(reader)) {
                 if (!StringUtils.isBlank(line) && !line.startsWith("#")) {
                     String[] array = line.split("=");
