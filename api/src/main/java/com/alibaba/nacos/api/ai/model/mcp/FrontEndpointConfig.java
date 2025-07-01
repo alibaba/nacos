@@ -22,10 +22,15 @@ package com.alibaba.nacos.api.ai.model.mcp;
  * @author OmCheeLin
  */
 public class FrontEndpointConfig {
+    
     private String type;
+    
     private String protocol;
+    
     private String endpointType;
+    
     private String endpointAddress;
+    
     private String path;
     
     public String getType() {
