@@ -17,7 +17,7 @@
 package com.alibaba.nacos.api.ai.model.mcp;
 
 /**
- * Specific endpoint information exposed to the outside
+ * Specific endpoint information exposed to the outside.
  *
  * @author OmCheeLin
  */
