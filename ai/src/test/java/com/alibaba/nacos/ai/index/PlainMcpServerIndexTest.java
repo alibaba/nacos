@@ -119,6 +119,54 @@ class PlainMcpServerIndexTest {
     }
     
     @Test
+    void searchMcpServerByNameWithMultiplePagesFirstPage() {
+        Page<ConfigInfo> searchPage = mockConfigInfoWithPagination(25, 10, 1, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
+        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(1), eq(10), eq("*"),
+                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
+                anyMap())).thenReturn(searchPage);
+        
+        Page<McpServerIndexData> result = plainMcpServerIndex.searchMcpServerByName(
+                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, Constants.MCP_LIST_SEARCH_BLUR, 0, 10);
+        
+        assertEquals(25, result.getTotalCount());
+        assertEquals(1, result.getPageNumber());
+        assertEquals(3, result.getPagesAvailable());
+        assertEquals(10, result.getPageItems().size());
+    }
+    
+    @Test
+    void searchMcpServerByNameWithMultiplePagesSecondPage() {
+        Page<ConfigInfo> searchPage = mockConfigInfoWithPagination(25, 10, 2, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
+        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(2), eq(10), eq("*"),
+                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
+                anyMap())).thenReturn(searchPage);
+        
+        Page<McpServerIndexData> result = plainMcpServerIndex.searchMcpServerByName(
+                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, Constants.MCP_LIST_SEARCH_BLUR, 10, 10);
+        
+        assertEquals(25, result.getTotalCount());
+        assertEquals(2, result.getPageNumber());
+        assertEquals(3, result.getPagesAvailable());
+        assertEquals(10, result.getPageItems().size());
+    }
+    
+    @Test
+    void searchMcpServerByNameWithMultiplePagesLastPage() {
+        Page<ConfigInfo> searchPage = mockConfigInfoWithPagination(25, 5, 3, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
+        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_BLUR), eq(3), eq(10), eq("*"),
+                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
+                anyMap())).thenReturn(searchPage);
+        
+        Page<McpServerIndexData> result = plainMcpServerIndex.searchMcpServerByName(
+                AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, Constants.MCP_LIST_SEARCH_BLUR, 20, 10);
+        
+        assertEquals(25, result.getTotalCount());
+        assertEquals(3, result.getPageNumber());
+        assertEquals(3, result.getPagesAvailable());
+        assertEquals(5, result.getPageItems().size());
+    }
+    
+    @Test
     void getMcpServerByIdWithEmptyId() {
         assertNull(plainMcpServerIndex.getMcpServerById(""));
     }
@@ -202,6 +250,24 @@ class PlainMcpServerIndexTest {
         mockConfigInfo.setPageNumber(1);
         List<ConfigInfo> list = new LinkedList<>();
         for (int i = 0; i < size; i++) {
+            ConfigInfo configInfo = new ConfigInfo();
+            configInfo.setTenant(namespaceId);
+            configInfo.setContent(JacksonUtils.toJson(mockServerVersionInfo(UUID.randomUUID().toString())));
+            list.add(configInfo);
+        }
+        mockConfigInfo.setPageItems(list);
+        return mockConfigInfo;
+    }
+    
+    private Page<ConfigInfo> mockConfigInfoWithPagination(int total, int currentPageSize, int pageNumber,
+            String namespaceId) {
+        Page<ConfigInfo> mockConfigInfo = new Page<>();
+        mockConfigInfo.setTotalCount(total);
+        mockConfigInfo.setPageNumber(pageNumber);
+        mockConfigInfo.setPagesAvailable((int) Math.ceil((double) total / (double) currentPageSize));
+        
+        List<ConfigInfo> list = new LinkedList<>();
+        for (int i = 0; i < currentPageSize; i++) {
             ConfigInfo configInfo = new ConfigInfo();
             configInfo.setTenant(namespaceId);
             configInfo.setContent(JacksonUtils.toJson(mockServerVersionInfo(UUID.randomUUID().toString())));
