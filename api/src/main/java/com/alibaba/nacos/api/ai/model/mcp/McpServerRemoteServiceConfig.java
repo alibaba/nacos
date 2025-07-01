@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.ai.model.mcp;
 
+import java.util.List;
+
 /**
  * AI MCP server remote service config.
  *
@@ -26,6 +28,8 @@ public class McpServerRemoteServiceConfig {
     private McpServiceRef serviceRef;
     
     private String exportPath;
+    
+    private List<FrontEndpointConfig> frontEndpointConfigList;
     
     public McpServiceRef getServiceRef() {
         return serviceRef;
@@ -41,5 +45,13 @@ public class McpServerRemoteServiceConfig {
     
     public void setExportPath(String exportPath) {
         this.exportPath = exportPath;
+    }
+    
+    public List<FrontEndpointConfig> getFrontEndpointConfigList() {
+        return frontEndpointConfigList;
+    }
+    
+    public void setFrontEndpointConfigList(List<FrontEndpointConfig> frontEndpointConfigList) {
+        this.frontEndpointConfigList = frontEndpointConfigList;
     }
 }
