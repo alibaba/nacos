@@ -21,6 +21,7 @@ import com.alibaba.nacos.plugin.auth.impl.configuration.core.NacosAuthPluginCore
 import com.alibaba.nacos.plugin.auth.impl.configuration.core.NacosAuthPluginRemoteServiceConfig;
 import com.alibaba.nacos.plugin.auth.impl.configuration.persistence.NacosAuthPluginPersistenceConfig;
 import com.alibaba.nacos.plugin.auth.impl.configuration.web.NacosAuthPluginControllerConfig;
+import com.alibaba.nacos.plugin.auth.impl.ldap.LdapAuthPluginConfig;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -33,7 +34,7 @@ import org.springframework.context.annotation.Import;
 @Configuration
 @Conditional(ConditionOnRemoteDatasource.class)
 @Import({NacosAuthPluginPersistenceConfig.class, NacosAuthPluginRemoteServiceConfig.class,
-        NacosAuthPluginCoreConfig.class, NacosAuthPluginControllerConfig.class})
+        NacosAuthPluginCoreConfig.class, NacosAuthPluginControllerConfig.class, LdapAuthPluginConfig.class})
 public class NacosAuthPluginRemoteAutoConfig {
 
 }
