@@ -18,6 +18,7 @@ package com.alibaba.nacos.console.handler.impl.inner.config;
 
 import com.alibaba.nacos.api.config.model.ConfigBasicInfo;
 import com.alibaba.nacos.api.config.model.ConfigDetailInfo;
+import com.alibaba.nacos.api.config.model.ConfigGrayInfo;
 import com.alibaba.nacos.api.config.model.ConfigListenerInfo;
 import com.alibaba.nacos.api.config.model.SameConfigPolicy;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -30,6 +31,7 @@ import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneC
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
+import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.ConfigMetadata;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
@@ -528,6 +530,40 @@ class ConfigInnerHandlerTest {
         when(configInfoGrayPersistService.findConfigInfo4Gray("dataId", "group", "tenant", "beta")).thenReturn(
                 mockConfigInfo);
         assertNotNull(configInnerHandler.queryBetaConfig("dataId", "group", "tenant"));
+    }
+
+    @Test
+    void queryBetaConfigWithTypeFieldFromProductionConfig() throws NacosException {
+        ConfigInfoGrayWrapper mockBetaConfigInfo = new ConfigInfoGrayWrapper();
+        mockBetaConfigInfo.setId(1L);
+        mockBetaConfigInfo.setDataId("dataId");
+        mockBetaConfigInfo.setGroup("group");
+        mockBetaConfigInfo.setTenant("tenant");
+        mockBetaConfigInfo.setContent("content");
+        mockBetaConfigInfo.setType(null);
+        mockBetaConfigInfo.setAppName("appName");
+        mockBetaConfigInfo.setMd5("md5");
+        mockBetaConfigInfo.setEncryptedDataKey("");
+        mockBetaConfigInfo.setGrayName("beta");
+        when(configInfoGrayPersistService.findConfigInfo4Gray("dataId", "group", "tenant", "beta")).thenReturn(
+                mockBetaConfigInfo);
+
+        ConfigInfoWrapper mockConfigInfo = new ConfigInfoWrapper();
+        mockConfigInfo.setId(1L);
+        mockConfigInfo.setDataId("dataId");
+        mockConfigInfo.setGroup("group");
+        mockConfigInfo.setTenant("tenant");
+        mockConfigInfo.setContent("content");
+        mockConfigInfo.setType("type");
+        mockConfigInfo.setAppName("appName");
+        mockConfigInfo.setMd5("md5");
+        mockConfigInfo.setEncryptedDataKey("");
+        when(configInfoPersistService.findConfigInfo("dataId", "group", "tenant")).thenReturn(
+                mockConfigInfo);
+
+        ConfigGrayInfo grayInfo = configInnerHandler.queryBetaConfig("dataId", "group", "tenant");
+        assertNotNull(grayInfo);
+        assertEquals("type", grayInfo.getType());
     }
     
     private ConfigInfo mockConfigInfo() {

@@ -34,6 +34,7 @@ import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneC
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
+import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.ConfigMetadata;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
@@ -506,6 +507,12 @@ public class ConfigInnerHandler implements ConfigHandler {
             Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey,
                     beta4Gray.getContent());
             beta4Gray.setContent(pair.getSecond());
+
+            //find the corresponding production config to get the `type` field, because the `type` field is not stored in the beta table
+            ConfigInfoWrapper productionConfig = configInfoPersistService.findConfigInfo(dataId, group, namespaceId);
+            if (Objects.nonNull(productionConfig)) {
+                beta4Gray.setType(productionConfig.getType());
+            }
             return ResponseUtil.transferToConfigGrayInfo(beta4Gray);
         }
         return null;
