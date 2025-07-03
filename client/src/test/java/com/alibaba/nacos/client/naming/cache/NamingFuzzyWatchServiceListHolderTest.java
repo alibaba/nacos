@@ -75,6 +75,7 @@ public class NamingFuzzyWatchServiceListHolderTest {
     
     @BeforeEach
     void before() {
+        eventScope = "scope" + System.currentTimeMillis();
         namingFuzzyWatchServiceListHolder = new NamingFuzzyWatchServiceListHolder(eventScope);
         namingFuzzyWatchServiceListHolder.registerNamingGrpcClientProxy(namingGrpcClientProxy);
         namingFuzzyWatchNotifyRequestHandler = new NamingFuzzyWatchNotifyRequestHandler(
@@ -318,9 +319,9 @@ public class NamingFuzzyWatchServiceListHolderTest {
     @Test
     void testSyncWhenWatcherFail() throws NacosException {
         
-        String serviceKey = NamingUtils.getServiceKey("namespace123", "group", "serviceName124");
+        String serviceKey = NamingUtils.getServiceKey("namespace0123", "group", "serviceName124");
         
-        String generatePattern = FuzzyGroupKeyPattern.generatePattern("serviceName124*", "group", "namespace123");
+        String generatePattern = FuzzyGroupKeyPattern.generatePattern("serviceName124*", "group", "namespace0123");
         
         AtomicInteger watcherFlag = new AtomicInteger(0);
         

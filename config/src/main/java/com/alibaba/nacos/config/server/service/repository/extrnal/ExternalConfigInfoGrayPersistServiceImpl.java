@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.repository.extrnal;
 
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -30,7 +31,6 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
-import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.persistence.repository.extrnal.ExternalStoragePaginationHelperImpl;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
@@ -276,6 +276,8 @@ public class ExternalConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
             String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
             String grayNameTmp = StringUtils.isBlank(grayName) ? StringUtils.EMPTY : grayName.trim();
             String grayRuleTmp = StringUtils.isBlank(grayRule) ? StringUtils.EMPTY : grayRule.trim();
+            final String encryptedDataKey =
+                    configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY : configInfo.getEncryptedDataKey();
             try {
                 String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
                 ConfigInfoGrayMapper configInfoGrayMapper = mapperManager.findMapper(
@@ -286,7 +288,7 @@ public class ExternalConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
                 context.putUpdateParameter(FieldConstant.SRC_IP, srcIp);
                 context.putUpdateParameter(FieldConstant.SRC_USER, srcUser);
                 context.putUpdateParameter(FieldConstant.APP_NAME, appNameTmp);
-                
+                context.putUpdateParameter(FieldConstant.ENCRYPTED_DATA_KEY, encryptedDataKey);
                 context.putWhereParameter(FieldConstant.DATA_ID, configInfo.getDataId());
                 context.putWhereParameter(FieldConstant.GROUP_ID, configInfo.getGroup());
                 context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
