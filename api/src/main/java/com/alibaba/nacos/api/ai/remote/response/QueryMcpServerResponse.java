@@ -14,33 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai;
+package com.alibaba.nacos.api.ai.remote.response;
 
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.remote.response.Response;
 
 /**
- * Nacos AI client service interface.
+ * Nacos AI module query mcp server response.
  *
  * @author xiweng.yy
  */
-public interface AiService {
+public class QueryMcpServerResponse extends Response {
     
-    /**
-     * Get mcp server detail info.
-     *
-     * @param mcpName name of MCP name
-     * @param version version of MCP, if null, will get the latest version
-     * @return detail information of MCP server
-     * @throws NacosException if request parameter is invalid or handle error
-     */
-    McpServerDetailInfo getMcpServer(String mcpName, String version) throws NacosException;
+    private McpServerDetailInfo mcpServerDetailInfo;
     
-    /**
-     * Shutdown the AI service and close resources.
-     *
-     * @throws NacosException exception.
-     */
-    void shutdown() throws NacosException;
+    public McpServerDetailInfo getMcpServerDetailInfo() {
+        return mcpServerDetailInfo;
+    }
     
+    public void setMcpServerDetailInfo(McpServerDetailInfo mcpServerDetailInfo) {
+        this.mcpServerDetailInfo = mcpServerDetailInfo;
+    }
 }

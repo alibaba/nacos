@@ -17,9 +17,19 @@
 package com.alibaba.nacos.client.ai.remote;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.remote.request.AbstractMcpRequest;
+import com.alibaba.nacos.api.ai.remote.request.IndexMcpServerRequest;
+import com.alibaba.nacos.api.ai.remote.request.QueryMcpServerRequest;
+import com.alibaba.nacos.api.ai.remote.response.IndexMcpServerResponse;
+import com.alibaba.nacos.api.ai.remote.response.QueryMcpServerResponse;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
+import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.client.address.AbstractServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.core.NamingServerListManager;
@@ -32,6 +42,7 @@ import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientConfigFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -48,6 +59,8 @@ public class AiGrpcClient implements Closeable {
     
     private final String uuid;
     
+    private final Long requestTimeout;
+    
     private final RpcClient rpcClient;
     
     private final AbstractServerListManager serverListManager;
@@ -55,10 +68,19 @@ public class AiGrpcClient implements Closeable {
     private SecurityProxy securityProxy;
     
     public AiGrpcClient(NacosClientProperties properties) {
-        this.namespaceId = properties.getProperty(PropertyKeyConst.NAMESPACE);
+        this.namespaceId = initNamespace(properties);
         this.uuid = UUID.randomUUID().toString();
+        this.requestTimeout = Long.parseLong(properties.getProperty(AiConstants.AI_REQUEST_TIMEOUT, "-1"));
         this.rpcClient = buildRpcClient(properties);
         this.serverListManager = new NamingServerListManager(properties, namespaceId);
+    }
+    
+    private String initNamespace(NacosClientProperties properties) {
+        String tempNamespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
+        if (StringUtils.isBlank(tempNamespace)) {
+            return Constants.DEFAULT_NAMESPACE_ID;
+        }
+        return tempNamespace;
     }
     
     private RpcClient buildRpcClient(NacosClientProperties properties) {
@@ -82,6 +104,72 @@ public class AiGrpcClient implements Closeable {
         rpcClient.start();
         this.securityProxy = new SecurityProxy(this.serverListManager,
                 NamingHttpClientManager.getInstance().getNacosRestTemplate());
+    }
+    
+    /**
+     * Do query mcp server by mcpId and version.
+     *
+     * @param mcpId   id of mcp server
+     * @param version version of mcp server, if input empty or null, return the latest version
+     * @return mcp server detail info
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    public McpServerDetailInfo queryMcpServer(String mcpId, String version) throws NacosException {
+        QueryMcpServerRequest request = new QueryMcpServerRequest();
+        request.setNamespace(namespaceId);
+        request.setMcpId(mcpId);
+        request.setVersion(version);
+        QueryMcpServerResponse response = requestToServer(request, QueryMcpServerResponse.class);
+        return response.getMcpServerDetailInfo();
+    }
+    
+    /**
+     * Index from mcpName to mcpId.
+     *
+     * @param mcpName mcp name
+     * @return mcp id of target namespaceId and mcpName
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    public String indexMcpNameToMcpId(String mcpName) throws NacosException {
+        IndexMcpServerRequest request = new IndexMcpServerRequest();
+        request.setNamespace(namespaceId);
+        request.setMcpName(mcpName);
+        IndexMcpServerResponse response = requestToServer(request, IndexMcpServerResponse.class);
+        return response.getMcpId();
+    }
+    
+    private <T extends Response> T requestToServer(Request request, Class<T> responseClass) throws NacosException {
+        Response response = null;
+        try {
+            if (request instanceof AbstractMcpRequest) {
+                request.putAllHeader(getSecurityHeaders(((AbstractMcpRequest) request).getNamespace(),
+                        ((AbstractMcpRequest) request).getMcpId()));
+            } else {
+                throw new NacosException(400,
+                        String.format("Unknown AI request type: %s", request.getClass().getSimpleName()));
+            }
+            
+            response = requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
+            if (ResponseCode.SUCCESS.getCode() != response.getResultCode()) {
+                // If the 403 login operation is triggered, refresh the accessToken of the client
+                if (NacosException.NO_RIGHT == response.getErrorCode()) {
+                    securityProxy.reLogin();
+                }
+                throw new NacosException(response.getErrorCode(), response.getMessage());
+            }
+            if (responseClass.isAssignableFrom(response.getClass())) {
+                return (T) response;
+            }
+            throw new NacosException(NacosException.SERVER_ERROR, "Server return invalid response");
+        } catch (NacosException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new NacosException(NacosException.SERVER_ERROR, "Request nacos server failed: ", e);
+        }
+    }
+    
+    private Map<String, String> getSecurityHeaders(String namespace, String mcpId) {
+        return null;
     }
     
     @Override

@@ -41,4 +41,6 @@ public class AiConstants {
         
         public static final String MCP_ENDPOINT_TYPE_DIRECT = "DIRECT";
     }
+    
+    public static final String AI_REQUEST_TIMEOUT = "nacosAiRequestTimeout";
 }
