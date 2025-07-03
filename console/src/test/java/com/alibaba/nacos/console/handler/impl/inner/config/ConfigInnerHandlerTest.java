@@ -62,6 +62,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -134,7 +135,7 @@ class ConfigInnerHandlerTest {
     void tearDown() {
         EnvUtil.setEnvironment(cachedEnv);
         PropertyUtil.setGrayCompatibleModel(cachedGrayCompatibleModel);
-        configInnerHandler.oldTableVersion = false;
+        ReflectionTestUtils.setField(configInnerHandler, "oldTableVersion", false);
     }
     
     @Test
@@ -481,7 +482,7 @@ class ConfigInnerHandlerTest {
     @Test
     void removeBetaConfigWithGrayCompatibleModelAndOldTableVersion() {
         PropertyUtil.setGrayCompatibleModel(true);
-        configInnerHandler.oldTableVersion = true;
+        ReflectionTestUtils.setField(configInnerHandler, "oldTableVersion", true);
         assertTrue(configInnerHandler.removeBetaConfig("dataId", "group", "tenant", "remoteIp", "requestIpApp",
                 "srcUser"));
         verify(configInfoGrayPersistService).removeConfigInfoGray("dataId", "group", "tenant", BetaGrayRule.TYPE_BETA,
@@ -494,7 +495,7 @@ class ConfigInnerHandlerTest {
     @Test
     void removeBetaConfigWithGrayCompatibleModelAndLatestTableVersion() {
         PropertyUtil.setGrayCompatibleModel(true);
-        configInnerHandler.oldTableVersion = false;
+        ReflectionTestUtils.setField(configInnerHandler, "oldTableVersion", false);
         assertTrue(configInnerHandler.removeBetaConfig("dataId", "group", "tenant", "remoteIp", "requestIpApp",
                 "srcUser"));
         verify(configInfoGrayPersistService).removeConfigInfoGray("dataId", "group", "tenant", BetaGrayRule.TYPE_BETA,

@@ -121,7 +121,7 @@ public class ConfigInnerHandler implements ConfigHandler {
     /**
      * Flag to indicate if the table `config_info_beta` exists, which means the old version of table schema is used.
      */
-    boolean oldTableVersion;
+    private boolean oldTableVersion;
     
     public ConfigInnerHandler(ConfigOperationService configOperationService,
             ConfigInfoPersistService configInfoPersistService, ConfigDetailService configDetailService,

@@ -141,7 +141,7 @@ public class ConfigControllerV3 {
     /**
      * Flag to indicate if the table `config_info_beta` exists, which means the old version of table schema is used.
      */
-    private final boolean oldTableVersion;
+    private boolean oldTableVersion;
     
     public ConfigControllerV3(ConfigOperationService configOperationService,
             ConfigInfoPersistService configInfoPersistService, ConfigDetailService configDetailService,
