@@ -593,6 +593,7 @@ class ConfigEditor extends React.Component {
             )}
             <Form.Item label={locale.format}>
               <Radio.Group
+                disabled={isBeta && tabActiveKey !== 'production'}
                 defaultValue="text"
                 value={form.type}
                 onChange={type => {
