@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.api.ai;
 
+import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
 
 /**
@@ -46,6 +48,23 @@ public interface AiService {
      * @throws NacosException if request parameter is invalid or mcp server not found or handle error
      */
     McpServerDetailInfo getMcpServer(String mcpName, String version) throws NacosException;
+    
+    /**
+     * Release new mcp server or release new version of exist mcp server request.
+     *
+     * <p>
+     *     If mcp server is not exist, will create an new mcp server with parameter specification.
+     *     If mcp server is exist, but version in specification is new one, request will create a new version of mcp server.
+     *     If mcp server is exist, and version in specification is exist, request will do nothing.
+     * </p>
+     *
+     * @param serverSpecification mcp server specification
+     * @param toolSpecification   mcp server tool specification
+     * @return mcp id
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification)
+            throws NacosException;
     
     /**
      * Shutdown the AI service and close resources.

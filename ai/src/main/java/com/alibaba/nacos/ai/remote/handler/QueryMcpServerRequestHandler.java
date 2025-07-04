@@ -17,7 +17,7 @@
 package com.alibaba.nacos.ai.remote.handler;
 
 import com.alibaba.nacos.ai.service.McpServerOperationService;
-import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.ai.utils.McpRequestUtils;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.remote.request.QueryMcpServerRequest;
 import com.alibaba.nacos.api.ai.remote.response.QueryMcpServerResponse;
@@ -45,17 +45,21 @@ public class QueryMcpServerRequestHandler extends RequestHandler<QueryMcpServerR
     
     @Override
     public QueryMcpServerResponse handle(QueryMcpServerRequest request, RequestMeta meta) throws NacosException {
-        String namespaceId = request.getNamespace();
-        if (StringUtils.isBlank(namespaceId)) {
-            namespaceId = AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;
-        }
-        String mcpId = request.getMcpId();
-        if (StringUtils.isBlank(mcpId)) {
+        McpRequestUtils.fillNamespaceId(request);
+        checkParameters(request);
+        return doHandler(request, meta);
+    }
+    
+    private void checkParameters(QueryMcpServerRequest request) throws NacosException {
+        if (StringUtils.isBlank(request.getMcpId())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "parameters `mcpId` can't be empty or null");
         }
-        McpServerDetailInfo detailInfo = mcpServerOperationService.getMcpServerDetail(namespaceId, mcpId, null,
-                request.getVersion());
+    }
+    
+    private QueryMcpServerResponse doHandler(QueryMcpServerRequest request, RequestMeta meta) throws NacosException {
+        McpServerDetailInfo detailInfo = mcpServerOperationService.getMcpServerDetail(request.getNamespaceId(),
+                request.getMcpId(), null, request.getVersion());
         QueryMcpServerResponse response = new QueryMcpServerResponse();
         response.setMcpServerDetailInfo(detailInfo);
         return response;

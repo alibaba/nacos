@@ -17,11 +17,16 @@
 package com.alibaba.nacos.client.ai;
 
 import com.alibaba.nacos.api.ai.AiService;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.client.ai.index.McpNameIndexCache;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.Properties;
 
@@ -50,8 +55,31 @@ public class NacosAiService implements AiService {
     
     @Override
     public McpServerDetailInfo getMcpServer(String mcpName, String version) throws NacosException {
+        if (StringUtils.isBlank(mcpName)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Required parameter `mcpName` not present");
+        }
         String mcpId = mcpNameIndexCache.indexMcpNameToMcpId(mcpName);
         return grpcClient.queryMcpServer(mcpId, version);
+    }
+    
+    @Override
+    public String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification)
+            throws NacosException {
+        if (null == serverSpecification) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Required parameter `serverSpecification` not present");
+        }
+        if (StringUtils.isBlank(serverSpecification.getName())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Required parameter `serverSpecification.name` not present");
+        }
+        if (null == serverSpecification.getVersionDetail() || StringUtils.isBlank(
+                serverSpecification.getVersionDetail().getVersion())) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "Required parameter `serverSpecification.versionDetail.version` not present");
+        }
+        return grpcClient.releaseMcpServer(serverSpecification, toolSpecification);
     }
     
     @Override

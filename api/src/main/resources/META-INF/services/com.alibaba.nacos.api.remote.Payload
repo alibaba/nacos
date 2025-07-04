@@ -79,3 +79,5 @@ com.alibaba.nacos.api.ai.remote.request.IndexMcpServerRequest
 com.alibaba.nacos.api.ai.remote.response.IndexMcpServerResponse
 com.alibaba.nacos.api.ai.remote.request.QueryMcpServerRequest
 com.alibaba.nacos.api.ai.remote.response.QueryMcpServerResponse
+com.alibaba.nacos.api.ai.remote.request.ReleaseMcpServerRequest
+com.alibaba.nacos.api.ai.remote.response.ReleaseMcpServerResponse

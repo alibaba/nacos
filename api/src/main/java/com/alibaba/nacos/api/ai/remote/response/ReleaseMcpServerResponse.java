@@ -14,34 +14,18 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.remote.request;
+package com.alibaba.nacos.api.ai.remote.response;
 
-import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.response.Response;
 
 /**
- * Nacos AI module mcp request.
+ * Nacos AI module release new mcp server or new version of exist mcp server response.
  *
  * @author xiweng.yy
  */
-public abstract class AbstractMcpRequest extends Request {
-    
-    private String namespaceId;
+public class ReleaseMcpServerResponse extends Response {
     
     private String mcpId;
-    
-    @Override
-    public String getModule() {
-        return Constants.AI.AI_MODULE;
-    }
-    
-    public String getNamespaceId() {
-        return namespaceId;
-    }
-    
-    public void setNamespaceId(String namespaceId) {
-        this.namespaceId = namespaceId;
-    }
     
     public String getMcpId() {
         return mcpId;

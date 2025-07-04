@@ -18,7 +18,7 @@ package com.alibaba.nacos.ai.remote.handler;
 
 import com.alibaba.nacos.ai.index.McpServerIndex;
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
-import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.ai.utils.McpRequestUtils;
 import com.alibaba.nacos.api.ai.remote.request.IndexMcpServerRequest;
 import com.alibaba.nacos.api.ai.remote.response.IndexMcpServerResponse;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -45,15 +45,21 @@ public class IndexMcpServerRequestHandler extends RequestHandler<IndexMcpServerR
     
     @Override
     public IndexMcpServerResponse handle(IndexMcpServerRequest request, RequestMeta meta) throws NacosException {
-        String namespaceId = request.getNamespace();
-        if (StringUtils.isBlank(namespaceId)) {
-            namespaceId = AiConstants.Mcp.MCP_DEFAULT_NAMESPACE;
-        }
-        String mcpName = request.getMcpName();
-        if (StringUtils.isBlank(mcpName)) {
+        McpRequestUtils.fillNamespaceId(request);
+        checkParameters(request);
+        return doHandler(request);
+    }
+    
+    private void checkParameters(IndexMcpServerRequest request) throws NacosException {
+        if (StringUtils.isBlank(request.getMcpName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "parameters `mcpName` can't be empty or null");
         }
+    }
+    
+    private IndexMcpServerResponse doHandler(IndexMcpServerRequest request) throws NacosException {
+        String namespaceId = request.getNamespaceId();
+        String mcpName = request.getMcpName();
         McpServerIndexData indexData = mcpServerIndex.getMcpServerByName(namespaceId, mcpName);
         if (null == indexData) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
