@@ -215,7 +215,8 @@ public class McpServerOperationService {
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         if (McpConfigUtils.isConfigNotFound(response.getStatus())) {
             throw new NacosApiException(NacosApiException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                    String.format("mcp server `%s` not found", mcpServerId));
+                     String.format("Mcp server [ID: %s] not found in namespace [%s]. Response: %s",
+                            mcpServerId, namespaceId, response.getMessage()));
         }
         
         return JacksonUtils.toObj(response.getContent(), McpServerVersionInfo.class);
