@@ -62,6 +62,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -134,6 +135,7 @@ class ConfigInnerHandlerTest {
     void tearDown() {
         EnvUtil.setEnvironment(cachedEnv);
         PropertyUtil.setGrayCompatibleModel(cachedGrayCompatibleModel);
+        ReflectionTestUtils.setField(configInnerHandler, "oldTableVersion", false);
     }
     
     @Test
@@ -476,10 +478,11 @@ class ConfigInnerHandlerTest {
         assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals(1, actual.getData().size());
     }
-    
+
     @Test
-    void removeBetaConfigWithGrayCompatibleModel() {
+    void removeBetaConfigWithGrayCompatibleModelAndOldTableVersion() {
         PropertyUtil.setGrayCompatibleModel(true);
+        ReflectionTestUtils.setField(configInnerHandler, "oldTableVersion", true);
         assertTrue(configInnerHandler.removeBetaConfig("dataId", "group", "tenant", "remoteIp", "requestIpApp",
                 "srcUser"));
         verify(configInfoGrayPersistService).removeConfigInfoGray("dataId", "group", "tenant", BetaGrayRule.TYPE_BETA,
@@ -488,7 +491,20 @@ class ConfigInnerHandlerTest {
                 "remoteIp", "srcUser");
         verify(configInfoBetaPersistService).removeConfigInfo4Beta("dataId", "group", "tenant");
     }
-    
+
+    @Test
+    void removeBetaConfigWithGrayCompatibleModelAndLatestTableVersion() {
+        PropertyUtil.setGrayCompatibleModel(true);
+        ReflectionTestUtils.setField(configInnerHandler, "oldTableVersion", false);
+        assertTrue(configInnerHandler.removeBetaConfig("dataId", "group", "tenant", "remoteIp", "requestIpApp",
+                "srcUser"));
+        verify(configInfoGrayPersistService).removeConfigInfoGray("dataId", "group", "tenant", BetaGrayRule.TYPE_BETA,
+                "remoteIp", "srcUser");
+        verify(configMigrateService).removeConfigInfoGrayMigrate("dataId", "group", "tenant", BetaGrayRule.TYPE_BETA,
+                "remoteIp", "srcUser");
+        verify(configInfoBetaPersistService, never()).removeConfigInfo4Beta("dataId", "group", "tenant");
+    }
+
     @Test
     void removeBetaConfigWithoutGrayCompatibleModel() {
         PropertyUtil.setGrayCompatibleModel(false);

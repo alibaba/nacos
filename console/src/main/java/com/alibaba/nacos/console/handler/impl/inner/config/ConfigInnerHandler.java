@@ -117,6 +117,11 @@ public class ConfigInnerHandler implements ConfigHandler {
     private ConfigInfoBetaPersistService configInfoBetaPersistService;
     
     private ConfigInfoGrayPersistService configInfoGrayPersistService;
+
+    /**
+     * Flag to indicate if the table `config_info_beta` exists, which means the old version of table schema is used.
+     */
+    private boolean oldTableVersion;
     
     public ConfigInnerHandler(ConfigOperationService configOperationService,
             ConfigInfoPersistService configInfoPersistService, ConfigDetailService configDetailService,
@@ -131,6 +136,7 @@ public class ConfigInnerHandler implements ConfigHandler {
         this.configInfoGrayPersistService = configInfoGrayPersistService;
         this.configListenerStateDelegate = configListenerStateDelegate;
         this.configMigrateService = configMigrateService;
+        this.oldTableVersion = namespacePersistService.isExistTable("config_info_beta");
     }
     
     @Override
@@ -488,7 +494,7 @@ public class ConfigInnerHandler implements ConfigHandler {
         }
         ConfigTraceService.logPersistenceEvent(dataId, group, namespaceId, requestIpApp, System.currentTimeMillis(),
                 remoteIp, ConfigTraceService.PERSISTENCE_EVENT_BETA, ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
-        if (PropertyUtil.isGrayCompatibleModel()) {
+        if (PropertyUtil.isGrayCompatibleModel() && oldTableVersion) {
             configInfoBetaPersistService.removeConfigInfo4Beta(dataId, group, namespaceId);
         }
         ConfigChangePublisher.notifyConfigChange(
