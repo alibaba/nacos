@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.ai;
 import com.alibaba.nacos.api.ai.AiService;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.ai.index.McpNameIndexCache;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 
@@ -34,9 +35,12 @@ public class NacosAiService implements AiService {
     
     private final AiGrpcClient grpcClient;
     
+    private final McpNameIndexCache mcpNameIndexCache;
+    
     public NacosAiService(Properties properties) throws NacosException {
         NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         this.grpcClient = new AiGrpcClient(clientProperties);
+        this.mcpNameIndexCache = new McpNameIndexCache(grpcClient);
         start();
     }
     
@@ -46,13 +50,13 @@ public class NacosAiService implements AiService {
     
     @Override
     public McpServerDetailInfo getMcpServer(String mcpName, String version) throws NacosException {
-        // TODO get index from cache.
-        String mcpId = grpcClient.indexMcpNameToMcpId(mcpName);
+        String mcpId = mcpNameIndexCache.indexMcpNameToMcpId(mcpName);
         return grpcClient.queryMcpServer(mcpId, version);
     }
     
     @Override
     public void shutdown() throws NacosException {
         this.grpcClient.shutdown();
+        this.mcpNameIndexCache.shutdown();
     }
 }

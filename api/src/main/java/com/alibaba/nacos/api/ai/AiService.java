@@ -27,12 +27,23 @@ import com.alibaba.nacos.api.exception.NacosException;
 public interface AiService {
     
     /**
+     * Get mcp server detail info for latest version.
+     *
+     * @param mcpName name of mcp server
+     * @return detail information of MCP server
+     * @throws NacosException if request parameter is invalid or mcp server not found or handle error
+     */
+    default McpServerDetailInfo getMcpServer(String mcpName) throws NacosException {
+        return getMcpServer(mcpName, null);
+    }
+    
+    /**
      * Get mcp server detail info.
      *
      * @param mcpName name of MCP name
      * @param version version of MCP, if null, will get the latest version
      * @return detail information of MCP server
-     * @throws NacosException if request parameter is invalid or handle error
+     * @throws NacosException if request parameter is invalid or mcp server not found or handle error
      */
     McpServerDetailInfo getMcpServer(String mcpName, String version) throws NacosException;
     
