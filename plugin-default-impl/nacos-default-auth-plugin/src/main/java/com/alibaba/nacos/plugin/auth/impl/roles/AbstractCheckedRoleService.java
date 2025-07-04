@@ -113,6 +113,9 @@ public abstract class AbstractCheckedRoleService extends AbstractCachedRoleServi
     @Override
     public boolean hasGlobalAdminRole(String userName) {
         List<RoleInfo> roles = getRoles(userName);
+        if (CollectionUtils.isEmpty(roles)) {
+            return false;
+        }
         return roles.stream().anyMatch(roleInfo -> AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole()));
     }
     
