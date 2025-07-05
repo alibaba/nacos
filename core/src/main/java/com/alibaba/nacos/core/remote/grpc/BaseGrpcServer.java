@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import com.alibaba.nacos.core.remote.BaseRpcServer;
 import com.alibaba.nacos.core.remote.ConnectionManager;
@@ -28,6 +29,7 @@ import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
 import com.alibaba.nacos.core.remote.grpc.negotiator.NacosGrpcProtocolNegotiator;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.InetUtils;
 import io.grpc.CompressorRegistry;
 import io.grpc.DecompressorRegistry;
 import io.grpc.MethodDescriptor;
@@ -45,6 +47,7 @@ import io.grpc.stub.StreamObserver;
 import io.grpc.util.MutableHandlerRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -88,8 +91,9 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     public void startServer() throws Exception {
         final MutableHandlerRegistry handlerRegistry = new MutableHandlerRegistry();
         addServices(handlerRegistry, getSeverInterceptors().toArray(new ServerInterceptor[0]));
-        NettyServerBuilder builder = NettyServerBuilder.forPort(getServicePort()).executor(getRpcExecutor());
-        
+        String nacosIp = InetUtils.getNacosIp();
+        InetSocketAddress inetSocketAddress = StringUtils.isNotBlank(nacosIp) ? new InetSocketAddress(nacosIp, getServicePort()) : new InetSocketAddress(getServicePort());
+        NettyServerBuilder builder = NettyServerBuilder.forAddress(inetSocketAddress).executor(getRpcExecutor());
         Optional<InternalProtocolNegotiator.ProtocolNegotiator> negotiator = newProtocolNegotiator();
         if (negotiator.isPresent()) {
             InternalProtocolNegotiator.ProtocolNegotiator actual = negotiator.get();
