@@ -21,11 +21,14 @@ import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
+import com.alibaba.nacos.api.ai.remote.AiRemoteConstants;
 import com.alibaba.nacos.api.ai.remote.request.AbstractMcpRequest;
 import com.alibaba.nacos.api.ai.remote.request.IndexMcpServerRequest;
+import com.alibaba.nacos.api.ai.remote.request.McpServerEndpointRequest;
 import com.alibaba.nacos.api.ai.remote.request.QueryMcpServerRequest;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseMcpServerRequest;
 import com.alibaba.nacos.api.ai.remote.response.IndexMcpServerResponse;
+import com.alibaba.nacos.api.ai.remote.response.McpServerEndpointResponse;
 import com.alibaba.nacos.api.ai.remote.response.QueryMcpServerResponse;
 import com.alibaba.nacos.api.ai.remote.response.ReleaseMcpServerResponse;
 import com.alibaba.nacos.api.common.Constants;
@@ -135,13 +138,36 @@ public class AiGrpcClient implements Closeable {
      * @return mcp id
      * @throws NacosException if request parameter is invalid or handle error
      */
-    public String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification) throws NacosException {
+    public String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification)
+            throws NacosException {
         ReleaseMcpServerRequest request = new ReleaseMcpServerRequest();
         request.setNamespaceId(namespaceId);
         request.setServerSpecification(serverSpecification);
         request.setToolSpecification(toolSpecification);
         ReleaseMcpServerResponse response = requestToServer(request, ReleaseMcpServerResponse.class);
         return response.getMcpId();
+    }
+    
+    /**
+     * Register endpoint to target mcp server.
+     *
+     * @param mcpId     id of mcp server
+     * @param address   address of mcp endpoint
+     * @param port      port of mcp endpoint
+     * @param version   version of mcp endpoint, if empty, the endpoint will return for all mcp version
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    public void registerMcpServerEndpoint(String mcpId, String address, int port, String version)
+            throws NacosException {
+        McpServerEndpointRequest request = new McpServerEndpointRequest();
+        request.setNamespaceId(namespaceId);
+        request.setMcpId(mcpId);
+        request.setAddress(address);
+        request.setPort(port);
+        request.setVersion(version);
+        request.setType(AiRemoteConstants.REGISTER_ENDPOINT);
+        // TODO redo
+        requestToServer(request, McpServerEndpointResponse.class);
     }
     
     /**
@@ -181,7 +207,8 @@ public class AiGrpcClient implements Closeable {
             if (responseClass.isAssignableFrom(response.getClass())) {
                 return (T) response;
             }
-            throw new NacosException(NacosException.SERVER_ERROR, "Server return invalid response");
+            throw new NacosException(NacosException.SERVER_ERROR,
+                    String.format("Server return invalid response: %s", response.getClass().getSimpleName()));
         } catch (NacosException e) {
             throw e;
         } catch (Exception e) {

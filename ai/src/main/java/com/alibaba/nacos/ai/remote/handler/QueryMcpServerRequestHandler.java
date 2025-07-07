@@ -50,6 +50,9 @@ public class QueryMcpServerRequestHandler extends RequestHandler<QueryMcpServerR
         return doHandler(request, meta);
     }
     
+    /**
+     * TODO, abstract to parameter check filter {@link com.alibaba.nacos.core.remote.grpc.RemoteParamCheckFilter}.
+     */
     private void checkParameters(QueryMcpServerRequest request) throws NacosException {
         if (StringUtils.isBlank(request.getMcpId())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,

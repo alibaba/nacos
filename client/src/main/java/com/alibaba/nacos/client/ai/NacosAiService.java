@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.ai.index.McpNameIndexCache;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.env.NacosClientProperties;
@@ -80,6 +81,21 @@ public class NacosAiService implements AiService {
                     "Required parameter `serverSpecification.versionDetail.version` not present");
         }
         return grpcClient.releaseMcpServer(serverSpecification, toolSpecification);
+    }
+    
+    @Override
+    public void registerMcpServerEndpoint(String mcpName, String address, int port, String version)
+            throws NacosException {
+        if (StringUtils.isBlank(mcpName)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `mcpName` can't be empty or null");
+        }
+        Instance instance = new Instance();
+        instance.setIp(address);
+        instance.setPort(port);
+        instance.validate();
+        String mcpId = mcpNameIndexCache.indexMcpNameToMcpId(mcpName);
+        grpcClient.registerMcpServerEndpoint(mcpId, address, port, version);
     }
     
     @Override

@@ -67,6 +67,29 @@ public interface AiService {
             throws NacosException;
     
     /**
+     * Register and endpoint into target mcp server for all version.
+     *
+     * @param mcpName   name of mcp server
+     * @param address   address of endpoint
+     * @param port      port of endpoint
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    default void registerMcpServerEndpoint(String mcpName, String address, int port) throws NacosException {
+        registerMcpServerEndpoint(mcpName, address, port, null);
+    }
+    
+    /**
+     * Register and endpoint into target mcp server for target version.
+     *
+     * @param mcpName   name of mcp server
+     * @param address   address of endpoint
+     * @param port      port of endpoint
+     * @param version   version of mcp server
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    void registerMcpServerEndpoint(String mcpName, String address, int port, String version) throws NacosException;
+    
+    /**
      * Shutdown the AI service and close resources.
      *
      * @throws NacosException exception.

@@ -69,6 +69,9 @@ public class ReleaseMcpServerRequestHandler extends RequestHandler<ReleaseMcpSer
         return doHandler(request, meta);
     }
     
+    /**
+     * TODO, abstract to parameter check filter {@link com.alibaba.nacos.core.remote.grpc.RemoteParamCheckFilter}.
+     */
     private void checkParameters(ReleaseMcpServerRequest request) throws NacosException {
         McpServerBasicInfo serverSpecification = request.getServerSpecification();
         if (null == serverSpecification) {

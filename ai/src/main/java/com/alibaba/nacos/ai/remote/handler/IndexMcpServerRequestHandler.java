@@ -50,6 +50,9 @@ public class IndexMcpServerRequestHandler extends RequestHandler<IndexMcpServerR
         return doHandler(request);
     }
     
+    /**
+     * TODO, abstract to parameter check filter {@link com.alibaba.nacos.core.remote.grpc.RemoteParamCheckFilter}.
+     */
     private void checkParameters(IndexMcpServerRequest request) throws NacosException {
         if (StringUtils.isBlank(request.getMcpName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
