@@ -30,6 +30,8 @@ public abstract class AbstractMcpRequest extends Request {
     
     private String mcpId;
     
+    private String mcpName;
+    
     @Override
     public String getModule() {
         return Constants.AI.AI_MODULE;
@@ -49,5 +51,13 @@ public abstract class AbstractMcpRequest extends Request {
     
     public void setMcpId(String mcpId) {
         this.mcpId = mcpId;
+    }
+    
+    public String getMcpName() {
+        return mcpName;
+    }
+    
+    public void setMcpName(String mcpName) {
+        this.mcpName = mcpName;
     }
 }

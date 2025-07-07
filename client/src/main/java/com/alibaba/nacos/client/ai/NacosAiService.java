@@ -24,7 +24,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.client.ai.index.McpNameIndexCache;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -41,12 +40,9 @@ public class NacosAiService implements AiService {
     
     private final AiGrpcClient grpcClient;
     
-    private final McpNameIndexCache mcpNameIndexCache;
-    
     public NacosAiService(Properties properties) throws NacosException {
         NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         this.grpcClient = new AiGrpcClient(clientProperties);
-        this.mcpNameIndexCache = new McpNameIndexCache(grpcClient);
         start();
     }
     
@@ -60,8 +56,7 @@ public class NacosAiService implements AiService {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter `mcpName` not present");
         }
-        String mcpId = mcpNameIndexCache.indexMcpNameToMcpId(mcpName);
-        return grpcClient.queryMcpServer(mcpId, version);
+        return grpcClient.queryMcpServer(mcpName, version);
     }
     
     @Override
@@ -94,13 +89,11 @@ public class NacosAiService implements AiService {
         instance.setIp(address);
         instance.setPort(port);
         instance.validate();
-        String mcpId = mcpNameIndexCache.indexMcpNameToMcpId(mcpName);
-        grpcClient.registerMcpServerEndpoint(mcpId, address, port, version);
+        grpcClient.registerMcpServerEndpoint(mcpName, address, port, version);
     }
     
     @Override
     public void shutdown() throws NacosException {
         this.grpcClient.shutdown();
-        this.mcpNameIndexCache.shutdown();
     }
 }

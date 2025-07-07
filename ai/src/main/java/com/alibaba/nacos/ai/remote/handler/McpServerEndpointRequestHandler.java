@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.ai.remote.handler;
 
+import com.alibaba.nacos.ai.index.McpServerIndex;
+import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.ai.utils.McpRequestUtils;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -53,10 +55,13 @@ public class McpServerEndpointRequestHandler
     
     private final McpServerOperationService mcpServerOperationService;
     
+    private final McpServerIndex mcpServerIndex;
+    
     public McpServerEndpointRequestHandler(EphemeralClientOperationServiceImpl clientOperationService,
-            McpServerOperationService mcpServerOperationService) {
+            McpServerOperationService mcpServerOperationService, McpServerIndex mcpServerIndex) {
         this.clientOperationService = clientOperationService;
         this.mcpServerOperationService = mcpServerOperationService;
+        this.mcpServerIndex = mcpServerIndex;
     }
     
     @Override
@@ -71,28 +76,34 @@ public class McpServerEndpointRequestHandler
      * TODO, abstract to parameter check filter {@link com.alibaba.nacos.core.remote.grpc.RemoteParamCheckFilter}.
      */
     private void checkParameters(McpServerEndpointRequest request) throws NacosApiException {
-        if (StringUtils.isBlank(request.getMcpId())) {
+        if (StringUtils.isBlank(request.getMcpName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `mcpId` can't be empty or null");
+                    "parameters `mcpName` can't be empty or null");
         }
     }
     
     private McpServerEndpointResponse doHandler(McpServerEndpointRequest request, Instance instance, RequestMeta meta)
             throws NacosException {
+        McpServerIndexData indexData = mcpServerIndex.getMcpServerByName(request.getNamespaceId(), request.getMcpName());
+        if (null == indexData) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.MCP_SERVER_NOT_FOUND,
+                    String.format("MCP server `%s` not found in namespaceId: `%s`", request.getMcpName(),
+                            request.getNamespaceId()));
+        }
         McpServerDetailInfo mcpServer = mcpServerOperationService.getMcpServerDetail(request.getNamespaceId(),
-                request.getMcpId(), null, request.getVersion());
+                indexData.getId(), null, request.getVersion());
         McpServiceRef serviceRef = mcpServer.getRemoteServerConfig().getServiceRef();
         Service service = Service.newService(request.getNamespaceId(), serviceRef.getGroupName(),
                 serviceRef.getServiceName(), true);
         switch (request.getType()) {
             case AiRemoteConstants.REGISTER_ENDPOINT:
                 LOGGER.info("[{}] register endpoint {}:{} version {} for mcp server: {}", meta.getConnectionId(),
-                        request.getAddress(), request.getPort(), request.getVersion(), request.getMcpId());
+                        request.getAddress(), request.getPort(), request.getVersion(), request.getMcpName());
                 doRegister(service, instance, meta.getConnectionId());
                 break;
             case AiRemoteConstants.DE_REGISTER_ENDPOINT:
                 LOGGER.info("[{}] de-register endpoint {}:{} version {} for mcp server: {}", meta.getConnectionId(),
-                        request.getAddress(), request.getPort(), request.getVersion(), request.getMcpId());
+                        request.getAddress(), request.getPort(), request.getVersion(), request.getMcpName());
                 doDeregister(service, instance, meta.getConnectionId());
                 break;
             default:

@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.ai.remote.handler;
 
+import com.alibaba.nacos.ai.index.McpServerIndex;
+import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.ai.utils.McpRequestUtils;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -39,8 +41,12 @@ public class QueryMcpServerRequestHandler extends RequestHandler<QueryMcpServerR
     
     private final McpServerOperationService mcpServerOperationService;
     
-    public QueryMcpServerRequestHandler(McpServerOperationService mcpServerOperationService) {
+    private final McpServerIndex mcpServerIndex;
+    
+    public QueryMcpServerRequestHandler(McpServerOperationService mcpServerOperationService,
+            McpServerIndex mcpServerIndex) {
         this.mcpServerOperationService = mcpServerOperationService;
+        this.mcpServerIndex = mcpServerIndex;
     }
     
     @Override
@@ -54,15 +60,21 @@ public class QueryMcpServerRequestHandler extends RequestHandler<QueryMcpServerR
      * TODO, abstract to parameter check filter {@link com.alibaba.nacos.core.remote.grpc.RemoteParamCheckFilter}.
      */
     private void checkParameters(QueryMcpServerRequest request) throws NacosException {
-        if (StringUtils.isBlank(request.getMcpId())) {
+        if (StringUtils.isBlank(request.getMcpName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "parameters `mcpId` can't be empty or null");
+                    "parameters `mcpName` can't be empty or null");
         }
     }
     
     private QueryMcpServerResponse doHandler(QueryMcpServerRequest request, RequestMeta meta) throws NacosException {
+        McpServerIndexData indexData = mcpServerIndex.getMcpServerByName(request.getNamespaceId(), request.getMcpName());
+        if (null == indexData) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.MCP_SERVER_NOT_FOUND,
+                    String.format("MCP server `%s` not found in namespaceId: `%s`", request.getMcpName(),
+                            request.getNamespaceId()));
+        }
         McpServerDetailInfo detailInfo = mcpServerOperationService.getMcpServerDetail(request.getNamespaceId(),
-                request.getMcpId(), null, request.getVersion());
+                indexData.getId(), null, request.getVersion());
         QueryMcpServerResponse response = new QueryMcpServerResponse();
         response.setMcpServerDetailInfo(detailInfo);
         return response;

@@ -23,11 +23,9 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.remote.AiRemoteConstants;
 import com.alibaba.nacos.api.ai.remote.request.AbstractMcpRequest;
-import com.alibaba.nacos.api.ai.remote.request.IndexMcpServerRequest;
 import com.alibaba.nacos.api.ai.remote.request.McpServerEndpointRequest;
 import com.alibaba.nacos.api.ai.remote.request.QueryMcpServerRequest;
 import com.alibaba.nacos.api.ai.remote.request.ReleaseMcpServerRequest;
-import com.alibaba.nacos.api.ai.remote.response.IndexMcpServerResponse;
 import com.alibaba.nacos.api.ai.remote.response.McpServerEndpointResponse;
 import com.alibaba.nacos.api.ai.remote.response.QueryMcpServerResponse;
 import com.alibaba.nacos.api.ai.remote.response.ReleaseMcpServerResponse;
@@ -116,15 +114,15 @@ public class AiGrpcClient implements Closeable {
     /**
      * Do query mcp server by mcpId and version.
      *
-     * @param mcpId   id of mcp server
-     * @param version version of mcp server, if input empty or null, return the latest version
+     * @param mcpName   name of mcp server
+     * @param version   version of mcp server, if input empty or null, return the latest version
      * @return mcp server detail info
      * @throws NacosException if request parameter is invalid or handle error
      */
-    public McpServerDetailInfo queryMcpServer(String mcpId, String version) throws NacosException {
+    public McpServerDetailInfo queryMcpServer(String mcpName, String version) throws NacosException {
         QueryMcpServerRequest request = new QueryMcpServerRequest();
         request.setNamespaceId(namespaceId);
-        request.setMcpId(mcpId);
+        request.setMcpName(mcpName);
         request.setVersion(version);
         QueryMcpServerResponse response = requestToServer(request, QueryMcpServerResponse.class);
         return response.getMcpServerDetailInfo();
@@ -142,6 +140,7 @@ public class AiGrpcClient implements Closeable {
             throws NacosException {
         ReleaseMcpServerRequest request = new ReleaseMcpServerRequest();
         request.setNamespaceId(namespaceId);
+        request.setMcpName(serverSpecification.getName());
         request.setServerSpecification(serverSpecification);
         request.setToolSpecification(toolSpecification);
         ReleaseMcpServerResponse response = requestToServer(request, ReleaseMcpServerResponse.class);
@@ -151,17 +150,17 @@ public class AiGrpcClient implements Closeable {
     /**
      * Register endpoint to target mcp server.
      *
-     * @param mcpId     id of mcp server
+     * @param mcpName   name of mcp server
      * @param address   address of mcp endpoint
      * @param port      port of mcp endpoint
      * @param version   version of mcp endpoint, if empty, the endpoint will return for all mcp version
      * @throws NacosException if request parameter is invalid or handle error
      */
-    public void registerMcpServerEndpoint(String mcpId, String address, int port, String version)
+    public void registerMcpServerEndpoint(String mcpName, String address, int port, String version)
             throws NacosException {
         McpServerEndpointRequest request = new McpServerEndpointRequest();
         request.setNamespaceId(namespaceId);
-        request.setMcpId(mcpId);
+        request.setMcpName(mcpName);
         request.setAddress(address);
         request.setPort(port);
         request.setVersion(version);
@@ -170,27 +169,12 @@ public class AiGrpcClient implements Closeable {
         requestToServer(request, McpServerEndpointResponse.class);
     }
     
-    /**
-     * Index from mcpName to mcpId.
-     *
-     * @param mcpName mcp name
-     * @return mcp id of target namespaceId and mcpName
-     * @throws NacosException if request parameter is invalid or handle error
-     */
-    public String indexMcpNameToMcpId(String mcpName) throws NacosException {
-        IndexMcpServerRequest request = new IndexMcpServerRequest();
-        request.setNamespaceId(namespaceId);
-        request.setMcpName(mcpName);
-        IndexMcpServerResponse response = requestToServer(request, IndexMcpServerResponse.class);
-        return response.getMcpId();
-    }
-    
     private <T extends Response> T requestToServer(Request request, Class<T> responseClass) throws NacosException {
         Response response = null;
         try {
             if (request instanceof AbstractMcpRequest) {
                 request.putAllHeader(getSecurityHeaders(((AbstractMcpRequest) request).getNamespaceId(),
-                        ((AbstractMcpRequest) request).getMcpId()));
+                        ((AbstractMcpRequest) request).getMcpName()));
             } else {
                 throw new NacosException(400,
                         String.format("Unknown AI request type: %s", request.getClass().getSimpleName()));
