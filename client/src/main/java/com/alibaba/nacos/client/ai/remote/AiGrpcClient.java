@@ -36,6 +36,7 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.client.address.AbstractServerListManager;
+import com.alibaba.nacos.client.ai.remote.redo.AiGrpcRedoService;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.core.NamingServerListManager;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
@@ -70,6 +71,8 @@ public class AiGrpcClient implements Closeable {
     
     private final AbstractServerListManager serverListManager;
     
+    private final AiGrpcRedoService redoService;
+    
     private SecurityProxy securityProxy;
     
     public AiGrpcClient(NacosClientProperties properties) {
@@ -78,6 +81,7 @@ public class AiGrpcClient implements Closeable {
         this.requestTimeout = Long.parseLong(properties.getProperty(AiConstants.AI_REQUEST_TIMEOUT, "-1"));
         this.rpcClient = buildRpcClient(properties);
         this.serverListManager = new NamingServerListManager(properties, namespaceId);
+        this.redoService = new AiGrpcRedoService(properties, this);
     }
     
     private String initNamespace(NacosClientProperties properties) {
@@ -105,8 +109,9 @@ public class AiGrpcClient implements Closeable {
      */
     public void start() throws NacosException {
         this.serverListManager.start();
-        rpcClient.serverListFactory(this.serverListManager);
-        rpcClient.start();
+        this.rpcClient.registerConnectionListener(this.redoService);
+        this.rpcClient.serverListFactory(this.serverListManager);
+        this.rpcClient.start();
         this.securityProxy = new SecurityProxy(this.serverListManager,
                 NamingHttpClientManager.getInstance().getNacosRestTemplate());
     }
@@ -148,7 +153,7 @@ public class AiGrpcClient implements Closeable {
     }
     
     /**
-     * Register endpoint to target mcp server.
+     * Register endpoint to target mcp server and cached to redo service.
      *
      * @param mcpName   name of mcp server
      * @param address   address of mcp endpoint
@@ -158,6 +163,20 @@ public class AiGrpcClient implements Closeable {
      */
     public void registerMcpServerEndpoint(String mcpName, String address, int port, String version)
             throws NacosException {
+        redoService.cachedMcpServerEndpointForRedo(mcpName, address, port, version);
+        doRegisterMcpServerEndpoint(mcpName, address, port, version);
+    }
+    
+    /**
+     * Actual do Register endpoint to target mcp server.
+     *
+     * @param mcpName   name of mcp server
+     * @param address   address of mcp endpoint
+     * @param port      port of mcp endpoint
+     * @param version   version of mcp endpoint, if empty, the endpoint will return for all mcp version
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    public void doRegisterMcpServerEndpoint(String mcpName, String address, int port, String version) throws NacosException {
         McpServerEndpointRequest request = new McpServerEndpointRequest();
         request.setNamespaceId(namespaceId);
         request.setMcpName(mcpName);
@@ -165,8 +184,12 @@ public class AiGrpcClient implements Closeable {
         request.setPort(port);
         request.setVersion(version);
         request.setType(AiRemoteConstants.REGISTER_ENDPOINT);
-        // TODO redo
         requestToServer(request, McpServerEndpointResponse.class);
+        redoService.mcpServerEndpointRegistered(mcpName);
+    }
+    
+    public boolean isEnable() {
+        return rpcClient.isRunning();
     }
     
     private <T extends Response> T requestToServer(Request request, Class<T> responseClass) throws NacosException {
