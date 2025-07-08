@@ -81,7 +81,7 @@ public class AiConnectionBasedClientManager extends ClientConnectionEventListene
         if (!RemoteConstants.LABEL_MODULE_AI.equals(connect.getMetaInfo().getLabel(RemoteConstants.LABEL_MODULE))) {
             return;
         }
-        delegate.clientDisConnected(connect);
+        clientDisconnected(connect.getMetaInfo().getConnectionId());
     }
     
     @Override

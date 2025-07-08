@@ -93,6 +93,19 @@ public class NacosAiService implements AiService {
     }
     
     @Override
+    public void deregisterMcpServerEndpoint(String mcpName, String address, int port) throws NacosException {
+        if (StringUtils.isBlank(mcpName)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `mcpName` can't be empty or null");
+        }
+        Instance instance = new Instance();
+        instance.setIp(address);
+        instance.setPort(port);
+        instance.validate();
+        grpcClient.deregisterMcpServerEndpoint(mcpName, address, port);
+    }
+    
+    @Override
     public void shutdown() throws NacosException {
         this.grpcClient.shutdown();
     }

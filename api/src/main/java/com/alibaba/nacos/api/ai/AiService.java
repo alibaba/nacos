@@ -67,7 +67,7 @@ public interface AiService {
             throws NacosException;
     
     /**
-     * Register and endpoint into target mcp server for all version.
+     * Register an endpoint into target mcp server for all version.
      *
      * @param mcpName   name of mcp server
      * @param address   address of endpoint
@@ -79,7 +79,7 @@ public interface AiService {
     }
     
     /**
-     * Register and endpoint into target mcp server for target version.
+     * Register an endpoint into target mcp server for target version.
      *
      * @param mcpName   name of mcp server
      * @param address   address of endpoint
@@ -88,6 +88,21 @@ public interface AiService {
      * @throws NacosException if request parameter is invalid or handle error
      */
     void registerMcpServerEndpoint(String mcpName, String address, int port, String version) throws NacosException;
+    
+    /**
+     * Deregister an endpoint from target mcp server for any version.
+     *
+     * <p>
+     *     The registered endpoint must be registered by this client service.
+     *     If the registered endpoint is registered by other client service, the endpoint will fail to deregister.
+     * </p>
+     *
+     * @param mcpName   name of mcp server
+     * @param address   address of endpoint
+     * @param port      port of endpoint
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    void deregisterMcpServerEndpoint(String mcpName, String address, int port) throws NacosException;
     
     /**
      * Shutdown the AI service and close resources.

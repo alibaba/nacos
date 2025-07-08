@@ -65,12 +65,12 @@ public class AiRedoScheduledTask extends AbstractRedoTask<AiGrpcRedoService> {
         NamingRedoData.RedoType redoType = redoData.getRedoType();
         String mcpName = redoData.getMcpName();
         LOGGER.info("Redo mcp server endpoint operation {} for {}.", redoType, mcpName);
+        McpServerEndpoint endpoint = redoData.get();
         switch (redoType) {
             case REGISTER:
                 if (!aiGrpcClient.isEnable()) {
                     return;
                 }
-                McpServerEndpoint endpoint = redoData.get();
                 aiGrpcClient.doRegisterMcpServerEndpoint(mcpName, endpoint.getAddress(), endpoint.getPort(),
                         endpoint.getVersion());
                 break;
@@ -78,7 +78,7 @@ public class AiRedoScheduledTask extends AbstractRedoTask<AiGrpcRedoService> {
                 if (!aiGrpcClient.isEnable()) {
                     return;
                 }
-                // TODO add unregister mcp server endpoint in ai grpc client.
+                aiGrpcClient.doDeregisterMcpServerEndpoint(mcpName, endpoint.getAddress(), endpoint.getPort());
                 break;
             case REMOVE:
                 getRedoService().removeMcpServerEndpointForRedo(mcpName);

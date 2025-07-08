@@ -176,7 +176,8 @@ public class AiGrpcClient implements Closeable {
      * @param version   version of mcp endpoint, if empty, the endpoint will return for all mcp version
      * @throws NacosException if request parameter is invalid or handle error
      */
-    public void doRegisterMcpServerEndpoint(String mcpName, String address, int port, String version) throws NacosException {
+    public void doRegisterMcpServerEndpoint(String mcpName, String address, int port, String version)
+            throws NacosException {
         McpServerEndpointRequest request = new McpServerEndpointRequest();
         request.setNamespaceId(namespaceId);
         request.setMcpName(mcpName);
@@ -186,6 +187,38 @@ public class AiGrpcClient implements Closeable {
         request.setType(AiRemoteConstants.REGISTER_ENDPOINT);
         requestToServer(request, McpServerEndpointResponse.class);
         redoService.mcpServerEndpointRegistered(mcpName);
+    }
+    
+    /**
+     * Deregister endpoint from target mcp server and cached to redo service.
+     *
+     * @param mcpName   name of mcp server
+     * @param address   address of mcp endpoint
+     * @param port      port of mcp endpoint
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    public void deregisterMcpServerEndpoint(String mcpName, String address, int port) throws NacosException {
+        redoService.mcpServerEndpointDeregister(mcpName);
+        doDeregisterMcpServerEndpoint(mcpName, address, port);
+    }
+    
+    /**
+     * Actual do deregister endpoint from target mcp server.
+     *
+     * @param mcpName   name of mcp server
+     * @param address   address of mcp endpoint
+     * @param port      port of mcp endpoint
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    public void doDeregisterMcpServerEndpoint(String mcpName, String address, int port) throws NacosException {
+        McpServerEndpointRequest request = new McpServerEndpointRequest();
+        request.setNamespaceId(namespaceId);
+        request.setMcpName(mcpName);
+        request.setAddress(address);
+        request.setPort(port);
+        request.setType(AiRemoteConstants.DE_REGISTER_ENDPOINT);
+        requestToServer(request, McpServerEndpointResponse.class);
+        redoService.mcpServerEndpointDeregistered(mcpName);
     }
     
     public boolean isEnable() {
