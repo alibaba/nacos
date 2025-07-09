@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.ai;
 
+import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
@@ -103,6 +104,25 @@ public interface AiService {
      * @throws NacosException if request parameter is invalid or handle error
      */
     void deregisterMcpServerEndpoint(String mcpName, String address, int port) throws NacosException;
+    
+    /**
+     * Subscribe mcp server.
+     *
+     * @param mcpName           name of mcp server
+     * @param mcpServerListener listener of mcp server, callback when mcp server is changed
+     * @return The detail info of mcp server at current time
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    McpServerDetailInfo subscribeMcpServer(String mcpName, AbstractNacosMcpServerListener mcpServerListener) throws NacosException;
+    
+    /**
+     * Un-subscribe mcp server.
+     *
+     * @param mcpName           name of mcp server
+     * @param mcpServerListener listener of mcp server
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    void unsubscribeMcpServer(String mcpName, AbstractNacosMcpServerListener mcpServerListener) throws NacosException;
     
     /**
      * Shutdown the AI service and close resources.

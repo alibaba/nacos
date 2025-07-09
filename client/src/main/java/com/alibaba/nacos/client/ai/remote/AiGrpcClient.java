@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.client.ai.remote;
 
-import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -36,6 +35,7 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.client.address.AbstractServerListManager;
+import com.alibaba.nacos.client.ai.cache.NacosMcpServerCacheHolder;
 import com.alibaba.nacos.client.ai.remote.redo.AiGrpcRedoService;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.core.NamingServerListManager;
@@ -48,7 +48,8 @@ import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientConfigFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
-import com.alibaba.nacos.common.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -60,6 +61,8 @@ import java.util.UUID;
  * @author xiweng.yy
  */
 public class AiGrpcClient implements Closeable {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(AiGrpcClient.class);
     
     private final String namespaceId;
     
@@ -75,21 +78,15 @@ public class AiGrpcClient implements Closeable {
     
     private SecurityProxy securityProxy;
     
-    public AiGrpcClient(NacosClientProperties properties) {
-        this.namespaceId = initNamespace(properties);
+    private NacosMcpServerCacheHolder mcpServerCacheHolder;
+    
+    public AiGrpcClient(String namespaceId, NacosClientProperties properties) {
+        this.namespaceId = namespaceId;
         this.uuid = UUID.randomUUID().toString();
         this.requestTimeout = Long.parseLong(properties.getProperty(AiConstants.AI_REQUEST_TIMEOUT, "-1"));
         this.rpcClient = buildRpcClient(properties);
         this.serverListManager = new NamingServerListManager(properties, namespaceId);
         this.redoService = new AiGrpcRedoService(properties, this);
-    }
-    
-    private String initNamespace(NacosClientProperties properties) {
-        String tempNamespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
-        if (StringUtils.isBlank(tempNamespace)) {
-            return Constants.DEFAULT_NAMESPACE_ID;
-        }
-        return tempNamespace;
     }
     
     private RpcClient buildRpcClient(NacosClientProperties properties) {
@@ -107,7 +104,8 @@ public class AiGrpcClient implements Closeable {
      *
      * @throws NacosException nacos exception
      */
-    public void start() throws NacosException {
+    public void start(NacosMcpServerCacheHolder mcpServerCacheHolder) throws NacosException {
+        this.mcpServerCacheHolder = mcpServerCacheHolder;
         this.serverListManager.start();
         this.rpcClient.registerConnectionListener(this.redoService);
         this.rpcClient.serverListFactory(this.serverListManager);
@@ -143,6 +141,8 @@ public class AiGrpcClient implements Closeable {
      */
     public String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification)
             throws NacosException {
+        LOGGER.info("[{}] RELEASE Mcp server {}, version {}", uuid, serverSpecification.getName(),
+                serverSpecification.getVersionDetail().getVersion());
         ReleaseMcpServerRequest request = new ReleaseMcpServerRequest();
         request.setNamespaceId(namespaceId);
         request.setMcpName(serverSpecification.getName());
@@ -163,6 +163,8 @@ public class AiGrpcClient implements Closeable {
      */
     public void registerMcpServerEndpoint(String mcpName, String address, int port, String version)
             throws NacosException {
+        LOGGER.info("[{}] REGISTER Mcp server endpoint {}:{}, version {} into mcp server {}", uuid, address, port,
+                version, mcpName);
         redoService.cachedMcpServerEndpointForRedo(mcpName, address, port, version);
         doRegisterMcpServerEndpoint(mcpName, address, port, version);
     }
@@ -198,6 +200,7 @@ public class AiGrpcClient implements Closeable {
      * @throws NacosException if request parameter is invalid or handle error
      */
     public void deregisterMcpServerEndpoint(String mcpName, String address, int port) throws NacosException {
+        LOGGER.info("[{}] DE-REGISTER Mcp server endpoint {}:{} from mcp server {}", uuid, address, port, mcpName);
         redoService.mcpServerEndpointDeregister(mcpName);
         doDeregisterMcpServerEndpoint(mcpName, address, port);
     }
@@ -219,6 +222,33 @@ public class AiGrpcClient implements Closeable {
         request.setType(AiRemoteConstants.DE_REGISTER_ENDPOINT);
         requestToServer(request, McpServerEndpointResponse.class);
         redoService.mcpServerEndpointDeregistered(mcpName);
+    }
+    
+    /**
+     * Subscribe mcp server latest version.
+     *
+     * @param mcpName   name of mcp server
+     * @return latest version mcp server
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    public McpServerDetailInfo subscribeMcpServer(String mcpName) throws NacosException {
+        McpServerDetailInfo cachedServer = mcpServerCacheHolder.getMcpServer(mcpName, null);
+        if (null == cachedServer) {
+            cachedServer = queryMcpServer(mcpName, null);
+            mcpServerCacheHolder.processMcpServerDetailInfo(cachedServer);
+            mcpServerCacheHolder.addMcpServerUpdateTask(mcpName);
+        }
+        return cachedServer;
+    }
+    
+    /**
+     * Un-subscribe mcp server.
+     *
+     * @param mcpName   name of mcp server
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    public void unsubscribeMcpServer(String mcpName) throws NacosException {
+        mcpServerCacheHolder.removeMcpServerUpdateTask(mcpName);
     }
     
     public boolean isEnable() {

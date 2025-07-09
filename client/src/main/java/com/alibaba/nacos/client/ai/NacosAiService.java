@@ -16,16 +16,25 @@
 
 package com.alibaba.nacos.client.ai;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ai.AiService;
+import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
+import com.alibaba.nacos.api.ai.listener.NacosMcpServerEvent;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.client.ai.cache.NacosMcpServerCacheHolder;
+import com.alibaba.nacos.client.ai.event.McpServerChangeNotifier;
+import com.alibaba.nacos.client.ai.event.McpServerChangedEvent;
+import com.alibaba.nacos.client.ai.event.McpServerListenerInvoker;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.Properties;
@@ -38,16 +47,35 @@ import java.util.Properties;
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosAiService implements AiService {
     
+    private final String namespaceId;
+    
     private final AiGrpcClient grpcClient;
+    
+    private final NacosMcpServerCacheHolder cacheHolder;
+    
+    private final McpServerChangeNotifier mcpServerNotifier;
     
     public NacosAiService(Properties properties) throws NacosException {
         NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
-        this.grpcClient = new AiGrpcClient(clientProperties);
+        this.namespaceId = initNamespace(clientProperties);
+        this.grpcClient = new AiGrpcClient(namespaceId, clientProperties);
+        this.cacheHolder = new NacosMcpServerCacheHolder(grpcClient, clientProperties);
+        this.mcpServerNotifier = new McpServerChangeNotifier();
         start();
     }
     
+    private String initNamespace(NacosClientProperties properties) {
+        String tempNamespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
+        if (StringUtils.isBlank(tempNamespace)) {
+            return Constants.DEFAULT_NAMESPACE_ID;
+        }
+        return tempNamespace;
+    }
+    
     private void start() throws NacosException {
-        this.grpcClient.start();
+        this.grpcClient.start(this.cacheHolder);
+        NotifyCenter.registerToPublisher(McpServerChangedEvent.class, 16384);
+        NotifyCenter.registerSubscriber(this.mcpServerNotifier);
     }
     
     @Override
@@ -106,7 +134,45 @@ public class NacosAiService implements AiService {
     }
     
     @Override
+    public McpServerDetailInfo subscribeMcpServer(String mcpName, AbstractNacosMcpServerListener mcpServerListener)
+            throws NacosException {
+        if (StringUtils.isBlank(mcpName)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `mcpName` can't be empty or null");
+        }
+        if (null == mcpServerListener) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `mcpServerListener` can't be empty or null");
+        }
+        McpServerListenerInvoker listenerInvoker = new McpServerListenerInvoker(mcpServerListener);
+        mcpServerNotifier.registerListener(mcpName, listenerInvoker);
+        McpServerDetailInfo result = grpcClient.subscribeMcpServer(mcpName);
+        if (!listenerInvoker.isInvoked()) {
+            listenerInvoker.invoke(new NacosMcpServerEvent(result));
+        }
+        return result;
+    }
+    
+    @Override
+    public void unsubscribeMcpServer(String mcpName, AbstractNacosMcpServerListener mcpServerListener)
+            throws NacosException {
+        if (StringUtils.isBlank(mcpName)) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
+                    "parameters `mcpName` can't be empty or null");
+        }
+        if (null == mcpServerListener) {
+            return;
+        }
+        McpServerListenerInvoker listenerInvoker = new McpServerListenerInvoker(mcpServerListener);
+        mcpServerNotifier.deregisterListener(mcpName, listenerInvoker);
+        if (!mcpServerNotifier.isSubscribed(mcpName)) {
+            grpcClient.unsubscribeMcpServer(mcpName);
+        }
+    }
+    
+    @Override
     public void shutdown() throws NacosException {
         this.grpcClient.shutdown();
+        this.cacheHolder.shutdown();
     }
 }
