@@ -34,8 +34,11 @@ import com.alibaba.nacos.client.ai.event.McpServerChangedEvent;
 import com.alibaba.nacos.client.ai.event.McpServerListenerInvoker;
 import com.alibaba.nacos.client.ai.remote.AiGrpcClient;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.utils.ClientBasicParamUtil;
+import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.StringUtils;
+import org.slf4j.Logger;
 
 import java.util.Properties;
 
@@ -47,6 +50,8 @@ import java.util.Properties;
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosAiService implements AiService {
     
+    private static final Logger LOGGER = LogUtils.logger(NacosAiService.class);
+    
     private final String namespaceId;
     
     private final AiGrpcClient grpcClient;
@@ -57,6 +62,7 @@ public class NacosAiService implements AiService {
     
     public NacosAiService(Properties properties) throws NacosException {
         NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        LOGGER.info(ClientBasicParamUtil.getInputParameters(clientProperties.asProperties()));
         this.namespaceId = initNamespace(clientProperties);
         this.grpcClient = new AiGrpcClient(namespaceId, clientProperties);
         this.cacheHolder = new NacosMcpServerCacheHolder(grpcClient, clientProperties);

@@ -22,6 +22,7 @@
     <nacosClientProperty scope="context" name="nacosConfigLogLevel" source="com.alibaba.nacos.config.log.level" defaultValue="info"/>
     <nacosClientProperty scope="context" name="nacosLogLevel" source="com.alibaba.nacos.log.level" defaultValue="info"/>
     <nacosClientProperty scope="context" name="nacosNamingLogLevel" source="com.alibaba.nacos.naming.log.level" defaultValue="info"/>
+    <nacosClientProperty scope="context" name="nacosAILogLevel" source="com.alibaba.nacos.ai.log.level" defaultValue="info"/>
     
     
     <appender name="CONFIG_LOG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -96,6 +97,30 @@
         <appender-ref ref="REMOTE_LOG_FILE"/>
     </appender>
     
+    <appender name="AI_LOG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${logPath}/nacos/ai.log</file>
+        
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>${logPath}/nacos/ai.log.%i</fileNamePattern>
+            <maxIndex>${logRetainCount}</maxIndex>
+        </rollingPolicy>
+        
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>${logFileSize}</maxFileSize>
+        </triggeringPolicy>
+        
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</pattern>
+        </encoder>
+    </appender>
+    
+    <appender name="ASYNC-AI" class="ch.qos.logback.classic.AsyncAppender">
+        <discardingThreshold>0</discardingThreshold>
+        <queueSize>1024</queueSize>
+        <neverBlock>true</neverBlock>
+        <appender-ref ref="AI_LOG_FILE"/>
+    </appender>
+    
     <logger name="com.alibaba.nacos.client" level="${nacosConfigLogLevel}"
         additivity="false">
         <appender-ref ref="ASYNC-CONFIG"/>
@@ -124,6 +149,11 @@
     <logger name="com.alibaba.nacos.client.naming" level="${nacosNamingLogLevel}"
         additivity="false">
         <appender-ref ref="ASYNC-NAMING"/>
+    </logger>
+    
+    <logger name="com.alibaba.nacos.client.ai" level="${nacosAILogLevel}"
+        additivity="false">
+        <appender-ref ref="ASYNC-AI"/>
     </logger>
 
 </configuration>
