@@ -31,6 +31,8 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.core.paramcheck.impl.McpServerRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
@@ -65,6 +67,7 @@ public class McpServerEndpointRequestHandler
     }
     
     @Override
+    @ExtractorManager.Extractor(rpcExtractor = McpServerRequestParamExtractor.class)
     public McpServerEndpointResponse handle(McpServerEndpointRequest request, RequestMeta meta) throws NacosException {
         McpRequestUtils.fillNamespaceId(request);
         checkParameters(request);
@@ -72,9 +75,6 @@ public class McpServerEndpointRequestHandler
         return doHandler(request, instance, meta);
     }
     
-    /**
-     * TODO, abstract to parameter check filter {@link com.alibaba.nacos.core.remote.grpc.RemoteParamCheckFilter}.
-     */
     private void checkParameters(McpServerEndpointRequest request) throws NacosApiException {
         if (StringUtils.isBlank(request.getMcpName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,

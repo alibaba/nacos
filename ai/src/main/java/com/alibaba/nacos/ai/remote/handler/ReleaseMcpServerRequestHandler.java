@@ -33,6 +33,8 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.core.paramcheck.impl.McpServerRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import org.slf4j.Logger;
@@ -63,15 +65,13 @@ public class ReleaseMcpServerRequestHandler extends RequestHandler<ReleaseMcpSer
     }
     
     @Override
+    @ExtractorManager.Extractor(rpcExtractor = McpServerRequestParamExtractor.class)
     public ReleaseMcpServerResponse handle(ReleaseMcpServerRequest request, RequestMeta meta) throws NacosException {
         McpRequestUtils.fillNamespaceId(request);
         checkParameters(request);
         return doHandler(request, meta);
     }
     
-    /**
-     * TODO, abstract to parameter check filter {@link com.alibaba.nacos.core.remote.grpc.RemoteParamCheckFilter}.
-     */
     private void checkParameters(ReleaseMcpServerRequest request) throws NacosException {
         McpServerBasicInfo serverSpecification = request.getServerSpecification();
         if (null == serverSpecification) {

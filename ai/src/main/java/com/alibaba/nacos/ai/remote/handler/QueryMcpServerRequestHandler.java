@@ -28,6 +28,8 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.core.paramcheck.impl.McpServerRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import org.springframework.stereotype.Component;
 
@@ -50,15 +52,13 @@ public class QueryMcpServerRequestHandler extends RequestHandler<QueryMcpServerR
     }
     
     @Override
+    @ExtractorManager.Extractor(rpcExtractor = McpServerRequestParamExtractor.class)
     public QueryMcpServerResponse handle(QueryMcpServerRequest request, RequestMeta meta) throws NacosException {
         McpRequestUtils.fillNamespaceId(request);
         checkParameters(request);
         return doHandler(request, meta);
     }
     
-    /**
-     * TODO, abstract to parameter check filter {@link com.alibaba.nacos.core.remote.grpc.RemoteParamCheckFilter}.
-     */
     private void checkParameters(QueryMcpServerRequest request) throws NacosException {
         if (StringUtils.isBlank(request.getMcpName())) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
@@ -67,7 +67,8 @@ public class QueryMcpServerRequestHandler extends RequestHandler<QueryMcpServerR
     }
     
     private QueryMcpServerResponse doHandler(QueryMcpServerRequest request, RequestMeta meta) throws NacosException {
-        McpServerIndexData indexData = mcpServerIndex.getMcpServerByName(request.getNamespaceId(), request.getMcpName());
+        McpServerIndexData indexData = mcpServerIndex.getMcpServerByName(request.getNamespaceId(),
+                request.getMcpName());
         if (null == indexData) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.MCP_SERVER_NOT_FOUND,
                     String.format("MCP server `%s` not found in namespaceId: `%s`", request.getMcpName(),
