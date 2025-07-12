@@ -16,8 +16,10 @@
 
 package com.alibaba.nacos.ai.index;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -29,7 +31,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Memory MCP cache index implementation with LRU and expiration support.
  *
- * @author xinluo
+ * @author misselvexu
  */
 public class MemoryMcpCacheIndex implements McpCacheIndex {
     
@@ -77,9 +79,12 @@ public class MemoryMcpCacheIndex implements McpCacheIndex {
             return null;
         }
         Entry entry = idToEntry.get(id);
-        if (entry == null || entry.isExpired()) {
+        if (entry == null || entry.isExpired(expireTimeSeconds)) {
+            // Clean up invalid mapping to maintain cache consistency
+            // Use remove(key, id) to ensure atomic removal only if the mapping still exists
+            nameKeyToId.remove(key, id);
             missCount.incrementAndGet();
-            LOGGER.debug("Cache miss for mcpId: {}", id);
+            LOGGER.debug("Cache miss for mcpId: {} (cleaned up invalid mapping for key: {})", id, key);
             return null;
         }
         hitCount.incrementAndGet();
@@ -108,9 +113,12 @@ public class MemoryMcpCacheIndex implements McpCacheIndex {
             return null;
         }
         Entry entry = idToEntry.get(mcpId);
-        if (entry == null || entry.isExpired()) {
+        if (entry == null || entry.isExpired(expireTimeSeconds)) {
+            // Clean up invalid mapping to maintain cache consistency
+            // Use a safer approach to avoid ConcurrentModificationException
+            cleanupInvalidMappings(mcpId);
             missCount.incrementAndGet();
-            LOGGER.debug("Cache miss for mcpId: {}", mcpId);
+            LOGGER.debug("Cache miss for mcpId: {} (cleaned up invalid mappings)", mcpId);
             return null;
         }
         hitCount.incrementAndGet();
@@ -166,7 +174,8 @@ public class MemoryMcpCacheIndex implements McpCacheIndex {
         }
         idToEntry.remove(mcpId);
         // Also remove all entries in nameKeyToId that point to this id
-        nameKeyToId.entrySet().removeIf(e -> mcpId.equals(e.getValue()));
+        // Use the same safe cleanup method
+        cleanupInvalidMappings(mcpId);
         LOGGER.debug("Removed cache index: mcpId={}", mcpId);
     }
     
@@ -212,6 +221,24 @@ public class MemoryMcpCacheIndex implements McpCacheIndex {
     }
     
     /**
+     * Safely cleanup invalid mappings for a given mcpId. This method avoids ConcurrentModificationException by using a
+     * safer approach.
+     */
+    private void cleanupInvalidMappings(String mcpId) {
+        // Collect keys to remove first, then remove them
+        List<String> keysToRemove = new ArrayList<>();
+        for (Map.Entry<String, String> entry : nameKeyToId.entrySet()) {
+            if (mcpId.equals(entry.getValue())) {
+                keysToRemove.add(entry.getKey());
+            }
+        }
+        // Remove collected keys
+        for (String key : keysToRemove) {
+            nameKeyToId.remove(key, mcpId);
+        }
+    }
+    
+    /**
      * Cache entry.
      */
     private static class Entry {
@@ -225,9 +252,10 @@ public class MemoryMcpCacheIndex implements McpCacheIndex {
             this.createTimeSeconds = createTimeSeconds;
         }
         
-        boolean isExpired() {
-            // Here we can implement expiration logic based on expireTimeSeconds
-            return false;
+        boolean isExpired(long expireTimeSeconds) {
+            // Check if the entry has expired based on the configured expireTimeSeconds
+            long currentTimeSeconds = System.currentTimeMillis() / 1000;
+            return currentTimeSeconds - createTimeSeconds > expireTimeSeconds;
         }
     }
     

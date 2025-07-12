@@ -18,7 +18,6 @@ package com.alibaba.nacos.ai.config;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import com.alibaba.nacos.ai.index.CachedMcpServerIndex;
 import com.alibaba.nacos.ai.index.McpServerIndex;
 import com.alibaba.nacos.ai.index.PlainMcpServerIndex;

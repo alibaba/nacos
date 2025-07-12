@@ -22,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,7 +31,7 @@ import org.junit.jupiter.api.Test;
 /**
  * MemoryMcpCacheIndex unit tests.
  *
- * @author xinluo
+ * @author misselvexu
  */
 class MemoryMcpCacheIndexTest {
     
@@ -212,5 +214,277 @@ class MemoryMcpCacheIndexTest {
         assertNotNull(serverData);
         assertEquals(mcpId2, serverData.getId());
         assertEquals(namespaceId, serverData.getNamespaceId());
+    }
+    
+    @Test
+    void testCacheConsistencyAfterExpiration() {
+        // Create cache with 1 second expiration time for testing
+        MemoryMcpCacheIndex shortExpireCache = new MemoryMcpCacheIndex(100, 1, 60);
+        
+        String namespaceId = "test-namespace";
+        String mcpName = "test-mcp";
+        String mcpId = "test-id";
+        
+        // Add entry to cache
+        shortExpireCache.updateIndex(namespaceId, mcpName, mcpId);
+        
+        // Verify entry is available
+        assertNotNull(shortExpireCache.getMcpId(namespaceId, mcpName));
+        assertEquals(1, shortExpireCache.getSize());
+        
+        // Wait for expiration
+        try {
+            Thread.sleep(1100);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        
+        // First call should return null and clean up invalid mapping
+        assertNull(shortExpireCache.getMcpId(namespaceId, mcpName));
+        
+        // Second call should also return null (no invalid mapping left)
+        assertNull(shortExpireCache.getMcpId(namespaceId, mcpName));
+        
+        // Cache size should be 0 (both idToEntry and nameKeyToId cleaned up)
+        assertEquals(0, shortExpireCache.getSize());
+    }
+    
+    @Test
+    void testCacheConsistencyAfterEntryRemoval() {
+        MemoryMcpCacheIndex cacheIndex = new MemoryMcpCacheIndex(100, 3600, 300);
+        
+        String namespaceId = "test-namespace";
+        String mcpName = "test-mcp";
+        String mcpId = "test-id";
+        
+        // Add entry to cache
+        cacheIndex.updateIndex(namespaceId, mcpName, mcpId);
+        
+        // Verify entry is available
+        assertNotNull(cacheIndex.getMcpId(namespaceId, mcpName));
+        assertEquals(1, cacheIndex.getSize());
+        
+        // Remove entry from idToEntry (simulating LRU eviction or manual removal)
+        // This simulates the scenario where entry is removed but nameKeyToId mapping remains
+        cacheIndex.removeIndex(mcpId);
+        
+        // First call should return null and clean up invalid mapping
+        assertNull(cacheIndex.getMcpId(namespaceId, mcpName));
+        
+        // Second call should also return null (no invalid mapping left)
+        assertNull(cacheIndex.getMcpId(namespaceId, mcpName));
+        
+        // Cache size should be 0
+        assertEquals(0, cacheIndex.getSize());
+    }
+    
+    @Test
+    void testCacheConsistencyWithMultipleNameMappings() {
+        MemoryMcpCacheIndex cacheIndex = new MemoryMcpCacheIndex(100, 3600, 300);
+        
+        String mcpId = "test-id";
+        
+        // Add multiple name mappings for the same ID
+        cacheIndex.updateIndex("ns1", "mcp1", mcpId);
+        cacheIndex.updateIndex("ns2", "mcp2", mcpId);
+        cacheIndex.updateIndex("ns3", "mcp3", mcpId);
+        
+        // Verify all mappings work
+        assertEquals(mcpId, cacheIndex.getMcpId("ns1", "mcp1"));
+        assertEquals(mcpId, cacheIndex.getMcpId("ns2", "mcp2"));
+        assertEquals(mcpId, cacheIndex.getMcpId("ns3", "mcp3"));
+        
+        // Remove the entry (simulating expiration or removal)
+        cacheIndex.removeIndex(mcpId);
+        
+        // All name mappings should now return null and be cleaned up
+        assertNull(cacheIndex.getMcpId("ns1", "mcp1"));
+        assertNull(cacheIndex.getMcpId("ns2", "mcp2"));
+        assertNull(cacheIndex.getMcpId("ns3", "mcp3"));
+        
+        // Cache should be empty
+        assertEquals(0, cacheIndex.getSize());
+    }
+    
+    @Test
+    void testCacheConsistencyWithGetMcpServerById() {
+        MemoryMcpCacheIndex cacheIndex = new MemoryMcpCacheIndex(100, 3600, 300);
+        
+        String namespaceId = "test-namespace";
+        String mcpName = "test-mcp";
+        String mcpId = "test-id";
+        
+        // Add entry to cache
+        cacheIndex.updateIndex(namespaceId, mcpName, mcpId);
+        
+        // Verify entry is available
+        assertNotNull(cacheIndex.getMcpServerById(mcpId));
+        assertEquals(1, cacheIndex.getSize());
+        
+        // Remove entry from idToEntry
+        cacheIndex.removeIndex(mcpId);
+        
+        // First call should return null and clean up invalid mappings
+        assertNull(cacheIndex.getMcpServerById(mcpId));
+        
+        // Second call should also return null
+        assertNull(cacheIndex.getMcpServerById(mcpId));
+        
+        // Cache size should be 0
+        assertEquals(0, cacheIndex.getSize());
+    }
+    
+    @Test
+    void testConcurrentDeletionSafety() throws InterruptedException {
+        MemoryMcpCacheIndex cacheIndex = new MemoryMcpCacheIndex(100, 3600, 300);
+        
+        // Add multiple entries with the same ID
+        String mcpId = "test-id";
+        cacheIndex.updateIndex("ns1", "mcp1", mcpId);
+        cacheIndex.updateIndex("ns2", "mcp2", mcpId);
+        cacheIndex.updateIndex("ns3", "mcp3", mcpId);
+        
+        // Verify entries exist
+        assertEquals(mcpId, cacheIndex.getMcpId("ns1", "mcp1"));
+        assertEquals(mcpId, cacheIndex.getMcpId("ns2", "mcp2"));
+        assertEquals(mcpId, cacheIndex.getMcpId("ns3", "mcp3"));
+        
+        // Create multiple threads to concurrently remove the same ID
+        int threadCount = 10;
+        Thread[] threads = new Thread[threadCount];
+        AtomicInteger exceptionCount = new AtomicInteger(0);
+        
+        for (int i = 0; i < threadCount; i++) {
+            threads[i] = new Thread(() -> {
+                try {
+                    // Simulate concurrent access
+                    cacheIndex.removeIndex(mcpId);
+                } catch (Exception e) {
+                    exceptionCount.incrementAndGet();
+                    System.err.println("Exception during concurrent access: " + e.getMessage());
+                }
+            });
+        }
+        
+        // Start all threads
+        for (Thread thread : threads) {
+            thread.start();
+        }
+        
+        // Wait for all threads to complete
+        for (Thread thread : threads) {
+            thread.join();
+        }
+        
+        // Verify no exceptions occurred
+        assertEquals(0, exceptionCount.get());
+        
+        // Verify all mappings are cleaned up
+        assertNull(cacheIndex.getMcpId("ns1", "mcp1"));
+        assertNull(cacheIndex.getMcpId("ns2", "mcp2"));
+        assertNull(cacheIndex.getMcpId("ns3", "mcp3"));
+        assertEquals(0, cacheIndex.getSize());
+    }
+    
+    @Test
+    void testConcurrentExpirationCleanup() throws InterruptedException {
+        // Create cache with 1 second expiration for testing
+        MemoryMcpCacheIndex shortExpireCache = new MemoryMcpCacheIndex(100, 1, 60);
+        
+        String mcpId = "test-id";
+        shortExpireCache.updateIndex("ns1", "mcp1", mcpId);
+        shortExpireCache.updateIndex("ns2", "mcp2", mcpId);
+        shortExpireCache.updateIndex("ns3", "mcp3", mcpId);
+        
+        // Wait for expiration
+        Thread.sleep(1100);
+        
+        // Create multiple threads to concurrently access expired entries
+        int threadCount = 10;
+        Thread[] threads = new Thread[threadCount];
+        AtomicInteger successCount = new AtomicInteger(0);
+        AtomicInteger exceptionCount = new AtomicInteger(0);
+        
+        for (int i = 0; i < threadCount; i++) {
+            threads[i] = new Thread(() -> {
+                try {
+                    // This should trigger cleanup of invalid mappings
+                    String result = shortExpireCache.getMcpId("ns1", "mcp1");
+                    if (result == null) {
+                        successCount.incrementAndGet();
+                    }
+                } catch (Exception e) {
+                    exceptionCount.incrementAndGet();
+                    System.err.println("Exception during concurrent access: " + e.getMessage());
+                }
+            });
+        }
+        
+        // Start all threads
+        for (Thread thread : threads) {
+            thread.start();
+        }
+        
+        // Wait for all threads to complete
+        for (Thread thread : threads) {
+            thread.join();
+        }
+        
+        // Verify no exceptions occurred
+        assertEquals(0, exceptionCount.get());
+        assertEquals(threadCount, successCount.get());
+        
+        // Verify cache is cleaned up
+        assertEquals(0, shortExpireCache.getSize());
+    }
+    
+    @Test
+    void testConcurrentGetMcpServerByIdCleanup() throws InterruptedException {
+        MemoryMcpCacheIndex cacheIndex = new MemoryMcpCacheIndex(100, 3600, 300);
+        
+        String mcpId = "test-id";
+        cacheIndex.updateIndex("ns1", "mcp1", mcpId);
+        cacheIndex.updateIndex("ns2", "mcp2", mcpId);
+        
+        // Remove the entry to simulate expiration
+        cacheIndex.removeIndex(mcpId);
+        
+        // Create multiple threads to concurrently access the invalid entry
+        int threadCount = 10;
+        Thread[] threads = new Thread[threadCount];
+        AtomicInteger successCount = new AtomicInteger(0);
+        AtomicInteger exceptionCount = new AtomicInteger(0);
+        
+        for (int i = 0; i < threadCount; i++) {
+            threads[i] = new Thread(() -> {
+                try {
+                    // This should trigger cleanup of invalid mappings
+                    McpServerIndexData result = cacheIndex.getMcpServerById(mcpId);
+                    if (result == null) {
+                        successCount.incrementAndGet();
+                    }
+                } catch (Exception e) {
+                    exceptionCount.incrementAndGet();
+                    System.err.println("Exception during concurrent getMcpServerById: " + e.getMessage());
+                }
+            });
+        }
+        
+        // Start all threads
+        for (Thread thread : threads) {
+            thread.start();
+        }
+        
+        // Wait for all threads to complete
+        for (Thread thread : threads) {
+            thread.join();
+        }
+        
+        // Verify no exceptions occurred
+        assertEquals(0, exceptionCount.get());
+        assertEquals(threadCount, successCount.get());
+        
+        // Verify cache is cleaned up
+        assertEquals(0, cacheIndex.getSize());
     }
 } 

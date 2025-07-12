@@ -50,7 +50,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 /**
  * CachedMcpServerIndex integration tests.
  *
- * @author xinluo
+ * @author misselvexu
  */
 @ExtendWith(MockitoExtension.class)
 class CachedMcpServerIndexTest {
@@ -79,7 +79,7 @@ class CachedMcpServerIndexTest {
         System.setProperty("nacos.mcp.cache.sync.interval", "300");
         
         cachedIndex = new CachedMcpServerIndex(configDetailService, namespaceOperationService, configQueryChainService,
-                cacheIndex, scheduledExecutor);
+                cacheIndex, scheduledExecutor, true, 300);
     }
     
     @Test
@@ -252,7 +252,7 @@ class CachedMcpServerIndexTest {
         
         // 重新创建实例
         final CachedMcpServerIndex disabledIndex = new CachedMcpServerIndex(configDetailService,
-                namespaceOperationService, configQueryChainService, cacheIndex, scheduledExecutor);
+                namespaceOperationService, configQueryChainService, cacheIndex, scheduledExecutor, false, 0);
         
         final String mcpId = "test-id-123";
         final String namespaceId = "test-namespace";

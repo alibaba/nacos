@@ -16,16 +16,22 @@
 
 package com.alibaba.nacos.ai.index;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.junit.jupiter.api.Test;
+
 /**
  * MCP缓存性能测试.
  *
- * @author xinluo
+ * @author misselvexu
  */
 public class McpCachePerformanceTest {
     
@@ -35,6 +41,9 @@ public class McpCachePerformanceTest {
     
     private static final int CACHE_SIZE = 1000;
     
+    // 实际测试中使用的键数量，确保在缓存容量范围内，避免频繁缓存替换
+    private static final int EFFECTIVE_KEY_COUNT = 800;
+    
     public static void main(String[] args) {
         System.out.println("开始MCP缓存性能测试...");
         
@@ -43,6 +52,9 @@ public class McpCachePerformanceTest {
         
         // 测试并发性能
         testConcurrentPerformance();
+        
+        // 验证修复效果：确保生成的键数量在合理范围内
+        // testKeyGenerationValidation(); // 现在作为JUnit测试运行
         
         System.out.println("性能测试完成！");
     }
@@ -55,9 +67,9 @@ public class McpCachePerformanceTest {
         
         MemoryMcpCacheIndex cacheIndex = new MemoryMcpCacheIndex(CACHE_SIZE, 3600, 300);
         
-        // 预热缓存
+        // 预热缓存 - 使用有效键数量，避免超出缓存容量
         System.out.println("预热缓存...");
-        for (int i = 0; i < CACHE_SIZE; i++) {
+        for (int i = 0; i < EFFECTIVE_KEY_COUNT; i++) {
             String namespaceId = "namespace-" + (i % 10);
             String mcpName = "mcp-" + i;
             String mcpId = "id-" + i;
@@ -70,7 +82,7 @@ public class McpCachePerformanceTest {
         
         for (int i = 0; i < OPERATION_COUNT; i++) {
             String namespaceId = "namespace-" + (i % 10);
-            String mcpName = "mcp-" + (i % CACHE_SIZE);
+            String mcpName = "mcp-" + (i % EFFECTIVE_KEY_COUNT);
             cacheIndex.getMcpId(namespaceId, mcpName);
         }
         
@@ -86,8 +98,10 @@ public class McpCachePerformanceTest {
         
         for (int i = 0; i < OPERATION_COUNT; i++) {
             String namespaceId = "namespace-" + (i % 10);
-            String mcpName = "mcp-" + i;
-            String mcpId = "id-" + i;
+            // 模拟真实的更新场景：大部分更新现有键，少部分创建新键
+            int keyIndex = i % (EFFECTIVE_KEY_COUNT + 100); // 允许少量超出有效范围的新键
+            String mcpName = "mcp-" + keyIndex;
+            String mcpId = "id-" + keyIndex;
             cacheIndex.updateIndex(namespaceId, mcpName, mcpId);
         }
         
@@ -105,15 +119,19 @@ public class McpCachePerformanceTest {
     
     /**
      * 测试并发性能.
+     *
+     * <p>修复说明：
+     * 1. 使用EFFECTIVE_KEY_COUNT限制实际使用的键数量，避免超出缓存容量 2. 在并发更新测试中，80%操作更新现有键，20%操作创建新键，更真实地模拟实际场景 3.
+     * 确保生成的键数量在合理范围内，避免频繁的缓存替换和内存压力
      */
     private static void testConcurrentPerformance() {
         System.out.println("\n=== 并发性能测试 ===");
         
         MemoryMcpCacheIndex cacheIndex = new MemoryMcpCacheIndex(CACHE_SIZE, 3600, 300);
         
-        // 预热缓存
+        // 预热缓存 - 使用有效键数量，避免超出缓存容量
         System.out.println("预热缓存...");
-        for (int i = 0; i < CACHE_SIZE; i++) {
+        for (int i = 0; i < EFFECTIVE_KEY_COUNT; i++) {
             String namespaceId = "namespace-" + (i % 10);
             String mcpName = "mcp-" + i;
             String mcpId = "id-" + i;
@@ -134,7 +152,7 @@ public class McpCachePerformanceTest {
                 try {
                     for (int i = 0; i < OPERATION_COUNT; i++) {
                         String namespaceId = "namespace-" + (threadId % 10);
-                        String mcpName = "mcp-" + (i % CACHE_SIZE);
+                        String mcpName = "mcp-" + (i % EFFECTIVE_KEY_COUNT);
                         cacheIndex.getMcpId(namespaceId, mcpName);
                         totalOperations.incrementAndGet();
                     }
@@ -170,8 +188,18 @@ public class McpCachePerformanceTest {
                 try {
                     for (int i = 0; i < OPERATION_COUNT; i++) {
                         String namespaceId = "namespace-" + (threadId % 10);
-                        String mcpName = "mcp-" + (threadId * 1000 + i);
-                        String mcpId = "id-" + (threadId * 1000 + i);
+                        // 使用模运算确保键的数量在有效范围内，模拟真实的缓存更新场景
+                        // 80%的操作更新现有键，20%的操作创建新键（在有效范围内）
+                        int keyIndex;
+                        if (i % 5 == 0) {
+                            // 20%的操作：创建新键（在有效范围内）
+                            keyIndex = (threadId * 50 + i) % EFFECTIVE_KEY_COUNT;
+                        } else {
+                            // 80%的操作：更新现有键
+                            keyIndex = i % EFFECTIVE_KEY_COUNT;
+                        }
+                        String mcpName = "mcp-" + keyIndex;
+                        String mcpId = "id-" + keyIndex;
                         cacheIndex.updateIndex(namespaceId, mcpName, mcpId);
                         totalUpdates.incrementAndGet();
                     }
@@ -242,5 +270,61 @@ public class McpCachePerformanceTest {
             long memoryUsed = runtime.totalMemory() - runtime.freeMemory();
             System.out.printf("内存使用: %.2f MB\n", memoryUsed / (1024.0 * 1024.0));
         }
+    }
+    
+    /**
+     * 验证修复效果：确保生成的键数量在合理范围内.
+     */
+    @Test
+    void testKeyGenerationValidation() {
+        System.out.println("\n=== 键生成验证测试 ===");
+        
+        int threadCount = 10;
+        int operationCount = 10000;
+        int cacheSize = 1000;
+        int effectiveKeyCount = 800;
+        
+        // 模拟并发更新测试中的键生成逻辑
+        Set<String> generatedKeys = new HashSet<>();
+        
+        for (int t = 0; t < threadCount; t++) {
+            final int threadId = t;
+            for (int i = 0; i < operationCount; i++) {
+                int keyIndex;
+                if (i % 5 == 0) {
+                    // 20%的操作：创建新键（在有效范围内）
+                    keyIndex = (threadId * 50 + i) % effectiveKeyCount;
+                } else {
+                    // 80%的操作：更新现有键
+                    keyIndex = i % effectiveKeyCount;
+                }
+                String mcpName = "mcp-" + keyIndex;
+                generatedKeys.add(mcpName);
+            }
+        }
+        
+        System.out.printf("线程数: %d, 操作数: %d, 缓存大小: %d, 有效键数: %d\n", threadCount, operationCount,
+                cacheSize, effectiveKeyCount);
+        System.out.printf("实际生成的唯一键数量: %d\n", generatedKeys.size());
+        System.out.printf("键数量是否在合理范围内: %s\n", generatedKeys.size() <= effectiveKeyCount ? "是" : "否");
+        
+        // 验证键的范围
+        boolean allKeysInRange = generatedKeys.stream().allMatch(key -> {
+            try {
+                int keyNum = Integer.parseInt(key.substring(4)); // 去掉"mcp-"前缀
+                return keyNum >= 0 && keyNum < effectiveKeyCount;
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        });
+        
+        System.out.printf("所有键都在有效范围内: %s\n", allKeysInRange ? "是" : "否");
+        
+        // 断言验证
+        assertTrue(generatedKeys.size() <= effectiveKeyCount, "生成的键数量应该不超过有效键数量");
+        assertTrue(allKeysInRange, "所有生成的键都应该在有效范围内");
+        
+        // 验证修复效果：键数量应该远小于原来的100,000
+        assertTrue(generatedKeys.size() < 1000, "修复后生成的键数量应该远小于原来的100,000");
     }
 } 

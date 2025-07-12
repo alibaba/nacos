@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.PreDestroy;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
@@ -41,7 +42,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Enhanced MCP cache index implementation combining memory cache and database queries.
  *
- * @author xinluo
+ * @author misselvexu
  */
 public class CachedMcpServerIndex implements McpServerIndex {
     
@@ -68,14 +69,15 @@ public class CachedMcpServerIndex implements McpServerIndex {
      */
     public CachedMcpServerIndex(ConfigDetailService configDetailService,
             NamespaceOperationService namespaceOperationService, ConfigQueryChainService configQueryChainService,
-            McpCacheIndex cacheIndex, ScheduledExecutorService scheduledExecutor) {
+            McpCacheIndex cacheIndex, ScheduledExecutorService scheduledExecutor, boolean cacheEnabled,
+            long syncInterval) {
         this.configDetailService = configDetailService;
         this.namespaceOperationService = namespaceOperationService;
         this.configQueryChainService = configQueryChainService;
         this.cacheIndex = cacheIndex;
         this.scheduledExecutor = scheduledExecutor;
-        this.cacheEnabled = Boolean.parseBoolean(System.getProperty("nacos.mcp.cache.enabled", "true"));
-        this.syncInterval = Long.parseLong(System.getProperty("nacos.mcp.cache.sync.interval", "300"));
+        this.cacheEnabled = cacheEnabled;
+        this.syncInterval = syncInterval;
         if (cacheEnabled) {
             startSyncTask();
         }
@@ -280,6 +282,21 @@ public class CachedMcpServerIndex implements McpServerIndex {
     }
     
     /**
+     * Shutdown the cache sync task and cleanup resources.
+     */
+    @PreDestroy
+    public void destroy() {
+        try {
+            if (syncTask != null) {
+                syncTask.cancel(true);
+            }
+            scheduledExecutor.shutdown();
+        } catch (Exception e) {
+            LOGGER.warn("shutting down sync task schedule executor failed", e);
+        }
+    }
+    
+    /**
      * Sync cache from database.
      */
     private void syncCacheFromDatabase() {
@@ -306,7 +323,7 @@ public class CachedMcpServerIndex implements McpServerIndex {
      */
     public McpCacheIndex.CacheStats getCacheStats() {
         McpCacheIndex.CacheStats stats = cacheIndex.getStats();
-        LOGGER.debug("Cache stats: hitCount={}, missCount={}, evictionCount={}, size={}, hitRate={:.2f}%",
+        LOGGER.debug("Cache stats: hitCount={}, missCount={}, evictionCount={}, size={}, hitRate=%.2f%%",
                 stats.getHitCount(), stats.getMissCount(), stats.getEvictionCount(), stats.getSize(),
                 stats.getHitRate() * 100);
         return stats;

@@ -39,7 +39,7 @@ import org.springframework.context.annotation.Primary;
 /**
  * MCP server index configuration class.
  *
- * @author xinluo
+ * @author misselvexu
  */
 @Configuration
 public class McpServerIndexConfiguration {
@@ -98,7 +98,7 @@ public class McpServerIndexConfiguration {
             McpCacheIndex mcpCacheIndex, ScheduledExecutorService mcpCacheScheduledExecutor) {
         LOGGER.info("Creating CachedMcpServerIndex bean with cache enabled");
         return new CachedMcpServerIndex(configDetailService, namespaceOperationService, configQueryChainService,
-                mcpCacheIndex, mcpCacheScheduledExecutor);
+                mcpCacheIndex, mcpCacheScheduledExecutor, cacheEnabled, syncIntervalSeconds);
     }
     
     /**

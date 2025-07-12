@@ -21,7 +21,7 @@ import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 /**
  * MCP cache index interface providing fast mapping between MCP Name and MCP ID.
  *
- * @author xinluo
+ * @author misselvexu
  */
 public interface McpCacheIndex {
     
