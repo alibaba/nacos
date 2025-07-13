@@ -55,6 +55,8 @@ public class Constants {
 
     public static final String NAMESPACE_ID = "namespaceId";
 
+    public static final String TARGET_NAMESPACE_ID = "targetNamespaceId";
+
     public static final String LAST_MODIFIED = "Last-Modified";
     
     public static final String ACCEPT_ENCODING = "Accept-Encoding";
