@@ -31,13 +31,17 @@ import java.util.Properties;
 public class ConfigHttpResourceParser extends AbstractHttpResourceParser {
     
     @Override
-    protected String getNamespaceId(HttpServletRequest request) {
-        String namespaceId = request.getParameter(Constants.NAMESPACE_ID);
-        if (StringUtils.isBlank(namespaceId)) {
-            namespaceId = request.getParameter(Constants.TENANT);
-        }
-        return NamespaceUtil.processNamespaceParameter(namespaceId);
-    }
+    protected String getNamespaceId(HttpServletRequest request) {
+        // For clone operations, prioritize targetNamespaceId
+        String namespaceId = request.getParameter("targetNamespaceId");
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = request.getParameter(Constants.NAMESPACE_ID);
+        }
+        if (StringUtils.isBlank(namespaceId)) {
+            namespaceId = request.getParameter(Constants.TENANT);
+        }
+        return NamespaceUtil.processNamespaceParameter(namespaceId);
+    }
     
     @Override
     protected String getGroup(HttpServletRequest request) {
