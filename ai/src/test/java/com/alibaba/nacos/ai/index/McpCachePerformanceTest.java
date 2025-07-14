@@ -26,6 +26,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.alibaba.nacos.ai.config.McpCacheIndexProperties;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -43,6 +44,18 @@ public class McpCachePerformanceTest {
     
     // 实际测试中使用的键数量，确保在缓存容量范围内，避免频繁缓存替换
     private static final int EFFECTIVE_KEY_COUNT = 800;
+    
+    /**
+     * Create test configuration properties.
+     */
+    private static McpCacheIndexProperties createTestProperties(int maxSize, long expireTimeSeconds,
+            long cleanupIntervalSeconds) {
+        McpCacheIndexProperties properties = new McpCacheIndexProperties();
+        properties.setMaxSize(maxSize);
+        properties.setExpireTimeSeconds(expireTimeSeconds);
+        properties.setCleanupIntervalSeconds(cleanupIntervalSeconds);
+        return properties;
+    }
     
     public static void main(String[] args) {
         System.out.println("开始MCP缓存性能测试...");
@@ -65,7 +78,7 @@ public class McpCachePerformanceTest {
     private static void testMemoryCachePerformance() {
         System.out.println("\n=== 内存缓存性能测试 ===");
         
-        MemoryMcpCacheIndex cacheIndex = new MemoryMcpCacheIndex(CACHE_SIZE, 3600, 300);
+        MemoryMcpCacheIndex cacheIndex = new MemoryMcpCacheIndex(createTestProperties(CACHE_SIZE, 3600, 300));
         
         // 预热缓存 - 使用有效键数量，避免超出缓存容量
         System.out.println("预热缓存...");
@@ -127,7 +140,7 @@ public class McpCachePerformanceTest {
     private static void testConcurrentPerformance() {
         System.out.println("\n=== 并发性能测试 ===");
         
-        MemoryMcpCacheIndex cacheIndex = new MemoryMcpCacheIndex(CACHE_SIZE, 3600, 300);
+        MemoryMcpCacheIndex cacheIndex = new MemoryMcpCacheIndex(createTestProperties(CACHE_SIZE, 3600, 300));
         
         // 预热缓存 - 使用有效键数量，避免超出缓存容量
         System.out.println("预热缓存...");
@@ -241,7 +254,7 @@ public class McpCachePerformanceTest {
         for (int size : cacheSizes) {
             System.out.printf("\n测试缓存大小: %d\n", size);
             
-            MemoryMcpCacheIndex cacheIndex = new MemoryMcpCacheIndex(size, 3600, 300);
+            MemoryMcpCacheIndex cacheIndex = new MemoryMcpCacheIndex(createTestProperties(size, 3600, 300));
             
             // 预热缓存
             for (int i = 0; i < size; i++) {

@@ -30,8 +30,8 @@ import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -42,24 +42,16 @@ import org.springframework.context.annotation.Primary;
  * @author misselvexu
  */
 @Configuration
+@EnableConfigurationProperties(McpCacheIndexProperties.class)
 public class McpServerIndexConfiguration {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(McpServerIndexConfiguration.class);
     
-    @Value("${nacos.mcp.cache.enabled:true}")
-    private boolean cacheEnabled;
+    private final McpCacheIndexProperties cacheProperties;
     
-    @Value("${nacos.mcp.cache.max-size:10000}")
-    private int maxSize;
-    
-    @Value("${nacos.mcp.cache.expire-time-seconds:3600}")
-    private long expireTimeSeconds;
-    
-    @Value("${nacos.mcp.cache.cleanup-interval-seconds:300}")
-    private long cleanupIntervalSeconds;
-    
-    @Value("${nacos.mcp.cache.sync-interval-seconds:300}")
-    private long syncIntervalSeconds;
+    public McpServerIndexConfiguration(McpCacheIndexProperties cacheProperties) {
+        this.cacheProperties = cacheProperties;
+    }
     
     /**
      * Create memory cache index Bean.
@@ -67,9 +59,10 @@ public class McpServerIndexConfiguration {
     @Bean
     @ConditionalOnProperty(name = "nacos.mcp.cache.enabled", havingValue = "true", matchIfMissing = true)
     public McpCacheIndex mcpCacheIndex() {
-        LOGGER.info("Creating McpCacheIndex bean with maxSize={}, expireTime={}s, cleanupInterval={}s", maxSize,
-                expireTimeSeconds, cleanupIntervalSeconds);
-        return new MemoryMcpCacheIndex(maxSize, expireTimeSeconds, cleanupIntervalSeconds);
+        LOGGER.info("Creating McpCacheIndex bean with maxSize={}, expireTime={}s, cleanupInterval={}s",
+                cacheProperties.getMaxSize(), cacheProperties.getExpireTimeSeconds(),
+                cacheProperties.getCleanupIntervalSeconds());
+        return new MemoryMcpCacheIndex(cacheProperties);
     }
     
     /**
@@ -78,7 +71,8 @@ public class McpServerIndexConfiguration {
     @Bean
     @ConditionalOnProperty(name = "nacos.mcp.cache.enabled", havingValue = "true", matchIfMissing = true)
     public ScheduledExecutorService mcpCacheScheduledExecutor() {
-        LOGGER.info("Creating ScheduledExecutorService for MCP cache with syncInterval={}s", syncIntervalSeconds);
+        LOGGER.info("Creating ScheduledExecutorService for MCP cache with syncInterval={}s",
+                cacheProperties.getSyncIntervalSeconds());
         // Manually create thread pool, following Alibaba coding standards
         return new ScheduledThreadPoolExecutor(1, r -> {
             Thread t = new Thread(r, "mcp-cache-sync");
@@ -98,7 +92,8 @@ public class McpServerIndexConfiguration {
             McpCacheIndex mcpCacheIndex, ScheduledExecutorService mcpCacheScheduledExecutor) {
         LOGGER.info("Creating CachedMcpServerIndex bean with cache enabled");
         return new CachedMcpServerIndex(configDetailService, namespaceOperationService, configQueryChainService,
-                mcpCacheIndex, mcpCacheScheduledExecutor, cacheEnabled, syncIntervalSeconds);
+                mcpCacheIndex, mcpCacheScheduledExecutor, cacheProperties.isEnabled(),
+                cacheProperties.getSyncIntervalSeconds());
     }
     
     /**
@@ -111,28 +106,5 @@ public class McpServerIndexConfiguration {
             NamespaceOperationService namespaceOperationService, ConfigQueryChainService configQueryChainService) {
         LOGGER.info("Creating PlainMcpServerIndex bean as cache is disabled");
         return new PlainMcpServerIndex(namespaceOperationService, configDetailService, configQueryChainService);
-    }
-    
-    /**
-     * Get cache configuration information.
-     */
-    public boolean isCacheEnabled() {
-        return cacheEnabled;
-    }
-    
-    public int getMaxSize() {
-        return maxSize;
-    }
-    
-    public long getExpireTimeSeconds() {
-        return expireTimeSeconds;
-    }
-    
-    public long getCleanupIntervalSeconds() {
-        return cleanupIntervalSeconds;
-    }
-    
-    public long getSyncIntervalSeconds() {
-        return syncIntervalSeconds;
     }
 } 

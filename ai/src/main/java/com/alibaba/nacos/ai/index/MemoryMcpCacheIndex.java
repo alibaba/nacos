@@ -16,85 +16,121 @@
 
 package com.alibaba.nacos.ai.index;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import com.alibaba.nacos.ai.config.McpCacheIndexProperties;
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 /**
- * Memory MCP cache index implementation with LRU and expiration support.
+ * Memory-based MCP cache index implementation with optimized locking.
  *
  * @author misselvexu
  */
 public class MemoryMcpCacheIndex implements McpCacheIndex {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(MemoryMcpCacheIndex.class);
+    private static final int DEFAULT_SHUTDOWN_TIMEOUT_SECONDS = 5;
     
-    private final int maxSize;
+    private final McpCacheIndexProperties properties;
     
-    private final long expireTimeSeconds;
+    private final ConcurrentHashMap<String, CacheNode> idToEntry;
     
-    private final long cleanupIntervalSeconds;
+    private final ConcurrentHashMap<String, String> nameKeyToId;
     
-    private final Map<String, Entry> idToEntry;
+    private final CacheNode head;
     
-    private final Map<String, String> nameKeyToId;
+    private final CacheNode tail;
     
-    private final AtomicLong hitCount = new AtomicLong();
+    private final ReentrantReadWriteLock lock;
     
-    private final AtomicLong missCount = new AtomicLong();
+    private final ReentrantReadWriteLock.ReadLock readLock;
     
-    private final AtomicLong evictionCount = new AtomicLong();
+    private final ReentrantReadWriteLock.WriteLock writeLock;
     
-    public MemoryMcpCacheIndex(int maxSize, long expireTimeSeconds, long cleanupIntervalSeconds) {
-        this.maxSize = maxSize;
-        this.expireTimeSeconds = expireTimeSeconds;
-        this.cleanupIntervalSeconds = cleanupIntervalSeconds;
-        this.idToEntry = Collections.synchronizedMap(new LruMap<>(maxSize));
+    private final AtomicLong hitCount;
+    
+    private final AtomicLong missCount;
+    
+    private final AtomicLong evictionCount;
+    
+    private final ScheduledExecutorService cleanupScheduler;
+    
+    private volatile boolean shutdown = false;
+    
+    public MemoryMcpCacheIndex(McpCacheIndexProperties properties) {
+        this.properties = properties;
+        
+        // Initialize cache storage
+        this.idToEntry = new ConcurrentHashMap<>(properties.getMaxSize());
         this.nameKeyToId = new ConcurrentHashMap<>();
-        LOGGER.info("MemoryMcpCacheIndex initialized with maxSize={}, expireTime={}s, cleanupInterval={}s", maxSize,
-                expireTimeSeconds, cleanupIntervalSeconds);
+        
+        // Initialize LRU linked list
+        this.head = new CacheNode("", null, 0);
+        this.tail = new CacheNode("", null, 0);
+        this.head.next = this.tail;
+        this.tail.prev = this.head;
+        
+        // Initialize lock
+        this.lock = new ReentrantReadWriteLock();
+        this.readLock = lock.readLock();
+        this.writeLock = lock.writeLock();
+        
+        // Initialize statistics
+        this.hitCount = new AtomicLong(0);
+        this.missCount = new AtomicLong(0);
+        this.evictionCount = new AtomicLong(0);
+        
+        // Start cleanup scheduler
+        this.cleanupScheduler = new ScheduledThreadPoolExecutor(1, r -> {
+            Thread t = new Thread(r, "mcp-cache-cleanup");
+            t.setDaemon(true);
+            return t;
+        }, new ThreadPoolExecutor.CallerRunsPolicy());
+        
+        // Schedule periodic cleanup
+        this.cleanupScheduler.scheduleWithFixedDelay(this::cleanupExpiredEntries,
+                properties.getCleanupIntervalSeconds(), properties.getCleanupIntervalSeconds(), TimeUnit.SECONDS);
     }
     
-    /**
-     * Get MCP ID.
-     */
     @Override
     public String getMcpId(String namespaceId, String mcpName) {
-        if (namespaceId == null || mcpName == null || namespaceId.isEmpty() || mcpName.isEmpty()) {
+        if (StringUtils.isBlank(namespaceId) || StringUtils.isBlank(mcpName)) {
             return null;
         }
+        
         String key = buildNameKey(namespaceId, mcpName);
         String id = nameKeyToId.get(key);
         if (id == null) {
             missCount.incrementAndGet();
-            LOGGER.debug("Cache miss for name key: {}", key);
             return null;
         }
-        Entry entry = idToEntry.get(id);
-        if (entry == null || entry.isExpired(expireTimeSeconds)) {
-            // Clean up invalid mapping to maintain cache consistency
-            // Use remove(key, id) to ensure atomic removal only if the mapping still exists
+        
+        CacheNode node = idToEntry.get(id);
+        if (node == null || node.isExpired(properties.getExpireTimeSeconds())) {
+            // Clean up invalid mapping
             nameKeyToId.remove(key, id);
+            if (node != null) {
+                removeFromLru(node);
+                idToEntry.remove(id, node);
+            }
             missCount.incrementAndGet();
-            LOGGER.debug("Cache miss for mcpId: {} (cleaned up invalid mapping for key: {})", id, key);
             return null;
         }
+        
+        // Update LRU position
+        moveToHead(node);
         hitCount.incrementAndGet();
-        LOGGER.debug("Cache hit for name key: {}", key);
         return id;
     }
     
-    /**
-     * Get MCP server information (by name).
-     */
     @Override
     public McpServerIndexData getMcpServerByName(String namespaceId, String mcpName) {
         String id = getMcpId(namespaceId, mcpName);
@@ -104,176 +140,234 @@ public class MemoryMcpCacheIndex implements McpCacheIndex {
         return getMcpServerById(id);
     }
     
-    /**
-     * Get MCP server information (by ID).
-     */
     @Override
     public McpServerIndexData getMcpServerById(String mcpId) {
-        if (mcpId == null || mcpId.isEmpty()) {
+        if (StringUtils.isBlank(mcpId)) {
             return null;
         }
-        Entry entry = idToEntry.get(mcpId);
-        if (entry == null || entry.isExpired(expireTimeSeconds)) {
-            // Clean up invalid mapping to maintain cache consistency
-            // Use a safer approach to avoid ConcurrentModificationException
-            cleanupInvalidMappings(mcpId);
+        
+        CacheNode node = idToEntry.get(mcpId);
+        if (node == null || node.isExpired(properties.getExpireTimeSeconds())) {
+            if (node != null) {
+                removeFromLru(node);
+                idToEntry.remove(mcpId, node);
+                cleanupInvalidMappings(mcpId);
+            }
             missCount.incrementAndGet();
-            LOGGER.debug("Cache miss for mcpId: {} (cleaned up invalid mappings)", mcpId);
             return null;
         }
+        
+        // Update LRU position
+        moveToHead(node);
         hitCount.incrementAndGet();
-        LOGGER.debug("Cache hit for mcpId: {}", mcpId);
-        return entry.data;
+        return node.data;
     }
     
-    /**
-     * Update index.
-     */
     @Override
     public void updateIndex(String namespaceId, String mcpName, String mcpId) {
-        if (namespaceId == null || mcpName == null || mcpId == null || namespaceId.isEmpty() || mcpName.isEmpty()
-                || mcpId.isEmpty()) {
-            LOGGER.warn("Invalid parameters for updateIndex: namespaceId={}, mcpName={}, mcpId={}", namespaceId,
-                    mcpName, mcpId);
+        if (StringUtils.isBlank(namespaceId) || StringUtils.isBlank(mcpName) || StringUtils.isBlank(mcpId)) {
             return;
         }
         
-        McpServerIndexData data = new McpServerIndexData();
-        data.setId(mcpId);
-        data.setNamespaceId(namespaceId);
-        Entry entry = new Entry(data, System.currentTimeMillis() / 1000);
-        idToEntry.put(mcpId, entry);
-        String key = buildNameKey(namespaceId, mcpName);
-        nameKeyToId.put(key, mcpId);
-        LOGGER.debug("Updated cache index: nameKey={}, mcpId={}", key, mcpId);
+        McpServerIndexData data = McpServerIndexData.newIndexData(mcpId, namespaceId);
+        CacheNode newNode = new CacheNode(mcpId, data, System.currentTimeMillis() / 1000);
+        
+        writeLock.lock();
+        try {
+            CacheNode oldNode = idToEntry.put(mcpId, newNode);
+            if (oldNode != null) {
+                // Remove old node from LRU list
+                removeFromLru(oldNode);
+            }
+            
+            // Add to head of LRU list
+            addToHead(newNode);
+            
+            // Check if eviction is needed and evict until size is correct
+            while (idToEntry.size() > properties.getMaxSize()) {
+                evictLeastRecentlyUsed();
+            }
+            
+            // Update name mapping
+            String key = buildNameKey(namespaceId, mcpName);
+            nameKeyToId.put(key, mcpId);
+        } finally {
+            writeLock.unlock();
+        }
     }
     
-    /**
-     * Remove index by name.
-     */
     @Override
     public void removeIndex(String namespaceId, String mcpName) {
-        if (namespaceId == null || mcpName == null || namespaceId.isEmpty() || mcpName.isEmpty()) {
+        if (StringUtils.isBlank(namespaceId) || StringUtils.isBlank(mcpName)) {
             return;
         }
+        
         String key = buildNameKey(namespaceId, mcpName);
         String id = nameKeyToId.remove(key);
         if (id != null) {
-            idToEntry.remove(id);
-            LOGGER.debug("Removed cache index: nameKey={}, mcpId={}", key, id);
+            CacheNode node = idToEntry.remove(id);
+            if (node != null) {
+                removeFromLru(node);
+            }
         }
     }
     
-    /**
-     * Remove index by ID.
-     */
     @Override
     public void removeIndex(String mcpId) {
-        if (mcpId == null || mcpId.isEmpty()) {
+        if (StringUtils.isBlank(mcpId)) {
             return;
         }
-        idToEntry.remove(mcpId);
-        // Also remove all entries in nameKeyToId that point to this id
-        // Use the same safe cleanup method
+        
+        CacheNode node = idToEntry.remove(mcpId);
+        if (node != null) {
+            removeFromLru(node);
+        }
         cleanupInvalidMappings(mcpId);
-        LOGGER.debug("Removed cache index: mcpId={}", mcpId);
     }
     
-    /**
-     * Clear cache.
-     */
     @Override
     public void clear() {
-        int size = idToEntry.size();
-        LOGGER.info("Cache cleared, removed {} entries", size);
-        idToEntry.clear();
-        nameKeyToId.clear();
+        writeLock.lock();
+        try {
+            idToEntry.clear();
+            nameKeyToId.clear();
+            head.next = tail;
+            tail.prev = head;
+        } finally {
+            writeLock.unlock();
+        }
+        
         hitCount.set(0);
         missCount.set(0);
         evictionCount.set(0);
     }
     
-    /**
-     * Get cache size.
-     */
     @Override
     public int getSize() {
         return idToEntry.size();
     }
     
-    /**
-     * Get cache statistics.
-     */
     @Override
     public CacheStats getStats() {
-        CacheStats stats = new CacheStats(hitCount.get(), missCount.get(), evictionCount.get(), getSize());
-        LOGGER.debug("Cache stats: hitCount={}, missCount={}, evictionCount={}, size={}, hitRate={:.2f}%",
-                stats.getHitCount(), stats.getMissCount(), stats.getEvictionCount(), stats.getSize(),
-                stats.getHitRate() * 100);
-        return stats;
+        return new CacheStats(hitCount.get(), missCount.get(), evictionCount.get(), getSize());
     }
     
     /**
-     * Build name key.
+     * Shuts down the cache and cleans up resources.
      */
+    public void shutdown() {
+        if (!shutdown) {
+            shutdown = true;
+            cleanupScheduler.shutdown();
+            try {
+                if (!cleanupScheduler.awaitTermination(DEFAULT_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                    cleanupScheduler.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                cleanupScheduler.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+            clear();
+        }
+    }
+    
     private String buildNameKey(String namespaceId, String mcpName) {
         return namespaceId + "::" + mcpName;
     }
     
-    /**
-     * Safely cleanup invalid mappings for a given mcpId. This method avoids ConcurrentModificationException by using a
-     * safer approach.
-     */
     private void cleanupInvalidMappings(String mcpId) {
-        // Collect keys to remove first, then remove them
-        List<String> keysToRemove = new ArrayList<>();
-        for (Map.Entry<String, String> entry : nameKeyToId.entrySet()) {
-            if (mcpId.equals(entry.getValue())) {
-                keysToRemove.add(entry.getKey());
-            }
+        nameKeyToId.entrySet().removeIf(entry -> mcpId.equals(entry.getValue()));
+    }
+    
+    private void cleanupExpiredEntries() {
+        if (shutdown) {
+            return;
         }
-        // Remove collected keys
-        for (String key : keysToRemove) {
-            nameKeyToId.remove(key, mcpId);
+        
+        try {
+            Iterator<Map.Entry<String, CacheNode>> iterator = idToEntry.entrySet().iterator();
+            
+            while (iterator.hasNext()) {
+                Map.Entry<String, CacheNode> entry = iterator.next();
+                CacheNode node = entry.getValue();
+                
+                if (node.isExpired(properties.getExpireTimeSeconds())) {
+                    iterator.remove();
+                    removeFromLru(node);
+                    cleanupInvalidMappings(entry.getKey());
+                    evictionCount.incrementAndGet();
+                }
+            }
+        } catch (Exception e) {
+            // Log error but don't throw
         }
     }
     
-    /**
-     * Cache entry.
-     */
-    private static class Entry {
+    private void evictLeastRecentlyUsed() {
+        CacheNode last = tail.prev;
+        if (last != head) {
+            CacheNode removed = idToEntry.remove(last.key);
+            if (removed != null) {
+                removeFromLru(last);
+                cleanupInvalidMappings(last.key);
+                evictionCount.incrementAndGet();
+            }
+        }
+    }
+    
+    private void addToHead(CacheNode node) {
+        node.prev = head;
+        node.next = head.next;
+        head.next.prev = node;
+        head.next = node;
+    }
+    
+    private void removeFromLru(CacheNode node) {
+        if (node.prev != null && node.next != null) {
+            node.prev.next = node.next;
+            node.next.prev = node.prev;
+        }
+    }
+    
+    private void moveToHead(CacheNode node) {
+        // Remove from current position
+        if (node.prev != null && node.next != null) {
+            node.prev.next = node.next;
+            node.next.prev = node.prev;
+        }
+        // Add to head
+        node.prev = head;
+        node.next = head.next;
+        head.next.prev = node;
+        head.next = node;
+    }
+    
+    // Inner classes
+    
+    private static class CacheNode {
         
-        private final McpServerIndexData data;
+        final String key;
         
-        private final long createTimeSeconds;
+        final McpServerIndexData data;
         
-        Entry(McpServerIndexData data, long createTimeSeconds) {
+        final long createTimeSeconds;
+        
+        volatile CacheNode prev;
+        
+        volatile CacheNode next;
+        
+        CacheNode(String key, McpServerIndexData data, long createTimeSeconds) {
+            this.key = key;
             this.data = data;
             this.createTimeSeconds = createTimeSeconds;
         }
         
         boolean isExpired(long expireTimeSeconds) {
-            // Check if the entry has expired based on the configured expireTimeSeconds
+            if (expireTimeSeconds <= 0) {
+                return false;
+            }
             long currentTimeSeconds = System.currentTimeMillis() / 1000;
-            return currentTimeSeconds - createTimeSeconds > expireTimeSeconds;
-        }
-    }
-    
-    /**
-     * LRU Map implementation.
-     */
-    private static class LruMap<K, V> extends LinkedHashMap<K, V> {
-        
-        private final int maxSize;
-        
-        LruMap(int maxSize) {
-            super(16, 0.75f, true);
-            this.maxSize = maxSize;
-        }
-        
-        @Override
-        protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
-            return size() > maxSize;
+            return (currentTimeSeconds - createTimeSeconds) >= expireTimeSeconds;
         }
     }
 } 
