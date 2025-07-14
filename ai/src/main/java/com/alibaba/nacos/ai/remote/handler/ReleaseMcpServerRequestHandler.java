@@ -122,6 +122,9 @@ public class ReleaseMcpServerRequestHandler extends RequestHandler<ReleaseMcpSer
                 response.setMcpId(mcpServerIndexData.getId());
                 LOGGER.info("Mcp Server {} new version {} released, Mcp Server id: {}", serverSpecification.getName(),
                         serverSpecification.getVersionDetail().getVersion(), mcpServerIndexData.getId());
+            } else {
+                LOGGER.error("Mcp Server {} released failed.", serverSpecification.getName(), e);
+                throw e;
             }
         }
         return response;

@@ -113,7 +113,7 @@ public class McpServerEndpointRequestHandler
                                 request.getType()));
         }
         McpServerEndpointResponse response = new McpServerEndpointResponse();
-        response.setType(response.getType());
+        response.setType(request.getType());
         return response;
     }
     
