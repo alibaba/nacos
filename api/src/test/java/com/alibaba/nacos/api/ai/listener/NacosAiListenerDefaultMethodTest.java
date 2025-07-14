@@ -14,35 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ai.model.mcp;
+package com.alibaba.nacos.api.ai.listener;
 
-/**
- * AI service credential.
- * 
- * @author xiweng.yy
- */
-public class AiCredential {
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+class NacosAiListenerDefaultMethodTest {
     
-    /**
-     * Credential type, such as OAuth2.0, Jwt token or others, default is `custom`.
-     */
-    private String type = "custom";
+    NacosAiListener aiListener;
     
-    private String ref;
-    
-    public String getType() {
-        return type;
+    @BeforeEach
+    void setUp() {
+        aiListener = event -> {
+        };
     }
     
-    public void setType(String type) {
-        this.type = type;
-    }
-    
-    public String getRef() {
-        return ref;
-    }
-    
-    public void setRef(String ref) {
-        this.ref = ref;
+    @Test
+    void testGetExecutor() {
+        assertNull(aiListener.getExecutor());
     }
 }

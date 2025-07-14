@@ -31,7 +31,7 @@ public class NacosMcpServerEvent implements NacosAiEvent {
     
     private final String mcpName;
     
-    private McpServerDetailInfo mcpServerDetailInfo;
+    private final McpServerDetailInfo mcpServerDetailInfo;
     
     public NacosMcpServerEvent(McpServerDetailInfo mcpServerDetailInfo) {
         this.mcpServerDetailInfo = mcpServerDetailInfo;
@@ -54,9 +54,5 @@ public class NacosMcpServerEvent implements NacosAiEvent {
     
     public McpServerDetailInfo getMcpServerDetailInfo() {
         return mcpServerDetailInfo;
-    }
-    
-    public void setMcpServerDetailInfo(McpServerDetailInfo mcpServerDetailInfo) {
-        this.mcpServerDetailInfo = mcpServerDetailInfo;
     }
 }
