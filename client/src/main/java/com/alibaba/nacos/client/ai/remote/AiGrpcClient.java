@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.client.ai.remote;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -30,6 +32,7 @@ import com.alibaba.nacos.api.ai.remote.response.QueryMcpServerResponse;
 import com.alibaba.nacos.api.ai.remote.response.ReleaseMcpServerResponse;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
@@ -123,6 +126,10 @@ public class AiGrpcClient implements Closeable {
      * @throws NacosException if request parameter is invalid or handle error
      */
     public McpServerDetailInfo queryMcpServer(String mcpName, String version) throws NacosException {
+        if (!isAbilitySupportedByServer(AbilityKey.SERVER_MCP_REGISTRY)) {
+            throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
+                    "Request Nacos server version is too low, not support mcp registry feature.");
+        }
         QueryMcpServerRequest request = new QueryMcpServerRequest();
         request.setNamespaceId(namespaceId);
         request.setMcpName(mcpName);
@@ -143,6 +150,10 @@ public class AiGrpcClient implements Closeable {
             throws NacosException {
         LOGGER.info("[{}] RELEASE Mcp server {}, version {}", uuid, serverSpecification.getName(),
                 serverSpecification.getVersionDetail().getVersion());
+        if (!isAbilitySupportedByServer(AbilityKey.SERVER_MCP_REGISTRY)) {
+            throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
+                    "Request Nacos server version is too low, not support mcp registry feature.");
+        }
         ReleaseMcpServerRequest request = new ReleaseMcpServerRequest();
         request.setNamespaceId(namespaceId);
         request.setMcpName(serverSpecification.getName());
@@ -165,6 +176,10 @@ public class AiGrpcClient implements Closeable {
             throws NacosException {
         LOGGER.info("[{}] REGISTER Mcp server endpoint {}:{}, version {} into mcp server {}", uuid, address, port,
                 version, mcpName);
+        if (!isAbilitySupportedByServer(AbilityKey.SERVER_MCP_REGISTRY)) {
+            throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
+                    "Request Nacos server version is too low, not support mcp registry feature.");
+        }
         redoService.cachedMcpServerEndpointForRedo(mcpName, address, port, version);
         doRegisterMcpServerEndpoint(mcpName, address, port, version);
     }
@@ -201,6 +216,10 @@ public class AiGrpcClient implements Closeable {
      */
     public void deregisterMcpServerEndpoint(String mcpName, String address, int port) throws NacosException {
         LOGGER.info("[{}] DE-REGISTER Mcp server endpoint {}:{} from mcp server {}", uuid, address, port, mcpName);
+        if (!isAbilitySupportedByServer(AbilityKey.SERVER_MCP_REGISTRY)) {
+            throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
+                    "Request Nacos server version is too low, not support mcp registry feature.");
+        }
         redoService.mcpServerEndpointDeregister(mcpName);
         doDeregisterMcpServerEndpoint(mcpName, address, port);
     }
@@ -232,6 +251,10 @@ public class AiGrpcClient implements Closeable {
      * @throws NacosException if request parameter is invalid or handle error
      */
     public McpServerDetailInfo subscribeMcpServer(String mcpName) throws NacosException {
+        if (!isAbilitySupportedByServer(AbilityKey.SERVER_MCP_REGISTRY)) {
+            throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
+                    "Request Nacos server version is too low, not support mcp registry feature.");
+        }
         McpServerDetailInfo cachedServer = mcpServerCacheHolder.getMcpServer(mcpName, null);
         if (null == cachedServer) {
             cachedServer = queryMcpServer(mcpName, null);
@@ -248,11 +271,25 @@ public class AiGrpcClient implements Closeable {
      * @throws NacosException if request parameter is invalid or handle error
      */
     public void unsubscribeMcpServer(String mcpName) throws NacosException {
+        if (!isAbilitySupportedByServer(AbilityKey.SERVER_MCP_REGISTRY)) {
+            throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
+                    "Request Nacos server version is too low, not support mcp registry feature.");
+        }
         mcpServerCacheHolder.removeMcpServerUpdateTask(mcpName);
     }
     
     public boolean isEnable() {
         return rpcClient.isRunning();
+    }
+    
+    /**
+     * Determine whether nacos-server supports the capability.
+     *
+     * @param abilityKey ability key
+     * @return true if supported, otherwise false
+     */
+    public boolean isAbilitySupportedByServer(AbilityKey abilityKey) {
+        return rpcClient.getConnectionAbility(abilityKey) == AbilityStatus.SUPPORTED;
     }
     
     private <T extends Response> T requestToServer(Request request, Class<T> responseClass) throws NacosException {
