@@ -91,8 +91,8 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     public void startServer() throws Exception {
         final MutableHandlerRegistry handlerRegistry = new MutableHandlerRegistry();
         addServices(handlerRegistry, getSeverInterceptors().toArray(new ServerInterceptor[0]));
-        String nacosIp = InetUtils.getNacosIp();
-        InetSocketAddress inetSocketAddress = StringUtils.isNotBlank(nacosIp) ? new InetSocketAddress(nacosIp, getServicePort()) : new InetSocketAddress(getServicePort());
+        String grpcListenIp = InetUtils.getGrpcListenIp();
+        InetSocketAddress inetSocketAddress = StringUtils.isNotBlank(grpcListenIp) ? new InetSocketAddress(grpcListenIp, getServicePort()) : new InetSocketAddress(getServicePort());
         NettyServerBuilder builder = NettyServerBuilder.forAddress(inetSocketAddress).executor(getRpcExecutor());
         Optional<InternalProtocolNegotiator.ProtocolNegotiator> negotiator = newProtocolNegotiator();
         if (negotiator.isPresent()) {
