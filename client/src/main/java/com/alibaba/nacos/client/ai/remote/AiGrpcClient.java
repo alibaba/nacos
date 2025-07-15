@@ -51,6 +51,8 @@ import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientConfigFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -323,8 +325,17 @@ public class AiGrpcClient implements Closeable {
         }
     }
     
-    private Map<String, String> getSecurityHeaders(String namespace, String mcpId) {
-        return null;
+    private Map<String, String> getSecurityHeaders(String namespace, String mcpName) {
+        RequestResource resource = buildRequestResource(namespace, mcpName);
+        return securityProxy.getIdentityContext(resource);
+    }
+    
+    private RequestResource buildRequestResource(String namespaceId, String mcpName) {
+        RequestResource.Builder builder = RequestResource.aiBuilder();
+        builder.setNamespace(namespaceId);
+        builder.setGroup(com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP);
+        builder.setResource(null == mcpName ? StringUtils.EMPTY : mcpName);
+        return builder.build();
     }
     
     @Override
@@ -332,7 +343,7 @@ public class AiGrpcClient implements Closeable {
         rpcClient.shutdown();
         serverListManager.shutdown();
         if (null != securityProxy) {
-            serverListManager.shutdown();
+            securityProxy.shutdown();
         }
     }
 }

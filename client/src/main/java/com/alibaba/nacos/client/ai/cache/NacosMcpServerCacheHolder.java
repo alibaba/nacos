@@ -89,9 +89,14 @@ public class NacosMcpServerCacheHolder implements Closeable {
     public void processMcpServerDetailInfo(McpServerDetailInfo detailInfo) {
         String mcpName = detailInfo.getName();
         String version = detailInfo.getVersionDetail().getVersion();
+        Boolean isLatest = detailInfo.getVersionDetail().getIs_latest();
         String key = buildCacheKey(mcpName, version);
         McpServerDetailInfo oldMcpServer = mcpServerCache.get(key);
         mcpServerCache.put(key, detailInfo);
+        if (null != isLatest && isLatest) {
+            String latestVersionKey = buildCacheKey(mcpName, null);
+            mcpServerCache.put(latestVersionKey, detailInfo);
+        }
         if (isMcpServerChanged(oldMcpServer, detailInfo)) {
             LOGGER.info("mcp server {} changed.", detailInfo.getName());
             NotifyCenter.publishEvent(new McpServerChangedEvent(detailInfo.getName(), detailInfo));
@@ -172,7 +177,7 @@ public class NacosMcpServerCacheHolder implements Closeable {
             try {
                 McpServerDetailInfo detailInfo = aiGrpcClient.queryMcpServer(mcpName, null);
                 processMcpServerDetailInfo(detailInfo);
-            } catch (NacosException e) {
+            } catch (Exception e) {
                 LOGGER.warn("Mcp server updater execute query failed", e);
             } finally {
                 if (!cancel.get()) {
