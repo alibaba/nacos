@@ -1,0 +1,160 @@
+/*
+ * Copyright 1999-2025 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.alibaba.nacos.ai.remote.handler;
+
+import com.alibaba.nacos.ai.constant.Constants;
+import com.alibaba.nacos.ai.index.McpServerIndex;
+import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
+import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerRemoteServiceConfig;
+import com.alibaba.nacos.api.ai.model.mcp.McpServiceRef;
+import com.alibaba.nacos.api.ai.remote.AiRemoteConstants;
+import com.alibaba.nacos.api.ai.remote.request.McpServerEndpointRequest;
+import com.alibaba.nacos.api.ai.remote.response.McpServerEndpointResponse;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class McpServerEndpointRequestHandlerTest {
+    
+    @Mock
+    private EphemeralClientOperationServiceImpl clientOperationService;
+    
+    @Mock
+    private McpServerOperationService mcpServerOperationService;
+    
+    @Mock
+    private McpServerIndex mcpServerIndex;
+    
+    @Mock
+    private RequestMeta meta;
+    
+    McpServerEndpointRequestHandler requestHandler;
+    
+    @BeforeEach
+    void setUp() {
+        requestHandler = new McpServerEndpointRequestHandler(clientOperationService, mcpServerOperationService,
+                mcpServerIndex);
+    }
+    
+    @AfterEach
+    void tearDown() {
+    }
+    
+    @Test
+    void handleWithInvalidParameters() throws NacosException {
+        McpServerEndpointRequest request = new McpServerEndpointRequest();
+        assertThrows(NacosApiException.class, () -> requestHandler.handle(request, meta));
+    }
+    
+    @Test
+    void handleForNotFound() throws NacosException {
+        McpServerEndpointRequest request = new McpServerEndpointRequest();
+        request.setAddress("1.1.1.1");
+        request.setPort(3306);
+        request.setMcpName("test");
+        assertThrows(NacosApiException.class, () -> requestHandler.handle(request, meta));
+    }
+    
+    @Test
+    void handleForRegisterEndpoint() throws NacosException {
+        McpServerEndpointRequest request = new McpServerEndpointRequest();
+        request.setAddress("1.1.1.1");
+        request.setPort(3306);
+        request.setMcpName("test");
+        request.setVersion("1.0.0");
+        request.setType(AiRemoteConstants.REGISTER_ENDPOINT);
+        String id = UUID.randomUUID().toString();
+        McpServerIndexData indexData = McpServerIndexData.newIndexData(id, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
+        when(mcpServerIndex.getMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test")).thenReturn(indexData);
+        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id, null,
+                "1.0.0")).thenReturn(buildMockMcpServerDetailInfo());
+        when(meta.getConnectionId()).thenReturn("TEST_CONNECTION_ID");
+        McpServerEndpointResponse response = requestHandler.handle(request, meta);
+        assertEquals(AiRemoteConstants.REGISTER_ENDPOINT, response.getType());
+        verify(clientOperationService).registerInstance(any(Service.class), any(Instance.class),
+                eq("TEST_CONNECTION_ID"));
+    }
+    
+    @Test
+    void handleForDeregisterEndpoint() throws NacosException {
+        McpServerEndpointRequest request = new McpServerEndpointRequest();
+        request.setAddress("1.1.1.1");
+        request.setPort(3306);
+        request.setMcpName("test");
+        request.setType(AiRemoteConstants.DE_REGISTER_ENDPOINT);
+        String id = UUID.randomUUID().toString();
+        McpServerIndexData indexData = McpServerIndexData.newIndexData(id, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
+        when(mcpServerIndex.getMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test")).thenReturn(indexData);
+        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id, null,
+                null)).thenReturn(buildMockMcpServerDetailInfo());
+        when(meta.getConnectionId()).thenReturn("TEST_CONNECTION_ID");
+        McpServerEndpointResponse response = requestHandler.handle(request, meta);
+        assertEquals(AiRemoteConstants.DE_REGISTER_ENDPOINT, response.getType());
+        verify(clientOperationService).deregisterInstance(any(Service.class), any(Instance.class),
+                eq("TEST_CONNECTION_ID"));
+    }
+    
+    @Test
+    void handleForInvalidType() throws NacosException {
+        McpServerEndpointRequest request = new McpServerEndpointRequest();
+        request.setAddress("1.1.1.1");
+        request.setPort(3306);
+        request.setMcpName("test");
+        request.setType("INVALID_TYPE");
+        String id = UUID.randomUUID().toString();
+        McpServerIndexData indexData = McpServerIndexData.newIndexData(id, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
+        when(mcpServerIndex.getMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test")).thenReturn(indexData);
+        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id, null,
+                null)).thenReturn(buildMockMcpServerDetailInfo());
+        assertThrows(NacosApiException.class, () -> requestHandler.handle(request, meta));
+    }
+    
+    McpServerDetailInfo buildMockMcpServerDetailInfo() {
+        McpServerDetailInfo result = new McpServerDetailInfo();
+        result.setName("test");
+        McpServiceRef serviceRef = new McpServiceRef();
+        serviceRef.setNamespaceId(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
+        serviceRef.setGroupName(Constants.MCP_SERVER_ENDPOINT_GROUP);
+        serviceRef.setServiceName("test");
+        McpServerRemoteServiceConfig remoteServiceConfig = new McpServerRemoteServiceConfig();
+        remoteServiceConfig.setServiceRef(serviceRef);
+        result.setRemoteServerConfig(remoteServiceConfig);
+        return result;
+    }
+}

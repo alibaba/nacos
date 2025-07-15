@@ -74,3 +74,10 @@ com.alibaba.nacos.api.naming.remote.response.NamingFuzzyWatchSyncResponse
 
 com.alibaba.nacos.api.lock.remote.request.LockOperationRequest
 com.alibaba.nacos.api.lock.remote.response.LockOperationResponse
+
+com.alibaba.nacos.api.ai.remote.request.QueryMcpServerRequest
+com.alibaba.nacos.api.ai.remote.response.QueryMcpServerResponse
+com.alibaba.nacos.api.ai.remote.request.ReleaseMcpServerRequest
+com.alibaba.nacos.api.ai.remote.response.ReleaseMcpServerResponse
+com.alibaba.nacos.api.ai.remote.request.McpServerEndpointRequest
+com.alibaba.nacos.api.ai.remote.response.McpServerEndpointResponse
