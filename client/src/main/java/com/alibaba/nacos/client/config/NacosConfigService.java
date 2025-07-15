@@ -46,7 +46,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Future;
 
-import static com.alibaba.nacos.api.common.Constants.ANY_PATTERN;
+import static com.alibaba.nacos.api.common.Constants.ALL_PATTERN;
 
 /**
  * Config Impl.
@@ -124,7 +124,7 @@ public class NacosConfigService implements ConfigService {
     
     @Override
     public void fuzzyWatch(String groupNamePattern, FuzzyWatchEventWatcher watcher) throws NacosException {
-        doAddFuzzyWatch(ANY_PATTERN, groupNamePattern, watcher);
+        doAddFuzzyWatch(ALL_PATTERN, groupNamePattern, watcher);
     }
     
     @Override
@@ -136,7 +136,7 @@ public class NacosConfigService implements ConfigService {
     @Override
     public Future<Set<String>> fuzzyWatchWithGroupKeys(String groupNamePattern, FuzzyWatchEventWatcher watcher)
             throws NacosException {
-        return doAddFuzzyWatch(ANY_PATTERN, groupNamePattern, watcher);
+        return doAddFuzzyWatch(ALL_PATTERN, groupNamePattern, watcher);
     }
     
     @Override
@@ -154,7 +154,7 @@ public class NacosConfigService implements ConfigService {
     
     @Override
     public void cancelFuzzyWatch(String groupNamePattern, FuzzyWatchEventWatcher watcher) throws NacosException {
-        cancelFuzzyWatch(ANY_PATTERN, groupNamePattern, watcher);
+        cancelFuzzyWatch(ALL_PATTERN, groupNamePattern, watcher);
     }
     
     @Override
