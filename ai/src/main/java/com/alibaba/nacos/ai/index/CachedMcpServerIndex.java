@@ -209,10 +209,13 @@ public class CachedMcpServerIndex implements McpServerIndex {
      * Get MCP server from database by name.
      */
     private McpServerIndexData getMcpServerByNameFromDatabase(String namespaceId, String name) {
-        Page<McpServerIndexData> indexDataPage = searchMcpServerByName(namespaceId, name,
-                Constants.MCP_LIST_SEARCH_ACCURATE, 0, 1);
-        if (CollectionUtils.isNotEmpty(indexDataPage.getPageItems())) {
-            McpServerIndexData result = indexDataPage.getPageItems().get(0);
+        // 直接查询数据库，避免调用searchMcpServerByName导致重复更新缓存
+        Page<ConfigInfo> serverInfos = searchMcpServers(namespaceId, name, Constants.MCP_LIST_SEARCH_ACCURATE, 1, 1);
+        if (CollectionUtils.isNotEmpty(serverInfos.getPageItems())) {
+            ConfigInfo configInfo = serverInfos.getPageItems().get(0);
+            McpServerIndexData result = new McpServerIndexData();
+            result.setId(configInfo.getDataId().replace(Constants.MCP_SERVER_VERSION_DATA_ID_SUFFIX, ""));
+            result.setNamespaceId(configInfo.getTenant());
             LOGGER.debug("Found MCP server in database: name={}:{}, mcpId={}", namespaceId, name, result.getId());
             return result;
         }

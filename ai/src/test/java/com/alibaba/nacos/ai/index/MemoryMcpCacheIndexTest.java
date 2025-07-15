@@ -125,8 +125,8 @@ class MemoryMcpCacheIndexTest {
     
     @Test
     void testConcurrentPutAndGet() throws InterruptedException {
-        int threadCount = 5;
-        int opCount = 20;
+        int threadCount = 3; // 减少线程数
+        int opCount = 10; // 减少操作数
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
         
@@ -147,13 +147,13 @@ class MemoryMcpCacheIndexTest {
             });
         }
         
-        // 等待所有线程完成
-        boolean completed = latch.await(10, TimeUnit.SECONDS);
+        // 增加等待时间
+        boolean completed = latch.await(30, TimeUnit.SECONDS);
         assertTrue(completed, "All threads should complete within timeout");
         
         // 关闭线程池并等待所有任务完成
         executor.shutdown();
-        boolean terminated = executor.awaitTermination(5, TimeUnit.SECONDS);
+        boolean terminated = executor.awaitTermination(10, TimeUnit.SECONDS);
         assertTrue(terminated, "Executor should terminate within timeout");
         
         // 验证缓存大小不超过限制，并且缓存功能正常

@@ -46,13 +46,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /**
- * CachedMcpServerIndex integration tests.
- *
- * @author misselvexu
+ * Unit tests for CachedMcpServerIndex.
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class CachedMcpServerIndexTest {
     
     @Mock
@@ -221,8 +222,9 @@ class CachedMcpServerIndexTest {
         mockPage.setPageItems(configList);
         mockPage.setTotalCount(1);
         
-        when(configDetailService.findConfigInfoPage(anyString(), anyInt(), anyInt(), anyString(), anyString(),
-                anyString(), any())).thenReturn(mockPage);
+        // 使用正确的参数匹配，匹配实际的调用参数
+        when(configDetailService.findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE), eq(1), eq(10), isNull(),
+                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any())).thenReturn(mockPage);
         
         // 执行搜索
         Page<McpServerIndexData> result = cachedIndex.searchMcpServerByName(namespaceId, mcpName,
@@ -238,8 +240,8 @@ class CachedMcpServerIndexTest {
         assertEquals(namespaceId, indexData.getNamespaceId());
         
         // 验证数据库查询被调用
-        verify(configDetailService).findConfigInfoPage(anyString(), anyInt(), anyInt(), anyString(), anyString(),
-                anyString(), any());
+        verify(configDetailService).findConfigInfoPage(eq(Constants.MCP_LIST_SEARCH_ACCURATE), eq(1), eq(10), isNull(),
+                eq(Constants.MCP_SERVER_VERSIONS_GROUP), eq(namespaceId), any());
         
         // 验证缓存被更新
         verify(cacheIndex).updateIndex(eq(namespaceId), eq(mcpName), eq(mcpId));

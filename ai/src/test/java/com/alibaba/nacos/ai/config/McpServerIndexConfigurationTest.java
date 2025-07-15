@@ -18,14 +18,18 @@ package com.alibaba.nacos.ai.config;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+
 import com.alibaba.nacos.ai.index.CachedMcpServerIndex;
 import com.alibaba.nacos.ai.index.McpServerIndex;
 import com.alibaba.nacos.ai.index.PlainMcpServerIndex;
-import org.junit.jupiter.api.Nested;
+import com.alibaba.nacos.config.server.service.ConfigDetailService;
+import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
+import com.alibaba.nacos.core.service.NamespaceOperationService;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 
 /**
@@ -33,13 +37,30 @@ import org.springframework.test.context.TestPropertySource;
  */
 class McpServerIndexConfigurationTest {
     
-    @Nested
-    @SpringBootTest(classes = McpServerIndexConfiguration.class)
-    @EnableAutoConfiguration
-    @TestPropertySource(properties = {"nacos.mcp.cache.enabled=true"})
-    class CacheEnabled {
+    @Configuration
+    static class TestConfig {
         
-        @Autowired(required = false)
+        @Bean
+        public ConfigDetailService configDetailService() {
+            return mock(ConfigDetailService.class);
+        }
+        
+        @Bean
+        public NamespaceOperationService namespaceOperationService() {
+            return mock(NamespaceOperationService.class);
+        }
+        
+        @Bean
+        public ConfigQueryChainService configQueryChainService() {
+            return mock(ConfigQueryChainService.class);
+        }
+    }
+    
+    @ContextConfiguration(classes = {McpServerIndexConfiguration.class, TestConfig.class})
+    @TestPropertySource(properties = {"nacos.mcp.cache.enabled=true"})
+    static class CacheEnabled {
+        
+        @org.springframework.beans.factory.annotation.Autowired(required = false)
         private McpServerIndex mcpServerIndex;
         
         @Test
@@ -50,13 +71,11 @@ class McpServerIndexConfigurationTest {
         }
     }
     
-    @Nested
-    @SpringBootTest(classes = McpServerIndexConfiguration.class)
-    @EnableAutoConfiguration
+    @ContextConfiguration(classes = {McpServerIndexConfiguration.class, TestConfig.class})
     @TestPropertySource(properties = {"nacos.mcp.cache.enabled=false"})
-    class CacheDisabled {
+    static class CacheDisabled {
         
-        @Autowired(required = false)
+        @org.springframework.beans.factory.annotation.Autowired(required = false)
         private McpServerIndex mcpServerIndex;
         
         @Test
