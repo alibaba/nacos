@@ -39,7 +39,8 @@ public class McpServerRequestParamExtractor extends AbstractRpcParamExtractor {
         paramInfo.setNamespaceId(mcpRequest.getNamespaceId());
         paramInfo.setMcpName(mcpRequest.getMcpName());
         paramInfo.setMcpId(mcpRequest.getMcpId());
-        if (mcpRequest instanceof ReleaseMcpServerRequest releaseMcpServerRequest) {
+        if (mcpRequest instanceof ReleaseMcpServerRequest) {
+            ReleaseMcpServerRequest releaseMcpServerRequest = (ReleaseMcpServerRequest) mcpRequest;
             if (null != releaseMcpServerRequest.getServerSpecification()) {
                 paramInfo.setMcpName(releaseMcpServerRequest.getServerSpecification().getName());
             }
