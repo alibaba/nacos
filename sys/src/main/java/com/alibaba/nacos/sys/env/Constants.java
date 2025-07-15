@@ -91,5 +91,5 @@ public interface Constants {
     
     String NACOS_DUPLICATE_BEAN_ENHANCEMENT_ENABLED = "nacos.sys.duplicate.bean.enhancement.enabled";
 
-    String GRPC_LISTEN_IP = "grpc.listen.ip";
+    String NACOS_REMOTE_GRPC_LISTEN_IP = "nacos.remote.grpc.listen.ip";
 }
