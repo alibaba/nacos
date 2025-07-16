@@ -138,6 +138,7 @@ public class ConfigServletInner {
         String requestIpApp = RequestUtil.getAppName(request);
         
         ConfigQueryChainRequest chainRequest = ConfigChainRequestExtractorService.getExtractor().extract(request);
+        chainRequest.setTenant(tenant);
         ConfigQueryChainResponse chainResponse = configQueryChainService.handle(chainRequest);
         
         if (ResponseCode.FAIL.getCode() == chainResponse.getResultCode()) {
