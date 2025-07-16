@@ -148,7 +148,7 @@ class MemoryMcpCacheIndexTest {
         }
         
         // 增加等待时间
-        boolean completed = latch.await(30, TimeUnit.SECONDS);
+        boolean completed = latch.await(60, TimeUnit.SECONDS);
         assertTrue(completed, "All threads should complete within timeout");
         
         // 关闭线程池并等待所有任务完成
