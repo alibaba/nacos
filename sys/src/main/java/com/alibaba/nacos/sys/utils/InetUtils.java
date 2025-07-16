@@ -46,6 +46,7 @@ import static com.alibaba.nacos.sys.env.Constants.NACOS_SERVER_IP;
 import static com.alibaba.nacos.sys.env.Constants.PREFER_HOSTNAME_OVER_IP;
 import static com.alibaba.nacos.sys.env.Constants.SYSTEM_PREFER_HOSTNAME_OVER_IP;
 import static com.alibaba.nacos.sys.env.Constants.USE_ONLY_SITE_INTERFACES;
+import static com.alibaba.nacos.sys.env.Constants.NACOS_REMOTE_GRPC_LISTEN_IP;
 
 /**
  * Network card operation tool class.
@@ -308,6 +309,14 @@ public class InetUtils {
         public String toString() {
             return "IPChangeEvent{" + "oldIP='" + oldIP + '\'' + ", newIP='" + newIP + '\'' + '}';
         }
+    }
+
+    public static String getGrpcListenIp() {
+        String grpcListenIp = System.getProperty(NACOS_REMOTE_GRPC_LISTEN_IP);
+        if (StringUtils.isNotBlank(grpcListenIp) && !InternetAddressUtil.isIp(grpcListenIp)) {
+            throw new RuntimeException("nacos address " + grpcListenIp + " is not ip");
+        }
+        return grpcListenIp;
     }
     
 }
