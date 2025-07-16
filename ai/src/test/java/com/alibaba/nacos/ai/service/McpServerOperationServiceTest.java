@@ -415,6 +415,64 @@ class McpServerOperationServiceTest {
     }
     
     @Test
+    void createMcpServerByCustomIdWithException() throws NacosException {
+        McpServerBasicInfo mockServerBasicInfo = mockServerVersionInfo("");
+        mockServerBasicInfo.setVersionDetail(mockVersion("1.0.0"));
+        mockServerBasicInfo.setRemoteServerConfig(new McpServerRemoteServiceConfig());
+        mockServerBasicInfo.setId("invalid Id");
+        McpEndpointSpec endpointSpec = new McpEndpointSpec();
+        endpointSpec.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
+        endpointSpec.setData(new HashMap<>());
+        endpointSpec.getData().put(Constants.MCP_SERVER_ENDPOINT_ADDRESS, "127.0.0.1");
+        endpointSpec.getData().put(Constants.MCP_SERVER_ENDPOINT_PORT, "8848");
+        assertThrows(NacosApiException.class,
+                () -> serverOperationService.createMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, mockServerBasicInfo,
+                        null, null));
+    }
+    
+    @Test
+    void createMcpServerByCustomIdWithExistedId() throws NacosException {
+        String id = UUID.randomUUID().toString();
+        McpServerBasicInfo mockServerBasicInfo = mockServerVersionInfo("");
+        mockServerBasicInfo.setVersionDetail(mockVersion("1.0.0"));
+        mockServerBasicInfo.setRemoteServerConfig(new McpServerRemoteServiceConfig());
+        mockServerBasicInfo.setId(id);
+        McpEndpointSpec endpointSpec = new McpEndpointSpec();
+        endpointSpec.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
+        endpointSpec.setData(new HashMap<>());
+        endpointSpec.getData().put(Constants.MCP_SERVER_ENDPOINT_ADDRESS, "127.0.0.1");
+        endpointSpec.getData().put(Constants.MCP_SERVER_ENDPOINT_PORT, "8848");
+        when(mcpServerIndex.getMcpServerById(id)).thenReturn(new McpServerIndexData());
+        assertThrows(NacosApiException.class,
+                () -> serverOperationService.createMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, mockServerBasicInfo,
+                        null, null));
+    }
+    
+    @Test
+    void createMcpServerByCustomId() throws NacosException {
+        String id = UUID.randomUUID().toString();
+        McpServerBasicInfo mockServerBasicInfo = mockServerVersionInfo("");
+        mockServerBasicInfo.setVersionDetail(mockVersion("1.0.0"));
+        mockServerBasicInfo.setRemoteServerConfig(new McpServerRemoteServiceConfig());
+        mockServerBasicInfo.setId(id);
+        McpEndpointSpec endpointSpec = new McpEndpointSpec();
+        endpointSpec.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
+        endpointSpec.setData(new HashMap<>());
+        endpointSpec.getData().put(Constants.MCP_SERVER_ENDPOINT_ADDRESS, "127.0.0.1");
+        endpointSpec.getData().put(Constants.MCP_SERVER_ENDPOINT_PORT, "8848");
+        when(endpointOperationService.createMcpServerEndpointServiceIfNecessary(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                "mcpName", endpointSpec)).thenReturn(
+                Service.newService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, Constants.MCP_SERVER_ENDPOINT_GROUP,
+                        "mcpName"));
+        String actualId = serverOperationService.createMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                mockServerBasicInfo, null, endpointSpec);
+        assertNotNull(actualId);
+        assertEquals(id, actualId);
+        verify(configOperationService, times(2)).publishConfig(any(ConfigFormV3.class), any(ConfigRequestInfo.class),
+                isNull());
+    }
+    
+    @Test
     void updateMcpServerByIdNotFound() {
         String id = mockId();
         McpServerBasicInfo mockServerBasicInfo = mockServerVersionInfo(id);

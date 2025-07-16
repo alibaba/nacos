@@ -235,6 +235,10 @@ public enum ErrorCode {
      */
     API_FUNCTION_DISABLED(40001, "API function disabled."),
     
+    MCP_SERVER_NOT_FOUND(50000, "MCP server not found"),
+    
+    MCP_SEVER_VERSION_NOT_FOUND(50001, "MCP server version not found"),
+    
     /**
      * Config use 100001 ~ 100999.
      **/

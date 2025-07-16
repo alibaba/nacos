@@ -174,7 +174,7 @@ public class McpServerOperationService {
         ConfigQueryChainRequest request = buildQueryMcpServerRequest(namespaceId, mcpServerId, version);
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         if (McpConfigUtils.isConfigNotFound(response.getStatus())) {
-            throw new NacosApiException(NacosApiException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+            throw new NacosApiException(NacosApiException.NOT_FOUND, ErrorCode.MCP_SEVER_VERSION_NOT_FOUND,
                     String.format("mcp server `%s` for version `%s` not found", mcpServerId, version));
         }
         
@@ -214,7 +214,7 @@ public class McpServerOperationService {
         ConfigQueryChainRequest request = buildQueryMcpServerVersionInfoRequest(namespaceId, mcpServerId);
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         if (McpConfigUtils.isConfigNotFound(response.getStatus())) {
-            throw new NacosApiException(NacosApiException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+            throw new NacosApiException(NacosApiException.NOT_FOUND, ErrorCode.MCP_SERVER_NOT_FOUND,
                      String.format("Mcp server [ID: %s] not found in namespace [%s]. Response: %s",
                             mcpServerId, namespaceId, response.getMessage()));
         }

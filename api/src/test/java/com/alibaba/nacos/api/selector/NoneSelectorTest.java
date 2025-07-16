@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.selector;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -24,7 +26,11 @@ import com.fasterxml.jackson.databind.jsontype.NamedType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NoneSelectorTest {
@@ -50,5 +56,13 @@ class NoneSelectorTest {
         String json = "{\"type\":\"none\"}";
         AbstractSelector actual = mapper.readValue(json, AbstractSelector.class);
         assertEquals(SelectorType.none.name(), actual.getType());
+    }
+    
+    @Test
+    void testCommandMethod() throws NacosException {
+        NoneSelector selector = new NoneSelector();
+        assertNull(selector.parse(""));
+        List<Instance> instances = new ArrayList<>();
+        assertEquals(instances, selector.select(instances));
     }
 }
