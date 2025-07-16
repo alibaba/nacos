@@ -92,7 +92,9 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         final MutableHandlerRegistry handlerRegistry = new MutableHandlerRegistry();
         addServices(handlerRegistry, getSeverInterceptors().toArray(new ServerInterceptor[0]));
         String grpcListenIp = InetUtils.getGrpcListenIp();
-        InetSocketAddress inetSocketAddress = StringUtils.isNotBlank(grpcListenIp) ? new InetSocketAddress(grpcListenIp, getServicePort()) : new InetSocketAddress(getServicePort());
+        InetSocketAddress inetSocketAddress = StringUtils.isNotBlank(grpcListenIp)
+                ? new InetSocketAddress(grpcListenIp, getServicePort())
+                : new InetSocketAddress(getServicePort());
         NettyServerBuilder builder = NettyServerBuilder.forAddress(inetSocketAddress).executor(getRpcExecutor());
         Optional<InternalProtocolNegotiator.ProtocolNegotiator> negotiator = newProtocolNegotiator();
         if (negotiator.isPresent()) {
