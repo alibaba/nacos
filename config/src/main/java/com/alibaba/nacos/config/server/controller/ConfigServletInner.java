@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -138,7 +139,7 @@ public class ConfigServletInner {
         String requestIpApp = RequestUtil.getAppName(request);
         
         ConfigQueryChainRequest chainRequest = ConfigChainRequestExtractorService.getExtractor().extract(request);
-        chainRequest.setTenant(tenant);
+        chainRequest.setTenant(NamespaceUtil.processNamespaceParameter(chainRequest.getTenant()));
         ConfigQueryChainResponse chainResponse = configQueryChainService.handle(chainRequest);
         
         if (ResponseCode.FAIL.getCode() == chainResponse.getResultCode()) {
