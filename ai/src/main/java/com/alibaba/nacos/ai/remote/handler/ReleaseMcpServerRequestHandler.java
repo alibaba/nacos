@@ -153,11 +153,13 @@ public class ReleaseMcpServerRequestHandler extends RequestHandler<ReleaseMcpSer
             return null;
         }
         // Not stdio protocol need to create endpoint service.
-        return autoBuildMcpEndpointSpecification(namespaceId, mcpServerBasicInfo.getName());
+        return autoBuildMcpEndpointSpecification(namespaceId, mcpServerBasicInfo.getName(),
+                mcpServerBasicInfo.getVersionDetail().getVersion());
     }
     
-    private McpEndpointSpec autoBuildMcpEndpointSpecification(String namespaceId, String mcpName) {
-        Service service = endpointOperationService.generateService(namespaceId, mcpName);
+    private McpEndpointSpec autoBuildMcpEndpointSpecification(String namespaceId, String mcpName, String version) {
+        String versionMcpName = mcpName + "::" + version;
+        Service service = endpointOperationService.generateService(namespaceId, versionMcpName);
         McpEndpointSpec endpointSpecification = new McpEndpointSpec();
         endpointSpecification.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_REF);
         endpointSpecification.getData().put(CommonParams.NAMESPACE_ID, service.getNamespace());

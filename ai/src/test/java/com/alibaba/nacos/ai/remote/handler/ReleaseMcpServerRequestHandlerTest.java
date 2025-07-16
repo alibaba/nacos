@@ -112,7 +112,7 @@ class ReleaseMcpServerRequestHandlerTest {
         when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, "test",
                 "1.0.0")).thenThrow(
                     new NacosApiException(NacosException.NOT_FOUND, ErrorCode.MCP_SERVER_NOT_FOUND, ""));
-        when(endpointOperationService.generateService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test")).thenReturn(
+        when(endpointOperationService.generateService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test::1.0.0")).thenReturn(
                 Service.newService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, Constants.MCP_SERVER_ENDPOINT_GROUP, "test"));
         when(mcpServerOperationService.createMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
                 eq(request.getServerSpecification()), isNull(), isNotNull())).thenReturn(id);
@@ -147,7 +147,7 @@ class ReleaseMcpServerRequestHandlerTest {
         when(meta.getConnectionId()).thenReturn("111");
         McpServerIndexData indexData = McpServerIndexData.newIndexData(id, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
         when(mcpServerIndex.getMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test")).thenReturn(indexData);
-        when(endpointOperationService.generateService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test")).thenReturn(
+        when(endpointOperationService.generateService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test::1.0.0")).thenReturn(
                 Service.newService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, Constants.MCP_SERVER_ENDPOINT_GROUP, "test"));
         ReleaseMcpServerResponse response = requestHandler.handle(request, meta);
         assertEquals(id, response.getMcpId());
@@ -166,7 +166,7 @@ class ReleaseMcpServerRequestHandlerTest {
         when(meta.getConnectionId()).thenReturn("111");
         McpServerIndexData indexData = McpServerIndexData.newIndexData(id, AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
         when(mcpServerIndex.getMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test")).thenReturn(indexData);
-        when(endpointOperationService.generateService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test")).thenReturn(
+        when(endpointOperationService.generateService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test::1.0.0")).thenReturn(
                 Service.newService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, Constants.MCP_SERVER_ENDPOINT_GROUP, "test"));
         ReleaseMcpServerResponse response = requestHandler.handle(request, meta);
         assertEquals(id, response.getMcpId());
