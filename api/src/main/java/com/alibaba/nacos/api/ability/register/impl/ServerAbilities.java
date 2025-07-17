@@ -48,6 +48,7 @@ public class ServerAbilities extends AbstractAbilityRegistry {
         supportedAbilities.put(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC, true);
         supportedAbilities.put(AbilityKey.SERVER_FUZZY_WATCH, true);
         supportedAbilities.put(AbilityKey.SERVER_DISTRIBUTED_LOCK, true);
+        supportedAbilities.put(AbilityKey.SERVER_MCP_REGISTRY, true);
     }
     
     /**.

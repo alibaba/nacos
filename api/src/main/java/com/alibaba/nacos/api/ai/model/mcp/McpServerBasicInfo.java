@@ -48,6 +48,9 @@ public class McpServerBasicInfo {
     
     private ServerVersionDetail versionDetail;
     
+    /**
+     * Please use {@link #versionDetail} replaced.
+     */
     private String version;
     
     /**

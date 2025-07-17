@@ -26,6 +26,7 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.ability.discover.NacosAbilityManagerHolder;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
+import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.ConnectionMeta;
 import com.alibaba.nacos.core.remote.RpcAckCallbackSynchronizer;
@@ -161,8 +162,8 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
             Channel channel = GrpcServerConstants.CONTEXT_KEY_CHANNEL.get();
             Attribute<Boolean> tlsProtected = channel.attr(AttributeKey.valueOf("TLS_PROTECTED"));
             metaInfo.setTlsProtected(tlsProtected != null && tlsProtected.get() != null && tlsProtected.get());
-            GrpcConnection connection = new GrpcConnection(metaInfo, responseObserver,
-                    GrpcServerConstants.CONTEXT_KEY_CHANNEL.get());
+            Connection connection = ConnectionGeneratorServiceDelegate.getInstance()
+                    .getConnection(metaInfo, responseObserver, GrpcServerConstants.CONTEXT_KEY_CHANNEL.get());
             // null if supported
             if (setUpRequest.getAbilityTable() != null) {
                 // map to table

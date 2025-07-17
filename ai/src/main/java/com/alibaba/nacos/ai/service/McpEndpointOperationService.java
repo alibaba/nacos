@@ -84,7 +84,7 @@ public class McpEndpointOperationService {
             String refServiceName = endpointSpecification.getData().get(CommonParams.SERVICE_NAME);
             return Service.newService(namespaceId, refGroupName, refServiceName);
         }
-        Service service = Service.newService(namespaceId, Constants.MCP_SERVER_ENDPOINT_GROUP, mcpName);
+        Service service = generateService(namespaceId, mcpName);
         if (isNotExist(service)) {
             doCreateNewService(service);
             doUpdateInstanceInfo(service, endpointSpecification);
@@ -92,6 +92,10 @@ public class McpEndpointOperationService {
         }
         doUpdateInstanceInfo(service, endpointSpecification);
         return service;
+    }
+    
+    public Service generateService(String namespaceId, String mcpName) {
+        return Service.newService(namespaceId, Constants.MCP_SERVER_ENDPOINT_GROUP, mcpName);
     }
     
     public List<Instance> getMcpServerEndpointInstances(McpServiceRef serviceRef) throws NacosException {
