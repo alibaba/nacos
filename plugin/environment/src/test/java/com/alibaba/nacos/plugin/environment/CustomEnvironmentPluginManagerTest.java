@@ -46,6 +46,9 @@ class CustomEnvironmentPluginManagerTest {
             public Map<String, Object> customValue(Map<String, Object> property) {
                 String pwd = (String) property.get("db.password.0");
                 property.put("db.password.0", "test" + pwd);
+                // [issue 13367] check property remove
+                property.put("db.password.1", null);
+                property.put("db.password.2", null);
                 return property;
             }
             
@@ -53,6 +56,8 @@ class CustomEnvironmentPluginManagerTest {
             public Set<String> propertyKey() {
                 Set<String> propertyKey = new HashSet<>();
                 propertyKey.add("db.password.0");
+                propertyKey.add("db.password.1");
+                propertyKey.add("db.password.2");
                 return propertyKey;
             }
             
