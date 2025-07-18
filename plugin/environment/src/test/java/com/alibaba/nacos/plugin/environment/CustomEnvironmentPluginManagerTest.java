@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
@@ -74,6 +75,10 @@ class CustomEnvironmentPluginManagerTest {
         assertNotNull(CustomEnvironmentPluginManager.getInstance().getPropertyKeys());
         Map<String, Object> sourcePropertyMap = new HashMap<>();
         sourcePropertyMap.put("db.password.0", "nacos");
-        assertNotNull(CustomEnvironmentPluginManager.getInstance().getCustomValues(sourcePropertyMap));
+        Map<String, Object> customValues = CustomEnvironmentPluginManager.getInstance().getCustomValues(sourcePropertyMap);
+        assertNotNull(customValues);
+        // [issue 13367] check property remove
+        assertFalse(customValues.containsKey("db.password.1"));
+        assertFalse(customValues.containsKey("db.password.2"));
     }
 }
