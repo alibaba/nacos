@@ -272,7 +272,7 @@ public class ConfigMigrateService {
             try {
                 ConfigGrayPersistInfo persistInfo = GrayRuleManager.deserializeConfigGrayPersistInfo(grayRule);
                 if (persistInfo != null) {
-                    betaIps = persistInfo.getExpr(); // beta IPs存储在expr字段
+                    betaIps = persistInfo.getExpr();
                 }
             } catch (Exception e) {
                 // 如果解析失败，使用空字符串
@@ -1065,19 +1065,19 @@ public class ConfigMigrateService {
                 for (ConfigInfoGrayWrapper cf : page.getPageItems()) {
                     executorService.execute(() -> {
                         try {
-                            // 如果是beta类型的灰度配置
+                            // beta type gray config
                             if (BetaGrayRule.TYPE_BETA.equals(cf.getGrayName())) {
                                 String betaIps = "";
                                 try {
                                     ConfigGrayPersistInfo persistInfo = GrayRuleManager.deserializeConfigGrayPersistInfo(cf.getGrayRule());
                                     if (persistInfo != null) {
-                                        betaIps = persistInfo.getExpr(); // beta IPs存储在expr字段
+                                        betaIps = persistInfo.getExpr();
                                     }
                                 } catch (Exception e) {
                                     LOGGER.warn("Failed to parse gray rule for beta IPs: {}", cf.getGrayRule(), e);
                                 }
                                 
-                                // 迁移逻辑
+                                // migration logic
                                 ConfigGrayPersistInfo localConfigGrayPersistInfo = new ConfigGrayPersistInfo(
                                         BetaGrayRule.TYPE_BETA, BetaGrayRule.VERSION, betaIps, BetaGrayRule.PRIORITY);
                                 
