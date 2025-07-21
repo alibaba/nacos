@@ -16,6 +16,10 @@
 
 package com.alibaba.nacos.api.ai.model.mcp;
 
+import com.alibaba.nacos.api.ai.model.mcp.registry.KeyValueInput;
+
+import java.util.List;
+
 /**
  * Specific endpoint information exposed to the outside.
  *
@@ -32,6 +36,8 @@ public class FrontEndpointConfig {
     private String endpointAddress;
     
     private String path;
+
+    private List<KeyValueInput> headers; 
     
     public String getType() {
         return type;
@@ -71,5 +77,13 @@ public class FrontEndpointConfig {
     
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public List<KeyValueInput> getHeaders() {
+        return headers;
+    }
+
+    public void setHeaders(List<KeyValueInput> headers) {
+        this.headers = headers;
     }
 }

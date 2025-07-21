@@ -48,7 +48,7 @@ class NacosMcpRegistryServerDetailTest extends BasicRequestTest {
         mcpRegistryServerDetail.getVersion_detail().setIs_latest(true);
         mcpRegistryServerDetail.setRemotes(Collections.singletonList(new Remote()));
         mcpRegistryServerDetail.getRemotes().get(0).setUrl("127.0.0.1:8848/sse");
-        mcpRegistryServerDetail.getRemotes().get(0).setTransport_type("https");
+        mcpRegistryServerDetail.getRemotes().get(0).setTransportType("https");
         mcpRegistryServerDetail.setNacosMcpEndpointSpec(new McpEndpointSpec());
         mcpRegistryServerDetail.setMcpToolSpecification(new McpToolSpecification());
         mcpRegistryServerDetail.setNacosNamespaceId(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
@@ -89,7 +89,7 @@ class NacosMcpRegistryServerDetailTest extends BasicRequestTest {
         assertTrue(mcpRegistryServerDetail.getVersion_detail().getIs_latest());
         assertNotNull(mcpRegistryServerDetail.getRemotes());
         assertEquals(1, mcpRegistryServerDetail.getRemotes().size());
-        assertEquals("https", mcpRegistryServerDetail.getRemotes().get(0).getTransport_type());
+        assertEquals("https", mcpRegistryServerDetail.getRemotes().get(0).getTransportType());
         assertEquals("127.0.0.1:8848/sse", mcpRegistryServerDetail.getRemotes().get(0).getUrl());
         assertNotNull(mcpRegistryServerDetail.getNacosMcpEndpointSpec());
         assertNotNull(mcpRegistryServerDetail.getMcpToolSpecification());
