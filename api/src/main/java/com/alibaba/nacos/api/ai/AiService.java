@@ -113,7 +113,20 @@ public interface AiService {
      * @return The detail info of mcp server at current time
      * @throws NacosException if request parameter is invalid or handle error
      */
-    McpServerDetailInfo subscribeMcpServer(String mcpName, AbstractNacosMcpServerListener mcpServerListener) throws NacosException;
+    default McpServerDetailInfo subscribeMcpServer(String mcpName, AbstractNacosMcpServerListener mcpServerListener) throws NacosException {
+        return subscribeMcpServer(mcpName, null, mcpServerListener);
+    }
+    
+    /**
+     * Subscribe mcp server.
+     *
+     * @param mcpName           name of mcp server
+     * @param version           version of mcp server
+     * @param mcpServerListener listener of mcp server, callback when mcp server is changed
+     * @return The detail info of mcp server at current time
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    McpServerDetailInfo subscribeMcpServer(String mcpName, String version, AbstractNacosMcpServerListener mcpServerListener) throws NacosException;
     
     /**
      * Un-subscribe mcp server.
@@ -122,7 +135,19 @@ public interface AiService {
      * @param mcpServerListener listener of mcp server
      * @throws NacosException if request parameter is invalid or handle error
      */
-    void unsubscribeMcpServer(String mcpName, AbstractNacosMcpServerListener mcpServerListener) throws NacosException;
+    default void unsubscribeMcpServer(String mcpName, AbstractNacosMcpServerListener mcpServerListener) throws NacosException {
+        unsubscribeMcpServer(mcpName, null, mcpServerListener);
+    }
+    
+    /**
+     * Un-subscribe mcp server.
+     *
+     * @param mcpName           name of mcp server
+     * @param version           version of mcp server
+     * @param mcpServerListener listener of mcp server
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    void unsubscribeMcpServer(String mcpName, String version, AbstractNacosMcpServerListener mcpServerListener) throws NacosException;
     
     /**
      * Shutdown the AI service and close resources.
