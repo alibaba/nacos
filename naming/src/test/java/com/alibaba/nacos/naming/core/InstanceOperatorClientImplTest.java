@@ -163,6 +163,17 @@ class InstanceOperatorClientImplTest {
     }
     
     @Test
+    void testUpdateInstanceWithNullValue() throws NacosException {
+        Instance instance = new Instance();
+        instance.setServiceName("C");
+        instance.getMetadata().put("nullValue", null);
+        instanceOperatorClient.updateInstance("A", Constants.DEFAULT_GROUP, "C", instance);
+        
+        Mockito.verify(metadataOperateService).updateInstanceMetadata(Mockito.any(), Mockito.any(),
+                Mockito.argThat(argument -> argument.getExtendData().isEmpty()));
+    }
+    
+    @Test
     void testPatchInstance() throws NacosException {
         Instance instance = new Instance();
         instance.setIp("1.1.1.1");
