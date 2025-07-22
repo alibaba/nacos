@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.ai.event;
 
 import com.alibaba.nacos.api.ai.listener.NacosMcpServerEvent;
+import com.alibaba.nacos.client.ai.utils.McpServerUtils;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.CollectionUtils;
@@ -42,11 +43,12 @@ public class McpServerChangeNotifier extends Subscriber<McpServerChangedEvent> {
     
     @Override
     public void onEvent(McpServerChangedEvent event) {
-        if (!isSubscribed(event.getMcpName())) {
+        String mcpServerKey = McpServerUtils.buildMcpServerKey(event.getMcpName(), event.getVersion());
+        if (!isSubscribed(mcpServerKey)) {
             return;
         }
         NacosMcpServerEvent notifiedEvent = new NacosMcpServerEvent(event.getMcpServer());
-        for (McpServerListenerInvoker each : mcpServerListenerInvokers.get(event.getMcpName())) {
+        for (McpServerListenerInvoker each : mcpServerListenerInvokers.get(mcpServerKey)) {
             each.invoke(notifiedEvent);
         }
     }
@@ -60,13 +62,15 @@ public class McpServerChangeNotifier extends Subscriber<McpServerChangedEvent> {
      * register listener.
      *
      * @param mcpName           name of mcp server
+     * @param version           version of mcp server
      * @param listenerInvoker   listener invoker
      */
-    public void registerListener(String mcpName, McpServerListenerInvoker listenerInvoker) {
+    public void registerListener(String mcpName, String version, McpServerListenerInvoker listenerInvoker) {
         if (listenerInvoker == null) {
             return;
         }
-        mcpServerListenerInvokers.compute(mcpName, (key, mcpServerListenerInvokers) -> {
+        String mcpServerKey = McpServerUtils.buildMcpServerKey(mcpName, version);
+        mcpServerListenerInvokers.compute(mcpServerKey, (key, mcpServerListenerInvokers) -> {
             if (null == mcpServerListenerInvokers) {
                 mcpServerListenerInvokers = new ConcurrentHashSet<>();
             }
@@ -79,13 +83,15 @@ public class McpServerChangeNotifier extends Subscriber<McpServerChangedEvent> {
      * deregister listener.
      *
      * @param mcpName           name of mcp server
+     * @param version           version of mcp server
      * @param listenerInvoker   listener invoker
      */
-    public void deregisterListener(String mcpName, McpServerListenerInvoker listenerInvoker) {
+    public void deregisterListener(String mcpName, String version, McpServerListenerInvoker listenerInvoker) {
         if (listenerInvoker == null) {
             return;
         }
-        mcpServerListenerInvokers.compute(mcpName, (key, mcpServerListenerInvokers) -> {
+        String mcpServerKey = McpServerUtils.buildMcpServerKey(mcpName, version);
+        mcpServerListenerInvokers.compute(mcpServerKey, (key, mcpServerListenerInvokers) -> {
             if (null == mcpServerListenerInvokers) {
                 return null;
             }

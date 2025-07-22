@@ -99,15 +99,15 @@ public class ReleaseMcpServerRequestHandler extends RequestHandler<ReleaseMcpSer
                 meta.getConnectionId());
         ReleaseMcpServerResponse response = new ReleaseMcpServerResponse();
         try {
-            // mcp server and version found, do nothing, directly return mcpId to client.
+            // mcp server and version found, means this version of mcp server has been release, throw exception.
             McpServerBasicInfo existMcpServer = mcpServerOperationService.getMcpServerDetail(namespaceId,
                     serverSpecification.getId(), serverSpecification.getName(),
                     serverSpecification.getVersionDetail().getVersion());
             String version = existMcpServer.getVersionDetail().getVersion();
-            response.setMcpId(existMcpServer.getId());
-            response.setMessage(String.format("Mcp Server %s and target version %s already exist, do not do release",
-                    existMcpServer.getName(), version));
             LOGGER.info("Mcp Server {} and target version {} already exist.", existMcpServer.getName(), version);
+            throw new NacosApiException(NacosException.CONFLICT, ErrorCode.MCP_SERVER_VERSION_EXIST,
+                    String.format("Mcp Server %s and target version %s already exist, do not do release",
+                            existMcpServer.getName(), version));
         } catch (NacosApiException e) {
             if (ErrorCode.MCP_SERVER_NOT_FOUND.getCode() == e.getDetailErrCode()) {
                 // mcp server not found, create new mcp server.
