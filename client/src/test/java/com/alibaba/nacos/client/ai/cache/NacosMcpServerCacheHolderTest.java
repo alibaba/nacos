@@ -77,6 +77,7 @@ class NacosMcpServerCacheHolderTest {
         mcpServerDetailInfo.setName("test");
         mcpServerDetailInfo.setVersionDetail(new ServerVersionDetail());
         mcpServerDetailInfo.getVersionDetail().setVersion("1.0.0");
+        mcpServerDetailInfo.getVersionDetail().setIs_latest(true);
         cacheHolder.processMcpServerDetailInfo(mcpServerDetailInfo);
         assertNotNull(cacheHolder.getMcpServer("test", "1.0.0"));
         assertEquals(mcpServerDetailInfo, cacheHolder.getMcpServer("test", "1.0.0"));
@@ -122,11 +123,13 @@ class NacosMcpServerCacheHolderTest {
         mcpServerDetailInfo.setName("test");
         mcpServerDetailInfo.setVersionDetail(new ServerVersionDetail());
         mcpServerDetailInfo.getVersionDetail().setVersion("1.0.0");
+        mcpServerDetailInfo.getVersionDetail().setIs_latest(true);
         cacheHolder.processMcpServerDetailInfo(mcpServerDetailInfo);
         mcpServerDetailInfo = new McpServerDetailInfo();
         mcpServerDetailInfo.setName("test");
         mcpServerDetailInfo.setVersionDetail(new ServerVersionDetail());
         mcpServerDetailInfo.getVersionDetail().setVersion("1.0.0");
+        mcpServerDetailInfo.getVersionDetail().setIs_latest(true);
         mcpServerDetailInfo.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_STDIO);
         
         MockEventSubscriber subscriber = new MockEventSubscriber();
@@ -150,6 +153,7 @@ class NacosMcpServerCacheHolderTest {
         mcpServerDetailInfo.setName("test");
         mcpServerDetailInfo.setVersionDetail(new ServerVersionDetail());
         mcpServerDetailInfo.getVersionDetail().setVersion("1.0.0");
+        mcpServerDetailInfo.getVersionDetail().setIs_latest(true);
         cacheHolder.processMcpServerDetailInfo(mcpServerDetailInfo);
         
         MockEventSubscriber subscriber = new MockEventSubscriber();
@@ -194,12 +198,12 @@ class NacosMcpServerCacheHolderTest {
         mcpServerDetailInfo.setName("test");
         mcpServerDetailInfo.setVersionDetail(new ServerVersionDetail());
         mcpServerDetailInfo.getVersionDetail().setVersion("1.0.0");
-        when(aiGrpcClient.queryMcpServer("test", null)).thenReturn(mcpServerDetailInfo);
-        cacheHolder.addMcpServerUpdateTask("test");
+        when(aiGrpcClient.queryMcpServer("test", "1.0.0")).thenReturn(mcpServerDetailInfo);
+        cacheHolder.addMcpServerUpdateTask("test", "1.0.0");
         TimeUnit.MILLISECONDS.sleep(110);
         assertNotNull(cacheHolder.getMcpServer("test", "1.0.0"));
         TimeUnit.MILLISECONDS.sleep(110);
-        verify(aiGrpcClient, times(2)).queryMcpServer("test", null);
+        verify(aiGrpcClient, times(2)).queryMcpServer("test", "1.0.0");
     }
     
     @Test
@@ -209,12 +213,12 @@ class NacosMcpServerCacheHolderTest {
         mcpServerDetailInfo.setName("test");
         mcpServerDetailInfo.setVersionDetail(new ServerVersionDetail());
         mcpServerDetailInfo.getVersionDetail().setVersion("1.0.0");
-        when(aiGrpcClient.queryMcpServer("test", null)).thenThrow(new RuntimeException("test"));
-        cacheHolder.addMcpServerUpdateTask("test");
+        when(aiGrpcClient.queryMcpServer("test", "1.0.0")).thenThrow(new RuntimeException("test"));
+        cacheHolder.addMcpServerUpdateTask("test", "1.0.0");
         TimeUnit.MILLISECONDS.sleep(110);
         assertNull(cacheHolder.getMcpServer("test", "1.0.0"));
         TimeUnit.MILLISECONDS.sleep(110);
-        verify(aiGrpcClient, times(2)).queryMcpServer("test", null);
+        verify(aiGrpcClient, times(2)).queryMcpServer("test", "1.0.0");
     }
     
     @Test
@@ -224,13 +228,13 @@ class NacosMcpServerCacheHolderTest {
         mcpServerDetailInfo.setName("test");
         mcpServerDetailInfo.setVersionDetail(new ServerVersionDetail());
         mcpServerDetailInfo.getVersionDetail().setVersion("1.0.0");
-        when(aiGrpcClient.queryMcpServer("test", null)).thenReturn(mcpServerDetailInfo);
-        cacheHolder.addMcpServerUpdateTask("test");
+        when(aiGrpcClient.queryMcpServer("test", "1.0.0")).thenReturn(mcpServerDetailInfo);
+        cacheHolder.addMcpServerUpdateTask("test", "1.0.0");
         TimeUnit.MILLISECONDS.sleep(110);
         assertNotNull(cacheHolder.getMcpServer("test", "1.0.0"));
-        cacheHolder.removeMcpServerUpdateTask("test");
+        cacheHolder.removeMcpServerUpdateTask("test", "1.0.0");
         TimeUnit.MILLISECONDS.sleep(110);
-        verify(aiGrpcClient).queryMcpServer("test", null);
+        verify(aiGrpcClient).queryMcpServer("test", "1.0.0");
     }
     
     @Test
@@ -240,8 +244,8 @@ class NacosMcpServerCacheHolderTest {
         mcpServerDetailInfo.setName("test");
         mcpServerDetailInfo.setVersionDetail(new ServerVersionDetail());
         mcpServerDetailInfo.getVersionDetail().setVersion("1.0.0");
-        cacheHolder.addMcpServerUpdateTask("test");
-        cacheHolder.removeMcpServerUpdateTask("test");
+        cacheHolder.addMcpServerUpdateTask("test", "1.0.0");
+        cacheHolder.removeMcpServerUpdateTask("test", "1.0.0");
         TimeUnit.MILLISECONDS.sleep(110);
         verify(aiGrpcClient, never()).queryMcpServer("test", null);
     }

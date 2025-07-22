@@ -98,10 +98,7 @@ class ReleaseMcpServerRequestHandlerTest {
         when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, "test",
                 "1.0.0")).thenReturn(detailInfo);
         when(meta.getConnectionId()).thenReturn("111");
-        ReleaseMcpServerResponse response = requestHandler.handle(request, meta);
-        assertEquals(detailInfo.getId(), response.getMcpId());
-        assertEquals("Mcp Server test and target version 1.0.0 already exist, do not do release",
-                response.getMessage());
+        assertThrows(NacosApiException.class, () -> requestHandler.handle(request, meta));
     }
     
     @Test
