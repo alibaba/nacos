@@ -26,6 +26,7 @@ import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
@@ -125,6 +126,10 @@ public class NacosUserServiceRemoteImpl extends AbstractCachedUserService implem
     
     @Override
     public void createUser(String username, String password, boolean encode) {
+        // [ISSUE #13625] check username and password is blank
+        if (StringUtils.isBlank(username) || StringUtils.isBlank(password)) {
+            throw new IllegalArgumentException("username or password is blank");
+        }
         if (AuthConstants.DEFAULT_USER.equals(username)) {
             doCreateAdminUser(password);
             return;
