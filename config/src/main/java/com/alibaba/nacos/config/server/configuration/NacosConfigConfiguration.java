@@ -17,9 +17,9 @@
 package com.alibaba.nacos.config.server.configuration;
 
 import com.alibaba.nacos.config.server.filter.CircuitFilter;
-import com.alibaba.nacos.config.server.filter.NacosConsolePathTipFilter;
 import com.alibaba.nacos.config.server.filter.NacosWebFilter;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import com.alibaba.nacos.core.console.NacosConsolePathTipFilter;
 import com.alibaba.nacos.core.web.NacosWebBean;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionDistributedEmbedStorage;
 import com.alibaba.nacos.sys.env.Constants;
