@@ -80,8 +80,11 @@ public class NacosUserServiceDirectImpl extends AbstractCachedUserService implem
     @Override
     public void createUser(String username, String password, boolean encode) {
         // [ISSUE #13625] check username and password is blank
-        if (StringUtils.isBlank(username) || StringUtils.isBlank(password)) {
-            throw new IllegalArgumentException("username or password is blank");
+        if (StringUtils.isBlank(username)) {
+            throw new IllegalArgumentException("username is blank");
+        }
+        if (StringUtils.isBlank(password)) {
+            throw new IllegalArgumentException("password is blank");
         }
         if (encode) {
             password = PasswordEncoderUtil.encode(password);
