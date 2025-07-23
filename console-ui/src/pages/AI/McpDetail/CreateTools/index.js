@@ -179,7 +179,7 @@ const CreateTools = React.forwardRef((props, ref) => {
     setType('');
     setCurrentNode({
       description: '',
-      type: 'string',
+      type: 'object',
       label: '',
       key: '',
       children: [],
@@ -289,8 +289,6 @@ const CreateTools = React.forwardRef((props, ref) => {
         // eslint-disable-next-line no-unused-expressions
         props?.onChange(JSON.parse(toolSpecification));
         closeDialog();
-      } else {
-        putMcp(params);
       }
     });
   };
