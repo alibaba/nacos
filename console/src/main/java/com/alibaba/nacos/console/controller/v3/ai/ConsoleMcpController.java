@@ -117,7 +117,8 @@ public class ConsoleMcpController {
             }
             transport = transportBuilder.build();
         } else {
-            return Result.failure(ErrorCode.SERVER_ERROR.getCode(), "Unsupported transport type: " + transportType,null);
+            return Result.failure(ErrorCode.SERVER_ERROR.getCode(), "Unsupported transport type: " + transportType,
+                    null);
         }
         try (McpSyncClient client = McpClient.sync(transport)
                 .requestTimeout(Duration.ofSeconds(10))
