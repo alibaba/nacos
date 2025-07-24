@@ -5,8 +5,29 @@
  */
 export function extractToolsFromOpenAPI(openapi) {
   const mcpConfig = {
+    server: {
+      name: 'openapi-server',
+      securitySchemes: [],
+    },
     tools: [],
   };
+
+  // Process security schemes
+  if (openapi.components && openapi.components.securitySchemes) {
+    const securitySchemes = openapi.components.securitySchemes;
+    for (const name in securitySchemes) {
+      const scheme = securitySchemes[name];
+      mcpConfig.server.securitySchemes.push({
+        id: name,
+        type: scheme.type,
+        scheme: scheme.scheme,
+        in: scheme.in,
+        name: scheme.name,
+      });
+    }
+    // Sort security schemes by ID for consistent output
+    mcpConfig.server.securitySchemes.sort((a, b) => a.id.localeCompare(b.id));
+  }
 
   // Process paths and operations
   if (openapi.paths) {
@@ -167,19 +188,19 @@ function createResponseTemplate(operation) {
 
   // Process each content type
   for (const [contentType, mediaType] of Object.entries(successResponse.content)) {
-    if (!mediaType.schema || !mediaType.schema.value) {
+    if (!mediaType.schema) {
       continue;
     }
 
     template.prependBody += `> Content-Type: ${contentType}\n\n`;
-    const schema = mediaType.schema.value;
+    const schema = mediaType.schema;
 
     // Generate field descriptions using recursive function
-    if (schema.type === 'array' && schema.items && schema.items.value) {
+    if (schema.type === 'array' && schema.items) {
       // Handle array type
       template.prependBody += '- **items**: Array of items (Type: array)\n';
       // Process array items recursively
-      processSchemaProperties(template, schema.items.value, 'items', 1, 10);
+      processSchemaProperties(template, schema.items, 'items', 1, 10);
     } else if (schema.type === 'object' && Object.keys(schema.properties || {}).length > 0) {
       // Get property names and sort them alphabetically for consistent output
       const propNames = Object.keys(schema.properties).sort();
@@ -187,19 +208,19 @@ function createResponseTemplate(operation) {
       // Process properties in alphabetical order
       for (const propName of propNames) {
         const propRef = schema.properties[propName];
-        if (!propRef.value) {
+        if (!propRef) {
           continue;
         }
 
         // Write the property description
-        template.prependBody += `- **${propName}**: ${propRef.value.description || ''}`;
-        if (propRef.value.type) {
-          template.prependBody += ` (Type: ${propRef.value.type})`;
+        template.prependBody += `- **${propName}**: ${propRef.description || ''}`;
+        if (propRef.type) {
+          template.prependBody += ` (Type: ${propRef.type})`;
         }
         template.prependBody += '\n';
 
         // Process nested properties recursively
-        processSchemaProperties(template, propRef.value, propName, 1, 10);
+        processSchemaProperties(template, propRef, propName, 1, 10);
       }
     }
   }
@@ -226,8 +247,8 @@ function processSchemaProperties(template, schema, path, depth, maxDepth) {
   const indent = '  '.repeat(depth);
 
   // Handle array type
-  if (schema.type === 'array' && schema.items && schema.items.value) {
-    const arrayItemSchema = schema.items.value;
+  if (schema.type === 'array' && schema.items) {
+    const arrayItemSchema = schema.items;
 
     // If array items are objects, describe their properties
     if (
@@ -240,20 +261,20 @@ function processSchemaProperties(template, schema, path, depth, maxDepth) {
       // Process each property
       for (const propName of propNames) {
         const propRef = arrayItemSchema.properties[propName];
-        if (!propRef.value) {
+        if (!propRef) {
           continue;
         }
 
         // Write the property description
         const propPath = `${path}[][${propName}]`;
-        template.prependBody += `${indent}- **${propPath}**: ${propRef.value.description || ''}`;
-        if (propRef.value.type) {
-          template.prependBody += ` (Type: ${propRef.value.type})`;
+        template.prependBody += `${indent}- **${propPath}**: ${propRef.description || ''}`;
+        if (propRef.type) {
+          template.prependBody += ` (Type: ${propRef.type})`;
         }
         template.prependBody += '\n';
 
         // Process nested properties recursively
-        processSchemaProperties(template, propRef.value, propPath, depth + 1, maxDepth);
+        processSchemaProperties(template, propRef, propPath, depth + 1, maxDepth);
       }
     } else if (arrayItemSchema.type) {
       // If array items are not objects, just describe the array item type
@@ -270,20 +291,20 @@ function processSchemaProperties(template, schema, path, depth, maxDepth) {
     // Process each property
     for (const propName of propNames) {
       const propRef = schema.properties[propName];
-      if (!propRef.value) {
+      if (!propRef) {
         continue;
       }
 
       // Write the property description
       const propPath = `${path}.${propName}`;
-      template.prependBody += `${indent}- **${propPath}**: ${propRef.value.description || ''}`;
-      if (propRef.value.type) {
-        template.prependBody += ` (Type: ${propRef.value.type})`;
+      template.prependBody += `${indent}- **${propPath}**: ${propRef.description || ''}`;
+      if (propRef.type) {
+        template.prependBody += ` (Type: ${propRef.type})`;
       }
       template.prependBody += '\n';
 
       // Process nested properties recursively
-      processSchemaProperties(template, propRef.value, propPath, depth + 1, maxDepth);
+      processSchemaProperties(template, propRef, propPath, depth + 1, maxDepth);
     }
   }
 }
