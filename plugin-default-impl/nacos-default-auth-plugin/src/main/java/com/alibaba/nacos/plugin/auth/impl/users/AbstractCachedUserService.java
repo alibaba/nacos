@@ -68,5 +68,4 @@ public abstract class AbstractCachedUserService implements NacosUserService {
             throw new IllegalArgumentException("password is blank");
         }
     }
-
 }

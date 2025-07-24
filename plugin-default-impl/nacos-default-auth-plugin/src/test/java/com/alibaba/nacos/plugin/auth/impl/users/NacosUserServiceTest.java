@@ -77,5 +77,4 @@ class NacosUserServiceTest {
         assertEquals("password is blank", exception.getMessage());
         verify(userPersistService, never()).createUser(anyString(), anyString());
     }
-
 }
