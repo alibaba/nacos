@@ -58,4 +58,15 @@ public abstract class AbstractCachedUserService implements NacosUserService {
             Loggers.AUTH.warn("[LOAD-USERS] load failed", e);
         }
     }
+
+    // [ISSUE #13625] check username and password is blank
+    protected void validateUserCredentials(String username, String password) {
+        if (StringUtils.isBlank(username)) {
+            throw new IllegalArgumentException("username is blank");
+        }
+        if (StringUtils.isBlank(password)) {
+            throw new IllegalArgumentException("password is blank");
+        }
+    }
+
 }

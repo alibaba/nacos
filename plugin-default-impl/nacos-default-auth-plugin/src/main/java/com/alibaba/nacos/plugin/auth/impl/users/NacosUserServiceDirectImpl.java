@@ -17,7 +17,6 @@
 package com.alibaba.nacos.plugin.auth.impl.users;
 
 import com.alibaba.nacos.api.model.Page;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.impl.configuration.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
 import com.alibaba.nacos.plugin.auth.impl.persistence.UserPersistService;
@@ -79,13 +78,7 @@ public class NacosUserServiceDirectImpl extends AbstractCachedUserService implem
     
     @Override
     public void createUser(String username, String password, boolean encode) {
-        // [ISSUE #13625] check username and password is blank
-        if (StringUtils.isBlank(username)) {
-            throw new IllegalArgumentException("username is blank");
-        }
-        if (StringUtils.isBlank(password)) {
-            throw new IllegalArgumentException("password is blank");
-        }
+        validateUserCredentials(username, password);
         if (encode) {
             password = PasswordEncoderUtil.encode(password);
         }
