@@ -33,8 +33,7 @@ import static org.mockito.Mockito.verify;
 /**
  * NacosUserServiceTest.
  *
- * @author FangYuan
- * @since 2025-07-24 16:00:47
+ * @author FangYuan on: 2025-07-24 16:00:47
  */
 @ExtendWith(MockitoExtension.class)
 class NacosUserServiceTest {
@@ -57,9 +56,8 @@ class NacosUserServiceTest {
         String blankUsername = "";
         String password = "testPassword";
         
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            nacosUserService.createUser(blankUsername, password);
-        });
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> nacosUserService.createUser(blankUsername, password));
         
         assertEquals("username is blank", exception.getMessage());
         verify(userPersistService, never()).createUser(anyString(), anyString());
@@ -70,9 +68,8 @@ class NacosUserServiceTest {
         String username = "testUser";
         String blankPassword = "";
         
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            nacosUserService.createUser(username, blankPassword);
-        });
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> nacosUserService.createUser(username, blankPassword));
         
         assertEquals("password is blank", exception.getMessage());
         verify(userPersistService, never()).createUser(anyString(), anyString());
