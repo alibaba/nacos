@@ -82,31 +82,149 @@ function convertOperation(path, method, operation, servers) {
   };
 
   // Convert parameters to arguments
+  // Process operation-level security requirements
+  if (operation.security && operation.security.length > 0) {
+    // Take the first security requirement
+    const securityRequirement = operation.security[0];
+    // Take the first scheme from that requirement
+    const schemeNames = Object.keys(securityRequirement);
+    if (schemeNames.length > 0) {
+      tool.requestTemplate.security = {
+        id: schemeNames[0],
+      };
+    }
+  }
+
+  // Convert parameters to arguments
   if (operation.parameters) {
-    tool.args = operation.parameters.map(param => ({
-      name: param.name,
-      description: param.description || '',
-      type: param.schema ? param.schema.type : '',
-      required: param.required || false,
-      position: param.in,
-    }));
+    tool.args = operation.parameters.map(param => {
+      const arg = {
+        name: param.name,
+        description: param.description || '',
+        required: param.required || false,
+        position: param.in,
+      };
+
+      // Set the type based on the schema
+      if (param.schema) {
+        const schema = param.schema;
+        // Set the type based on the schema type
+        arg.type = schema.type;
+
+        // Handle enum values
+        if (schema.enum && schema.enum.length > 0) {
+          arg.enum = schema.enum;
+        }
+
+        // Handle array type
+        if (schema.type === 'array' && schema.items) {
+          arg.items = {
+            type: schema.items.type,
+          };
+        }
+
+        // Handle object type
+        if (schema.type === 'object' && schema.properties) {
+          arg.properties = {};
+          for (const propName in schema.properties) {
+            const prop = schema.properties[propName];
+            if (prop) {
+              arg.properties[propName] = {
+                type: prop.type,
+              };
+              if (prop.description) {
+                arg.properties[propName].description = prop.description;
+              }
+            }
+          }
+        }
+      }
+
+      return arg;
+    });
   }
 
   // Convert request body to arguments
-  if (operation.requestBody) {
+  if (operation.requestBody && operation.requestBody.content) {
     for (const contentType in operation.requestBody.content) {
-      if (operation.requestBody.content[contentType].schema) {
-        const schema = operation.requestBody.content[contentType].schema;
-        if (schema.type === 'object' && schema.properties) {
-          for (const propName in schema.properties) {
-            const prop = schema.properties[propName];
-            tool.args.push({
-              name: propName,
-              description: prop.description || '',
-              type: prop.type,
-              required: schema.required && schema.required.includes(propName),
-              position: 'body',
-            });
+      const mediaType = operation.requestBody.content[contentType];
+      if (mediaType.schema) {
+        const schema = mediaType.schema;
+
+        // For JSON and form content types, convert the schema to arguments
+        if (
+          contentType.includes('application/json') ||
+          contentType.includes('application/x-www-form-urlencoded')
+        ) {
+          // For object type, convert each property to an argument
+          if (schema.type === 'object' && schema.properties) {
+            for (const propName in schema.properties) {
+              const prop = schema.properties[propName];
+              if (!prop) {
+                continue;
+              }
+
+              const arg = {
+                name: propName,
+                description: prop.description || '',
+                type: prop.type,
+                required: schema.required && schema.required.includes(propName),
+                position: 'body',
+              };
+
+              // Handle enum values
+              if (prop.enum && prop.enum.length > 0) {
+                arg.enum = prop.enum;
+              }
+
+              // Handle array type
+              if (prop.type === 'array' && prop.items) {
+                arg.items = {
+                  type: prop.items.type,
+                  description: prop.items.description || '',
+                };
+
+                if (prop.items.minItems > 0) {
+                  arg.items.minItems = prop.items.minItems;
+                }
+
+                if (prop.items.type === 'object' && prop.items.properties) {
+                  arg.items.properties = prop.items.properties;
+                }
+              }
+
+              // Handle object type
+              if (prop.type === 'object' && prop.properties) {
+                arg.properties = {};
+                for (const subPropName in prop.properties) {
+                  const subProp = prop.properties[subPropName];
+                  if (subProp) {
+                    const subPropObj = {
+                      type: subProp.type,
+                      description: subProp.description || '',
+                    };
+
+                    if (subProp.default !== undefined) {
+                      subPropObj.default = subProp.default;
+                    }
+
+                    if (subProp.enum) {
+                      subPropObj.enum = subProp.enum;
+                    }
+
+                    arg.properties[subPropName] = subPropObj;
+                  }
+                }
+              }
+
+              // Handle allOf
+              if (!prop.type && prop.allOf && prop.allOf.length === 1) {
+                arg.type = 'object';
+                arg.properties = allOfHandle(prop.allOf[0]);
+              }
+
+              tool.args.push(arg);
+            }
           }
         }
       }
@@ -118,6 +236,33 @@ function convertOperation(path, method, operation, servers) {
   tool.args.sort((a, b) => a.name.localeCompare(b.name));
 
   return tool;
+}
+
+function allOfHandle(schema) {
+  const properties = {};
+
+  if (schema.type === 'object' && schema.properties) {
+    for (const propName in schema.properties) {
+      const prop = schema.properties[propName];
+      if (prop) {
+        properties[propName] = {
+          type: prop.type,
+        };
+
+        if (prop.description) {
+          properties[propName].description = prop.description;
+        }
+
+        // Handle nested allOf
+        if (!prop.type && prop.allOf && prop.allOf.length === 1) {
+          properties[propName].type = 'object';
+          properties[propName].properties = allOfHandle(prop.allOf[0]);
+        }
+      }
+    }
+  }
+
+  return properties;
 }
 
 function createRequestTemplate(path, method, operation, servers) {

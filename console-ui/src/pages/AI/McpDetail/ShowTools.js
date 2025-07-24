@@ -64,6 +64,8 @@ const ShowTools = props => {
 
       let config = extractToolsFromOpenAPI(doc);
 
+      console.log(config);
+
       const toolsMeta = config.tools.reduce((acc, tool) => {
         const argsPosition = tool.args.reduce((acc, arg) => {
           acc[arg.name] = arg.position;
@@ -91,6 +93,7 @@ const ShowTools = props => {
             acc[arg.name] = {
               type: arg.type,
               description: arg.description,
+              properties: arg.properties,
             };
             return acc;
           }, {}),
