@@ -249,19 +249,20 @@ public class AiGrpcClient implements Closeable {
      * Subscribe mcp server latest version.
      *
      * @param mcpName   name of mcp server
+     * @param version   version of mcp server
      * @return latest version mcp server
      * @throws NacosException if request parameter is invalid or handle error
      */
-    public McpServerDetailInfo subscribeMcpServer(String mcpName) throws NacosException {
+    public McpServerDetailInfo subscribeMcpServer(String mcpName, String version) throws NacosException {
         if (!isAbilitySupportedByServer(AbilityKey.SERVER_MCP_REGISTRY)) {
             throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
                     "Request Nacos server version is too low, not support mcp registry feature.");
         }
-        McpServerDetailInfo cachedServer = mcpServerCacheHolder.getMcpServer(mcpName, null);
+        McpServerDetailInfo cachedServer = mcpServerCacheHolder.getMcpServer(mcpName, version);
         if (null == cachedServer) {
-            cachedServer = queryMcpServer(mcpName, null);
+            cachedServer = queryMcpServer(mcpName, version);
             mcpServerCacheHolder.processMcpServerDetailInfo(cachedServer);
-            mcpServerCacheHolder.addMcpServerUpdateTask(mcpName);
+            mcpServerCacheHolder.addMcpServerUpdateTask(mcpName, version);
         }
         return cachedServer;
     }
@@ -270,14 +271,15 @@ public class AiGrpcClient implements Closeable {
      * Un-subscribe mcp server.
      *
      * @param mcpName   name of mcp server
+     * @param version   version of mcp server
      * @throws NacosException if request parameter is invalid or handle error
      */
-    public void unsubscribeMcpServer(String mcpName) throws NacosException {
+    public void unsubscribeMcpServer(String mcpName, String version) throws NacosException {
         if (!isAbilitySupportedByServer(AbilityKey.SERVER_MCP_REGISTRY)) {
             throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
                     "Request Nacos server version is too low, not support mcp registry feature.");
         }
-        mcpServerCacheHolder.removeMcpServerUpdateTask(mcpName);
+        mcpServerCacheHolder.removeMcpServerUpdateTask(mcpName, version);
     }
     
     public boolean isEnable() {

@@ -17,10 +17,12 @@
 package com.alibaba.nacos.config.server.configuration;
 
 import com.alibaba.nacos.config.server.filter.CircuitFilter;
+import com.alibaba.nacos.config.server.filter.NacosConsolePathTipFilter;
 import com.alibaba.nacos.config.server.filter.NacosWebFilter;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.web.NacosWebBean;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionDistributedEmbedStorage;
+import com.alibaba.nacos.sys.env.Constants;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -81,6 +83,17 @@ public class NacosConfigConfiguration {
     @Bean
     public CircuitFilter transferToLeader() {
         return new CircuitFilter();
+    }
+    
+    @Bean
+    @ConditionalOnProperty(name = Constants.NACOS_DEPLOYMENT_TYPE, havingValue = Constants.NACOS_DEPLOYMENT_TYPE_MERGED, matchIfMissing = true)
+    public FilterRegistrationBean<NacosConsolePathTipFilter> nacosConsolePathTipFilterRegistration() {
+        FilterRegistrationBean<NacosConsolePathTipFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(new NacosConsolePathTipFilter());
+        registration.addUrlPatterns("/*");
+        registration.setName("nacosConsolePathTipFilter");
+        registration.setOrder(7);
+        return registration;
     }
     
 }

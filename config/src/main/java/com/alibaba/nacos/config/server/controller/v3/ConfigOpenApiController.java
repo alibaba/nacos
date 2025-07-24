@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigCacheGray;
 import com.alibaba.nacos.config.server.model.form.ConfigFormV3;
@@ -79,6 +80,7 @@ public class ConfigOpenApiController {
     public Result<ConfigQueryResponse> getConfig(ConfigFormV3 configForm)
             throws NacosApiException, UnsupportedEncodingException {
         configForm.validate();
+        configForm.setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
         RequestContext requestContext = RequestContextHolder.getContext();
         String sourceIp = requestContext.getBasicContext().getAddressContext().getSourceIp();
         ConfigQueryChainRequest chainRequest = buildQueryChainRequest(configForm, sourceIp);

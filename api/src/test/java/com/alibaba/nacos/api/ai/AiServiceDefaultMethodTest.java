@@ -61,14 +61,14 @@ class AiServiceDefaultMethodTest {
             }
             
             @Override
-            public McpServerDetailInfo subscribeMcpServer(String mcpName,
+            public McpServerDetailInfo subscribeMcpServer(String mcpName, String version,
                     AbstractNacosMcpServerListener mcpServerListener) throws NacosException {
                 return null;
             }
             
             @Override
-            public void unsubscribeMcpServer(String mcpName, AbstractNacosMcpServerListener mcpServerListener)
-                    throws NacosException {
+            public void unsubscribeMcpServer(String mcpName, String version,
+                    AbstractNacosMcpServerListener mcpServerListener) throws NacosException {
             }
             
             @Override
