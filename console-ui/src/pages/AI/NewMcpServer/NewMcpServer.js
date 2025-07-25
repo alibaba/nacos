@@ -403,13 +403,6 @@ class NewMcpServer extends React.Component {
 
   toolsChange = async (_toolSpec = {}, cb = () => {}) => {
     const { locale = {} } = this.props;
-    // 更新 tools 之后, 立即调用接口全量覆盖。
-    const validate = await this.handleData();
-    if (!validate || validate?.errors) {
-      // 请先完善基础配置
-      cb && cb();
-      return Message.warning(locale.pleaseComplete);
-    }
 
     await new Promise(resolve => {
       this.setState(
@@ -426,22 +419,6 @@ class NewMcpServer extends React.Component {
         resolve
       );
     });
-    const params = await this.handleData();
-    params['latest'] = false;
-    this.openLoading();
-    const result = await request({
-      url: 'v3/console/ai/mcp',
-      method: 'put',
-      data: params,
-      error: err => {
-        this.closeLoading();
-      },
-    });
-    this.closeLoading();
-
-    if (result.data === 'ok' || result.message === 'success') {
-      Message.success(locale.editSuccessfully);
-    }
   };
 
   LocalServerConfigLabel = () => {
@@ -621,6 +598,10 @@ class NewMcpServer extends React.Component {
                       this.setState({
                         restToMcpSwitch: data,
                       });
+                      data === 'off' &&
+                        this.setState({
+                          useExistService: false,
+                        });
                     }}
                   >
                     <Radio id={'off'} value={'off'}>
@@ -635,32 +616,32 @@ class NewMcpServer extends React.Component {
                   </RadioGroup>
                 </Row>
               </FormItem>
-              {!isEdit && (
-                <FormItem label={locale.backendService}>
-                  <RadioGroup
-                    value={this.state.useExistService ? 'useExistService' : 'useRemoteService'}
-                    onChange={value => {
-                      this.setState({
-                        useExistService: value === 'useExistService' ? true : false,
-                      });
-                    }}
-                  >
-                    {// mcp-sse 和 mcp-streamable 不使用已有服务
-                    (!['mcp-sse', 'mcp-streamable'].includes(
-                      this.field.getValue('frontProtocol')
-                    ) ||
-                      this.state.restToMcpSwitch !== 'off') && (
-                      <Radio id="useExistService" value="useExistService">
-                        {locale.useExistService}
-                      </Radio>
-                    )}
-                    <Radio id="useRemoteService" value="useRemoteService">
-                      {locale.useNewService}
-                      {/* 新建服务 */}
+              {/*{!isEdit && (*/}
+              <FormItem label={locale.backendService}>
+                <RadioGroup
+                  disabled={currentVersionExist}
+                  value={this.state.useExistService ? 'useExistService' : 'useRemoteService'}
+                  onChange={value => {
+                    this.setState({
+                      useExistService: value === 'useExistService' ? true : false,
+                    });
+                  }}
+                >
+                  {// mcp-sse 和 mcp-streamable 不使用已有服务
+                  (!['mcp-sse', 'mcp-streamable'].includes(this.field.getValue('frontProtocol')) ||
+                    isEdit ||
+                    this.state.restToMcpSwitch !== 'off') && (
+                    <Radio id="useExistService" value="useExistService">
+                      {locale.useExistService}
                     </Radio>
-                  </RadioGroup>
-                </FormItem>
-              )}
+                  )}
+                  <Radio id="useRemoteService" value="useRemoteService">
+                    {locale.useNewService}
+                    {/* 新建服务 */}
+                  </Radio>
+                </RadioGroup>
+              </FormItem>
+
               {this.state.useExistService ? (
                 <FormItem label={locale.serviceRef} required>
                   <Row gutter={8}>
@@ -790,7 +771,10 @@ class NewMcpServer extends React.Component {
           {/* 服务版本 */}
           <FormItem label={locale.serverVersion} required>
             <Input
-              {...init('version', { props: { placeholder: 'e.g. 1.0.0' }, rules: [{ required: true }] })}
+              {...init('version', {
+                props: { placeholder: 'e.g. 1.0.0' },
+                rules: [{ required: true }],
+              })}
             />
             {currentVersionExist && (
               <>
@@ -800,18 +784,22 @@ class NewMcpServer extends React.Component {
             )}
           </FormItem>
 
-          {getParams('mcptype') && (
-            <FormItem label={'Tools'} {...formItemLayout}>
-              <ShowTools
-                locale={locale}
-                restToMcpSwitch={this.state.restToMcpSwitch}
-                serverConfig={this.state.serverConfig}
-                getServerDetail={this.initEditedData}
-                onChange={this.toolsChange}
-                onlyEditRuntimeInfo={currentVersionExist}
-              />
-            </FormItem>
-          )}
+          <FormItem label={'Tools'} {...formItemLayout}>
+            <ShowTools
+              locale={locale}
+              restToMcpSwitch={this.state.restToMcpSwitch}
+              frontProtocol={this.field.getValue('frontProtocol')}
+              address={this.field.getValue('address')}
+              port={this.field.getValue('port')}
+              useExistService={this.state.useExistService}
+              service={this.field.getValue('service')}
+              exportPath={this.field.getValue('exportPath')}
+              serverConfig={this.state.serverConfig}
+              getServerDetail={this.initEditedData}
+              onChange={this.toolsChange}
+              onlyEditRuntimeInfo={currentVersionExist}
+            />
+          </FormItem>
         </Form>
       </Loading>
     );
