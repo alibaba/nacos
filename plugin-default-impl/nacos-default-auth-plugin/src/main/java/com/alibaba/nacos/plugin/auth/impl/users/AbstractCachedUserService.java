@@ -60,7 +60,7 @@ public abstract class AbstractCachedUserService implements NacosUserService {
     }
 
     /**
-     * [ISSUE #13625] check username and password is blank
+     * [ISSUE #13625] check username and password is blank.
      */
     protected void validateUserCredentials(String username, String password) {
         if (StringUtils.isBlank(username)) {
