@@ -152,7 +152,7 @@ public class NotifyCenter {
     }
     
     /**
-     * Register a Subscriber. If the Publisher concerned by the Subscriber does not exist, then PublihserMap will
+     * Register a Subscriber. If the Publisher concerned by the Subscriber does not exist, then PublisherMap will
      * preempt a placeholder Publisher with default EventPublisherFactory first.
      *
      * @param consumer subscriber
@@ -162,7 +162,7 @@ public class NotifyCenter {
     }
     
     /**
-     * Register a Subscriber. If the Publisher concerned by the Subscriber does not exist, then PublihserMap will
+     * Register a Subscriber. If the Publisher concerned by the Subscriber does not exist, then PublisherMap will
      * preempt a placeholder Publisher with specified EventPublisherFactory first.
      *
      * @param consumer subscriber
