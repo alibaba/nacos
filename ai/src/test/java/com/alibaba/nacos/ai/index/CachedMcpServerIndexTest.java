@@ -16,22 +16,6 @@
 
 package com.alibaba.nacos.ai.index;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ScheduledExecutorService;
-
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.api.model.Page;
@@ -48,6 +32,22 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for CachedMcpServerIndex.
@@ -337,5 +337,103 @@ class CachedMcpServerIndexTest {
         // 验证数据库查询被调用
         verify(configDetailService).findConfigInfoPage(anyString(), anyInt(), anyInt(), anyString(), anyString(),
                 anyString(), any());
+    }
+    
+    // 新增缓存删除功能测试
+    
+    @Test
+    void testRemoveMcpServerByNameWhenCacheEnabled() {
+        final String namespaceId = "test-namespace";
+        final String mcpName = "test-mcp-name";
+        
+        // 执行缓存删除
+        cachedIndex.removeMcpServerByName(namespaceId, mcpName);
+        
+        // 验证缓存删除方法被调用
+        verify(cacheIndex).removeIndex(namespaceId, mcpName);
+    }
+    
+    @Test
+    void testRemoveMcpServerByIdWhenCacheEnabled() {
+        final String mcpId = "test-mcp-id-123";
+        
+        // 执行缓存删除
+        cachedIndex.removeMcpServerById(mcpId);
+        
+        // 验证缓存删除方法被调用
+        verify(cacheIndex).removeIndex(mcpId);
+    }
+    
+    @Test
+    void testRemoveMcpServerByNameWhenCacheDisabled() {
+        // 创建禁用缓存的实例
+        final CachedMcpServerIndex disabledIndex = new CachedMcpServerIndex(configDetailService,
+                namespaceOperationService, configQueryChainService, cacheIndex, scheduledExecutor, false, 0);
+        
+        final String namespaceId = "test-namespace";
+        final String mcpName = "test-mcp-name";
+        
+        // 执行缓存删除
+        disabledIndex.removeMcpServerByName(namespaceId, mcpName);
+        
+        // 验证缓存删除方法没有被调用（因为缓存被禁用）
+        verify(cacheIndex, never()).removeIndex(namespaceId, mcpName);
+    }
+    
+    @Test
+    void testRemoveMcpServerByIdWhenCacheDisabled() {
+        // 创建禁用缓存的实例
+        final CachedMcpServerIndex disabledIndex = new CachedMcpServerIndex(configDetailService,
+                namespaceOperationService, configQueryChainService, cacheIndex, scheduledExecutor, false, 0);
+        
+        final String mcpId = "test-mcp-id-123";
+        
+        // 执行缓存删除
+        disabledIndex.removeMcpServerById(mcpId);
+        
+        // 验证缓存删除方法没有被调用（因为缓存被禁用）
+        verify(cacheIndex, never()).removeIndex(mcpId);
+    }
+    
+    @Test
+    void testRemoveMcpServerByNameWithNullParameters() {
+        // 测试 null 参数
+        cachedIndex.removeMcpServerByName(null, null);
+        cachedIndex.removeMcpServerByName("namespace", null);
+        cachedIndex.removeMcpServerByName(null, "mcpName");
+        
+        // 验证缓存删除方法没有被调用（因为参数为 null 或空）
+        verify(cacheIndex, never()).removeIndex(anyString(), anyString());
+    }
+    
+    @Test
+    void testRemoveMcpServerByIdWithNullParameter() {
+        // 测试 null 参数
+        cachedIndex.removeMcpServerById(null);
+        
+        // 验证缓存删除方法没有被调用（因为参数为 null）
+        verify(cacheIndex, never()).removeIndex(anyString());
+    }
+    
+    @Test
+    void testRemoveMcpServerByNameWithEmptyParameters() {
+        // 测试空字符串参数
+        cachedIndex.removeMcpServerByName("", "");
+        cachedIndex.removeMcpServerByName("namespace", "");
+        cachedIndex.removeMcpServerByName("", "mcpName");
+        
+        // 空字符串应该仍然调用缓存删除方法
+        verify(cacheIndex).removeIndex("", "");
+        verify(cacheIndex).removeIndex("namespace", "");
+        verify(cacheIndex).removeIndex("", "mcpName");
+    }
+    
+    @Test
+    void testRemoveMcpServerByIdWithEmptyParameter() {
+        // 测试空字符串参数
+        cachedIndex.removeMcpServerById("");
+        
+        // 空字符串应该仍然调用缓存删除方法
+        verify(cacheIndex).removeIndex("");
     }
 } 
