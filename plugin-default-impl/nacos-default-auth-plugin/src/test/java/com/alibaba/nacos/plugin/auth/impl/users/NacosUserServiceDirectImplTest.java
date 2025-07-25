@@ -31,12 +31,12 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 /**
- * NacosUserServiceTest.
+ * NacosUserServiceDirectImplTest.
  *
  * @author FangYuan on: 2025-07-24 16:00:47
  */
 @ExtendWith(MockitoExtension.class)
-class NacosUserServiceTest {
+class NacosUserServiceDirectImplTest {
     
     @Mock
     private AuthConfigs authConfigs;
