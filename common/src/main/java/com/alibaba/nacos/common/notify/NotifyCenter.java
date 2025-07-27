@@ -54,7 +54,7 @@ public class NotifyCenter {
     
     private static final EventPublisherFactory DEFAULT_PUBLISHER_FACTORY;
     
-    private static final NotifyCenter INSTANCE = new NotifyCenter();
+    private static NotifyCenter INSTANCE = new NotifyCenter();
     
     private DefaultSharePublisher sharePublisher;
     
@@ -149,6 +149,9 @@ public class NotifyCenter {
         }
         
         LOGGER.info("[NotifyCenter] Completed destruction of Publisher");
+
+        // help gc
+        INSTANCE = null;
     }
     
     /**

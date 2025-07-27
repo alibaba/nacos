@@ -75,8 +75,11 @@ public class CacheData {
         }
         return notifyWarnTimeout;
     }
-    
-    static ScheduledThreadPoolExecutor scheduledExecutor;
+
+    /**
+     * double check lock initialization of scheduledExecutor.
+     */
+    static volatile ScheduledThreadPoolExecutor scheduledExecutor;
     
     static ScheduledThreadPoolExecutor getNotifyBlockMonitor() {
         if (scheduledExecutor == null) {
@@ -92,6 +95,18 @@ public class CacheData {
         return scheduledExecutor;
     }
     
+    public static void shutdownScheduledExecutor() {
+        if (scheduledExecutor != null) {
+            try {
+                scheduledExecutor.shutdown();
+                // help gc
+                scheduledExecutor = null;
+            } catch (Exception e) {
+                // ignore
+            }
+        }
+    }
+
     static boolean initSnapshot;
     
     static {
