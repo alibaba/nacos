@@ -129,7 +129,7 @@ public class ConfigFuzzyWatchGroupKeyHolder extends SmartSubscriber implements C
     }
 
     /**
-     * Deregistering it from the NotifyCenter and clearing.
+     * Deregistering it from the NotifyCenter.
      */
     @Override
     public void shutdown() {
