@@ -364,6 +364,9 @@ class McpServerOperationServiceTest {
         assertNotNull(id);
         verify(configOperationService, times(2)).publishConfig(any(ConfigFormV3.class), any(ConfigRequestInfo.class),
                 isNull());
+        verify(mcpServerIndex, times(1)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                mockServerBasicInfo.getName());
+        verify(mcpServerIndex, times(1)).removeMcpServerById(id);
     }
     
     @Test
@@ -376,6 +379,9 @@ class McpServerOperationServiceTest {
         assertNotNull(id);
         verify(configOperationService, times(2)).publishConfig(any(ConfigFormV3.class), any(ConfigRequestInfo.class),
                 isNull());
+        verify(mcpServerIndex, times(1)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                mockServerBasicInfo.getName());
+        verify(mcpServerIndex, times(1)).removeMcpServerById(id);
     }
     
     @Test
@@ -391,6 +397,9 @@ class McpServerOperationServiceTest {
                 isNull());
         verify(toolOperationService).refreshMcpTool(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
                 any(McpServerStorageInfo.class), eq(toolSpecification));
+        verify(mcpServerIndex, times(1)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                mockServerBasicInfo.getName());
+        verify(mcpServerIndex, times(1)).removeMcpServerById(id);
     }
     
     @Test
@@ -412,6 +421,8 @@ class McpServerOperationServiceTest {
         assertNotNull(id);
         verify(configOperationService, times(2)).publishConfig(any(ConfigFormV3.class), any(ConfigRequestInfo.class),
                 isNull());
+        verify(mcpServerIndex, times(1)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName");
+        verify(mcpServerIndex, times(1)).removeMcpServerById(id);
     }
     
     @Test
@@ -470,6 +481,8 @@ class McpServerOperationServiceTest {
         assertEquals(id, actualId);
         verify(configOperationService, times(2)).publishConfig(any(ConfigFormV3.class), any(ConfigRequestInfo.class),
                 isNull());
+        verify(mcpServerIndex, times(1)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName");
+        verify(mcpServerIndex, times(1)).removeMcpServerById(id);
     }
     
     @Test
@@ -504,6 +517,9 @@ class McpServerOperationServiceTest {
                 null);
         verify(configOperationService, times(2)).publishConfig(any(ConfigFormV3.class), any(ConfigRequestInfo.class),
                 isNull());
+        verify(mcpServerIndex, times(1)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                mockServerBasicInfo.getName());
+        verify(mcpServerIndex, times(1)).removeMcpServerById(id);
     }
     
     @Test
@@ -518,6 +534,9 @@ class McpServerOperationServiceTest {
                 null);
         verify(configOperationService, times(2)).publishConfig(any(ConfigFormV3.class), any(ConfigRequestInfo.class),
                 isNull());
+        verify(mcpServerIndex, times(1)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                mockServerBasicInfo.getName());
+        verify(mcpServerIndex, times(1)).removeMcpServerById(id);
     }
     
     @Test
@@ -532,6 +551,9 @@ class McpServerOperationServiceTest {
                 null);
         verify(configOperationService, times(2)).publishConfig(any(ConfigFormV3.class), any(ConfigRequestInfo.class),
                 isNull());
+        verify(mcpServerIndex, times(1)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                mockServerBasicInfo.getName());
+        verify(mcpServerIndex, times(1)).removeMcpServerById(id);
     }
     
     @Test
@@ -555,6 +577,8 @@ class McpServerOperationServiceTest {
                 null);
         verify(configOperationService, times(2)).publishConfig(any(ConfigFormV3.class), any(ConfigRequestInfo.class),
                 isNull());
+        verify(mcpServerIndex, times(1)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName");
+        verify(mcpServerIndex, times(1)).removeMcpServerById(id);
     }
     
     @Test
@@ -577,6 +601,8 @@ class McpServerOperationServiceTest {
         String serverVersionDataId = McpConfigUtils.formatServerVersionInfoDataId(id);
         verify(configOperationService, times(2)).deleteConfig(serverVersionDataId, Constants.MCP_SERVER_VERSIONS_GROUP,
                 AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, null, "nacos", null);
+        verify(mcpServerIndex, times(0)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null);
+        verify(mcpServerIndex, times(1)).removeMcpServerById(id);
         for (ServerVersionDetail each : mockServerVersionInfo(id).getVersionDetails()) {
             verify(toolOperationService).deleteMcpTool(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id, each.getVersion());
             String serverSpecDataId = McpConfigUtils.formatServerSpecInfoDataId(id, each.getVersion());
@@ -596,6 +622,8 @@ class McpServerOperationServiceTest {
         serverOperationService.deleteMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", null, null);
         verify(endpointOperationService, times(2)).deleteMcpServerEndpointService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
                 "mcpName");
+        verify(mcpServerIndex, times(1)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName");
+        verify(mcpServerIndex, times(0)).removeMcpServerById(null);
         String serverVersionDataId = McpConfigUtils.formatServerVersionInfoDataId(id);
         verify(configOperationService, times(2)).deleteConfig(serverVersionDataId, Constants.MCP_SERVER_VERSIONS_GROUP,
                 AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, null, "nacos", null);
@@ -613,6 +641,8 @@ class McpServerOperationServiceTest {
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(
                 mockConfigQueryChainResponse(mockServerVersionInfo(id)));
         serverOperationService.deleteMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, id, "1.0.0");
+        verify(mcpServerIndex, times(0)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null);
+        verify(mcpServerIndex, times(1)).removeMcpServerById(id);
         verify(endpointOperationService).deleteMcpServerEndpointService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
                 "mcpName");
         String serverVersionDataId = McpConfigUtils.formatServerVersionInfoDataId(id);

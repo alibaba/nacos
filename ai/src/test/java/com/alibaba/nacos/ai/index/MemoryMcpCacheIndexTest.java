@@ -16,20 +16,20 @@
 
 package com.alibaba.nacos.ai.index;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import com.alibaba.nacos.ai.config.McpCacheIndexProperties;
+import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import com.alibaba.nacos.ai.config.McpCacheIndexProperties;
-import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MemoryMcpCacheIndexTest {
     
@@ -215,5 +215,202 @@ class MemoryMcpCacheIndexTest {
         assertEquals("id1", data.getId());
         assertEquals("ns", data.getNamespaceId());
         assertNull(cache.getMcpServerByName("ns", "not-exist"));
+    }
+    
+    // 新增缓存删除功能测试
+    
+    @Test
+    void testRemoveByNameDeletesCorrectMapping() {
+        // 准备多个映射
+        cache.updateIndex("ns1", "name1", "id1");
+        cache.updateIndex("ns1", "name2", "id2");
+        cache.updateIndex("ns2", "name1", "id3");
+        
+        // 删除特定命名空间的特定名称
+        cache.removeIndex("ns1", "name1");
+        
+        // 验证只有正确的映射被删除
+        assertNull(cache.getMcpId("ns1", "name1"));
+        assertNull(cache.getMcpServerById("id1"));
+        
+        // 验证其他映射仍然存在
+        assertEquals("id2", cache.getMcpId("ns1", "name2"));
+        assertEquals("id3", cache.getMcpId("ns2", "name1"));
+        assertNotNull(cache.getMcpServerById("id2"));
+        assertNotNull(cache.getMcpServerById("id3"));
+        
+        assertEquals(2, cache.getSize());
+    }
+    
+    @Test
+    void testRemoveByIdDeletesAllRelatedMappings() {
+        // 准备数据，一个ID对应一个名称映射
+        cache.updateIndex("ns1", "name1", "id1");
+        cache.updateIndex("ns1", "name2", "id2");
+        cache.updateIndex("ns2", "name1", "id3");
+        
+        // 通过ID删除
+        cache.removeIndex("id2");
+        
+        // 验证ID对应的数据被删除
+        assertNull(cache.getMcpServerById("id2"));
+        
+        // 验证名称到ID的映射也被清理
+        assertNull(cache.getMcpId("ns1", "name2"));
+        
+        // 验证其他数据仍然存在
+        assertEquals("id1", cache.getMcpId("ns1", "name1"));
+        assertEquals("id3", cache.getMcpId("ns2", "name1"));
+        assertNotNull(cache.getMcpServerById("id1"));
+        assertNotNull(cache.getMcpServerById("id3"));
+        
+        assertEquals(2, cache.getSize());
+    }
+    
+    @Test
+    void testRemoveWithInvalidMappingConsistency() {
+        // 准备数据
+        cache.updateIndex("ns1", "name1", "id1");
+        
+        // 验证数据存在
+        assertEquals("id1", cache.getMcpId("ns1", "name1"));
+        assertNotNull(cache.getMcpServerById("id1"));
+        
+        // 删除名称映射
+        cache.removeIndex("ns1", "name1");
+        
+        // 验证数据被完全清理
+        assertNull(cache.getMcpId("ns1", "name1"));
+        assertNull(cache.getMcpServerById("id1"));
+        assertEquals(0, cache.getSize());
+    }
+    
+    @Test
+    void testRemoveNonExistentEntries() {
+        // 添加一些数据
+        cache.updateIndex("ns1", "name1", "id1");
+        
+        // 尝试删除不存在的条目
+        cache.removeIndex("non-exist-ns", "non-exist-name");
+        cache.removeIndex("non-exist-id");
+        
+        // 验证原有数据不受影响
+        assertEquals("id1", cache.getMcpId("ns1", "name1"));
+        assertNotNull(cache.getMcpServerById("id1"));
+        assertEquals(1, cache.getSize());
+    }
+    
+    @Test
+    void testRemoveWithNullParameters() {
+        // 添加一些数据
+        cache.updateIndex("ns1", "name1", "id1");
+        
+        // 尝试用null参数删除
+        cache.removeIndex(null, null);
+        cache.removeIndex("ns1", null);
+        cache.removeIndex(null, "name1");
+        cache.removeIndex((String) null);
+        
+        // 验证原有数据不受影响
+        assertEquals("id1", cache.getMcpId("ns1", "name1"));
+        assertNotNull(cache.getMcpServerById("id1"));
+        assertEquals(1, cache.getSize());
+    }
+    
+    @Test
+    void testRemoveWithEmptyParameters() {
+        // 添加一些数据，包括空字符串键
+        cache.updateIndex("ns1", "name1", "id1");
+        cache.updateIndex("", "", "id2");
+        cache.updateIndex("ns2", "", "id3");
+        
+        // 删除空字符串键
+        cache.removeIndex("", "");
+        
+        // 验证空字符串键的数据被删除
+        assertNull(cache.getMcpId("", ""));
+        assertNull(cache.getMcpServerById("id2"));
+        
+        // 验证其他数据不受影响
+        assertEquals("id1", cache.getMcpId("ns1", "name1"));
+        assertNull(cache.getMcpId("ns2", ""));
+        assertEquals(1, cache.getSize());
+    }
+    
+    @Test
+    void testRemoveAfterEviction() {
+        // 填满缓存
+        cache.updateIndex("ns", "name1", "id1");
+        cache.updateIndex("ns", "name2", "id2");
+        cache.updateIndex("ns", "name3", "id3");
+        
+        // 添加新元素触发淘汰
+        cache.updateIndex("ns", "name4", "id4");
+        
+        // id1应该被淘汰了（LRU）
+        assertNull(cache.getMcpServerById("id1"));
+        assertEquals(3, cache.getSize());
+        
+        // 尝试删除已被淘汰的元素
+        cache.removeIndex("ns", "name1");
+        cache.removeIndex("id1");
+        
+        // 验证缓存大小和其他元素不受影响
+        assertEquals(3, cache.getSize());
+        assertNotNull(cache.getMcpServerById("id2"));
+        assertNotNull(cache.getMcpServerById("id3"));
+        assertNotNull(cache.getMcpServerById("id4"));
+    }
+    
+    @Test
+    void testConcurrentRemoveOperations() throws InterruptedException {
+        int threadCount = 3;
+        int opCount = 10;
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+        
+        // 先填充数据
+        for (int i = 0; i < threadCount * opCount; i++) {
+            cache.updateIndex("ns" + (i % 3), "name" + i, "id" + i);
+        }
+        
+        int initialSize = cache.getSize();
+        
+        // 并发删除操作
+        for (int i = 0; i < threadCount; i++) {
+            int threadIndex = i;
+            executor.submit(() -> {
+                try {
+                    for (int j = 0; j < opCount; j++) {
+                        int index = threadIndex * opCount + j;
+                        if (index % 2 == 0) {
+                            // 通过名称删除
+                            cache.removeIndex("ns" + (index % 3), "name" + index);
+                        } else {
+                            // 通过ID删除
+                            cache.removeIndex("id" + index);
+                        }
+                    }
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+        
+        // 等待所有线程完成
+        boolean completed = latch.await(60, TimeUnit.SECONDS);
+        assertTrue(completed, "All threads should complete within timeout");
+        
+        executor.shutdown();
+        boolean terminated = executor.awaitTermination(10, TimeUnit.SECONDS);
+        assertTrue(terminated, "Executor should terminate within timeout");
+        
+        // 验证所有数据都被删除
+        assertEquals(0, cache.getSize());
+        
+        // 验证缓存仍然可以正常工作
+        cache.updateIndex("test", "test", "test-id");
+        assertEquals("test-id", cache.getMcpId("test", "test"));
+        assertEquals(1, cache.getSize());
     }
 } 

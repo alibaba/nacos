@@ -91,14 +91,6 @@ public class CachedMcpServerIndex implements McpServerIndex {
     @Override
     public Page<McpServerIndexData> searchMcpServerByName(String namespaceId, String name, String search, int offset,
             int limit) {
-        if (!cacheEnabled) {
-            LOGGER.debug("Cache disabled, searching directly from database");
-            return searchFromDatabase(namespaceId, name, search, offset, limit);
-        }
-        // Priority query from cache (only hit statistics here, actual pagination still queries database)
-        LOGGER.debug(
-                "Searching MCP servers with cache enabled: namespaceId={}, name={}, search={}, offset={}, limit={}",
-                namespaceId, name, search, offset, limit);
         return searchFromDatabase(namespaceId, name, search, offset, limit);
     }
     
@@ -349,6 +341,38 @@ public class CachedMcpServerIndex implements McpServerIndex {
             syncCacheFromDatabase();
         } else {
             LOGGER.warn("Cache is disabled, manual sync ignored");
+        }
+    }
+    
+    /**
+     * Remove cache entry by namespace ID and MCP server name.
+     *
+     * @param namespaceId namespace ID
+     * @param mcpName     MCP server name
+     */
+    @Override
+    public void removeMcpServerByName(String namespaceId, String mcpName) {
+        if (cacheEnabled) {
+            LOGGER.debug("Removing cache entry by name: namespaceId={}, mcpName={}", namespaceId, mcpName);
+            cacheIndex.removeIndex(namespaceId, mcpName);
+        } else {
+            LOGGER.debug("Cache is disabled, ignoring cache removal by name: namespaceId={}, mcpName={}", namespaceId,
+                    mcpName);
+        }
+    }
+    
+    /**
+     * Remove cache entry by MCP server ID.
+     *
+     * @param mcpId MCP server ID
+     */
+    @Override
+    public void removeMcpServerById(String mcpId) {
+        if (cacheEnabled) {
+            LOGGER.debug("Removing cache entry by ID: mcpId={}", mcpId);
+            cacheIndex.removeIndex(mcpId);
+        } else {
+            LOGGER.debug("Cache is disabled, ignoring cache removal by ID: mcpId={}", mcpId);
         }
     }
 } 

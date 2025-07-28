@@ -49,6 +49,8 @@ import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 
 import java.time.ZoneOffset;
@@ -76,6 +78,8 @@ import static com.alibaba.nacos.ai.utils.McpConfigUtils.buildMcpServerVersionCon
  */
 @org.springframework.stereotype.Service
 public class McpServerOperationService {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(McpServerOperationService.class);
     
     private final ConfigQueryChainService configQueryChainService;
     
@@ -215,8 +219,8 @@ public class McpServerOperationService {
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         if (McpConfigUtils.isConfigNotFound(response.getStatus())) {
             throw new NacosApiException(NacosApiException.NOT_FOUND, ErrorCode.MCP_SERVER_NOT_FOUND,
-                     String.format("Mcp server [ID: %s] not found in namespace [%s]. Response: %s",
-                            mcpServerId, namespaceId, response.getMessage()));
+                    String.format("Mcp server [ID: %s] not found in namespace [%s]. Response: %s", mcpServerId,
+                            namespaceId, response.getMessage()));
         }
         
         return JacksonUtils.toObj(response.getContent(), McpServerVersionInfo.class);
@@ -282,7 +286,7 @@ public class McpServerOperationService {
         }
         String id;
         String customMcpId = serverSpecification.getId();
-
+        
         if (StringUtils.isEmpty(customMcpId)) {
             id = UUID.randomUUID().toString();
         } else {
@@ -294,10 +298,10 @@ public class McpServerOperationService {
                 throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
                         "parameter `serverSpecification.id` conflict with exist mcp server id");
             }
-
+            
             id = customMcpId;
         }
-
+        
         serverSpecification.setId(id);
         ZonedDateTime currentTime = ZonedDateTime.now(ZoneOffset.UTC);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(Constants.RELEASE_DATE_FORMAT);
@@ -319,6 +323,10 @@ public class McpServerOperationService {
         
         ConfigForm configForm = buildMcpConfigForm(namespaceId, id, versionDetail.getVersion(), newSpecification);
         configOperationService.publishConfig(configForm, configRequestInfo, null);
+        
+        // Delete the relevant cache after a successful database operation
+        invalidateCacheAfterDbOperation(namespaceId, serverSpecification.getName(), id);
+        
         return id;
     }
     
@@ -415,6 +423,10 @@ public class McpServerOperationService {
         
         ConfigFormV3 mcpServerVersionForm = buildMcpServerVersionForm(namespaceId, mcpServerVersionInfo);
         configOperationService.publishConfig(mcpServerVersionForm, new ConfigRequestInfo(), null);
+        
+        // Delete the relevant cache after a successful database operation
+        invalidateCacheAfterDbUpdateOperation(namespaceId, mcpServerVersionInfo.getName(),
+                serverSpecification.getName(), mcpServerId);
     }
     
     /**
@@ -446,6 +458,9 @@ public class McpServerOperationService {
             configOperationService.deleteConfig(serverVersionDataId, Constants.MCP_SERVER_VERSIONS_GROUP, namespaceId,
                     null, null, "nacos", null);
         }
+        
+        // Delete the relevant cache after a successful database operation
+        invalidateCacheAfterDbOperation(namespaceId, mcpName, mcpServerId);
     }
     
     private void injectToolAndEndpoint(String namespaceId, String mcpServerId, McpServerStorageInfo serverSpecification,
@@ -543,5 +558,57 @@ public class McpServerOperationService {
         }
         
         return null;
+    }
+    
+    /**
+     * Invalidate cache after update mcp server operation.
+     *
+     * @param namespaceId namespace id of mcp server
+     * @param oldMcpName  old mcp server name
+     * @param newMcpName  new mcp server name
+     * @param mcpServerId mcp server id
+     */
+    private void invalidateCacheAfterDbUpdateOperation(String namespaceId, String oldMcpName, String newMcpName,
+            String mcpServerId) {
+        try {
+            if (StringUtils.isNotEmpty(oldMcpName) && !oldMcpName.equals(newMcpName)) {
+                mcpServerIndex.removeMcpServerByName(namespaceId, oldMcpName);
+            }
+            if (StringUtils.isNotEmpty(newMcpName)) {
+                mcpServerIndex.removeMcpServerByName(namespaceId, newMcpName);
+            }
+            if (StringUtils.isNotEmpty(mcpServerId)) {
+                mcpServerIndex.removeMcpServerById(mcpServerId);
+            }
+            LOGGER.debug("Cache invalidated after updateMcpServer: namespaceId={}, oldName={}, newName={}, id={}",
+                    namespaceId, oldMcpName, newMcpName, mcpServerId);
+        } catch (Exception e) {
+            LOGGER.warn(
+                    "Failed to invalidate cache after updateMcpServer: namespaceId={}, oldName={}, newName={}, id={}, error={}",
+                    namespaceId, oldMcpName, newMcpName, mcpServerId, e.getMessage());
+        }
+    }
+    
+    /**
+     * Unified cache invalidation method.
+     *
+     * @param namespaceId namespace ID
+     * @param mcpName     MCP server name
+     * @param mcpServerId MCP server ID
+     */
+    private void invalidateCacheAfterDbOperation(String namespaceId, String mcpName, String mcpServerId) {
+        try {
+            if (StringUtils.isNotEmpty(mcpName)) {
+                mcpServerIndex.removeMcpServerByName(namespaceId, mcpName);
+            }
+            if (StringUtils.isNotEmpty(mcpServerId)) {
+                mcpServerIndex.removeMcpServerById(mcpServerId);
+            }
+            LOGGER.debug("Cache invalidated after DB operation: namespaceId={}, mcpName={}, mcpId={}", namespaceId,
+                    mcpName, mcpServerId);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to invalidate cache after DB operation: namespaceId={}, mcpName={}, mcpId={}, error={}",
+                    namespaceId, mcpName, mcpServerId, e.getMessage());
+        }
     }
 }
