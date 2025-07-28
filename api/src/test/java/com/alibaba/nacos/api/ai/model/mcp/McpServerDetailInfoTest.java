@@ -171,7 +171,7 @@ class McpServerDetailInfoTest extends BasicRequestTest {
                         + "{\"version\":\"1.0.0\",\"release_date\":\"2025-07-15 23:59:59\",\"is_latest\":false},"
                         + "\"remoteServerConfig\":{\"serviceRef\":{\"namespaceId\":\"public\",\"groupName\":\"testG\","
                         + "\"serviceName\":\"testS\"},\"exportPath\":\"/test\",\"frontEndpointConfigList\":[{\"type\":"
-                        + "\"mcp-sse\",\"protocol\":\"http\",\"endpointType\":\"DIRECT\",\"endpointAddress\":\"1.1.1.1:8080\","
+                        + "\"mcp-sse\",\"protocol\":\"http\",\"endpointType\":\"DIRECT\",\"endpointData\":\"1.1.1.1:8080\","
                         + "\"path\":\"/testFront\"}]},\"enabled\":true,\"capabilities\":[\"TOOL\"],\"backendEndpoints\":"
                         + "[{\"address\":\"1.1.1.1\",\"port\":3306,\"path\":\"/testBack\"}],\"toolSpec\":{\"tools\":[],"
                         + "\"toolsMeta\":{}},\"allVersions\":[{\"version\":\"1.0.0\",\"release_date\":\"2025-07-15 23:59:59\","
