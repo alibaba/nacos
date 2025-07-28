@@ -66,7 +66,7 @@ class NacosMcpRegistryServerDetailTest extends BasicRequestTest {
         assertTrue(json.contains("\"url\":\"127.0.0.1:8848/sse\""));
         assertTrue(json.contains("\"transport_type\":\"https\""));
         assertTrue(json.contains("\"nacosMcpEndpointSpec\":{\"data\":{}}"));
-        assertTrue(json.contains("\"mcpToolSpecification\":{\"tools\":[],\"toolsMeta\":{}}"));
+        assertTrue(json.contains("\"mcpToolSpecification\":{\"tools\":[],\"toolsMeta\":{},\"securitySchemes\":[]}"));
         assertTrue(json.contains("\"nacosNamespaceId\":\"public\""));
     }
     

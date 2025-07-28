@@ -18,13 +18,13 @@ import {
   Switch,
 } from '@alifd/next';
 import ShowTools from '../McpDetail/ShowTools';
+import MonacoEditor from '../../../components/MonacoEditor';
 import { McpServerManagementRoute } from '../../../layouts/menu';
 const { Row, Col } = Grid;
 
 const FormItem = Form.Item;
 const { Group: RadioGroup } = Radio;
-const localServerConfigDesc = `示例：
-{
+const localServerConfigDesc = `{
     "mcpServers":
     {
         "amap-mcp-server":
@@ -56,7 +56,13 @@ class NewMcpServer extends React.Component {
 
   constructor(props) {
     super(props);
-    this.field = new Field(this);
+    this.field = new Field(this, {
+      parseName: true,
+      values: {
+        securitySchemes: [],
+        localServerConfig: localServerConfigDesc,
+      },
+    });
     this.tenant = getParams('namespace') || '';
     this.state = {
       loading: false,
@@ -70,6 +76,7 @@ class NewMcpServer extends React.Component {
       isLatestVersion: false,
       versionsList: [],
       isInputError: false,
+      securitySchemeIdx: 0,
     };
   }
 
@@ -145,6 +152,21 @@ class NewMcpServer extends React.Component {
 
         this.field.setValues(initFileData);
 
+        // 初始化 securitySchemes 数据
+        const securitySchemes = result.data?.toolSpec?.securitySchemes || [];
+        const securitySchemesFormData = securitySchemes.map((scheme, index) => ({
+          // 如果后端数据中有 id 则使用，否则生成一个用于表单管理
+          id: scheme.id || `securityScheme_${index + 1}`,
+          ...scheme,
+        }));
+        this.setState({
+          securitySchemeIdx: securitySchemes.length,
+        });
+        this.field.setValues({
+          ...this.field.getValues(),
+          securitySchemes: securitySchemesFormData,
+        });
+
         let restToMcpBackendProtocol = 'off';
         if (protocol === 'https' || protocol === 'http') {
           restToMcpBackendProtocol = protocol;
@@ -194,6 +216,21 @@ class NewMcpServer extends React.Component {
           protocol = values.frontProtocol;
         }
         const mcpServerId = getParams('id') || '';
+
+        // 处理 securitySchemes 数据
+        const formSecuritySchemes = values?.securitySchemes || [];
+        const securitySchemes = formSecuritySchemes.map(scheme => {
+          // 保留所有字段，包括 id
+          return {
+            id: scheme.id,
+            type: scheme.type,
+            scheme: scheme.scheme,
+            in: scheme.in,
+            name: scheme.name,
+            defaultCredential: scheme.defaultCredential,
+          };
+        });
+
         const params = {
           id: mcpServerId,
           serverSpecification: JSON.stringify(
@@ -214,7 +251,12 @@ class NewMcpServer extends React.Component {
             null,
             2
           ),
-          toolSpecification: JSON.stringify(this.state?.serverConfig?.toolSpec || {}),
+          toolSpecification: JSON.stringify(
+            {
+              ...this.state?.serverConfig?.toolSpec,
+              securitySchemes: securitySchemes,
+            } || {}
+          ),
         };
 
         if (values?.frontProtocol !== 'stdio') {
@@ -266,11 +308,13 @@ class NewMcpServer extends React.Component {
 
   publishConfig = async isPublish => {
     if (this.state.isInputError) {
+      console.log('input error');
       return;
     }
 
     const params = await this.handleData();
     if (params.errors) {
+      console.log('handleData errors', params.errors);
       return;
     }
 
@@ -401,8 +445,60 @@ class NewMcpServer extends React.Component {
     }
   };
 
+  // 添加新的安全认证方案
+  addNewSecurityScheme = () => {
+    const { securitySchemeIdx } = this.state;
+    const newIdx = securitySchemeIdx + 1;
+    this.setState({
+      securitySchemeIdx: newIdx,
+    });
+    this.field.addArrayValue('securitySchemes', newIdx, {
+      id: `securityScheme_${newIdx}`,
+      type: 'http',
+      scheme: '',
+      in: '',
+      name: '',
+      defaultCredential: '',
+    });
+    // 更新 serverConfig 以便 CreateTools 能够实时获取到最新的 securitySchemes
+    setTimeout(() => {
+      this.toolsChange();
+    }, 100);
+  };
+
+  // 删除安全认证方案
+  deleteSecurityScheme = index => {
+    this.field.deleteArrayValue('securitySchemes', index);
+    // 更新 serverConfig 以便 CreateTools 能够实时获取到最新的 securitySchemes
+    setTimeout(() => {
+      this.toolsChange();
+    }, 100);
+  };
+
+  // 处理 securitySchemes 字段变化
+  handleSecuritySchemeChange = () => {
+    // 延迟执行，确保表单字段已经更新
+    setTimeout(() => {
+      this.toolsChange();
+    }, 100);
+  };
+
   toolsChange = async (_toolSpec = {}, cb = () => {}) => {
     const { locale = {} } = this.props;
+
+    // 获取当前表单中的 securitySchemes 数据
+    const formSecuritySchemes = this.field.getValue('securitySchemes') || [];
+    const securitySchemes = formSecuritySchemes.map(scheme => {
+      // 保留所有字段，包括 id
+      return {
+        id: scheme.id,
+        type: scheme.type,
+        scheme: scheme.scheme,
+        in: scheme.in,
+        name: scheme.name,
+        defaultCredential: scheme.defaultCredential,
+      };
+    });
 
     await new Promise(resolve => {
       this.setState(
@@ -413,6 +509,7 @@ class NewMcpServer extends React.Component {
               ...this.state?.serverConfig?.toolSpec,
               tools: _toolSpec?.tools || [],
               toolsMeta: _toolSpec?.toolsMeta || {},
+              securitySchemes: securitySchemes,
             },
           },
         },
@@ -717,45 +814,246 @@ class NewMcpServer extends React.Component {
                   />
                 </FormItem>
               )}
+
+              {/* Security Schemes 配置 - 只在 restToMcpSwitch 不为 off 时显示 */}
+              {this.state.restToMcpSwitch !== 'off' && (
+                <FormItem label={locale.securitySchemes || '安全认证方案'}>
+                  <Button
+                    type="primary"
+                    size="small"
+                    onClick={this.addNewSecurityScheme}
+                    style={{ marginBottom: 10 }}
+                  >
+                    {locale.addSecurityScheme || '添加认证方案'}
+                  </Button>
+
+                  {this.field.getValue('securitySchemes') &&
+                    this.field.getValue('securitySchemes').map((item, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          border: '1px solid #ddd',
+                          padding: '15px',
+                          marginBottom: '10px',
+                          borderRadius: '4px',
+                        }}
+                      >
+                        <Row gutter={8}>
+                          <Col span={6}>
+                            <FormItem label={locale.schemeId || 'ID'} required>
+                              <Input
+                                {...init(`securitySchemes.${index}.id`, {
+                                  rules: [{ required: true, message: locale.pleaseEnter }],
+                                  props: {
+                                    onChange: this.handleSecuritySchemeChange,
+                                  },
+                                })}
+                                placeholder="unique-id"
+                              />
+                            </FormItem>
+                          </Col>
+                          <Col span={6}>
+                            <FormItem label={locale.schemeType || '认证类型'} required>
+                              <Select
+                                {...init(`securitySchemes.${index}.type`, {
+                                  initValue: 'http',
+                                  rules: [{ required: true, message: locale.pleaseSelect }],
+                                  props: {
+                                    onChange: this.handleSecuritySchemeChange,
+                                  },
+                                })}
+                                dataSource={[
+                                  { label: 'HTTP (Basic/Bearer)', value: 'http' },
+                                  { label: 'API Key', value: 'apiKey' },
+                                ]}
+                              />
+                            </FormItem>
+                          </Col>
+                          <Col span={6}>
+                            {this.field.getValue(`securitySchemes.${index}.type`) === 'http' ? (
+                              <FormItem label={locale.scheme || 'Scheme'}>
+                                <Select
+                                  {...init(`securitySchemes.${index}.scheme`, {
+                                    props: {
+                                      onChange: this.handleSecuritySchemeChange,
+                                    },
+                                  })}
+                                  dataSource={[
+                                    { label: 'Basic', value: 'basic' },
+                                    { label: 'Bearer', value: 'bearer' },
+                                  ]}
+                                  placeholder={locale.selectScheme || '选择认证方案'}
+                                />
+                              </FormItem>
+                            ) : (
+                              <FormItem label={locale.keyLocation || '密钥位置'}>
+                                <Select
+                                  {...init(`securitySchemes.${index}.in`, {
+                                    props: {
+                                      onChange: this.handleSecuritySchemeChange,
+                                    },
+                                  })}
+                                  dataSource={[
+                                    { label: 'Header', value: 'header' },
+                                    { label: 'Query', value: 'query' },
+                                  ]}
+                                  placeholder="选择位置"
+                                />
+                              </FormItem>
+                            )}
+                          </Col>
+                          <Col span={4}>
+                            <FormItem label=" ">
+                              <Button
+                                type="normal"
+                                warning
+                                size="small"
+                                onClick={() => this.deleteSecurityScheme(index)}
+                              >
+                                {locale.delete || '删除'}
+                              </Button>
+                            </FormItem>
+                          </Col>
+                        </Row>
+
+                        <Row gutter={8}>
+                          {this.field.getValue(`securitySchemes.${index}.type`) === 'apiKey' && (
+                            <Col span={12}>
+                              <FormItem label={locale.keyName || '密钥名称'}>
+                                <Input
+                                  {...init(`securitySchemes.${index}.name`, {
+                                    props: {
+                                      onChange: this.handleSecuritySchemeChange,
+                                    },
+                                  })}
+                                  placeholder="X-API-Key"
+                                />
+                              </FormItem>
+                            </Col>
+                          )}
+                          <Col span={12}>
+                            <FormItem label={locale.defaultCredential || '默认凭证'}>
+                              <Input
+                                {...init(`securitySchemes.${index}.defaultCredential`, {
+                                  props: {
+                                    onChange: this.handleSecuritySchemeChange,
+                                  },
+                                })}
+                                placeholder="默认凭证值"
+                              />
+                            </FormItem>
+                          </Col>
+                        </Row>
+                      </div>
+                    ))}
+                </FormItem>
+              )}
             </>
           ) : (
             // Local Server 配置
             <>
               <FormItem label={this.LocalServerConfigLabel()} required>
-                <Input.TextArea
-                  isPreview={currentVersionExist}
-                  {...init('localServerConfig', {
-                    props: textAreaProps,
-                    rules: [
-                      {
-                        required: true,
-                        message: locale.pleaseEnter,
-                      },
-                      {
-                        validator: (rule, value, callback) => {
-                          try {
-                            if (value?.length > 0) {
-                              const parsedValue = JSON.parse(value);
-                              if (parsedValue['description']) {
-                                this.field.setValue('description', parsedValue['description']);
-                              }
-                            }
-                            callback();
-                            this.setState({
-                              isInputError: false,
-                            });
-                          } catch (e) {
-                            callback(locale.localServerConfigError);
-                            this.setState({
-                              isInputError: true,
-                            });
+                {currentVersionExist ? (
+                  // 预览模式使用格式化的 pre 标签
+                  <pre
+                    style={{
+                      backgroundColor: '#f6f7f9',
+                      border: '1px solid #dcdee3',
+                      borderRadius: '4px',
+                      padding: '8px 12px',
+                      fontSize: '12px',
+                      fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
+                      lineHeight: '1.5',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-all',
+                      maxHeight: '400px',
+                      overflow: 'auto',
+                      margin: 0,
+                    }}
+                  >
+                    {(() => {
+                      try {
+                        const configValue = this.field.getValue('localServerConfig');
+                        return configValue
+                          ? JSON.stringify(JSON.parse(configValue), null, 2)
+                          : configValue;
+                      } catch (error) {
+                        return this.field.getValue('localServerConfig');
+                      }
+                    })()}
+                  </pre>
+                ) : (
+                  // 编辑模式使用 Monaco Editor
+                  <MonacoEditor
+                    language="json"
+                    height="300px"
+                    value={this.field.getValue('localServerConfig') || localServerConfigDesc}
+                    onChange={value => {
+                      this.field.setValue('localServerConfig', value);
+                      // 执行验证逻辑
+                      try {
+                        if (value?.length > 0) {
+                          const parsedValue = JSON.parse(value);
+                          if (parsedValue['description']) {
+                            this.field.setValue('description', parsedValue['description']);
                           }
+                        }
+                        this.setState({
+                          isInputError: false,
+                        });
+                      } catch (e) {
+                        this.setState({
+                          isInputError: true,
+                        });
+                      }
+                    }}
+                    options={{
+                      minimap: { enabled: false },
+                      scrollBeyondLastLine: false,
+                      fontSize: 12,
+                      tabSize: 2,
+                      insertSpaces: true,
+                      wordWrap: 'on',
+                      lineNumbers: 'on',
+                      formatOnPaste: true,
+                      formatOnType: true,
+                    }}
+                  />
+                )}
+                {/* 隐藏的表单字段，用于验证 */}
+                <div style={{ display: 'none' }}>
+                  <Input.TextArea
+                    {...init('localServerConfig', {
+                      rules: [
+                        {
+                          required: true,
+                          message: locale.pleaseEnter,
                         },
-                      },
-                    ],
-                  })}
-                  placeholder={localServerConfigDesc}
-                />
+                        {
+                          validator: (rule, value, callback) => {
+                            try {
+                              if (value?.length > 0) {
+                                const parsedValue = JSON.parse(value);
+                                if (parsedValue['description']) {
+                                  this.field.setValue('description', parsedValue['description']);
+                                }
+                              }
+                              callback();
+                              this.setState({
+                                isInputError: false,
+                              });
+                            } catch (e) {
+                              callback(locale.localServerConfigError);
+                              this.setState({
+                                isInputError: true,
+                              });
+                            }
+                          },
+                        },
+                      ],
+                    })}
+                  />
+                </div>
               </FormItem>
             </>
           )}

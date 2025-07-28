@@ -195,7 +195,7 @@ class McpDetail extends React.Component {
               </h1>
             </Col>
             <Col span={4}>
-              <span>版本</span>
+              <span>{locale.version}</span>
               <Select
                 dataSource={versionSelections}
                 style={{
@@ -254,7 +254,7 @@ class McpDetail extends React.Component {
               this.getFormItem({
                 list: [
                   {
-                    label: '服务引用',
+                    label: locale.serviceRef,
                     value: (
                       <a
                         onClick={() => {
@@ -272,6 +272,88 @@ class McpDetail extends React.Component {
                 ],
               })}
           </div>
+
+          {/* Security Schemes 展示 - 只在非 stdio 协议且有数据时显示 */}
+          {this.state.serverConfig?.protocol !== 'stdio' &&
+            this.state.serverConfig?.toolSpec?.securitySchemes?.length > 0 && (
+              <>
+                <Divider></Divider>
+                <h2
+                  style={{
+                    color: '#333',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  {locale.backendServiceAuth || '后端服务认证方式'}
+                </h2>
+                <div style={{ marginTop: '16px' }}>
+                  {this.state.serverConfig.toolSpec.securitySchemes.map((scheme, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        border: '1px solid #e6e6e6',
+                        borderRadius: '4px',
+                        padding: '16px',
+                        marginBottom: '12px',
+                        backgroundColor: '#fafafa',
+                      }}
+                    >
+                      <Row wrap style={{ textAlign: 'left' }}>
+                        <Col span={12} style={{ display: 'flex', marginBottom: '8px' }}>
+                          <p style={{ minWidth: 120, fontWeight: 'bold' }}>
+                            {locale.authType || '认证类型'}:
+                          </p>
+                          <p>{scheme.type}</p>
+                        </Col>
+                        {scheme.scheme && (
+                          <Col span={12} style={{ display: 'flex', marginBottom: '8px' }}>
+                            <p style={{ minWidth: 120, fontWeight: 'bold' }}>
+                              {locale.authScheme || '认证方案'}:
+                            </p>
+                            <p>{scheme.scheme}</p>
+                          </Col>
+                        )}
+                        {scheme.in && (
+                          <Col span={12} style={{ display: 'flex', marginBottom: '8px' }}>
+                            <p style={{ minWidth: 120, fontWeight: 'bold' }}>
+                              {locale.keyLocation || '密钥位置'}:
+                            </p>
+                            <p>{scheme.in}</p>
+                          </Col>
+                        )}
+                        {scheme.name && (
+                          <Col span={12} style={{ display: 'flex', marginBottom: '8px' }}>
+                            <p style={{ minWidth: 120, fontWeight: 'bold' }}>
+                              {locale.keyName || '密钥名称'}:
+                            </p>
+                            <p>{scheme.name}</p>
+                          </Col>
+                        )}
+                        {scheme.defaultCredential && (
+                          <Col span={24} style={{ display: 'flex', marginBottom: '8px' }}>
+                            <p style={{ minWidth: 120, fontWeight: 'bold' }}>
+                              {locale.defaultCredential || '默认凭证'}:
+                            </p>
+                            <p
+                              style={{
+                                wordBreak: 'break-all',
+                                fontFamily: 'monospace',
+                                backgroundColor: '#f5f5f5',
+                                padding: '4px 8px',
+                                borderRadius: '3px',
+                              }}
+                            >
+                              {scheme.defaultCredential}
+                            </p>
+                          </Col>
+                        )}
+                      </Row>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
           {this.state.serverConfig?.protocol === 'stdio' && (
             <>
               <Divider></Divider>
