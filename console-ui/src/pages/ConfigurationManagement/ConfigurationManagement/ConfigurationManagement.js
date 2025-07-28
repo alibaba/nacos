@@ -256,7 +256,6 @@ class ConfigurationManagement extends React.Component {
   }
 
   changeParamsBySearchType(params) {
-    debugger;
     if (this.state.defaultFuzzySearch) {
       if (params.dataId && params.dataId !== '') {
         params.dataId = '*' + params.dataId + '*';
