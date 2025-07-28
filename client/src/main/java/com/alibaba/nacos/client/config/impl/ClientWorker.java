@@ -693,8 +693,6 @@ public class ClientWorker implements Closeable {
                 if (subscriber != null) {
                     NotifyCenter.deregisterSubscriber(subscriber);
                 }
-                // Shutdown NotifyCenter, include all subscribers and publishers
-                NotifyCenter.shutdown();
 
                 multiTaskExecutor.values().forEach((executor) ->{
                     if (executor != null && !executor.isShutdown()) {

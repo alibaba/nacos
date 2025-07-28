@@ -636,11 +636,7 @@ public class NacosNamingService implements NamingService {
         serviceInfoHolder.shutdown();
         clientProxy.shutdown();
         namingFuzzyWatchServiceListHolder.shutdown();
-        // NotifyCenter#shutdown will shutdown all subscribers and publishers, so we don't need to
-        // NotifyCenter.deregisterSubscriber(changeNotifier);
-
-        // Shutdown NotifyCenter, include all subscribers and publishers
-        NotifyCenter.shutdown();
+        NotifyCenter.deregisterSubscriber(changeNotifier);
     }
     
     private void batchCheckAndStripGroupNamePrefix(List<Instance> instances, String groupName) throws NacosException {
