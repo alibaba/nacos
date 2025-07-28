@@ -83,6 +83,24 @@ public class ConsoleHealthControllerTest {
         });
         
         assertEquals("ready", result.getData());
+        assertEquals(200, response.getStatus());
+    }
+    
+    @Test
+    void testReadinessFail() throws Exception {
+        when(healthProxy.checkReadiness()).thenReturn(Result.failure("fail"));
+        
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/v3/console/health/readiness");
+        
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        String actualValue = response.getContentAsString();
+        
+        Result<String> result = new ObjectMapper().readValue(actualValue, new TypeReference<Result<String>>() {
+        });
+        
+        assertEquals("fail", result.getMessage());
+        assertEquals(500, response.getStatus());
+        
     }
 }
 
