@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.ai;
 
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
+import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
@@ -46,7 +47,8 @@ class AiServiceDefaultMethodTest {
             
             @Override
             public String releaseMcpServer(McpServerBasicInfo serverSpecification,
-                    McpToolSpecification toolSpecification) throws NacosException {
+                    McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
+                invokeMark.set(true);
                 return "";
             }
             
@@ -63,12 +65,14 @@ class AiServiceDefaultMethodTest {
             @Override
             public McpServerDetailInfo subscribeMcpServer(String mcpName, String version,
                     AbstractNacosMcpServerListener mcpServerListener) throws NacosException {
+                invokeMark.set(true);
                 return null;
             }
             
             @Override
             public void unsubscribeMcpServer(String mcpName, String version,
                     AbstractNacosMcpServerListener mcpServerListener) throws NacosException {
+                invokeMark.set(true);
             }
             
             @Override
@@ -87,5 +91,22 @@ class AiServiceDefaultMethodTest {
     void registerMcpServerEndpoint() throws NacosException {
         aiService.registerMcpServerEndpoint("", "", 0);
         assertTrue(invokeMark.get());
+    }
+    
+    @Test
+    void releaseMcpServer() throws NacosException {
+        McpServerBasicInfo serverSpecification = new McpServerBasicInfo();
+        aiService.releaseMcpServer(serverSpecification, null);
+        assertTrue(invokeMark.get());
+    }
+    
+    @Test
+    void subscribeMcpServer() throws NacosException {
+        aiService.subscribeMcpServer("", null);
+    }
+    
+    @Test
+    void unsubscribeMcpServer() throws NacosException {
+        aiService.unsubscribeMcpServer("", null);
     }
 }
