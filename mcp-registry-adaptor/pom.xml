@@ -25,7 +25,10 @@
         <version>${revision}</version>
     </parent>
 
-    <artifactId>nacos-mcp-regsitry-adaptor</artifactId>
+    <name>nacos-mcp-registry-adaptor ${project.version}</name>
+    <url>https://nacos.io</url>
+    
+    <artifactId>nacos-mcp-registry-adaptor</artifactId>
     <packaging>jar</packaging>
 
     <properties>
