@@ -29,7 +29,7 @@ public class FrontEndpointConfig {
     
     private String endpointType;
     
-    private String endpointAddress;
+    private Object endpointData;
     
     private String path;
     
@@ -57,12 +57,12 @@ public class FrontEndpointConfig {
         this.endpointType = endpointType;
     }
     
-    public String getEndpointAddress() {
-        return endpointAddress;
+    public Object getEndpointData() {
+        return endpointData;
     }
     
-    public void setEndpointAddress(String endpointAddress) {
-        this.endpointAddress = endpointAddress;
+    public void setEndpointData(String endpointData) {
+        this.endpointData = endpointData;
     }
     
     public String getPath() {

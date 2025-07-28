@@ -41,8 +41,6 @@ public class Constants {
     
     public static final String MCP_SERVER_TOOL_GROUP = "mcp-tools";
     
-    public static final String MCP_SERVER_PROTOCOL_TRANSLATOR_GROUP = "mcp-protocol-translator";
-    
     public static final String MCP_SERVER_SPEC_DATA_ID_SUFFIX = "-mcp-server.json";
     
     public static final String MCP_SERVER_VERSION_DATA_ID_SUFFIX = "-mcp-versions.json";

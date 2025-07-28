@@ -128,7 +128,7 @@ class McpServerDetailInfoTest extends BasicRequestTest {
         mcpServerDetailInfo.getRemoteServerConfig().getFrontEndpointConfigList().get(0).setType(AiConstants.Mcp.MCP_PROTOCOL_SSE);
         mcpServerDetailInfo.getRemoteServerConfig().getFrontEndpointConfigList().get(0).setProtocol(AiConstants.Mcp.MCP_PROTOCOL_HTTP);
         mcpServerDetailInfo.getRemoteServerConfig().getFrontEndpointConfigList().get(0).setEndpointType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
-        mcpServerDetailInfo.getRemoteServerConfig().getFrontEndpointConfigList().get(0).setEndpointAddress("1.1.1.1:8080");
+        mcpServerDetailInfo.getRemoteServerConfig().getFrontEndpointConfigList().get(0).setEndpointData("1.1.1.1:8080");
         mcpServerDetailInfo.getRemoteServerConfig().getFrontEndpointConfigList().get(0).setPath("/testFront");
         mcpServerDetailInfo.setRepository(new Repository());
         mcpServerDetailInfo.setCapabilities(Collections.singletonList(McpCapability.TOOL));
@@ -213,7 +213,7 @@ class McpServerDetailInfoTest extends BasicRequestTest {
         FrontEndpointConfig frontEndpointConfig = result.getRemoteServerConfig().getFrontEndpointConfigList().get(0);
         assertEquals(AiConstants.Mcp.MCP_PROTOCOL_SSE, frontEndpointConfig.getType());
         assertEquals(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT, frontEndpointConfig.getEndpointType());
-        assertEquals("1.1.1.1:8080", frontEndpointConfig.getEndpointAddress());
+        assertEquals("1.1.1.1:8080", frontEndpointConfig.getEndpointData());
         assertEquals("/testFront", frontEndpointConfig.getPath());
         assertEquals(AiConstants.Mcp.MCP_PROTOCOL_HTTP, frontEndpointConfig.getProtocol());
     }
