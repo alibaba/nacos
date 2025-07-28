@@ -620,7 +620,6 @@ public class ClientWorker implements Closeable {
             // help gc
             configFuzzyWatchGroupKeyHolder = null;
         }
-        CacheData.shutdownScheduledExecutor();
         if (agent != null) {
             agent.shutdown();
         }

@@ -33,6 +33,7 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.NumberUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -89,6 +90,8 @@ public class CacheData {
                             new NameThreadFactory("com.alibaba.nacos.client.notify.block.monitor"),
                             new ThreadPoolExecutor.DiscardPolicy());
                     scheduledExecutor.setRemoveOnCancelPolicy(true);
+                    // it will shut down when jvm exit.
+                    ThreadUtils.addShutdownHook(CacheData::shutdownScheduledExecutor);
                 }
             }
         }
@@ -96,7 +99,7 @@ public class CacheData {
     }
     
     public static void shutdownScheduledExecutor() {
-        if (scheduledExecutor != null) {
+        if (scheduledExecutor != null && !scheduledExecutor.isShutdown()) {
             try {
                 scheduledExecutor.shutdown();
                 // help gc
