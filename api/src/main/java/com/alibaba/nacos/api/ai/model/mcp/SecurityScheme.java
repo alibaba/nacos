@@ -1,14 +1,23 @@
 package com.alibaba.nacos.api.ai.model.mcp;
 
 /**
+ * SecurityScheme 表示安全认证方案的模型，包括类型、方案、位置、名称及默认凭证等信息.
+ * 用于描述 API 的安全机制.
+ *
  * @author xinluo
  */
 public class SecurityScheme {
+    
     private String id;
+    
     private String type;
+    
     private String scheme;
+    
     private String in;
+    
     private String name;
+    
     private String defaultCredential;
 
     public String getId() {
