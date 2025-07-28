@@ -730,6 +730,7 @@ const I18N_CONF = {
   McpDetail: {
     basicInformation: '基本信息',
     serviceRef: '服务引用',
+    version: '版本',
     mcpServerDetail: 'MCP Server 详情',
     operationToolDetail: '详情',
     operationToolEdit: '编辑',
@@ -794,6 +795,19 @@ const I18N_CONF = {
     versionIsPublished: '已发布',
     versionIsDraft: '草稿',
     noAvailableEndpoint: '无可用的endpoint',
+    // 透明认证相关
+    transparentAuth: '启用透明认证',
+    enable: '启用',
+    disable: '禁用',
+    selectSecurityScheme: '选择认证方案',
+    pleaseSelectSecurityScheme: '请选择认证方案',
+    // Security Schemes 展示相关
+    backendServiceAuth: '后端服务认证方式',
+    authType: '认证类型',
+    authScheme: '认证方案',
+    keyLocation: '密钥位置',
+    keyName: '密钥名称',
+    defaultCredential: '默认凭证',
   },
   NewMcpServer: {
     pleaseComplete: '请先完善基础配置',
@@ -915,6 +929,29 @@ const I18N_CONF = {
     editExistVersionMessage: '当前正在修改已发布的版本，只能修改Tool以及参数的描述信息以及开关',
     editMoreNeedNewVersion: '修改其他信息请使用新的版本号',
     off: '关闭',
+    // 透明认证相关
+    transparentAuth: '启用透明认证',
+    enable: '启用',
+    disable: '禁用',
+    selectSecurityScheme: '选择认证方案',
+    pleaseSelectSecurityScheme: '请选择认证方案',
+    // Security Schemes 相关
+    securitySchemes: '安全认证方案',
+    addSecurityScheme: '添加认证方案',
+    schemeId: 'ID',
+    schemeType: '认证类型',
+    scheme: 'Scheme',
+    keyLocation: '密钥位置',
+    keyName: '密钥名称',
+    defaultCredential: '默认凭证',
+    pleaseSelect: '请选择',
+    selectScheme: '选择认证方案',
+    delete: '删除',
+    templateParseError: '模板格式错误，请检查 JSON 格式',
+    templatePreview: '模板预览（注入安全配置后）',
+    templatePreviewError: '模板格式错误，无法预览',
+    backendAuth: '后端认证方式',
+    clientAuth: '客户端认证方式',
   },
 };
 
