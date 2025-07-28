@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.ai.model.mcp;
 
+import com.alibaba.nacos.api.ai.constant.AiConstants;
+
 /**
  * Specific endpoint information exposed to the outside.
  *
@@ -29,7 +31,15 @@ public class FrontEndpointConfig {
     
     private String endpointType;
     
-    private String endpointAddress;
+    /**
+     * According To the {@link #endpointType}, the data type will be different.
+     * <ul>
+     *     <li>If {@link AiConstants.Mcp#MCP_ENDPOINT_TYPE_REF}, the data type is {@link McpServiceRef}</li>
+     *     <li>If {@link AiConstants.Mcp#MCP_ENDPOINT_TYPE_DIRECT}, the data type is {@link String}</li>
+     *     <li>If {@link AiConstants.Mcp#MCP_FRONT_ENDPOINT_TYPE_TO_BACK}, the data is {@code null}</li>
+     * </ul>
+     */
+    private Object endpointData;
     
     private String path;
     
@@ -57,12 +67,12 @@ public class FrontEndpointConfig {
         this.endpointType = endpointType;
     }
     
-    public String getEndpointAddress() {
-        return endpointAddress;
+    public Object getEndpointData() {
+        return endpointData;
     }
     
-    public void setEndpointAddress(String endpointAddress) {
-        this.endpointAddress = endpointAddress;
+    public void setEndpointData(Object endpointData) {
+        this.endpointData = endpointData;
     }
     
     public String getPath() {

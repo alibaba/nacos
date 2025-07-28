@@ -21,8 +21,9 @@ import com.alibaba.nacos.ai.index.McpServerIndex;
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.ai.model.mcp.McpServerStorageInfo;
 import com.alibaba.nacos.ai.utils.McpConfigUtils;
-import com.alibaba.nacos.ai.utils.McpProtocolUtils;
+import com.alibaba.nacos.ai.utils.McpRequestUtil;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.mcp.FrontEndpointConfig;
 import com.alibaba.nacos.api.ai.model.mcp.McpCapability;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
@@ -39,6 +40,7 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
@@ -208,7 +210,7 @@ public class McpServerOperationService {
         }
         
         if (!AiConstants.Mcp.MCP_PROTOCOL_STDIO.equalsIgnoreCase(serverSpecification.getProtocol())) {
-            injectBackendEndpointRef(namespaceId, result);
+            injectEndpoint(result);
         }
         return result;
     }
@@ -226,33 +228,70 @@ public class McpServerOperationService {
         return JacksonUtils.toObj(response.getContent(), McpServerVersionInfo.class);
     }
     
-    private void injectBackendEndpointRef(String namespaceId, McpServerDetailInfo detailInfo) throws NacosException {
+    private void injectEndpoint(McpServerDetailInfo detailInfo) throws NacosException {
+        injectBackendEndpointRef(detailInfo);
+        injectFrontendEndpointRef(detailInfo);
+    }
+    
+    private void injectBackendEndpointRef(McpServerDetailInfo detailInfo) throws NacosException {
         List<Instance> instances;
         
-        // inject translator address to the mcp server.
-        if (McpProtocolUtils.isProtocolNeedTranslator(detailInfo.getProtocol())) {
-            McpServiceRef mcpServiceRef = new McpServiceRef();
-            mcpServiceRef.setServiceName(detailInfo.getName());
-            mcpServiceRef.setGroupName(Constants.MCP_SERVER_PROTOCOL_TRANSLATOR_GROUP);
-            mcpServiceRef.setNamespaceId(namespaceId);
-            instances = endpointOperationService.getMcpServerEndpointInstances(mcpServiceRef);
-        } else {
-            instances = endpointOperationService.getMcpServerEndpointInstances(
-                    detailInfo.getRemoteServerConfig().getServiceRef());
-        }
-        List<McpEndpointInfo> backendEndpoints = new LinkedList<>();
+        instances = endpointOperationService.getMcpServerEndpointInstances(
+                detailInfo.getRemoteServerConfig().getServiceRef());
+        List<McpEndpointInfo> backendEndpoints = transferToMcpEndpointInfo(instances,
+                detailInfo.getRemoteServerConfig().getExportPath(), detailInfo.getProtocol());
+        detailInfo.setBackendEndpoints(backendEndpoints);
+    }
+    
+    private List<McpEndpointInfo> transferToMcpEndpointInfo(List<Instance> instances, String exportPath,
+            String protocol) {
+        List<McpEndpointInfo> endpointInfos = new LinkedList<>();
         for (Instance each : instances) {
             McpEndpointInfo mcpEndpointInfo = new McpEndpointInfo();
             mcpEndpointInfo.setAddress(each.getIp());
             mcpEndpointInfo.setPort(each.getPort());
-            String exportPath = detailInfo.getRemoteServerConfig().getExportPath();
-            if (Constants.PROTOCOL_TYPE_HTTP.equals(detailInfo.getProtocol())) {
+            if (Constants.PROTOCOL_TYPE_HTTP.equals(protocol)) {
                 exportPath = each.getMetadata().get(Constants.META_PATH);
             }
             mcpEndpointInfo.setPath(exportPath);
-            backendEndpoints.add(mcpEndpointInfo);
+            endpointInfos.add(mcpEndpointInfo);
         }
-        detailInfo.setBackendEndpoints(backendEndpoints);
+        return endpointInfos;
+    }
+    
+    private void injectFrontendEndpointRef(McpServerDetailInfo detailInfo) throws NacosException {
+        List<FrontEndpointConfig> frontEndpointConfigs = detailInfo.getRemoteServerConfig()
+                .getFrontEndpointConfigList();
+        if (CollectionUtils.isEmpty(frontEndpointConfigs)) {
+            detailInfo.setFrontendEndpoints(Collections.emptyList());
+            return;
+        }
+        List<McpEndpointInfo> frontendEndpoints = new LinkedList<>();
+        for (FrontEndpointConfig each : frontEndpointConfigs) {
+            if (AiConstants.Mcp.MCP_ENDPOINT_TYPE_REF.equals(each.getEndpointType())) {
+                McpServiceRef mcpServiceRef = McpRequestUtil.transferToMcpServiceRef(each.getEndpointData());
+                List<Instance> instances = endpointOperationService.getMcpServerEndpointInstances(mcpServiceRef);
+                List<McpEndpointInfo> endpointInfos = transferToMcpEndpointInfo(instances, each.getPath(),
+                        each.getType());
+                frontendEndpoints.addAll(endpointInfos);
+            } else if (AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT.equals(each.getEndpointType())) {
+                String address = each.getEndpointData().toString();
+                McpEndpointInfo endpointInfo = new McpEndpointInfo();
+                endpointInfo.setPath(each.getPath());
+                if (InternetAddressUtil.containsPort(address)) {
+                    String[] info = InternetAddressUtil.splitIpPortStr(address);
+                    endpointInfo.setAddress(info[0]);
+                    endpointInfo.setPort(Integer.parseInt(info[1]));
+                } else {
+                    endpointInfo.setAddress(address);
+                    endpointInfo.setPort(Constants.PROTOCOL_TYPE_HTTP.equals(each.getProtocol()) ? 80 : 443);
+                }
+                frontendEndpoints.add(endpointInfo);
+            } else {
+                frontendEndpoints.addAll(detailInfo.getBackendEndpoints());
+            }
+            detailInfo.setFrontendEndpoints(frontendEndpoints);
+        }
     }
     
     /**

@@ -16,21 +16,24 @@
 
 package com.alibaba.nacos.ai.config;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-
 import com.alibaba.nacos.ai.index.CachedMcpServerIndex;
 import com.alibaba.nacos.ai.index.McpServerIndex;
 import com.alibaba.nacos.ai.index.PlainMcpServerIndex;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
 import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.mock;
 
 /**
  * Unit tests for McpServerIndexConfiguration.
@@ -56,9 +59,11 @@ class McpServerIndexConfigurationTest {
         }
     }
     
+    @Nested
+    @ExtendWith(SpringExtension.class)
     @ContextConfiguration(classes = {McpServerIndexConfiguration.class, TestConfig.class})
     @TestPropertySource(properties = {"nacos.mcp.cache.enabled=true"})
-    static class CacheEnabled {
+    class CacheEnabled {
         
         @org.springframework.beans.factory.annotation.Autowired(required = false)
         private McpServerIndex mcpServerIndex;
@@ -66,14 +71,16 @@ class McpServerIndexConfigurationTest {
         @Test
         void shouldInjectCachedMcpServerIndexWhenCacheEnabled() {
             assertNotNull(mcpServerIndex, "McpServerIndex should be injected");
-            assertTrue(mcpServerIndex instanceof CachedMcpServerIndex,
+            assertInstanceOf(CachedMcpServerIndex.class, mcpServerIndex,
                     "Should be CachedMcpServerIndex when cache enabled");
         }
     }
     
+    @Nested
+    @ExtendWith(SpringExtension.class)
     @ContextConfiguration(classes = {McpServerIndexConfiguration.class, TestConfig.class})
     @TestPropertySource(properties = {"nacos.mcp.cache.enabled=false"})
-    static class CacheDisabled {
+    class CacheDisabled {
         
         @org.springframework.beans.factory.annotation.Autowired(required = false)
         private McpServerIndex mcpServerIndex;
@@ -81,7 +88,7 @@ class McpServerIndexConfigurationTest {
         @Test
         void shouldInjectPlainMcpServerIndexWhenCacheDisabled() {
             assertNotNull(mcpServerIndex, "McpServerIndex should be injected");
-            assertTrue(mcpServerIndex instanceof PlainMcpServerIndex,
+            assertInstanceOf(PlainMcpServerIndex.class, mcpServerIndex,
                     "Should be PlainMcpServerIndex when cache disabled");
         }
     }

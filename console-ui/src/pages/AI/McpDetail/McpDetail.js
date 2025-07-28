@@ -139,10 +139,24 @@ class McpDetail extends React.Component {
       }
     }
 
-    this.state?.serverConfig?.backendEndpoints;
+    let restToMcpBackendProtocol = 'off';
+    if (
+      this.state?.serverConfig?.protocol === 'https' ||
+      this.state?.serverConfig?.protocol === 'http'
+    ) {
+      restToMcpBackendProtocol = this.state?.serverConfig?.protocol;
+    }
+
     const endpoints = [];
-    for (let i = 0; i < this.state?.serverConfig?.backendEndpoints?.length; i++) {
-      const item = this.state?.serverConfig?.backendEndpoints[i];
+    let serverReturnEndpoints = [];
+    if (restToMcpBackendProtocol === 'off') {
+      serverReturnEndpoints = this.state?.serverConfig?.backendEndpoints;
+    } else {
+      serverReturnEndpoints = this.state?.serverConfig?.frontendEndpoints;
+    }
+
+    for (let i = 0; i < serverReturnEndpoints?.length; i++) {
+      const item = serverReturnEndpoints[i];
       const endpoint = item.address + ':' + item.port + item.path;
       const serverConfig = {
         index: i,
@@ -155,14 +169,6 @@ class McpDetail extends React.Component {
         url: endpoint,
       };
       endpoints.push(serverConfig);
-    }
-
-    let restToMcpBackendProtocol = 'off';
-    if (
-      this.state?.serverConfig?.protocol === 'https' ||
-      this.state?.serverConfig?.protocol === 'http'
-    ) {
-      restToMcpBackendProtocol = this.state?.serverConfig?.protocol;
     }
 
     return (
