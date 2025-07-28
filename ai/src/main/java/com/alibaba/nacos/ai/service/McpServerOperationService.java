@@ -21,6 +21,7 @@ import com.alibaba.nacos.ai.index.McpServerIndex;
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.ai.model.mcp.McpServerStorageInfo;
 import com.alibaba.nacos.ai.utils.McpConfigUtils;
+import com.alibaba.nacos.ai.utils.McpRequestUtil;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.FrontEndpointConfig;
 import com.alibaba.nacos.api.ai.model.mcp.McpCapability;
@@ -268,7 +269,7 @@ public class McpServerOperationService {
         List<McpEndpointInfo> frontendEndpoints = new LinkedList<>();
         for (FrontEndpointConfig each : frontEndpointConfigs) {
             if (AiConstants.Mcp.MCP_ENDPOINT_TYPE_REF.equals(each.getEndpointType())) {
-                McpServiceRef mcpServiceRef = (McpServiceRef) each.getEndpointData();
+                McpServiceRef mcpServiceRef = McpRequestUtil.transferToMcpServiceRef(each.getEndpointData());
                 List<Instance> instances = endpointOperationService.getMcpServerEndpointInstances(mcpServiceRef);
                 List<McpEndpointInfo> endpointInfos = transferToMcpEndpointInfo(instances, each.getPath(),
                         each.getType());

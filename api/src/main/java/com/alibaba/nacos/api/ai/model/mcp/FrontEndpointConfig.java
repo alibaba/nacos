@@ -61,7 +61,7 @@ public class FrontEndpointConfig {
         return endpointData;
     }
     
-    public void setEndpointData(String endpointData) {
+    public void setEndpointData(Object endpointData) {
         this.endpointData = endpointData;
     }
     
