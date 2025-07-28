@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ai.AiService;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
 import com.alibaba.nacos.api.ai.listener.NacosMcpServerEvent;
+import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
@@ -94,8 +95,8 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification)
-            throws NacosException {
+    public String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
+            McpEndpointSpec endpointSpecification) throws NacosException {
         if (null == serverSpecification) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter `serverSpecification` not present");
@@ -109,7 +110,7 @@ public class NacosAiService implements AiService {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter `serverSpecification.versionDetail.version` not present");
         }
-        return grpcClient.releaseMcpServer(serverSpecification, toolSpecification);
+        return grpcClient.releaseMcpServer(serverSpecification, toolSpecification, endpointSpecification);
     }
     
     @Override

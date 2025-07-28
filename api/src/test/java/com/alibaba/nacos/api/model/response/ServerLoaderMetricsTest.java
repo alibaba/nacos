@@ -61,7 +61,6 @@ class ServerLoaderMetricsTest {
     @Test
     void testSerialize() throws JsonProcessingException {
         String json = mapper.writeValueAsString(serverLoaderMetrics);
-        System.out.println(json);
         assertTrue(json.contains("\"memberCount\":1"));
         assertTrue(json.contains("\"metricsCount\":1"));
         assertTrue(json.contains("\"completed\":true"));

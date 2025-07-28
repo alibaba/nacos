@@ -165,7 +165,7 @@ class AiGrpcClientTest {
         ReleaseMcpServerResponse response = new ReleaseMcpServerResponse();
         response.setMcpId(id);
         when(rpcClient.request(any(ReleaseMcpServerRequest.class))).thenReturn(response);
-        assertEquals(id, aiGrpcClient.releaseMcpServer(serverSpec, new McpToolSpecification()));
+        assertEquals(id, aiGrpcClient.releaseMcpServer(serverSpec, new McpToolSpecification(), null));
     }
     
     @Test
@@ -240,7 +240,7 @@ class AiGrpcClientTest {
         serverSpec.setName("test");
         serverSpec.setVersionDetail(new ServerVersionDetail());
         serverSpec.getVersionDetail().setVersion("1.0.0");
-        assertThrows(NacosRuntimeException.class, () -> aiGrpcClient.releaseMcpServer(serverSpec, null));
+        assertThrows(NacosRuntimeException.class, () -> aiGrpcClient.releaseMcpServer(serverSpec, null, null));
     }
     
     @Test

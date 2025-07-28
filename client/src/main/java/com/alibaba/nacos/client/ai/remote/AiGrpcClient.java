@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.ai.remote;
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
@@ -148,8 +149,8 @@ public class AiGrpcClient implements Closeable {
      * @return mcp id
      * @throws NacosException if request parameter is invalid or handle error
      */
-    public String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification)
-            throws NacosException {
+    public String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
+            McpEndpointSpec endpointSpecification) throws NacosException {
         LOGGER.info("[{}] RELEASE Mcp server {}, version {}", uuid, serverSpecification.getName(),
                 serverSpecification.getVersionDetail().getVersion());
         if (!isAbilitySupportedByServer(AbilityKey.SERVER_MCP_REGISTRY)) {
@@ -161,6 +162,7 @@ public class AiGrpcClient implements Closeable {
         request.setMcpName(serverSpecification.getName());
         request.setServerSpecification(serverSpecification);
         request.setToolSpecification(toolSpecification);
+        request.setEndpointSpecification(endpointSpecification);
         ReleaseMcpServerResponse response = requestToServer(request, ReleaseMcpServerResponse.class);
         return response.getMcpId();
     }
