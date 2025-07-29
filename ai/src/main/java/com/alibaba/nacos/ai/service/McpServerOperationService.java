@@ -93,14 +93,18 @@ public class McpServerOperationService {
     
     private final McpServerIndex mcpServerIndex;
     
+    private final McpServerSyncEffectService syncEffectService;
+    
     public McpServerOperationService(ConfigQueryChainService configQueryChainService,
             ConfigOperationService configOperationService, McpToolOperationService toolOperationService,
-            McpEndpointOperationService endpointOperationService, McpServerIndex mcpServerIndex) {
+            McpEndpointOperationService endpointOperationService, McpServerIndex mcpServerIndex,
+            McpServerSyncEffectService syncEffectService) {
         this.configQueryChainService = configQueryChainService;
         this.configOperationService = configOperationService;
         this.toolOperationService = toolOperationService;
         this.endpointOperationService = endpointOperationService;
         this.mcpServerIndex = mcpServerIndex;
+        this.syncEffectService = syncEffectService;
     }
     
     /**
@@ -361,7 +365,9 @@ public class McpServerOperationService {
         configOperationService.publishConfig(mcpServerVersionForm, configRequestInfo, null);
         
         ConfigForm configForm = buildMcpConfigForm(namespaceId, id, versionDetail.getVersion(), newSpecification);
+        long startOperationTime = System.currentTimeMillis();
         configOperationService.publishConfig(configForm, configRequestInfo, null);
+        syncEffectService.toSync(configForm, startOperationTime);
         
         // Delete the relevant cache after a successful database operation
         invalidateCacheAfterDbOperation(namespaceId, serverSpecification.getName(), id);
@@ -461,7 +467,9 @@ public class McpServerOperationService {
         }
         
         ConfigFormV3 mcpServerVersionForm = buildMcpServerVersionForm(namespaceId, mcpServerVersionInfo);
+        long startOperationTime = System.currentTimeMillis();
         configOperationService.publishConfig(mcpServerVersionForm, new ConfigRequestInfo(), null);
+        syncEffectService.toSync(mcpServerVersionForm, startOperationTime);
         
         // Delete the relevant cache after a successful database operation
         invalidateCacheAfterDbUpdateOperation(namespaceId, mcpServerVersionInfo.getName(),

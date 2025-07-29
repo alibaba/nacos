@@ -89,12 +89,15 @@ class McpServerOperationServiceTest {
     @Mock
     private McpServerIndex mcpServerIndex;
     
+    @Mock
+    private McpServerSyncEffectService syncEffectService;
+    
     McpServerOperationService serverOperationService;
     
     @BeforeEach
     void setUp() {
         serverOperationService = new McpServerOperationService(configQueryChainService, configOperationService,
-                toolOperationService, endpointOperationService, mcpServerIndex);
+                toolOperationService, endpointOperationService, mcpServerIndex, syncEffectService);
     }
     
     @AfterEach
