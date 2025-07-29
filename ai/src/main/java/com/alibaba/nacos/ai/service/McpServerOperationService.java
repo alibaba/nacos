@@ -469,7 +469,7 @@ public class McpServerOperationService {
         ConfigFormV3 mcpServerVersionForm = buildMcpServerVersionForm(namespaceId, mcpServerVersionInfo);
         long startOperationTime = System.currentTimeMillis();
         configOperationService.publishConfig(mcpServerVersionForm, new ConfigRequestInfo(), null);
-        syncEffectService.toSync(configForm, startOperationTime);
+        syncEffectService.toSync(mcpServerVersionForm, startOperationTime);
         
         // Delete the relevant cache after a successful database operation
         invalidateCacheAfterDbUpdateOperation(namespaceId, mcpServerVersionInfo.getName(),
