@@ -21,6 +21,7 @@ const I18N_CONF = {
     blog: '博客',
     community: '社区',
     enterprise: 'Nacos企业版',
+    mcp: 'MCP',
     languageSwitchButton: 'En',
     logout: '登出',
     changePassword: '修改密码',

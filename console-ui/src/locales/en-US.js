@@ -21,6 +21,7 @@ const I18N_CONF = {
     blog: 'BLOG',
     community: 'COMMUNITY',
     enterprise: 'ENTERPRISE EDITION',
+    mcp: 'MCP',
     languageSwitchButton: '中',
     logout: 'logout',
     changePassword: 'modify password',
