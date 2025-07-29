@@ -21,7 +21,7 @@ const I18N_CONF = {
     blog: 'BLOG',
     community: 'COMMUNITY',
     enterprise: 'ENTERPRISE EDITION',
-    mcp: 'MCP',
+    mcp: 'MCP Marketplace',
     languageSwitchButton: '中',
     logout: 'logout',
     changePassword: 'modify password',
