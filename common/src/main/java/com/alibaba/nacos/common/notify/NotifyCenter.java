@@ -53,7 +53,8 @@ public class NotifyCenter {
     private static final AtomicBoolean CLOSED = new AtomicBoolean(false);
     
     private static final EventPublisherFactory DEFAULT_PUBLISHER_FACTORY;
-    
+
+    @SuppressWarnings("checkstyle:StaticVariableName")
     private static NotifyCenter INSTANCE = new NotifyCenter();
     
     private DefaultSharePublisher sharePublisher;
