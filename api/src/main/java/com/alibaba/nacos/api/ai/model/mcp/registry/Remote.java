@@ -18,6 +18,10 @@ package com.alibaba.nacos.api.ai.model.mcp.registry;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * Mcp Remote Endpoint info.
+ * @author xinluo
+ */
 public class Remote {
     
     @JsonProperty("transport_type")

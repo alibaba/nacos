@@ -47,7 +47,7 @@ public class McpServerBasicInfo {
     
     private Repository repository;
     
-    private Package packageInfo;
+    private List<Package> packages;
     
     private ServerVersionDetail versionDetail;
     
@@ -169,11 +169,11 @@ public class McpServerBasicInfo {
         this.version = version;
     }
 
-    public Package getPackage() {
-        return packageInfo;
+    public List<Package> getPackages() {
+        return packages;
     }
 
-    public void setPackage(Package _package) {
-        this.packageInfo = _package;
+    public void setPackages(List<Package> packages) {
+        this.packages = packages;
     }
 }
