@@ -656,6 +656,7 @@ public class McpServerOperationService {
             response.setResults(results);
             
         } catch (Exception e) {
+            log.error("Import execution failed", e);
             response.setSuccess(false);
             response.setErrorMessage("Import execution failed: " + e.getMessage());
         }

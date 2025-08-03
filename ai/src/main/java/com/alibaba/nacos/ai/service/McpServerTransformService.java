@@ -350,6 +350,10 @@ public class McpServerTransformService {
         
         String url = remote.getUrl();
         if (StringUtils.isNotBlank(url)) {
+            // Validate URL security and validity
+            if (!isValidUrl(url, protocol)) {
+                throw new IllegalArgumentException("Invalid URL: " + url);
+            }
             switch (protocol) {
                 case AiConstants.Mcp.MCP_PROTOCOL_HTTP:
                     // For HTTP protocol, set the base URL
@@ -604,5 +608,39 @@ public class McpServerTransformService {
         String baseId = name.toLowerCase().replaceAll("[^a-z0-9]", "");
         String suffix = UUID.randomUUID().toString().substring(0, 8);
         return baseId + "-" + suffix;
+    }
+    
+    /**
+     * Validate URL security and validity based on protocol.
+     *
+     * @param url URL to validate
+     * @param protocol Protocol type
+     * @return true if URL is valid
+     */
+    private boolean isValidUrl(String url, String protocol) {
+        if (StringUtils.isBlank(url)) {
+            return false;
+        }
+        
+        // Basic security checks - prevent potential malicious URLs
+        String lowerUrl = url.toLowerCase();
+        if (lowerUrl.contains("javascript:") || lowerUrl.contains("data:") || lowerUrl.contains("file:")) {
+            return false;
+        }
+        
+        switch (protocol) {
+            case AiConstants.Mcp.MCP_PROTOCOL_HTTP:
+                // HTTP protocol requires valid HTTP/HTTPS URLs
+                return lowerUrl.startsWith(HTTP_PREFIX) || lowerUrl.startsWith(HTTPS_PREFIX);
+            case AiConstants.Mcp.MCP_PROTOCOL_STDIO:
+                // STDIO protocol allows commands and paths, more flexible validation
+                return !lowerUrl.contains("..") && !lowerUrl.contains("&") && !lowerUrl.contains("|");
+            case AiConstants.Mcp.MCP_PROTOCOL_DUBBO:
+                // Dubbo protocol allows dubbo:// URLs or standard service URLs
+                return lowerUrl.startsWith("dubbo://") || lowerUrl.startsWith(HTTP_PREFIX) || lowerUrl.startsWith(HTTPS_PREFIX);
+            default:
+                // For unknown protocols, apply basic validation
+                return !lowerUrl.contains("..") && !lowerUrl.contains("javascript:") && !lowerUrl.contains("data:");
+        }
     }
 }

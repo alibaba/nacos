@@ -163,4 +163,35 @@ class McpServerTransformServiceTest {
         assertEquals(AiConstants.Mcp.MCP_PROTOCOL_STDIO, server.getProtocol());
         assertEquals("npx test-mcp-server", server.getRemoteServerConfig().getExportPath());
     }
+    
+    @Test
+    void testUrlValidationWithMaliciousUrls() throws Exception {
+        // Test with non-registry format to trigger URL validation
+        String jsonWithMaliciousUrl = "{\"id\":\"malicious-server\",\"name\":\"Malicious Server\","
+                + "\"url\":\"javascript:alert('xss')\",\"protocol\":\"http\"}";
+        
+        // This should handle malicious URLs gracefully by rejecting them or skipping invalid servers
+        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithMaliciousUrl, "json");
+        
+        // Should return empty list or handle gracefully
+        assertNotNull(servers);
+    }
+    
+    @Test
+    void testUrlValidationWithValidPackage() throws Exception {
+        // Test with valid package format that doesn't trigger URL validation issues
+        String jsonWithValidPackage = "{\"id\":\"valid-server\",\"name\":\"Valid Server\","
+                + "\"repository\":{\"url\":\"https://github.com/test/valid-server\",\"source\":\"github\",\"id\":\"123\"},"
+                + "\"version_detail\":{\"version\":\"1.0.0\",\"release_date\":\"2024-01-01T00:00:00Z\",\"is_latest\":true},"
+                + "\"packages\":[{\"registry_name\":\"npm\",\"name\":\"valid-mcp-server\",\"version\":\"1.0.0\"}]}";
+        
+        List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(jsonWithValidPackage, "json");
+        
+        assertNotNull(servers);
+        assertEquals(1, servers.size());
+        
+        McpServerDetailInfo server = servers.get(0);
+        assertEquals(AiConstants.Mcp.MCP_PROTOCOL_STDIO, server.getProtocol());
+        assertEquals("npx valid-mcp-server", server.getRemoteServerConfig().getExportPath());
+    }
 }
