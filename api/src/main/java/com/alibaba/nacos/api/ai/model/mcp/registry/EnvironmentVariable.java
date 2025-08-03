@@ -17,39 +17,29 @@
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
 /**
- * Repository.
- * @author xinluo
+ * Environment variable for MCP package.
+ * @author nacos
  */
 @SuppressWarnings({"checkstyle:MethodName", "checkstyle:ParameterName", "checkstyle:MemberName", "checkstyle:SummaryJavadoc"})
-public class Repository {
+public class EnvironmentVariable {
     
-    private String url;
+    private String description;
     
-    private String source;
+    private String name;
     
-    private String id;
-
-    public String getUrl() {
-        return url;
+    public String getDescription() {
+        return description;
     }
-
-    public void setUrl(String url) {
-        this.url = url;
+    
+    public void setDescription(String description) {
+        this.description = description;
     }
-
-    public String getSource() {
-        return source;
+    
+    public String getName() {
+        return name;
     }
-
-    public void setSource(String source) {
-        this.source = source;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
+    
+    public void setName(String name) {
+        this.name = name;
     }
 }

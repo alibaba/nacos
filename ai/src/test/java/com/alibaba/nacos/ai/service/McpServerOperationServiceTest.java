@@ -93,7 +93,7 @@ class McpServerOperationServiceTest {
     @BeforeEach
     void setUp() {
         serverOperationService = new McpServerOperationService(configQueryChainService, configOperationService,
-                toolOperationService, endpointOperationService, mcpServerIndex);
+                toolOperationService, endpointOperationService, mcpServerIndex, null, null);
     }
     
     @AfterEach
