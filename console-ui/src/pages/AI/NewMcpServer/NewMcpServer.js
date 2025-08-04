@@ -681,36 +681,6 @@ class NewMcpServer extends React.Component {
                 enabled: true,
                 remoteServerConfig: {
                   exportPath: values?.exportPath || '',
-                  frontEndpointConfigList: [
-                    {
-                      protocol: 'https',
-                      endpointType: 'DIRECT',
-                      path: '/test/sse',
-                      endpointData: '127.0.0.1:8080',
-                      headers: [
-                        {
-                          name: 'Authorization',
-                          description: 'Bearer token for API authentication',
-                          is_required: true,
-                          format: 'string',
-                          value: 'Bearer {api_token}',
-                          is_secret: true,
-                          default: 'Bearer default-token',
-                          choices: ['Bearer token1', 'Bearer token2', 'Bearer token3'],
-                          variables: {
-                            api_token: {
-                              description: 'The API token to use for authentication',
-                              is_required: true,
-                              format: 'string',
-                              value: 'your-api-token-here',
-                              is_secret: true,
-                              default: 'default-api-token',
-                            },
-                          },
-                        },
-                      ],
-                    },
-                  ],
                 },
               },
               null,
