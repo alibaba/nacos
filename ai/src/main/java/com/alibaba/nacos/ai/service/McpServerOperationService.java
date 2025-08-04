@@ -32,6 +32,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServiceRef;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
+import com.alibaba.nacos.api.ai.model.mcp.registry.KeyValueInput;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -242,14 +243,16 @@ public class McpServerOperationService {
                 detailInfo.getRemoteServerConfig().getExportPath(), detailInfo.getProtocol());
         detailInfo.setBackendEndpoints(backendEndpoints);
     }
-    
-    private List<McpEndpointInfo> transferToMcpEndpointInfo(List<Instance> instances, String exportPath,
-            String protocol) {
+
+    private List<McpEndpointInfo> transferToMcpEndpointInfoWithHeaders(List<Instance> instances, String exportPath,
+            String protocol, List<KeyValueInput> headers) {
         List<McpEndpointInfo> endpointInfos = new LinkedList<>();
         for (Instance each : instances) {
             McpEndpointInfo mcpEndpointInfo = new McpEndpointInfo();
             mcpEndpointInfo.setAddress(each.getIp());
             mcpEndpointInfo.setPort(each.getPort());
+            mcpEndpointInfo.setProtocol(protocol);
+            mcpEndpointInfo.setHeaders(headers);
             if (Constants.PROTOCOL_TYPE_HTTP.equals(protocol)) {
                 exportPath = each.getMetadata().get(Constants.META_PATH);
             }
@@ -257,6 +260,11 @@ public class McpServerOperationService {
             endpointInfos.add(mcpEndpointInfo);
         }
         return endpointInfos;
+    }
+    
+    private List<McpEndpointInfo> transferToMcpEndpointInfo(List<Instance> instances, String exportPath,
+            String protocol) {
+        return transferToMcpEndpointInfoWithHeaders(instances, exportPath, protocol, null);
     }
     
     private void injectFrontendEndpointRef(McpServerDetailInfo detailInfo) throws NacosException {
@@ -271,13 +279,15 @@ public class McpServerOperationService {
             if (AiConstants.Mcp.MCP_ENDPOINT_TYPE_REF.equals(each.getEndpointType())) {
                 McpServiceRef mcpServiceRef = McpRequestUtil.transferToMcpServiceRef(each.getEndpointData());
                 List<Instance> instances = endpointOperationService.getMcpServerEndpointInstances(mcpServiceRef);
-                List<McpEndpointInfo> endpointInfos = transferToMcpEndpointInfo(instances, each.getPath(),
-                        each.getType());
+                List<McpEndpointInfo> endpointInfos = transferToMcpEndpointInfoWithHeaders(instances, each.getPath(),
+                        each.getType(), each.getHeaders());
                 frontendEndpoints.addAll(endpointInfos);
             } else if (AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT.equals(each.getEndpointType())) {
-                String address = each.getEndpointData().toString();
                 McpEndpointInfo endpointInfo = new McpEndpointInfo();
                 endpointInfo.setPath(each.getPath());
+                endpointInfo.setProtocol(each.getProtocol());
+                endpointInfo.setHeaders(each.getHeaders());
+                String address = each.getEndpointData().toString();
                 if (InternetAddressUtil.containsPort(address)) {
                     String[] info = InternetAddressUtil.splitIpPortStr(address);
                     endpointInfo.setAddress(info[0]);
