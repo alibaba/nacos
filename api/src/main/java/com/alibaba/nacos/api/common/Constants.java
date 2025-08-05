@@ -52,7 +52,7 @@ public class Constants {
     public static final String GROUP = "group";
     
     public static final String GROUP_NAME = "groupName";
-
+    
     public static final String NAMESPACE_ID = "namespaceId";
 
     public static final String TARGET_NAMESPACE_ID = "targetNamespaceId";

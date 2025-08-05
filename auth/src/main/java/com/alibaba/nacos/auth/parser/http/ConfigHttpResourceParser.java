@@ -40,17 +40,13 @@ public class ConfigHttpResourceParser extends AbstractHttpResourceParser {
         }
         return NamespaceUtil.processNamespaceParameter(namespaceId);
     }
-
+    
     @Override
     protected String getNamespaceId(HttpServletRequest request, Secured secured) {
-        return Arrays.stream(secured.tags())
-                .filter(tag -> tag.startsWith(Constants.NAMESPACE_ID))
+        return Arrays.stream(secured.tags()).filter(tag -> tag.startsWith(Constants.NAMESPACE_ID))
                 .map(tag -> tag.split(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.SPLITTER))
-                .filter(splitTags -> splitTags.length >= 2)
-                .map(splitTags -> request.getParameter(splitTags[1]))
-                .filter(StringUtils::isNotBlank)
-                .findFirst()
-                .orElseGet(() -> getNamespaceId(request));
+                .filter(splitTags -> splitTags.length >= 2).map(splitTags -> request.getParameter(splitTags[1]))
+                .filter(StringUtils::isNotBlank).findFirst().orElseGet(() -> getNamespaceId(request));
     }
     @Override
     protected String getGroup(HttpServletRequest request) {
