@@ -48,6 +48,7 @@ public class ConfigHttpResourceParser extends AbstractHttpResourceParser {
                 .filter(splitTags -> splitTags.length >= 2).map(splitTags -> request.getParameter(splitTags[1]))
                 .filter(StringUtils::isNotBlank).findFirst().orElseGet(() -> getNamespaceId(request));
     }
+    
     @Override
     protected String getGroup(HttpServletRequest request) {
         String groupName = request.getParameter(Constants.GROUP_NAME);
