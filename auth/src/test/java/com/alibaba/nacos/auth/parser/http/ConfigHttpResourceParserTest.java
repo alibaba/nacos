@@ -34,6 +34,7 @@ import java.lang.reflect.Method;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 // todo remove this
@@ -138,5 +139,66 @@ class ConfigHttpResourceParserTest {
         String methodName = callerElement.getMethodName();
         Method method = this.getClass().getDeclaredMethod(methodName);
         return method.getAnnotation(Secured.class);
+    }
+
+    @Test
+    @Secured(tags = {"namespaceId:customNsParam"})
+    void testParseWithSecuredTags() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        when(request.getParameter("customNsParam")).thenReturn("tagNs");
+
+        String actualNamespaceId = resourceParser.getNamespaceId(request, secured);
+        assertEquals("tagNs", actualNamespaceId);
+    }
+
+    @Test
+    @Secured(tags = {"namespaceId:emptyParam"})
+    void testParseWithSecuredTagsButEmptyParam() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        when(request.getParameter("emptyParam")).thenReturn(StringUtils.EMPTY);
+        when(request.getParameter(Constants.NAMESPACE_ID)).thenReturn("defaultNs");
+
+        String actualNamespaceId = resourceParser.getNamespaceId(request, secured);
+        assertEquals("defaultNs", actualNamespaceId);
+    }
+
+    @Test
+    @Secured(tags = {"invalidTag:param", "namespaceId:multiTag"})
+    void testParseWithMultipleTags() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        when(request.getParameter("multiTag")).thenReturn("multiNs");
+
+        String actualNamespaceId = resourceParser.getNamespaceId(request, secured);
+        assertEquals("multiNs", actualNamespaceId);
+    }
+
+    @Test
+    @Secured(tags = {"namespaceId:splitTag:extra"})
+    void testParseWithInvalidSplitTag() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        when(request.getParameter("splitTag")).thenReturn("splitNs");
+
+        String actualNamespaceId = resourceParser.getNamespaceId(request, secured);
+        assertEquals("splitNs", actualNamespaceId);
+    }
+
+    @Test
+    @Secured(tags = {"normalTag"})
+    void testParseWithNoNamespaceTag() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        when(request.getParameter(Constants.NAMESPACE_ID)).thenReturn("defaultNs");
+
+        String actualNamespaceId = resourceParser.getNamespaceId(request, secured);
+        assertEquals("defaultNs", actualNamespaceId);
+    }
+
+    @Test
+    @Secured(tags = {"namespaceId"})
+    void testParseWithInvalidSplitTag1() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        when(request.getParameter(Constants.NAMESPACE_ID)).thenReturn("defaultNs");
+
+        String actualNamespaceId = resourceParser.getNamespaceId(request, secured);
+        assertEquals("defaultNs", actualNamespaceId);
     }
 }

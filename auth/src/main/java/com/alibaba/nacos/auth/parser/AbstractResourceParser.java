@@ -32,7 +32,7 @@ public abstract class AbstractResourceParser<R> implements ResourceParser<R> {
     
     @Override
     public Resource parse(R request, Secured secured) {
-        String namespaceId = getNamespaceId(request);
+        String namespaceId = getNamespaceId(request,secured);
         String group = getGroup(request);
         String name = getResourceName(request);
         Properties properties = getProperties(request);
@@ -49,7 +49,17 @@ public abstract class AbstractResourceParser<R> implements ResourceParser<R> {
      * @return namespaceId
      */
     protected abstract String getNamespaceId(R request);
-    
+
+    /**
+     * Get namespaceId from request and secured.
+     * No implementation is required by default,this method can be rewrited with special processing.
+     * @param request request
+     * @param secured secured
+     * @return namespaceId
+     */
+    protected String getNamespaceId(R request, Secured secured){
+        return getNamespaceId(request);
+    }
     /**
      * Get group name from request.
      *
