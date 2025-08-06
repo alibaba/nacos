@@ -16,32 +16,18 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
- * Mcp Remote Endpoint info.
+ * Argument interface for MCP registry model arguments.
  * @author xinluo
  */
-public class Remote {
-    
-    @JsonProperty("transport_type")
-    private String transportType;
 
-    private String url;
-
-    public String getTransportType() {
-        return transportType;
-    }
-
-    public void setTransportType(String transportType) {
-        this.transportType = transportType;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = PositionalArgument.class, name = "positional"),
+        @JsonSubTypes.Type(value = NamedArgument.class, name = "named")
+})
+public interface Argument {
 }

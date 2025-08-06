@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Table, Button, Dialog, Message, Input, Form, Grid, Upload } from '@alifd/next';
+import { Table, Button, Dialog, Message, Input, Form, Grid, Upload, Tree } from '@alifd/next';
 import CreateTools from './CreateTools';
 import DeleteTool from './CreateTools/DeleteTool';
 import { getParams, request } from '../../../globalLib';
@@ -19,7 +19,7 @@ const ShowTools = props => {
     useExistService,
     service,
     exportPath,
-    restToMcpSwitch = 'off',
+    restToMcpSwitch = false,
     locale,
     isPreview = false,
     onlyEditRuntimeInfo = false,
@@ -32,8 +32,218 @@ const ShowTools = props => {
   const toolsRef = useRef(null);
   const [file, setFile] = useState(null);
   const [openApiDialogVisible, setOpenApiDialogVisible] = useState(false);
+  const [activeToolIndex, setActiveToolIndex] = useState(0);
+
+  // 初始化参数映射表
+  const parameterMap = useRef(new Map());
+
   const getServerDetail = () => {
     props.getServerDetail && props.getServerDetail();
+  };
+
+  // 构建参数树形数据结构
+  const buildParameterTreeData = (properties, required = [], parentKey = '') => {
+    if (!properties) return [];
+
+    // 只在顶层调用时清空参数映射表
+    if (!parentKey) {
+      parameterMap.current = new Map();
+    }
+
+    return Object.entries(properties).map(([paramName, paramDef], index) => {
+      const nodeKey = parentKey ? `${parentKey}-${paramName}-${index}` : `${paramName}-${index}`;
+      const isRequired = required.includes(paramName);
+      const hasDefault = paramDef.default !== undefined;
+      const paramType = paramDef.type || 'string';
+
+      // 将参数信息存储到映射表中
+      parameterMap.current.set(nodeKey, {
+        name: paramName,
+        type: paramType,
+        description: paramDef.description || '',
+        isRequired,
+        hasDefault,
+        defaultValue: paramDef.default,
+        enum: paramDef.enum,
+        format: paramDef.format,
+        isParameterNode: true,
+        originalDef: paramDef,
+      });
+
+      // 构建子节点（属性详情）
+      const children = [];
+
+      // 添加基本信息子节点
+      if (paramDef.description) {
+        const descKey = `${nodeKey}-desc`;
+        parameterMap.current.set(descKey, {
+          name: '描述',
+          type: 'info',
+          description: paramDef.description,
+          isInfoNode: true,
+        });
+        children.push({
+          key: descKey,
+          label: `描述: ${paramDef.description}`,
+          isLeaf: true,
+        });
+      }
+
+      if (hasDefault) {
+        const defaultKey = `${nodeKey}-default`;
+        parameterMap.current.set(defaultKey, {
+          name: '默认值',
+          type: 'info',
+          description: JSON.stringify(paramDef.default),
+          isInfoNode: true,
+        });
+        children.push({
+          key: defaultKey,
+          label: `默认值: ${JSON.stringify(paramDef.default)}`,
+          isLeaf: true,
+        });
+      }
+
+      if (paramDef.enum) {
+        const enumValue = Array.isArray(paramDef.enum) ? paramDef.enum.join(', ') : paramDef.enum;
+        const enumKey = `${nodeKey}-enum`;
+        parameterMap.current.set(enumKey, {
+          name: '可选值',
+          type: 'info',
+          description: enumValue,
+          isInfoNode: true,
+        });
+        children.push({
+          key: enumKey,
+          label: `可选值: ${enumValue}`,
+          isLeaf: true,
+        });
+      }
+
+      if (paramDef.format) {
+        const formatKey = `${nodeKey}-format`;
+        parameterMap.current.set(formatKey, {
+          name: '格式',
+          type: 'info',
+          description: paramDef.format,
+          isInfoNode: true,
+        });
+        children.push({
+          key: formatKey,
+          label: `格式: ${paramDef.format}`,
+          isLeaf: true,
+        });
+      }
+
+      // 递归处理object类型的属性
+      if (paramType === 'object' && paramDef.properties) {
+        const objectRequired = paramDef.required || [];
+        const objectChildren = buildParameterTreeData(
+          paramDef.properties,
+          objectRequired,
+          `${nodeKey}-props`
+        );
+
+        if (objectChildren.length > 0) {
+          const propsKey = `${nodeKey}-properties`;
+          parameterMap.current.set(propsKey, {
+            name: '属性',
+            type: 'group',
+            description: '对象属性',
+            isGroupNode: true,
+          });
+          children.push({
+            key: propsKey,
+            label: '属性',
+            children: objectChildren,
+            isLeaf: false,
+          });
+        }
+      }
+
+      // 递归处理array类型的属性
+      if (paramType === 'array' && paramDef.items) {
+        const arrayItemChildren = [];
+
+        // 如果数组项是对象类型
+        if (paramDef.items.type === 'object' && paramDef.items.properties) {
+          const itemRequired = paramDef.items.required || [];
+          const itemChildren = buildParameterTreeData(
+            paramDef.items.properties,
+            itemRequired,
+            `${nodeKey}-items`
+          );
+
+          if (itemChildren.length > 0) {
+            const itemPropsKey = `${nodeKey}-item-properties`;
+            parameterMap.current.set(itemPropsKey, {
+              name: '数组项属性',
+              type: 'group',
+              description: '数组项的属性',
+              isGroupNode: true,
+            });
+            arrayItemChildren.push({
+              key: itemPropsKey,
+              label: '数组项属性',
+              children: itemChildren,
+              isLeaf: false,
+            });
+          }
+        } else {
+          // 基本类型的数组项
+          const itemInfo = [];
+          if (paramDef.items.type) {
+            itemInfo.push(`类型: ${paramDef.items.type}`);
+          }
+          if (paramDef.items.description) {
+            itemInfo.push(`描述: ${paramDef.items.description}`);
+          }
+          if (paramDef.items.format) {
+            itemInfo.push(`格式: ${paramDef.items.format}`);
+          }
+
+          if (itemInfo.length > 0) {
+            const itemInfoKey = `${nodeKey}-item-info`;
+            parameterMap.current.set(itemInfoKey, {
+              name: '数组项信息',
+              type: 'info',
+              description: itemInfo.join(', '),
+              isInfoNode: true,
+            });
+            arrayItemChildren.push({
+              key: itemInfoKey,
+              label: `数组项信息: ${itemInfo.join(', ')}`,
+              isLeaf: true,
+            });
+          }
+        }
+
+        if (arrayItemChildren.length > 0) {
+          const itemsKey = `${nodeKey}-items`;
+          parameterMap.current.set(itemsKey, {
+            name: '数组项定义',
+            type: 'group',
+            description: '数组项的定义',
+            isGroupNode: true,
+          });
+          children.push({
+            key: itemsKey,
+            label: '数组项定义',
+            children: arrayItemChildren,
+            isLeaf: false,
+          });
+        }
+      }
+
+      // 返回树节点
+      const result = {
+        key: nodeKey,
+        label: paramName,
+        children: children.length > 0 ? children : undefined,
+        isLeaf: children.length === 0,
+      };
+      return result;
+    });
   };
 
   const openToolDetail = params => {
@@ -63,8 +273,6 @@ const ShowTools = props => {
       const doc = await parseOpenAPI(content);
 
       let config = extractToolsFromOpenAPI(doc);
-
-      console.log(config);
 
       const toolsMeta = config.tools.reduce((acc, tool) => {
         const argsPosition = tool.args.reduce((acc, arg) => {
@@ -225,49 +433,1026 @@ const ShowTools = props => {
     setTokenDialogVisible(true);
   };
 
+  console.log('isPreview:', isPreview);
+  console.log('onlyEditRuntimeInfo:', onlyEditRuntimeInfo);
+  console.log('restToMcpSwitch:', restToMcpSwitch);
+  console.log('fontProtocol:', frontProtocol);
+
   return (
     <div>
-      {!isPreview && !onlyEditRuntimeInfo && (
-        <Button type="primary" onClick={openDialog} style={{ marginRight: 10 }}>
-          {locale.newMcpTool}
-        </Button>
+      {/* Tools 展示 - 使用与 McpDetail 相同的左右分栏风格 */}
+      {serverConfig?.toolSpec?.tools && serverConfig.toolSpec.tools.length > 0 ? (
+        <>
+          {/* 当有tools时，显示添加按钮 */}
+          {!isPreview && !onlyEditRuntimeInfo && (
+            <Button type="primary" onClick={openDialog} style={{ marginRight: 10 }}>
+              {locale.newMcpTool}
+            </Button>
+          )}
+
+          {!isPreview && !onlyEditRuntimeInfo && frontProtocol === 'mcp-sse' && !restToMcpSwitch && (
+            <Button
+              type="primary"
+              onClick={autoImportToolsFromMCPServer}
+              style={{ marginRight: 10 }}
+              loading={importLoading}
+              disabled={importLoading}
+            >
+              {importLoading ? locale.importing : locale.importToolsFromMCP}
+            </Button>
+          )}
+
+          {!isPreview && !onlyEditRuntimeInfo && frontProtocol !== 'stdio' && restToMcpSwitch && (
+            <Button
+              type="primary"
+              onClick={importToolsFromOpenApi}
+              style={{ marginRight: 10 }}
+              loading={importLoading}
+              disabled={importLoading}
+            >
+              {importLoading ? locale.importing : locale.importToolsFromOpenAPI}
+            </Button>
+          )}
+
+          <div style={{ display: 'flex', minHeight: '400px', marginTop: '20px' }}>
+            {/* 左侧标签栏 */}
+            <div style={{ width: '250px', borderRight: '1px solid #e6e6e6', marginRight: '16px' }}>
+              {serverConfig.toolSpec.tools.map((tool, index) => {
+                // 获取工具的在线状态
+                const toolsMeta = serverConfig?.toolSpec?.toolsMeta?.[tool.name];
+                const isOnline = toolsMeta ? toolsMeta.enabled : true;
+
+                return (
+                  <div
+                    key={index}
+                    style={{
+                      padding: '12px 16px',
+                      cursor: 'pointer',
+                      borderBottom: '1px solid #f0f0f0',
+                      backgroundColor: activeToolIndex === index ? '#e6f7ff' : 'transparent',
+                      borderLeft:
+                        activeToolIndex === index ? '3px solid #1890ff' : '3px solid transparent',
+                    }}
+                    onClick={() => setActiveToolIndex(index)}
+                  >
+                    <div style={{ fontWeight: 'bold', fontSize: '16px', marginBottom: '4px' }}>
+                      {tool.name}
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        marginBottom: '8px',
+                      }}
+                    >
+                      <span
+                        style={{
+                          backgroundColor: isOnline ? '#52c41a' : '#ff4d4f',
+                          color: 'white',
+                          padding: '1px 6px',
+                          borderRadius: '10px',
+                          fontSize: '10px',
+                          fontWeight: 'bold',
+                        }}
+                      >
+                        {isOnline ? '启用' : '禁用'}
+                      </span>
+                      {tool.inputSchema?.properties && (
+                        <span style={{ color: '#666', fontSize: '12px' }}>
+                          {Object.keys(tool.inputSchema.properties).length} 参数
+                        </span>
+                      )}
+                    </div>
+                    {/* 操作按钮 - 只保留编辑和删除 */}
+                    {!isPreview && (
+                      <div style={{ marginTop: '8px' }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                          <a
+                            onClick={e => {
+                              e.stopPropagation();
+                              openToolDetail({ type: 'edit', record: tool });
+                            }}
+                            style={{ fontSize: '12px' }}
+                          >
+                            {locale.operationToolEdit}
+                          </a>
+                          {!onlyEditRuntimeInfo && (
+                            <>
+                              <span style={{ fontSize: '12px' }}>|</span>
+                              <DeleteTool
+                                record={tool}
+                                locale={locale}
+                                serverConfig={serverConfig}
+                                getServerDetail={getServerDetail}
+                                onChange={props?.onChange}
+                                size="small"
+                              />
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 右侧内容区 */}
+            <div style={{ flex: 1 }}>
+              {(() => {
+                const tool = serverConfig.toolSpec.tools[activeToolIndex];
+                if (!tool) return null;
+
+                return (
+                  <div style={{ padding: '16px' }}>
+                    {/* Tool 标题 */}
+                    <h2
+                      style={{
+                        fontSize: '20px',
+                        fontWeight: 'bold',
+                        color: '#000',
+                        marginBottom: '16px',
+                        borderBottom: '1px solid #e6e6e6',
+                        paddingBottom: '8px',
+                      }}
+                    >
+                      {tool.name}
+                    </h2>
+
+                    {/* Tool 信息 */}
+                    {tool.description && (
+                      <div style={{ marginBottom: '24px' }}>
+                        <p style={{ color: '#000', fontSize: '14px', lineHeight: '1.6' }}>
+                          {tool.description}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Tool 参数配置 */}
+                    {tool.inputSchema?.properties &&
+                      Object.keys(tool.inputSchema.properties).length > 0 && (
+                        <div style={{ marginBottom: '16px' }}>
+                          <h3
+                            style={{
+                              color: '#000',
+                              margin: '0 0 16px 0',
+                              borderBottom: '2px solid #d9d9d9',
+                              paddingBottom: '8px',
+                            }}
+                          >
+                            {locale?.parameters || '参数配置'}
+                            <span style={{ marginLeft: '8px', color: '#666', fontSize: '14px' }}>
+                              (共 {Object.keys(tool.inputSchema.properties).length} 项)
+                            </span>
+                          </h3>
+
+                          <div
+                            style={{
+                              border: '1px solid rgba(230, 230, 230, 0.4)',
+                              borderRadius: '8px',
+                              backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                              backdropFilter: 'blur(10px)',
+                              boxShadow:
+                                '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
+                              padding: '16px',
+                            }}
+                          >
+                            <Tree
+                              dataSource={buildParameterTreeData(
+                                tool.inputSchema.properties,
+                                tool.inputSchema.required
+                              )}
+                              showLine
+                              defaultExpandAll
+                              isLabelBlock
+                              style={{ backgroundColor: 'transparent' }}
+                              labelRender={node => {
+                                // 从参数映射表中获取节点数据
+                                const nodeData = parameterMap.current?.get(node.key);
+
+                                // 如果是子节点（详情信息）
+                                // if (node.isLeaf) {
+                                //   return (
+                                //     <span style={{
+                                //       fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+                                //       color: '#000',
+                                //       fontSize: '13px'
+                                //     }}>
+                                //       {node.label}
+                                //     </span>
+                                //   );
+                                // }
+
+                                // 检查是否是组织节点（属性、数组项定义等）
+                                if (nodeData?.isGroupNode) {
+                                  return (
+                                    <span
+                                      style={{
+                                        fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+                                        fontWeight: 'bold',
+                                        color: '#000',
+                                        fontSize: '14px',
+                                      }}
+                                    >
+                                      {node.label}
+                                    </span>
+                                  );
+                                }
+
+                                // 检查是否是参数节点（通过映射表中的 isParameterNode 标识）
+                                if (nodeData?.isParameterNode || node.isLeaf) {
+                                  return (
+                                    <div
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        width: '100%',
+                                        flexWrap: 'wrap',
+                                      }}
+                                    >
+                                      {/* 参数名 */}
+                                      <span
+                                        style={{
+                                          fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+                                          fontWeight: 'bold',
+                                          color: '#000',
+                                          fontSize: '14px',
+                                        }}
+                                      >
+                                        {nodeData.name}
+                                      </span>
+
+                                      {/* 类型信息 - 确保总是显示类型 */}
+                                      <span
+                                        style={{
+                                          fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+                                          color: '#666',
+                                          fontSize: '12px',
+                                          backgroundColor: '#f5f5f5',
+                                          padding: '2px 6px',
+                                          borderRadius: '3px',
+                                          border: '1px solid #ddd',
+                                        }}
+                                      >
+                                        [{nodeData.type || 'string'}]
+                                      </span>
+
+                                      {/* 必填标记 */}
+                                      {nodeData.isRequired && (
+                                        <span
+                                          style={{
+                                            fontFamily:
+                                              'Monaco, Consolas, "Courier New", monospace',
+                                            color: '#000',
+                                            fontSize: '11px',
+                                            fontWeight: 'bold',
+                                          }}
+                                        >
+                                          *必填
+                                        </span>
+                                      )}
+
+                                      {/* 默认值标记 */}
+                                      {nodeData.hasDefault && (
+                                        <span
+                                          style={{
+                                            fontFamily:
+                                              'Monaco, Consolas, "Courier New", monospace',
+                                            color: '#000',
+                                            fontSize: '11px',
+                                          }}
+                                        >
+                                          [默认值]
+                                        </span>
+                                      )}
+
+                                      {/* 描述信息 - 直接放在后面，如果没有显示 - */}
+                                      <span
+                                        style={{
+                                          fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+                                          color: '#000',
+                                          fontSize: '12px',
+                                        }}
+                                      >
+                                        - {nodeData.description || '-'}
+                                      </span>
+
+                                      {/* 默认值信息（如果有的话） */}
+                                      {nodeData.hasDefault && nodeData.defaultValue !== undefined && (
+                                        <span
+                                          style={{
+                                            fontFamily:
+                                              'Monaco, Consolas, "Courier New", monospace',
+                                            color: '#000',
+                                            fontSize: '11px',
+                                          }}
+                                        >
+                                          ({JSON.stringify(nodeData.defaultValue)})
+                                        </span>
+                                      )}
+
+                                      {/* 可选值信息（如果有的话） */}
+                                      {nodeData.enum && (
+                                        <span
+                                          style={{
+                                            fontFamily:
+                                              'Monaco, Consolas, "Courier New", monospace',
+                                            color: '#000',
+                                            fontSize: '11px',
+                                          }}
+                                        >
+                                          [
+                                          {Array.isArray(nodeData.enum)
+                                            ? nodeData.enum.join(', ')
+                                            : nodeData.enum}
+                                          ]
+                                        </span>
+                                      )}
+                                    </div>
+                                  );
+                                }
+
+                                // 回退处理：如果节点数据存在但不是参数节点，可能是旧数据格式
+                                if (
+                                  nodeData &&
+                                  !nodeData.isParameterNode &&
+                                  !nodeData.isGroupNode &&
+                                  !nodeData.isInfoNode
+                                ) {
+                                  return (
+                                    <div
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        width: '100%',
+                                        flexWrap: 'wrap',
+                                      }}
+                                    >
+                                      {/* 参数名 */}
+                                      <span
+                                        style={{
+                                          fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+                                          fontWeight: 'bold',
+                                          color: '#000',
+                                          fontSize: '14px',
+                                        }}
+                                      >
+                                        {nodeData.name || node.label}
+                                      </span>
+
+                                      {/* 类型信息 */}
+                                      <span
+                                        style={{
+                                          fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+                                          color: '#666',
+                                          fontSize: '12px',
+                                          backgroundColor: '#f5f5f5',
+                                          padding: '2px 6px',
+                                          borderRadius: '3px',
+                                          border: '1px solid #ddd',
+                                        }}
+                                      >
+                                        [{nodeData.type || 'string'}]
+                                      </span>
+                                    </div>
+                                  );
+                                }
+
+                                // 默认渲染（其他类型的节点）
+                                return (
+                                  <span
+                                    style={{
+                                      fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+                                      color: '#000',
+                                      fontSize: '13px',
+                                    }}
+                                  >
+                                    {node.label}
+                                  </span>
+                                );
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                    {/* RestToMcp 场景下的协议转化配置和透明认证信息 */}
+                    {frontProtocol !== 'stdio' &&
+                      restToMcpSwitch &&
+                      (() => {
+                        const toolsMeta = serverConfig?.toolSpec?.toolsMeta?.[tool.name];
+                        const templateData = toolsMeta?.templates?.['json-go-template'];
+
+                        if (templateData) {
+                          return (
+                            <div style={{ marginBottom: '16px' }}>
+                              <h3
+                                style={{
+                                  color: '#000',
+                                  margin: '0 0 16px 0',
+                                  borderBottom: '2px solid #d9d9d9',
+                                  paddingBottom: '8px',
+                                }}
+                              >
+                                {locale?.protocolConversion || '协议转化配置'}
+                              </h3>
+
+                              <div
+                                style={{
+                                  border: '1px solid rgba(230, 230, 230, 0.4)',
+                                  borderRadius: '8px',
+                                  backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                                  backdropFilter: 'blur(10px)',
+                                  boxShadow:
+                                    '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
+                                  padding: '16px',
+                                }}
+                              >
+                                {/* 透明认证信息 */}
+                                {templateData.security && (
+                                  <div style={{ marginBottom: '16px' }}>
+                                    <h4
+                                      style={{
+                                        color: '#000',
+                                        fontSize: '14px',
+                                        fontWeight: 'bold',
+                                        marginBottom: '8px',
+                                        borderLeft: '3px solid #52c41a',
+                                        paddingLeft: '8px',
+                                      }}
+                                    >
+                                      {locale?.transparentAuth || '透明认证信息'}
+                                    </h4>
+                                    <div
+                                      style={{
+                                        backgroundColor: '#f9f9f9',
+                                        padding: '12px',
+                                        borderRadius: '4px',
+                                        fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+                                        fontSize: '12px',
+                                      }}
+                                    >
+                                      <div style={{ marginBottom: '4px' }}>
+                                        <span style={{ fontWeight: 'bold', color: '#000' }}>
+                                          启用状态:{' '}
+                                        </span>
+                                        <span
+                                          style={{
+                                            color: templateData.security.passthrough
+                                              ? '#52c41a'
+                                              : '#666',
+                                            fontWeight: 'bold',
+                                          }}
+                                        >
+                                          {templateData.security.passthrough ? '已启用' : '未启用'}
+                                        </span>
+                                      </div>
+                                      {templateData.security.id && (
+                                        <div style={{ marginBottom: '4px' }}>
+                                          <span style={{ fontWeight: 'bold', color: '#000' }}>
+                                            客户端认证方式:{' '}
+                                          </span>
+                                          <span style={{ color: '#1890ff' }}>
+                                            {templateData.security.id}
+                                          </span>
+                                        </div>
+                                      )}
+                                      {templateData.security.type && (
+                                        <div>
+                                          <span style={{ fontWeight: 'bold', color: '#000' }}>
+                                            认证类型:{' '}
+                                          </span>
+                                          <span style={{ color: '#666' }}>
+                                            {templateData.security.type}
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* 请求模板信息 */}
+                                {templateData.requestTemplate && (
+                                  <div style={{ marginBottom: '16px' }}>
+                                    <h4
+                                      style={{
+                                        color: '#000',
+                                        fontSize: '14px',
+                                        fontWeight: 'bold',
+                                        marginBottom: '8px',
+                                        borderLeft: '3px solid #1890ff',
+                                        paddingLeft: '8px',
+                                      }}
+                                    >
+                                      {locale?.requestTemplate || '请求模板配置'}
+                                    </h4>
+                                    <div
+                                      style={{
+                                        backgroundColor: '#f6f8fa',
+                                        padding: '12px',
+                                        borderRadius: '4px',
+                                        fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+                                        fontSize: '12px',
+                                      }}
+                                    >
+                                      {templateData.requestTemplate.method && (
+                                        <div style={{ marginBottom: '4px' }}>
+                                          <span style={{ fontWeight: 'bold', color: '#000' }}>
+                                            HTTP 方法:{' '}
+                                          </span>
+                                          <span
+                                            style={{
+                                              color: '#fff',
+                                              backgroundColor:
+                                                templateData.requestTemplate.method === 'GET'
+                                                  ? '#52c41a'
+                                                  : templateData.requestTemplate.method === 'POST'
+                                                  ? '#1890ff'
+                                                  : templateData.requestTemplate.method === 'PUT'
+                                                  ? '#fa8c16'
+                                                  : '#f5222d',
+                                              padding: '2px 6px',
+                                              borderRadius: '3px',
+                                              fontSize: '11px',
+                                              fontWeight: 'bold',
+                                            }}
+                                          >
+                                            {templateData.requestTemplate.method}
+                                          </span>
+                                        </div>
+                                      )}
+                                      {templateData.requestTemplate.url && (
+                                        <div style={{ marginBottom: '4px' }}>
+                                          <span style={{ fontWeight: 'bold', color: '#000' }}>
+                                            请求路径:{' '}
+                                          </span>
+                                          <span
+                                            style={{
+                                              color: '#1890ff',
+                                              backgroundColor: '#e6f7ff',
+                                              padding: '2px 6px',
+                                              borderRadius: '3px',
+                                            }}
+                                          >
+                                            {templateData.requestTemplate.url}
+                                          </span>
+                                        </div>
+                                      )}
+                                      {templateData.requestTemplate.security && (
+                                        <div style={{ marginBottom: '4px' }}>
+                                          <span style={{ fontWeight: 'bold', color: '#000' }}>
+                                            后端认证方式:{' '}
+                                          </span>
+                                          <span style={{ color: '#fa8c16' }}>
+                                            {Object.keys(
+                                              templateData.requestTemplate.security
+                                            ).join(', ')}
+                                          </span>
+                                        </div>
+                                      )}
+
+                                      {/* 请求头 */}
+                                      {templateData.requestTemplate.headers &&
+                                        Object.keys(templateData.requestTemplate.headers).length >
+                                          0 && (
+                                          <div style={{ marginBottom: '12px' }}>
+                                            <div
+                                              style={{
+                                                fontWeight: 'bold',
+                                                color: '#000',
+                                                marginBottom: '4px',
+                                                borderBottom: '1px solid #d9d9d9',
+                                                paddingBottom: '2px',
+                                              }}
+                                            >
+                                              headers:
+                                            </div>
+                                            <div
+                                              style={{
+                                                backgroundColor: '#e6f7ff',
+                                                border: '1px solid #91d5ff',
+                                                borderRadius: '3px',
+                                                padding: '8px',
+                                                maxHeight: '120px',
+                                                overflowY: 'auto',
+                                                fontSize: '11px',
+                                              }}
+                                            >
+                                              {typeof templateData.requestTemplate.headers ===
+                                              'object' ? (
+                                                Object.entries(
+                                                  templateData.requestTemplate.headers
+                                                ).map(([key, value], index) => (
+                                                  <div
+                                                    key={index}
+                                                    style={{
+                                                      marginBottom: '6px',
+                                                      display: 'flex',
+                                                      alignItems: 'flex-start',
+                                                      gap: '8px',
+                                                    }}
+                                                  >
+                                                    <span
+                                                      style={{
+                                                        fontWeight: 'bold',
+                                                        color: '#000',
+                                                        fontFamily:
+                                                          'Monaco, Consolas, "Courier New", monospace',
+                                                        minWidth: 'fit-content',
+                                                      }}
+                                                    >
+                                                      {key}:
+                                                    </span>
+                                                    <span
+                                                      style={{
+                                                        color: '#1890ff',
+                                                        fontFamily:
+                                                          'Monaco, Consolas, "Courier New", monospace',
+                                                        wordBreak: 'break-word',
+                                                      }}
+                                                    >
+                                                      {typeof value === 'object'
+                                                        ? JSON.stringify(value)
+                                                        : String(value)}
+                                                    </span>
+                                                  </div>
+                                                ))
+                                              ) : (
+                                                <div
+                                                  style={{
+                                                    color: '#1890ff',
+                                                    fontFamily:
+                                                      'Monaco, Consolas, "Courier New", monospace',
+                                                    whiteSpace: 'pre-wrap',
+                                                  }}
+                                                >
+                                                  {templateData.requestTemplate.headers}
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+
+                                      {/* 请求体 */}
+                                      {templateData.requestTemplate.body && (
+                                        <div style={{ marginBottom: '12px' }}>
+                                          <div
+                                            style={{
+                                              fontWeight: 'bold',
+                                              color: '#000',
+                                              marginBottom: '4px',
+                                              borderBottom: '1px solid #d9d9d9',
+                                              paddingBottom: '2px',
+                                            }}
+                                          >
+                                            body:
+                                          </div>
+                                          <div
+                                            style={{
+                                              backgroundColor: '#f6ffed',
+                                              border: '1px solid #b7eb8f',
+                                              borderRadius: '3px',
+                                              padding: '8px',
+                                              maxHeight: '100px',
+                                              overflowY: 'auto',
+                                              whiteSpace: 'pre-wrap',
+                                              color: '#52c41a',
+                                              fontSize: '11px',
+                                            }}
+                                          >
+                                            {typeof templateData.requestTemplate.body === 'object'
+                                              ? JSON.stringify(
+                                                  templateData.requestTemplate.body,
+                                                  null,
+                                                  2
+                                                )
+                                              : templateData.requestTemplate.body}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* 响应模板信息 */}
+                                {templateData.responseTemplate && (
+                                  <div>
+                                    <h4
+                                      style={{
+                                        color: '#000',
+                                        fontSize: '14px',
+                                        fontWeight: 'bold',
+                                        marginBottom: '8px',
+                                        borderLeft: '3px solid #fa8c16',
+                                        paddingLeft: '8px',
+                                      }}
+                                    >
+                                      {locale?.responseTemplate || '响应模板配置'}
+                                    </h4>
+                                    <div
+                                      style={{
+                                        backgroundColor: '#fffbf0',
+                                        padding: '12px',
+                                        borderRadius: '4px',
+                                        fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+                                        fontSize: '12px',
+                                      }}
+                                    >
+                                      {/* 响应体模板 */}
+                                      {templateData.responseTemplate.body && (
+                                        <div style={{ marginBottom: '12px' }}>
+                                          <div
+                                            style={{
+                                              fontWeight: 'bold',
+                                              color: '#000',
+                                              marginBottom: '4px',
+                                              borderBottom: '1px solid #d9d9d9',
+                                              paddingBottom: '2px',
+                                            }}
+                                          >
+                                            body:
+                                          </div>
+                                          <div
+                                            style={{
+                                              backgroundColor: '#f6f8fa',
+                                              border: '1px solid #e1e4e8',
+                                              borderRadius: '3px',
+                                              padding: '8px',
+                                              maxHeight: '100px',
+                                              overflowY: 'auto',
+                                              whiteSpace: 'pre-wrap',
+                                              color: '#666',
+                                              fontSize: '11px',
+                                            }}
+                                          >
+                                            {templateData.responseTemplate.body}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* 响应前缀 */}
+                                      {templateData.responseTemplate.prependBody && (
+                                        <div style={{ marginBottom: '12px' }}>
+                                          <div
+                                            style={{
+                                              fontWeight: 'bold',
+                                              color: '#000',
+                                              marginBottom: '4px',
+                                              borderBottom: '1px solid #d9d9d9',
+                                              paddingBottom: '2px',
+                                            }}
+                                          >
+                                            prependBody:
+                                          </div>
+                                          <div
+                                            style={{
+                                              backgroundColor: '#e6f7ff',
+                                              border: '1px solid #91d5ff',
+                                              borderRadius: '3px',
+                                              padding: '8px',
+                                              maxHeight: '80px',
+                                              overflowY: 'auto',
+                                              whiteSpace: 'pre-wrap',
+                                              color: '#1890ff',
+                                              fontSize: '11px',
+                                            }}
+                                          >
+                                            {templateData.responseTemplate.prependBody}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* 响应后缀 */}
+                                      {templateData.responseTemplate.appendBody && (
+                                        <div style={{ marginBottom: '12px' }}>
+                                          <div
+                                            style={{
+                                              fontWeight: 'bold',
+                                              color: '#000',
+                                              marginBottom: '4px',
+                                              borderBottom: '1px solid #d9d9d9',
+                                              paddingBottom: '2px',
+                                            }}
+                                          >
+                                            appendBody:
+                                          </div>
+                                          <div
+                                            style={{
+                                              backgroundColor: '#f6ffed',
+                                              border: '1px solid #b7eb8f',
+                                              borderRadius: '3px',
+                                              padding: '8px',
+                                              maxHeight: '80px',
+                                              overflowY: 'auto',
+                                              whiteSpace: 'pre-wrap',
+                                              color: '#52c41a',
+                                              fontSize: '11px',
+                                            }}
+                                          >
+                                            {templateData.responseTemplate.appendBody}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* 其他响应模板字段 */}
+                                      {(() => {
+                                        const responseTemplate = templateData.responseTemplate;
+                                        const knownFields = ['body', 'prependBody', 'appendBody'];
+                                        const otherFields = Object.keys(responseTemplate).filter(
+                                          key => !knownFields.includes(key)
+                                        );
+
+                                        if (otherFields.length > 0) {
+                                          return (
+                                            <div>
+                                              <div
+                                                style={{
+                                                  fontWeight: 'bold',
+                                                  color: '#000',
+                                                  marginBottom: '4px',
+                                                  borderBottom: '1px solid #d9d9d9',
+                                                  paddingBottom: '2px',
+                                                }}
+                                              >
+                                                其他配置:
+                                              </div>
+                                              {otherFields.map(field => (
+                                                <div key={field} style={{ marginBottom: '6px' }}>
+                                                  <span
+                                                    style={{ fontWeight: 'bold', color: '#fa8c16' }}
+                                                  >
+                                                    {field}:{' '}
+                                                  </span>
+                                                  <span style={{ color: '#666' }}>
+                                                    {typeof responseTemplate[field] === 'object'
+                                                      ? JSON.stringify(
+                                                          responseTemplate[field],
+                                                          null,
+                                                          2
+                                                        )
+                                                      : String(responseTemplate[field])}
+                                                  </span>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          );
+                                        }
+                                        return null;
+                                      })()}
+
+                                      {/* 如果没有任何字段，显示完整对象 */}
+                                      {!templateData.responseTemplate.body &&
+                                        !templateData.responseTemplate.prependBody &&
+                                        !templateData.responseTemplate.appendBody &&
+                                        Object.keys(templateData.responseTemplate).length === 0 && (
+                                          <div
+                                            style={{
+                                              color: '#999',
+                                              fontStyle: 'italic',
+                                              textAlign: 'center',
+                                              padding: '12px',
+                                            }}
+                                          >
+                                            暂无响应模板配置
+                                          </div>
+                                        )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </>
+      ) : (
+        <div style={{ marginTop: '20px' }}>
+          <div
+            style={{
+              border: '1px solid rgba(230, 230, 230, 0.4)',
+              borderRadius: '8px',
+              padding: '24px',
+              marginBottom: '12px',
+              backgroundColor: 'rgba(250, 250, 250, 0.7)',
+              backdropFilter: 'blur(10px)',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
+              transition: 'all 0.3s ease',
+              textAlign: 'center',
+              minHeight: '200px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '20px',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow =
+                '0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.05)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow =
+                '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)';
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  fontSize: '48px',
+                  color: '#d9d9d9',
+                  marginBottom: '12px',
+                  fontWeight: '300',
+                }}
+              >
+                🔧
+              </div>
+              <p
+                style={{
+                  color: '#666',
+                  fontStyle: 'italic',
+                  margin: 0,
+                  fontSize: '14px',
+                  marginBottom: '20px',
+                }}
+              >
+                {locale.noToolsAvailable || '暂无可用的 Tools'}
+              </p>
+            </div>
+
+            {/* 在占位卡片中显示添加按钮 */}
+            {!isPreview && !onlyEditRuntimeInfo && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  alignItems: 'center',
+                }}
+              >
+                <Button
+                  type="primary"
+                  onClick={openDialog}
+                  size="large"
+                  style={{
+                    minWidth: '140px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                  }}
+                >
+                  {locale.newMcpTool}
+                </Button>
+
+                {/* 根据不同协议显示相应的导入按钮 */}
+                {frontProtocol === 'mcp-sse' && !restToMcpSwitch && (
+                  <Button
+                    type="normal"
+                    onClick={autoImportToolsFromMCPServer}
+                    loading={importLoading}
+                    disabled={importLoading}
+                    style={{
+                      minWidth: '140px',
+                      fontSize: '14px',
+                    }}
+                  >
+                    {importLoading ? locale.importing : locale.importToolsFromMCP}
+                  </Button>
+                )}
+
+                {frontProtocol !== 'stdio' && restToMcpSwitch && (
+                  <Button
+                    type="normal"
+                    onClick={importToolsFromOpenApi}
+                    loading={importLoading}
+                    disabled={importLoading}
+                    style={{
+                      minWidth: '140px',
+                      fontSize: '14px',
+                    }}
+                  >
+                    {importLoading ? locale.importing : locale.importToolsFromOpenAPI}
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
       )}
-
-      {!isPreview &&
-        !onlyEditRuntimeInfo &&
-        frontProtocol === 'mcp-sse' &&
-        restToMcpSwitch === 'off' && (
-          <Button
-            type="primary"
-            onClick={autoImportToolsFromMCPServer}
-            style={{ marginRight: 10 }}
-            loading={importLoading}
-            disabled={importLoading}
-          >
-            {importLoading ? locale.importing : locale.importToolsFromMCP}
-          </Button>
-        )}
-
-      {!isPreview &&
-        !onlyEditRuntimeInfo &&
-        frontProtocol !== 'stdio' &&
-        restToMcpSwitch !== 'off' && (
-          <Button
-            type="primary"
-            onClick={importToolsFromOpenApi}
-            style={{ marginRight: 10 }}
-            loading={importLoading}
-            disabled={importLoading}
-          >
-            {importLoading ? locale.importing : locale.importToolsFromOpenAPI}
-          </Button>
-        )}
 
       <CreateTools
         key={JSON.stringify(serverConfig)}
         locale={locale}
         serverConfig={serverConfig}
-        showTemplates={frontProtocol !== 'stdio' && restToMcpSwitch !== 'off'}
+        showTemplates={frontProtocol !== 'stdio' && restToMcpSwitch}
         ref={toolsRef}
         getServerDetail={getServerDetail}
         onChange={props?.onChange}
@@ -279,6 +1464,7 @@ const ShowTools = props => {
         visible={openApiDialogVisible}
         onOk={handleConfirm}
         onCancel={() => setOpenApiDialogVisible(false)}
+        onClose={() => setOpenApiDialogVisible(false)}
         style={{ width: 800 }}
       >
         <Form>
@@ -358,6 +1544,7 @@ const ShowTools = props => {
             }
           }}
           onCancel={() => setTokenDialogVisible(false)}
+          onClose={() => setTokenDialogVisible(false)}
           style={{ width: 600 }}
         >
           <Form>
@@ -385,77 +1572,6 @@ const ShowTools = props => {
           </Form>
         </Dialog>
       )}
-
-      <Table style={{ marginTop: '20px' }} dataSource={serverConfig?.toolSpec?.tools || []}>
-        <Table.Column
-          width={'15%'}
-          title={locale.toolName}
-          cell={(value, index, record) => {
-            return <div style={{ minWidth: '100px' }}>{record.name}</div>;
-          }}
-        />
-        <Table.Column title={locale.toolDescription} dataIndex={'description'} />
-        <Table.Column
-          title={locale.toolOnline}
-          width={100}
-          cell={(value, index, record) => {
-            const onlineText = (
-              <div style={{ color: 'green', textAlign: 'center' }}>{locale.online}</div>
-            );
-            const offlineText = (
-              <div style={{ color: 'red', textAlign: 'center' }}>{locale.offline}</div>
-            );
-            if (serverConfig?.toolSpec?.toolsMeta?.[record.name]) {
-              return serverConfig?.toolSpec?.toolsMeta?.[record.name]?.enabled
-                ? onlineText
-                : offlineText;
-            } else {
-              return onlineText;
-            }
-          }}
-        />
-        <Table.Column
-          title={locale.operations}
-          width={200}
-          cell={(value, index, record) => {
-            if (isPreview) {
-              return (
-                <a onClick={() => openToolDetail({ type: 'preview', record })}>
-                  {locale.operationToolDetail}
-                </a>
-              );
-            }
-
-            return (
-              <div>
-                <a onClick={() => openToolDetail({ type: 'preview', record })}>
-                  {locale.operationToolDetail}
-                </a>
-                <span style={{ margin: '0 5px' }}>|</span>
-                <a
-                  style={{ marginRight: 5 }}
-                  onClick={() => openToolDetail({ type: 'edit', record })}
-                >
-                  {locale.operationToolEdit}
-                  {/* 编辑 */}
-                </a>
-                {!onlyEditRuntimeInfo && (
-                  <>
-                    <span style={{ margin: '0 5px' }}>|</span>
-                    <DeleteTool
-                      record={record}
-                      locale={locale}
-                      serverConfig={serverConfig}
-                      getServerDetail={getServerDetail}
-                      onChange={props?.onChange}
-                    />
-                  </>
-                )}
-              </div>
-            );
-          }}
-        />
-      </Table>
     </div>
   );
 };

@@ -369,7 +369,6 @@ function createResponseTemplate(operation) {
       }
     }
   }
-  console.log(template);
 
   template.prependBody += '\n## Original Response\n\n';
   return template;
