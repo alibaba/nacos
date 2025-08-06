@@ -526,7 +526,7 @@ public class McpServerOperationService {
         }
         if (null != endpointSpecification) {
             Service service = endpointOperationService.createMcpServerEndpointServiceIfNecessary(namespaceId,
-                    serverSpecification.getName(), endpointSpecification);
+                    serverSpecification.getName(), serverSpecification.getVersionDetail().getVersion(), endpointSpecification);
             McpServiceRef serviceRef = new McpServiceRef();
             serviceRef.setNamespaceId(service.getNamespace());
             serviceRef.setGroupName(service.getGroup());

@@ -610,7 +610,7 @@ class McpServerOperationServiceTest {
         endpointSpec.getData().put(Constants.MCP_SERVER_ENDPOINT_ADDRESS, "127.0.0.1");
         endpointSpec.getData().put(Constants.MCP_SERVER_ENDPOINT_PORT, "8848");
         when(endpointOperationService.createMcpServerEndpointServiceIfNecessary(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
-                "mcpName", endpointSpec)).thenReturn(
+                "mcpName", "1.0.0", endpointSpec)).thenReturn(
                 Service.newService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, Constants.MCP_SERVER_ENDPOINT_GROUP,
                         "mcpName"));
         String id = serverOperationService.createMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, mockServerBasicInfo,
@@ -669,7 +669,7 @@ class McpServerOperationServiceTest {
         endpointSpec.getData().put(Constants.MCP_SERVER_ENDPOINT_ADDRESS, "127.0.0.1");
         endpointSpec.getData().put(Constants.MCP_SERVER_ENDPOINT_PORT, "8848");
         when(endpointOperationService.createMcpServerEndpointServiceIfNecessary(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
-                "mcpName", endpointSpec)).thenReturn(
+                "mcpName", "1.0.0", endpointSpec)).thenReturn(
                 Service.newService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, Constants.MCP_SERVER_ENDPOINT_GROUP,
                         "mcpName"));
         String actualId = serverOperationService.createMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
