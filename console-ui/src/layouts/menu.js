@@ -58,6 +58,7 @@ const AiControlMenu = {
     },
   ],
 };
+
 /**
  * 权限控制相关
  */
@@ -95,6 +96,19 @@ const settingMenu = {
   key: 'settingCenter',
   url: '/settingCenter',
 };
+
+const agentManagementMenu = {
+  key: 'agentManagement',
+  badge: 'new',
+  url: '/agentManagement',
+  children: [
+    {
+      key: 'agentList',
+      url: '/agentManagement',
+    },
+  ],
+};
+
 export default function(model) {
   const { token = '{}' } = localStorage;
   const { globalAdmin } = isJsonString(token) ? JSON.parse(token) || {} : {};
@@ -106,6 +120,7 @@ export default function(model) {
   } else {
     result.push(configurationMenu, serviceDiscoveryMenu);
     result.push(AiControlMenu);
+    result.push(agentManagementMenu);
   }
   if (globalAdmin) {
     result.push(authorityControlMenu);
