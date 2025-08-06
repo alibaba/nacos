@@ -41,4 +41,9 @@ public class AiConstants {
         
         public static final String MCP_ENDPOINT_TYPE_DIRECT = "DIRECT";
     }
+    
+    public static class A2a {
+        
+        public static final String A2A_DEFAULT_NAMESPACE = "public";
+    }
 }
