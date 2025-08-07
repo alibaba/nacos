@@ -91,12 +91,10 @@ public class Constants {
         
         public static final String AGENT_GROUP = "agent";
         
+        public static final String AGENT_VERSION_GROUP = "agent-version";
+        
         public static final String SEARCH_BLUR = "blur";
         
         public static final String SEARCH_ACCURATE = "accurate";
-        
-        public static final String AGENT = "agent";
-        
-        public static final String AGENT_VERSION = "agent-version";
     }
 }
