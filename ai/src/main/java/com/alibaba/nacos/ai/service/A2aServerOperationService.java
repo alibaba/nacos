@@ -49,9 +49,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 
-import static com.alibaba.nacos.ai.constant.Constants.A2A.AGENT;
 import static com.alibaba.nacos.ai.constant.Constants.A2A.AGENT_GROUP;
-import static com.alibaba.nacos.ai.constant.Constants.A2A.AGENT_VERSION;
+import static com.alibaba.nacos.ai.constant.Constants.A2A.AGENT_VERSION_GROUP;
 
 @Service
 public class A2aServerOperationService {
@@ -78,13 +77,13 @@ public class A2aServerOperationService {
     public void registerAgent(AgentDetailForm form) throws NacosException {
         // 1. register agent's info
         AgentCardVersionInfo agentCardVersionInfo = buildAgentCardVersionInfo(form);
-        ConfigForm configForm = transferAgentInfoToConfigForm(agentCardVersionInfo, form);
+        ConfigForm configForm = transferVersionInfoToConfigForm(agentCardVersionInfo, form);
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
         configRequestInfo.setUpdateForExist(Boolean.FALSE);
         configOperationService.publishConfig(configForm, configRequestInfo, null);
         
         // 2. register agent's version info
-        ConfigForm configFormVersion = transferVersionInfoToConfigForm(form);
+        ConfigForm configFormVersion = transferAgentInfoToConfigForm(form);
         ConfigRequestInfo configRequestInfo0 = new ConfigRequestInfo();
         configRequestInfo0.setUpdateForExist(Boolean.FALSE);
         configOperationService.publishConfig(configFormVersion, configRequestInfo0, null);
@@ -126,10 +125,10 @@ public class A2aServerOperationService {
         return currentTime.format(formatter);
     }
     
-    private ConfigForm transferAgentInfoToConfigForm(AgentCardVersionInfo agentCardVersionInfo, AgentDetailForm form) {
+    private ConfigForm transferVersionInfoToConfigForm(AgentCardVersionInfo agentCardVersionInfo, AgentDetailForm form) {
         ConfigForm configForm = new ConfigForm();
         configForm.setDataId(form.getName());
-        configForm.setGroup(AGENT);
+        configForm.setGroup(AGENT_GROUP);
         configForm.setNamespaceId(form.getNamespaceId());
         configForm.setContent(JacksonUtils.toJson(agentCardVersionInfo));
         configForm.setConfigTags("nacos.internal.config=agent");
@@ -140,10 +139,10 @@ public class A2aServerOperationService {
         return configForm;
     }
     
-    private ConfigForm transferVersionInfoToConfigForm(AgentDetailForm form) {
+    private ConfigForm transferAgentInfoToConfigForm(AgentDetailForm form) {
         ConfigForm configForm = new ConfigForm();
         configForm.setDataId(form.getName() + "-" + form.getVersion());
-        configForm.setGroup(AGENT_VERSION);
+        configForm.setGroup(AGENT_VERSION_GROUP);
         configForm.setNamespaceId(form.getNamespaceId());
         configForm.setContent(JacksonUtils.toJson(form));
         configForm.setConfigTags("nacos.internal.config=agent-version");
@@ -157,7 +156,7 @@ public class A2aServerOperationService {
     public AgentCardVersionInfo getAgentCard(AgentForm form) {
         ConfigQueryChainRequest request = new ConfigQueryChainRequest();
         request.setDataId(form.getName());
-        request.setGroup(AGENT);
+        request.setGroup(AGENT_GROUP);
         request.setTenant(form.getNamespaceId());
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         
@@ -179,27 +178,24 @@ public class A2aServerOperationService {
      */
     public void deleteAgent(AgentForm form) {
         String dataId = form.getName();
-        String groupName = AGENT;
+        String groupName = AGENT_GROUP;
         String namespaceId = form.getNamespaceId();
         
         try {
-            ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(dataId, groupName,
-                    namespaceId);
+            ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(dataId, groupName, namespaceId);
             ConfigQueryChainResponse response = configQueryChainService.handle(request);
             
             if (response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
                 return;
             }
             
-            AgentCardVersionInfo agentCardVersionInfo = JacksonUtils.toObj(response.getContent(),
-                    AgentCardVersionInfo.class);
-            List<String> allVersions = agentCardVersionInfo.getVersionDetails().stream()
-                    .map(AgentVersionDetail::getVersion).toList();
+            AgentCardVersionInfo agentCardVersionInfo = JacksonUtils.toObj(response.getContent(), AgentCardVersionInfo.class);
+            List<String> allVersions = agentCardVersionInfo.getVersionDetails().stream().map(AgentVersionDetail::getVersion).toList();
             
             // 1. If version is specified, only delete the corresponding version of the agent
             if (form.getVersion() != null) {
                 String versionDataId = form.getName() + form.getVersion();
-                configOperationService.deleteConfig(versionDataId, AGENT_VERSION, namespaceId, null, null, "nacos",
+                configOperationService.deleteConfig(versionDataId, AGENT_VERSION_GROUP, namespaceId, null, null, "nacos",
                         null);
                 
                 if (form.getVersion().equals(agentCardVersionInfo.getLatestPublishedVersion())) {
@@ -227,7 +223,7 @@ public class A2aServerOperationService {
                 // 2. If no version specified, delete all versions and agent information
                 for (String version : allVersions) {
                     String versionDataId = form.getName() + "-" + version;
-                    configOperationService.deleteConfig(versionDataId, AGENT_VERSION, namespaceId, null, null,
+                    configOperationService.deleteConfig(versionDataId, AGENT_VERSION_GROUP, namespaceId, null, null,
                             "nacos", null);
                 }
             }
@@ -244,12 +240,11 @@ public class A2aServerOperationService {
      */
     public void updateAgentCard(AgentUpdateForm form) throws NacosException {
         String dataId = form.getName();
-        String groupName = AGENT;
+        String groupName = AGENT_GROUP;
         String namespaceId = form.getNamespaceId();
         
         // 1. Check if the agent exists
-        ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(dataId, groupName,
-                namespaceId);
+        ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(dataId, groupName, namespaceId);
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         
         if (response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
@@ -262,7 +257,7 @@ public class A2aServerOperationService {
         String versionDataId = form.getName() + "-" + form.getVersion();
         ConfigQueryChainRequest versionRequest = new ConfigQueryChainRequest();
         versionRequest.setDataId(versionDataId);
-        versionRequest.setGroup(AGENT_VERSION);
+        versionRequest.setGroup(AGENT_VERSION_GROUP);
         versionRequest.setTenant(namespaceId);
         ConfigQueryChainResponse versionResponse = configQueryChainService.handle(versionRequest);
         
@@ -288,7 +283,7 @@ public class A2aServerOperationService {
             existingAgentInfo.setVersionDetails(updatedVersionDetails);
         }
         
-        // 4. Update agent version info
+        // 3. Update agent version info
         ConfigForm configForm = new ConfigForm();
         configForm.setDataId(dataId);
         configForm.setGroup(groupName);
@@ -302,8 +297,8 @@ public class A2aServerOperationService {
         configRequestInfo.setUpdateForExist(Boolean.TRUE);
         configOperationService.publishConfig(configForm, configRequestInfo, null);
         
-        // 5. Update agent info
-        ConfigForm versionConfigForm = transferVersionInfoToConfigForm(form);
+        // 4. Update agent info
+        ConfigForm versionConfigForm = transferAgentInfoToConfigForm(form);
         ConfigRequestInfo versionConfigRequestInfo = new ConfigRequestInfo();
         versionConfigRequestInfo.setUpdateForExist(Boolean.TRUE);
         configOperationService.publishConfig(versionConfigForm, versionConfigRequestInfo, null);
