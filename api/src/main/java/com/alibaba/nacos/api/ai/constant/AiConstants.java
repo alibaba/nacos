@@ -47,4 +47,9 @@ public class AiConstants {
     public static final String AI_MCP_SERVER_CACHE_UPDATE_INTERVAL = "nacosAiMcpServerCacheUpdateInterval";
     
     public static final long DEFAULT_AI_MCP_SERVER_CACHE_UPDATE_INTERVAL = 10000L;
+    
+    public static class A2a {
+        
+        public static final String A2A_DEFAULT_NAMESPACE = "public";
+    }
 }

@@ -76,6 +76,22 @@ public class ConfigQueryChainRequest {
         this.appLabels = appLabels;
     }
     
+    /**
+     * buildConfigQueryChainRequest.
+     *
+     * @param dataId    dataId
+     * @param groupName groupName
+     * @param namespaceId namespaceId
+     * @return ConfigQueryChainRequest
+     */
+    public static ConfigQueryChainRequest buildConfigQueryChainRequest(String dataId, String groupName, String namespaceId) {
+        ConfigQueryChainRequest request = new ConfigQueryChainRequest();
+        request.setDataId(dataId);
+        request.setGroup(groupName);
+        request.setTenant(namespaceId);
+        return request;
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) {
