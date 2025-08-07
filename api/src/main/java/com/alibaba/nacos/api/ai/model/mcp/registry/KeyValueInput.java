@@ -16,32 +16,22 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 /**
- * Mcp Remote Endpoint info.
+ * KeyValueInput model for MCP registry, used for environment variables or headers.
  * @author xinluo
  */
-public class Remote {
-    
-    @JsonProperty("transport_type")
-    private String transportType;
+public class KeyValueInput extends InputWithVariables {
+    private String name;
 
-    private String url;
-
-    public String getTransportType() {
-        return transportType;
+    /**
+     * Get the name of the header or environment variable.
+     * @return variable name
+     */
+    public String getName() {
+        return name;
     }
 
-    public void setTransportType(String transportType) {
-        this.transportType = transportType;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
+    public void setName(String name) {
+        this.name = name;
     }
 }

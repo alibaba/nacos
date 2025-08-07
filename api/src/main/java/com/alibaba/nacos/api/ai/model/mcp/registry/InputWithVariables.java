@@ -16,32 +16,24 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Map;
 
 /**
- * Mcp Remote Endpoint info.
+ * InputWithVariables model for MCP registry, supporting variable mapping.
  * @author xinluo
  */
-public class Remote {
-    
-    @JsonProperty("transport_type")
-    private String transportType;
+public class InputWithVariables extends Input {
+    private Map<String, Input> variables;
 
-    private String url;
-
-    public String getTransportType() {
-        return transportType;
+    /**
+     * Get variable mapping for input value replacement.
+     * @return variable map
+     */
+    public Map<String, Input> getVariables() {
+        return variables;
     }
 
-    public void setTransportType(String transportType) {
-        this.transportType = transportType;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
+    public void setVariables(Map<String, Input> variables) {
+        this.variables = variables;
     }
 }

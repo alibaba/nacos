@@ -40,7 +40,7 @@
         </dependency>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
-            <artifactId>nacos-mcp-regsitry-adaptor</artifactId>
+            <artifactId>nacos-mcp-registry-adaptor</artifactId>
         </dependency>
     </dependencies>
     
