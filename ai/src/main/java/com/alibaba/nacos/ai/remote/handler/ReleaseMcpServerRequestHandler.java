@@ -68,8 +68,14 @@ public class ReleaseMcpServerRequestHandler extends RequestHandler<ReleaseMcpSer
     @ExtractorManager.Extractor(rpcExtractor = McpServerRequestParamExtractor.class)
     public ReleaseMcpServerResponse handle(ReleaseMcpServerRequest request, RequestMeta meta) throws NacosException {
         McpRequestUtils.fillNamespaceId(request);
-        checkParameters(request);
-        return doHandler(request, meta);
+        try {
+            checkParameters(request);
+            return doHandler(request, meta);
+        } catch (NacosException e) {
+            ReleaseMcpServerResponse response = new ReleaseMcpServerResponse();
+            response.setErrorInfo(e.getErrCode(), e.getErrMsg());
+            return response;
+        }
     }
     
     private void checkParameters(ReleaseMcpServerRequest request) throws NacosException {

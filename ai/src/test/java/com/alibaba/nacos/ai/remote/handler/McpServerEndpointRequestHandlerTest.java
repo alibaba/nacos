@@ -29,9 +29,9 @@ import com.alibaba.nacos.api.ai.remote.AiRemoteConstants;
 import com.alibaba.nacos.api.ai.remote.request.McpServerEndpointRequest;
 import com.alibaba.nacos.api.ai.remote.response.McpServerEndpointResponse;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
 import org.junit.jupiter.api.AfterEach;
@@ -45,7 +45,6 @@ import java.util.Collections;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -81,7 +80,8 @@ class McpServerEndpointRequestHandlerTest {
     @Test
     void handleWithInvalidParameters() throws NacosException {
         McpServerEndpointRequest request = new McpServerEndpointRequest();
-        assertThrows(NacosApiException.class, () -> requestHandler.handle(request, meta));
+        McpServerEndpointResponse response = requestHandler.handle(request, meta);
+        assertErrorResponse(response, NacosException.INVALID_PARAM, "parameters `mcpName` can't be empty or null");
     }
     
     @Test
@@ -90,7 +90,8 @@ class McpServerEndpointRequestHandlerTest {
         request.setAddress("1.1.1.1");
         request.setPort(3306);
         request.setMcpName("test");
-        assertThrows(NacosApiException.class, () -> requestHandler.handle(request, meta));
+        McpServerEndpointResponse response = requestHandler.handle(request, meta);
+        assertErrorResponse(response, NacosException.NOT_FOUND, "MCP server `test` not found in namespaceId: `public`");
     }
     
     @Test
@@ -144,7 +145,9 @@ class McpServerEndpointRequestHandlerTest {
         when(mcpServerIndex.getMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test")).thenReturn(indexData);
         when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id, null,
                 null)).thenReturn(buildMockMcpServerDetailInfo());
-        assertThrows(NacosApiException.class, () -> requestHandler.handle(request, meta));
+        McpServerEndpointResponse response = requestHandler.handle(request, meta);
+        assertErrorResponse(response, NacosException.INVALID_PARAM,
+                "parameter `type` should be registerEndpoint or deregisterEndpoint, but was INVALID_TYPE");
     }
     
     @Test
@@ -201,7 +204,8 @@ class McpServerEndpointRequestHandlerTest {
         detailInfo.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_HTTP);
         when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id, null,
                 null)).thenReturn(detailInfo);
-        assertThrows(NacosApiException.class, () -> requestHandler.handle(request, meta));
+        McpServerEndpointResponse response = requestHandler.handle(request, meta);
+        assertErrorResponse(response, NacosException.NOT_FOUND, "The Mcp Server Ref endpoint service not found.");
     }
     
     McpServerDetailInfo buildMockMcpServerDetailInfo() {
@@ -215,5 +219,11 @@ class McpServerEndpointRequestHandlerTest {
         remoteServiceConfig.setServiceRef(serviceRef);
         result.setRemoteServerConfig(remoteServiceConfig);
         return result;
+    }
+    
+    private void assertErrorResponse(McpServerEndpointResponse response, int code, String message) {
+        assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
+        assertEquals(code, response.getErrorCode());
+        assertEquals(message, response.getMessage());
     }
 }

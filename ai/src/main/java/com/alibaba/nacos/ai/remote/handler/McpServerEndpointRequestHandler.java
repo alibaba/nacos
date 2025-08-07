@@ -73,9 +73,15 @@ public class McpServerEndpointRequestHandler
     @ExtractorManager.Extractor(rpcExtractor = McpServerRequestParamExtractor.class)
     public McpServerEndpointResponse handle(McpServerEndpointRequest request, RequestMeta meta) throws NacosException {
         McpRequestUtils.fillNamespaceId(request);
-        checkParameters(request);
-        Instance instance = buildInstance(request);
-        return doHandler(request, instance, meta);
+        try {
+            checkParameters(request);
+            Instance instance = buildInstance(request);
+            return doHandler(request, instance, meta);
+        } catch (NacosException e) {
+            McpServerEndpointResponse response = new McpServerEndpointResponse();
+            response.setErrorInfo(e.getErrCode(), e.getErrMsg());
+            return response;
+        }
     }
     
     private void checkParameters(McpServerEndpointRequest request) throws NacosApiException {
