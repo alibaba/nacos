@@ -323,8 +323,10 @@ public class AiGrpcClient implements Closeable {
             throw new NacosException(NacosException.SERVER_ERROR,
                     String.format("Server return invalid response: %s", response.getClass().getSimpleName()));
         } catch (NacosException e) {
+            LOGGER.warn("AI request {} execute failed, {}", request.getClass().getSimpleName(), e.getMessage());
             throw e;
         } catch (Exception e) {
+            LOGGER.warn("AI request {} execute failed. ", request.getClass().getSimpleName(), e);
             throw new NacosException(NacosException.SERVER_ERROR, "Request nacos server failed: ", e);
         }
     }
