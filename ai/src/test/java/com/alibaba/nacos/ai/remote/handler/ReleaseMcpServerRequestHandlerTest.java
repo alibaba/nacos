@@ -32,6 +32,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +44,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNotNull;
@@ -80,17 +80,25 @@ class ReleaseMcpServerRequestHandlerTest {
     }
     
     @Test
-    void handleWithInvalidParameter() {
+    void handleWithInvalidParameter() throws NacosException {
         ReleaseMcpServerRequest request = new ReleaseMcpServerRequest();
-        assertThrows(NacosApiException.class, () -> requestHandler.handle(request, null));
+        ReleaseMcpServerResponse response = requestHandler.handle(request, null);
+        assertErrorResponse(response, NacosException.INVALID_PARAM,
+                "Required parameter 'serverSpecification' type McpServerBasicInfo is not present");
         McpServerBasicInfo serverSpecification = new McpServerBasicInfo();
         request.setServerSpecification(serverSpecification);
-        assertThrows(NacosApiException.class, () -> requestHandler.handle(request, null));
+        response = requestHandler.handle(request, null);
+        assertErrorResponse(response, NacosException.INVALID_PARAM,
+                "Required parameter 'serverSpecification.name' type String is not present");
         serverSpecification.setName("test");
-        assertThrows(NacosApiException.class, () -> requestHandler.handle(request, null));
+        response = requestHandler.handle(request, null);
+        assertErrorResponse(response, NacosException.INVALID_PARAM,
+                "Required parameter `serverSpecification.versionDetail.version` not present");
         ServerVersionDetail serverVersionDetail = new ServerVersionDetail();
         serverSpecification.setVersionDetail(serverVersionDetail);
-        assertThrows(NacosApiException.class, () -> requestHandler.handle(request, null));
+        response = requestHandler.handle(request, null);
+        assertErrorResponse(response, NacosException.INVALID_PARAM,
+                "Required parameter `serverSpecification.versionDetail.version` not present");
     }
     
     @Test
@@ -101,7 +109,9 @@ class ReleaseMcpServerRequestHandlerTest {
         when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, "test",
                 "1.0.0")).thenReturn(detailInfo);
         when(meta.getConnectionId()).thenReturn("111");
-        assertThrows(NacosApiException.class, () -> requestHandler.handle(request, meta));
+        ReleaseMcpServerResponse response = requestHandler.handle(request, meta);
+        assertErrorResponse(response, NacosException.CONFLICT,
+                "Mcp Server test and target version 1.0.0 already exist, do not do release");
     }
     
     @Test
@@ -252,5 +262,11 @@ class ReleaseMcpServerRequestHandlerTest {
         result.setVersionDetail(serverVersionDetail);
         result.setId(UUID.randomUUID().toString());
         return result;
+    }
+    
+    private void assertErrorResponse(ReleaseMcpServerResponse response, int code, String message) {
+        assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
+        assertEquals(code, response.getErrorCode());
+        assertEquals(message, response.getMessage());
     }
 }
