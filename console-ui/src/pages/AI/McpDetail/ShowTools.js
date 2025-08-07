@@ -93,7 +93,7 @@ const ShowTools = props => {
         });
         children.push({
           key: descKey,
-          label: `描述: ${truncateText(paramDef.description, 16)}`,
+          label: `描述: ${truncateText(paramDef.description, 64)}`,
           isLeaf: true,
         });
       }
@@ -1031,7 +1031,7 @@ const ShowTools = props => {
                                         </span>
                                       )}
 
-                                      {/* 描述信息 - 过长时（>16）强制省略号 */}
+                                      {/* 描述信息 - 过长时（>64）强制省略号 */}
                                       <span
                                         style={{
                                           fontFamily: 'Monaco, Consolas, "Courier New", monospace',
@@ -1045,7 +1045,7 @@ const ShowTools = props => {
                                         }}
                                         title={nodeData.description || '-'}
                                       >
-                                        - {truncateText(nodeData.description || '-', 16)}
+                                        - {truncateText(nodeData.description || '-', 64)}
                                       </span>
 
                                       {/* 默认值信息（如果有的话） */}
@@ -1134,7 +1134,7 @@ const ShowTools = props => {
                                 if (nodeData?.isInfoNode) {
                                   const isDesc = nodeData.name === '描述';
                                   const displayText = isDesc
-                                    ? `${nodeData.name}: ${truncateText(nodeData.description, 16)}`
+                                    ? `${nodeData.name}: ${truncateText(nodeData.description, 64)}`
                                     : `${nodeData.name}: ${nodeData.description}`;
                                   return (
                                     <span
