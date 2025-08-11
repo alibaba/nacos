@@ -855,6 +855,59 @@ class NewMcpServer extends React.Component {
     }
   };
 
+  // 解析 MCP Server Endpoint 并更新相关字段
+  updateEndpointFields = endpoint => {
+    if (!endpoint || typeof endpoint !== 'string') {
+      return;
+    }
+
+    try {
+      const url = new URL(endpoint);
+
+      // 提取地址（hostname）
+      const address = url.hostname;
+
+      // 提取端口，如果没有指定则使用默认端口
+      const port = url.port || (url.protocol === 'https:' ? '443' : '80');
+
+      // 提取路径
+      const exportPath = url.pathname || '/';
+
+      // 提取传输协议
+      const transportProtocol = url.protocol.replace(':', ''); // 去掉冒号
+
+      // 更新表单字段
+      this.field.setValue('address', address);
+      this.field.setValue('port', parseInt(port, 10));
+      this.field.setValue('exportPath', exportPath);
+
+      // 根据URL的协议设置传输协议
+      if (['http', 'https'].includes(transportProtocol)) {
+        this.field.setValue('serviceTransportProtocol', transportProtocol);
+        this.field.setValue('newServiceTransportProtocol', transportProtocol);
+      }
+
+      // 同步更新 serverConfig
+      this.setState({
+        serverConfig: {
+          ...this.state.serverConfig,
+          endpoint: {
+            address: address,
+            port: parseInt(port, 10),
+          },
+          remoteServerConfig: {
+            ...this.state.serverConfig?.remoteServerConfig,
+            exportPath: exportPath,
+          },
+          protocol: transportProtocol,
+        },
+      });
+    } catch (error) {
+      // URL 解析失败时不做任何处理，保持现有值
+      console.warn('Failed to parse MCP Server Endpoint URL:', error);
+    }
+  };
+
   // 切换高级配置展开/折叠状态
   toggleAdvancedConfig = () => {
     this.setState({
@@ -1290,6 +1343,9 @@ class NewMcpServer extends React.Component {
                       ],
                       props: {
                         onChange: value => {
+                          // 解析URL并更新相关字段
+                          this.updateEndpointFields(value);
+
                           this.setState({
                             serverConfig: {
                               ...this.state.serverConfig,
@@ -1710,18 +1766,20 @@ class NewMcpServer extends React.Component {
                           marginBottom: '16px',
                           borderRadius: '6px',
                           backgroundColor: '#fff',
-                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
                           transition: 'all 0.2s ease',
                           backdropFilter: 'blur(8px)',
                           position: 'relative',
                           overflow: 'hidden',
                         }}
                         onMouseEnter={e => {
-                          e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.12)';
+                          e.currentTarget.style.boxShadow =
+                            '0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.05)';
                           e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.1)';
                         }}
                         onMouseLeave={e => {
-                          e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
+                          e.currentTarget.style.boxShadow =
+                            '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)';
                           e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.06)';
                         }}
                       >

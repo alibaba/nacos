@@ -1238,7 +1238,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                 backgroundColor: '#fff',
                 borderRadius: '8px',
                 border: '1px solid #e8e8e8',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
               }}
             >
               <h3
@@ -1407,7 +1407,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                   backgroundColor: '#fff',
                   borderRadius: '8px',
                   border: '1px solid #e8e8e8',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
                 }}
               >
                 <h3
@@ -1673,7 +1673,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                   backgroundColor: '#fff',
                   borderRadius: '8px',
                   border: '1px solid #e8e8e8',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
                 }}
               >
                 <h3
