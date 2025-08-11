@@ -1519,6 +1519,78 @@ class McpDetail extends React.Component {
 
     return (
       <div>
+        <style>
+          {`
+            .responsive-layout {
+              display: flex;
+              gap: 24px;
+            }
+            
+            .left-content {
+              flex: 1;
+              min-width: 0;
+            }
+            
+            .right-content {
+              width: 350px;
+              flex-shrink: 0;
+              overflow-x: auto;
+              word-wrap: break-word;
+              word-break: break-word;
+            }
+            
+            @media (max-width: 768px) {
+              .server-config-responsive {
+                margin-top: 24px !important;
+              }
+              .responsive-layout {
+                flex-direction: column !important;
+                gap: 0 !important;
+              }
+              .left-content {
+                width: 100% !important;
+                margin-bottom: 24px !important;
+              }
+              .right-content {
+                width: 100% !important;
+                order: 2;
+                overflow-x: auto;
+                word-wrap: break-word;
+                word-break: break-word;
+              }
+            }
+            
+            @media (max-width: 1024px) and (min-width: 769px) {
+              .right-content {
+                width: 280px;
+              }
+            }
+            
+            @media (max-width: 900px) and (min-width: 769px) {
+              .responsive-layout {
+                flex-direction: column !important;
+                gap: 0 !important;
+              }
+              .left-content {
+                width: 100% !important;
+                margin-bottom: 24px !important;
+              }
+              .right-content {
+                width: 100% !important;
+                order: 2;
+                overflow-x: auto;
+                word-wrap: break-word;
+                word-break: break-word;
+              }
+            }
+            
+            @media (max-width: 1024px) {
+              .right-content {
+                width: 300px;
+              }
+            }
+          `}
+        </style>
         <Loading
           shape={'flower'}
           tip={'Loading...'}
@@ -1537,7 +1609,7 @@ class McpDetail extends React.Component {
                   width: '60%',
                 }}
               >
-                {locale.mcpServerDetail}
+                {this.state.serverConfig?.name || locale.mcpServerDetail || 'MCP Server'}
               </h1>
             </Col>
             <Col span={4}>
@@ -1561,25 +1633,45 @@ class McpDetail extends React.Component {
               </Button>
             </Col>
           </Row>
+
+          {/* 服务描述 - 平铺展示 */}
+          {this.state.serverConfig?.description && (
+            <div style={{ marginTop: '20px', marginBottom: '20px' }}>
+              <p
+                style={{
+                  color: '#666',
+                  fontSize: '16px',
+                  lineHeight: '1.6',
+                  margin: 0,
+                  fontStyle: 'italic',
+                  textAlign: 'left',
+                }}
+              >
+                {this.state.serverConfig.description}
+              </p>
+            </div>
+          )}
+
           <h2
             style={{
               color: '#333',
               fontWeight: 'bold',
             }}
           >
-            {this.state.serverConfig?.name || locale.basicInformation}
+            {locale.basicInformation || '基本信息'}
           </h2>
+
           <div style={{ marginTop: '16px' }}>
             <div
               style={{
                 border: '1px solid rgba(230, 230, 230, 0.4)',
                 borderRadius: '8px',
-                padding: '24px',
+                padding: '20px',
                 backgroundColor: 'rgba(250, 250, 250, 0.7)',
                 backdropFilter: 'blur(10px)',
                 boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
-                transition: 'all 0.3s ease',
                 marginBottom: '16px',
+                transition: 'all 0.3s ease',
               }}
               onMouseEnter={e => {
                 e.currentTarget.style.transform = 'translateY(-2px)';
@@ -1679,26 +1771,16 @@ class McpDetail extends React.Component {
                       </div>
                     </Col>
                   )}
-                <Col span={24} style={{ display: 'flex', marginBottom: '8px' }}>
-                  <div
-                    style={{ minWidth: 120, fontWeight: 'bold', color: '#000', fontSize: '14px' }}
-                  >
-                    {locale.serverDescription || '服务描述'}:
-                  </div>
-                  <div style={{ color: '#000', fontSize: '14px', lineHeight: '1.6' }}>
-                    {this.state.serverConfig.description || '暂无描述'}
-                  </div>
-                </Col>
               </Row>
             </div>
           </div>
 
           <Divider></Divider>
 
-          {/* 左右布局：左侧显示 Package 和 Tool 信息，右侧显示 Server Config 信息 */}
-          <Row gutter={24}>
+          {/* 响应式布局：桌面端左右分栏，移动端上下堆叠 */}
+          <div className="responsive-layout">
             {/* 左侧：Package 和 Tool 信息 */}
-            <Col span={17}>
+            <div className="left-content">
               {/* Security Schemes 展示 - 只在非 stdio 协议且有数据时显示 */}
               {this.state.serverConfig?.protocol !== 'stdio' &&
                 this.state.serverConfig?.toolSpec?.securitySchemes?.length > 0 && (
@@ -1730,7 +1812,7 @@ class McpDetail extends React.Component {
                           onMouseEnter={e => {
                             e.currentTarget.style.transform = 'translateY(-2px)';
                             e.currentTarget.style.boxShadow =
-                              '0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.05)';
+                              '0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08)';
                           }}
                           onMouseLeave={e => {
                             e.currentTarget.style.transform = 'translateY(0)';
@@ -1803,24 +1885,158 @@ class McpDetail extends React.Component {
                 isPreview={true}
                 onlyEditRuntimeInfo={false}
               />
-            </Col>
+            </div>
 
             {/* 右侧：Server Config 信息 */}
-            <Col span={7}>
-              {/* stdio 协议的 Server Config */}
-              {this.state.serverConfig?.protocol === 'stdio' && (
-                <>
-                  {packageConfigs?.length > 0 ? (
-                    // 多个Package的Tab展示
-                    <div style={{ marginTop: '12px' }}>
-                      <Tab excessMode="dropdown" defaultActiveKey={0}>
-                        {packageConfigs.map((item, index) => {
-                          const packageDef = packagesToShow[index];
-                          return (
-                            <Tab.Item
-                              key={item.index}
-                              title={`${item.shortTitle} (${item.registryType})`}
-                            >
+            <div className="right-content">
+              <div
+                className="server-config-responsive"
+                style={{
+                  marginTop: '0px',
+                }}
+              >
+                {/* stdio 协议的 Server Config */}
+                {this.state.serverConfig?.protocol === 'stdio' && (
+                  <>
+                    {packageConfigs?.length > 0 ? (
+                      // 多个Package的Tab展示
+                      <div style={{ marginTop: '12px' }}>
+                        <Tab excessMode="dropdown" defaultActiveKey={0}>
+                          {packageConfigs.map((item, index) => {
+                            const packageDef = packagesToShow[index];
+                            return (
+                              <Tab.Item
+                                key={item.index}
+                                title={`${item.shortTitle} (${item.registryType})`}
+                              >
+                                <div style={{ marginTop: '12px' }}>
+                                  {/* Server Config */}
+                                  <div style={{ marginBottom: '24px' }}>
+                                    <h4
+                                      style={{
+                                        color: '#333',
+                                        fontWeight: 'bold',
+                                        marginBottom: '12px',
+                                        fontSize: '14px',
+                                      }}
+                                    >
+                                      {locale.serverConfig || '客户端配置'}
+                                    </h4>
+                                    <pre
+                                      style={{
+                                        cursor: 'pointer',
+                                        border: '1px solid rgba(221, 221, 221, 0.4)',
+                                        borderRadius: '8px',
+                                        padding: '12px',
+                                        backgroundColor: 'rgba(248, 248, 248, 0.7)',
+                                        backdropFilter: 'blur(10px)',
+                                        boxShadow:
+                                          '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
+                                        position: 'relative',
+                                        transition: 'all 0.3s ease',
+                                        overflow: 'auto',
+                                        maxHeight: '400px',
+                                        fontSize: '12px',
+                                        lineHeight: '1.4',
+                                        whiteSpace: 'pre-wrap',
+                                        wordBreak: 'break-all',
+                                        margin: 0,
+                                      }}
+                                      onClick={() =>
+                                        this.copyToClipboard(
+                                          JSON.stringify(item.mcpConfig, null, 2)
+                                        )
+                                      }
+                                      onMouseEnter={e => {
+                                        e.target.style.backgroundColor = 'rgba(232, 244, 253, 0.8)';
+                                        e.target.style.borderColor = 'rgba(24, 144, 255, 0.6)';
+                                        e.target.style.boxShadow =
+                                          '0 4px 16px rgba(24, 144, 255, 0.1), 0 2px 8px rgba(24, 144, 255, 0.05)';
+                                        e.target.style.transform = 'translateY(-2px)';
+                                      }}
+                                      onMouseLeave={e => {
+                                        e.target.style.backgroundColor = 'rgba(248, 248, 248, 0.7)';
+                                        e.target.style.borderColor = 'rgba(221, 221, 221, 0.4)';
+                                        e.target.style.boxShadow =
+                                          '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)';
+                                        e.target.style.transform = 'translateY(0)';
+                                      }}
+                                      title="点击复制配置"
+                                    >
+                                      {JSON.stringify(item.mcpConfig, null, 2)}
+                                    </pre>
+                                  </div>
+
+                                  {/* 依赖详情 */}
+                                  <div>
+                                    <h4
+                                      style={{
+                                        color: '#333',
+                                        fontWeight: 'bold',
+                                        marginBottom: '12px',
+                                        fontSize: '14px',
+                                      }}
+                                    >
+                                      依赖详情
+                                    </h4>
+                                    {this.renderPackageDetails(packageDef, index)}
+                                  </div>
+                                </div>
+                              </Tab.Item>
+                            );
+                          })}
+                        </Tab>
+                      </div>
+                    ) : (
+                      // 原有的localServerConfig显示
+                      <pre
+                        style={{
+                          cursor: 'pointer',
+                          border: '1px solid rgba(221, 221, 221, 0.4)',
+                          borderRadius: '8px',
+                          padding: '12px',
+                          backgroundColor: 'rgba(248, 248, 248, 0.7)',
+                          backdropFilter: 'blur(10px)',
+                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
+                          transition: 'all 0.3s ease',
+                          overflow: 'auto',
+                          maxHeight: '400px',
+                          fontSize: '12px',
+                          lineHeight: '1.4',
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-all',
+                        }}
+                        onClick={() => this.copyToClipboard(localServerConfig)}
+                        onMouseEnter={e => {
+                          e.target.style.backgroundColor = 'rgba(232, 244, 253, 0.8)';
+                          e.target.style.borderColor = 'rgba(24, 144, 255, 0.6)';
+                          e.target.style.boxShadow =
+                            '0 4px 16px rgba(24, 144, 255, 0.1), 0 2px 8px rgba(24, 144, 255, 0.05)';
+                          e.target.style.transform = 'translateY(-2px)';
+                        }}
+                        onMouseLeave={e => {
+                          e.target.style.backgroundColor = 'rgba(248, 248, 248, 0.7)';
+                          e.target.style.borderColor = 'rgba(221, 221, 221, 0.4)';
+                          e.target.style.boxShadow =
+                            '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)';
+                          e.target.style.transform = 'translateY(0)';
+                        }}
+                        title="点击复制配置"
+                      >
+                        {localServerConfig}
+                      </pre>
+                    )}
+                  </>
+                )}
+
+                {/* 非 stdio 协议的 Endpoint 配置 */}
+                {this.state.serverConfig?.protocol !== 'stdio' && (
+                  <>
+                    {endpoints?.length > 0 ? (
+                      <div style={{ marginTop: '12px' }}>
+                        <Tab excessMode="dropdown" defaultActiveKey={0}>
+                          {endpoints?.map(item => (
+                            <Tab.Item key={item.index} title={item.address}>
                               <div style={{ marginTop: '12px' }}>
                                 {/* Server Config */}
                                 <div style={{ marginBottom: '24px' }}>
@@ -1844,18 +2060,19 @@ class McpDetail extends React.Component {
                                       backdropFilter: 'blur(10px)',
                                       boxShadow:
                                         '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
-                                      position: 'relative',
                                       transition: 'all 0.3s ease',
+                                      margin: 0,
                                       overflow: 'auto',
                                       maxHeight: '400px',
                                       fontSize: '12px',
                                       lineHeight: '1.4',
                                       whiteSpace: 'pre-wrap',
                                       wordBreak: 'break-all',
-                                      margin: 0,
                                     }}
                                     onClick={() =>
-                                      this.copyToClipboard(JSON.stringify(item.mcpConfig, null, 2))
+                                      this.copyToClipboard(
+                                        JSON.stringify(item.serverConfig, null, 2)
+                                      )
                                     }
                                     onMouseEnter={e => {
                                       e.target.style.backgroundColor = 'rgba(232, 244, 253, 0.8)';
@@ -1873,11 +2090,11 @@ class McpDetail extends React.Component {
                                     }}
                                     title="点击复制配置"
                                   >
-                                    {JSON.stringify(item.mcpConfig, null, 2)}
+                                    {JSON.stringify(item.serverConfig, null, 2)}
                                   </pre>
                                 </div>
 
-                                {/* 依赖详情 */}
+                                {/* Headers 配置 */}
                                 <div>
                                   <h4
                                     style={{
@@ -1887,198 +2104,75 @@ class McpDetail extends React.Component {
                                       fontSize: '14px',
                                     }}
                                   >
-                                    依赖详情
+                                    {locale.httpHeaders || 'HTTP Headers 配置'}
                                   </h4>
-                                  {this.renderPackageDetails(packageDef, index)}
+                                  {this.renderHeaders(item.headers, locale)}
                                 </div>
                               </div>
                             </Tab.Item>
-                          );
-                        })}
-                      </Tab>
-                    </div>
-                  ) : (
-                    // 原有的localServerConfig显示
-                    <pre
-                      style={{
-                        cursor: 'pointer',
-                        border: '1px solid rgba(221, 221, 221, 0.4)',
-                        borderRadius: '8px',
-                        padding: '12px',
-                        backgroundColor: 'rgba(248, 248, 248, 0.7)',
-                        backdropFilter: 'blur(10px)',
-                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
-                        transition: 'all 0.3s ease',
-                        overflow: 'auto',
-                        maxHeight: '400px',
-                        fontSize: '12px',
-                        lineHeight: '1.4',
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-all',
-                      }}
-                      onClick={() => this.copyToClipboard(localServerConfig)}
-                      onMouseEnter={e => {
-                        e.target.style.backgroundColor = 'rgba(232, 244, 253, 0.8)';
-                        e.target.style.borderColor = 'rgba(24, 144, 255, 0.6)';
-                        e.target.style.boxShadow =
-                          '0 4px 16px rgba(24, 144, 255, 0.1), 0 2px 8px rgba(24, 144, 255, 0.05)';
-                        e.target.style.transform = 'translateY(-2px)';
-                      }}
-                      onMouseLeave={e => {
-                        e.target.style.backgroundColor = 'rgba(248, 248, 248, 0.7)';
-                        e.target.style.borderColor = 'rgba(221, 221, 221, 0.4)';
-                        e.target.style.boxShadow =
-                          '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)';
-                        e.target.style.transform = 'translateY(0)';
-                      }}
-                      title="点击复制配置"
-                    >
-                      {localServerConfig}
-                    </pre>
-                  )}
-                </>
-              )}
-
-              {/* 非 stdio 协议的 Endpoint 配置 */}
-              {this.state.serverConfig?.protocol !== 'stdio' && (
-                <>
-                  {endpoints?.length > 0 ? (
-                    <div style={{ marginTop: '12px' }}>
-                      <Tab excessMode="dropdown" defaultActiveKey={0}>
-                        {endpoints?.map(item => (
-                          <Tab.Item key={item.index} title={item.address}>
-                            <div style={{ marginTop: '12px' }}>
-                              {/* Server Config */}
-                              <div style={{ marginBottom: '24px' }}>
-                                <h4
-                                  style={{
-                                    color: '#333',
-                                    fontWeight: 'bold',
-                                    marginBottom: '12px',
-                                    fontSize: '14px',
-                                  }}
-                                >
-                                  {locale.serverConfig || '客户端配置'}
-                                </h4>
-                                <pre
-                                  style={{
-                                    cursor: 'pointer',
-                                    border: '1px solid rgba(221, 221, 221, 0.4)',
-                                    borderRadius: '8px',
-                                    padding: '12px',
-                                    backgroundColor: 'rgba(248, 248, 248, 0.7)',
-                                    backdropFilter: 'blur(10px)',
-                                    boxShadow:
-                                      '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
-                                    transition: 'all 0.3s ease',
-                                    margin: 0,
-                                    overflow: 'auto',
-                                    maxHeight: '400px',
-                                    fontSize: '12px',
-                                    lineHeight: '1.4',
-                                    whiteSpace: 'pre-wrap',
-                                    wordBreak: 'break-all',
-                                  }}
-                                  onClick={() =>
-                                    this.copyToClipboard(JSON.stringify(item.serverConfig, null, 2))
-                                  }
-                                  onMouseEnter={e => {
-                                    e.target.style.backgroundColor = 'rgba(232, 244, 253, 0.8)';
-                                    e.target.style.borderColor = 'rgba(24, 144, 255, 0.6)';
-                                    e.target.style.boxShadow =
-                                      '0 4px 16px rgba(24, 144, 255, 0.1), 0 2px 8px rgba(24, 144, 255, 0.05)';
-                                    e.target.style.transform = 'translateY(-2px)';
-                                  }}
-                                  onMouseLeave={e => {
-                                    e.target.style.backgroundColor = 'rgba(248, 248, 248, 0.7)';
-                                    e.target.style.borderColor = 'rgba(221, 221, 221, 0.4)';
-                                    e.target.style.boxShadow =
-                                      '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)';
-                                    e.target.style.transform = 'translateY(0)';
-                                  }}
-                                  title="点击复制配置"
-                                >
-                                  {JSON.stringify(item.serverConfig, null, 2)}
-                                </pre>
-                              </div>
-
-                              {/* Headers 配置 */}
-                              <div>
-                                <h4
-                                  style={{
-                                    color: '#333',
-                                    fontWeight: 'bold',
-                                    marginBottom: '12px',
-                                    fontSize: '14px',
-                                  }}
-                                >
-                                  {locale.httpHeaders || 'HTTP Headers 配置'}
-                                </h4>
-                                {this.renderHeaders(item.headers, locale)}
-                              </div>
+                          ))}
+                        </Tab>
+                      </div>
+                    ) : (
+                      <div style={{ marginTop: '64px' }}>
+                        <div
+                          style={{
+                            border: '1px solid rgba(230, 230, 230, 0.4)',
+                            borderRadius: '8px',
+                            padding: '16px',
+                            marginBottom: '12px',
+                            backgroundColor: 'rgba(250, 250, 250, 0.7)',
+                            backdropFilter: 'blur(10px)',
+                            boxShadow:
+                              '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
+                            transition: 'all 0.3s ease',
+                            textAlign: 'center',
+                            minHeight: '120px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                          onMouseEnter={e => {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow =
+                              '0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08)';
+                          }}
+                          onMouseLeave={e => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow =
+                              '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)';
+                          }}
+                        >
+                          <div>
+                            <div
+                              style={{
+                                fontSize: '48px',
+                                color: '#d9d9d9',
+                                marginBottom: '12px',
+                                fontWeight: '300',
+                              }}
+                            >
+                              📡
                             </div>
-                          </Tab.Item>
-                        ))}
-                      </Tab>
-                    </div>
-                  ) : (
-                    <div style={{ marginTop: '64px' }}>
-                      <div
-                        style={{
-                          border: '1px solid rgba(230, 230, 230, 0.4)',
-                          borderRadius: '8px',
-                          padding: '16px',
-                          marginBottom: '12px',
-                          backgroundColor: 'rgba(250, 250, 250, 0.7)',
-                          backdropFilter: 'blur(10px)',
-                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
-                          transition: 'all 0.3s ease',
-                          textAlign: 'center',
-                          minHeight: '120px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                        onMouseEnter={e => {
-                          e.currentTarget.style.transform = 'translateY(-2px)';
-                          e.currentTarget.style.boxShadow =
-                            '0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.05)';
-                        }}
-                        onMouseLeave={e => {
-                          e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow =
-                            '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)';
-                        }}
-                      >
-                        <div>
-                          <div
-                            style={{
-                              fontSize: '48px',
-                              color: '#d9d9d9',
-                              marginBottom: '12px',
-                              fontWeight: '300',
-                            }}
-                          >
-                            📡
+                            <p
+                              style={{
+                                color: '#666',
+                                fontStyle: 'italic',
+                                margin: 0,
+                                fontSize: '14px',
+                              }}
+                            >
+                              {locale.noAvailableEndpoint || '暂无可用的端点'}
+                            </p>
                           </div>
-                          <p
-                            style={{
-                              color: '#666',
-                              fontStyle: 'italic',
-                              margin: 0,
-                              fontSize: '14px',
-                            }}
-                          >
-                            {locale.noAvailableEndpoint || '暂无可用的端点'}
-                          </p>
                         </div>
                       </div>
-                    </div>
-                  )}
-                </>
-              )}
-            </Col>
-          </Row>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
         </Loading>
       </div>
     );

@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Table, Button, Dialog, Message, Input, Form, Grid, Upload, Tree } from '@alifd/next';
+import { Table, Button, Dialog, Message, Input, Form, Grid, Upload, Tree, Card } from '@alifd/next';
 import CreateTools from './CreateTools';
 import DeleteTool from './CreateTools/DeleteTool';
 import { getParams, request } from '../../../globalLib';
@@ -439,7 +439,67 @@ const ShowTools = props => {
   console.log('fontProtocol:', frontProtocol);
 
   return (
-    <div>
+    <Card
+      style={{
+        backgroundColor: 'rgba(250, 250, 250, 0.7)',
+        backdropFilter: 'blur(10px)',
+        boxShadow:
+          isPreview || onlyEditRuntimeInfo
+            ? 'none'
+            : '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
+        borderRadius: '8px',
+        border: '1px solid #e8e8e8',
+        transition: 'all 0.3s ease',
+      }}
+      contentHeight="auto"
+      onMouseEnter={e => {
+        if (!isPreview && !onlyEditRuntimeInfo) {
+          e.currentTarget.style.boxShadow =
+            '0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08)';
+          e.currentTarget.style.transform = 'translateY(-2px)';
+        }
+      }}
+      onMouseLeave={e => {
+        if (!isPreview && !onlyEditRuntimeInfo) {
+          e.currentTarget.style.boxShadow =
+            '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)';
+          e.currentTarget.style.transform = 'translateY(0)';
+        }
+      }}
+    >
+      <style>
+        {`
+          .tools-layout {
+            display: flex;
+            min-height: 400px;
+            margin-top: 20px;
+          }
+          
+          .tools-sidebar {
+            width: 250px;
+            border-right: 1px solid #e6e6e6;
+            margin-right: 16px;
+          }
+          
+          .tools-content {
+            flex: 1;
+          }
+          
+          @media (max-width: 768px) {
+            .tools-layout {
+              flex-direction: column;
+            }
+            
+            .tools-sidebar {
+              width: 100%;
+              border-right: none;
+              border-bottom: 1px solid #e6e6e6;
+              margin-right: 0;
+              margin-bottom: 16px;
+            }
+          }
+        `}
+      </style>
       {/* Tools 展示 - 使用与 McpDetail 相同的左右分栏风格 */}
       {serverConfig?.toolSpec?.tools && serverConfig.toolSpec.tools.length > 0 ? (
         <>
@@ -474,9 +534,9 @@ const ShowTools = props => {
             </Button>
           )}
 
-          <div style={{ display: 'flex', minHeight: '400px', marginTop: '20px' }}>
+          <div className="tools-layout">
             {/* 左侧标签栏 */}
-            <div style={{ width: '250px', borderRight: '1px solid #e6e6e6', marginRight: '16px' }}>
+            <div className="tools-sidebar">
               {serverConfig.toolSpec.tools.map((tool, index) => {
                 // 获取工具的在线状态
                 const toolsMeta = serverConfig?.toolSpec?.toolsMeta?.[tool.name];
@@ -492,10 +552,22 @@ const ShowTools = props => {
                       backgroundColor: activeToolIndex === index ? '#e6f7ff' : 'transparent',
                       borderLeft:
                         activeToolIndex === index ? '3px solid #1890ff' : '3px solid transparent',
+                      overflow: 'hidden',
+                      width: '100%',
+                      boxSizing: 'border-box',
                     }}
                     onClick={() => setActiveToolIndex(index)}
                   >
-                    <div style={{ fontWeight: 'bold', fontSize: '16px', marginBottom: '4px' }}>
+                    <div
+                      style={{
+                        fontWeight: 'bold',
+                        fontSize: '16px',
+                        marginBottom: '4px',
+                        wordBreak: 'break-word',
+                        overflowWrap: 'break-word',
+                        lineHeight: '1.4',
+                      }}
+                    >
                       {tool.name}
                     </div>
                     <div
@@ -559,7 +631,7 @@ const ShowTools = props => {
             </div>
 
             {/* 右侧内容区 */}
-            <div style={{ flex: 1 }}>
+            <div className="tools-content">
               {(() => {
                 const tool = serverConfig.toolSpec.tools[activeToolIndex];
                 if (!tool) return null;
@@ -575,6 +647,9 @@ const ShowTools = props => {
                         marginBottom: '16px',
                         borderBottom: '1px solid #e6e6e6',
                         paddingBottom: '8px',
+                        wordBreak: 'break-word',
+                        overflowWrap: 'break-word',
+                        lineHeight: '1.4',
                       }}
                     >
                       {tool.name}
@@ -1572,7 +1647,7 @@ const ShowTools = props => {
           </Form>
         </Dialog>
       )}
-    </div>
+    </Card>
   );
 };
 
