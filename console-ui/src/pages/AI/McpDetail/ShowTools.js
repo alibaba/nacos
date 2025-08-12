@@ -1,10 +1,12 @@
 import React, { useRef, useState } from 'react';
-import { Table, Button, Dialog, Message, Input, Form, Grid, Upload, Tree, Card } from '@alifd/next';
+import { Button, Card, Dialog, Form, Grid, Input, Message, Tree, Upload } from '@alifd/next';
 import CreateTools from './CreateTools';
 import DeleteTool from './CreateTools/DeleteTool';
 import { getParams, request } from '../../../globalLib';
-import SwaggerParser from 'swagger-parser';
+import swagger2openapi from 'swagger2openapi';
+import YAML from 'js-yaml';
 import { extractToolsFromOpenAPI } from './Swagger2Tools';
+
 const { Row, Col } = Grid;
 const currentNamespace = getParams('namespace');
 
@@ -354,11 +356,23 @@ const ShowTools = props => {
       try {
         parsedContent = JSON.parse(content);
       } catch (jsonError) {
-        throw new Error('Invalid JSON/YAML format');
+        // 尝试 YAML 解析
+        try {
+          parsedContent = YAML.load(content);
+        } catch (yamlError) {
+          throw new Error('Invalid JSON/YAML format');
+        }
       }
-      // 再使用 SwaggerParser 验证和解析 OpenAPI 文档
-      const api = await SwaggerParser.validate(parsedContent);
-      return api;
+      if (parsedContent.swagger) {
+        const converted = await swagger2openapi.convertObj(parsedContent, {});
+        return converted.openapi;
+      }
+
+      // 验证 OpenAPI 3.x 文档
+      if (parsedContent.openapi) {
+        // 可以添加更多验证逻辑
+        return parsedContent;
+      }
     } catch (e) {
       console.error('解析失败:', e);
       throw new Error(locale.fileInvalidFormat);
