@@ -181,7 +181,7 @@ const CreateTools = React.forwardRef((props, ref) => {
     let extractedTransparentAuth = false;
 
     if (toolsMeta?.templates !== undefined && 'json-go-template' in toolsMeta?.templates) {
-      templatesStr = JSON.stringify(toolsMeta?.templates['json-go-template']);
+      templatesStr = JSON.stringify(toolsMeta?.templates['json-go-template'], null, 2);
 
       // 从模板中提取安全方案ID和透明认证状态
       try {
