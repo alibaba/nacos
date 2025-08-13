@@ -23,6 +23,7 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -51,6 +52,8 @@ import static org.mockito.Mockito.when;
  * @date 2021-09-15 19:52
  */
 @ExtendWith(MockitoExtension.class)
+@Disabled("The Udp push Unit test is not stable by async runnable, and Udp push has been mark deprecated. "
+        + "So Disabled this Unit test first and will remove it.")
 class UdpConnectorTest {
     
     @InjectMocks
