@@ -44,7 +44,7 @@ const CreateTools = React.forwardRef((props, ref) => {
   const [data, setData] = useState([]);
   const [args, setArgs] = useState({});
   const [originalTemplate, setOriginalTemplate] = useState(''); // 存储原始模板
-  const [expandedKeys, setExpandedKeys] = useState(['args']); // 控制树节点展开状态
+  const [expandedKeys, setExpandedKeys] = useState([]); // 控制树节点展开状态，默认折叠
   const [currentNode, setCurrentNode] = useState({
     description: '',
     type: 'object',
@@ -70,7 +70,7 @@ const CreateTools = React.forwardRef((props, ref) => {
   //   }
   // }, [visible]);
 
-  const convertPropertiesToTreeData = (properties, prefix) => {
+  const convertPropertiesToTreeData = (properties, prefix, requiredList = []) => {
     if (properties == null) {
       return [];
     }
@@ -81,6 +81,7 @@ const CreateTools = React.forwardRef((props, ref) => {
       const arg = properties[element];
       let children = [];
       if (arg.type === 'object') {
+        // 嵌套对象暂不处理其 required 列表（当前仅支持根级 required）
         children = convertPropertiesToTreeData(arg.properties, `${prefix}@@${element}`);
       } else if (arg.type === 'array') {
         children = convertPropertiesToTreeData(
@@ -96,6 +97,8 @@ const CreateTools = React.forwardRef((props, ref) => {
         arg: arg,
         description: arg.description ? arg.description : '',
         defaultValue: arg.default || '',
+        // 仅根级 required 使用 inputSchema.required 进行标记
+        required: Array.isArray(requiredList) ? requiredList.includes(element) : false,
         children,
         key: `${prefix}@@${element}`,
       };
@@ -125,7 +128,11 @@ const CreateTools = React.forwardRef((props, ref) => {
     setType(type);
 
     const _toolParams = inputSchema?.properties
-      ? convertPropertiesToTreeData(inputSchema?.properties, 'args')
+      ? convertPropertiesToTreeData(
+          inputSchema?.properties,
+          'args',
+          Array.isArray(inputSchema?.required) ? inputSchema?.required : []
+        )
       : [];
 
     let rootNode = {
@@ -145,6 +152,7 @@ const CreateTools = React.forwardRef((props, ref) => {
         key: 'args@@NewArg1',
         description: '',
         defaultValue: '',
+        required: false,
         children: [],
         arg: {
           type: 'string',
@@ -163,9 +171,8 @@ const CreateTools = React.forwardRef((props, ref) => {
     // 保存默认参数到表单字段
     const defaultParams = rawDataToFiledValue(rootNode.children);
 
-    // 初始化时展开所有节点
-    const allKeys = collectAllKeys([rootNode]);
-    setExpandedKeys(allKeys);
+    // 默认不展开任何节点
+    setExpandedKeys([]);
 
     const _invokeContext = toolsMeta?.invokeContext
       ? Object.keys(toolsMeta?.invokeContext).map(key => ({
@@ -261,7 +268,7 @@ const CreateTools = React.forwardRef((props, ref) => {
     setEditorKey(0); // 重置编辑器key
     setShowTemplateHelp(false); // 重置帮助信息状态
 
-    setExpandedKeys(['args']); // 重置展开状态
+    setExpandedKeys([]); // 重置展开状态为折叠
     setCurrentNode({
       description: '',
       type: 'object',
@@ -862,6 +869,7 @@ const CreateTools = React.forwardRef((props, ref) => {
       type: 'string',
       description: '',
       defaultValue: '',
+      required: false,
       children: [],
       arg: {
         type: 'string',
@@ -907,6 +915,7 @@ const CreateTools = React.forwardRef((props, ref) => {
       type: 'string',
       description: '',
       defaultValue: '',
+      required: false,
       children: [],
       arg: {
         type: 'string',
@@ -1023,7 +1032,16 @@ const CreateTools = React.forwardRef((props, ref) => {
   };
 
   const saveParamToFiled = () => {
-    field.setValue('toolParams', rawDataToFiledValue(rawData[0].children));
+    if (!rawData || rawData.length === 0) {
+      return;
+    }
+    const root = rawData[0];
+    field.setValue('toolParams', rawDataToFiledValue(root.children));
+    // 同步 required（仅根级参数）
+    const req = Array.isArray(root.children)
+      ? root.children.filter(n => n.required).map(n => n.label)
+      : [];
+    field.setValue('required', req);
   };
 
   const isPreview = type === 'preview';
@@ -1325,8 +1343,6 @@ const CreateTools = React.forwardRef((props, ref) => {
                         }}
                       >
                         <Tree
-                          defaultExpandAll
-                          autoExpandParent
                           showLine
                           isLabelBlock
                           dataSource={data}
@@ -1344,7 +1360,15 @@ const CreateTools = React.forwardRef((props, ref) => {
                                 <Col>
                                   <Row>
                                     <Col>
-                                      <a>{node.label}</a>&nbsp;&nbsp;({args[node.key].type})
+                                      <a>
+                                        {node.label}
+                                        {node.key.split('@@').length === 2 && (
+                                          <span style={{ color: '#fa541c', marginLeft: 6 }}>
+                                            {args[node.key].required ? '*' : ''}
+                                          </span>
+                                        )}
+                                      </a>
+                                      &nbsp;&nbsp;({args[node.key].type})
                                     </Col>
                                     <Col style={{ textOverflow: 'ellipsis', marginLeft: 10 }}>
                                       {args[node.key].description?.length <= 25
@@ -1567,6 +1591,41 @@ const CreateTools = React.forwardRef((props, ref) => {
                     </Form.Item>
                   </Col>
                 </Row>
+
+                {/* 是否必填 - 仅对根级参数（args 的直接子节点）展示 */}
+                {currentNode.key && currentNode.key.split('@@').length === 2 && (
+                  <Row>
+                    <Col span={24}>
+                      <Form.Item
+                        label={locale.toolParamRequired || '是否必填'}
+                        name="args.required"
+                        asterisk={false}
+                        style={{ marginBottom: '12px' }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          <Switch
+                            size="large"
+                            checked={!!currentNode.required}
+                            onChange={checked => {
+                              if (currentNode.key) {
+                                currentNode.required = !!checked;
+                                changeNodeInfo(currentNode);
+                              }
+                            }}
+                            disabled={onlyEditRuntimeInfo}
+                            checkedChildren={locale.required || '必填'}
+                            unCheckedChildren={locale.optional || '可选'}
+                          />
+                          <span style={{ marginLeft: 12, color: '#666', fontSize: 12 }}>
+                            {currentNode.required
+                              ? locale.required || '必填'
+                              : locale.optional || '可选'}
+                          </span>
+                        </div>
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                )}
 
                 {/* 默认值输入 - 仅对非 object 和 array 类型显示 */}
                 {currentNode.type &&

@@ -10,6 +10,13 @@ import { extractToolsFromOpenAPI } from './Swagger2Tools';
 const { Row, Col } = Grid;
 const currentNamespace = getParams('namespace');
 
+// 文本截断工具：超过指定长度使用省略号
+const truncateText = (text, maxLen = 16) => {
+  if (!text) return '';
+  const str = String(text);
+  return str.length > maxLen ? str.slice(0, maxLen) + '...' : str;
+};
+
 const ShowTools = props => {
   const {
     serverConfig = {
@@ -86,7 +93,7 @@ const ShowTools = props => {
         });
         children.push({
           key: descKey,
-          label: `描述: ${paramDef.description}`,
+          label: `描述: ${truncateText(paramDef.description, 16)}`,
           isLeaf: true,
         });
       }
@@ -713,7 +720,6 @@ const ShowTools = props => {
                                 tool.inputSchema.required
                               )}
                               showLine
-                              defaultExpandAll
                               isLabelBlock
                               style={{ backgroundColor: 'transparent' }}
                               labelRender={node => {
@@ -817,15 +823,21 @@ const ShowTools = props => {
                                         </span>
                                       )}
 
-                                      {/* 描述信息 - 直接放在后面，如果没有显示 - */}
+                                      {/* 描述信息 - 过长时（>16）强制省略号 */}
                                       <span
                                         style={{
                                           fontFamily: 'Monaco, Consolas, "Courier New", monospace',
                                           color: '#000',
                                           fontSize: '12px',
+                                          flex: 1,
+                                          minWidth: 0,
+                                          overflow: 'hidden',
+                                          textOverflow: 'ellipsis',
+                                          whiteSpace: 'nowrap',
                                         }}
+                                        title={nodeData.description || '-'}
                                       >
-                                        - {nodeData.description || '-'}
+                                        - {truncateText(nodeData.description || '-', 16)}
                                       </span>
 
                                       {/* 默认值信息（如果有的话） */}
@@ -907,6 +919,26 @@ const ShowTools = props => {
                                         [{nodeData.type || 'string'}]
                                       </span>
                                     </div>
+                                  );
+                                }
+
+                                // 信息节点（如 描述/默认值/可选值/格式）
+                                if (nodeData?.isInfoNode) {
+                                  const isDesc = nodeData.name === '描述';
+                                  const displayText = isDesc
+                                    ? `${nodeData.name}: ${truncateText(nodeData.description, 16)}`
+                                    : `${nodeData.name}: ${nodeData.description}`;
+                                  return (
+                                    <span
+                                      style={{
+                                        fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+                                        color: '#000',
+                                        fontSize: '13px',
+                                      }}
+                                      title={`${nodeData.name}: ${nodeData.description}`}
+                                    >
+                                      {displayText}
+                                    </span>
                                   );
                                 }
 
@@ -1424,116 +1456,67 @@ const ShowTools = props => {
           </div>
         </>
       ) : (
-        <div style={{ marginTop: '20px' }}>
+        <div style={{ marginTop: '20px', textAlign: 'center' }}>
           <div
             style={{
-              border: '1px solid rgba(230, 230, 230, 0.4)',
-              borderRadius: '8px',
-              padding: '24px',
-              marginBottom: '12px',
-              backgroundColor: 'rgba(250, 250, 250, 0.7)',
-              backdropFilter: 'blur(10px)',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
-              transition: 'all 0.3s ease',
-              textAlign: 'center',
-              minHeight: '200px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '20px',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow =
-                '0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.05)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow =
-                '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)';
+              fontSize: '40px',
+              color: '#d9d9d9',
+              marginBottom: '8px',
+              lineHeight: 1,
             }}
           >
-            <div>
-              <div
-                style={{
-                  fontSize: '48px',
-                  color: '#d9d9d9',
-                  marginBottom: '12px',
-                  fontWeight: '300',
-                }}
-              >
-                🔧
-              </div>
-              <p
-                style={{
-                  color: '#666',
-                  fontStyle: 'italic',
-                  margin: 0,
-                  fontSize: '14px',
-                  marginBottom: '20px',
-                }}
-              >
-                {locale.noToolsAvailable || '暂无可用的 Tools'}
-              </p>
-            </div>
-
-            {/* 在占位卡片中显示添加按钮 */}
-            {!isPreview && !onlyEditRuntimeInfo && (
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '12px',
-                  alignItems: 'center',
-                }}
-              >
-                <Button
-                  type="primary"
-                  onClick={openDialog}
-                  size="large"
-                  style={{
-                    minWidth: '140px',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                  }}
-                >
-                  {locale.newMcpTool}
-                </Button>
-
-                {/* 根据不同协议显示相应的导入按钮 */}
-                {frontProtocol === 'mcp-sse' && !restToMcpSwitch && (
-                  <Button
-                    type="normal"
-                    onClick={autoImportToolsFromMCPServer}
-                    loading={importLoading}
-                    disabled={importLoading}
-                    style={{
-                      minWidth: '140px',
-                      fontSize: '14px',
-                    }}
-                  >
-                    {importLoading ? locale.importing : locale.importToolsFromMCP}
-                  </Button>
-                )}
-
-                {frontProtocol !== 'stdio' && restToMcpSwitch && (
-                  <Button
-                    type="normal"
-                    onClick={importToolsFromOpenApi}
-                    loading={importLoading}
-                    disabled={importLoading}
-                    style={{
-                      minWidth: '140px',
-                      fontSize: '14px',
-                    }}
-                  >
-                    {importLoading ? locale.importing : locale.importToolsFromOpenAPI}
-                  </Button>
-                )}
-              </div>
-            )}
+            🔧
           </div>
+          <p
+            style={{
+              color: '#666',
+              fontStyle: 'italic',
+              margin: 0,
+              fontSize: '14px',
+              marginBottom: '16px',
+            }}
+          >
+            {locale.noToolsAvailable || '暂无可用的 Tools'}
+          </p>
+
+          {!isPreview && !onlyEditRuntimeInfo && (
+            <div
+              style={{
+                display: 'flex',
+                gap: '12px',
+                justifyContent: 'center',
+                flexWrap: 'wrap',
+              }}
+            >
+              <Button type="primary" onClick={openDialog} style={{ minWidth: '140px' }}>
+                {locale.newMcpTool}
+              </Button>
+
+              {frontProtocol === 'mcp-sse' && !restToMcpSwitch && (
+                <Button
+                  type="normal"
+                  onClick={autoImportToolsFromMCPServer}
+                  loading={importLoading}
+                  disabled={importLoading}
+                  style={{ minWidth: '140px' }}
+                >
+                  {importLoading ? locale.importing : locale.importToolsFromMCP}
+                </Button>
+              )}
+
+              {frontProtocol !== 'stdio' && restToMcpSwitch && (
+                <Button
+                  type="normal"
+                  onClick={importToolsFromOpenApi}
+                  loading={importLoading}
+                  disabled={importLoading}
+                  style={{ minWidth: '140px' }}
+                >
+                  {importLoading ? locale.importing : locale.importToolsFromOpenAPI}
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       )}
 
