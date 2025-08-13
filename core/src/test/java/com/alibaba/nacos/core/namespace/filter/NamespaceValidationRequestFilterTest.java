@@ -33,12 +33,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
@@ -132,6 +135,68 @@ class NamespaceValidationRequestFilterTest {
                 actual.getMessage());
     }
 
+    @Test
+    void testFilterWithGlobalConfigDisabled() throws NacosException {
+        InstanceRequest request = new InstanceRequest();
+        request.setNamespace("test-namespace");
+        RequestMeta meta = new RequestMeta();
+
+        NamespaceValidationConfig mockConfig = Mockito.mock(NamespaceValidationConfig.class);
+        when(mockConfig.isNamespaceValidationEnabled()).thenReturn(false);
+
+        try (MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class)) {
+            mockedStatic.when(NamespaceValidationConfig::getInstance).thenReturn(mockConfig);
+
+            Response response = namespaceValidationFilter.filter(request, meta, MockWithEnabledValidation.class);
+
+            // When global config is disabled, filter should return null (skip validation)
+            assertNull(response);
+        }
+    }
+
+    @Test
+    void testFilterWithGlobalConfigEnabled() throws NacosException {
+        InstanceRequest request = new InstanceRequest();
+        request.setNamespace("non-existent-namespace");
+        RequestMeta meta = new RequestMeta();
+
+        NamespaceValidationConfig mockConfig = Mockito.mock(NamespaceValidationConfig.class);
+        when(mockConfig.isNamespaceValidationEnabled()).thenReturn(true);
+        when(namespaceOperationService.isNamespaceExist("non-existent-namespace")).thenReturn(false);
+
+        try (MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class)) {
+            mockedStatic.when(NamespaceValidationConfig::getInstance).thenReturn(mockConfig);
+
+            Response response = namespaceValidationFilter.filter(request, meta, MockWithEnabledValidation.class);
+
+            // When global config is enabled and namespace doesn't exist, should return error response
+            assertNotNull(response);
+            assertEquals(ErrorCode.NAMESPACE_NOT_EXIST.getCode(), response.getErrorCode());
+            assertEquals("Namespace 'non-existent-namespace' does not exist. Please create the namespace first.",
+                    response.getMessage());
+        }
+    }
+
+    @Test
+    void testFilterWithGlobalConfigEnabledAndNamespaceExists() throws NacosException {
+        InstanceRequest request = new InstanceRequest();
+        request.setNamespace("existing-namespace");
+        RequestMeta meta = new RequestMeta();
+
+        NamespaceValidationConfig mockConfig = Mockito.mock(NamespaceValidationConfig.class);
+        when(mockConfig.isNamespaceValidationEnabled()).thenReturn(true);
+        when(namespaceOperationService.isNamespaceExist("existing-namespace")).thenReturn(true);
+
+        try (MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class)) {
+            mockedStatic.when(NamespaceValidationConfig::getInstance).thenReturn(mockConfig);
+
+            Response response = namespaceValidationFilter.filter(request, meta, MockWithEnabledValidation.class);
+
+            // When global config is enabled and namespace exists, should return null (pass validation)
+            assertNull(response);
+        }
+    }
+
     static class MockWithoutAnnotation extends RequestHandler<Request, Response> {
         @Override
         public Response handle(Request request, RequestMeta meta) throws NacosException {
@@ -157,5 +222,4 @@ class NamespaceValidationRequestFilterTest {
             };
         }
     }
-
 }

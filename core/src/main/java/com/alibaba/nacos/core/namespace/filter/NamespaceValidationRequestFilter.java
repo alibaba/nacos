@@ -51,8 +51,12 @@ public class NamespaceValidationRequestFilter extends AbstractRequestFilter {
     @Override
     protected Response filter(Request request, RequestMeta meta, Class handlerClazz) throws NacosException {
         try {
-            Method method = getHandleMethod(handlerClazz);
+            boolean namespaceValidationEnabled = NamespaceValidationConfig.getInstance().isNamespaceValidationEnabled();
+            if (!namespaceValidationEnabled) {
+                return null;
+            }
 
+            Method method = getHandleMethod(handlerClazz);
             if (method.isAnnotationPresent(NamespaceValidation.class)) {
                 NamespaceValidation namespaceValidation = method.getAnnotation(NamespaceValidation.class);
                 if (!namespaceValidation.enable()) {
