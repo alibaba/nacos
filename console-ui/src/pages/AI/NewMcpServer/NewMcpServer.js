@@ -1703,6 +1703,19 @@ class NewMcpServer extends React.Component {
           <FormItem label={locale.description}>
             <Input.TextArea
               isPreview={currentVersionExist}
+              renderPreview={value => (
+                <div
+                  style={{
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                    maxHeight: 240,
+                    overflowY: 'auto',
+                  }}
+                >
+                  {value || '-'}
+                </div>
+              )}
               {...init('description', {
                 props: {
                   ...descAreaProps,

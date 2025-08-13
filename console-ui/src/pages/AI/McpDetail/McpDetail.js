@@ -1645,6 +1645,9 @@ class McpDetail extends React.Component {
                   margin: 0,
                   fontStyle: 'italic',
                   textAlign: 'left',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  overflowWrap: 'anywhere',
                 }}
               >
                 {this.state.serverConfig.description}
@@ -2114,7 +2117,7 @@ class McpDetail extends React.Component {
                         </Tab>
                       </div>
                     ) : (
-                      <div style={{ marginTop: '64px' }}>
+                      <div>
                         <div
                           style={{
                             border: '1px solid rgba(230, 230, 230, 0.4)',
