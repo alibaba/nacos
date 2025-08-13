@@ -634,11 +634,10 @@ class NewMcpServer extends React.Component {
 
               // 从URL中提取传输协议，并追加到protocol字段之后
               const transportProtocol = url.protocol.replace(':', ''); // 去掉冒号，得到 http 或 https
-              const finalProtocol = `${protocol}-${transportProtocol}`;
 
               params.serverSpecification = JSON.stringify(
                 {
-                  protocol: finalProtocol,
+                  protocol: protocol,
                   frontProtocol: values?.frontProtocol,
                   name: values?.serverName,
                   id: mcpServerId,
@@ -660,6 +659,7 @@ class NewMcpServer extends React.Component {
                 data: {
                   address: address,
                   port: port,
+                  transportProtocol: transportProtocol,
                 },
               });
             } catch (error) {
@@ -686,7 +686,7 @@ class NewMcpServer extends React.Component {
               null,
               2
             );
-            // 添加服务
+            // 添加服务，并携带所选传输协议到 endpointSpecification.protocol
 
             if (useExistService) {
               const group = values?.service.split('@@')[0];
@@ -698,13 +698,24 @@ class NewMcpServer extends React.Component {
                     namespaceId: values?.namespace || '',
                     serviceName: serviceName || '',
                     groupName: group || '',
+                    // 传输协议：来自已有服务下拉框
+                    transportProtocol: values?.serviceTransportProtocol || 'http',
                   },
                 },
                 null,
                 2
               );
             } else {
-              params.endpointSpecification = `{"type": "DIRECT","data":{"address":"${values?.address}","port": "${values?.port}"}}`;
+              // 直连新服务：携带 address/port 以及用户选择的传输协议
+              const directSpec = {
+                type: 'DIRECT',
+                data: {
+                  address: values?.address,
+                  port: `${values?.port}`,
+                  transportProtocol: values?.newServiceTransportProtocol || 'http',
+                },
+              };
+              params.endpointSpecification = JSON.stringify(directSpec, null, 2);
             }
           }
         }

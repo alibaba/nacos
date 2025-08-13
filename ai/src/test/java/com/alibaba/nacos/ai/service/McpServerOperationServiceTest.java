@@ -228,6 +228,7 @@ class McpServerOperationServiceTest {
         serviceRef.setNamespaceId(Constants.MCP_SERVER_ENDPOINT_GROUP);
         serviceRef.setServiceName("mcpName");
         remoteServiceConfig.setServiceRef(serviceRef);
+        remoteServiceConfig.setExportPath("/nacos");
         mockStorageInfo.setRemoteServerConfig(remoteServiceConfig);
         ConfigQueryChainResponse storageDataResponse = mockConfigQueryChainResponse(mockStorageInfo);
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(versionDataResponse,
@@ -235,7 +236,6 @@ class McpServerOperationServiceTest {
         Instance instance = new Instance();
         instance.setIp("127.0.0.1");
         instance.setPort(8848);
-        instance.setMetadata(Collections.singletonMap(Constants.META_PATH, "/nacos"));
         when(endpointOperationService.getMcpServerEndpointInstances(any(McpServiceRef.class))).thenReturn(
                 Collections.singletonList(instance));
         McpServerDetailInfo actual = serverOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
@@ -414,6 +414,7 @@ class McpServerOperationServiceTest {
         serviceRef.setNamespaceId(Constants.MCP_SERVER_ENDPOINT_GROUP);
         serviceRef.setServiceName("mcpName");
         remoteServiceConfig.setServiceRef(serviceRef);
+        remoteServiceConfig.setExportPath("/nacos");
         remoteServiceConfig.setFrontEndpointConfigList(Collections.singletonList(new FrontEndpointConfig()));
         remoteServiceConfig.getFrontEndpointConfigList().get(0).setProtocol(AiConstants.Mcp.MCP_PROTOCOL_HTTP);
         remoteServiceConfig.getFrontEndpointConfigList().get(0).setType(AiConstants.Mcp.MCP_PROTOCOL_SSE);
@@ -425,7 +426,6 @@ class McpServerOperationServiceTest {
         Instance instance = new Instance();
         instance.setIp("127.0.0.1");
         instance.setPort(8848);
-        instance.setMetadata(Collections.singletonMap(Constants.META_PATH, "/nacos"));
         when(endpointOperationService.getMcpServerEndpointInstances(any(McpServiceRef.class))).thenReturn(
                 Collections.singletonList(instance));
         McpServerDetailInfo actual = serverOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
