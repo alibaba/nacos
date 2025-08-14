@@ -172,73 +172,80 @@ const ShowTools = props => {
 
       // 递归处理array类型的属性
       if (paramType === 'array' && paramDef.items) {
-        const arrayItemChildren = [];
+        // 递归构建数组项的子树
+        const buildArrayItemSubtree = (itemDef, itemKey) => {
+          const subChildren = [];
+          const itemType = itemDef.type || (itemDef.properties ? 'object' : 'string');
 
-        // 如果数组项是对象类型
-        if (paramDef.items.type === 'object' && paramDef.items.properties) {
-          const itemRequired = paramDef.items.required || [];
-          const itemChildren = buildParameterTreeData(
-            paramDef.items.properties,
-            itemRequired,
-            `${nodeKey}-items`
-          );
+          // 如果数组项是对象
+          if (itemType === 'object' && itemDef.properties) {
+            const itemRequired = itemDef.required || [];
+            const propertiesChildren = buildParameterTreeData(
+              itemDef.properties,
+              itemRequired,
+              `${itemKey}-props`
+            );
+            if (propertiesChildren.length > 0) {
+              subChildren.push(...propertiesChildren);
+            }
+          }
+          // 如果数组项是另一个数组（嵌套数组）
+          else if (itemType === 'array' && itemDef.items) {
+            const nestedItemKey = `${itemKey}-items`;
+            const nestedChildren = buildArrayItemSubtree(itemDef.items, nestedItemKey);
+            if (nestedChildren.length > 0) {
+              const itemsNodeKey = `${nestedItemKey}-group`;
+              parameterMap.current.set(itemsNodeKey, {
+                name: 'items',
+                type: itemDef.items.type,
+                isGroupNode: true,
+              });
+              subChildren.push({
+                key: itemsNodeKey,
+                label: `items (${itemDef.items.type || 'object'})`,
+                children: nestedChildren,
+                isLeaf: false,
+              });
+            }
+          }
+          // 如果数组项是基本类型
+          else {
+            const itemInfo = [];
+            if (itemDef.type) itemInfo.push(`类型: ${itemDef.type}`);
+            if (itemDef.description) itemInfo.push(`描述: ${itemDef.description}`);
+            if (itemDef.format) itemInfo.push(`格式: ${itemDef.format}`);
 
-          if (itemChildren.length > 0) {
-            const itemPropsKey = `${nodeKey}-item-properties`;
-            parameterMap.current.set(itemPropsKey, {
-              name: '数组项属性',
-              type: 'group',
-              description: '数组项的属性',
-              isGroupNode: true,
-            });
-            arrayItemChildren.push({
-              key: itemPropsKey,
-              label: '数组项属性',
-              children: itemChildren,
-              isLeaf: false,
-            });
+            if (itemInfo.length > 0) {
+              const itemInfoKey = `${itemKey}-info`;
+              parameterMap.current.set(itemInfoKey, {
+                name: '数组项信息',
+                type: 'info',
+                description: itemInfo.join(', '),
+                isInfoNode: true,
+              });
+              subChildren.push({
+                key: itemInfoKey,
+                label: `数组项信息: ${itemInfo.join(', ')}`,
+                isLeaf: true,
+              });
+            }
           }
-        } else {
-          // 基本类型的数组项
-          const itemInfo = [];
-          if (paramDef.items.type) {
-            itemInfo.push(`类型: ${paramDef.items.type}`);
-          }
-          if (paramDef.items.description) {
-            itemInfo.push(`描述: ${paramDef.items.description}`);
-          }
-          if (paramDef.items.format) {
-            itemInfo.push(`格式: ${paramDef.items.format}`);
-          }
+          return subChildren;
+        };
 
-          if (itemInfo.length > 0) {
-            const itemInfoKey = `${nodeKey}-item-info`;
-            parameterMap.current.set(itemInfoKey, {
-              name: '数组项信息',
-              type: 'info',
-              description: itemInfo.join(', '),
-              isInfoNode: true,
-            });
-            arrayItemChildren.push({
-              key: itemInfoKey,
-              label: `数组项信息: ${itemInfo.join(', ')}`,
-              isLeaf: true,
-            });
-          }
-        }
+        const itemChildren = buildArrayItemSubtree(paramDef.items, `${nodeKey}-items`);
 
-        if (arrayItemChildren.length > 0) {
-          const itemsKey = `${nodeKey}-items`;
+        if (itemChildren.length > 0) {
+          const itemsKey = `${nodeKey}-items-group`;
           parameterMap.current.set(itemsKey, {
-            name: '数组项定义',
-            type: 'group',
-            description: '数组项的定义',
+            name: 'items',
+            type: paramDef.items.type,
             isGroupNode: true,
           });
           children.push({
             key: itemsKey,
-            label: '数组项定义',
-            children: arrayItemChildren,
+            label: `items (${paramDef.items.type || 'object'})`,
+            children: itemChildren,
             isLeaf: false,
           });
         }
@@ -613,7 +620,7 @@ const ShowTools = props => {
                       </span>
                       {tool.inputSchema?.properties && (
                         <span style={{ color: '#666', fontSize: '12px' }}>
-                          {Object.keys(tool.inputSchema.properties).length} 参数
+                          {Object.keys(tool.inputSchema.properties).length} 个参数
                         </span>
                       )}
                     </div>

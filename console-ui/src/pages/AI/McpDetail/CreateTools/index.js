@@ -823,10 +823,18 @@ const CreateTools = React.forwardRef((props, ref) => {
         ...element.arg,
         type: element.type,
       };
-
-      arg.description = element.description;
+      // items 节点不需要描述
+      if (!String(element.key || '').endsWith('@@items')) {
+        arg.description = element.description;
+      } else if (arg && arg.description !== undefined) {
+        delete arg.description;
+      }
       arg.type = element.type;
-      if (element.defaultValue !== undefined && element.defaultValue !== '') {
+      if (
+        element.defaultValue !== undefined &&
+        element.defaultValue !== '' &&
+        !String(element.key || '').endsWith('@@items')
+      ) {
         // 根据类型设置默认值
         if (element.type === 'boolean') {
           arg.default = element.defaultValue === 'true';
@@ -1045,6 +1053,16 @@ const CreateTools = React.forwardRef((props, ref) => {
   };
 
   const isPreview = type === 'preview';
+  // 判断是否为数组的 items 子节点
+  const isArrayItemsNode = node => {
+    if (!node || !node.key) return false;
+    if (!node.key.endsWith('@@items')) return false;
+    const parentKey = node.key
+      .split('@@')
+      .slice(0, -1)
+      .join('@@');
+    return args[parentKey]?.type === 'array';
+  };
   return (
     <div>
       {visible ? (
@@ -1370,11 +1388,14 @@ const CreateTools = React.forwardRef((props, ref) => {
                                       </a>
                                       &nbsp;&nbsp;({args[node.key].type})
                                     </Col>
-                                    <Col style={{ textOverflow: 'ellipsis', marginLeft: 10 }}>
-                                      {args[node.key].description?.length <= 25
-                                        ? args[node.key].description
-                                        : `${args[node.key].description?.substring(0, 20)}...`}
-                                    </Col>
+                                    {/* items 节点不显示描述 */}
+                                    {!isArrayItemsNode(args[node.key]) && (
+                                      <Col style={{ textOverflow: 'ellipsis', marginLeft: 10 }}>
+                                        {args[node.key].description?.length <= 25
+                                          ? args[node.key].description
+                                          : `${args[node.key].description?.substring(0, 20)}...`}
+                                      </Col>
+                                    )}
                                   </Row>
                                 </Col>
                                 {/* 删除按钮 - 不能删除根节点args */}
@@ -1464,11 +1485,11 @@ const CreateTools = React.forwardRef((props, ref) => {
                         size="large"
                         style={{ borderRadius: '6px' }}
                         isPreview={onlyEditRuntimeInfo}
-                        disabled={currentNode.key === 'args'}
+                        disabled={currentNode.key === 'args' || isArrayItemsNode(currentNode)}
                         value={currentNode.label}
                         placeholder="请输入参数名称"
                         onChange={data => {
-                          if (currentNode.key !== '') {
+                          if (currentNode.key !== '' && !isArrayItemsNode(currentNode)) {
                             currentNode.label = data;
                             changeNodeInfo(currentNode);
                           }
@@ -1564,33 +1585,36 @@ const CreateTools = React.forwardRef((props, ref) => {
                   </Col>
                 </Row>
 
-                <Row>
-                  <Col span={24}>
-                    <Form.Item
-                      label={locale.toolParamDescription}
-                      name="args.description"
-                      asterisk={false}
-                      style={{ marginBottom: '20px' }}
-                    >
-                      <Input.TextArea
-                        size="large"
-                        style={{ borderRadius: '6px', minHeight: '80px' }}
-                        disabled={currentNode.key === 'args'}
-                        value={currentNode.description}
-                        placeholder="请输入参数描述信息"
-                        onChange={data => {
-                          if (currentNode.key !== '') {
-                            currentNode.description = data;
-                            if (currentNode.arg) {
-                              currentNode.arg.description = data;
+                {/* items 节点不需要描述，隐藏描述编辑 */}
+                {!isArrayItemsNode(currentNode) && (
+                  <Row>
+                    <Col span={24}>
+                      <Form.Item
+                        label={locale.toolParamDescription}
+                        name="args.description"
+                        asterisk={false}
+                        style={{ marginBottom: '20px' }}
+                      >
+                        <Input.TextArea
+                          size="large"
+                          style={{ borderRadius: '6px', minHeight: '80px' }}
+                          disabled={currentNode.key === 'args'}
+                          value={currentNode.description}
+                          placeholder="请输入参数描述信息"
+                          onChange={data => {
+                            if (currentNode.key !== '') {
+                              currentNode.description = data;
+                              if (currentNode.arg) {
+                                currentNode.arg.description = data;
+                              }
+                              changeNodeInfo(currentNode);
                             }
-                            changeNodeInfo(currentNode);
-                          }
-                        }}
-                      />
-                    </Form.Item>
-                  </Col>
-                </Row>
+                          }}
+                        />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                )}
 
                 {/* 是否必填 - 仅对根级参数（args 的直接子节点）展示 */}
                 {currentNode.key && currentNode.key.split('@@').length === 2 && (
@@ -1627,11 +1651,12 @@ const CreateTools = React.forwardRef((props, ref) => {
                   </Row>
                 )}
 
-                {/* 默认值输入 - 仅对非 object 和 array 类型显示 */}
+                {/* 默认值输入 - 仅对非 object/array 且非 items 节点显示 */}
                 {currentNode.type &&
                   currentNode.type !== 'object' &&
                   currentNode.type !== 'array' &&
-                  currentNode.key !== 'args' && (
+                  currentNode.key !== 'args' &&
+                  !isArrayItemsNode(currentNode) && (
                     <Row>
                       <Col span={24}>
                         <Form.Item
@@ -1667,7 +1692,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                                 { label: 'false', value: 'false' },
                               ]}
                               onChange={data => {
-                                if (currentNode.key !== '') {
+                                if (currentNode.key !== '' && !isArrayItemsNode(currentNode)) {
                                   currentNode.defaultValue = data || '';
                                   if (currentNode.arg) {
                                     if (data) {
@@ -1691,7 +1716,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                                   : '请输入默认值'
                               }
                               onChange={data => {
-                                if (currentNode.key !== '') {
+                                if (currentNode.key !== '' && !isArrayItemsNode(currentNode)) {
                                   currentNode.defaultValue = data;
                                   if (currentNode.arg) {
                                     if (data && data.trim()) {
