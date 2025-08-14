@@ -47,7 +47,7 @@ public class A2aProxy {
     }
     
     public AgentCardVersionInfo getAgentCard(AgentForm form) throws NacosException {
-        return a2aHandler.getAgentCard(form);
+        return a2aHandler.getAgentCardWithVersions(form);
     }
     
     public void deleteAgent(AgentForm form) throws NacosException {

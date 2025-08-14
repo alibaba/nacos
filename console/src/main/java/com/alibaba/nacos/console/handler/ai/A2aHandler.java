@@ -42,13 +42,13 @@ public interface A2aHandler {
     void registerAgent(AgentDetailForm form) throws NacosException;
     
     /**
-     * Get agent card.
+     * Get agent card with versions.
      *
      * @param form agent form
      * @return agent card
      * @throws NacosException nacos exception
      */
-    AgentCardVersionInfo getAgentCard(AgentForm form) throws NacosException;
+    AgentCardVersionInfo getAgentCardWithVersions(AgentForm form) throws NacosException;
     
     /**
      * Delete agent.
