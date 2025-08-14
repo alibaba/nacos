@@ -20,6 +20,11 @@ package com.alibaba.nacos.ai.form.a2a.admin;
 import java.io.Serial;
 import java.util.Objects;
 
+/**
+ * Agent update form.
+ *
+ * @author KiteSoar
+ */
 public class AgentUpdateForm extends AgentDetailForm {
     
     @Serial

@@ -26,15 +26,53 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.core.model.form.PageForm;
 
+/**
+ * A2a handler.
+ *
+ * @author KiteSoar
+ */
 public interface A2aHandler {
     
+    /**
+     * Register agent.
+     *
+     * @param form agent detail form
+     * @throws NacosException nacos exception
+     */
     void registerAgent(AgentDetailForm form) throws NacosException;
     
-    AgentCardVersionInfo getAgentCard(AgentForm form);
+    /**
+     * Get agent card.
+     *
+     * @param form agent form
+     * @return agent card
+     * @throws NacosException nacos exception
+     */
+    AgentCardVersionInfo getAgentCard(AgentForm form) throws NacosException;
     
-    void deleteAgent(AgentForm form);
+    /**
+     * Delete agent.
+     *
+     * @param form agent form
+     * @throws NacosException nacos exception
+     */
+    void deleteAgent(AgentForm form) throws NacosException;
     
+    /**
+     * Update agent card.
+     *
+     * @param form agent update form
+     * @throws NacosException nacos exception
+     */
     void updateAgentCard(AgentUpdateForm form) throws NacosException;
 
+    /**
+     * List agents.
+     *
+     * @param agentListForm agent list form
+     * @param pageForm page form
+     * @return agent card list
+     * @throws NacosException nacos exception
+     */
     Page<AgentCardVersionInfo> listAgents(AgentListForm agentListForm, PageForm pageForm);
 }

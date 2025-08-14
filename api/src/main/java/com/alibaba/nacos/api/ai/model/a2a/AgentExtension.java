@@ -20,6 +20,11 @@ package com.alibaba.nacos.api.ai.model.a2a;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * AgentExtension.
+ *
+ * @author KiteSoar
+ */
 public class AgentExtension {
     
     private String uri;

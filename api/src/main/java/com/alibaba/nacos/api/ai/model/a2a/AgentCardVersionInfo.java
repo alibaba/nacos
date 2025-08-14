@@ -20,6 +20,11 @@ package com.alibaba.nacos.api.ai.model.a2a;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * AgentCardVersionInfo.
+ *
+ * @author KiteSoar
+ */
 public class AgentCardVersionInfo extends AgentCard {
     
     private String latestPublishedVersion;

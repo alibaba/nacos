@@ -24,6 +24,11 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import java.io.Serial;
 import java.util.Objects;
 
+/**
+ * Agent list form.
+ *
+ * @author KiteSoar
+ */
 public class AgentListForm extends AgentForm {
     
     @Serial

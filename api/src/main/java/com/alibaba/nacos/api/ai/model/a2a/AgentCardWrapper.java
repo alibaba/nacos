@@ -17,34 +17,41 @@
 
 package com.alibaba.nacos.api.ai.model.a2a;
 
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
+
 import java.util.Objects;
 
 /**
- * AgentAuthentication.
+ * AgentCardWrapper.
  *
  * @author KiteSoar
  */
-public class AgentAuthentication {
+public class AgentCardWrapper {
     
-    private List<String> schemes;
+    @JsonUnwrapped
+    private AgentCard agentCard;
     
-    private String credentials;
+    private String namespaceId;
     
-    public List<String> getSchemes() {
-        return schemes;
+    public AgentCardWrapper(AgentCard agentCard, String namespaceId) {
+        this.agentCard = agentCard;
+        this.namespaceId = namespaceId;
     }
     
-    public void setSchemes(List<String> schemes) {
-        this.schemes = schemes;
+    public AgentCard getAgentCard() {
+        return agentCard;
     }
     
-    public String getCredentials() {
-        return credentials;
+    public void setAgentCard(AgentCard agentCard) {
+        this.agentCard = agentCard;
     }
     
-    public void setCredentials(String credentials) {
-        this.credentials = credentials;
+    public String getNamespaceId() {
+        return namespaceId;
+    }
+    
+    public void setNamespaceId(String namespaceId) {
+        this.namespaceId = namespaceId;
     }
     
     @Override
@@ -52,12 +59,12 @@ public class AgentAuthentication {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        AgentAuthentication that = (AgentAuthentication) o;
-        return Objects.equals(schemes, that.schemes) && Objects.equals(credentials, that.credentials);
+        AgentCardWrapper that = (AgentCardWrapper) o;
+        return Objects.equals(agentCard, that.agentCard) && Objects.equals(namespaceId, that.namespaceId);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(schemes, credentials);
+        return Objects.hash(agentCard, namespaceId);
     }
 }

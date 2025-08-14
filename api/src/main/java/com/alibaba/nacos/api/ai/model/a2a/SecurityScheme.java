@@ -17,6 +17,12 @@
 
 package com.alibaba.nacos.api.ai.model.a2a;
 
+/**
+ * SecurityScheme.
+ *
+ * @author KiteSoar
+ */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class SecurityScheme {
 
 }

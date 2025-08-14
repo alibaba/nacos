@@ -21,6 +21,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * AgentCard.
+ *
+ * @author KiteSoar
+ */
 public class AgentCard {
     
     private String protocolVersion;

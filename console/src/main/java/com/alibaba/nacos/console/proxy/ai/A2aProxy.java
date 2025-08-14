@@ -28,6 +28,11 @@ import com.alibaba.nacos.console.handler.ai.A2aHandler;
 import com.alibaba.nacos.core.model.form.PageForm;
 import org.springframework.stereotype.Component;
 
+/**
+ * A2a proxy.
+ *
+ * @author KiteSoar
+ */
 @Component
 public class A2aProxy {
     
@@ -41,11 +46,11 @@ public class A2aProxy {
         a2aHandler.registerAgent(form);
     }
     
-    public AgentCardVersionInfo getAgentCard(AgentForm form) {
+    public AgentCardVersionInfo getAgentCard(AgentForm form) throws NacosException {
         return a2aHandler.getAgentCard(form);
     }
     
-    public void deleteAgent(AgentForm form) {
+    public void deleteAgent(AgentForm form) throws NacosException {
         a2aHandler.deleteAgent(form);
     }
     

@@ -20,6 +20,11 @@ package com.alibaba.nacos.api.ai.model.a2a;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * AgentSkill.
+ *
+ * @author KiteSoar
+ */
 public class AgentSkill {
     
     private String id;
