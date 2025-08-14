@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Button, Card, Dialog, Form, Grid, Input, Message, Tree, Upload } from '@alifd/next';
+import { Button, Card, Dialog, Form, Grid, Icon, Input, Message, Tree, Upload } from '@alifd/next';
 import CreateTools from './CreateTools';
 import DeleteTool from './CreateTools/DeleteTool';
 import { getParams, request } from '../../../globalLib';
@@ -274,6 +274,7 @@ const ShowTools = props => {
 
   const handleFileChange = fileList => {
     if (fileList && fileList.length > 0) {
+      fileList[0].state = 'success';
       setFile(fileList[0].originFileObj || fileList[0].file);
     }
   };
@@ -335,7 +336,7 @@ const ShowTools = props => {
       Message.success(locale.importSuccess);
       setOpenApiDialogVisible(false);
     } catch (error) {
-      Message.error(error.message || locale.fileInvalidFormat);
+      Message.error(locale.fileInvalidFormat + ': ' + error.message);
       console.error('导入失败:', error);
     }
   };
@@ -1549,25 +1550,27 @@ const ShowTools = props => {
         <Form>
           <Form.Item label={locale.selectOpenAPIFile}>
             <Upload
-              listType="picture-card"
+              listType="text"
               accept=".json,.yaml,.yml"
               onChange={handleFileChange}
+              limit={1}
+              reUpload={true}
               beforeUpload={() => false} // 禁止自动上传
               dragable
               style={{
                 border: '2px dashed #ccc',
                 borderRadius: '8px',
                 padding: '20px',
-                backgroundColor: '#f9f9f9',
                 transition: 'all 0.3s ease',
                 textAlign: 'center',
                 width: '100%',
               }}
             >
+              <p className="next-upload-drag-icon">
+                <Icon type="upload" />
+              </p>
               <div style={{ padding: '20px', textAlign: 'center' }}>
-                <p style={{ color: '#595959', fontSize: '14px' }}>
-                  {locale.dragAndDropFileHereOrClickToSelect}
-                </p>
+                <p style={{ fontSize: '14px' }}>{locale.dragAndDropFileHereOrClickToSelect}</p>
               </div>
             </Upload>
           </Form.Item>
