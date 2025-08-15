@@ -78,6 +78,7 @@ public class HistoryController {
         pageNo = null == pageNo ? 1 : pageNo;
         pageSize = null == pageSize ? 100 : pageSize;
         pageSize = Math.min(500, pageSize);
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         // configInfoBase has no appName field.
         return historyService.listConfigHistory(dataId, group, tenant, pageNo, pageSize);
     }
@@ -98,6 +99,7 @@ public class HistoryController {
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam("nid") Long nid) throws AccessException {
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         return historyService.getConfigHistoryInfo(dataId, group, tenant, nid);
     }
 
@@ -118,6 +120,7 @@ public class HistoryController {
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam("id") Long id) throws AccessException {
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         return historyService.getPreviousConfigHistoryInfo(dataId, group, tenant, id);
     }
     
