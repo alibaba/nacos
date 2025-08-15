@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.service.repository.extrnal;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.constant.Symbols;
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -33,7 +34,6 @@ import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
-import com.alibaba.nacos.config.server.service.sql.ExternalStorageUtils;
 import com.alibaba.nacos.config.server.utils.ConfigExtInfoUtil;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
@@ -63,7 +63,6 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
@@ -145,7 +144,8 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             final Map<String, Object> configAdvanceInfo) {
         return tjt.execute(status -> {
             try {
-                long configId = addConfigInfoAtomic(-1, srcIp, srcUser, configInfo, configAdvanceInfo);
+                addConfigInfoAtomic(-1, srcIp, srcUser, configInfo, configAdvanceInfo);
+                long configId = getConfigInfoId(configInfo);
                 String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
                 addConfigTagsRelation(configId, configTags, configInfo.getDataId(), configInfo.getGroup(),
                         configInfo.getTenant());
@@ -218,26 +218,40 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     @Override
     public long addConfigInfoAtomic(final long configId, final String srcIp, final String srcUser,
             final ConfigInfo configInfo, Map<String, Object> configAdvanceInfo) {
-        
-        KeyHolder keyHolder = ExternalStorageUtils.createKeyHolder();
-        
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO);
         try {
             jt.update(
                     connection -> createPsForInsertConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo, connection,
-                            configInfoMapper), keyHolder);
-            Number nu = keyHolder.getKey();
-            if (nu == null) {
-                throw new IllegalArgumentException("insert config_info fail");
-            }
-            return nu.longValue();
+                            configInfoMapper));
+            return -1;
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;
         }
     }
-    
+
+    /**
+     * get config info id by data_id and group_id and tenant_id.
+     *
+     * @param configInfo config info
+     * @return id
+     */
+    private long getConfigInfoId(ConfigInfo configInfo) {
+        ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.CONFIG_INFO);
+
+        String sql = configInfoMapper.select(Collections.singletonList("id"), Arrays.asList("data_id", "group_id", "tenant_id"));
+
+        String tenant = NamespaceUtil.processNamespaceParameter(configInfo.getTenant());
+        Long id = jt.queryForObject(sql, Long.class, configInfo.getDataId(), configInfo.getGroup(), tenant);
+
+        if (id == null) {
+            throw new IllegalArgumentException("get config info id fail");
+        }
+
+        return id;
+    }
+
     PreparedStatement createPsForInsertConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
             Map<String, Object> configAdvanceInfo, Connection connection, ConfigInfoMapper configInfoMapper)
             throws SQLException {
