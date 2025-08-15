@@ -96,11 +96,8 @@ public class CustomEnvironmentPluginManager {
             }
             customValuesMap.putAll(targetPropertyMap);
         }
-        for (Map.Entry<String, Object> entry : customValuesMap.entrySet()) {
-            if (Objects.isNull(entry.getValue())) {
-                customValuesMap.remove(entry.getKey());
-            }
-        }
+        // [issue 13367] fix ConcurrentModificationException
+        customValuesMap.entrySet().removeIf(entry -> Objects.isNull(entry.getValue()));
         return customValuesMap;
     }
 

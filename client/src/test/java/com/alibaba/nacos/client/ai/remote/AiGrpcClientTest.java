@@ -165,7 +165,7 @@ class AiGrpcClientTest {
         ReleaseMcpServerResponse response = new ReleaseMcpServerResponse();
         response.setMcpId(id);
         when(rpcClient.request(any(ReleaseMcpServerRequest.class))).thenReturn(response);
-        assertEquals(id, aiGrpcClient.releaseMcpServer(serverSpec, new McpToolSpecification()));
+        assertEquals(id, aiGrpcClient.releaseMcpServer(serverSpec, new McpToolSpecification(), null));
     }
     
     @Test
@@ -200,9 +200,9 @@ class AiGrpcClientTest {
         QueryMcpServerResponse response = new QueryMcpServerResponse();
         response.setMcpServerDetailInfo(mcpServerDetailInfo);
         when(rpcClient.request(any(QueryMcpServerRequest.class))).thenReturn(response);
-        assertEquals(mcpServerDetailInfo, aiGrpcClient.subscribeMcpServer("test"));
+        assertEquals(mcpServerDetailInfo, aiGrpcClient.subscribeMcpServer("test", null));
         verify(mcpServerCacheHolder).processMcpServerDetailInfo(mcpServerDetailInfo);
-        verify(mcpServerCacheHolder).addMcpServerUpdateTask("test");
+        verify(mcpServerCacheHolder).addMcpServerUpdateTask("test", null);
     }
     
     @Test
@@ -211,18 +211,18 @@ class AiGrpcClientTest {
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_REGISTRY)).thenReturn(AbilityStatus.SUPPORTED);
         McpServerDetailInfo mcpServerDetailInfo = new McpServerDetailInfo();
         when(mcpServerCacheHolder.getMcpServer("test", null)).thenReturn(mcpServerDetailInfo);
-        assertEquals(mcpServerDetailInfo, aiGrpcClient.subscribeMcpServer("test"));
+        assertEquals(mcpServerDetailInfo, aiGrpcClient.subscribeMcpServer("test", null));
         verify(rpcClient, never()).request(any(QueryMcpServerRequest.class));
         verify(mcpServerCacheHolder, never()).processMcpServerDetailInfo(mcpServerDetailInfo);
-        verify(mcpServerCacheHolder, never()).addMcpServerUpdateTask("test");
+        verify(mcpServerCacheHolder, never()).addMcpServerUpdateTask("test", null);
     }
     
     @Test
     void unsubscribeMcpServer() throws NoSuchFieldException, IllegalAccessException, NacosException {
         injectMock();
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_REGISTRY)).thenReturn(AbilityStatus.SUPPORTED);
-        aiGrpcClient.unsubscribeMcpServer("test");
-        verify(mcpServerCacheHolder).removeMcpServerUpdateTask("test");
+        aiGrpcClient.unsubscribeMcpServer("test", null);
+        verify(mcpServerCacheHolder).removeMcpServerUpdateTask("test", null);
     }
     
     @Test
@@ -240,7 +240,7 @@ class AiGrpcClientTest {
         serverSpec.setName("test");
         serverSpec.setVersionDetail(new ServerVersionDetail());
         serverSpec.getVersionDetail().setVersion("1.0.0");
-        assertThrows(NacosRuntimeException.class, () -> aiGrpcClient.releaseMcpServer(serverSpec, null));
+        assertThrows(NacosRuntimeException.class, () -> aiGrpcClient.releaseMcpServer(serverSpec, null, null));
     }
     
     @Test
@@ -263,14 +263,14 @@ class AiGrpcClientTest {
     void subscribeMcpServerWithFeatureDisabled() throws NoSuchFieldException, IllegalAccessException {
         injectMock();
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_REGISTRY)).thenReturn(AbilityStatus.NOT_SUPPORTED);
-        assertThrows(NacosRuntimeException.class, () -> aiGrpcClient.subscribeMcpServer("test"));
+        assertThrows(NacosRuntimeException.class, () -> aiGrpcClient.subscribeMcpServer("test", null));
     }
     
     @Test
     void unsubscribeMcpServerWithFeatureDisabled() throws NoSuchFieldException, IllegalAccessException {
         injectMock();
         when(rpcClient.getConnectionAbility(AbilityKey.SERVER_MCP_REGISTRY)).thenReturn(AbilityStatus.NOT_SUPPORTED);
-        assertThrows(NacosRuntimeException.class, () -> aiGrpcClient.unsubscribeMcpServer("test"));
+        assertThrows(NacosRuntimeException.class, () -> aiGrpcClient.unsubscribeMcpServer("test", null));
     }
     
     @Test

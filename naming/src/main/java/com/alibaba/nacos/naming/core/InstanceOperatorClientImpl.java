@@ -62,6 +62,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Instance service.
@@ -144,8 +145,13 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
         InstanceMetadata result = new InstanceMetadata();
         result.setEnabled(instance.isEnabled());
         result.setWeight(instance.getWeight());
-        result.getExtendData().putAll(instance.getMetadata());
+        result.getExtendData().putAll(filterNullValue(instance.getMetadata()));
         return result;
+    }
+    
+    private Map<String, String> filterNullValue(Map<String, String> metadata) {
+        return metadata.entrySet().stream().filter(entry -> entry.getValue() != null)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
     
     @Override

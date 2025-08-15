@@ -23,7 +23,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.remote.request.QueryMcpServerRequest;
 import com.alibaba.nacos.api.ai.remote.response.QueryMcpServerResponse;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.remote.response.ResponseCode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,7 +34,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -58,18 +57,22 @@ class QueryMcpServerRequestHandlerTest {
     }
     
     @Test
-    void handleWithInvalidParam() {
+    void handleWithInvalidParam() throws NacosException {
         QueryMcpServerRequest request = new QueryMcpServerRequest();
-        assertThrows(NacosApiException.class, () -> requestHandler.handle(request, null),
-                "parameters `mcpName` can't be empty or null");
+        QueryMcpServerResponse response = requestHandler.handle(request, null);
+        assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
+        assertEquals(NacosException.INVALID_PARAM, response.getErrorCode());
+        assertEquals("parameters `mcpName` can't be empty or null", response.getMessage());
     }
     
     @Test
-    void handleMcpServerNotFound() {
+    void handleMcpServerNotFound() throws NacosException {
         QueryMcpServerRequest request = new QueryMcpServerRequest();
         request.setMcpName("test");
-        assertThrows(NacosApiException.class, () -> requestHandler.handle(request, null),
-                "MCP server `test` not found in namespaceId: `public`");
+        QueryMcpServerResponse response = requestHandler.handle(request, null);
+        assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
+        assertEquals(NacosException.NOT_FOUND, response.getErrorCode());
+        assertEquals("MCP server `test` not found in namespaceId: `public`", response.getMessage());
     }
     
     @Test

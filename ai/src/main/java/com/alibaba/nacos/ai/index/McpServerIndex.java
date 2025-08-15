@@ -55,4 +55,19 @@ public interface McpServerIndex {
      * @return {@link McpServerIndexData}
      */
     McpServerIndexData getMcpServerByName(String namespaceId, String name);
+    
+    /**
+     * Remove cache entry by namespace ID and MCP server name.
+     *
+     * @param namespaceId namespace ID
+     * @param mcpName     MCP server name
+     */
+    void removeMcpServerByName(String namespaceId, String mcpName);
+    
+    /**
+     * Remove cache entry by MCP server ID.
+     *
+     * @param mcpId MCP server ID
+     */
+    void removeMcpServerById(String mcpId);
 }

@@ -31,7 +31,6 @@ class ServerReloadRequestTest extends BasicRequestTest {
         request.setReloadServer("1.1.1.1");
         request.setRequestId("1");
         String json = mapper.writeValueAsString(request);
-        System.out.println(json);
         assertNotNull(json);
         assertTrue(json.contains("\"reloadCount\":10"));
         assertTrue(json.contains("\"reloadServer\":\"1.1.1.1\""));

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.ai;
 
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
+import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
@@ -64,8 +65,28 @@ public interface AiService {
      * @return mcp id
      * @throws NacosException if request parameter is invalid or handle error
      */
-    String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification)
-            throws NacosException;
+    default String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification)
+            throws NacosException {
+        return releaseMcpServer(serverSpecification, toolSpecification, null);
+    }
+    
+    /**
+     * Release new mcp server or release new version of exist mcp server request.
+     *
+     * <p>
+     *     If mcp server is not exist, will create an new mcp server with parameter specification.
+     *     If mcp server is exist, but version in specification is new one, request will create a new version of mcp server.
+     *     If mcp server is exist, and version in specification is exist, request will do nothing.
+     * </p>
+     *
+     * @param serverSpecification mcp server specification
+     * @param toolSpecification   mcp server tool specification
+     * @param endpointSpecification mcp server endpoint specification, optional, if null, will create ref service auto.
+     * @return mcp id
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
+            McpEndpointSpec endpointSpecification) throws NacosException;
     
     /**
      * Register an endpoint into target mcp server for all version.
@@ -113,7 +134,22 @@ public interface AiService {
      * @return The detail info of mcp server at current time
      * @throws NacosException if request parameter is invalid or handle error
      */
-    McpServerDetailInfo subscribeMcpServer(String mcpName, AbstractNacosMcpServerListener mcpServerListener) throws NacosException;
+    default McpServerDetailInfo subscribeMcpServer(String mcpName, AbstractNacosMcpServerListener mcpServerListener)
+            throws NacosException {
+        return subscribeMcpServer(mcpName, null, mcpServerListener);
+    }
+    
+    /**
+     * Subscribe mcp server.
+     *
+     * @param mcpName           name of mcp server
+     * @param version           version of mcp server
+     * @param mcpServerListener listener of mcp server, callback when mcp server is changed
+     * @return The detail info of mcp server at current time
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    McpServerDetailInfo subscribeMcpServer(String mcpName, String version,
+            AbstractNacosMcpServerListener mcpServerListener) throws NacosException;
     
     /**
      * Un-subscribe mcp server.
@@ -122,7 +158,21 @@ public interface AiService {
      * @param mcpServerListener listener of mcp server
      * @throws NacosException if request parameter is invalid or handle error
      */
-    void unsubscribeMcpServer(String mcpName, AbstractNacosMcpServerListener mcpServerListener) throws NacosException;
+    default void unsubscribeMcpServer(String mcpName, AbstractNacosMcpServerListener mcpServerListener)
+            throws NacosException {
+        unsubscribeMcpServer(mcpName, null, mcpServerListener);
+    }
+    
+    /**
+     * Un-subscribe mcp server.
+     *
+     * @param mcpName           name of mcp server
+     * @param version           version of mcp server
+     * @param mcpServerListener listener of mcp server
+     * @throws NacosException if request parameter is invalid or handle error
+     */
+    void unsubscribeMcpServer(String mcpName, String version, AbstractNacosMcpServerListener mcpServerListener)
+            throws NacosException;
     
     /**
      * Shutdown the AI service and close resources.

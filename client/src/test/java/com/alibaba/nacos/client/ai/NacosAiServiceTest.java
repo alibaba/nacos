@@ -46,6 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -117,7 +118,7 @@ class NacosAiServiceTest {
         serverSpecification.setVersionDetail(new ServerVersionDetail());
         serverSpecification.getVersionDetail().setVersion("1.0.0");
         String id = UUID.randomUUID().toString();
-        when(grpcClient.releaseMcpServer(serverSpecification, null)).thenReturn(id);
+        when(grpcClient.releaseMcpServer(serverSpecification, null, null)).thenReturn(id);
         assertEquals(id, nacosAiService.releaseMcpServer(serverSpecification, null));
     }
     
@@ -169,10 +170,10 @@ class NacosAiServiceTest {
         injectMocks();
         AbstractNacosMcpServerListener listener = Mockito.mock(AbstractNacosMcpServerListener.class);
         McpServerDetailInfo expected = new McpServerDetailInfo();
-        when(grpcClient.subscribeMcpServer("testMcpName")).thenReturn(expected);
+        when(grpcClient.subscribeMcpServer("testMcpName", null)).thenReturn(expected);
         McpServerDetailInfo actual = nacosAiService.subscribeMcpServer("testMcpName", listener);
         assertEquals(expected, actual);
-        verify(mcpServerNotifier).registerListener(eq("testMcpName"), any(McpServerListenerInvoker.class));
+        verify(mcpServerNotifier).registerListener(eq("testMcpName"), isNull(), any(McpServerListenerInvoker.class));
         verify(listener).onEvent(any(NacosMcpServerEvent.class));
     }
     
@@ -187,8 +188,8 @@ class NacosAiServiceTest {
         injectMocks();
         AbstractNacosMcpServerListener listener = Mockito.mock(AbstractNacosMcpServerListener.class);
         nacosAiService.unsubscribeMcpServer("testMcpName", listener);
-        verify(mcpServerNotifier).deregisterListener(eq("testMcpName"), any(McpServerListenerInvoker.class));
-        verify(grpcClient).unsubscribeMcpServer("testMcpName");
+        verify(mcpServerNotifier).deregisterListener(eq("testMcpName"), isNull(), any(McpServerListenerInvoker.class));
+        verify(grpcClient).unsubscribeMcpServer("testMcpName", null);
     }
     
     @Test
@@ -197,16 +198,16 @@ class NacosAiServiceTest {
         when(mcpServerNotifier.isSubscribed("testMcpName")).thenReturn(true);
         AbstractNacosMcpServerListener listener = Mockito.mock(AbstractNacosMcpServerListener.class);
         nacosAiService.unsubscribeMcpServer("testMcpName", listener);
-        verify(mcpServerNotifier).deregisterListener(eq("testMcpName"), any(McpServerListenerInvoker.class));
-        verify(grpcClient, never()).unsubscribeMcpServer("testMcpName");
+        verify(mcpServerNotifier).deregisterListener(eq("testMcpName"), isNull(), any(McpServerListenerInvoker.class));
+        verify(grpcClient, never()).unsubscribeMcpServer("testMcpName", null);
     }
     
     @Test
     void unsubscribeMcpServerWithNullListener() throws NoSuchFieldException, IllegalAccessException, NacosException {
         injectMocks();
         nacosAiService.unsubscribeMcpServer("testMcpName", null);
-        verify(mcpServerNotifier, never()).deregisterListener(eq("testMcpName"), any(McpServerListenerInvoker.class));
-        verify(grpcClient, never()).unsubscribeMcpServer("testMcpName");
+        verify(mcpServerNotifier, never()).deregisterListener(eq("testMcpName"), isNull(), any(McpServerListenerInvoker.class));
+        verify(grpcClient, never()).unsubscribeMcpServer("testMcpName", null);
     }
     
     @Test

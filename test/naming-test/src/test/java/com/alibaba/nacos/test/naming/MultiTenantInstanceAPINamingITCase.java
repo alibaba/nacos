@@ -268,7 +268,6 @@ class MultiTenantInstanceAPINamingITCase {
                 .appendParam("namespaceId", "namespace-2").done(), String.class);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         json = JacksonUtils.toObj(response.getBody());
-        System.out.println(json);
         assertEquals(1, json.get("hosts").size());
     }
     

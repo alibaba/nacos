@@ -23,6 +23,8 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
 import com.alibaba.nacos.console.proxy.HealthProxy;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -62,8 +64,13 @@ public class ConsoleHealthController {
      * ready.
      */
     @GetMapping("/readiness")
-    public Result<String> readiness() throws NacosException {
-        return healthProxy.checkReadiness();
+    public ResponseEntity<Result<String>> readiness() throws NacosException {
+        Result<String> ret = healthProxy.checkReadiness();
+        if (ret.getCode() == 0) {
+            return ResponseEntity.ok().body(ret);
+        } else {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ret);
+        }
     }
     
 }

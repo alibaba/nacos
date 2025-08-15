@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.ai.event;
 
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.client.ai.utils.McpServerUtils;
 import com.alibaba.nacos.common.notify.Event;
 
 /**
@@ -30,15 +31,27 @@ public class McpServerChangedEvent extends Event {
     
     private final String mcpName;
     
+    private final String version;
+    
     private final McpServerDetailInfo mcpServer;
     
-    public McpServerChangedEvent(String mcpName, McpServerDetailInfo mcpServer) {
-        this.mcpName = mcpName;
+    public McpServerChangedEvent(McpServerDetailInfo mcpServer) {
         this.mcpServer = mcpServer;
+        this.mcpName = mcpServer.getName();
+        this.version = buildVersion(mcpServer);
+    }
+    
+    private String buildVersion(McpServerDetailInfo mcpServer) {
+        return mcpServer.getVersionDetail().getIs_latest() ? McpServerUtils.LATEST_VERSION
+                : mcpServer.getVersionDetail().getVersion();
     }
     
     public String getMcpName() {
         return mcpName;
+    }
+    
+    public String getVersion() {
+        return version;
     }
     
     public McpServerDetailInfo getMcpServer() {

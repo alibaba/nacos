@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.ai.remote;
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
@@ -148,8 +149,8 @@ public class AiGrpcClient implements Closeable {
      * @return mcp id
      * @throws NacosException if request parameter is invalid or handle error
      */
-    public String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification)
-            throws NacosException {
+    public String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
+            McpEndpointSpec endpointSpecification) throws NacosException {
         LOGGER.info("[{}] RELEASE Mcp server {}, version {}", uuid, serverSpecification.getName(),
                 serverSpecification.getVersionDetail().getVersion());
         if (!isAbilitySupportedByServer(AbilityKey.SERVER_MCP_REGISTRY)) {
@@ -161,6 +162,7 @@ public class AiGrpcClient implements Closeable {
         request.setMcpName(serverSpecification.getName());
         request.setServerSpecification(serverSpecification);
         request.setToolSpecification(toolSpecification);
+        request.setEndpointSpecification(endpointSpecification);
         ReleaseMcpServerResponse response = requestToServer(request, ReleaseMcpServerResponse.class);
         return response.getMcpId();
     }
@@ -249,19 +251,20 @@ public class AiGrpcClient implements Closeable {
      * Subscribe mcp server latest version.
      *
      * @param mcpName   name of mcp server
+     * @param version   version of mcp server
      * @return latest version mcp server
      * @throws NacosException if request parameter is invalid or handle error
      */
-    public McpServerDetailInfo subscribeMcpServer(String mcpName) throws NacosException {
+    public McpServerDetailInfo subscribeMcpServer(String mcpName, String version) throws NacosException {
         if (!isAbilitySupportedByServer(AbilityKey.SERVER_MCP_REGISTRY)) {
             throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
                     "Request Nacos server version is too low, not support mcp registry feature.");
         }
-        McpServerDetailInfo cachedServer = mcpServerCacheHolder.getMcpServer(mcpName, null);
+        McpServerDetailInfo cachedServer = mcpServerCacheHolder.getMcpServer(mcpName, version);
         if (null == cachedServer) {
-            cachedServer = queryMcpServer(mcpName, null);
+            cachedServer = queryMcpServer(mcpName, version);
             mcpServerCacheHolder.processMcpServerDetailInfo(cachedServer);
-            mcpServerCacheHolder.addMcpServerUpdateTask(mcpName);
+            mcpServerCacheHolder.addMcpServerUpdateTask(mcpName, version);
         }
         return cachedServer;
     }
@@ -270,14 +273,15 @@ public class AiGrpcClient implements Closeable {
      * Un-subscribe mcp server.
      *
      * @param mcpName   name of mcp server
+     * @param version   version of mcp server
      * @throws NacosException if request parameter is invalid or handle error
      */
-    public void unsubscribeMcpServer(String mcpName) throws NacosException {
+    public void unsubscribeMcpServer(String mcpName, String version) throws NacosException {
         if (!isAbilitySupportedByServer(AbilityKey.SERVER_MCP_REGISTRY)) {
             throw new NacosRuntimeException(NacosException.SERVER_NOT_IMPLEMENTED,
                     "Request Nacos server version is too low, not support mcp registry feature.");
         }
-        mcpServerCacheHolder.removeMcpServerUpdateTask(mcpName);
+        mcpServerCacheHolder.removeMcpServerUpdateTask(mcpName, version);
     }
     
     public boolean isEnable() {
@@ -319,8 +323,10 @@ public class AiGrpcClient implements Closeable {
             throw new NacosException(NacosException.SERVER_ERROR,
                     String.format("Server return invalid response: %s", response.getClass().getSimpleName()));
         } catch (NacosException e) {
+            LOGGER.warn("AI request {} execute failed, {}", request.getClass().getSimpleName(), e.getMessage());
             throw e;
         } catch (Exception e) {
+            LOGGER.warn("AI request {} execute failed. ", request.getClass().getSimpleName(), e);
             throw new NacosException(NacosException.SERVER_ERROR, "Request nacos server failed: ", e);
         }
     }

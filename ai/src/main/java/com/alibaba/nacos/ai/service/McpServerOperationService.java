@@ -22,8 +22,9 @@ import com.alibaba.nacos.ai.index.McpServerIndex;
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.ai.model.mcp.McpServerStorageInfo;
 import com.alibaba.nacos.ai.utils.McpConfigUtils;
-import com.alibaba.nacos.ai.utils.McpProtocolUtils;
+import com.alibaba.nacos.ai.utils.McpRequestUtil;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.mcp.FrontEndpointConfig;
 import com.alibaba.nacos.api.ai.model.mcp.McpCapability;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
@@ -37,6 +38,7 @@ import com.alibaba.nacos.api.ai.model.mcp.McpServerVersionInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerValidationItem;
 import com.alibaba.nacos.api.ai.model.mcp.McpServiceRef;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
+import com.alibaba.nacos.api.ai.model.mcp.registry.KeyValueInput;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -45,6 +47,7 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
@@ -55,6 +58,9 @@ import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 
 import java.time.ZoneOffset;
@@ -85,6 +91,8 @@ import static com.alibaba.nacos.ai.utils.McpConfigUtils.buildMcpServerVersionCon
 @org.springframework.stereotype.Service
 public class McpServerOperationService {
     
+    private static final Logger LOGGER = LoggerFactory.getLogger(McpServerOperationService.class);
+
     private final ConfigQueryChainService configQueryChainService;
     
     private final ConfigOperationService configOperationService;
@@ -95,24 +103,28 @@ public class McpServerOperationService {
     
     private final McpServerIndex mcpServerIndex;
     
+    private final McpServerSyncEffectService syncEffectService;
+
     private final McpServerTransformService transformService;
-    
+
     private final McpServerValidationService validationService;
-    
+
     /**
      * Maximum servers per import batch.
      */
     private static final int MAX_IMPORT_BATCH_SIZE = 100;
-    
+
     public McpServerOperationService(ConfigQueryChainService configQueryChainService,
             ConfigOperationService configOperationService, McpToolOperationService toolOperationService,
             McpEndpointOperationService endpointOperationService, McpServerIndex mcpServerIndex,
+            McpServerSyncEffectService syncEffectService,
             McpServerTransformService transformService, McpServerValidationService validationService) {
         this.configQueryChainService = configQueryChainService;
         this.configOperationService = configOperationService;
         this.toolOperationService = toolOperationService;
         this.endpointOperationService = endpointOperationService;
         this.mcpServerIndex = mcpServerIndex;
+        this.syncEffectService = syncEffectService;
         this.transformService = transformService;
         this.validationService = validationService;
     }
@@ -224,7 +236,7 @@ public class McpServerOperationService {
         }
         
         if (!AiConstants.Mcp.MCP_PROTOCOL_STDIO.equalsIgnoreCase(serverSpecification.getProtocol())) {
-            injectBackendEndpointRef(namespaceId, result);
+            injectEndpoint(result);
         }
         return result;
     }
@@ -235,42 +247,92 @@ public class McpServerOperationService {
         ConfigQueryChainResponse response = configQueryChainService.handle(request);
         if (McpConfigUtils.isConfigNotFound(response.getStatus())) {
             throw new NacosApiException(NacosApiException.NOT_FOUND, ErrorCode.MCP_SERVER_NOT_FOUND,
-                     String.format("Mcp server [ID: %s] not found in namespace [%s]. Response: %s",
-                            mcpServerId, namespaceId, response.getMessage()));
+                    String.format("Mcp server [ID: %s] not found in namespace [%s]. Response: %s", mcpServerId,
+                            namespaceId, response.getMessage()));
         }
         
         return JacksonUtils.toObj(response.getContent(), McpServerVersionInfo.class);
     }
     
-    private void injectBackendEndpointRef(String namespaceId, McpServerDetailInfo detailInfo) throws NacosException {
+    private void injectEndpoint(McpServerDetailInfo detailInfo) throws NacosException {
+        injectBackendEndpointRef(detailInfo);
+        injectFrontendEndpointRef(detailInfo);
+    }
+
+    private void injectBackendEndpointRef(McpServerDetailInfo detailInfo) throws NacosException {
         List<Instance> instances;
         
-        // inject translator address to the mcp server.
-        if (McpProtocolUtils.isProtocolNeedTranslator(detailInfo.getProtocol())) {
-            McpServiceRef mcpServiceRef = new McpServiceRef();
-            mcpServiceRef.setServiceName(detailInfo.getName());
-            mcpServiceRef.setGroupName(Constants.MCP_SERVER_PROTOCOL_TRANSLATOR_GROUP);
-            mcpServiceRef.setNamespaceId(namespaceId);
-            instances = endpointOperationService.getMcpServerEndpointInstances(mcpServiceRef);
-        } else {
-            instances = endpointOperationService.getMcpServerEndpointInstances(
-                    detailInfo.getRemoteServerConfig().getServiceRef());
+        instances = endpointOperationService.getMcpServerEndpointInstances(
+                detailInfo.getRemoteServerConfig().getServiceRef());
+
+        String protocol = null;
+        McpServiceRef serviceRef = detailInfo.getRemoteServerConfig().getServiceRef();
+        if (Objects.nonNull(serviceRef)) {
+            protocol = serviceRef.getTransportProtocol();
         }
-        List<McpEndpointInfo> backendEndpoints = new LinkedList<>();
+        List<McpEndpointInfo> backendEndpoints = transferToMcpEndpointInfo(instances,
+                detailInfo.getRemoteServerConfig().getExportPath(),
+                protocol);
+        detailInfo.setBackendEndpoints(backendEndpoints);
+    }
+
+    private List<McpEndpointInfo> transferToMcpEndpointInfoWithHeaders(List<Instance> instances, String exportPath,
+            String protocol, List<KeyValueInput> headers) {
+        List<McpEndpointInfo> endpointInfos = new LinkedList<>();
         for (Instance each : instances) {
             McpEndpointInfo mcpEndpointInfo = new McpEndpointInfo();
             mcpEndpointInfo.setAddress(each.getIp());
             mcpEndpointInfo.setPort(each.getPort());
-            String exportPath = detailInfo.getRemoteServerConfig().getExportPath();
-            if (Constants.PROTOCOL_TYPE_HTTP.equals(detailInfo.getProtocol())) {
-                exportPath = each.getMetadata().get(Constants.META_PATH);
-            }
+            mcpEndpointInfo.setProtocol(protocol);
+            mcpEndpointInfo.setHeaders(headers);
             mcpEndpointInfo.setPath(exportPath);
-            backendEndpoints.add(mcpEndpointInfo);
+            endpointInfos.add(mcpEndpointInfo);
         }
-        detailInfo.setBackendEndpoints(backendEndpoints);
+        return endpointInfos;
     }
-    
+
+    private List<McpEndpointInfo> transferToMcpEndpointInfo(List<Instance> instances, String exportPath,
+            String protocol) {
+        return transferToMcpEndpointInfoWithHeaders(instances, exportPath, protocol, null);
+    }
+
+    private void injectFrontendEndpointRef(McpServerDetailInfo detailInfo) throws NacosException {
+        List<FrontEndpointConfig> frontEndpointConfigs = detailInfo.getRemoteServerConfig()
+                .getFrontEndpointConfigList();
+        if (CollectionUtils.isEmpty(frontEndpointConfigs)) {
+            detailInfo.setFrontendEndpoints(Collections.emptyList());
+            return;
+        }
+        List<McpEndpointInfo> frontendEndpoints = new LinkedList<>();
+        for (FrontEndpointConfig each : frontEndpointConfigs) {
+            if (AiConstants.Mcp.MCP_ENDPOINT_TYPE_REF.equals(each.getEndpointType())) {
+                McpServiceRef mcpServiceRef = McpRequestUtil.transferToMcpServiceRef(each.getEndpointData());
+                List<Instance> instances = endpointOperationService.getMcpServerEndpointInstances(mcpServiceRef);
+                List<McpEndpointInfo> endpointInfos = transferToMcpEndpointInfoWithHeaders(instances, each.getPath(),
+                        each.getProtocol(), each.getHeaders());
+                frontendEndpoints.addAll(endpointInfos);
+            } else if (AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT.equals(each.getEndpointType())) {
+                McpEndpointInfo endpointInfo = new McpEndpointInfo();
+                endpointInfo.setPath(each.getPath());
+                endpointInfo.setProtocol(each.getProtocol());
+                endpointInfo.setHeaders(each.getHeaders());
+                String address = each.getEndpointData().toString();
+                if (InternetAddressUtil.containsPort(address)) {
+                    String[] info = InternetAddressUtil.splitIpPortStr(address);
+                    endpointInfo.setAddress(info[0]);
+                    endpointInfo.setPort(Integer.parseInt(info[1]));
+                } else {
+                    endpointInfo.setAddress(address);
+                    endpointInfo.setPort(Constants.PROTOCOL_TYPE_HTTP.equals(each.getProtocol()) ? 80 : 443);
+                }
+                frontendEndpoints.add(endpointInfo);
+            } else {
+                frontendEndpoints.addAll(detailInfo.getBackendEndpoints());
+            }
+            detailInfo.setFrontendEndpoints(frontendEndpoints);
+        }
+    }
+
     /**
      * Create new mcp server.
      *
@@ -338,7 +400,13 @@ public class McpServerOperationService {
         configOperationService.publishConfig(mcpServerVersionForm, configRequestInfo, null);
         
         ConfigForm configForm = buildMcpConfigForm(namespaceId, id, versionDetail.getVersion(), newSpecification);
+        long startOperationTime = System.currentTimeMillis();
         configOperationService.publishConfig(configForm, configRequestInfo, null);
+        syncEffectService.toSync(configForm, startOperationTime);
+
+        // Delete the relevant cache after a successful database operation
+        invalidateCacheAfterDbOperation(namespaceId, serverSpecification.getName(), id);
+
         return id;
     }
     
@@ -434,7 +502,13 @@ public class McpServerOperationService {
         }
         
         ConfigFormV3 mcpServerVersionForm = buildMcpServerVersionForm(namespaceId, mcpServerVersionInfo);
+        long startOperationTime = System.currentTimeMillis();
         configOperationService.publishConfig(mcpServerVersionForm, new ConfigRequestInfo(), null);
+        syncEffectService.toSync(mcpServerVersionForm, startOperationTime);
+
+        // Delete the relevant cache after a successful database operation
+        invalidateCacheAfterDbUpdateOperation(namespaceId, mcpServerVersionInfo.getName(),
+                serverSpecification.getName(), mcpServerId);
     }
     
     /**
@@ -466,13 +540,19 @@ public class McpServerOperationService {
             configOperationService.deleteConfig(serverVersionDataId, Constants.MCP_SERVER_VERSIONS_GROUP, namespaceId,
                     null, null, "nacos", null);
         }
+
+        // Delete the relevant cache after a successful database operation
+        invalidateCacheAfterDbOperation(namespaceId, mcpName, mcpServerId);
     }
     
     private void injectToolAndEndpoint(String namespaceId, String mcpServerId, McpServerStorageInfo serverSpecification,
             McpToolSpecification toolSpecification, McpEndpointSpec endpointSpecification) throws NacosException {
         serverSpecification.setCapabilities(new LinkedList<>());
-        if (null != toolSpecification && null != toolSpecification.getTools() && !toolSpecification.getTools()
-                .isEmpty()) {
+        boolean hasToolSpec = toolSpecification != null;
+        boolean hasTools = hasToolSpec && toolSpecification.getTools() != null;
+        boolean hasSecuritySchemes = hasToolSpec && toolSpecification.getSecuritySchemes() != null;
+        boolean shouldCreateToolConfig = hasToolSpec && (hasTools || hasSecuritySchemes);
+        if (shouldCreateToolConfig) {
             toolOperationService.refreshMcpTool(namespaceId, serverSpecification, toolSpecification);
             serverSpecification.getCapabilities().add(McpCapability.TOOL);
             String version = serverSpecification.getVersionDetail().getVersion();
@@ -481,11 +561,13 @@ public class McpServerOperationService {
         }
         if (null != endpointSpecification) {
             Service service = endpointOperationService.createMcpServerEndpointServiceIfNecessary(namespaceId,
-                    serverSpecification.getName(), endpointSpecification);
+                    serverSpecification.getName(), serverSpecification.getVersionDetail().getVersion(), endpointSpecification);
+            String transportProtocol = endpointSpecification.getData().get(Constants.MCP_BACKEND_ISTANCE_PROTOCOL_KEY);
             McpServiceRef serviceRef = new McpServiceRef();
             serviceRef.setNamespaceId(service.getNamespace());
             serviceRef.setGroupName(service.getGroup());
             serviceRef.setServiceName(service.getName());
+            serviceRef.setTransportProtocol(transportProtocol);
             serverSpecification.getRemoteServerConfig().setServiceRef(serviceRef);
         }
     }
@@ -564,7 +646,59 @@ public class McpServerOperationService {
         
         return null;
     }
-    
+
+    /**
+     * Invalidate cache after update mcp server operation.
+     *
+     * @param namespaceId namespace id of mcp server
+     * @param oldMcpName  old mcp server name
+     * @param newMcpName  new mcp server name
+     * @param mcpServerId mcp server id
+     */
+    private void invalidateCacheAfterDbUpdateOperation(String namespaceId, String oldMcpName, String newMcpName,
+            String mcpServerId) {
+        try {
+            if (StringUtils.isNotEmpty(oldMcpName) && !oldMcpName.equals(newMcpName)) {
+                mcpServerIndex.removeMcpServerByName(namespaceId, oldMcpName);
+            }
+            if (StringUtils.isNotEmpty(newMcpName)) {
+                mcpServerIndex.removeMcpServerByName(namespaceId, newMcpName);
+            }
+            if (StringUtils.isNotEmpty(mcpServerId)) {
+                mcpServerIndex.removeMcpServerById(mcpServerId);
+            }
+            LOGGER.debug("Cache invalidated after updateMcpServer: namespaceId={}, oldName={}, newName={}, id={}",
+                    namespaceId, oldMcpName, newMcpName, mcpServerId);
+        } catch (Exception e) {
+            LOGGER.warn(
+                    "Failed to invalidate cache after updateMcpServer: namespaceId={}, oldName={}, newName={}, id={}, error={}",
+                    namespaceId, oldMcpName, newMcpName, mcpServerId, e.getMessage());
+        }
+    }
+
+    /**
+     * Unified cache invalidation method.
+     *
+     * @param namespaceId namespace ID
+     * @param mcpName     MCP server name
+     * @param mcpServerId MCP server ID
+     */
+    private void invalidateCacheAfterDbOperation(String namespaceId, String mcpName, String mcpServerId) {
+        try {
+            if (StringUtils.isNotEmpty(mcpName)) {
+                mcpServerIndex.removeMcpServerByName(namespaceId, mcpName);
+            }
+            if (StringUtils.isNotEmpty(mcpServerId)) {
+                mcpServerIndex.removeMcpServerById(mcpServerId);
+            }
+            LOGGER.debug("Cache invalidated after DB operation: namespaceId={}, mcpName={}, mcpId={}", namespaceId,
+                    mcpName, mcpServerId);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to invalidate cache after DB operation: namespaceId={}, mcpName={}, mcpId={}, error={}",
+                    namespaceId, mcpName, mcpServerId, e.getMessage());
+        }
+    }
+
     /**
      * Validate servers for import.
      *
@@ -573,12 +707,12 @@ public class McpServerOperationService {
      * @return validation result
      * @throws NacosException if validation fails
      */
-    public McpServerImportValidationResult validateImport(String namespaceId, McpServerImportRequest request) 
+    public McpServerImportValidationResult validateImport(String namespaceId, McpServerImportRequest request)
             throws NacosException {
         try {
             List<McpServerDetailInfo> servers = transformService.transformToNacosFormat(
                     request.getData(), request.getImportType());
-            
+
             if (servers.size() > MAX_IMPORT_BATCH_SIZE) {
                 McpServerImportValidationResult result = new McpServerImportValidationResult();
                 result.setValid(false);
@@ -588,9 +722,9 @@ public class McpServerOperationService {
                 result.setErrors(errors);
                 return result;
             }
-            
+
             return validationService.validateServers(namespaceId, servers);
-            
+
         } catch (Exception e) {
             McpServerImportValidationResult result = new McpServerImportValidationResult();
             result.setValid(false);
@@ -600,7 +734,7 @@ public class McpServerOperationService {
             return result;
         }
     }
-    
+
     /**
      * Execute import of MCP servers.
      *
@@ -609,11 +743,11 @@ public class McpServerOperationService {
      * @return import response
      * @throws NacosException if import fails
      */
-    public McpServerImportResponse executeImport(String namespaceId, McpServerImportRequest request) 
+    public McpServerImportResponse executeImport(String namespaceId, McpServerImportRequest request)
             throws NacosException {
         McpServerImportResponse response = new McpServerImportResponse();
         List<McpServerImportResult> results = new ArrayList<>();
-        
+
         try {
             McpServerImportValidationResult validationResult = validateImport(namespaceId, request);
             if (!validationResult.isValid()) {
@@ -621,18 +755,18 @@ public class McpServerOperationService {
                 response.setErrorMessage("Import validation failed: " + String.join(", ", validationResult.getErrors()));
                 return response;
             }
-            
+
             List<McpServerValidationItem> serversToImport = filterSelectedServers(
                     validationResult.getServers(), request.getSelectedServers());
-            
+
             int successCount = 0;
             int failedCount = 0;
             int skippedCount = 0;
-            
+
             for (McpServerValidationItem item : serversToImport) {
                 McpServerImportResult result = importSingleServer(namespaceId, item, request.isOverrideExisting());
                 results.add(result);
-                
+
                 switch (result.getStatus()) {
                     case "success":
                         successCount++;
@@ -647,23 +781,23 @@ public class McpServerOperationService {
                         break;
                 }
             }
-            
+
             response.setSuccess(failedCount == 0);
             response.setTotalCount(serversToImport.size());
             response.setSuccessCount(successCount);
             response.setFailedCount(failedCount);
             response.setSkippedCount(skippedCount);
             response.setResults(results);
-            
+
         } catch (Exception e) {
             log.error("Import execution failed", e);
             response.setSuccess(false);
             response.setErrorMessage("Import execution failed: " + e.getMessage());
         }
-        
+
         return response;
     }
-    
+
     /**
      * Filter selected servers for import.
      *
@@ -671,20 +805,20 @@ public class McpServerOperationService {
      * @param selectedServers selected server IDs
      * @return filtered servers
      */
-    private List<McpServerValidationItem> filterSelectedServers(List<McpServerValidationItem> validationItems, 
+    private List<McpServerValidationItem> filterSelectedServers(List<McpServerValidationItem> validationItems,
             String[] selectedServers) {
         if (selectedServers == null || selectedServers.length == 0) {
             return validationItems.stream()
                     .filter(item -> McpServerValidationConstants.STATUS_VALID.equals(item.getStatus()))
                     .collect(Collectors.toList());
         }
-        
+
         Set<String> selectedSet = new HashSet<>(Arrays.asList(selectedServers));
         return validationItems.stream()
                 .filter(item -> selectedSet.contains(item.getServerId()) && McpServerValidationConstants.STATUS_VALID.equals(item.getStatus()))
                 .collect(Collectors.toList());
     }
-    
+
     /**
      * Import single MCP server.
      *
@@ -693,21 +827,21 @@ public class McpServerOperationService {
      * @param overrideExisting whether to override existing servers
      * @return import result
      */
-    private McpServerImportResult importSingleServer(String namespaceId, McpServerValidationItem item, 
+    private McpServerImportResult importSingleServer(String namespaceId, McpServerValidationItem item,
             boolean overrideExisting) {
         McpServerImportResult result = new McpServerImportResult();
         result.setServerName(item.getServerName());
         result.setServerId(item.getServerId());
-        
+
         try {
             if (item.isExists() && !overrideExisting) {
                 result.setStatus("skipped");
                 result.setConflictType("existing");
                 return result;
             }
-            
+
             McpServerDetailInfo server = item.getServer();
-            
+
             // Create basic info from server detail
             McpServerBasicInfo basicInfo = new McpServerBasicInfo();
             basicInfo.setId(server.getId());
@@ -718,29 +852,29 @@ public class McpServerOperationService {
             basicInfo.setRepository(server.getRepository());
             basicInfo.setVersionDetail(server.getVersionDetail());
             basicInfo.setRemoteServerConfig(server.getRemoteServerConfig());
-            
+
             // Extract tool specification
             McpToolSpecification toolSpec = server.getToolSpec();
-            
+
             // Create endpoint specification
             McpEndpointSpec endpointSpec = convertToEndpointSpec(server);
-            
+
             if (item.isExists() && overrideExisting) {
                 updateMcpServer(namespaceId, true, basicInfo, toolSpec, endpointSpec);
             } else {
                 createMcpServer(namespaceId, basicInfo, toolSpec, endpointSpec);
             }
-            
+
             result.setStatus("success");
-            
+
         } catch (Exception e) {
             result.setStatus("failed");
             result.setErrorMessage("Failed to import server: " + e.getMessage());
         }
-        
+
         return result;
     }
-    
+
     /**
      * Convert server detail info to endpoint spec.
      *
@@ -749,7 +883,7 @@ public class McpServerOperationService {
      */
     private McpEndpointSpec convertToEndpointSpec(McpServerDetailInfo server) {
         McpEndpointSpec endpointSpec = new McpEndpointSpec();
-        
+
         if (server.getRemoteServerConfig() != null) {
             // Set basic endpoint spec info
             if (AiConstants.Mcp.MCP_PROTOCOL_STDIO.equals(server.getProtocol())) {
@@ -758,7 +892,7 @@ public class McpServerOperationService {
                 endpointSpec.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_REF);
             }
         }
-        
+
         return endpointSpec;
     }
 }

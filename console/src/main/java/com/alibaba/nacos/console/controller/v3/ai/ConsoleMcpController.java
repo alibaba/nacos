@@ -31,7 +31,9 @@ import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.utils.StringUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.console.proxy.ai.McpProxy;
 import com.alibaba.nacos.core.model.form.PageForm;
@@ -39,12 +41,23 @@ import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import io.modelcontextprotocol.client.McpClient;
+import io.modelcontextprotocol.client.McpSyncClient;
+import io.modelcontextprotocol.client.transport.HttpClientSseClientTransport;
+import io.modelcontextprotocol.spec.McpClientTransport;
+import io.modelcontextprotocol.spec.McpSchema;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.time.Duration;
+import java.util.List;
+
+import static com.alibaba.nacos.api.ai.constant.AiConstants.Mcp.MCP_PROTOCOL_SSE;
 
 /**
  * Nacos Console AI MCP Server Constants.
@@ -80,6 +93,43 @@ public class ConsoleMcpController {
         return Result.success(
                 mcpProxy.listMcpServers(mcpListForm.getNamespaceId(), mcpListForm.getMcpName(), mcpListForm.getSearch(),
                         pageForm.getPageNo(), pageForm.getPageSize()));
+    }
+    
+    /**
+     * Import tools from mcp result.
+     *
+     * @param transportType the transport type
+     * @param baseUrl       the base url
+     * @param endpoint      the endpoint
+     * @return the result
+     * @throws NacosException the nacos exception
+     */
+    @GetMapping("/importToolsFromMcp")
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    public Result<List<McpSchema.Tool>> importToolsFromMcp(@RequestParam String transportType, @RequestParam String baseUrl,
+            @RequestParam String endpoint, @RequestParam(required = false) String authToken) throws NacosException {
+        McpClientTransport transport = null;
+        if (StringUtils.equals(transportType, MCP_PROTOCOL_SSE)) {
+            HttpClientSseClientTransport.Builder transportBuilder = HttpClientSseClientTransport.builder(baseUrl)
+                    .sseEndpoint(endpoint);
+            if (!StringUtils.isBlank(authToken)) {
+                transportBuilder.customizeRequest(req -> req.header("Authorization", "Bearer " + authToken));
+            }
+            transport = transportBuilder.build();
+        } else {
+            return Result.failure(ErrorCode.SERVER_ERROR.getCode(), "Unsupported transport type: " + transportType,
+                    null);
+        }
+        try (McpSyncClient client = McpClient.sync(transport)
+                .requestTimeout(Duration.ofSeconds(10))
+                .build()) {
+            client.initialize();
+            McpSchema.ListToolsResult tools = client.listTools();
+            return Result.success(tools.tools());
+        } catch (Exception e) {
+            // 可以记录日志或抛出 NacosException
+            throw new NacosException(NacosException.SERVER_ERROR, "Failed to import tools from MCP server", e);
+        }
     }
     
     /**

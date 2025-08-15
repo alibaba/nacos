@@ -22,6 +22,7 @@ import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.ai.model.mcp.McpServerStorageInfo;
 import com.alibaba.nacos.ai.utils.McpConfigUtils;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.mcp.FrontEndpointConfig;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -88,12 +89,15 @@ class McpServerOperationServiceTest {
     @Mock
     private McpServerIndex mcpServerIndex;
     
+    @Mock
+    private McpServerSyncEffectService syncEffectService;
+    
     McpServerOperationService serverOperationService;
     
     @BeforeEach
     void setUp() {
         serverOperationService = new McpServerOperationService(configQueryChainService, configOperationService,
-                toolOperationService, endpointOperationService, mcpServerIndex, null, null);
+                toolOperationService, endpointOperationService, mcpServerIndex, syncEffectService);
     }
     
     @AfterEach
@@ -224,6 +228,7 @@ class McpServerOperationServiceTest {
         serviceRef.setNamespaceId(Constants.MCP_SERVER_ENDPOINT_GROUP);
         serviceRef.setServiceName("mcpName");
         remoteServiceConfig.setServiceRef(serviceRef);
+        remoteServiceConfig.setExportPath("/nacos");
         mockStorageInfo.setRemoteServerConfig(remoteServiceConfig);
         ConfigQueryChainResponse storageDataResponse = mockConfigQueryChainResponse(mockStorageInfo);
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(versionDataResponse,
@@ -231,7 +236,6 @@ class McpServerOperationServiceTest {
         Instance instance = new Instance();
         instance.setIp("127.0.0.1");
         instance.setPort(8848);
-        instance.setMetadata(Collections.singletonMap(Constants.META_PATH, "/nacos"));
         when(endpointOperationService.getMcpServerEndpointInstances(any(McpServiceRef.class))).thenReturn(
                 Collections.singletonList(instance));
         McpServerDetailInfo actual = serverOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
@@ -247,6 +251,199 @@ class McpServerOperationServiceTest {
         assertEquals("127.0.0.1", actual.getBackendEndpoints().get(0).getAddress());
         assertEquals(8848, actual.getBackendEndpoints().get(0).getPort());
         assertEquals("/nacos", actual.getBackendEndpoints().get(0).getPath());
+    }
+    
+    @Test
+    void getMcpServerDetailByIdWithServiceRefFrontEndpoint() throws NacosException {
+        String id = mockId();
+        final ConfigQueryChainResponse versionDataResponse = mockConfigQueryChainResponse(mockServerVersionInfo(id));
+        final McpServerStorageInfo mockStorageInfo = mockStorageInfo(id, true, false,
+                AiConstants.Mcp.MCP_PROTOCOL_HTTP);
+        final McpServerRemoteServiceConfig remoteServiceConfig = new McpServerRemoteServiceConfig();
+        McpServiceRef serviceRef = new McpServiceRef();
+        serviceRef.setNamespaceId(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
+        serviceRef.setNamespaceId(Constants.MCP_SERVER_ENDPOINT_GROUP);
+        serviceRef.setServiceName("mcpName");
+        remoteServiceConfig.setFrontEndpointConfigList(new LinkedList<>());
+        remoteServiceConfig.getFrontEndpointConfigList().add(new FrontEndpointConfig());
+        remoteServiceConfig.getFrontEndpointConfigList().get(0).setProtocol(AiConstants.Mcp.MCP_PROTOCOL_HTTP);
+        remoteServiceConfig.getFrontEndpointConfigList().get(0).setType(AiConstants.Mcp.MCP_PROTOCOL_SSE);
+        remoteServiceConfig.getFrontEndpointConfigList().get(0).setEndpointData(serviceRef);
+        remoteServiceConfig.getFrontEndpointConfigList().get(0).setEndpointType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_REF);
+        remoteServiceConfig.getFrontEndpointConfigList().get(0).setPath("/sse");
+        mockStorageInfo.setRemoteServerConfig(remoteServiceConfig);
+        ConfigQueryChainResponse storageDataResponse = mockConfigQueryChainResponse(mockStorageInfo);
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(versionDataResponse,
+                storageDataResponse);
+        Instance instance = new Instance();
+        instance.setIp("127.0.0.1");
+        instance.setPort(8848);
+        when(endpointOperationService.getMcpServerEndpointInstances(any(McpServiceRef.class))).thenReturn(
+                Collections.singletonList(instance));
+        when(endpointOperationService.getMcpServerEndpointInstances(isNull())).thenReturn(
+                Collections.emptyList());
+        McpServerDetailInfo actual = serverOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                id, null, null);
+        assertEquals(id, actual.getId());
+        assertEquals("mcpName", actual.getName());
+        assertEquals("9.9.9", actual.getVersion());
+        assertEquals("9.9.9", actual.getVersionDetail().getVersion());
+        assertTrue(actual.getVersionDetail().getIs_latest());
+        assertNull(actual.getToolSpec());
+        verify(toolOperationService, never()).getMcpTool(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                McpConfigUtils.formatServerToolSpecDataId(id, "9.9.9"));
+        assertEquals("127.0.0.1", actual.getFrontendEndpoints().get(0).getAddress());
+        assertEquals(8848, actual.getFrontendEndpoints().get(0).getPort());
+        assertEquals("/sse", actual.getFrontendEndpoints().get(0).getPath());
+    }
+    
+    @Test
+    void getMcpServerDetailByIdWithDirectFrontEndpoint() throws NacosException {
+        String id = mockId();
+        final ConfigQueryChainResponse versionDataResponse = mockConfigQueryChainResponse(mockServerVersionInfo(id));
+        final McpServerStorageInfo mockStorageInfo = mockStorageInfo(id, true, false,
+                AiConstants.Mcp.MCP_PROTOCOL_HTTP);
+        final McpServerRemoteServiceConfig remoteServiceConfig = new McpServerRemoteServiceConfig();
+        remoteServiceConfig.setFrontEndpointConfigList(new LinkedList<>());
+        remoteServiceConfig.getFrontEndpointConfigList().add(new FrontEndpointConfig());
+        remoteServiceConfig.getFrontEndpointConfigList().get(0).setProtocol(AiConstants.Mcp.MCP_PROTOCOL_HTTP);
+        remoteServiceConfig.getFrontEndpointConfigList().get(0).setType(AiConstants.Mcp.MCP_PROTOCOL_SSE);
+        remoteServiceConfig.getFrontEndpointConfigList().get(0).setEndpointData("127.0.0.1:8848");
+        remoteServiceConfig.getFrontEndpointConfigList().get(0).setEndpointType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
+        remoteServiceConfig.getFrontEndpointConfigList().get(0).setPath("/sse");
+        mockStorageInfo.setRemoteServerConfig(remoteServiceConfig);
+        ConfigQueryChainResponse storageDataResponse = mockConfigQueryChainResponse(mockStorageInfo);
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(versionDataResponse,
+                storageDataResponse);
+        when(endpointOperationService.getMcpServerEndpointInstances(isNull())).thenReturn(
+                Collections.emptyList());
+        McpServerDetailInfo actual = serverOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                id, null, null);
+        assertEquals(id, actual.getId());
+        assertEquals("mcpName", actual.getName());
+        assertEquals("9.9.9", actual.getVersion());
+        assertEquals("9.9.9", actual.getVersionDetail().getVersion());
+        assertTrue(actual.getVersionDetail().getIs_latest());
+        assertNull(actual.getToolSpec());
+        verify(toolOperationService, never()).getMcpTool(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                McpConfigUtils.formatServerToolSpecDataId(id, "9.9.9"));
+        assertEquals("127.0.0.1", actual.getFrontendEndpoints().get(0).getAddress());
+        assertEquals(8848, actual.getFrontendEndpoints().get(0).getPort());
+        assertEquals("/sse", actual.getFrontendEndpoints().get(0).getPath());
+    }
+    
+    @Test
+    void getMcpServerDetailByIdWithDirectNoPortFrontEndpoint() throws NacosException {
+        String id = mockId();
+        final ConfigQueryChainResponse versionDataResponse = mockConfigQueryChainResponse(mockServerVersionInfo(id));
+        final McpServerStorageInfo mockStorageInfo = mockStorageInfo(id, true, false,
+                AiConstants.Mcp.MCP_PROTOCOL_HTTP);
+        final McpServerRemoteServiceConfig remoteServiceConfig = new McpServerRemoteServiceConfig();
+        remoteServiceConfig.setFrontEndpointConfigList(new LinkedList<>());
+        remoteServiceConfig.getFrontEndpointConfigList().add(new FrontEndpointConfig());
+        remoteServiceConfig.getFrontEndpointConfigList().get(0).setProtocol(AiConstants.Mcp.MCP_PROTOCOL_HTTP);
+        remoteServiceConfig.getFrontEndpointConfigList().get(0).setType(AiConstants.Mcp.MCP_PROTOCOL_SSE);
+        remoteServiceConfig.getFrontEndpointConfigList().get(0).setEndpointData("127.0.0.1");
+        remoteServiceConfig.getFrontEndpointConfigList().get(0).setEndpointType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
+        remoteServiceConfig.getFrontEndpointConfigList().get(0).setPath("/sse");
+        mockStorageInfo.setRemoteServerConfig(remoteServiceConfig);
+        ConfigQueryChainResponse storageDataResponse = mockConfigQueryChainResponse(mockStorageInfo);
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(versionDataResponse,
+                storageDataResponse);
+        when(endpointOperationService.getMcpServerEndpointInstances(isNull())).thenReturn(
+                Collections.emptyList());
+        McpServerDetailInfo actual = serverOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                id, null, null);
+        assertEquals(id, actual.getId());
+        assertEquals("mcpName", actual.getName());
+        assertEquals("9.9.9", actual.getVersion());
+        assertEquals("9.9.9", actual.getVersionDetail().getVersion());
+        assertTrue(actual.getVersionDetail().getIs_latest());
+        assertNull(actual.getToolSpec());
+        verify(toolOperationService, never()).getMcpTool(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                McpConfigUtils.formatServerToolSpecDataId(id, "9.9.9"));
+        assertEquals("127.0.0.1", actual.getFrontendEndpoints().get(0).getAddress());
+        assertEquals(80, actual.getFrontendEndpoints().get(0).getPort());
+        assertEquals("/sse", actual.getFrontendEndpoints().get(0).getPath());
+    }
+    
+    @Test
+    void getMcpServerDetailByIdWithDirectNoPortForHttpsFrontEndpoint() throws NacosException {
+        String id = mockId();
+        final ConfigQueryChainResponse versionDataResponse = mockConfigQueryChainResponse(mockServerVersionInfo(id));
+        final McpServerStorageInfo mockStorageInfo = mockStorageInfo(id, true, false,
+                AiConstants.Mcp.MCP_PROTOCOL_HTTP);
+        final McpServerRemoteServiceConfig remoteServiceConfig = new McpServerRemoteServiceConfig();
+        remoteServiceConfig.setFrontEndpointConfigList(new LinkedList<>());
+        remoteServiceConfig.getFrontEndpointConfigList().add(new FrontEndpointConfig());
+        remoteServiceConfig.getFrontEndpointConfigList().get(0).setProtocol(Constants.PROTOCOL_TYPE_HTTPS);
+        remoteServiceConfig.getFrontEndpointConfigList().get(0).setType(AiConstants.Mcp.MCP_PROTOCOL_SSE);
+        remoteServiceConfig.getFrontEndpointConfigList().get(0).setEndpointData("127.0.0.1");
+        remoteServiceConfig.getFrontEndpointConfigList().get(0).setEndpointType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
+        remoteServiceConfig.getFrontEndpointConfigList().get(0).setPath("/sse");
+        mockStorageInfo.setRemoteServerConfig(remoteServiceConfig);
+        ConfigQueryChainResponse storageDataResponse = mockConfigQueryChainResponse(mockStorageInfo);
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(versionDataResponse,
+                storageDataResponse);
+        when(endpointOperationService.getMcpServerEndpointInstances(isNull())).thenReturn(
+                Collections.emptyList());
+        McpServerDetailInfo actual = serverOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                id, null, null);
+        assertEquals(id, actual.getId());
+        assertEquals("mcpName", actual.getName());
+        assertEquals("9.9.9", actual.getVersion());
+        assertEquals("9.9.9", actual.getVersionDetail().getVersion());
+        assertTrue(actual.getVersionDetail().getIs_latest());
+        assertNull(actual.getToolSpec());
+        verify(toolOperationService, never()).getMcpTool(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                McpConfigUtils.formatServerToolSpecDataId(id, "9.9.9"));
+        assertEquals("127.0.0.1", actual.getFrontendEndpoints().get(0).getAddress());
+        assertEquals(443, actual.getFrontendEndpoints().get(0).getPort());
+        assertEquals("/sse", actual.getFrontendEndpoints().get(0).getPath());
+    }
+    
+    @Test
+    void getMcpServerDetailByIdWithToBackendFrontEndpoint() throws NacosException {
+        String id = mockId();
+        final ConfigQueryChainResponse versionDataResponse = mockConfigQueryChainResponse(mockServerVersionInfo(id));
+        final McpServerStorageInfo mockStorageInfo = mockStorageInfo(id, true, false,
+                AiConstants.Mcp.MCP_PROTOCOL_HTTP);
+        final McpServerRemoteServiceConfig remoteServiceConfig = new McpServerRemoteServiceConfig();
+        McpServiceRef serviceRef = new McpServiceRef();
+        serviceRef.setNamespaceId(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE);
+        serviceRef.setNamespaceId(Constants.MCP_SERVER_ENDPOINT_GROUP);
+        serviceRef.setServiceName("mcpName");
+        remoteServiceConfig.setServiceRef(serviceRef);
+        remoteServiceConfig.setExportPath("/nacos");
+        remoteServiceConfig.setFrontEndpointConfigList(Collections.singletonList(new FrontEndpointConfig()));
+        remoteServiceConfig.getFrontEndpointConfigList().get(0).setProtocol(AiConstants.Mcp.MCP_PROTOCOL_HTTP);
+        remoteServiceConfig.getFrontEndpointConfigList().get(0).setType(AiConstants.Mcp.MCP_PROTOCOL_SSE);
+        remoteServiceConfig.getFrontEndpointConfigList().get(0).setEndpointType(AiConstants.Mcp.MCP_FRONT_ENDPOINT_TYPE_TO_BACK);
+        mockStorageInfo.setRemoteServerConfig(remoteServiceConfig);
+        ConfigQueryChainResponse storageDataResponse = mockConfigQueryChainResponse(mockStorageInfo);
+        when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(versionDataResponse,
+                storageDataResponse);
+        Instance instance = new Instance();
+        instance.setIp("127.0.0.1");
+        instance.setPort(8848);
+        when(endpointOperationService.getMcpServerEndpointInstances(any(McpServiceRef.class))).thenReturn(
+                Collections.singletonList(instance));
+        McpServerDetailInfo actual = serverOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                id, null, null);
+        assertEquals(id, actual.getId());
+        assertEquals("mcpName", actual.getName());
+        assertEquals("9.9.9", actual.getVersion());
+        assertEquals("9.9.9", actual.getVersionDetail().getVersion());
+        assertTrue(actual.getVersionDetail().getIs_latest());
+        assertNull(actual.getToolSpec());
+        verify(toolOperationService, never()).getMcpTool(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                McpConfigUtils.formatServerToolSpecDataId(id, "9.9.9"));
+        assertEquals("127.0.0.1", actual.getBackendEndpoints().get(0).getAddress());
+        assertEquals(8848, actual.getBackendEndpoints().get(0).getPort());
+        assertEquals("/nacos", actual.getBackendEndpoints().get(0).getPath());
+        assertEquals("127.0.0.1", actual.getFrontendEndpoints().get(0).getAddress());
+        assertEquals(8848, actual.getFrontendEndpoints().get(0).getPort());
+        assertEquals("/nacos", actual.getFrontendEndpoints().get(0).getPath());
     }
     
     @Test
@@ -364,6 +561,9 @@ class McpServerOperationServiceTest {
         assertNotNull(id);
         verify(configOperationService, times(2)).publishConfig(any(ConfigFormV3.class), any(ConfigRequestInfo.class),
                 isNull());
+        verify(mcpServerIndex, times(1)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                mockServerBasicInfo.getName());
+        verify(mcpServerIndex, times(1)).removeMcpServerById(id);
     }
     
     @Test
@@ -376,6 +576,9 @@ class McpServerOperationServiceTest {
         assertNotNull(id);
         verify(configOperationService, times(2)).publishConfig(any(ConfigFormV3.class), any(ConfigRequestInfo.class),
                 isNull());
+        verify(mcpServerIndex, times(1)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                mockServerBasicInfo.getName());
+        verify(mcpServerIndex, times(1)).removeMcpServerById(id);
     }
     
     @Test
@@ -391,6 +594,9 @@ class McpServerOperationServiceTest {
                 isNull());
         verify(toolOperationService).refreshMcpTool(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
                 any(McpServerStorageInfo.class), eq(toolSpecification));
+        verify(mcpServerIndex, times(1)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                mockServerBasicInfo.getName());
+        verify(mcpServerIndex, times(1)).removeMcpServerById(id);
     }
     
     @Test
@@ -404,7 +610,7 @@ class McpServerOperationServiceTest {
         endpointSpec.getData().put(Constants.MCP_SERVER_ENDPOINT_ADDRESS, "127.0.0.1");
         endpointSpec.getData().put(Constants.MCP_SERVER_ENDPOINT_PORT, "8848");
         when(endpointOperationService.createMcpServerEndpointServiceIfNecessary(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
-                "mcpName", endpointSpec)).thenReturn(
+                "mcpName", "1.0.0", endpointSpec)).thenReturn(
                 Service.newService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, Constants.MCP_SERVER_ENDPOINT_GROUP,
                         "mcpName"));
         String id = serverOperationService.createMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, mockServerBasicInfo,
@@ -412,6 +618,8 @@ class McpServerOperationServiceTest {
         assertNotNull(id);
         verify(configOperationService, times(2)).publishConfig(any(ConfigFormV3.class), any(ConfigRequestInfo.class),
                 isNull());
+        verify(mcpServerIndex, times(1)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName");
+        verify(mcpServerIndex, times(1)).removeMcpServerById(id);
     }
     
     @Test
@@ -461,7 +669,7 @@ class McpServerOperationServiceTest {
         endpointSpec.getData().put(Constants.MCP_SERVER_ENDPOINT_ADDRESS, "127.0.0.1");
         endpointSpec.getData().put(Constants.MCP_SERVER_ENDPOINT_PORT, "8848");
         when(endpointOperationService.createMcpServerEndpointServiceIfNecessary(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
-                "mcpName", endpointSpec)).thenReturn(
+                "mcpName", "1.0.0", endpointSpec)).thenReturn(
                 Service.newService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, Constants.MCP_SERVER_ENDPOINT_GROUP,
                         "mcpName"));
         String actualId = serverOperationService.createMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
@@ -470,6 +678,8 @@ class McpServerOperationServiceTest {
         assertEquals(id, actualId);
         verify(configOperationService, times(2)).publishConfig(any(ConfigFormV3.class), any(ConfigRequestInfo.class),
                 isNull());
+        verify(mcpServerIndex, times(1)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName");
+        verify(mcpServerIndex, times(1)).removeMcpServerById(id);
     }
     
     @Test
@@ -504,6 +714,9 @@ class McpServerOperationServiceTest {
                 null);
         verify(configOperationService, times(2)).publishConfig(any(ConfigFormV3.class), any(ConfigRequestInfo.class),
                 isNull());
+        verify(mcpServerIndex, times(1)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                mockServerBasicInfo.getName());
+        verify(mcpServerIndex, times(1)).removeMcpServerById(id);
     }
     
     @Test
@@ -518,6 +731,9 @@ class McpServerOperationServiceTest {
                 null);
         verify(configOperationService, times(2)).publishConfig(any(ConfigFormV3.class), any(ConfigRequestInfo.class),
                 isNull());
+        verify(mcpServerIndex, times(1)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                mockServerBasicInfo.getName());
+        verify(mcpServerIndex, times(1)).removeMcpServerById(id);
     }
     
     @Test
@@ -532,6 +748,9 @@ class McpServerOperationServiceTest {
                 null);
         verify(configOperationService, times(2)).publishConfig(any(ConfigFormV3.class), any(ConfigRequestInfo.class),
                 isNull());
+        verify(mcpServerIndex, times(1)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
+                mockServerBasicInfo.getName());
+        verify(mcpServerIndex, times(1)).removeMcpServerById(id);
     }
     
     @Test
@@ -555,6 +774,8 @@ class McpServerOperationServiceTest {
                 null);
         verify(configOperationService, times(2)).publishConfig(any(ConfigFormV3.class), any(ConfigRequestInfo.class),
                 isNull());
+        verify(mcpServerIndex, times(1)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName");
+        verify(mcpServerIndex, times(1)).removeMcpServerById(id);
     }
     
     @Test
@@ -577,6 +798,8 @@ class McpServerOperationServiceTest {
         String serverVersionDataId = McpConfigUtils.formatServerVersionInfoDataId(id);
         verify(configOperationService, times(2)).deleteConfig(serverVersionDataId, Constants.MCP_SERVER_VERSIONS_GROUP,
                 AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, null, "nacos", null);
+        verify(mcpServerIndex, times(0)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null);
+        verify(mcpServerIndex, times(1)).removeMcpServerById(id);
         for (ServerVersionDetail each : mockServerVersionInfo(id).getVersionDetails()) {
             verify(toolOperationService).deleteMcpTool(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, id, each.getVersion());
             String serverSpecDataId = McpConfigUtils.formatServerSpecInfoDataId(id, each.getVersion());
@@ -596,6 +819,8 @@ class McpServerOperationServiceTest {
         serverOperationService.deleteMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName", null, null);
         verify(endpointOperationService, times(2)).deleteMcpServerEndpointService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
                 "mcpName");
+        verify(mcpServerIndex, times(1)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "mcpName");
+        verify(mcpServerIndex, times(0)).removeMcpServerById(null);
         String serverVersionDataId = McpConfigUtils.formatServerVersionInfoDataId(id);
         verify(configOperationService, times(2)).deleteConfig(serverVersionDataId, Constants.MCP_SERVER_VERSIONS_GROUP,
                 AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, null, "nacos", null);
@@ -613,6 +838,8 @@ class McpServerOperationServiceTest {
         when(configQueryChainService.handle(any(ConfigQueryChainRequest.class))).thenReturn(
                 mockConfigQueryChainResponse(mockServerVersionInfo(id)));
         serverOperationService.deleteMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null, id, "1.0.0");
+        verify(mcpServerIndex, times(0)).removeMcpServerByName(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, null);
+        verify(mcpServerIndex, times(1)).removeMcpServerById(id);
         verify(endpointOperationService).deleteMcpServerEndpointService(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE,
                 "mcpName");
         String serverVersionDataId = McpConfigUtils.formatServerVersionInfoDataId(id);

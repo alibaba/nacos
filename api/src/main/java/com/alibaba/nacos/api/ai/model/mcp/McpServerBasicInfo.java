@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.ai.model.mcp;
 
 import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.mcp.registry.Package;
 import com.alibaba.nacos.api.ai.model.mcp.registry.Repository;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
 
@@ -45,6 +46,8 @@ public class McpServerBasicInfo {
     private String description;
     
     private Repository repository;
+    
+    private List<Package> packages;
     
     private ServerVersionDetail versionDetail;
     
@@ -164,5 +167,13 @@ public class McpServerBasicInfo {
 
     public void setVersion(String version) {
         this.version = version;
+    }
+
+    public List<Package> getPackages() {
+        return packages;
+    }
+
+    public void setPackages(List<Package> packages) {
+        this.packages = packages;
     }
 }

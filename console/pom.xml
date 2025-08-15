@@ -68,6 +68,11 @@
             <artifactId>nacos-k8s-sync</artifactId>
         </dependency>
         
+        <dependency>
+            <groupId>io.modelcontextprotocol.sdk</groupId>
+            <artifactId>mcp</artifactId>
+        </dependency>
+        
         <!-- log -->
         <!-- log4j通过slf4j来代理 -->
         <dependency>

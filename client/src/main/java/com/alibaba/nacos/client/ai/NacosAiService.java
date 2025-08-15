@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ai.AiService;
 import com.alibaba.nacos.api.ai.listener.AbstractNacosMcpServerListener;
 import com.alibaba.nacos.api.ai.listener.NacosMcpServerEvent;
+import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
@@ -94,8 +95,8 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification)
-            throws NacosException {
+    public String releaseMcpServer(McpServerBasicInfo serverSpecification, McpToolSpecification toolSpecification,
+            McpEndpointSpec endpointSpecification) throws NacosException {
         if (null == serverSpecification) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter `serverSpecification` not present");
@@ -109,7 +110,7 @@ public class NacosAiService implements AiService {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "Required parameter `serverSpecification.versionDetail.version` not present");
         }
-        return grpcClient.releaseMcpServer(serverSpecification, toolSpecification);
+        return grpcClient.releaseMcpServer(serverSpecification, toolSpecification, endpointSpecification);
     }
     
     @Override
@@ -140,8 +141,8 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public McpServerDetailInfo subscribeMcpServer(String mcpName, AbstractNacosMcpServerListener mcpServerListener)
-            throws NacosException {
+    public McpServerDetailInfo subscribeMcpServer(String mcpName, String version,
+            AbstractNacosMcpServerListener mcpServerListener) throws NacosException {
         if (StringUtils.isBlank(mcpName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                     "parameters `mcpName` can't be empty or null");
@@ -151,8 +152,8 @@ public class NacosAiService implements AiService {
                     "parameters `mcpServerListener` can't be empty or null");
         }
         McpServerListenerInvoker listenerInvoker = new McpServerListenerInvoker(mcpServerListener);
-        mcpServerNotifier.registerListener(mcpName, listenerInvoker);
-        McpServerDetailInfo result = grpcClient.subscribeMcpServer(mcpName);
+        mcpServerNotifier.registerListener(mcpName, version, listenerInvoker);
+        McpServerDetailInfo result = grpcClient.subscribeMcpServer(mcpName, version);
         if (!listenerInvoker.isInvoked()) {
             listenerInvoker.invoke(new NacosMcpServerEvent(result));
         }
@@ -160,7 +161,7 @@ public class NacosAiService implements AiService {
     }
     
     @Override
-    public void unsubscribeMcpServer(String mcpName, AbstractNacosMcpServerListener mcpServerListener)
+    public void unsubscribeMcpServer(String mcpName, String version, AbstractNacosMcpServerListener mcpServerListener)
             throws NacosException {
         if (StringUtils.isBlank(mcpName)) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
@@ -170,9 +171,9 @@ public class NacosAiService implements AiService {
             return;
         }
         McpServerListenerInvoker listenerInvoker = new McpServerListenerInvoker(mcpServerListener);
-        mcpServerNotifier.deregisterListener(mcpName, listenerInvoker);
+        mcpServerNotifier.deregisterListener(mcpName, version, listenerInvoker);
         if (!mcpServerNotifier.isSubscribed(mcpName)) {
-            grpcClient.unsubscribeMcpServer(mcpName);
+            grpcClient.unsubscribeMcpServer(mcpName, version);
         }
     }
     

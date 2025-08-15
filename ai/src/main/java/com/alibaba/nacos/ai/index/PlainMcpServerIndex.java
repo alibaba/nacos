@@ -178,4 +178,26 @@ public class PlainMcpServerIndex implements McpServerIndex {
         return namespaceOperationService.getNamespaceList().stream()
                 .sorted(Comparator.comparing(Namespace::getNamespace)).map(Namespace::getNamespace).toList();
     }
+    
+    /**
+     * Remove cache entry by namespace ID and MCP server name. This is a no-op implementation since PlainMcpServerIndex
+     * doesn't use cache.
+     *
+     * @param namespaceId namespace ID
+     * @param mcpName     MCP server name
+     */
+    @Override
+    public void removeMcpServerByName(String namespaceId, String mcpName) {
+        // No-op implementation since PlainMcpServerIndex doesn't use cache
+    }
+    
+    /**
+     * Remove cache entry by MCP server ID. This is a no-op implementation since PlainMcpServerIndex doesn't use cache.
+     *
+     * @param mcpId MCP server ID
+     */
+    @Override
+    public void removeMcpServerById(String mcpId) {
+        // No-op implementation since PlainMcpServerIndex doesn't use cache
+    }
 }

@@ -16,17 +16,20 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * Repository.
  * @author xinluo
  */
-@SuppressWarnings({"checkstyle:MethodName", "checkstyle:ParameterName", "checkstyle:MemberName", "checkstyle:SummaryJavadoc"})
 public class Repository {
-    
+    @JsonProperty("url")
     private String url;
-    
+
+    @JsonProperty("source")
     private String source;
-    
+
+    @JsonProperty("id")
     private String id;
 
     public String getUrl() {

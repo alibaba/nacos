@@ -31,12 +31,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class McpToolSpecificationTest extends BasicRequestTest {
     
     private static final String MCP_TOOL_SPEC =
-            "{\"tools\":[{\"name\":\"testTool\",\"description\":\"test tool description\","
-                    + "\"inputSchema\":{\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"string\",\"description\":\"aaa\"}}}}],"
-                    + "\"toolsMeta\":{\"testTool\":{\"invokeContext\":{\"path\":\"/xxx\",\"method\":\"GET\"},\"enabled\":true,"
-                    + "\"templates\":{\"json-go-tamplate\":{\"templateType\":\"string\",\"requestTemplate\":{\"url\":\"\",\"method\":\"GET\","
-                    + "\"headers\":[],\"argsToJsonBody\":false,\"argsToUrlParam\":true,\"argsToFormBody\":true,\"body\":\"string\"},"
-                    + "\"responseTemplate\":{\"body\":\"string\"}}}}}}";
+            "{\"tools\":[{\"name\":\"testTool\",\"description\":\"test tool description\",\"inputSchema\":{\"type\":\"object\","
+                    + "\"properties\":{\"a\":{\"description\":\"aaa\",\"type\":\"string\"}}}}],\"toolsMeta\":{\"testTool\":"
+                    + "{\"invokeContext\":{\"path\":\"/xxx\",\"method\":\"GET\"},\"enabled\":true,\"templates\":"
+                    + "{\"json-go-tamplate\":{\"templateType\":\"string\",\"responseTemplate\":{\"body\":\"string\"},"
+                    + "\"requestTemplate\":{\"headers\":[],\"method\":\"GET\",\"argsToFormBody\":true,\"argsToJsonBody\":false,"
+                    + "\"body\":\"string\",\"url\":\"\",\"argsToUrlParam\":true}}}}},\"securitySchemes\":[{\"id\":\"1\","
+                    + "\"type\":\"apiKey\",\"scheme\":\"\",\"in\":\"header\",\"name\":\"testSecurity\","
+                    + "\"defaultCredential\":\"publicKey\"}]}";
     
     @Test
     void testSerialize() throws JsonProcessingException {
@@ -81,6 +83,15 @@ class McpToolSpecificationTest extends BasicRequestTest {
         mcpToolMeta.setInvokeContext(invokeContext);
         toolSpecification.setToolsMeta(Collections.singletonMap("testTool", mcpToolMeta));
         
+        SecurityScheme securityScheme = new SecurityScheme();
+        securityScheme.setId("1");
+        securityScheme.setType("apiKey");
+        securityScheme.setName("testSecurity");
+        securityScheme.setScheme("");
+        securityScheme.setIn("header");
+        securityScheme.setDefaultCredential("publicKey");
+        toolSpecification.setSecuritySchemes(Collections.singletonList(securityScheme));
+        
         String json = mapper.writeValueAsString(toolSpecification);
         assertNotNull(json);
         assertTrue(json.contains("\"tools\":[{"));
@@ -92,6 +103,8 @@ class McpToolSpecificationTest extends BasicRequestTest {
         assertTrue(json.contains("\"toolsMeta\":{\"testTool\":{"));
         assertTrue(json.contains("\"invokeContext\":{"));
         assertTrue(json.contains("\"templates\":{"));
+        assertTrue(json.contains("\"securitySchemes\":[{"));
+        
     }
     
     @Test
@@ -106,5 +119,7 @@ class McpToolSpecificationTest extends BasicRequestTest {
         assertNotNull(result.getToolsMeta().get("testTool"));
         assertNotNull(result.getToolsMeta().get("testTool").getInvokeContext());
         assertNotNull(result.getToolsMeta().get("testTool").getTemplates());
+        assertNotNull(result.getSecuritySchemes());
+        assertEquals(1, result.getSecuritySchemes().size());
     }
 }
