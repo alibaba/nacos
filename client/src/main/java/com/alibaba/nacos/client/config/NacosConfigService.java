@@ -232,8 +232,8 @@ public class NacosConfigService implements ConfigService {
             cr.setEncryptedDataKey(response.getEncryptedDataKey());
             configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();
-            LOGGER.info("[{}] [get-config] get from server ok，namespace={}, group={}, dataId={}, source=server",
-                    worker.getAgentName(), tenant, group, dataId);
+            LOGGER.info("[{}] [get-config] get from server ok，dataId={}, group={}, tenant={}", worker.getAgentName(),
+                    dataId, group, tenant);
             return content;
         } catch (NacosException ioe) {
             if (NacosException.NO_RIGHT == ioe.getErrCode()) {
