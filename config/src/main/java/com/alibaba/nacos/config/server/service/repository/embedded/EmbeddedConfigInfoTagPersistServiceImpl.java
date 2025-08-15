@@ -127,11 +127,11 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
                     TableConstant.CONFIG_INFO_TAG);
             final String sql = configInfoTagMapper.insert(
                     Arrays.asList("data_id", "group_id", "tenant_id", "tag_id", "app_name", "content", "md5", "src_ip",
-                            "src_user", "gmt_create", "gmt_modified"));
+                            "src_user", "gmt_create@NOW()", "gmt_modified@NOW()"));
             Timestamp time = new Timestamp(System.currentTimeMillis());
             
             final Object[] args = new Object[] {configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp,
-                    appNameTmp, configInfo.getContent(), md5, srcIp, srcUser, time, time};
+                    appNameTmp, configInfo.getContent(), md5, srcIp, srcUser};
             
             EmbeddedStorageContextUtils.onModifyConfigTagInfo(configInfo, tagTmp, srcIp, time);
             EmbeddedStorageContextHolder.addSqlContext(sql, args);
