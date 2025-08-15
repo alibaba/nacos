@@ -144,8 +144,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             final Map<String, Object> configAdvanceInfo) {
         return tjt.execute(status -> {
             try {
-                addConfigInfoAtomic(-1, srcIp, srcUser, configInfo, configAdvanceInfo);
-                long configId = getConfigInfoId(configInfo);
+                long configId = addConfigInfoAtomic(-1, srcIp, srcUser, configInfo, configAdvanceInfo);
                 String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
                 addConfigTagsRelation(configId, configTags, configInfo.getDataId(), configInfo.getGroup(),
                         configInfo.getTenant());
@@ -224,7 +223,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             jt.update(
                     connection -> createPsForInsertConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo, connection,
                             configInfoMapper));
-            return -1;
+            return getConfigInfoId(configInfo);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;
