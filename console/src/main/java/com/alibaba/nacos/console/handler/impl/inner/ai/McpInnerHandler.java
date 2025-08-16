@@ -16,10 +16,14 @@
 
 package com.alibaba.nacos.console.handler.impl.inner.ai;
 
+import com.alibaba.nacos.ai.service.McpServerImportService;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerImportRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerImportResponse;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerImportValidationResult;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
@@ -41,8 +45,12 @@ public class McpInnerHandler implements McpHandler {
     
     private final McpServerOperationService mcpServerOperationService;
     
-    public McpInnerHandler(McpServerOperationService mcpServerOperationService) {
+    private final McpServerImportService mcpServerImportService;
+    
+    public McpInnerHandler(McpServerOperationService mcpServerOperationService,
+                          McpServerImportService mcpServerImportService) {
         this.mcpServerOperationService = mcpServerOperationService;
+        this.mcpServerImportService = mcpServerImportService;
     }
     
     @Override
@@ -73,5 +81,15 @@ public class McpInnerHandler implements McpHandler {
     @Override
     public void deleteMcpServer(String namespaceId, String mcpName, String mcpServerId, String version) throws NacosException {
         mcpServerOperationService.deleteMcpServer(namespaceId, mcpName, mcpServerId, version);
+    }
+    
+    @Override
+    public McpServerImportValidationResult validateImport(String namespaceId, McpServerImportRequest request) throws NacosException {
+        return mcpServerImportService.validateImport(namespaceId, request);
+    }
+    
+    @Override
+    public McpServerImportResponse executeImport(String namespaceId, McpServerImportRequest request) throws NacosException {
+        return mcpServerImportService.executeImport(namespaceId, request);
     }
 }

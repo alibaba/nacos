@@ -35,7 +35,7 @@ public class McpRegistryServer {
     
     private ServerVersionDetail version_detail;
     
-    private List<McpPackage> packages;
+    private List<Package> packages;
 
     public String getId() {
         return id;
@@ -77,11 +77,11 @@ public class McpRegistryServer {
         this.version_detail = version_detail;
     }
     
-    public List<McpPackage> getPackages() {
+    public List<Package> getPackages() {
         return packages;
     }
     
-    public void setPackages(List<McpPackage> packages) {
+    public void setPackages(List<Package> packages) {
         this.packages = packages;
     }
 }

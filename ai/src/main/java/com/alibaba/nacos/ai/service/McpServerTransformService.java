@@ -24,8 +24,10 @@ import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.ai.model.mcp.registry.McpRegistryServer;
 import com.alibaba.nacos.api.ai.model.mcp.registry.McpRegistryServerDetail;
 import com.alibaba.nacos.api.ai.model.mcp.registry.McpRegistryServerList;
-import com.alibaba.nacos.api.ai.model.mcp.registry.McpPackage;
-import com.alibaba.nacos.api.ai.model.mcp.registry.PackageArgument;
+import com.alibaba.nacos.api.ai.model.mcp.registry.Package;
+import com.alibaba.nacos.api.ai.model.mcp.registry.Argument;
+import com.alibaba.nacos.api.ai.model.mcp.registry.NamedArgument;
+import com.alibaba.nacos.api.ai.model.mcp.registry.PositionalArgument;
 import com.alibaba.nacos.api.ai.model.mcp.registry.Remote;
 import com.alibaba.nacos.api.ai.model.mcp.registry.Repository;
 import com.alibaba.nacos.api.ai.model.mcp.registry.ServerVersionDetail;
@@ -253,7 +255,7 @@ public class McpServerTransformService {
             
             // Handle packages to infer protocol and remote configuration
             if (registryServer.getPackages() != null && !registryServer.getPackages().isEmpty()) {
-                McpPackage firstPackage = registryServer.getPackages().get(0);
+                Package firstPackage = registryServer.getPackages().get(0);
                 
                 // Infer protocol from package registry type
                 String protocol = inferProtocolFromPackage(firstPackage);
@@ -309,7 +311,7 @@ public class McpServerTransformService {
             return AiConstants.Mcp.MCP_PROTOCOL_STDIO;
         }
         
-        String transportType = remote.getTransport_type();
+        String transportType = remote.getTransportType();
         if (StringUtils.isNotBlank(transportType)) {
             switch (transportType.toLowerCase()) {
                 case "http":
@@ -380,12 +382,12 @@ public class McpServerTransformService {
      * @param mcpPackage MCP package information
      * @return inferred protocol
      */
-    private String inferProtocolFromPackage(McpPackage mcpPackage) {
+    private String inferProtocolFromPackage(Package mcpPackage) {
         if (mcpPackage == null) {
             return AiConstants.Mcp.MCP_PROTOCOL_STDIO;
         }
         
-        String registryName = mcpPackage.getRegistry_name();
+        String registryName = mcpPackage.getRegistryName();
         if (StringUtils.isNotBlank(registryName)) {
             switch (registryName.toLowerCase()) {
                 case "npm":
@@ -412,12 +414,12 @@ public class McpServerTransformService {
      * @param protocol Protocol type
      */
     private void configureRemoteServiceFromPackage(McpServerRemoteServiceConfig remoteConfig, 
-            McpPackage mcpPackage, String protocol) {
+            Package mcpPackage, String protocol) {
         if (mcpPackage == null || remoteConfig == null) {
             return;
         }
         
-        String registryName = mcpPackage.getRegistry_name();
+        String registryName = mcpPackage.getRegistryName();
         String packageName = mcpPackage.getName();
         
         if (StringUtils.isNotBlank(registryName) && StringUtils.isNotBlank(packageName)) {
@@ -434,7 +436,7 @@ public class McpServerTransformService {
      * @param mcpPackage Package details
      * @return command string
      */
-    private String buildPackageCommand(String registryName, String packageName, McpPackage mcpPackage) {
+    private String buildPackageCommand(String registryName, String packageName, Package mcpPackage) {
         StringBuilder command = new StringBuilder();
         
         switch (registryName.toLowerCase()) {
@@ -450,15 +452,33 @@ public class McpServerTransformService {
         }
         
         // Add package arguments if available
-        if (mcpPackage.getPackage_arguments() != null) {
-            for (PackageArgument arg : mcpPackage.getPackage_arguments()) {
-                if (StringUtils.isNotBlank(arg.getValue())) {
-                    command.append(" ").append(arg.getValue());
+        if (mcpPackage.getPackageArguments() != null) {
+            for (Argument arg : mcpPackage.getPackageArguments()) {
+                String argValue = extractArgumentValue(arg);
+                if (StringUtils.isNotBlank(argValue)) {
+                    command.append(" ").append(argValue);
                 }
             }
         }
         
         return command.toString();
+    }
+    
+    /**
+     * Extract argument value from polymorphic Argument interface.
+     * 
+     * @param arg Argument instance (either NamedArgument or PositionalArgument)
+     * @return argument value
+     */
+    private String extractArgumentValue(Argument arg) {
+        if (arg instanceof NamedArgument) {
+            NamedArgument namedArg = (NamedArgument) arg;
+            return namedArg.getValue();
+        } else if (arg instanceof PositionalArgument) {
+            PositionalArgument positionalArg = (PositionalArgument) arg;
+            return positionalArg.getValue();
+        }
+        return null;
     }
     
     /**
