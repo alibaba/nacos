@@ -126,8 +126,8 @@ public class ExternalConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
             
             jt.update(configInfoTagMapper.insert(
                             Arrays.asList("data_id", "group_id", "tenant_id", "tag_id", "app_name", "content", "md5", "src_ip",
-                                    "src_user", "gmt_create", "gmt_modified")), configInfo.getDataId(), configInfo.getGroup(),
-                    tenantTmp, tagTmp, appNameTmp, configInfo.getContent(), md5, srcIp, srcUser, time, time);
+                                    "src_user", "gmt_create@NOW()", "gmt_modified@NOW()")), configInfo.getDataId(), configInfo.getGroup(),
+                    tenantTmp, tagTmp, appNameTmp, configInfo.getContent(), md5, srcIp, srcUser);
             return getTagOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp);
             
         } catch (CannotGetJdbcConnectionException e) {
