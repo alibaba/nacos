@@ -16,20 +16,31 @@
 
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
+import static com.alibaba.nacos.plugin.auth.impl.persistence.AuthRowMapperManager.USER_ROW_MAPPER;
+
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
+import com.alibaba.nacos.persistence.datasource.DataSourceService;
+import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.plugin.auth.impl.persistence.embedded.AuthEmbeddedPaginationHelperImpl;
+import com.alibaba.nacos.plugin.datasource.MapperManager;
+import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
+import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.mapper.UsersMapper;
+import com.alibaba.nacos.plugin.datasource.model.MapperContext;
+import com.alibaba.nacos.plugin.datasource.model.MapperResult;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static com.alibaba.nacos.plugin.auth.impl.persistence.AuthRowMapperManager.USER_ROW_MAPPER;
 
 /**
  * There is no self-augmented primary key.
@@ -46,6 +57,16 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     private static final String PATTERN_STR = "*";
     
     private static final String SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE = " ESCAPE '\\' ";
+
+    private DataSourceService dataSourceService;
+
+    private MapperManager mapperManager;
+
+    public EmbeddedUserPersistServiceImpl() {
+        this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
+        Boolean isDataSourceLogEnable = EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class, false);
+        this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
+    }
     
     /**
      * Execute create user operation.
@@ -55,8 +76,8 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
      */
     @Override
     public void createUser(String username, String password) {
-        String sql = "INSERT INTO users (username, password, enabled) VALUES (?, ?, ?)";
-        
+        UsersMapper usersMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.USERS);
+        String sql = usersMapper.insert(Arrays.asList("username", "password", "enabled"));
         try {
             EmbeddedStorageContextHolder.addSqlContext(sql, username, password, true);
             databaseOperate.blockUpdate();
@@ -72,7 +93,8 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
      */
     @Override
     public void deleteUser(String username) {
-        String sql = "DELETE FROM users WHERE username=?";
+        UsersMapper usersMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.USERS);
+        String sql = usersMapper.delete(Collections.singletonList("username"));
         try {
             EmbeddedStorageContextHolder.addSqlContext(sql, username);
             databaseOperate.blockUpdate();
@@ -89,9 +111,10 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
      */
     @Override
     public void updateUserPassword(String username, String password) {
+        UsersMapper usersMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.USERS);
+        String sql = usersMapper.update(Collections.singletonList("password"), Collections.singletonList("username"));
         try {
-            EmbeddedStorageContextHolder
-                    .addSqlContext("UPDATE users SET password = ? WHERE username=?", password, username);
+            EmbeddedStorageContextHolder.addSqlContext(sql, password, username);
             databaseOperate.blockUpdate();
         } finally {
             EmbeddedStorageContextHolder.cleanAllContext();
@@ -100,28 +123,29 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     
     @Override
     public User findUserByUsername(String username) {
-        String sql = "SELECT username,password FROM users WHERE username=? ";
-        return databaseOperate.queryOne(sql, new Object[] {username}, USER_ROW_MAPPER);
+        final MapperContext context = new MapperContext();
+        context.putWhereParameter(FieldConstant.USER_NAME, username);
+
+        UsersMapper usersMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.USERS);
+        MapperResult sql = usersMapper.findUserByUsername(context);
+
+        return databaseOperate.queryOne(sql.getSql(), sql.getParamList().toArray(), USER_ROW_MAPPER);
     }
     
     @Override
     public Page<User> getUsers(int pageNo, int pageSize, String username) {
-    
         AuthPaginationHelper<User> helper = createPaginationHelper();
-        
-        String sqlCountRows = "SELECT count(*) FROM users ";
-        
-        String sqlFetchRows = "SELECT username,password FROM users ";
-        
-        StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
-        List<String> params = new ArrayList<>();
-        if (StringUtils.isNotBlank(username)) {
-            where.append(" AND username = ? ");
-            params.add(username);
-        }
-        Page<User> pageInfo = helper
-                .fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
-                        USER_ROW_MAPPER);
+
+        final MapperContext context = new MapperContext();
+        context.setStartRow((pageNo - 1) * pageSize);
+        context.setPageSize(pageSize);
+        context.putWhereParameter(FieldConstant.USER_NAME, username);
+
+        UsersMapper usersMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.USERS);
+        MapperResult sqlCount = usersMapper.getUsersCountRows(context);
+        MapperResult sql = usersMapper.getUsersFetchRows(context);
+
+        Page<User> pageInfo = helper.fetchPageLimit(sqlCount, sql, pageNo, pageSize, USER_ROW_MAPPER);
         if (pageInfo == null) {
             pageInfo = new Page<>();
             pageInfo.setTotalCount(0);
@@ -132,34 +156,37 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     
     @Override
     public List<String> findUserLikeUsername(String username) {
-        String sql = "SELECT username FROM users WHERE username LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
-        return databaseOperate.queryMany(sql, new String[] {"%" + username + "%"}, String.class);
+        final MapperContext context = new MapperContext();
+        context.putWhereParameter(FieldConstant.USER_NAME, "%" + username + "%");
+
+        UsersMapper usersMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.USERS);
+        MapperResult sql = usersMapper.findUserLikeUsername(context);
+
+        return databaseOperate.queryMany(sql.getSql(), sql.getParamList().toArray(), String.class);
     }
     
     @Override
     public Page<User> findUsersLike4Page(String username, int pageNo, int pageSize) {
-        String sqlCountRows = "SELECT count(*) FROM users ";
-        String sqlFetchRows = "SELECT username,password FROM users ";
-        
-        StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
-        List<String> params = new ArrayList<>();
-        if (StringUtils.isNotBlank(username)) {
-            where.append(" AND username LIKE ? ");
-            where.append(SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
-            params.add(generateLikeArgument(username));
-        }
-    
-        AuthPaginationHelper<User> helper = createPaginationHelper();
-        return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
-                USER_ROW_MAPPER);
+        final AuthPaginationHelper<User> helper = createPaginationHelper();
+
+        final MapperContext context = new MapperContext();
+        context.setStartRow((pageNo - 1) * pageSize);
+        context.setPageSize(pageSize);
+        context.putWhereParameter(FieldConstant.USER_NAME, generateLikeArgument(username));
+
+        UsersMapper usersMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.USERS);
+        MapperResult sqlCount = usersMapper.findUsersLike4PageCountRows(context);
+        MapperResult sql = usersMapper.findUsersLike4PageFetchRows(context);
+
+        return helper.fetchPageLimit(sqlCount, sql, pageNo, pageSize, USER_ROW_MAPPER);
     }
     
     @Override
     public String generateLikeArgument(String s) {
-        String underscore = "_";
-        if (s.contains(underscore)) {
-            s = s.replaceAll(underscore, "\\\\_");
+        if (StringUtils.isBlank(s)) {
+            return s;
         }
+
         String fuzzySearchSign = "\\*";
         String sqlLikePercentSign = "%";
         if (s.contains(PATTERN_STR)) {

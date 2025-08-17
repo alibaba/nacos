@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
+import static com.alibaba.nacos.plugin.auth.impl.persistence.AuthRowMapperManager.USER_ROW_MAPPER;
+
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
@@ -23,17 +25,24 @@ import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.impl.persistence.extrnal.AuthExternalPaginationHelperImpl;
+import com.alibaba.nacos.plugin.datasource.MapperManager;
+import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
+import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.mapper.UsersMapper;
+import com.alibaba.nacos.plugin.datasource.model.MapperContext;
+import com.alibaba.nacos.plugin.datasource.model.MapperResult;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import javax.annotation.PostConstruct;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
-import java.util.ArrayList;
-import java.util.List;
-
-import static com.alibaba.nacos.plugin.auth.impl.persistence.AuthRowMapperManager.USER_ROW_MAPPER;
 
 /**
  * Implemetation of ExternalUserPersistServiceImpl.
@@ -49,6 +58,16 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
     private String dataSourceType = "";
     
     private static final String PATTERN_STR = "*";
+
+    private DataSourceService dataSourceService;
+
+    private MapperManager mapperManager;
+
+    public ExternalUserPersistServiceImpl() {
+        this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
+        Boolean isDataSourceLogEnable = EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class, false);
+        this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
+    }
     
     @PostConstruct
     protected void init() {
@@ -65,8 +84,8 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
      */
     @Override
     public void createUser(String username, String password) {
-        String sql = "INSERT INTO users (username, password, enabled) VALUES (?, ?, ?)";
-        
+        UsersMapper usersMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.USERS);
+        String sql = usersMapper.insert(Arrays.asList("username", "password", "enabled"));
         try {
             jt.update(sql, username, password, true);
         } catch (CannotGetJdbcConnectionException e) {
@@ -82,7 +101,8 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
      */
     @Override
     public void deleteUser(String username) {
-        String sql = "DELETE FROM users WHERE username=?";
+        UsersMapper usersMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.USERS);
+        String sql = usersMapper.delete(Collections.singletonList("username"));
         try {
             jt.update(sql, username);
         } catch (CannotGetJdbcConnectionException e) {
@@ -99,8 +119,10 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
      */
     @Override
     public void updateUserPassword(String username, String password) {
+        UsersMapper usersMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.USERS);
+        String sql = usersMapper.update(Collections.singletonList("password"), Collections.singletonList("username"));
         try {
-            jt.update("UPDATE users SET password = ? WHERE username=?", password, username);
+            jt.update(sql, password, username);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
@@ -115,9 +137,14 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
      */
     @Override
     public User findUserByUsername(String username) {
-        String sql = "SELECT username,password FROM users WHERE username=? ";
+        final MapperContext context = new MapperContext();
+        context.putWhereParameter(FieldConstant.USER_NAME, username);
+
+        UsersMapper usersMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.USERS);
+        MapperResult sql = usersMapper.findUserByUsername(context);
+
         try {
-            return this.jt.queryForObject(sql, new Object[] {username}, USER_ROW_MAPPER);
+            return this.jt.queryForObject(sql.getSql(), sql.getParamList().toArray(), USER_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
@@ -131,23 +158,19 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
     
     @Override
     public Page<User> getUsers(int pageNo, int pageSize, String username) {
-    
         AuthPaginationHelper<User> helper = createPaginationHelper();
-        
-        String sqlCountRows = "SELECT count(*) FROM users ";
-        
-        String sqlFetchRows = "SELECT username,password FROM users ";
-        
-        StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
-        List<String> params = new ArrayList<>();
-        if (StringUtils.isNotBlank(username)) {
-            where.append(" AND username = ? ");
-            params.add(username);
-        }
+
+        final MapperContext context = new MapperContext();
+        context.setStartRow((pageNo - 1) * pageSize);
+        context.setPageSize(pageSize);
+        context.putWhereParameter(FieldConstant.USER_NAME, username);
+
+        UsersMapper usersMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.USERS);
+        MapperResult sqlCount = usersMapper.getUsersCountRows(context);
+        MapperResult sql = usersMapper.getUsersFetchRows(context);
         
         try {
-            Page<User> pageInfo = helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo,
-                    pageSize, USER_ROW_MAPPER);
+            Page<User> pageInfo = helper.fetchPageLimit(sqlCount, sql, pageNo, pageSize, USER_ROW_MAPPER);
             if (pageInfo == null) {
                 pageInfo = new Page<>();
                 pageInfo.setTotalCount(0);
@@ -162,27 +185,30 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
     
     @Override
     public List<String> findUserLikeUsername(String username) {
-        String sql = "SELECT username FROM users WHERE username LIKE ?";
-        List<String> users = this.jt.queryForList(sql, new String[] {String.format("%%%s%%", username)}, String.class);
-        return users;
+        final MapperContext context = new MapperContext();
+        context.putWhereParameter(FieldConstant.USER_NAME, "%" + username + "%");
+
+        UsersMapper usersMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.USERS);
+        MapperResult sql = usersMapper.findUserLikeUsername(context);
+
+        return this.jt.queryForList(sql.getSql(), sql.getParamList().toArray(), String.class);
     }
     
     @Override
     public Page<User> findUsersLike4Page(String username, int pageNo, int pageSize) {
-        String sqlCountRows = "SELECT count(*) FROM users ";
-        String sqlFetchRows = "SELECT username,password FROM users ";
-        
-        StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
-        List<String> params = new ArrayList<>();
-        if (StringUtils.isNotBlank(username)) {
-            where.append(" AND username LIKE ? ");
-            params.add(generateLikeArgument(username));
-        }
-    
         AuthPaginationHelper<User> helper = createPaginationHelper();
+
+        final MapperContext context = new MapperContext();
+        context.setStartRow((pageNo - 1) * pageSize);
+        context.setPageSize(pageSize);
+        context.putWhereParameter(FieldConstant.USER_NAME, generateLikeArgument(username));
+
+        UsersMapper usersMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.USERS);
+        MapperResult sqlCount = usersMapper.findUsersLike4PageCountRows(context);
+        MapperResult sql = usersMapper.findUsersLike4PageFetchRows(context);
+
         try {
-            return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
-                    USER_ROW_MAPPER);
+            return helper.fetchPageLimit(sqlCount, sql, pageNo, pageSize, USER_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
@@ -191,10 +217,10 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
     
     @Override
     public String generateLikeArgument(String s) {
-        String underscore = "_";
-        if (s.contains(underscore)) {
-            s = s.replaceAll(underscore, "\\\\_");
+        if (StringUtils.isBlank(s)) {
+            return s;
         }
+
         String fuzzySearchSign = "\\*";
         String sqlLikePercentSign = "%";
         if (s.contains(PATTERN_STR)) {

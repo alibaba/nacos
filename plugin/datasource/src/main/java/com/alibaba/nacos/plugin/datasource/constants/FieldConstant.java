@@ -101,4 +101,8 @@ public class FieldConstant {
     public static final String USAGE = "usage";
     
     public static final String LIMIT_SIZE = "limitSize";
+
+    public static final String ROLE = "role";
+
+    public static final String USER_NAME = "username";
 }

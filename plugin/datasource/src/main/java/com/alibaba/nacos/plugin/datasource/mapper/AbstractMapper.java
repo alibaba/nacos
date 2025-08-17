@@ -34,7 +34,7 @@ public abstract class AbstractMapper implements Mapper {
         StringBuilder sql = new StringBuilder();
         String method = "SELECT ";
         sql.append(method);
-        sql.append(columns.stream().collect(Collectors.joining(",")));
+        sql.append(columns.stream().map(this::handleKeywordColumn).collect(Collectors.joining(",")));
         sql.append(" FROM ");
         sql.append(getTableName());
 
@@ -56,7 +56,7 @@ public abstract class AbstractMapper implements Mapper {
         int size = columns.size();
         sql.append("(");
         for (int i = 0; i < size; i++) {
-            sql.append(columns.get(i).split("@")[0]);
+            sql.append(handleKeywordColumn(columns.get(i).split("@")[0]));
             if (i != columns.size() - 1) {
                 sql.append(", ");
             }
@@ -89,7 +89,7 @@ public abstract class AbstractMapper implements Mapper {
 
         for (int i = 0; i < columns.size(); i++) {
             String[] parts = columns.get(i).split("@");
-            String column = parts[0];
+            String column = handleKeywordColumn(parts[0]);
             if (parts.length == 2) {
                 sql.append(column).append(" = ").append(getFunction(parts[1]));
             } else {
@@ -141,8 +141,12 @@ public abstract class AbstractMapper implements Mapper {
         return new String[]{"id"};
     }
 
-    private void appendWhereClause(List<String> where, StringBuilder sql) {
+    protected void appendWhereClause(List<String> where, StringBuilder sql) {
         sql.append(" WHERE ");
-        sql.append(where.stream().map(str -> (str + " = ?")).collect(Collectors.joining(" AND ")));
+        sql.append(where.stream().map(str -> (handleKeywordColumn(str) + " = ?")).collect(Collectors.joining(" AND ")));
+    }
+
+    protected String handleKeywordColumn(String column) {
+        return column;
     }
 }

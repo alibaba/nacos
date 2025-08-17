@@ -16,21 +16,31 @@
 
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
-import com.alibaba.nacos.common.utils.CollectionUtils;
+import static com.alibaba.nacos.plugin.auth.impl.persistence.AuthRowMapperManager.ROLE_INFO_ROW_MAPPER;
+
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
+import com.alibaba.nacos.persistence.datasource.DataSourceService;
+import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.plugin.auth.impl.persistence.embedded.AuthEmbeddedPaginationHelperImpl;
+import com.alibaba.nacos.plugin.datasource.MapperManager;
+import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
+import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.mapper.RolesMapper;
+import com.alibaba.nacos.plugin.datasource.model.MapperContext;
+import com.alibaba.nacos.plugin.datasource.model.MapperResult;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static com.alibaba.nacos.plugin.auth.impl.persistence.AuthRowMapperManager.ROLE_INFO_ROW_MAPPER;
 
 /**
  * There is no self-augmented primary key.
@@ -47,20 +57,31 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     private static final String PATTERN_STR = "*";
     
     private static final String SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE = " ESCAPE '\\' ";
+
+    private DataSourceService dataSourceService;
+
+    private MapperManager mapperManager;
+
+    public EmbeddedRolePersistServiceImpl() {
+        this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
+        Boolean isDataSourceLogEnable = EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class, false);
+        this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
+    }
     
     @Override
     public Page<RoleInfo> getRoles(int pageNo, int pageSize) {
-    
         AuthPaginationHelper<RoleInfo> helper = createPaginationHelper();
-        
-        String sqlCountRows = "SELECT count(*) FROM (SELECT DISTINCT role FROM roles) roles WHERE ";
-        
-        String sqlFetchRows = "SELECT role,username FROM roles WHERE ";
-        
-        String where = " 1=1 ";
-        
-        Page<RoleInfo> pageInfo = helper.fetchPage(sqlCountRows + where, sqlFetchRows + where,
-                new ArrayList<String>().toArray(), pageNo, pageSize, ROLE_INFO_ROW_MAPPER);
+
+        final MapperContext context = new MapperContext();
+        context.setStartRow((pageNo - 1) * pageSize);
+        context.setPageSize(pageSize);
+
+        RolesMapper rolesMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.ROLES);
+        MapperResult sqlCount = rolesMapper.getRolesCountRows(context);
+        MapperResult sql = rolesMapper.getRolesFetchRows(context);
+
+        Page<RoleInfo> pageInfo = helper.fetchPageLimit(sqlCount, sql, pageNo, pageSize, ROLE_INFO_ROW_MAPPER);
+
         if (pageInfo == null) {
             pageInfo = new Page<>();
             pageInfo.setTotalCount(0);
@@ -72,27 +93,19 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     
     @Override
     public Page<RoleInfo> getRolesByUserNameAndRoleName(String username, String role, int pageNo, int pageSize) {
-    
-        AuthPaginationHelper<RoleInfo> helper = createPaginationHelper();
-        
-        String sqlCountRows = "SELECT count(*) FROM roles ";
-        
-        String sqlFetchRows = "SELECT role,username FROM roles ";
-        
-        StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
-        List<String> params = new ArrayList<>();
-        if (StringUtils.isNotBlank(username)) {
-            where.append(" AND username = ? ");
-            params.add(username);
-        }
-        if (StringUtils.isNotBlank(role)) {
-            where.append(" AND role = ? ");
-            params.add(role);
-        }
-        
-        return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
-                ROLE_INFO_ROW_MAPPER);
-        
+        final AuthPaginationHelper<RoleInfo> helper = createPaginationHelper();
+
+        final MapperContext context = new MapperContext();
+        context.setStartRow((pageNo - 1) * pageSize);
+        context.setPageSize(pageSize);
+        context.putWhereParameter(FieldConstant.USER_NAME, username);
+        context.putWhereParameter(FieldConstant.ROLE, role);
+
+        RolesMapper rolesMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.ROLES);
+        MapperResult sqlCount = rolesMapper.getRolesByUserNameAndRoleNameCountRows(context);
+        MapperResult sql = rolesMapper.getRolesByUserNameAndRoleNameFetchRows(context);
+
+        return helper.fetchPageLimit(sqlCount, sql, pageNo, pageSize, ROLE_INFO_ROW_MAPPER);
     }
     
     /**
@@ -103,9 +116,9 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
      */
     @Override
     public void addRole(String role, String userName) {
-        
-        String sql = "INSERT INTO roles (role, username) VALUES (?, ?)";
-        
+        RolesMapper rolesMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.ROLES);
+        String sql = rolesMapper.insert(Arrays.asList("role", "username"));
+
         try {
             EmbeddedStorageContextHolder.addSqlContext(sql, role, userName);
             databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
@@ -121,7 +134,8 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
      */
     @Override
     public void deleteRole(String role) {
-        String sql = "DELETE FROM roles WHERE role=?";
+        RolesMapper rolesMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.ROLES);
+        String sql = rolesMapper.delete(Collections.singletonList("role"));
         try {
             EmbeddedStorageContextHolder.addSqlContext(sql, role);
             databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
@@ -138,7 +152,8 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
      */
     @Override
     public void deleteRole(String role, String username) {
-        String sql = "DELETE FROM roles WHERE role=? AND username=?";
+        RolesMapper rolesMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.ROLES);
+        String sql = rolesMapper.delete(Arrays.asList("role", "username"));
         try {
             EmbeddedStorageContextHolder.addSqlContext(sql, role, username);
             databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
@@ -149,16 +164,21 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     
     @Override
     public List<String> findRolesLikeRoleName(String role) {
-        String sql = "SELECT role FROM roles WHERE role LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
-        return databaseOperate.queryMany(sql, new String[] {"%" + role + "%"}, String.class);
+        final MapperContext context = new MapperContext();
+        context.putWhereParameter(FieldConstant.ROLE, "%" + role + "%");
+
+        RolesMapper rolesMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.ROLES);
+        MapperResult sql = rolesMapper.findRolesLikeRoleName(context);
+
+        return databaseOperate.queryMany(sql.getSql(), sql.getParamList().toArray(), String.class);
     }
     
     @Override
     public String generateLikeArgument(String s) {
-        String underscore = "_";
-        if (s.contains(underscore)) {
-            s = s.replaceAll(underscore, "\\\\_");
+        if (StringUtils.isBlank(s)) {
+            return s;
         }
+
         String fuzzySearchSign = "\\*";
         String sqlLikePercentSign = "%";
         if (s.contains(PATTERN_STR)) {
@@ -170,26 +190,19 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     
     @Override
     public Page<RoleInfo> findRolesLike4Page(String username, String role, int pageNo, int pageSize) {
-        StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
-        List<String> params = new ArrayList<>();
-        
-        if (StringUtils.isNotBlank(username)) {
-            where.append(" AND username LIKE ? ");
-            params.add(generateLikeArgument(username));
-        }
-        if (StringUtils.isNotBlank(role)) {
-            where.append(" AND role LIKE ? ");
-            params.add(generateLikeArgument(role));
-        }
-        if (CollectionUtils.isNotEmpty(params)) {
-            where.append(SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
-        }
-        String sqlCountRows = "SELECT count(*) FROM roles";
-        String sqlFetchRows = "SELECT role, username FROM roles";
-    
-        AuthPaginationHelper<RoleInfo> helper = createPaginationHelper();
-        return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
-                ROLE_INFO_ROW_MAPPER);
+        final AuthPaginationHelper<RoleInfo> helper = createPaginationHelper();
+
+        final MapperContext context = new MapperContext();
+        context.setStartRow((pageNo - 1) * pageSize);
+        context.setPageSize(pageSize);
+        context.putWhereParameter(FieldConstant.USER_NAME, generateLikeArgument(username));
+        context.putWhereParameter(FieldConstant.ROLE, generateLikeArgument(role));
+
+        RolesMapper rolesMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.ROLES);
+        MapperResult sqlCount = rolesMapper.findRolesLike4PageCountRows(context);
+        MapperResult sql = rolesMapper.findRolesLike4PageFetchRows(context);
+
+        return helper.fetchPageLimit(sqlCount, sql, pageNo, pageSize, ROLE_INFO_ROW_MAPPER);
     }
     
     @Override
