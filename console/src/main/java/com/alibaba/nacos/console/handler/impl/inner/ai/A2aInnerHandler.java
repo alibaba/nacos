@@ -49,7 +49,7 @@ public class A2aInnerHandler implements A2aHandler {
     }
     
     @Override
-    public AgentCardVersionInfo getAgentCard(AgentForm form) {
+    public AgentCardVersionInfo getAgentCardWithVersions(AgentForm form) {
         return a2aServerOperationService.getAgentCard(form);
     }
     

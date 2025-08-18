@@ -24,6 +24,7 @@ import com.alibaba.nacos.console.cluster.RemoteServerMemberManager;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
+import com.alibaba.nacos.maintainer.client.ai.A2aMaintainerFactory;
 import com.alibaba.nacos.maintainer.client.ai.A2aMaintainerService;
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerFactory;
 import com.alibaba.nacos.maintainer.client.ai.AiMaintainerService;
@@ -73,7 +74,7 @@ public class NacosMaintainerClientHolder extends MemberChangeListener {
         namingMaintainerService = NamingMaintainerFactory.createNamingMaintainerService(properties);
         configMaintainerService = ConfigMaintainerFactory.createConfigMaintainerService(properties);
         aiMaintainerService = AiMaintainerFactory.createAiMaintainerService(properties);
-        a2aMaintainerService = AiMaintainerFactory.createA2aMaintainerService(properties);
+        a2aMaintainerService = A2aMaintainerFactory.createA2aMaintainerService(properties);
     }
     
     public NamingMaintainerService getNamingMaintainerService() {
