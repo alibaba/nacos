@@ -19,6 +19,11 @@ package com.alibaba.nacos.api.ai.model.a2a;
 
 import java.util.Objects;
 
+/**
+ * AgentVersionDetail.
+ *
+ * @author KiteSoar
+ */
 public class AgentVersionDetail {
     
     private String version;

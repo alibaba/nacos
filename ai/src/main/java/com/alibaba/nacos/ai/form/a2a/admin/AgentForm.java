@@ -25,6 +25,11 @@ import java.util.Objects;
 
 import static com.alibaba.nacos.api.ai.constant.AiConstants.A2a.A2A_DEFAULT_NAMESPACE;
 
+/**
+ * Agent form.
+ *
+ * @author KiteSoar
+ **/
 public class AgentForm implements NacosForm {
     
     @Serial

@@ -32,6 +32,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * AgentDetailForm.
+ *
+ * @author KiteSoar
+ */
 public class AgentDetailForm extends AgentForm {
     
     @Serial

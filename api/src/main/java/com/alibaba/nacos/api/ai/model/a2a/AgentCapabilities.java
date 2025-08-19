@@ -20,6 +20,11 @@ package com.alibaba.nacos.api.ai.model.a2a;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * AgentCapabilities.
+ *
+ * @author KiteSoar
+ */
 public class AgentCapabilities {
     
     private Boolean streaming;
@@ -54,6 +59,14 @@ public class AgentCapabilities {
         this.stateTransitionHistory = stateTransitionHistory;
     }
     
+    public List<AgentExtension> getExtensions() {
+        return extensions;
+    }
+    
+    public void setExtensions(List<AgentExtension> extensions) {
+        this.extensions = extensions;
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {
@@ -61,11 +74,12 @@ public class AgentCapabilities {
         }
         AgentCapabilities that = (AgentCapabilities) o;
         return Objects.equals(streaming, that.streaming) && Objects.equals(pushNotifications, that.pushNotifications)
-                && Objects.equals(stateTransitionHistory, that.stateTransitionHistory);
+                && Objects.equals(stateTransitionHistory, that.stateTransitionHistory) && Objects.equals(extensions,
+                that.extensions);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(streaming, pushNotifications, stateTransitionHistory);
+        return Objects.hash(streaming, pushNotifications, stateTransitionHistory, extensions);
     }
 }

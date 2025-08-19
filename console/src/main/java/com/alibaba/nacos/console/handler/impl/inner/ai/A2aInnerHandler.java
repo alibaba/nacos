@@ -29,6 +29,11 @@ import com.alibaba.nacos.console.handler.ai.A2aHandler;
 import com.alibaba.nacos.core.model.form.PageForm;
 import org.springframework.stereotype.Component;
 
+/**
+ * A2a inner handler.
+ *
+ * @author KiteSoar
+ */
 @Component
 public class A2aInnerHandler implements A2aHandler {
     
@@ -44,7 +49,7 @@ public class A2aInnerHandler implements A2aHandler {
     }
     
     @Override
-    public AgentCardVersionInfo getAgentCard(AgentForm form) {
+    public AgentCardVersionInfo getAgentCardWithVersions(AgentForm form) {
         return a2aServerOperationService.getAgentCard(form);
     }
     

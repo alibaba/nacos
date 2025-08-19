@@ -19,6 +19,11 @@ package com.alibaba.nacos.api.ai.model.a2a;
 
 import java.util.Objects;
 
+/**
+ * AgentInterface.
+ *
+ * @author KiteSoar
+ */
 public class AgentInterface {
     
     private String url;

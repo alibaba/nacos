@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.console.controller.v3.ai;
+package com.alibaba.nacos.ai.controller;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentDetailForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentListForm;
 import com.alibaba.nacos.ai.form.a2a.admin.AgentUpdateForm;
+import com.alibaba.nacos.ai.service.A2aServerOperationService;
 import com.alibaba.nacos.api.ai.model.a2a.AgentCardVersionInfo;
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -28,7 +29,6 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.console.proxy.ai.A2aProxy;
 import com.alibaba.nacos.core.model.form.PageForm;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.ApiType;
@@ -42,82 +42,82 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Console A2a Controller.
+ * Nacos A2A Admin controller.
  *
- * @author KiteSoar
+ * @author nacos
  */
 @NacosApi
 @RestController
-@RequestMapping(Constants.A2A.CONSOLE_PATH)
-public class ConsoleA2aController {
+@RequestMapping(Constants.A2A.ADMIN_PATH)
+public class AdminA2aController {
 
-    private final A2aProxy a2aProxy;
+    private final A2aServerOperationService a2aServerOperationService;
 
-    public ConsoleA2aController(A2aProxy a2aProxy) {
-        this.a2aProxy = a2aProxy;
+    public AdminA2aController(A2aServerOperationService a2aServerOperationService) {
+        this.a2aServerOperationService = a2aServerOperationService;
     }
 
     /**
-     * register agent.
+     * Register agent.
      *
      * @param form the agent detail form to register
      * @return result of the registration operation
      * @throws NacosException if the agent registration fails due to invalid input or internal error
      */
     @PostMapping
-    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> registerAgent(@RequestBody AgentDetailForm form) throws NacosException {
         form.validate();
-        a2aProxy.registerAgent(form);
+        a2aServerOperationService.registerAgent(form);
         return Result.success("ok");
     }
 
     /**
-     * get agent card.
+     * Get agent card.
      *
      * @param form the agent form to get
      * @return result of the get operation
      * @throws NacosApiException if the agent get fails due to invalid input or internal error
      */
     @GetMapping
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
-    public Result<AgentCardVersionInfo> getAgentCard(AgentForm form) throws NacosException {
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
+    public Result<AgentCardVersionInfo> getAgentCard(AgentForm form) throws NacosApiException {
         form.validate();
-        return Result.success(a2aProxy.getAgentCard(form));
+        return Result.success(a2aServerOperationService.getAgentCard(form));
     }
 
     /**
-     * update agent.
+     * Update agent.
      *
      * @param form the agent update form to update
      * @return result of the update operation
      * @throws NacosException if the agent update fails due to invalid input or internal error
      */
     @PutMapping
-    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> updateAgentCard(@RequestBody AgentUpdateForm form) throws NacosException {
         form.validate();
-        a2aProxy.updateAgentCard(form);
+        a2aServerOperationService.updateAgentCard(form);
         return Result.success("ok");
     }
 
     /**
-     * delete agent.
+     * Delete agent.
      *
      * @param form the agent form to delete
      * @return result of the deletion operation
      * @throws NacosException if the agent deletion fails due to invalid input or internal error
      */
     @DeleteMapping
-    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<String> deleteAgent(AgentForm form) throws NacosException {
         form.validate();
-        a2aProxy.deleteAgent(form);
+        a2aServerOperationService.deleteAgent(form);
         return Result.success("ok");
     }
 
     /**
-     * list agents.
+     * List agents.
      *
      * @param agentListForm the agent list form to list
      * @param pageForm the page form to list
@@ -125,11 +125,10 @@ public class ConsoleA2aController {
      * @throws NacosException if the agent list fails due to invalid input or internal error
      */
     @GetMapping("/list")
-    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.CONSOLE_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.AI, apiType = ApiType.ADMIN_API)
     public Result<Page<AgentCardVersionInfo>> listAgents(AgentListForm agentListForm, PageForm pageForm) throws NacosException {
         agentListForm.validate();
         pageForm.validate();
-        return Result.success(a2aProxy.listAgents(agentListForm, pageForm));
+        return Result.success(a2aServerOperationService.listAgents(agentListForm, pageForm));
     }
 }
-
