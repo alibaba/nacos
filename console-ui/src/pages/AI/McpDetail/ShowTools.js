@@ -394,9 +394,16 @@ const ShowTools = props => {
             url = url.replace(re, `{{.args.${name}}}`);
           });
 
-          // 2) 处理 query：将 name 放到 URL 的 query 中，采用 {{urlquery ...}}
-          if (queryArgs.length > 0) {
-            // 不使用 urlquery 等函数，直接构造占位符形式的 query 串
+          // 统计总体位置
+          const totalArgsCount = entries.length;
+          const allInQuery = totalArgsCount > 0 && queryArgs.length === totalArgsCount;
+          const allInBody = totalArgsCount > 0 && bodyArgs.length === totalArgsCount;
+
+          // 2) 处理 query：当全部在 query 时，使用 argsToUrlParam 标记，不拼接到 URL
+          if (allInQuery) {
+            tmpl.requestTemplate.argsToUrlParam = true;
+          } else if (queryArgs.length > 0) {
+            // 混合场景下仍然把 query 参数拼接到 URL
             const pairs = queryArgs.map(name => `${name}={{.args.${name}}}`);
             const connector = url.includes('?') ? '&' : '?';
             url = url + (pairs.length > 0 ? connector + pairs.join('&') : '');
@@ -426,47 +433,60 @@ const ShowTools = props => {
             }
           }
 
-          // 5) 处理 body：如果未显式提供 body/argsToJsonBody/argsToFormBody，根据 Content-Type 生成
+          // 5) 处理 body：
+          //    - 如果全部在 body：根据 Content-Type 设置 argsToJsonBody/argsToFormBody，不直接生成 body
+          //    - 否则（混合场景）：若未显式提供 body/argsTo*，再根据 Content-Type 生成
           const hasExplicit =
             body !== undefined ||
             tmpl.requestTemplate.argsToJsonBody === true ||
             tmpl.requestTemplate.argsToFormBody === true ||
             tmpl.requestTemplate.argsToUrlParam === true;
 
-          if (!hasExplicit && bodyArgs.length > 0) {
+          if (bodyArgs.length > 0) {
             const ct = getContentType(headers);
-            if (ct.includes('application/x-www-form-urlencoded')) {
-              // 简单 form 内容，不使用函数
-              const formPairs = bodyArgs.map(name => `${name}={{.args.${name}}}`);
-              body = formPairs.join('&');
-            } else {
-              // JSON 场景：若存在复杂类型（object/array），改为使用 argsToJsonBody 标志并保留 argsPosition
-              const hasComplex = bodyArgs.some(n => {
-                const a = byName[n];
-                const t = a && (a.type || (a.schema && a.schema.type));
-                return t === 'object' || t === 'array';
-              });
-
-              if (hasComplex) {
+            if (allInBody) {
+              // 全部在 body：通过标记控制
+              if (
+                ct.includes('application/x-www-form-urlencoded') ||
+                ct.includes('multipart/form-data')
+              ) {
+                tmpl.requestTemplate.argsToFormBody = true;
+              } else {
                 tmpl.requestTemplate.argsToJsonBody = true;
-                shouldKeepArgsPosition = true;
-                // 若未设置 Content-Type，补全为 application/json
                 if (!getContentType(headers) && !hasHeaderKey(headers, 'Content-Type')) {
                   headers.push({ key: 'Content-Type', value: 'application/json; charset=utf-8' });
                 }
+              }
+            } else if (!hasExplicit) {
+              // 混合场景且未显式指定：保持原有自动生成策略
+              if (ct.includes('application/x-www-form-urlencoded')) {
+                const formPairs = bodyArgs.map(name => `${name}={{.args.${name}}}`);
+                body = formPairs.join('&');
               } else {
-                // 仅含基础类型时，直接拼装 JSON，字符串类型加引号
-                const jsonPairs = bodyArgs.map(name => {
-                  const a = byName[name];
+                const hasComplex = bodyArgs.some(n => {
+                  const a = byName[n];
                   const t = a && (a.type || (a.schema && a.schema.type));
-                  const isString = t === 'string';
-                  const valueTpl = isString ? `"{{.args.${name}}}"` : `{{.args.${name}}}`;
-                  return `  \"${name}\": ${valueTpl}`;
+                  return t === 'object' || t === 'array';
                 });
-                body = `{$\n${jsonPairs.join(',\n')}\n}`.replace('{$\n', '{\n');
-                // 若未设置 Content-Type，补全为 application/json
-                if (!getContentType(headers) && !hasHeaderKey(headers, 'Content-Type')) {
-                  headers.push({ key: 'Content-Type', value: 'application/json; charset=utf-8' });
+
+                if (hasComplex) {
+                  tmpl.requestTemplate.argsToJsonBody = true;
+                  shouldKeepArgsPosition = true;
+                  if (!getContentType(headers) && !hasHeaderKey(headers, 'Content-Type')) {
+                    headers.push({ key: 'Content-Type', value: 'application/json; charset=utf-8' });
+                  }
+                } else {
+                  const jsonPairs = bodyArgs.map(name => {
+                    const a = byName[name];
+                    const t = a && (a.type || (a.schema && a.schema.type));
+                    const isString = t === 'string';
+                    const valueTpl = isString ? `"{{.args.${name}}}"` : `{{.args.${name}}}`;
+                    return `  \"${name}\": ${valueTpl}`;
+                  });
+                  body = `{$\n${jsonPairs.join(',\n')}\n}`.replace('{$\n', '{\n');
+                  if (!getContentType(headers) && !hasHeaderKey(headers, 'Content-Type')) {
+                    headers.push({ key: 'Content-Type', value: 'application/json; charset=utf-8' });
+                  }
                 }
               }
             }
@@ -486,13 +506,16 @@ const ShowTools = props => {
           } else {
             // 未生成明确 body，但存在 bodyArgs 且 Content-Type 为表单时，设置表单标记
             const ct2 = getContentType(headers);
-            if (bodyArgs.length > 0 && ct2.includes('application/x-www-form-urlencoded')) {
-              tmpl.requestTemplate.argsToFormBody = true;
-              shouldKeepArgsPosition = true;
+            if (!allInBody) {
+              if (bodyArgs.length > 0 && ct2.includes('application/x-www-form-urlencoded')) {
+                tmpl.requestTemplate.argsToFormBody = true;
+                shouldKeepArgsPosition = true;
+              }
             }
           }
-          // 仅在不依赖 flags 的情况下删除 argsPosition
-          if (!shouldKeepArgsPosition) {
+          // 仅在不依赖 flags 的情况下删除 argsPosition；
+          // 若全部在 query/body 已由 flags 控制，也可删除
+          if (!shouldKeepArgsPosition || allInQuery || allInBody) {
             delete tmpl.argsPosition;
           }
         });
@@ -1313,9 +1336,7 @@ const ShowTools = props => {
                                             后端认证方式:{' '}
                                           </span>
                                           <span style={{ color: '#fa8c16' }}>
-                                            {Object.keys(
-                                              templateData.requestTemplate.security
-                                            ).join(', ')}
+                                            {templateData.requestTemplate.security.id}
                                           </span>
                                         </div>
                                       )}
