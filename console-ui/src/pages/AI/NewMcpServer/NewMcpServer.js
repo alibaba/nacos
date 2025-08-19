@@ -972,7 +972,7 @@ class NewMcpServer extends React.Component {
 
     // 获取当前表单中的 securitySchemes 数据
     const formSecuritySchemes = this.field.getValue('securitySchemes') || [];
-    const securitySchemes = formSecuritySchemes.map(scheme => {
+    const securitySchemesFromForm = formSecuritySchemes.map(scheme => {
       // 保留所有字段，包括 id
       return {
         id: scheme.id,
@@ -984,6 +984,47 @@ class NewMcpServer extends React.Component {
       };
     });
 
+    // 处理从子组件传入的 securitySchemes（来自 OpenAPI 导入）
+    const importedSchemes = Array.isArray(_toolSpec?.securitySchemes)
+      ? _toolSpec.securitySchemes
+      : [];
+
+    // 合并并按 id 去重（导入优先覆盖同 id）
+    const mergedMap = new Map();
+    securitySchemesFromForm.forEach(s => {
+      if (s?.id) mergedMap.set(s.id, s);
+    });
+    importedSchemes.forEach(s => {
+      if (s?.id) {
+        mergedMap.set(s.id, {
+          id: s.id,
+          type: s.type,
+          scheme: s.scheme,
+          in: s.in,
+          name: s.name,
+          // 默认凭证仅保留表单里已存在的值，导入的一般不含默认值
+          defaultCredential: mergedMap.get(s.id)?.defaultCredential || '',
+        });
+      }
+    });
+    const mergedSecuritySchemes = Array.from(mergedMap.values());
+
+    // 将合并后的结果同步回表单字段，便于用户在 UI 中看到并进一步编辑
+    this.field.setValue(
+      'securitySchemes',
+      mergedSecuritySchemes.map((s, idx) => ({
+        // 确保表单行有稳定的 id 字段
+        id: s.id || `securityScheme_${idx + 1}`,
+        type: s.type,
+        scheme: s.scheme,
+        in: s.in,
+        name: s.name,
+        defaultCredential: s.defaultCredential,
+      }))
+    );
+    // 同步 internal 计数器，便于后续新增时生成唯一行 id
+    this.setState({ securitySchemeIdx: mergedSecuritySchemes.length });
+
     await new Promise(resolve => {
       this.setState(
         {
@@ -994,7 +1035,7 @@ class NewMcpServer extends React.Component {
               tools: _toolSpec?.tools || this.state?.serverConfig?.toolSpec?.tools || [],
               toolsMeta:
                 _toolSpec?.toolsMeta || this.state?.serverConfig?.toolSpec?.toolsMeta || {},
-              securitySchemes: securitySchemes,
+              securitySchemes: mergedSecuritySchemes,
             },
           },
         },
