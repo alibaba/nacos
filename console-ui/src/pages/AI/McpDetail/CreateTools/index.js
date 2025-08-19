@@ -196,11 +196,7 @@ const CreateTools = React.forwardRef((props, ref) => {
 
         // 提取后端认证方式 (从 requestTemplate.security 中)
         if (templateObj?.requestTemplate?.security) {
-          const securityKeys = Object.keys(templateObj.requestTemplate.security);
-          if (securityKeys.length > 0) {
-            const securityObj = templateObj.requestTemplate.security[securityKeys[0]];
-            extractedSecuritySchemeId = securityObj?.id || securityKeys[0];
-          }
+          extractedSecuritySchemeId = templateObj?.requestTemplate?.security.id;
         }
 
         // 提取客户端认证方式和透明认证状态 (从根级别 security 中)
@@ -726,9 +722,7 @@ const CreateTools = React.forwardRef((props, ref) => {
             templateObject.requestTemplate = {};
           }
           templateObject.requestTemplate.security = {
-            [selectedScheme.id]: {
-              id: selectedScheme.id,
-            },
+            id: selectedScheme.id,
           };
           modified = true;
         }

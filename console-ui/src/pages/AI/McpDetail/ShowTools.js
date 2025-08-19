@@ -290,6 +290,10 @@ const ShowTools = props => {
       const doc = await parseOpenAPI(content);
 
       let config = extractToolsFromOpenAPI(doc);
+      // 提取 OpenAPI 顶层的 securitySchemes
+      const securitySchemes = Array.isArray(config?.server?.securitySchemes)
+        ? config.server.securitySchemes
+        : [];
 
       const toolsMeta = config.tools.reduce((acc, tool) => {
         const argsPosition = tool.args.reduce((acc, arg) => {
@@ -501,6 +505,7 @@ const ShowTools = props => {
       const toolSpecification = JSON.stringify({
         tools,
         toolsMeta,
+        securitySchemes,
       });
       if (props?.onChange) {
         props.onChange(JSON.parse(toolSpecification));
