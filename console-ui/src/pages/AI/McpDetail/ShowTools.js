@@ -326,6 +326,178 @@ const ShowTools = props => {
         },
       }));
 
+      // 在生成最终 specification 之前：将 argsPosition 合并进 requestTemplate
+      try {
+        // 建立一个快速索引：toolName -> args 数组（含类型、position）
+        const toolArgsByName = config.tools.reduce((acc, t) => {
+          acc[t.name] = t.args || [];
+          return acc;
+        }, {});
+
+        const ensureHeadersArray = headers => {
+          // 规范化 headers 为数组 [{key, value}, ...]
+          if (!headers) return [];
+          if (Array.isArray(headers)) return headers;
+          if (typeof headers === 'object') {
+            return Object.entries(headers).map(([k, v]) => ({ key: k, value: String(v) }));
+          }
+          return [];
+        };
+
+        const hasHeaderKey = (headers, key) => {
+          return headers.some(h => (h.key || '').toLowerCase() === String(key).toLowerCase());
+        };
+
+        const getContentType = headers => {
+          const h = headers.find(it => (it.key || '').toLowerCase() === 'content-type');
+          return h ? String(h.value).toLowerCase() : '';
+        };
+
+        Object.keys(toolsMeta || {}).forEach(toolName => {
+          const meta = toolsMeta[toolName];
+          const tmpl = meta?.templates?.['json-go-template'];
+          if (!tmpl || !tmpl.requestTemplate) return;
+
+          const argsPos = tmpl.argsPosition || {};
+          let url = tmpl.requestTemplate.url || '';
+          let headers = ensureHeadersArray(tmpl.requestTemplate.headers);
+          let body = tmpl.requestTemplate.body; // 可能为字符串或对象，保留原样优先
+
+          // 收集各类参数名
+          const allArgs = toolArgsByName[toolName] || [];
+          const byName = allArgs.reduce((acc, a) => {
+            acc[a.name] = a;
+            return acc;
+          }, {});
+
+          const entries = Object.entries(argsPos);
+          const pathArgs = entries.filter(([, pos]) => pos === 'path').map(([n]) => n);
+          const queryArgs = entries.filter(([, pos]) => pos === 'query').map(([n]) => n);
+          const headerArgs = entries.filter(([, pos]) => pos === 'header').map(([n]) => n);
+          const cookieArgs = entries.filter(([, pos]) => pos === 'cookie').map(([n]) => n);
+          const bodyArgs = entries.filter(([, pos]) => pos === 'body').map(([n]) => n);
+
+          // 标记是否需要保留 argsPosition（当依赖 argsTo* flags 时需要）
+          let shouldKeepArgsPosition = false;
+
+          // 1) 处理 path 占位：将 {name} 替换为 {{urlqueryescape .args.name}}
+          pathArgs.forEach(name => {
+            const re = new RegExp(
+              '\\{' + name.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&') + '\\}',
+              'g'
+            );
+            // 不使用模板函数，直接插入占位 {{.args.name}}
+            url = url.replace(re, `{{.args.${name}}}`);
+          });
+
+          // 2) 处理 query：将 name 放到 URL 的 query 中，采用 {{urlquery ...}}
+          if (queryArgs.length > 0) {
+            // 不使用 urlquery 等函数，直接构造占位符形式的 query 串
+            const pairs = queryArgs.map(name => `${name}={{.args.${name}}}`);
+            const connector = url.includes('?') ? '&' : '?';
+            url = url + (pairs.length > 0 ? connector + pairs.join('&') : '');
+          }
+
+          // 3) 处理 header：为每个 header 参数添加 header 条目
+          if (headerArgs.length > 0) {
+            headerArgs.forEach(name => {
+              if (!hasHeaderKey(headers, name)) {
+                // 不使用 toString，直接占位
+                headers.push({ key: name, value: `{{.args.${name}}}` });
+              }
+            });
+          }
+
+          // 4) 处理 cookie：将所有 cookie 参数合并为一个 Cookie 头
+          if (cookieArgs.length > 0) {
+            const cookiePairs = cookieArgs.map(name => `${name}={{.args.${name}}}`);
+            const cookieValue = cookiePairs.join('; ');
+            const idx = headers.findIndex(h => (h.key || '').toLowerCase() === 'cookie');
+            if (idx >= 0) {
+              headers[idx].value = headers[idx].value
+                ? `${headers[idx].value}; ${cookieValue}`
+                : cookieValue;
+            } else {
+              headers.push({ key: 'Cookie', value: cookieValue });
+            }
+          }
+
+          // 5) 处理 body：如果未显式提供 body/argsToJsonBody/argsToFormBody，根据 Content-Type 生成
+          const hasExplicit =
+            body !== undefined ||
+            tmpl.requestTemplate.argsToJsonBody === true ||
+            tmpl.requestTemplate.argsToFormBody === true ||
+            tmpl.requestTemplate.argsToUrlParam === true;
+
+          if (!hasExplicit && bodyArgs.length > 0) {
+            const ct = getContentType(headers);
+            if (ct.includes('application/x-www-form-urlencoded')) {
+              // 简单 form 内容，不使用函数
+              const formPairs = bodyArgs.map(name => `${name}={{.args.${name}}}`);
+              body = formPairs.join('&');
+            } else {
+              // JSON 场景：若存在复杂类型（object/array），改为使用 argsToJsonBody 标志并保留 argsPosition
+              const hasComplex = bodyArgs.some(n => {
+                const a = byName[n];
+                const t = a && (a.type || (a.schema && a.schema.type));
+                return t === 'object' || t === 'array';
+              });
+
+              if (hasComplex) {
+                tmpl.requestTemplate.argsToJsonBody = true;
+                shouldKeepArgsPosition = true;
+                // 若未设置 Content-Type，补全为 application/json
+                if (!getContentType(headers) && !hasHeaderKey(headers, 'Content-Type')) {
+                  headers.push({ key: 'Content-Type', value: 'application/json; charset=utf-8' });
+                }
+              } else {
+                // 仅含基础类型时，直接拼装 JSON，字符串类型加引号
+                const jsonPairs = bodyArgs.map(name => {
+                  const a = byName[name];
+                  const t = a && (a.type || (a.schema && a.schema.type));
+                  const isString = t === 'string';
+                  const valueTpl = isString ? `"{{.args.${name}}}"` : `{{.args.${name}}}`;
+                  return `  \"${name}\": ${valueTpl}`;
+                });
+                body = `{$\n${jsonPairs.join(',\n')}\n}`.replace('{$\n', '{\n');
+                // 若未设置 Content-Type，补全为 application/json
+                if (!getContentType(headers) && !hasHeaderKey(headers, 'Content-Type')) {
+                  headers.push({ key: 'Content-Type', value: 'application/json; charset=utf-8' });
+                }
+              }
+            }
+          }
+
+          // 写回模板，并移除 argsPosition 字段
+          tmpl.requestTemplate.url = url;
+          if (headers.length > 0) {
+            tmpl.requestTemplate.headers = headers;
+          }
+          if (body !== undefined) {
+            tmpl.requestTemplate.body = body;
+            // 当生成了明确的 body 时，移除 flags（避免冲突）
+            delete tmpl.requestTemplate.argsToJsonBody;
+            delete tmpl.requestTemplate.argsToUrlParam;
+            delete tmpl.requestTemplate.argsToFormBody;
+          } else {
+            // 未生成明确 body，但存在 bodyArgs 且 Content-Type 为表单时，设置表单标记
+            const ct2 = getContentType(headers);
+            if (bodyArgs.length > 0 && ct2.includes('application/x-www-form-urlencoded')) {
+              tmpl.requestTemplate.argsToFormBody = true;
+              shouldKeepArgsPosition = true;
+            }
+          }
+          // 仅在不依赖 flags 的情况下删除 argsPosition
+          if (!shouldKeepArgsPosition) {
+            delete tmpl.argsPosition;
+          }
+        });
+      } catch (e) {
+        // 转换失败不影响导入流程，仅记录日志
+        // eslint-disable-next-line no-console
+        console.warn('argsPosition to requestTemplate transform failed:', e);
+      }
+
       const toolSpecification = JSON.stringify({
         tools,
         toolsMeta,
