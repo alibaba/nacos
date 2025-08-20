@@ -339,7 +339,6 @@ class NewAgent extends React.Component {
       }
       try {
         const parsed = JSON.parse(trimmedValue);
-        // 确保解析结果是对象或数组
         if (typeof parsed !== 'object') {
           callback('JSON格式错误：必须是有效的JSON对象或数组');
           return;
