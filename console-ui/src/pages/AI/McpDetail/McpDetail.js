@@ -1498,7 +1498,7 @@ class McpDetail extends React.Component {
       const item = serverReturnEndpoints[i];
 
       // 根据 protocol 字段判断使用 https 还是 http 前缀
-      const protocolPrefix = item.protocol + '://';
+      const protocolPrefix = (item.protocol || 'http') + '://';
       const endpoint = protocolPrefix + item.address + ':' + item.port + item.path;
 
       const serverConfig = {
