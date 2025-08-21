@@ -52,6 +52,7 @@ import com.alibaba.nacos.config.server.service.query.ConfigQueryChainService;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainResponse;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -243,8 +244,15 @@ public class McpServerOperationService {
         
         instances = endpointOperationService.getMcpServerEndpointInstances(
                 detailInfo.getRemoteServerConfig().getServiceRef());
+        
+        String protocol = null;
+        McpServiceRef serviceRef = detailInfo.getRemoteServerConfig().getServiceRef();
+        if (Objects.nonNull(serviceRef)) {
+            protocol = serviceRef.getTransportProtocol();
+        }
         List<McpEndpointInfo> backendEndpoints = transferToMcpEndpointInfo(instances,
-                detailInfo.getRemoteServerConfig().getExportPath(), detailInfo.getProtocol());
+                detailInfo.getRemoteServerConfig().getExportPath(), 
+                protocol);
         detailInfo.setBackendEndpoints(backendEndpoints);
     }
 
@@ -257,9 +265,6 @@ public class McpServerOperationService {
             mcpEndpointInfo.setPort(each.getPort());
             mcpEndpointInfo.setProtocol(protocol);
             mcpEndpointInfo.setHeaders(headers);
-            if (Constants.PROTOCOL_TYPE_HTTP.equals(protocol)) {
-                exportPath = each.getMetadata().get(Constants.META_PATH);
-            }
             mcpEndpointInfo.setPath(exportPath);
             endpointInfos.add(mcpEndpointInfo);
         }
@@ -284,7 +289,7 @@ public class McpServerOperationService {
                 McpServiceRef mcpServiceRef = McpRequestUtil.transferToMcpServiceRef(each.getEndpointData());
                 List<Instance> instances = endpointOperationService.getMcpServerEndpointInstances(mcpServiceRef);
                 List<McpEndpointInfo> endpointInfos = transferToMcpEndpointInfoWithHeaders(instances, each.getPath(),
-                        each.getType(), each.getHeaders());
+                        each.getProtocol(), each.getHeaders());
                 frontendEndpoints.addAll(endpointInfos);
             } else if (AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT.equals(each.getEndpointType())) {
                 McpEndpointInfo endpointInfo = new McpEndpointInfo();
@@ -537,10 +542,12 @@ public class McpServerOperationService {
         if (null != endpointSpecification) {
             Service service = endpointOperationService.createMcpServerEndpointServiceIfNecessary(namespaceId,
                     serverSpecification.getName(), serverSpecification.getVersionDetail().getVersion(), endpointSpecification);
+            String transportProtocol = endpointSpecification.getData().get(Constants.MCP_BACKEND_ISTANCE_PROTOCOL_KEY);
             McpServiceRef serviceRef = new McpServiceRef();
             serviceRef.setNamespaceId(service.getNamespace());
             serviceRef.setGroupName(service.getGroup());
             serviceRef.setServiceName(service.getName());
+            serviceRef.setTransportProtocol(transportProtocol);
             serverSpecification.getRemoteServerConfig().setServiceRef(serviceRef);
         }
     }

@@ -44,7 +44,7 @@ const CreateTools = React.forwardRef((props, ref) => {
   const [data, setData] = useState([]);
   const [args, setArgs] = useState({});
   const [originalTemplate, setOriginalTemplate] = useState(''); // 存储原始模板
-  const [expandedKeys, setExpandedKeys] = useState(['args']); // 控制树节点展开状态
+  const [expandedKeys, setExpandedKeys] = useState([]); // 控制树节点展开状态，默认折叠
   const [currentNode, setCurrentNode] = useState({
     description: '',
     type: 'object',
@@ -70,7 +70,7 @@ const CreateTools = React.forwardRef((props, ref) => {
   //   }
   // }, [visible]);
 
-  const convertPropertiesToTreeData = (properties, prefix) => {
+  const convertPropertiesToTreeData = (properties, prefix, requiredList = []) => {
     if (properties == null) {
       return [];
     }
@@ -81,6 +81,7 @@ const CreateTools = React.forwardRef((props, ref) => {
       const arg = properties[element];
       let children = [];
       if (arg.type === 'object') {
+        // 嵌套对象暂不处理其 required 列表（当前仅支持根级 required）
         children = convertPropertiesToTreeData(arg.properties, `${prefix}@@${element}`);
       } else if (arg.type === 'array') {
         children = convertPropertiesToTreeData(
@@ -96,6 +97,8 @@ const CreateTools = React.forwardRef((props, ref) => {
         arg: arg,
         description: arg.description ? arg.description : '',
         defaultValue: arg.default || '',
+        // 仅根级 required 使用 inputSchema.required 进行标记
+        required: Array.isArray(requiredList) ? requiredList.includes(element) : false,
         children,
         key: `${prefix}@@${element}`,
       };
@@ -125,7 +128,11 @@ const CreateTools = React.forwardRef((props, ref) => {
     setType(type);
 
     const _toolParams = inputSchema?.properties
-      ? convertPropertiesToTreeData(inputSchema?.properties, 'args')
+      ? convertPropertiesToTreeData(
+          inputSchema?.properties,
+          'args',
+          Array.isArray(inputSchema?.required) ? inputSchema?.required : []
+        )
       : [];
 
     let rootNode = {
@@ -145,6 +152,7 @@ const CreateTools = React.forwardRef((props, ref) => {
         key: 'args@@NewArg1',
         description: '',
         defaultValue: '',
+        required: false,
         children: [],
         arg: {
           type: 'string',
@@ -163,9 +171,8 @@ const CreateTools = React.forwardRef((props, ref) => {
     // 保存默认参数到表单字段
     const defaultParams = rawDataToFiledValue(rootNode.children);
 
-    // 初始化时展开所有节点
-    const allKeys = collectAllKeys([rootNode]);
-    setExpandedKeys(allKeys);
+    // 默认不展开任何节点
+    setExpandedKeys([]);
 
     const _invokeContext = toolsMeta?.invokeContext
       ? Object.keys(toolsMeta?.invokeContext).map(key => ({
@@ -181,7 +188,7 @@ const CreateTools = React.forwardRef((props, ref) => {
     let extractedTransparentAuth = false;
 
     if (toolsMeta?.templates !== undefined && 'json-go-template' in toolsMeta?.templates) {
-      templatesStr = JSON.stringify(toolsMeta?.templates['json-go-template']);
+      templatesStr = JSON.stringify(toolsMeta?.templates['json-go-template'], null, 2);
 
       // 从模板中提取安全方案ID和透明认证状态
       try {
@@ -189,11 +196,7 @@ const CreateTools = React.forwardRef((props, ref) => {
 
         // 提取后端认证方式 (从 requestTemplate.security 中)
         if (templateObj?.requestTemplate?.security) {
-          const securityKeys = Object.keys(templateObj.requestTemplate.security);
-          if (securityKeys.length > 0) {
-            const securityObj = templateObj.requestTemplate.security[securityKeys[0]];
-            extractedSecuritySchemeId = securityObj?.id || securityKeys[0];
-          }
+          extractedSecuritySchemeId = templateObj?.requestTemplate?.security.id;
         }
 
         // 提取客户端认证方式和透明认证状态 (从根级别 security 中)
@@ -261,7 +264,7 @@ const CreateTools = React.forwardRef((props, ref) => {
     setEditorKey(0); // 重置编辑器key
     setShowTemplateHelp(false); // 重置帮助信息状态
 
-    setExpandedKeys(['args']); // 重置展开状态
+    setExpandedKeys([]); // 重置展开状态为折叠
     setCurrentNode({
       description: '',
       type: 'object',
@@ -719,9 +722,7 @@ const CreateTools = React.forwardRef((props, ref) => {
             templateObject.requestTemplate = {};
           }
           templateObject.requestTemplate.security = {
-            [selectedScheme.id]: {
-              id: selectedScheme.id,
-            },
+            id: selectedScheme.id,
           };
           modified = true;
         }
@@ -816,10 +817,18 @@ const CreateTools = React.forwardRef((props, ref) => {
         ...element.arg,
         type: element.type,
       };
-
-      arg.description = element.description;
+      // items 节点不需要描述
+      if (!String(element.key || '').endsWith('@@items')) {
+        arg.description = element.description;
+      } else if (arg && arg.description !== undefined) {
+        delete arg.description;
+      }
       arg.type = element.type;
-      if (element.defaultValue !== undefined && element.defaultValue !== '') {
+      if (
+        element.defaultValue !== undefined &&
+        element.defaultValue !== '' &&
+        !String(element.key || '').endsWith('@@items')
+      ) {
         // 根据类型设置默认值
         if (element.type === 'boolean') {
           arg.default = element.defaultValue === 'true';
@@ -862,6 +871,7 @@ const CreateTools = React.forwardRef((props, ref) => {
       type: 'string',
       description: '',
       defaultValue: '',
+      required: false,
       children: [],
       arg: {
         type: 'string',
@@ -907,6 +917,7 @@ const CreateTools = React.forwardRef((props, ref) => {
       type: 'string',
       description: '',
       defaultValue: '',
+      required: false,
       children: [],
       arg: {
         type: 'string',
@@ -1023,10 +1034,29 @@ const CreateTools = React.forwardRef((props, ref) => {
   };
 
   const saveParamToFiled = () => {
-    field.setValue('toolParams', rawDataToFiledValue(rawData[0].children));
+    if (!rawData || rawData.length === 0) {
+      return;
+    }
+    const root = rawData[0];
+    field.setValue('toolParams', rawDataToFiledValue(root.children));
+    // 同步 required（仅根级参数）
+    const req = Array.isArray(root.children)
+      ? root.children.filter(n => n.required).map(n => n.label)
+      : [];
+    field.setValue('required', req);
   };
 
   const isPreview = type === 'preview';
+  // 判断是否为数组的 items 子节点
+  const isArrayItemsNode = node => {
+    if (!node || !node.key) return false;
+    if (!node.key.endsWith('@@items')) return false;
+    const parentKey = node.key
+      .split('@@')
+      .slice(0, -1)
+      .join('@@');
+    return args[parentKey]?.type === 'array';
+  };
   return (
     <div>
       {visible ? (
@@ -1238,7 +1268,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                 backgroundColor: '#fff',
                 borderRadius: '8px',
                 border: '1px solid #e8e8e8',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
               }}
             >
               <h3
@@ -1325,8 +1355,6 @@ const CreateTools = React.forwardRef((props, ref) => {
                         }}
                       >
                         <Tree
-                          defaultExpandAll
-                          autoExpandParent
                           showLine
                           isLabelBlock
                           dataSource={data}
@@ -1344,13 +1372,24 @@ const CreateTools = React.forwardRef((props, ref) => {
                                 <Col>
                                   <Row>
                                     <Col>
-                                      <a>{node.label}</a>&nbsp;&nbsp;({args[node.key].type})
+                                      <a>
+                                        {node.label}
+                                        {node.key.split('@@').length === 2 && (
+                                          <span style={{ color: '#fa541c', marginLeft: 6 }}>
+                                            {args[node.key].required ? '*' : ''}
+                                          </span>
+                                        )}
+                                      </a>
+                                      &nbsp;&nbsp;({args[node.key].type})
                                     </Col>
-                                    <Col style={{ textOverflow: 'ellipsis', marginLeft: 10 }}>
-                                      {args[node.key].description?.length <= 25
-                                        ? args[node.key].description
-                                        : `${args[node.key].description?.substring(0, 20)}...`}
-                                    </Col>
+                                    {/* items 节点不显示描述 */}
+                                    {!isArrayItemsNode(args[node.key]) && (
+                                      <Col style={{ textOverflow: 'ellipsis', marginLeft: 10 }}>
+                                        {args[node.key].description?.length <= 25
+                                          ? args[node.key].description
+                                          : `${args[node.key].description?.substring(0, 20)}...`}
+                                      </Col>
+                                    )}
                                   </Row>
                                 </Col>
                                 {/* 删除按钮 - 不能删除根节点args */}
@@ -1407,7 +1446,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                   backgroundColor: '#fff',
                   borderRadius: '8px',
                   border: '1px solid #e8e8e8',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
                 }}
               >
                 <h3
@@ -1440,11 +1479,11 @@ const CreateTools = React.forwardRef((props, ref) => {
                         size="large"
                         style={{ borderRadius: '6px' }}
                         isPreview={onlyEditRuntimeInfo}
-                        disabled={currentNode.key === 'args'}
+                        disabled={currentNode.key === 'args' || isArrayItemsNode(currentNode)}
                         value={currentNode.label}
                         placeholder="请输入参数名称"
                         onChange={data => {
-                          if (currentNode.key !== '') {
+                          if (currentNode.key !== '' && !isArrayItemsNode(currentNode)) {
                             currentNode.label = data;
                             changeNodeInfo(currentNode);
                           }
@@ -1540,39 +1579,78 @@ const CreateTools = React.forwardRef((props, ref) => {
                   </Col>
                 </Row>
 
-                <Row>
-                  <Col span={24}>
-                    <Form.Item
-                      label={locale.toolParamDescription}
-                      name="args.description"
-                      asterisk={false}
-                      style={{ marginBottom: '20px' }}
-                    >
-                      <Input.TextArea
-                        size="large"
-                        style={{ borderRadius: '6px', minHeight: '80px' }}
-                        disabled={currentNode.key === 'args'}
-                        value={currentNode.description}
-                        placeholder="请输入参数描述信息"
-                        onChange={data => {
-                          if (currentNode.key !== '') {
-                            currentNode.description = data;
-                            if (currentNode.arg) {
-                              currentNode.arg.description = data;
+                {/* items 节点不需要描述，隐藏描述编辑 */}
+                {!isArrayItemsNode(currentNode) && (
+                  <Row>
+                    <Col span={24}>
+                      <Form.Item
+                        label={locale.toolParamDescription}
+                        name="args.description"
+                        asterisk={false}
+                        style={{ marginBottom: '20px' }}
+                      >
+                        <Input.TextArea
+                          size="large"
+                          style={{ borderRadius: '6px', minHeight: '80px' }}
+                          disabled={currentNode.key === 'args'}
+                          value={currentNode.description}
+                          placeholder="请输入参数描述信息"
+                          onChange={data => {
+                            if (currentNode.key !== '') {
+                              currentNode.description = data;
+                              if (currentNode.arg) {
+                                currentNode.arg.description = data;
+                              }
+                              changeNodeInfo(currentNode);
                             }
-                            changeNodeInfo(currentNode);
-                          }
-                        }}
-                      />
-                    </Form.Item>
-                  </Col>
-                </Row>
+                          }}
+                        />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                )}
 
-                {/* 默认值输入 - 仅对非 object 和 array 类型显示 */}
+                {/* 是否必填 - 仅对根级参数（args 的直接子节点）展示 */}
+                {currentNode.key && currentNode.key.split('@@').length === 2 && (
+                  <Row>
+                    <Col span={24}>
+                      <Form.Item
+                        label={locale.toolParamRequired || '是否必填'}
+                        name="args.required"
+                        asterisk={false}
+                        style={{ marginBottom: '12px' }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          <Switch
+                            size="large"
+                            checked={!!currentNode.required}
+                            onChange={checked => {
+                              if (currentNode.key) {
+                                currentNode.required = !!checked;
+                                changeNodeInfo(currentNode);
+                              }
+                            }}
+                            disabled={onlyEditRuntimeInfo}
+                            checkedChildren={locale.required || '必填'}
+                            unCheckedChildren={locale.optional || '可选'}
+                          />
+                          <span style={{ marginLeft: 12, color: '#666', fontSize: 12 }}>
+                            {currentNode.required
+                              ? locale.required || '必填'
+                              : locale.optional || '可选'}
+                          </span>
+                        </div>
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                )}
+
+                {/* 默认值输入 - 仅对非 object/array 且非 items 节点显示 */}
                 {currentNode.type &&
                   currentNode.type !== 'object' &&
                   currentNode.type !== 'array' &&
-                  currentNode.key !== 'args' && (
+                  currentNode.key !== 'args' &&
+                  !isArrayItemsNode(currentNode) && (
                     <Row>
                       <Col span={24}>
                         <Form.Item
@@ -1608,7 +1686,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                                 { label: 'false', value: 'false' },
                               ]}
                               onChange={data => {
-                                if (currentNode.key !== '') {
+                                if (currentNode.key !== '' && !isArrayItemsNode(currentNode)) {
                                   currentNode.defaultValue = data || '';
                                   if (currentNode.arg) {
                                     if (data) {
@@ -1632,7 +1710,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                                   : '请输入默认值'
                               }
                               onChange={data => {
-                                if (currentNode.key !== '') {
+                                if (currentNode.key !== '' && !isArrayItemsNode(currentNode)) {
                                   currentNode.defaultValue = data;
                                   if (currentNode.arg) {
                                     if (data && data.trim()) {
@@ -1673,7 +1751,7 @@ const CreateTools = React.forwardRef((props, ref) => {
                   backgroundColor: '#fff',
                   borderRadius: '8px',
                   border: '1px solid #e8e8e8',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
                 }}
               >
                 <h3

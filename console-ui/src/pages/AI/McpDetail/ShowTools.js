@@ -1,12 +1,21 @@
 import React, { useRef, useState } from 'react';
-import { Table, Button, Dialog, Message, Input, Form, Grid, Upload, Tree } from '@alifd/next';
+import { Button, Card, Dialog, Form, Grid, Icon, Input, Message, Tree, Upload } from '@alifd/next';
 import CreateTools from './CreateTools';
 import DeleteTool from './CreateTools/DeleteTool';
 import { getParams, request } from '../../../globalLib';
-import SwaggerParser from 'swagger-parser';
+import swagger2openapi from 'swagger2openapi';
+import YAML from 'js-yaml';
 import { extractToolsFromOpenAPI } from './Swagger2Tools';
+
 const { Row, Col } = Grid;
 const currentNamespace = getParams('namespace');
+
+// 文本截断工具：超过指定长度使用省略号
+const truncateText = (text, maxLen = 16) => {
+  if (!text) return '';
+  const str = String(text);
+  return str.length > maxLen ? str.slice(0, maxLen) + '...' : str;
+};
 
 const ShowTools = props => {
   const {
@@ -84,7 +93,7 @@ const ShowTools = props => {
         });
         children.push({
           key: descKey,
-          label: `描述: ${paramDef.description}`,
+          label: `描述: ${truncateText(paramDef.description, 64)}`,
           isLeaf: true,
         });
       }
@@ -163,73 +172,80 @@ const ShowTools = props => {
 
       // 递归处理array类型的属性
       if (paramType === 'array' && paramDef.items) {
-        const arrayItemChildren = [];
+        // 递归构建数组项的子树
+        const buildArrayItemSubtree = (itemDef, itemKey) => {
+          const subChildren = [];
+          const itemType = itemDef.type || (itemDef.properties ? 'object' : 'string');
 
-        // 如果数组项是对象类型
-        if (paramDef.items.type === 'object' && paramDef.items.properties) {
-          const itemRequired = paramDef.items.required || [];
-          const itemChildren = buildParameterTreeData(
-            paramDef.items.properties,
-            itemRequired,
-            `${nodeKey}-items`
-          );
+          // 如果数组项是对象
+          if (itemType === 'object' && itemDef.properties) {
+            const itemRequired = itemDef.required || [];
+            const propertiesChildren = buildParameterTreeData(
+              itemDef.properties,
+              itemRequired,
+              `${itemKey}-props`
+            );
+            if (propertiesChildren.length > 0) {
+              subChildren.push(...propertiesChildren);
+            }
+          }
+          // 如果数组项是另一个数组（嵌套数组）
+          else if (itemType === 'array' && itemDef.items) {
+            const nestedItemKey = `${itemKey}-items`;
+            const nestedChildren = buildArrayItemSubtree(itemDef.items, nestedItemKey);
+            if (nestedChildren.length > 0) {
+              const itemsNodeKey = `${nestedItemKey}-group`;
+              parameterMap.current.set(itemsNodeKey, {
+                name: 'items',
+                type: itemDef.items.type,
+                isGroupNode: true,
+              });
+              subChildren.push({
+                key: itemsNodeKey,
+                label: `items (${itemDef.items.type || 'object'})`,
+                children: nestedChildren,
+                isLeaf: false,
+              });
+            }
+          }
+          // 如果数组项是基本类型
+          else {
+            const itemInfo = [];
+            if (itemDef.type) itemInfo.push(`类型: ${itemDef.type}`);
+            if (itemDef.description) itemInfo.push(`描述: ${itemDef.description}`);
+            if (itemDef.format) itemInfo.push(`格式: ${itemDef.format}`);
 
-          if (itemChildren.length > 0) {
-            const itemPropsKey = `${nodeKey}-item-properties`;
-            parameterMap.current.set(itemPropsKey, {
-              name: '数组项属性',
-              type: 'group',
-              description: '数组项的属性',
-              isGroupNode: true,
-            });
-            arrayItemChildren.push({
-              key: itemPropsKey,
-              label: '数组项属性',
-              children: itemChildren,
-              isLeaf: false,
-            });
+            if (itemInfo.length > 0) {
+              const itemInfoKey = `${itemKey}-info`;
+              parameterMap.current.set(itemInfoKey, {
+                name: '数组项信息',
+                type: 'info',
+                description: itemInfo.join(', '),
+                isInfoNode: true,
+              });
+              subChildren.push({
+                key: itemInfoKey,
+                label: `数组项信息: ${itemInfo.join(', ')}`,
+                isLeaf: true,
+              });
+            }
           }
-        } else {
-          // 基本类型的数组项
-          const itemInfo = [];
-          if (paramDef.items.type) {
-            itemInfo.push(`类型: ${paramDef.items.type}`);
-          }
-          if (paramDef.items.description) {
-            itemInfo.push(`描述: ${paramDef.items.description}`);
-          }
-          if (paramDef.items.format) {
-            itemInfo.push(`格式: ${paramDef.items.format}`);
-          }
+          return subChildren;
+        };
 
-          if (itemInfo.length > 0) {
-            const itemInfoKey = `${nodeKey}-item-info`;
-            parameterMap.current.set(itemInfoKey, {
-              name: '数组项信息',
-              type: 'info',
-              description: itemInfo.join(', '),
-              isInfoNode: true,
-            });
-            arrayItemChildren.push({
-              key: itemInfoKey,
-              label: `数组项信息: ${itemInfo.join(', ')}`,
-              isLeaf: true,
-            });
-          }
-        }
+        const itemChildren = buildArrayItemSubtree(paramDef.items, `${nodeKey}-items`);
 
-        if (arrayItemChildren.length > 0) {
-          const itemsKey = `${nodeKey}-items`;
+        if (itemChildren.length > 0) {
+          const itemsKey = `${nodeKey}-items-group`;
           parameterMap.current.set(itemsKey, {
-            name: '数组项定义',
-            type: 'group',
-            description: '数组项的定义',
+            name: 'items',
+            type: paramDef.items.type,
             isGroupNode: true,
           });
           children.push({
             key: itemsKey,
-            label: '数组项定义',
-            children: arrayItemChildren,
+            label: `items (${paramDef.items.type || 'object'})`,
+            children: itemChildren,
             isLeaf: false,
           });
         }
@@ -258,6 +274,7 @@ const ShowTools = props => {
 
   const handleFileChange = fileList => {
     if (fileList && fileList.length > 0) {
+      fileList[0].state = 'success';
       setFile(fileList[0].originFileObj || fileList[0].file);
     }
   };
@@ -273,6 +290,10 @@ const ShowTools = props => {
       const doc = await parseOpenAPI(content);
 
       let config = extractToolsFromOpenAPI(doc);
+      // 提取 OpenAPI 顶层的 securitySchemes
+      const securitySchemes = Array.isArray(config?.server?.securitySchemes)
+        ? config.server.securitySchemes
+        : [];
 
       const toolsMeta = config.tools.reduce((acc, tool) => {
         const argsPosition = tool.args.reduce((acc, arg) => {
@@ -309,9 +330,205 @@ const ShowTools = props => {
         },
       }));
 
+      // 在生成最终 specification 之前：将 argsPosition 合并进 requestTemplate
+      try {
+        // 建立一个快速索引：toolName -> args 数组（含类型、position）
+        const toolArgsByName = config.tools.reduce((acc, t) => {
+          acc[t.name] = t.args || [];
+          return acc;
+        }, {});
+
+        const ensureHeadersArray = headers => {
+          // 规范化 headers 为数组 [{key, value}, ...]
+          if (!headers) return [];
+          if (Array.isArray(headers)) return headers;
+          if (typeof headers === 'object') {
+            return Object.entries(headers).map(([k, v]) => ({ key: k, value: String(v) }));
+          }
+          return [];
+        };
+
+        const hasHeaderKey = (headers, key) => {
+          return headers.some(h => (h.key || '').toLowerCase() === String(key).toLowerCase());
+        };
+
+        const getContentType = headers => {
+          const h = headers.find(it => (it.key || '').toLowerCase() === 'content-type');
+          return h ? String(h.value).toLowerCase() : '';
+        };
+
+        Object.keys(toolsMeta || {}).forEach(toolName => {
+          const meta = toolsMeta[toolName];
+          const tmpl = meta?.templates?.['json-go-template'];
+          if (!tmpl || !tmpl.requestTemplate) return;
+
+          const argsPos = tmpl.argsPosition || {};
+          let url = tmpl.requestTemplate.url || '';
+          let headers = ensureHeadersArray(tmpl.requestTemplate.headers);
+          let body = tmpl.requestTemplate.body; // 可能为字符串或对象，保留原样优先
+
+          // 收集各类参数名
+          const allArgs = toolArgsByName[toolName] || [];
+          const byName = allArgs.reduce((acc, a) => {
+            acc[a.name] = a;
+            return acc;
+          }, {});
+
+          const entries = Object.entries(argsPos);
+          const pathArgs = entries.filter(([, pos]) => pos === 'path').map(([n]) => n);
+          const queryArgs = entries.filter(([, pos]) => pos === 'query').map(([n]) => n);
+          const headerArgs = entries.filter(([, pos]) => pos === 'header').map(([n]) => n);
+          const cookieArgs = entries.filter(([, pos]) => pos === 'cookie').map(([n]) => n);
+          const bodyArgs = entries.filter(([, pos]) => pos === 'body').map(([n]) => n);
+
+          // 标记是否需要保留 argsPosition（当依赖 argsTo* flags 时需要）
+          let shouldKeepArgsPosition = false;
+
+          // 1) 处理 path 占位：将 {name} 替换为 {{urlqueryescape .args.name}}
+          pathArgs.forEach(name => {
+            const re = new RegExp(
+              '\\{' + name.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&') + '\\}',
+              'g'
+            );
+            // 不使用模板函数，直接插入占位 {{.args.name}}
+            url = url.replace(re, `{{.args.${name}}}`);
+          });
+
+          // 统计总体位置
+          const totalArgsCount = entries.length;
+          const allInQuery = totalArgsCount > 0 && queryArgs.length === totalArgsCount;
+          const allInBody = totalArgsCount > 0 && bodyArgs.length === totalArgsCount;
+
+          // 2) 处理 query：当全部在 query 时，使用 argsToUrlParam 标记，不拼接到 URL
+          if (allInQuery) {
+            tmpl.requestTemplate.argsToUrlParam = true;
+          } else if (queryArgs.length > 0) {
+            // 混合场景下仍然把 query 参数拼接到 URL
+            const pairs = queryArgs.map(name => `${name}={{.args.${name}}}`);
+            const connector = url.includes('?') ? '&' : '?';
+            url = url + (pairs.length > 0 ? connector + pairs.join('&') : '');
+          }
+
+          // 3) 处理 header：为每个 header 参数添加 header 条目
+          if (headerArgs.length > 0) {
+            headerArgs.forEach(name => {
+              if (!hasHeaderKey(headers, name)) {
+                // 不使用 toString，直接占位
+                headers.push({ key: name, value: `{{.args.${name}}}` });
+              }
+            });
+          }
+
+          // 4) 处理 cookie：将所有 cookie 参数合并为一个 Cookie 头
+          if (cookieArgs.length > 0) {
+            const cookiePairs = cookieArgs.map(name => `${name}={{.args.${name}}}`);
+            const cookieValue = cookiePairs.join('; ');
+            const idx = headers.findIndex(h => (h.key || '').toLowerCase() === 'cookie');
+            if (idx >= 0) {
+              headers[idx].value = headers[idx].value
+                ? `${headers[idx].value}; ${cookieValue}`
+                : cookieValue;
+            } else {
+              headers.push({ key: 'Cookie', value: cookieValue });
+            }
+          }
+
+          // 5) 处理 body：
+          //    - 如果全部在 body：根据 Content-Type 设置 argsToJsonBody/argsToFormBody，不直接生成 body
+          //    - 否则（混合场景）：若未显式提供 body/argsTo*，再根据 Content-Type 生成
+          const hasExplicit =
+            body !== undefined ||
+            tmpl.requestTemplate.argsToJsonBody === true ||
+            tmpl.requestTemplate.argsToFormBody === true ||
+            tmpl.requestTemplate.argsToUrlParam === true;
+
+          if (bodyArgs.length > 0) {
+            const ct = getContentType(headers);
+            if (allInBody) {
+              // 全部在 body：通过标记控制
+              if (
+                ct.includes('application/x-www-form-urlencoded') ||
+                ct.includes('multipart/form-data')
+              ) {
+                tmpl.requestTemplate.argsToFormBody = true;
+              } else {
+                tmpl.requestTemplate.argsToJsonBody = true;
+                if (!getContentType(headers) && !hasHeaderKey(headers, 'Content-Type')) {
+                  headers.push({ key: 'Content-Type', value: 'application/json; charset=utf-8' });
+                }
+              }
+            } else if (!hasExplicit) {
+              // 混合场景且未显式指定：保持原有自动生成策略
+              if (ct.includes('application/x-www-form-urlencoded')) {
+                const formPairs = bodyArgs.map(name => `${name}={{.args.${name}}}`);
+                body = formPairs.join('&');
+              } else {
+                const hasComplex = bodyArgs.some(n => {
+                  const a = byName[n];
+                  const t = a && (a.type || (a.schema && a.schema.type));
+                  return t === 'object' || t === 'array';
+                });
+
+                if (hasComplex) {
+                  tmpl.requestTemplate.argsToJsonBody = true;
+                  shouldKeepArgsPosition = true;
+                  if (!getContentType(headers) && !hasHeaderKey(headers, 'Content-Type')) {
+                    headers.push({ key: 'Content-Type', value: 'application/json; charset=utf-8' });
+                  }
+                } else {
+                  const jsonPairs = bodyArgs.map(name => {
+                    const a = byName[name];
+                    const t = a && (a.type || (a.schema && a.schema.type));
+                    const isString = t === 'string';
+                    const valueTpl = isString ? `"{{.args.${name}}}"` : `{{.args.${name}}}`;
+                    return `  \"${name}\": ${valueTpl}`;
+                  });
+                  body = `{$\n${jsonPairs.join(',\n')}\n}`.replace('{$\n', '{\n');
+                  if (!getContentType(headers) && !hasHeaderKey(headers, 'Content-Type')) {
+                    headers.push({ key: 'Content-Type', value: 'application/json; charset=utf-8' });
+                  }
+                }
+              }
+            }
+          }
+
+          // 写回模板，并移除 argsPosition 字段
+          tmpl.requestTemplate.url = url;
+          if (headers.length > 0) {
+            tmpl.requestTemplate.headers = headers;
+          }
+          if (body !== undefined) {
+            tmpl.requestTemplate.body = body;
+            // 当生成了明确的 body 时，移除 flags（避免冲突）
+            delete tmpl.requestTemplate.argsToJsonBody;
+            delete tmpl.requestTemplate.argsToUrlParam;
+            delete tmpl.requestTemplate.argsToFormBody;
+          } else {
+            // 未生成明确 body，但存在 bodyArgs 且 Content-Type 为表单时，设置表单标记
+            const ct2 = getContentType(headers);
+            if (!allInBody) {
+              if (bodyArgs.length > 0 && ct2.includes('application/x-www-form-urlencoded')) {
+                tmpl.requestTemplate.argsToFormBody = true;
+                shouldKeepArgsPosition = true;
+              }
+            }
+          }
+          // 仅在不依赖 flags 的情况下删除 argsPosition；
+          // 若全部在 query/body 已由 flags 控制，也可删除
+          if (!shouldKeepArgsPosition || allInQuery || allInBody) {
+            delete tmpl.argsPosition;
+          }
+        });
+      } catch (e) {
+        // 转换失败不影响导入流程，仅记录日志
+        // eslint-disable-next-line no-console
+        console.warn('argsPosition to requestTemplate transform failed:', e);
+      }
+
       const toolSpecification = JSON.stringify({
         tools,
         toolsMeta,
+        securitySchemes,
       });
       if (props?.onChange) {
         props.onChange(JSON.parse(toolSpecification));
@@ -319,7 +536,7 @@ const ShowTools = props => {
       Message.success(locale.importSuccess);
       setOpenApiDialogVisible(false);
     } catch (error) {
-      Message.error(error.message || locale.fileInvalidFormat);
+      Message.error(locale.fileInvalidFormat + ': ' + error.message);
       console.error('导入失败:', error);
     }
   };
@@ -354,11 +571,23 @@ const ShowTools = props => {
       try {
         parsedContent = JSON.parse(content);
       } catch (jsonError) {
-        throw new Error('Invalid JSON/YAML format');
+        // 尝试 YAML 解析
+        try {
+          parsedContent = YAML.load(content);
+        } catch (yamlError) {
+          throw new Error('Invalid JSON/YAML format');
+        }
       }
-      // 再使用 SwaggerParser 验证和解析 OpenAPI 文档
-      const api = await SwaggerParser.validate(parsedContent);
-      return api;
+      if (parsedContent.swagger) {
+        const converted = await swagger2openapi.convertObj(parsedContent, {});
+        return converted.openapi;
+      }
+
+      // 验证 OpenAPI 3.x 文档
+      if (parsedContent.openapi) {
+        // 可以添加更多验证逻辑
+        return parsedContent;
+      }
     } catch (e) {
       console.error('解析失败:', e);
       throw new Error(locale.fileInvalidFormat);
@@ -439,7 +668,67 @@ const ShowTools = props => {
   console.log('fontProtocol:', frontProtocol);
 
   return (
-    <div>
+    <Card
+      style={{
+        backgroundColor: 'rgba(250, 250, 250, 0.7)',
+        backdropFilter: 'blur(10px)',
+        boxShadow:
+          isPreview || onlyEditRuntimeInfo
+            ? 'none'
+            : '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
+        borderRadius: '8px',
+        border: '1px solid #e8e8e8',
+        transition: 'all 0.3s ease',
+      }}
+      contentHeight="auto"
+      onMouseEnter={e => {
+        if (!isPreview && !onlyEditRuntimeInfo) {
+          e.currentTarget.style.boxShadow =
+            '0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08)';
+          e.currentTarget.style.transform = 'translateY(-2px)';
+        }
+      }}
+      onMouseLeave={e => {
+        if (!isPreview && !onlyEditRuntimeInfo) {
+          e.currentTarget.style.boxShadow =
+            '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)';
+          e.currentTarget.style.transform = 'translateY(0)';
+        }
+      }}
+    >
+      <style>
+        {`
+          .tools-layout {
+            display: flex;
+            min-height: 400px;
+            margin-top: 20px;
+          }
+          
+          .tools-sidebar {
+            width: 250px;
+            border-right: 1px solid #e6e6e6;
+            margin-right: 16px;
+          }
+          
+          .tools-content {
+            flex: 1;
+          }
+          
+          @media (max-width: 768px) {
+            .tools-layout {
+              flex-direction: column;
+            }
+            
+            .tools-sidebar {
+              width: 100%;
+              border-right: none;
+              border-bottom: 1px solid #e6e6e6;
+              margin-right: 0;
+              margin-bottom: 16px;
+            }
+          }
+        `}
+      </style>
       {/* Tools 展示 - 使用与 McpDetail 相同的左右分栏风格 */}
       {serverConfig?.toolSpec?.tools && serverConfig.toolSpec.tools.length > 0 ? (
         <>
@@ -474,9 +763,9 @@ const ShowTools = props => {
             </Button>
           )}
 
-          <div style={{ display: 'flex', minHeight: '400px', marginTop: '20px' }}>
+          <div className="tools-layout">
             {/* 左侧标签栏 */}
-            <div style={{ width: '250px', borderRight: '1px solid #e6e6e6', marginRight: '16px' }}>
+            <div className="tools-sidebar">
               {serverConfig.toolSpec.tools.map((tool, index) => {
                 // 获取工具的在线状态
                 const toolsMeta = serverConfig?.toolSpec?.toolsMeta?.[tool.name];
@@ -492,10 +781,22 @@ const ShowTools = props => {
                       backgroundColor: activeToolIndex === index ? '#e6f7ff' : 'transparent',
                       borderLeft:
                         activeToolIndex === index ? '3px solid #1890ff' : '3px solid transparent',
+                      overflow: 'hidden',
+                      width: '100%',
+                      boxSizing: 'border-box',
                     }}
                     onClick={() => setActiveToolIndex(index)}
                   >
-                    <div style={{ fontWeight: 'bold', fontSize: '16px', marginBottom: '4px' }}>
+                    <div
+                      style={{
+                        fontWeight: 'bold',
+                        fontSize: '16px',
+                        marginBottom: '4px',
+                        wordBreak: 'break-word',
+                        overflowWrap: 'break-word',
+                        lineHeight: '1.4',
+                      }}
+                    >
                       {tool.name}
                     </div>
                     <div
@@ -520,7 +821,7 @@ const ShowTools = props => {
                       </span>
                       {tool.inputSchema?.properties && (
                         <span style={{ color: '#666', fontSize: '12px' }}>
-                          {Object.keys(tool.inputSchema.properties).length} 参数
+                          {Object.keys(tool.inputSchema.properties).length} 个参数
                         </span>
                       )}
                     </div>
@@ -559,7 +860,7 @@ const ShowTools = props => {
             </div>
 
             {/* 右侧内容区 */}
-            <div style={{ flex: 1 }}>
+            <div className="tools-content">
               {(() => {
                 const tool = serverConfig.toolSpec.tools[activeToolIndex];
                 if (!tool) return null;
@@ -575,6 +876,9 @@ const ShowTools = props => {
                         marginBottom: '16px',
                         borderBottom: '1px solid #e6e6e6',
                         paddingBottom: '8px',
+                        wordBreak: 'break-word',
+                        overflowWrap: 'break-word',
+                        lineHeight: '1.4',
                       }}
                     >
                       {tool.name}
@@ -624,7 +928,6 @@ const ShowTools = props => {
                                 tool.inputSchema.required
                               )}
                               showLine
-                              defaultExpandAll
                               isLabelBlock
                               style={{ backgroundColor: 'transparent' }}
                               labelRender={node => {
@@ -728,15 +1031,21 @@ const ShowTools = props => {
                                         </span>
                                       )}
 
-                                      {/* 描述信息 - 直接放在后面，如果没有显示 - */}
+                                      {/* 描述信息 - 过长时（>64）强制省略号 */}
                                       <span
                                         style={{
                                           fontFamily: 'Monaco, Consolas, "Courier New", monospace',
                                           color: '#000',
                                           fontSize: '12px',
+                                          flex: 1,
+                                          minWidth: 0,
+                                          overflow: 'hidden',
+                                          textOverflow: 'ellipsis',
+                                          whiteSpace: 'nowrap',
                                         }}
+                                        title={nodeData.description || '-'}
                                       >
-                                        - {nodeData.description || '-'}
+                                        - {truncateText(nodeData.description || '-', 64)}
                                       </span>
 
                                       {/* 默认值信息（如果有的话） */}
@@ -818,6 +1127,26 @@ const ShowTools = props => {
                                         [{nodeData.type || 'string'}]
                                       </span>
                                     </div>
+                                  );
+                                }
+
+                                // 信息节点（如 描述/默认值/可选值/格式）
+                                if (nodeData?.isInfoNode) {
+                                  const isDesc = nodeData.name === '描述';
+                                  const displayText = isDesc
+                                    ? `${nodeData.name}: ${truncateText(nodeData.description, 64)}`
+                                    : `${nodeData.name}: ${nodeData.description}`;
+                                  return (
+                                    <span
+                                      style={{
+                                        fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+                                        color: '#000',
+                                        fontSize: '13px',
+                                      }}
+                                      title={`${nodeData.name}: ${nodeData.description}`}
+                                    >
+                                      {displayText}
+                                    </span>
                                   );
                                 }
 
@@ -1007,9 +1336,7 @@ const ShowTools = props => {
                                             后端认证方式:{' '}
                                           </span>
                                           <span style={{ color: '#fa8c16' }}>
-                                            {Object.keys(
-                                              templateData.requestTemplate.security
-                                            ).join(', ')}
+                                            {templateData.requestTemplate.security.id}
                                           </span>
                                         </div>
                                       )}
@@ -1335,116 +1662,67 @@ const ShowTools = props => {
           </div>
         </>
       ) : (
-        <div style={{ marginTop: '20px' }}>
+        <div style={{ marginTop: '20px', textAlign: 'center' }}>
           <div
             style={{
-              border: '1px solid rgba(230, 230, 230, 0.4)',
-              borderRadius: '8px',
-              padding: '24px',
-              marginBottom: '12px',
-              backgroundColor: 'rgba(250, 250, 250, 0.7)',
-              backdropFilter: 'blur(10px)',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
-              transition: 'all 0.3s ease',
-              textAlign: 'center',
-              minHeight: '200px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '20px',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow =
-                '0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.05)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow =
-                '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)';
+              fontSize: '40px',
+              color: '#d9d9d9',
+              marginBottom: '8px',
+              lineHeight: 1,
             }}
           >
-            <div>
-              <div
-                style={{
-                  fontSize: '48px',
-                  color: '#d9d9d9',
-                  marginBottom: '12px',
-                  fontWeight: '300',
-                }}
-              >
-                🔧
-              </div>
-              <p
-                style={{
-                  color: '#666',
-                  fontStyle: 'italic',
-                  margin: 0,
-                  fontSize: '14px',
-                  marginBottom: '20px',
-                }}
-              >
-                {locale.noToolsAvailable || '暂无可用的 Tools'}
-              </p>
-            </div>
-
-            {/* 在占位卡片中显示添加按钮 */}
-            {!isPreview && !onlyEditRuntimeInfo && (
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '12px',
-                  alignItems: 'center',
-                }}
-              >
-                <Button
-                  type="primary"
-                  onClick={openDialog}
-                  size="large"
-                  style={{
-                    minWidth: '140px',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                  }}
-                >
-                  {locale.newMcpTool}
-                </Button>
-
-                {/* 根据不同协议显示相应的导入按钮 */}
-                {frontProtocol === 'mcp-sse' && !restToMcpSwitch && (
-                  <Button
-                    type="normal"
-                    onClick={autoImportToolsFromMCPServer}
-                    loading={importLoading}
-                    disabled={importLoading}
-                    style={{
-                      minWidth: '140px',
-                      fontSize: '14px',
-                    }}
-                  >
-                    {importLoading ? locale.importing : locale.importToolsFromMCP}
-                  </Button>
-                )}
-
-                {frontProtocol !== 'stdio' && restToMcpSwitch && (
-                  <Button
-                    type="normal"
-                    onClick={importToolsFromOpenApi}
-                    loading={importLoading}
-                    disabled={importLoading}
-                    style={{
-                      minWidth: '140px',
-                      fontSize: '14px',
-                    }}
-                  >
-                    {importLoading ? locale.importing : locale.importToolsFromOpenAPI}
-                  </Button>
-                )}
-              </div>
-            )}
+            🔧
           </div>
+          <p
+            style={{
+              color: '#666',
+              fontStyle: 'italic',
+              margin: 0,
+              fontSize: '14px',
+              marginBottom: '16px',
+            }}
+          >
+            {locale.noToolsAvailable || '暂无可用的 Tools'}
+          </p>
+
+          {!isPreview && !onlyEditRuntimeInfo && (
+            <div
+              style={{
+                display: 'flex',
+                gap: '12px',
+                justifyContent: 'center',
+                flexWrap: 'wrap',
+              }}
+            >
+              <Button type="primary" onClick={openDialog} style={{ minWidth: '140px' }}>
+                {locale.newMcpTool}
+              </Button>
+
+              {frontProtocol === 'mcp-sse' && !restToMcpSwitch && (
+                <Button
+                  type="normal"
+                  onClick={autoImportToolsFromMCPServer}
+                  loading={importLoading}
+                  disabled={importLoading}
+                  style={{ minWidth: '140px' }}
+                >
+                  {importLoading ? locale.importing : locale.importToolsFromMCP}
+                </Button>
+              )}
+
+              {frontProtocol !== 'stdio' && restToMcpSwitch && (
+                <Button
+                  type="normal"
+                  onClick={importToolsFromOpenApi}
+                  loading={importLoading}
+                  disabled={importLoading}
+                  style={{ minWidth: '140px' }}
+                >
+                  {importLoading ? locale.importing : locale.importToolsFromOpenAPI}
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -1470,25 +1748,27 @@ const ShowTools = props => {
         <Form>
           <Form.Item label={locale.selectOpenAPIFile}>
             <Upload
-              listType="picture-card"
+              listType="text"
               accept=".json,.yaml,.yml"
               onChange={handleFileChange}
+              limit={1}
+              reUpload={true}
               beforeUpload={() => false} // 禁止自动上传
               dragable
               style={{
                 border: '2px dashed #ccc',
                 borderRadius: '8px',
                 padding: '20px',
-                backgroundColor: '#f9f9f9',
                 transition: 'all 0.3s ease',
                 textAlign: 'center',
                 width: '100%',
               }}
             >
+              <p className="next-upload-drag-icon">
+                <Icon type="upload" />
+              </p>
               <div style={{ padding: '20px', textAlign: 'center' }}>
-                <p style={{ color: '#595959', fontSize: '14px' }}>
-                  {locale.dragAndDropFileHereOrClickToSelect}
-                </p>
+                <p style={{ fontSize: '14px' }}>{locale.dragAndDropFileHereOrClickToSelect}</p>
               </div>
             </Upload>
           </Form.Item>
@@ -1572,7 +1852,7 @@ const ShowTools = props => {
           </Form>
         </Dialog>
       )}
-    </div>
+    </Card>
   );
 };
 

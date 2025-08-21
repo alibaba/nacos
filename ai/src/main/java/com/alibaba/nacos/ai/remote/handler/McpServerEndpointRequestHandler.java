@@ -33,12 +33,15 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.McpServerRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -71,11 +74,18 @@ public class McpServerEndpointRequestHandler
     
     @Override
     @ExtractorManager.Extractor(rpcExtractor = McpServerRequestParamExtractor.class)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI)
     public McpServerEndpointResponse handle(McpServerEndpointRequest request, RequestMeta meta) throws NacosException {
         McpRequestUtils.fillNamespaceId(request);
-        checkParameters(request);
-        Instance instance = buildInstance(request);
-        return doHandler(request, instance, meta);
+        try {
+            checkParameters(request);
+            Instance instance = buildInstance(request);
+            return doHandler(request, instance, meta);
+        } catch (NacosException e) {
+            McpServerEndpointResponse response = new McpServerEndpointResponse();
+            response.setErrorInfo(e.getErrCode(), e.getErrMsg());
+            return response;
+        }
     }
     
     private void checkParameters(McpServerEndpointRequest request) throws NacosApiException {

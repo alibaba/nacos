@@ -634,11 +634,10 @@ class NewMcpServer extends React.Component {
 
               // 从URL中提取传输协议，并追加到protocol字段之后
               const transportProtocol = url.protocol.replace(':', ''); // 去掉冒号，得到 http 或 https
-              const finalProtocol = `${protocol}-${transportProtocol}`;
 
               params.serverSpecification = JSON.stringify(
                 {
-                  protocol: finalProtocol,
+                  protocol: protocol,
                   frontProtocol: values?.frontProtocol,
                   name: values?.serverName,
                   id: mcpServerId,
@@ -660,6 +659,7 @@ class NewMcpServer extends React.Component {
                 data: {
                   address: address,
                   port: port,
+                  transportProtocol: transportProtocol,
                 },
               });
             } catch (error) {
@@ -686,7 +686,7 @@ class NewMcpServer extends React.Component {
               null,
               2
             );
-            // 添加服务
+            // 添加服务，并携带所选传输协议到 endpointSpecification.protocol
 
             if (useExistService) {
               const group = values?.service.split('@@')[0];
@@ -698,13 +698,24 @@ class NewMcpServer extends React.Component {
                     namespaceId: values?.namespace || '',
                     serviceName: serviceName || '',
                     groupName: group || '',
+                    // 传输协议：来自已有服务下拉框
+                    transportProtocol: values?.serviceTransportProtocol || 'http',
                   },
                 },
                 null,
                 2
               );
             } else {
-              params.endpointSpecification = `{"type": "DIRECT","data":{"address":"${values?.address}","port": "${values?.port}"}}`;
+              // 直连新服务：携带 address/port 以及用户选择的传输协议
+              const directSpec = {
+                type: 'DIRECT',
+                data: {
+                  address: values?.address,
+                  port: `${values?.port}`,
+                  transportProtocol: values?.newServiceTransportProtocol || 'http',
+                },
+              };
+              params.endpointSpecification = JSON.stringify(directSpec, null, 2);
             }
           }
         }
@@ -855,6 +866,59 @@ class NewMcpServer extends React.Component {
     }
   };
 
+  // 解析 MCP Server Endpoint 并更新相关字段
+  updateEndpointFields = endpoint => {
+    if (!endpoint || typeof endpoint !== 'string') {
+      return;
+    }
+
+    try {
+      const url = new URL(endpoint);
+
+      // 提取地址（hostname）
+      const address = url.hostname;
+
+      // 提取端口，如果没有指定则使用默认端口
+      const port = url.port || (url.protocol === 'https:' ? '443' : '80');
+
+      // 提取路径
+      const exportPath = url.pathname || '/';
+
+      // 提取传输协议
+      const transportProtocol = url.protocol.replace(':', ''); // 去掉冒号
+
+      // 更新表单字段
+      this.field.setValue('address', address);
+      this.field.setValue('port', parseInt(port, 10));
+      this.field.setValue('exportPath', exportPath);
+
+      // 根据URL的协议设置传输协议
+      if (['http', 'https'].includes(transportProtocol)) {
+        this.field.setValue('serviceTransportProtocol', transportProtocol);
+        this.field.setValue('newServiceTransportProtocol', transportProtocol);
+      }
+
+      // 同步更新 serverConfig
+      this.setState({
+        serverConfig: {
+          ...this.state.serverConfig,
+          endpoint: {
+            address: address,
+            port: parseInt(port, 10),
+          },
+          remoteServerConfig: {
+            ...this.state.serverConfig?.remoteServerConfig,
+            exportPath: exportPath,
+          },
+          protocol: transportProtocol,
+        },
+      });
+    } catch (error) {
+      // URL 解析失败时不做任何处理，保持现有值
+      console.warn('Failed to parse MCP Server Endpoint URL:', error);
+    }
+  };
+
   // 切换高级配置展开/折叠状态
   toggleAdvancedConfig = () => {
     this.setState({
@@ -908,7 +972,7 @@ class NewMcpServer extends React.Component {
 
     // 获取当前表单中的 securitySchemes 数据
     const formSecuritySchemes = this.field.getValue('securitySchemes') || [];
-    const securitySchemes = formSecuritySchemes.map(scheme => {
+    const securitySchemesFromForm = formSecuritySchemes.map(scheme => {
       // 保留所有字段，包括 id
       return {
         id: scheme.id,
@@ -920,6 +984,47 @@ class NewMcpServer extends React.Component {
       };
     });
 
+    // 处理从子组件传入的 securitySchemes（来自 OpenAPI 导入）
+    const importedSchemes = Array.isArray(_toolSpec?.securitySchemes)
+      ? _toolSpec.securitySchemes
+      : [];
+
+    // 合并并按 id 去重（导入优先覆盖同 id）
+    const mergedMap = new Map();
+    securitySchemesFromForm.forEach(s => {
+      if (s?.id) mergedMap.set(s.id, s);
+    });
+    importedSchemes.forEach(s => {
+      if (s?.id) {
+        mergedMap.set(s.id, {
+          id: s.id,
+          type: s.type,
+          scheme: s.scheme,
+          in: s.in,
+          name: s.name,
+          // 默认凭证仅保留表单里已存在的值，导入的一般不含默认值
+          defaultCredential: mergedMap.get(s.id)?.defaultCredential || '',
+        });
+      }
+    });
+    const mergedSecuritySchemes = Array.from(mergedMap.values());
+
+    // 将合并后的结果同步回表单字段，便于用户在 UI 中看到并进一步编辑
+    this.field.setValue(
+      'securitySchemes',
+      mergedSecuritySchemes.map((s, idx) => ({
+        // 确保表单行有稳定的 id 字段
+        id: s.id || `securityScheme_${idx + 1}`,
+        type: s.type,
+        scheme: s.scheme,
+        in: s.in,
+        name: s.name,
+        defaultCredential: s.defaultCredential,
+      }))
+    );
+    // 同步 internal 计数器，便于后续新增时生成唯一行 id
+    this.setState({ securitySchemeIdx: mergedSecuritySchemes.length });
+
     await new Promise(resolve => {
       this.setState(
         {
@@ -930,7 +1035,7 @@ class NewMcpServer extends React.Component {
               tools: _toolSpec?.tools || this.state?.serverConfig?.toolSpec?.tools || [],
               toolsMeta:
                 _toolSpec?.toolsMeta || this.state?.serverConfig?.toolSpec?.toolsMeta || {},
-              securitySchemes: securitySchemes,
+              securitySchemes: mergedSecuritySchemes,
             },
           },
         },
@@ -1290,6 +1395,9 @@ class NewMcpServer extends React.Component {
                       ],
                       props: {
                         onChange: value => {
+                          // 解析URL并更新相关字段
+                          this.updateEndpointFields(value);
+
                           this.setState({
                             serverConfig: {
                               ...this.state.serverConfig,
@@ -1647,6 +1755,19 @@ class NewMcpServer extends React.Component {
           <FormItem label={locale.description}>
             <Input.TextArea
               isPreview={currentVersionExist}
+              renderPreview={value => (
+                <div
+                  style={{
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                    maxHeight: 240,
+                    overflowY: 'auto',
+                  }}
+                >
+                  {value || '-'}
+                </div>
+              )}
               {...init('description', {
                 props: {
                   ...descAreaProps,
@@ -1710,18 +1831,20 @@ class NewMcpServer extends React.Component {
                           marginBottom: '16px',
                           borderRadius: '6px',
                           backgroundColor: '#fff',
-                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
                           transition: 'all 0.2s ease',
                           backdropFilter: 'blur(8px)',
                           position: 'relative',
                           overflow: 'hidden',
                         }}
                         onMouseEnter={e => {
-                          e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.12)';
+                          e.currentTarget.style.boxShadow =
+                            '0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.05)';
                           e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.1)';
                         }}
                         onMouseLeave={e => {
-                          e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
+                          e.currentTarget.style.boxShadow =
+                            '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)';
                           e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.06)';
                         }}
                       >
