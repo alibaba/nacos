@@ -68,7 +68,11 @@ public class NamespaceValidationRequestFilter extends AbstractRequestFilter {
                     return null;
                 }
 
+                // if namespace param is null, don't need to check namespace
                 String namespace = getNamespace(request);
+                if (namespace == null) {
+                    return null;
+                }
                 boolean exist = isNamespaceExist(namespace);
                 if (!exist) {
                     Response response = super.getDefaultResponseInstance(handlerClazz);
