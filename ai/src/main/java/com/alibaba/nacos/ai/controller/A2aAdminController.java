@@ -49,11 +49,11 @@ import org.springframework.web.bind.annotation.RestController;
 @NacosApi
 @RestController
 @RequestMapping(Constants.A2A.ADMIN_PATH)
-public class AdminA2aController {
+public class A2aAdminController {
 
     private final A2aServerOperationService a2aServerOperationService;
 
-    public AdminA2aController(A2aServerOperationService a2aServerOperationService) {
+    public A2aAdminController(A2aServerOperationService a2aServerOperationService) {
         this.a2aServerOperationService = a2aServerOperationService;
     }
 

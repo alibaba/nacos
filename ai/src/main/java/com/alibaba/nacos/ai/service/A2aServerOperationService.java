@@ -112,6 +112,7 @@ public class A2aServerOperationService {
         agentCardVersionInfo.setDefaultOutputModes(form.getDefaultOutputModes());
         agentCardVersionInfo.setSkills(form.getSkills());
         agentCardVersionInfo.setSupportsAuthenticatedExtendedCard(form.getSupportsAuthenticatedExtendedCard());
+        agentCardVersionInfo.setDocumentationUrl(form.getDocumentationUrl());
         
         agentCardVersionInfo.setLatestPublishedVersion(form.getVersion());
         AgentVersionDetail agentVersionDetail = new AgentVersionDetail();
@@ -181,59 +182,67 @@ public class A2aServerOperationService {
      *
      * @param form agent form
      */
-    public void deleteAgent(AgentForm form) {
+    public void deleteAgent(AgentForm form) throws NacosException {
         String dataId = form.getName();
-        String groupName = AGENT_GROUP;
         String namespaceId = form.getNamespaceId();
         
-        try {
-            ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(dataId, groupName, namespaceId);
-            ConfigQueryChainResponse response = configQueryChainService.handle(request);
+        ConfigQueryChainRequest request = ConfigQueryChainRequest.buildConfigQueryChainRequest(dataId, AGENT_GROUP, namespaceId);
+        ConfigQueryChainResponse response = configQueryChainService.handle(request);
+        
+        if (response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
+            return;
+        }
+        
+        AgentCardVersionInfo agentCardVersionInfo = JacksonUtils.toObj(response.getContent(), AgentCardVersionInfo.class);
+        List<String> allVersions = agentCardVersionInfo.getVersionDetails().stream().map(AgentVersionDetail::getVersion).toList();
+        
+        // 1. If version is specified, only delete the corresponding version of the agent
+        if (form.getVersion() != null) {
+            String versionDataId = form.getName() + form.getVersion();
+            configOperationService.deleteConfig(versionDataId, AGENT_VERSION_GROUP, namespaceId, null, null, "nacos",
+                    null);
             
-            if (response.getStatus() == ConfigQueryChainResponse.ConfigQueryStatus.CONFIG_NOT_FOUND) {
-                return;
-            }
+            List<AgentVersionDetail> versionDetails = agentCardVersionInfo.getVersionDetails();
             
-            AgentCardVersionInfo agentCardVersionInfo = JacksonUtils.toObj(response.getContent(), AgentCardVersionInfo.class);
-            List<String> allVersions = agentCardVersionInfo.getVersionDetails().stream().map(AgentVersionDetail::getVersion).toList();
+            // 检查删除的是否是最新版本
+            boolean isLatestVersion = form.getVersion().equals(agentCardVersionInfo.getLatestPublishedVersion());
             
-            // 1. If version is specified, only delete the corresponding version of the agent
-            if (form.getVersion() != null) {
-                String versionDataId = form.getName() + form.getVersion();
-                configOperationService.deleteConfig(versionDataId, AGENT_VERSION_GROUP, namespaceId, null, null, "nacos",
-                        null);
+            // 如果这是最后一个版本，则删除整个agent
+            if (versionDetails.size() == 1 && versionDetails.get(0).getVersion().equals(form.getVersion())) {
+                configOperationService.deleteConfig(dataId, AGENT_GROUP, namespaceId, null, null, "nacos", null);
+            } else {
+                // 从版本列表中移除指定版本
+                agentCardVersionInfo.getVersionDetails().removeIf(versionDetail -> versionDetail.getVersion().equals(form.getVersion()));
                 
-                if (form.getVersion().equals(agentCardVersionInfo.getLatestPublishedVersion())) {
+                // 如果删除的是最新版本，需要更新最新版本信息
+                if (isLatestVersion) {
                     agentCardVersionInfo.setLatestPublishedVersion(null);
                     agentCardVersionInfo.setVersion(null);
-                    
-                    List<AgentVersionDetail> updatedVersionDetails = agentCardVersionInfo.getVersionDetails().stream()
-                            .filter(detail -> !detail.getVersion().equals(form.getVersion())).toList();
-                    agentCardVersionInfo.setVersionDetails(updatedVersionDetails);
-                    
-                    ConfigForm updateForm = new ConfigForm();
-                    updateForm.setDataId(dataId);
-                    updateForm.setGroup(groupName);
-                    updateForm.setNamespaceId(namespaceId);
-                    updateForm.setContent(JacksonUtils.toJson(agentCardVersionInfo));
-                    updateForm.setConfigTags("nacos.internal.config=agent");
-                    updateForm.setAppName(form.getName());
-                    updateForm.setSrcUser("nacos");
-                    
-                    ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
-                    configRequestInfo.setUpdateForExist(Boolean.TRUE);
-                    configOperationService.publishConfig(updateForm, configRequestInfo, null);
                 }
-            } else {
-                // 2. If no version specified, delete all versions and agent information
-                for (String version : allVersions) {
-                    String versionDataId = form.getName() + "-" + version;
-                    configOperationService.deleteConfig(versionDataId, AGENT_VERSION_GROUP, namespaceId, null, null,
-                            "nacos", null);
-                }
+                
+                // 更新agent信息
+                ConfigForm updateForm = new ConfigForm();
+                updateForm.setDataId(dataId);
+                updateForm.setGroup(AGENT_GROUP);
+                updateForm.setNamespaceId(namespaceId);
+                updateForm.setContent(JacksonUtils.toJson(agentCardVersionInfo));
+                updateForm.setConfigTags("nacos.internal.config=agent");
+                updateForm.setAppName(form.getName());
+                updateForm.setSrcUser("nacos");
+                
+                ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+                configRequestInfo.setUpdateForExist(Boolean.TRUE);
+                configOperationService.publishConfig(updateForm, configRequestInfo, null);
             }
-        } catch (NacosException e) {
-            throw new NacosConfigException("Failed to delete agent: " + e.getMessage(), e);
+        } else {
+            // 2. If no version specified, delete all versions and agent information
+            for (String version : allVersions) {
+                String versionDataId = form.getName() + "-" + version;
+                configOperationService.deleteConfig(versionDataId, AGENT_VERSION_GROUP, namespaceId, null, null,
+                        "nacos", null);
+            }
+            
+            configOperationService.deleteConfig(dataId, AGENT_GROUP, namespaceId, null, null, "nacos", null);
         }
     }
     

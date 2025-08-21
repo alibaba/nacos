@@ -54,7 +54,7 @@ public class A2aInnerHandler implements A2aHandler {
     }
     
     @Override
-    public void deleteAgent(AgentForm form) {
+    public void deleteAgent(AgentForm form) throws NacosException {
         a2aServerOperationService.deleteAgent(form);
     }
     
