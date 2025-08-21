@@ -48,7 +48,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import javax.annotation.Resource;
@@ -185,8 +185,8 @@ class AbilityDiscovery {
     @Test
     void testClientDiscovery() throws NacosException {
         // client judge ability
-        assertEquals(AbilityStatus.SUPPORTED, client.getConnectionAbility(AbilityKey.SERVER_TEST_1));
-        assertEquals(AbilityStatus.NOT_SUPPORTED, client.getConnectionAbility(AbilityKey.SERVER_TEST_2));
+        assertEquals(AbilityStatus.SUPPORTED, client.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH));
+        assertEquals(AbilityStatus.NOT_SUPPORTED, client.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK));
     }
     
     @Test
@@ -213,8 +213,8 @@ class AbilityDiscovery {
         client.registerServerRequestHandler(new ServerRequestHandler() {
             @Override
             public Response requestReply(Request request, Connection connection) {
-                if (connection.getConnectionAbility(AbilityKey.SERVER_TEST_1).equals(AbilityStatus.SUPPORTED)
-                        && connection.getConnectionAbility(AbilityKey.SERVER_TEST_2).equals(AbilityStatus.NOT_SUPPORTED)) {
+                if (connection.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH).equals(AbilityStatus.SUPPORTED)
+                        && connection.getConnectionAbility(AbilityKey.SERVER_DISTRIBUTED_LOCK).equals(AbilityStatus.NOT_SUPPORTED)) {
                     clientSuccess = true;
                 }
                 return new Response() {
@@ -284,7 +284,7 @@ class AbilityDiscovery {
         
         @Override
         public ConfigQueryResponse handle(ConfigQueryRequest request, RequestMeta meta) throws NacosException {
-            if (meta.getConnectionAbility(AbilityKey.SDK_CLIENT_TEST_1).equals(AbilityStatus.SUPPORTED)) {
+            if (meta.getConnectionAbility(AbilityKey.SDK_CLIENT_FUZZY_WATCH).equals(AbilityStatus.SUPPORTED)) {
                 serverSuccess = true;
             }
             return new ConfigQueryResponse();

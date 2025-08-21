@@ -81,7 +81,7 @@ public class EnvUtil {
     
     private static final String FILE_PREFIX = "file:";
     
-    private static final String SERVER_PORT_PROPERTY = "server.port";
+    private static final String SERVER_PORT_PROPERTY = "nacos.server.main.port";
     
     private static final int DEFAULT_SERVER_PORT = 8848;
     
@@ -118,6 +118,8 @@ public class EnvUtil {
     private static String nacosHomePath = null;
     
     private static ConfigurableEnvironment environment;
+    
+    private static DeploymentType deploymentType;
     
     /**
      * customEnvironment.
@@ -496,5 +498,13 @@ public class EnvUtil {
                 getProperty(Constants.AVAILABLE_PROCESSORS_BASIC, int.class, ThreadUtils.getSuitableThreadCount(1))
                         * scale;
         return result > 1 ? (int) result : 1;
+    }
+    
+    public static DeploymentType getDeploymentType() {
+        return deploymentType;
+    }
+    
+    public static void setDeploymentType(DeploymentType deploymentType) {
+        EnvUtil.deploymentType = deploymentType;
     }
 }

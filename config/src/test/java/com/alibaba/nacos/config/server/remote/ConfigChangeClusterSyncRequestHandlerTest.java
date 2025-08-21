@@ -21,7 +21,7 @@ import com.alibaba.nacos.api.config.remote.response.cluster.ConfigChangeClusterS
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
-import com.alibaba.nacos.config.server.service.ConfigGrayModelMigrateService;
+import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,12 +44,12 @@ class ConfigChangeClusterSyncRequestHandlerTest {
     private DumpService dumpService;
     
     @Mock
-    private ConfigGrayModelMigrateService configGrayModelMigrateService;
+    private ConfigMigrateService configMigrateService;
     
     @BeforeEach
     void setUp() throws IOException {
         configChangeClusterSyncRequestHandler = new ConfigChangeClusterSyncRequestHandler(dumpService,
-                configGrayModelMigrateService);
+                configMigrateService);
     }
     
     @Test
@@ -80,7 +80,7 @@ class ConfigChangeClusterSyncRequestHandlerTest {
         meta.setClientIp("1.1.1.1");
         ConfigChangeClusterSyncResponse configChangeClusterSyncResponse = configChangeClusterSyncRequestHandler.handle(
                 configChangeSyncRequest, meta);
-        verify(configGrayModelMigrateService, times(1)).checkMigrateBeta(configChangeSyncRequest.getDataId(),
+        verify(configMigrateService, times(1)).checkMigrateBeta(configChangeSyncRequest.getDataId(),
                 configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant());
         assertEquals(configChangeClusterSyncResponse.getResultCode(), ResponseCode.SUCCESS.getCode());
     }
@@ -98,7 +98,7 @@ class ConfigChangeClusterSyncRequestHandlerTest {
         meta.setClientIp("1.1.1.1");
         ConfigChangeClusterSyncResponse configChangeClusterSyncResponse = configChangeClusterSyncRequestHandler.handle(
                 configChangeSyncRequest, meta);
-        verify(configGrayModelMigrateService, times(1)).checkMigrateTag(configChangeSyncRequest.getDataId(),
+        verify(configMigrateService, times(1)).checkMigrateTag(configChangeSyncRequest.getDataId(),
                 configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant(),
                 configChangeSyncRequest.getTag());
         assertEquals(configChangeClusterSyncResponse.getResultCode(), ResponseCode.SUCCESS.getCode());

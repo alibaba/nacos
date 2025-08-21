@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * ServiceInfo.
+ * Service Information with instances and without cluster information, used in data pushing and cached for nacos-client.
  *
  * @author nkorange
  * @author shizhengxing
@@ -67,19 +67,19 @@ public class ServiceInfo {
     
     private String checksum = "";
     
-    private volatile boolean allIPs = false;
+    private volatile boolean allIps = false;
     
     private volatile boolean reachProtectionThreshold = false;
     
     public ServiceInfo() {
     }
     
-    public boolean isAllIPs() {
-        return allIPs;
+    public boolean isAllIps() {
+        return allIps;
     }
     
-    public void setAllIPs(boolean allIPs) {
-        this.allIPs = allIPs;
+    public void setAllIps(boolean allIps) {
+        this.allIps = allIps;
     }
     
     /**
@@ -180,7 +180,7 @@ public class ServiceInfo {
      * @return true if validate, otherwise false
      */
     public boolean validate() {
-        if (isAllIPs()) {
+        if (isAllIps()) {
             return true;
         }
         

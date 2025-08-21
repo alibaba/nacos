@@ -24,6 +24,7 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.regex.Pattern;
 
 /**
  * string util.
@@ -53,6 +54,9 @@ public class StringUtils {
     public static final String FOLDER_SEPARATOR = "/";
     
     public static final String WINDOWS_FOLDER_SEPARATOR = "\\";
+
+    public static final Pattern UUID_PATTERN = Pattern.compile(
+            "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
     
     /**
      * <p>Create a string with encoding format as utf8.</p>
@@ -807,5 +811,9 @@ public class StringUtils {
         char[] chars = str.toCharArray();
         chars[0] = updatedChar;
         return new String(chars);
+    }
+
+    public static boolean isUuidString(String str) {
+        return UUID_PATTERN.matcher(str).matches();
     }
 }

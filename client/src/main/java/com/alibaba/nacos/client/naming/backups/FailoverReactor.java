@@ -117,7 +117,7 @@ public class FailoverReactor implements Closeable {
                         failoverMap.put(entry.getKey(), (ServiceInfo) entry.getValue().getData());
                     }
                     
-                    if (failoverMap.size() > 0) {
+                    if (!failoverMap.isEmpty()) {
                         failoverServiceCntMetrics();
                         serviceMap = failoverMap;
                     }
@@ -185,32 +185,24 @@ public class FailoverReactor implements Closeable {
     }
     
     private void failoverServiceCntMetrics() {
-        try {
-            for (Map.Entry<String, ServiceInfo> entry : serviceMap.entrySet()) {
-                String serviceName = entry.getKey();
-                List<Tag> tags = new ArrayList<>();
-                tags.add(new ImmutableTag("service_name", serviceName));
-                if (Metrics.globalRegistry.find("nacos_naming_client_failover_instances").tags(tags).gauge() == null) {
-                    Gauge.builder("nacos_naming_client_failover_instances", () -> serviceMap.get(serviceName).ipCount())
-                            .tags(tags).register(Metrics.globalRegistry);
-                }
+        for (Map.Entry<String, ServiceInfo> entry : serviceMap.entrySet()) {
+            String serviceName = entry.getKey();
+            List<Tag> tags = new ArrayList<>();
+            tags.add(new ImmutableTag("service_name", serviceName));
+            if (Metrics.globalRegistry.find("nacos_naming_client_failover_instances").tags(tags).gauge() == null) {
+                Gauge.builder("nacos_naming_client_failover_instances", () -> serviceMap.get(serviceName).ipCount())
+                        .tags(tags).register(Metrics.globalRegistry);
             }
-        } catch (Exception e) {
-            NAMING_LOGGER.info("[NA] registerFailoverServiceCnt fail.", e);
         }
     }
     
     private void failoverServiceCntMetricsClear() {
-        try {
-            for (Map.Entry<String, ServiceInfo> entry : serviceMap.entrySet()) {
-                Gauge gauge = Metrics.globalRegistry.find("nacos_naming_client_failover_instances")
-                        .tag("service_name", entry.getKey()).gauge();
-                if (gauge != null) {
-                    Metrics.globalRegistry.remove(gauge);
-                }
+        for (Map.Entry<String, ServiceInfo> entry : serviceMap.entrySet()) {
+            Gauge gauge = Metrics.globalRegistry.find("nacos_naming_client_failover_instances")
+                    .tag("service_name", entry.getKey()).gauge();
+            if (gauge != null) {
+                Metrics.globalRegistry.remove(gauge);
             }
-        } catch (Exception e) {
-            NAMING_LOGGER.info("[NA] registerFailoverServiceCnt fail.", e);
         }
     }
 }

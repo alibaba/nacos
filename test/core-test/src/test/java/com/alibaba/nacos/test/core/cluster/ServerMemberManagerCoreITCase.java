@@ -22,7 +22,7 @@ import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtil;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
-import com.alibaba.nacos.core.cluster.NodeState;
+import com.alibaba.nacos.api.common.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -34,7 +34,6 @@ import org.junit.jupiter.api.MethodOrderer.MethodName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.core.env.StandardEnvironment;
-import org.springframework.mock.web.MockServletContext;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -80,7 +79,7 @@ class ServerMemberManagerCoreITCase {
     
     @BeforeEach
     void before() throws Exception {
-        memberManager = new ServerMemberManager(new MockServletContext());
+        memberManager = new ServerMemberManager();
     }
     
     @AfterEach

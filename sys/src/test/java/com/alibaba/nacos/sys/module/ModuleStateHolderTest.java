@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.sys.module;
 
+import com.alibaba.nacos.sys.env.DeploymentType;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +40,7 @@ class ModuleStateHolderTest {
     void setUp() throws Exception {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
+        EnvUtil.setDeploymentType(DeploymentType.MERGED);
         moduleStateMap = (Map<String, ModuleState>) ReflectionTestUtils.getField(ModuleStateHolder.getInstance(),
                 ModuleStateHolder.class, "moduleStates");
     }

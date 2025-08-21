@@ -80,7 +80,7 @@ class StandaloneExternalStorageTest {
         
         assertTrue(EnvUtil.getStandaloneMode());
         assertTrue(dataSource.getDataSource() instanceof LocalDataSourceServiceImpl);
-        assertFalse(DatasourceConfiguration.isUseExternalDB());
+        assertFalse(DatasourceConfiguration.isUseExternalDb());
     }
     
     @Test
@@ -96,7 +96,7 @@ class StandaloneExternalStorageTest {
         
         assertTrue(EnvUtil.getStandaloneMode());
         assertTrue(dataSource.getDataSource() instanceof LocalDataSourceServiceImpl);
-        assertFalse(DatasourceConfiguration.isUseExternalDB());
+        assertFalse(DatasourceConfiguration.isUseExternalDb());
     }
     
     @Test
@@ -112,7 +112,7 @@ class StandaloneExternalStorageTest {
         
         assertTrue(EnvUtil.getStandaloneMode());
         assertTrue(dataSource.getDataSource() instanceof ExternalDataSourceServiceImpl);
-        assertTrue(DatasourceConfiguration.isUseExternalDB());
+        assertTrue(DatasourceConfiguration.isUseExternalDb());
     }
     
     @Test
@@ -128,7 +128,7 @@ class StandaloneExternalStorageTest {
         
         assertTrue(EnvUtil.getStandaloneMode());
         assertTrue(dataSource.getDataSource() instanceof ExternalDataSourceServiceImpl);
-        assertTrue(DatasourceConfiguration.isUseExternalDB());
+        assertTrue(DatasourceConfiguration.isUseExternalDb());
     }
     
 }

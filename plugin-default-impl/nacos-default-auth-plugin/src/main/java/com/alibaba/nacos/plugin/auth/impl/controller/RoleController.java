@@ -16,15 +16,16 @@
 
 package com.alibaba.nacos.plugin.auth.impl.controller;
 
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
-import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -44,8 +45,11 @@ import java.util.List;
 @RequestMapping("/v1/auth/roles")
 public class RoleController {
     
-    @Autowired
-    private NacosRoleServiceImpl roleService;
+    private final NacosRoleService roleService;
+    
+    public RoleController(NacosRoleService roleService) {
+        this.roleService = roleService;
+    }
     
     /**
      * Get roles list.
@@ -58,12 +62,13 @@ public class RoleController {
      */
     @GetMapping(params = "search=accurate")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.READ)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/auth/role/list")
     public Object getRoles(@RequestParam int pageNo, @RequestParam int pageSize,
             @RequestParam(name = "username", defaultValue = "") String username,
             @RequestParam(name = "role", defaultValue = "") String role) {
-        return roleService.getRolesFromDatabase(username, role, pageNo, pageSize);
+        return roleService.getRoles(username, role, pageNo, pageSize);
     }
-
+    
     /**
      * Fuzzy query role information.
      * @param pageNo number index of page
@@ -74,10 +79,11 @@ public class RoleController {
      */
     @GetMapping(params = "search=blur")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.READ)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/auth/role/list")
     public Page<RoleInfo> fuzzySearchRole(@RequestParam int pageNo, @RequestParam int pageSize,
             @RequestParam(name = "username", defaultValue = "") String username,
             @RequestParam(name = "role", defaultValue = "") String role) {
-        return roleService.findRolesLike4Page(username, role, pageNo, pageSize);
+        return roleService.findRoles(username, role, pageNo, pageSize);
     }
     
     /**
@@ -88,8 +94,9 @@ public class RoleController {
      */
     @GetMapping("/search")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.READ)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/auth/role/search")
     public List<String> searchRoles(@RequestParam String role) {
-        return roleService.findRolesLikeRoleName(role);
+        return roleService.findRoleNames(role);
     }
     
     /**
@@ -103,6 +110,7 @@ public class RoleController {
      */
     @PostMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "POST ${contextPath:nacos}/v3/auth/role")
     public Object addRole(@RequestParam String role, @RequestParam String username) {
         roleService.addRole(role, username);
         return RestResultUtils.success("add role ok!");
@@ -117,6 +125,7 @@ public class RoleController {
      */
     @DeleteMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.WRITE)
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "DELETE ${contextPath:nacos}/v3/auth/role")
     public Object deleteRole(@RequestParam String role,
             @RequestParam(name = "username", defaultValue = StringUtils.EMPTY) String username) {
         if (StringUtils.isBlank(username)) {

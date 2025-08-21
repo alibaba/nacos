@@ -55,6 +55,8 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
     
+    private static final String DEFAULT_APP_NAME = "-";
+    
     @Autowired
     RequestHandlerRegistry requestHandlerRegistry;
     
@@ -66,18 +68,19 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         String connectionId = GrpcServerConstants.CONTEXT_KEY_CONN_ID.get();
         try {
             if (connectionManager.traced(clientIp)) {
-                Loggers.REMOTE_DIGEST.info("[{}]Payload {},meta={},body={}", connectionId, receive ? "receive" : "send",
+                Loggers.REMOTE_DIGEST.info("[{}] Payload {}, meta={}, body={}", connectionId, receive ? "receive" : "send",
                         grpcRequest.getMetadata().toByteString().toStringUtf8(),
                         grpcRequest.getBody().toByteString().toStringUtf8());
             }
         } catch (Throwable throwable) {
-            Loggers.REMOTE_DIGEST.error("[{}]Monitor request error,payload={},error={}", connectionId, clientIp,
+            Loggers.REMOTE_DIGEST.error("[{}] Monitor request error, payload={}, error={}", connectionId, clientIp,
                     grpcRequest.toByteString().toStringUtf8());
         }
         
     }
     
     @Override
+    @SuppressWarnings("PMD.MethodTooLongRule")
     public void request(Payload grpcRequest, StreamObserver<Payload> responseObserver) {
         
         traceIfNecessary(grpcRequest, true);
@@ -210,7 +213,7 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
                     response.getErrorCode(), null, request.getModule(), System.nanoTime() - startTime);
         } catch (Throwable e) {
             Loggers.REMOTE_DIGEST
-                    .error("[{}] Fail to handle request from connection [{}] ,error message :{}", "grpc", connectionId,
+                    .error("[{}] Fail to handle request from connection [{}], error message :{}", "grpc", connectionId,
                             e);
             Payload payloadResponse = GrpcUtils.convert(ErrorResponse.build(e));
             traceIfNecessary(payloadResponse, false);
@@ -231,7 +234,7 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         requestContext.getBasicContext().setRequestProtocol(BasicContext.GRPC_PROTOCOL);
         requestContext.getBasicContext().setRequestTarget(request.getClass().getSimpleName());
         String app = connection.getMetaInfo().getAppName();
-        if (StringUtils.isBlank(app)) {
+        if (StringUtils.isBlank(app) || StringUtils.equals(DEFAULT_APP_NAME, app)) {
             app = request.getHeader(HttpHeaderConsts.APP_FILED, "unknown");
         }
         requestContext.getBasicContext().setApp(app);

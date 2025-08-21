@@ -25,6 +25,7 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.ApiVersionEnum;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigCacheGray;
+import com.alibaba.nacos.config.server.model.ConfigListenState;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.model.gray.ConfigGrayPersistInfo;
 import com.alibaba.nacos.config.server.model.gray.GrayRuleManager;
@@ -54,10 +55,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import javax.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG;
@@ -126,12 +125,12 @@ class ConfigServletInnerTest {
     @Test
     void testDoPollingConfig() throws Exception {
         
-        Map<String, String> clientMd5Map = new HashMap<>();
+        Map<String, ConfigListenState> clientMd5Map = new HashMap<>();
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
-        List<String> changedGroups = new ArrayList<>();
-        changedGroups.add("1");
-        changedGroups.add("2");
+        HashMap<String, ConfigListenState> changedGroups = new HashMap<>();
+        changedGroups.put("1", new ConfigListenState("testMd51"));
+        changedGroups.put("2", new ConfigListenState("testMd52"));
         
         md5UtilMockedStatic.when(() -> MD5Util.compareMd5(request, response, clientMd5Map)).thenReturn(changedGroups);
         md5UtilMockedStatic.when(() -> MD5Util.compareMd5OldResult(changedGroups)).thenReturn("test-old");

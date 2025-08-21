@@ -21,7 +21,7 @@ import com.alibaba.nacos.config.server.constant.CounterMode;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.capacity.GroupCapacity;
-import com.alibaba.nacos.config.server.model.capacity.TenantCapacity;
+import com.alibaba.nacos.config.server.model.capacity.NamespaceCapacity;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.capacity.CapacityService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
@@ -233,8 +233,8 @@ class CapacityManagementAspectTest {
         when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean())).thenReturn(true);
         when(capacityService.updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant))).thenReturn(true);
         
-        TenantCapacity localTenantCapacity = new TenantCapacity();
-        localTenantCapacity.setTenant(mockTenant);
+        NamespaceCapacity localTenantCapacity = new NamespaceCapacity();
+        localTenantCapacity.setNamespaceId(mockTenant);
         localTenantCapacity.setMaxSize(0);
         localTenantCapacity.setMaxAggrCount(0);
         when(capacityService.getTenantCapacity(eq(mockTenant))).thenReturn(localTenantCapacity);
@@ -284,7 +284,7 @@ class CapacityManagementAspectTest {
         when(capacityService.updateGroupUsage(eq(CounterMode.INCREMENT), eq(mockGroup))).thenReturn(true);
         
         GroupCapacity localGroupCapacity = new GroupCapacity();
-        localGroupCapacity.setGroup(mockGroup);
+        localGroupCapacity.setGroupName(mockGroup);
         localGroupCapacity.setMaxSize(0);
         localGroupCapacity.setMaxAggrCount(0);
         when(capacityService.getGroupCapacity(eq(mockGroup))).thenReturn(localGroupCapacity);
@@ -331,8 +331,8 @@ class CapacityManagementAspectTest {
         when(capacityService.insertAndUpdateClusterUsage(any(), anyBoolean())).thenReturn(true);
         when(capacityService.updateTenantUsage(eq(CounterMode.INCREMENT), eq(mockTenant))).thenReturn(true);
         
-        TenantCapacity localTenantCapacity = new TenantCapacity();
-        localTenantCapacity.setTenant(mockTenant);
+        NamespaceCapacity localTenantCapacity = new NamespaceCapacity();
+        localTenantCapacity.setNamespaceId(mockTenant);
         localTenantCapacity.setMaxSize(10 * 1024);
         localTenantCapacity.setMaxAggrCount(1024);
         when(capacityService.getTenantCapacity(eq(mockTenant))).thenReturn(localTenantCapacity);
@@ -367,7 +367,7 @@ class CapacityManagementAspectTest {
         when(capacityService.updateGroupUsage(eq(CounterMode.INCREMENT), eq(mockGroup))).thenReturn(true);
         
         GroupCapacity localGroupCapacity = new GroupCapacity();
-        localGroupCapacity.setGroup(mockGroup);
+        localGroupCapacity.setGroupName(mockGroup);
         localGroupCapacity.setMaxSize(10 * 1024);
         localGroupCapacity.setMaxAggrCount(1024);
         when(capacityService.getGroupCapacity(eq(mockGroup))).thenReturn(localGroupCapacity);
@@ -402,8 +402,8 @@ class CapacityManagementAspectTest {
         when(capacityService.updateClusterUsage(any())).thenReturn(true);
         when(capacityService.updateTenantUsage(any(), eq(mockTenant))).thenReturn(true);
         
-        TenantCapacity localTenantCapacity = new TenantCapacity();
-        localTenantCapacity.setTenant(mockTenant);
+        NamespaceCapacity localTenantCapacity = new NamespaceCapacity();
+        localTenantCapacity.setNamespaceId(mockTenant);
         localTenantCapacity.setMaxSize(10 * 1024);
         localTenantCapacity.setMaxAggrCount(1024);
         when(capacityService.getTenantCapacity(eq(mockTenant))).thenReturn(localTenantCapacity);

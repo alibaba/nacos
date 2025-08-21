@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.namespace.injector;
 
-import com.alibaba.nacos.core.namespace.model.Namespace;
+import com.alibaba.nacos.api.model.response.Namespace;
 
 /**
  * Namespace detail injector.

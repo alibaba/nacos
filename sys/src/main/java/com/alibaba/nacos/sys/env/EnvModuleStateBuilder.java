@@ -17,15 +17,15 @@
 package com.alibaba.nacos.sys.env;
 
 import com.alibaba.nacos.common.utils.VersionUtils;
+import com.alibaba.nacos.sys.module.AbstractServerModuleStateBuilder;
 import com.alibaba.nacos.sys.module.ModuleState;
-import com.alibaba.nacos.sys.module.ModuleStateBuilder;
 
 /**
  * Module state builder for env module.
  *
  * @author xiweng.yy
  */
-public class EnvModuleStateBuilder implements ModuleStateBuilder {
+public class EnvModuleStateBuilder extends AbstractServerModuleStateBuilder {
     
     @Override
     public ModuleState build() {

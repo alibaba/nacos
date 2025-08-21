@@ -20,35 +20,36 @@ import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.istio.IstioApp;
-import com.alibaba.nacos.sys.env.EnvUtil;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
 
 /**
  * @author special.fy
  */
 public class IstioExecutor {
-
-    private static final ScheduledExecutorService NACOS_RESOURCE_WATCHER = ExecutorFactory.Managed
-            .newScheduledExecutorService(ClassUtils.getCanonicalName(IstioApp.class),
-                    EnvUtil.getAvailableProcessors(2),
-                    new NameThreadFactory("com.alibaba.nacos.istio.resource.watcher"));
-
     private static final ExecutorService EVENT_HANDLE_EXECUTOR = ExecutorFactory.Managed
             .newSingleExecutorService(ClassUtils.getCanonicalName(IstioApp.class),
-                    new NameThreadFactory("com.alibaba.nacos.istio.event.handle"));
-
-
-    public static void registerNacosResourceWatcher(Runnable watcher, long initialDelay, long period) {
-        NACOS_RESOURCE_WATCHER.scheduleAtFixedRate(watcher, initialDelay, period, TimeUnit.MILLISECONDS);
-    }
+                new NameThreadFactory("com.alibaba.nacos.istio.event.handle"));
+    
+    private static final ExecutorService PUSH_CHANGE_EXECUTOR = ExecutorFactory.Managed
+            .newSingleExecutorService(ClassUtils.getCanonicalName(IstioApp.class),
+                    new NameThreadFactory("com.alibaba.nacos.istio.pushchange.debounce"));
+    
+    private static final ExecutorService CYCLE_DEBOUNCE_EXECUTOR = ExecutorFactory.Managed
+            .newSingleExecutorService(ClassUtils.getCanonicalName(IstioApp.class),
+                    new NameThreadFactory("com.alibaba.nacos.istio.cycle.debounce"));
 
     public static <V> Future<V> asyncHandleEvent(Callable<V> task) {
         return EVENT_HANDLE_EXECUTOR.submit(task);
+    }
+    
+    public static <V> Future<V> debouncePushChange(Callable<V> debounce) {
+        return PUSH_CHANGE_EXECUTOR.submit(debounce);
+    }
+    
+    public static void cycleDebounce(Runnable toNotify) {
+        CYCLE_DEBOUNCE_EXECUTOR.submit(toNotify);
     }
 }

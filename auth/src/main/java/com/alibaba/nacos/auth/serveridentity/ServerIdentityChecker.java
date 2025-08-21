@@ -17,7 +17,7 @@
 package com.alibaba.nacos.auth.serveridentity;
 
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
 
 /**
  * Nacos server identity checker for nacos inner/admin API identity check.
@@ -29,9 +29,9 @@ public interface ServerIdentityChecker {
     /**
      * Do init checker.
      *
-     * @param authConfigs config for nacos auth.
+     * @param authConfig config for nacos auth.
      */
-    void init(AuthConfigs authConfigs);
+    void init(NacosAuthConfig authConfig);
     
     /**
      * Do check nacos server identity.

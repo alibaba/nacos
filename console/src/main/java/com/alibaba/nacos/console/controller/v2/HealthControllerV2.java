@@ -20,12 +20,14 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
 import com.alibaba.nacos.core.cluster.health.ModuleHealthCheckerHolder;
 import com.alibaba.nacos.core.cluster.health.ReadinessResult;
+import com.alibaba.nacos.core.controller.compatibility.Compatibility;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Health ControllerV2.
@@ -44,6 +46,7 @@ public class HealthControllerV2 {
      * Nacos is in broken states.
      */
     @GetMapping("/liveness")
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/health/liveness")
     public Result<String> liveness() {
         return Result.success("ok");
     }
@@ -55,6 +58,7 @@ public class HealthControllerV2 {
      * ready.
      */
     @GetMapping("/readiness")
+    @Compatibility(apiType = ApiType.CONSOLE_API, alternatives = "GET ${contextPath:nacos}/v3/console/health/readiness")
     public Result<String> readiness(HttpServletRequest request) {
         ReadinessResult result = ModuleHealthCheckerHolder.getInstance().checkReadiness();
         if (result.isSuccess()) {

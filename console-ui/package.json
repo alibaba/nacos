@@ -31,7 +31,7 @@
     "@babel/core": "^7.7.7",
     "@babel/plugin-proposal-decorators": "^7.7.4",
     "@babel/preset-env": "^7.7.7",
-    "@babel/runtime": "^7.7.7",
+    "@babel/runtime": "^7.28.2",
     "babel-eslint": "^10.0.1",
     "babel-loader": "^8.0.4",
     "babel-plugin-import": "^1.13.0",
@@ -82,6 +82,7 @@
     "react-router-dom": "^5.1.2",
     "react-router-redux": "^4.0.8",
     "redux": "^4.0.5",
-    "redux-thunk": "^2.3.0"
+    "redux-thunk": "^2.3.0",
+    "swagger2openapi": "^7.0.8"
   }
 }

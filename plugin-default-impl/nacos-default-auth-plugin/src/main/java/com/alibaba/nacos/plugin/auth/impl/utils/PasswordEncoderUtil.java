@@ -16,7 +16,8 @@
 
 package com.alibaba.nacos.plugin.auth.impl.utils;
 
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import com.alibaba.nacos.plugin.auth.impl.SafeBcryptPasswordEncoder;
+import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 
 /**
  * Password encoder tool.
@@ -26,10 +27,22 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 public class PasswordEncoderUtil {
     
     public static Boolean matches(String raw, String encoded) {
-        return new BCryptPasswordEncoder().matches(raw, encoded);
+        return new SafeBcryptPasswordEncoder().matches(raw, encoded);
     }
     
+    /**
+     * Encode password.
+     *
+     * @param raw password
+     * @return encoded password
+     */
     public static String encode(String raw) {
-        return new BCryptPasswordEncoder().encode(raw);
+        if (raw == null) {
+            throw new IllegalArgumentException("Password cannot be null");
+        }
+        if (raw.length() > AuthConstants.MAX_PASSWORD_LENGTH) {
+            throw new IllegalArgumentException("Password length must not exceed " + AuthConstants.MAX_PASSWORD_LENGTH + " characters");
+        }
+        return new SafeBcryptPasswordEncoder().encode(raw);
     }
 }

@@ -26,7 +26,7 @@ jobs:
     strategy:
       matrix:
         base-image: ["ubuntu"]
-        java-version: ["8"]
+        java-version: ["17"]
     outputs:
       version-json: ${{ steps.show_versions.outputs.version-json }}
     steps:

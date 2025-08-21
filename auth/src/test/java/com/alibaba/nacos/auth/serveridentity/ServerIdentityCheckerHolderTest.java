@@ -17,7 +17,7 @@
 package com.alibaba.nacos.auth.serveridentity;
 
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,29 +37,34 @@ class ServerIdentityCheckerHolderTest {
     
     Map<Class<?>, Collection<Class<?>>> servicesMap;
     
+    private Class<? extends ServerIdentityChecker> cachedCheckerClass;
+    
     @BeforeEach
     void setUp() {
         servicesMap = (Map<Class<?>, Collection<Class<?>>>) ReflectionTestUtils.getField(NacosServiceLoader.class,
                 "SERVICES");
+        cachedCheckerClass = (Class<? extends ServerIdentityChecker>) ReflectionTestUtils.getField(
+                ServerIdentityCheckerHolder.getInstance(), "checkerClass");
     }
     
     @AfterEach
     void tearDown() {
         servicesMap.remove(ServerIdentityChecker.class);
+        ReflectionTestUtils.setField(ServerIdentityCheckerHolder.getInstance(), "checkerClass", cachedCheckerClass);
     }
     
     @Test
     void testConstructorWithSingleImplementation()
             throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
         ServerIdentityCheckerHolder holder = getNewHolder(1);
-        assertInstanceOf(MockChecker.class, holder.getChecker());
+        assertInstanceOf(MockChecker.class, holder.newChecker());
     }
     
     @Test
     void testConstructorWithMultipleImplementation()
             throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
         ServerIdentityCheckerHolder holder = getNewHolder(2);
-        assertInstanceOf(MockChecker.class, holder.getChecker());
+        assertInstanceOf(MockChecker.class, holder.newChecker());
     }
     
     ServerIdentityCheckerHolder getNewHolder(int size)
@@ -77,7 +82,7 @@ class ServerIdentityCheckerHolderTest {
     public static class MockChecker implements ServerIdentityChecker {
         
         @Override
-        public void init(AuthConfigs authConfigs) {
+        public void init(NacosAuthConfig authConfig) {
         }
         
         @Override

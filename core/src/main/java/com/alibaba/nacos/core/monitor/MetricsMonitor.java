@@ -61,22 +61,22 @@ public final class MetricsMonitor {
         List<Tag> tags = new ArrayList<>();
         tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "raft_read_index_failed"));
-        RAFT_READ_INDEX_FAILED = NacosMeterRegistryCenter.summary(METER_REGISTRY, "nacos_monitor", tags);
+        RAFT_READ_INDEX_FAILED = NacosMeterRegistryCenter.summary(METER_REGISTRY, "nacos_monitor_summary", tags);
     
         tags = new ArrayList<>();
         tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "raft_read_from_leader"));
-        RAFT_FROM_LEADER = NacosMeterRegistryCenter.summary(METER_REGISTRY, "nacos_monitor", tags);
+        RAFT_FROM_LEADER = NacosMeterRegistryCenter.summary(METER_REGISTRY, "nacos_monitor_summary", tags);
     
         tags = new ArrayList<>();
         tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "raft_apply_log_timer"));
-        RAFT_APPLY_LOG_TIMER = NacosMeterRegistryCenter.timer(METER_REGISTRY, "nacos_monitor", tags);
+        RAFT_APPLY_LOG_TIMER = NacosMeterRegistryCenter.timer(METER_REGISTRY, "nacos_monitor_summary", tags);
     
         tags = new ArrayList<>();
         tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "raft_apply_read_timer"));
-        RAFT_APPLY_READ_TIMER = NacosMeterRegistryCenter.timer(METER_REGISTRY, "nacos_monitor", tags);
+        RAFT_APPLY_READ_TIMER = NacosMeterRegistryCenter.timer(METER_REGISTRY, "nacos_monitor_summary", tags);
         
         tags = new ArrayList<>();
         tags.add(immutableTag);
@@ -172,7 +172,7 @@ public final class MetricsMonitor {
         private String type;
 
         /**
-         * cout of thread are running job.
+         * cout of thread are ready job.
          */
         private AtomicInteger activeCount = new AtomicInteger();
 

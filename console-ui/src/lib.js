@@ -28,7 +28,10 @@ request.middleWare((_config = {}) => {
   let config = _config;
   let { url = '' } = config;
 
-  const namespace = localStorage.getItem('namespace') ? localStorage.getItem('namespace') : '';
+  let namespace = config?.data?.namespaceId;
+  if (!namespace) {
+    namespace = localStorage.getItem('namespace') ? localStorage.getItem('namespace') : '';
+  }
   // 如果url中已经有 namespaceId, 不在data中添加namespaceId
   config.data =
     url.indexOf('namespaceId=') === -1

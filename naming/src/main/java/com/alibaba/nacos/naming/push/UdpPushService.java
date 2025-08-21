@@ -154,19 +154,19 @@ public class UdpPushService {
         ClientInfo clientInfo = new ClientInfo(agent);
         
         if (ClientInfo.ClientType.JAVA == clientInfo.type
-                && clientInfo.version.compareTo(parseVersion(switchDomain.getPushJavaVersion())) >= 0) {
+                && clientInfo.version.compareTo(parseVersion(switchDomain.getPushVersionOfJava())) >= 0) {
             return true;
         } else if (ClientInfo.ClientType.DNS == clientInfo.type
-                && clientInfo.version.compareTo(parseVersion(switchDomain.getPushPythonVersion())) >= 0) {
+                && clientInfo.version.compareTo(parseVersion(switchDomain.getPushVersionOfPython())) >= 0) {
             return true;
         } else if (ClientInfo.ClientType.C == clientInfo.type
-                && clientInfo.version.compareTo(parseVersion(switchDomain.getPushCVersion())) >= 0) {
+                && clientInfo.version.compareTo(parseVersion(switchDomain.getPushVersionOfC())) >= 0) {
             return true;
         } else if (ClientInfo.ClientType.GO == clientInfo.type
-                && clientInfo.version.compareTo(parseVersion(switchDomain.getPushGoVersion())) >= 0) {
+                && clientInfo.version.compareTo(parseVersion(switchDomain.getPushVersionOfGo())) >= 0) {
             return true;
         } else if (ClientInfo.ClientType.CSHARP == clientInfo.type
-                && clientInfo.version.compareTo(parseVersion(switchDomain.getPushCSharpVersion())) >= 0) {
+                && clientInfo.version.compareTo(parseVersion(switchDomain.getPushVersionOfCsharp())) >= 0) {
             return true;
         }
         

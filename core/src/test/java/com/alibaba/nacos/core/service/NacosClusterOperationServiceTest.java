@@ -18,7 +18,7 @@ package com.alibaba.nacos.core.service;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.NodeState;
+import com.alibaba.nacos.api.common.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.model.request.LookupUpdateRequest;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -122,6 +122,7 @@ class NacosClusterOperationServiceTest {
         Member member2 = new Member();
         member2.setIp("2.2.2.2");
         member2.setPort(8848);
+        member2.setAddress(null);
         List<Member> members = Arrays.asList(member1, member2);
         
         when(serverMemberManager.update(any())).thenReturn(true);

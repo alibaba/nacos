@@ -17,13 +17,14 @@
 package com.alibaba.nacos.auth;
 
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.auth.serveridentity.ServerIdentity;
 import com.alibaba.nacos.auth.serveridentity.ServerIdentityChecker;
 import com.alibaba.nacos.auth.serveridentity.ServerIdentityCheckerHolder;
 import com.alibaba.nacos.auth.serveridentity.ServerIdentityResult;
 import com.alibaba.nacos.auth.util.Loggers;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.auth.api.AuthResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
@@ -45,50 +46,50 @@ import java.util.Properties;
  */
 public abstract class AbstractProtocolAuthService<R> implements ProtocolAuthService<R> {
     
-    protected final AuthConfigs authConfigs;
+    protected final NacosAuthConfig authConfig;
     
     protected final ServerIdentityChecker checker;
     
-    protected AbstractProtocolAuthService(AuthConfigs authConfigs) {
-        this.authConfigs = authConfigs;
-        this.checker = ServerIdentityCheckerHolder.getInstance().getChecker();
+    protected AbstractProtocolAuthService(NacosAuthConfig authConfig) {
+        this.authConfig = authConfig;
+        this.checker = ServerIdentityCheckerHolder.getInstance().newChecker();
     }
     
     @Override
     public void initialize() {
-        this.checker.init(authConfigs);
+        this.checker.init(authConfig);
     }
     
     @Override
     public boolean enableAuth(Secured secured) {
         Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
-                .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
+                .findAuthServiceSpiImpl(authConfig.getNacosAuthSystemType());
         if (authPluginService.isPresent()) {
             return authPluginService.get().enableAuth(secured.action(), secured.signType());
         }
         Loggers.AUTH.warn("Can't find auth plugin for type {}, please add plugin to classpath or set {} as false",
-                authConfigs.getNacosAuthSystemType(), Constants.Auth.NACOS_CORE_AUTH_ENABLED);
+                authConfig.getNacosAuthSystemType(), Constants.Auth.NACOS_CORE_AUTH_ENABLED);
         return false;
     }
     
     @Override
-    public boolean validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException {
+    public AuthResult validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException {
         Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
-                .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
+                .findAuthServiceSpiImpl(authConfig.getNacosAuthSystemType());
         if (authPluginService.isPresent()) {
             return authPluginService.get().validateIdentity(identityContext, resource);
         }
-        return true;
+        return AuthResult.successResult();
     }
     
     @Override
-    public boolean validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException {
+    public AuthResult validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException {
         Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
-                .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
+                .findAuthServiceSpiImpl(authConfig.getNacosAuthSystemType());
         if (authPluginService.isPresent()) {
             return authPluginService.get().validateAuthority(identityContext, permission);
         }
-        return true;
+        return AuthResult.successResult();
     }
     
     @Override
@@ -103,8 +104,8 @@ public abstract class AbstractProtocolAuthService<R> implements ProtocolAuthServ
     }
     
     private boolean isInvalidServerIdentity() {
-        return StringUtils.isBlank(authConfigs.getServerIdentityKey()) || StringUtils.isBlank(
-                authConfigs.getServerIdentityValue());
+        return StringUtils.isBlank(authConfig.getServerIdentityKey()) || StringUtils.isBlank(
+                authConfig.getServerIdentityValue());
     }
     
     /**

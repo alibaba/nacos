@@ -69,9 +69,9 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     
     private TransactionTemplate tjt;
     
-    private JdbcTemplate testMasterJT;
+    private JdbcTemplate testMasterJt;
     
-    private JdbcTemplate testMasterWritableJT;
+    private JdbcTemplate testMasterWritableJt;
     
     private volatile List<JdbcTemplate> testJtList;
     
@@ -91,12 +91,12 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         jt.setMaxRows(50000);
         jt.setQueryTimeout(queryTimeout);
         
-        testMasterJT = new JdbcTemplate();
-        testMasterJT.setQueryTimeout(queryTimeout);
+        testMasterJt = new JdbcTemplate();
+        testMasterJt.setQueryTimeout(queryTimeout);
         
-        testMasterWritableJT = new JdbcTemplate();
+        testMasterWritableJt = new JdbcTemplate();
         // Prevent the login interface from being too long because the main library is not available
-        testMasterWritableJT.setQueryTimeout(1);
+        testMasterWritableJt.setQueryTimeout(1);
         
         //  Database health check
         
@@ -111,7 +111,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         
         dataSourceType = DatasourcePlatformUtil.getDatasourcePlatform(defaultDataSourceType);
         
-        if (DatasourceConfiguration.isUseExternalDB()) {
+        if (DatasourceConfiguration.isUseExternalDb()) {
             try {
                 reload();
             } catch (IOException e) {
@@ -172,13 +172,13 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     @Override
     public boolean checkMasterWritable() {
         
-        testMasterWritableJT.setDataSource(jt.getDataSource());
+        testMasterWritableJt.setDataSource(jt.getDataSource());
         // Prevent the login interface from being too long because the main library is not available
-        testMasterWritableJT.setQueryTimeout(1);
+        testMasterWritableJt.setQueryTimeout(1);
         String sql = " SELECT @@read_only ";
         
         try {
-            Integer result = testMasterWritableJT.queryForObject(sql, Integer.class);
+            Integer result = testMasterWritableJt.queryForObject(sql, Integer.class);
             if (result == null) {
                 return false;
             } else {
@@ -217,10 +217,10 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             if (!isHealthList.get(i)) {
                 if (i == masterIndex) {
                     // The master is unhealthy.
-                    return "DOWN:" + InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl());
+                    return "DOWN:" + InternetAddressUtil.getIpFromString(dataSourceList.get(i).getJdbcUrl());
                 } else {
                     // The slave  is unhealthy.
-                    return "WARN:" + InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl());
+                    return "WARN:" + InternetAddressUtil.getIpFromString(dataSourceList.get(i).getJdbcUrl());
                 }
             }
         }
@@ -245,10 +245,10 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             int index = -1;
             for (HikariDataSource ds : dataSourceList) {
                 index++;
-                testMasterJT.setDataSource(ds);
-                testMasterJT.setQueryTimeout(queryTimeout);
+                testMasterJt.setDataSource(ds);
+                testMasterJt.setQueryTimeout(queryTimeout);
                 try {
-                    testMasterJT.update("DELETE FROM config_info WHERE data_id='com.alibaba.nacos.testMasterDB'");
+                    testMasterJt.update("DELETE FROM config_info WHERE data_id='com.alibaba.nacos.testMasterDB'");
                     if (jt.getDataSource() != ds) {
                         LOGGER.warn("[master-db] {}", ds.getJdbcUrl());
                     }
@@ -277,7 +277,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("check db health.");
             }
-            String sql = "SELECT * FROM config_info_beta WHERE id = 1";
+            String sql = "SELECT * FROM config_info_gray WHERE id = 1";
             
             for (int i = 0; i < testJtList.size(); i++) {
                 JdbcTemplate jdbcTemplate = testJtList.get(i);
@@ -291,10 +291,10 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 } catch (DataAccessException e) {
                     if (i == masterIndex) {
                         LOGGER.error("[db-error] master db {} down.",
-                                InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
+                                InternetAddressUtil.getIpFromString(dataSourceList.get(i).getJdbcUrl()));
                     } else {
                         LOGGER.error("[db-error] slave db {} down.",
-                                InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
+                                InternetAddressUtil.getIpFromString(dataSourceList.get(i).getJdbcUrl()));
                     }
                     isHealthList.set(i, Boolean.FALSE);
                     

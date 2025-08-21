@@ -80,7 +80,7 @@ class CloneDialog extends React.Component {
       type: 'get',
       url: `/diamond-ops/service/serverId/${serverId}/namespaceInfo`,
       success: res => {
-        if (res.code === 200) {
+        if (res.code === 0) {
           const dataSource = [];
           res.data.forEach(value => {
             if (value.namespace !== payload.tenantFrom.id) {

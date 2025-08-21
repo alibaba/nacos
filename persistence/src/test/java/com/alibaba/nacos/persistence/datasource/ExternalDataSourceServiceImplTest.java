@@ -81,8 +81,8 @@ class ExternalDataSourceServiceImplTest {
         ReflectionTestUtils.setField(service, "jt", jt);
         ReflectionTestUtils.setField(service, "tm", tm);
         ReflectionTestUtils.setField(service, "tjt", tjt);
-        ReflectionTestUtils.setField(service, "testMasterJT", testMasterJT);
-        ReflectionTestUtils.setField(service, "testMasterWritableJT", testMasterWritableJT);
+        ReflectionTestUtils.setField(service, "testMasterJt", testMasterJT);
+        ReflectionTestUtils.setField(service, "testMasterWritableJt", testMasterWritableJT);
         List<HikariDataSource> dataSourceList = new ArrayList<>();
         dataSourceList.add(new HikariDataSource());
         ReflectionTestUtils.setField(service, "dataSourceList", dataSourceList);
@@ -100,7 +100,7 @@ class ExternalDataSourceServiceImplTest {
             environment.setProperty("db.url.1", "2.2.2.2");
             environment.setProperty("db.pool.config.driverClassName",
                     "com.alibaba.nacos.persistence.datasource.mock.MockDriver");
-            DatasourceConfiguration.setUseExternalDB(true);
+            DatasourceConfiguration.setUseExternalDb(true);
             ExternalDataSourceServiceImpl service1 = new ExternalDataSourceServiceImpl();
             assertDoesNotThrow(service1::init);
             assertEquals("", service1.getDataSourceType());
@@ -108,7 +108,7 @@ class ExternalDataSourceServiceImplTest {
             assertNotNull(service1.getJdbcTemplate());
             assertNotNull(service1.getTransactionTemplate());
         } finally {
-            DatasourceConfiguration.setUseExternalDB(false);
+            DatasourceConfiguration.setUseExternalDb(false);
             EnvUtil.setEnvironment(null);
         }
     }
@@ -118,11 +118,11 @@ class ExternalDataSourceServiceImplTest {
         try {
             MockEnvironment environment = new MockEnvironment();
             EnvUtil.setEnvironment(environment);
-            DatasourceConfiguration.setUseExternalDB(true);
+            DatasourceConfiguration.setUseExternalDb(true);
             ExternalDataSourceServiceImpl service1 = new ExternalDataSourceServiceImpl();
             assertThrows(RuntimeException.class, service1::init);
         } finally {
-            DatasourceConfiguration.setUseExternalDB(false);
+            DatasourceConfiguration.setUseExternalDb(false);
             EnvUtil.setEnvironment(null);
         }
     }
@@ -138,7 +138,7 @@ class ExternalDataSourceServiceImplTest {
             environment.setProperty("db.url.0", "1.1.1.1");
             environment.setProperty("db.pool.config.driverClassName",
                     "com.alibaba.nacos.persistence.datasource.mock.MockDriver");
-            DatasourceConfiguration.setUseExternalDB(true);
+            DatasourceConfiguration.setUseExternalDb(true);
             HikariDataSource dataSource = mock(HikariDataSource.class);
             JdbcTemplate oldJt = mock(JdbcTemplate.class);
             ReflectionTestUtils.setField(service, "testJtList", Collections.singletonList(oldJt));
@@ -148,7 +148,7 @@ class ExternalDataSourceServiceImplTest {
             verify(oldJt).setDataSource(null);
             verify(dataSource).close();
         } finally {
-            DatasourceConfiguration.setUseExternalDB(false);
+            DatasourceConfiguration.setUseExternalDb(false);
             EnvUtil.setEnvironment(null);
         }
     }

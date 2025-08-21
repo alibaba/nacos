@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -28,6 +29,7 @@ import com.alibaba.nacos.config.server.enums.ApiVersionEnum;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.exception.NacosConfigException;
 import com.alibaba.nacos.config.server.model.ConfigCacheGray;
+import com.alibaba.nacos.config.server.model.ConfigListenState;
 import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
 import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
 import com.alibaba.nacos.config.server.service.LongPollingService;
@@ -41,17 +43,16 @@ import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.Protocol;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Map;
 
 import static com.alibaba.nacos.api.common.Constants.CONFIG_TYPE;
@@ -91,7 +92,7 @@ public class ConfigServletInner {
      * long polling the config.
      */
     public String doPollingConfig(HttpServletRequest request, HttpServletResponse response,
-            Map<String, String> clientMd5Map, int probeRequestSize) throws IOException {
+            Map<String, ConfigListenState> clientMd5Map, int probeRequestSize) throws IOException {
         
         // Long polling.
         if (LongPollingService.isSupportLongPolling(request)) {
@@ -100,7 +101,7 @@ public class ConfigServletInner {
         }
         
         // Compatible with short polling logic.
-        List<String> changedGroups = MD5Util.compareMd5(request, response, clientMd5Map);
+        Map<String, ConfigListenState> changedGroups = MD5Util.compareMd5(request, response, clientMd5Map);
         
         // Compatible with short polling result.
         String oldResult = MD5Util.compareMd5OldResult(changedGroups);
@@ -138,6 +139,7 @@ public class ConfigServletInner {
         String requestIpApp = RequestUtil.getAppName(request);
         
         ConfigQueryChainRequest chainRequest = ConfigChainRequestExtractorService.getExtractor().extract(request);
+        chainRequest.setTenant(NamespaceUtil.processNamespaceParameter(chainRequest.getTenant()));
         ConfigQueryChainResponse chainResponse = configQueryChainService.handle(chainRequest);
         
         if (ResponseCode.FAIL.getCode() == chainResponse.getResultCode()) {

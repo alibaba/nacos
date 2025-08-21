@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 
 /**
@@ -33,7 +34,7 @@ public class ServerIdentityCheckerHolder {
     
     private static final ServerIdentityCheckerHolder INSTANCE = new ServerIdentityCheckerHolder();
     
-    private ServerIdentityChecker checker;
+    private Class<? extends ServerIdentityChecker> checkerClass;
     
     private ServerIdentityCheckerHolder() {
         tryGetCheckerBySpi();
@@ -43,32 +44,41 @@ public class ServerIdentityCheckerHolder {
         return INSTANCE;
     }
     
-    public ServerIdentityChecker getChecker() {
-        return checker;
+    /**
+     * Build a new checker.
+     *
+     * @return new checker instance.
+     */
+    public ServerIdentityChecker newChecker() {
+        try {
+            return checkerClass.getDeclaredConstructor(new Class[0]).newInstance();
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            return new DefaultChecker();
+        }
     }
     
     private synchronized void tryGetCheckerBySpi() {
         Collection<ServerIdentityChecker> checkers = NacosServiceLoader.load(ServerIdentityChecker.class);
         if (checkers.isEmpty()) {
-            checker = new DefaultChecker();
+            checkerClass = DefaultChecker.class;
             LOGGER.info("Not found ServerIdentityChecker implementation from SPI, use default.");
             return;
         }
         if (checkers.size() > 1) {
-            checker = showAllImplementations(checkers);
+            checkerClass = showAllImplementations(checkers);
             return;
         }
-        checker = checkers.iterator().next();
-        LOGGER.info("Found ServerIdentityChecker implementation {}", checker.getClass().getCanonicalName());
+        checkerClass = checkers.iterator().next().getClass();
+        LOGGER.info("Found ServerIdentityChecker implementation {}", checkerClass.getClass().getCanonicalName());
     }
     
-    private ServerIdentityChecker showAllImplementations(Collection<ServerIdentityChecker> checkers) {
+    private Class<? extends ServerIdentityChecker> showAllImplementations(Collection<ServerIdentityChecker> checkers) {
         ServerIdentityChecker result = checkers.iterator().next();
         for (ServerIdentityChecker each : checkers) {
             LOGGER.warn("Found ServerIdentityChecker implementation {}", each.getClass().getCanonicalName());
         }
         LOGGER.warn("Found more than one ServerIdentityChecker implementation from SPI, use the first one {}.",
                 result.getClass().getCanonicalName());
-        return result;
+        return result.getClass();
     }
 }

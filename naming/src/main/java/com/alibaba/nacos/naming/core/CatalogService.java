@@ -17,7 +17,10 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceView;
 
 import java.util.List;
 
@@ -37,7 +40,7 @@ public interface CatalogService {
      * @return detail information of service
      * @throws NacosException exception in query
      */
-    Object getServiceDetail(String namespaceId, String groupName, String serviceName) throws NacosException;
+    ServiceDetailInfo getServiceDetail(String namespaceId, String groupName, String serviceName) throws NacosException;
     
     /**
      * List all instances of specified services.
@@ -46,7 +49,7 @@ public interface CatalogService {
      * @param groupName   group name of service
      * @param serviceName service name
      * @param clusterName cluster name of instances
-     * @return instances list
+     * @return instances page object
      * @throws NacosException exception in query
      */
     List<? extends Instance> listInstances(String namespaceId, String groupName, String serviceName, String clusterName)
@@ -74,7 +77,9 @@ public interface CatalogService {
      * @param ignoreEmptyService whether ignore empty service
      * @return service list
      * @throws NacosException exception in query
+     * @deprecated after v1 http api removed, use {@link #listService(String, String, String, int, int, boolean)} replace.
      */
+    @Deprecated
     Object pageListService(String namespaceId, String groupName, String serviceName, int pageNo, int pageSize,
             String instancePattern, boolean ignoreEmptyService) throws NacosException;
     
@@ -86,9 +91,25 @@ public interface CatalogService {
      * @param serviceName service name
      * @param pageNo      page number
      * @param pageSize    page size
-     * @return service list
+     * @return service page object
      * @throws NacosException exception in query
      */
-    Object pageListServiceDetail(String namespaceId, String groupName, String serviceName, int pageNo, int pageSize)
-            throws NacosException;
+    Page<ServiceDetailInfo> pageListServiceDetail(String namespaceId, String groupName, String serviceName, int pageNo,
+            int pageSize) throws NacosException;
+    
+    /**
+     * List service by page.
+     *
+     * @param namespaceId        namespace id of service
+     * @param groupName          group name of service
+     * @param serviceName        service name
+     * @param pageNo             page number
+     * @param pageSize           page size
+     * @param ignoreEmptyService whether ignore empty service
+     * @return service page object
+     * @throws NacosException exception in query
+     */
+    Page<ServiceView> listService(String namespaceId, String groupName, String serviceName, int pageNo, int pageSize,
+            boolean ignoreEmptyService) throws NacosException;
+    
 }

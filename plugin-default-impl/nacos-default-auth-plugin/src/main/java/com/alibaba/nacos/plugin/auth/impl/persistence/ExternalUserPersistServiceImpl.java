@@ -16,18 +16,16 @@
 
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
+import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
-import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.impl.persistence.extrnal.AuthExternalPaginationHelperImpl;
-import org.springframework.context.annotation.Conditional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
@@ -40,9 +38,9 @@ import static com.alibaba.nacos.plugin.auth.impl.persistence.AuthRowMapperManage
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@Conditional(value = ConditionOnExternalStorage.class)
-@Component
 public class ExternalUserPersistServiceImpl implements UserPersistService {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger("com.alibaba.nacos.persistence");
     
     private JdbcTemplate jt;
     
@@ -70,7 +68,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
         try {
             jt.update(sql, username, password, true);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            LOGGER.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -86,7 +84,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
         try {
             jt.update(sql, username);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            LOGGER.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -102,7 +100,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
         try {
             jt.update("UPDATE users SET password = ? WHERE username=?", password, username);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            LOGGER.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -119,19 +117,19 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
         try {
             return this.jt.queryForObject(sql, new Object[] {username}, USER_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            LOGGER.error("[db-error] " + e.toString(), e);
             throw e;
         } catch (EmptyResultDataAccessException e) {
             return null;
         } catch (Exception e) {
-            LogUtil.FATAL_LOG.error("[db-other-error]" + e.getMessage(), e);
+            LOGGER.error("[db-other-error]" + e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
     
     @Override
     public Page<User> getUsers(int pageNo, int pageSize, String username) {
-    
+        
         AuthPaginationHelper<User> helper = createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM users ";
@@ -155,7 +153,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
             }
             return pageInfo;
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            LOGGER.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -178,13 +176,13 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
             where.append(" AND username LIKE ? ");
             params.add(generateLikeArgument(username));
         }
-    
+        
         AuthPaginationHelper<User> helper = createPaginationHelper();
         try {
             return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
                     USER_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            LOGGER.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }

@@ -19,7 +19,7 @@ package com.alibaba.nacos.core.paramcheck;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 
 /**

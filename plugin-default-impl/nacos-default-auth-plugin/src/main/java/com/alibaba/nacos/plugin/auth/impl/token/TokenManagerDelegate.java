@@ -17,41 +17,26 @@
 package com.alibaba.nacos.plugin.auth.impl.token;
 
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import com.alibaba.nacos.plugin.auth.impl.token.impl.CachedJwtTokenManager;
-import com.alibaba.nacos.plugin.auth.impl.token.impl.JwtTokenManager;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
-import com.alibaba.nacos.sys.env.EnvUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
 
 /**
  * token manager delegate.
  *
  * @author majorhe
  */
-@Component
 public class TokenManagerDelegate implements TokenManager {
     
     public static final String NACOS_AUTH_TOKEN_CACHING_ENABLED = "nacos.core.auth.plugin.nacos.token.cache.enable";
     
-    private boolean tokenCacheEnabled = false;
+    private final TokenManager delegate;
     
-    @Autowired
-    private JwtTokenManager jwtTokenManager;
-    
-    @Autowired
-    private CachedJwtTokenManager cachedJwtTokenManager;
-    
-    @PostConstruct
-    public void init() {
-        tokenCacheEnabled = EnvUtil.getProperty(NACOS_AUTH_TOKEN_CACHING_ENABLED, Boolean.class, false);
+    public TokenManagerDelegate(TokenManager delegate) {
+        this.delegate = delegate;
     }
     
     private TokenManager getExecuteTokenManager() {
-        return tokenCacheEnabled ? cachedJwtTokenManager : jwtTokenManager;
+        return delegate;
     }
     
     @Override

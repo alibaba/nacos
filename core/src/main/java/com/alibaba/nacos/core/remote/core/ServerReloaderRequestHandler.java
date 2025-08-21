@@ -21,11 +21,14 @@ import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.ServerReloadRequest;
 import com.alibaba.nacos.api.remote.response.ServerReloadResponse;
+import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.remote.grpc.InvokeSource;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.RemoteUtils;
+import com.alibaba.nacos.plugin.auth.constant.ApiType;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -46,6 +49,7 @@ public class ServerReloaderRequestHandler extends RequestHandler<ServerReloadReq
     private ConnectionManager connectionManager;
     
     @Override
+    @Secured(resource = "serverReload", signType = SignType.SPECIFIED, apiType = ApiType.INNER_API)
     public ServerReloadResponse handle(ServerReloadRequest request, RequestMeta meta) throws NacosException {
         ServerReloadResponse response = new ServerReloadResponse();
         Loggers.REMOTE.info("server reload request receive,reload count={},redirectServer={},requestIp={}",

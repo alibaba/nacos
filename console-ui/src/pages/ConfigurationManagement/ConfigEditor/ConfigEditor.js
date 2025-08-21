@@ -62,7 +62,7 @@ class ConfigEditor extends React.Component {
     this.field = new Field(this);
     this.dataId = getParams('dataId') || 'yanlin';
     this.group = getParams('group') || 'DEFAULT_GROUP';
-    this.tenant = getParams('namespace') || '';
+    this.tenant = getParams('namespace') || 'public';
     this.state = {
       configType: 'text',
       codeValue: '',
@@ -159,11 +159,11 @@ class ConfigEditor extends React.Component {
 
   navTo(url) {
     this.serverId = getParams('serverId') || '';
-    this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
+    this.tenant = getParams('namespace') || 'public'; // 为当前实例保存tenant参数
     this.props.history.push(
-      `${url}?serverId=${this.serverId || ''}&dataId=${this.dataId}&group=${this.group}&namespace=${
-        this.tenant
-      }`
+      `${url}?serverId=${this.serverId || ''}&dataId=${this.dataId}&groupName=${
+        this.group
+      }&namespace=${this.tenant}`
     );
   }
 
@@ -182,23 +182,23 @@ class ConfigEditor extends React.Component {
   getDataDetail() {
     const { locale = {} } = this.props;
     const self = this;
-    this.tenant = getParams('namespace') || '';
+    this.tenant = getParams('namespace') || 'public';
     this.serverId = getParams('serverId') || 'center';
-    const url = `v1/cs/configs?show=all&dataId=${this.dataId}&group=${this.group}`;
+    const url = `v3/console/cs/config?dataId=${this.dataId}&groupName=${this.group}`;
     request({
       url,
       beforeSend() {
         self.openLoading();
       },
       success(result) {
-        if (result != null) {
-          const data = result;
+        if (result != null && result.code === 0) {
+          const { data } = result;
           self.valueMap.normal = data;
           self.field.setValue('dataId', data.dataId);
           // self.field.setValue('content', data.content);
           self.field.setValue('appName', self.inApp ? self.edasAppName : data.appName);
           // self.field.setValue('envs', self.serverId);
-          self.field.setValue('group', data.group);
+          self.field.setValue('group', data.groupName);
 
           // self.field.setValue('type', data.type);
           self.field.setValue('desc', data.desc);
@@ -361,20 +361,20 @@ class ConfigEditor extends React.Component {
     const { locale = {} } = this.props;
     const self = this;
     this.codeValue = content;
-    this.tenant = getParams('namespace') || '';
+    this.tenant = getParams('namespace') || 'public';
     this.serverId = getParams('serverId') || 'center';
 
     const payload = {
       dataId: this.field.getValue('dataId'),
       appName: this.inApp ? this.edasAppId : this.field.getValue('appName'),
-      group: this.field.getValue('group'),
+      groupName: this.field.getValue('group'),
       desc: this.field.getValue('desc'),
-      config_tags: this.state.config_tags.join(','),
+      configTags: this.state.config_tags.join(','),
       type: this.state.configType,
       content,
-      tenant: this.tenant,
+      namespaceId: this.tenant,
     };
-    const url = 'v1/cs/configs';
+    const url = 'v3/console/cs/config';
     request({
       type: 'post',
       contentType: 'application/x-www-form-urlencoded',

@@ -30,7 +30,7 @@ import org.mockito.stubbing.Answer;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -64,27 +64,19 @@ class TlsFileWatcherTest {
     ScheduledExecutorService executorService;
     
     @BeforeAll
-    static void setUpBeforeClass() throws NoSuchFieldException, IllegalAccessException {
+    static void setUpBeforeClass()
+            throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         watchFilesMapField = TlsFileWatcher.getInstance().getClass().getDeclaredField("watchFilesMap");
         watchFilesMapField.setAccessible(true);
-        Field modifiersField1 = Field.class.getDeclaredField("modifiers");
-        modifiersField1.setAccessible(true);
-        modifiersField1.setInt(watchFilesMapField, watchFilesMapField.getModifiers() & ~Modifier.FINAL);
         
         fileMd5MapField = TlsFileWatcher.getInstance().getClass().getDeclaredField("fileMd5Map");
         fileMd5MapField.setAccessible(true);
         
         serviceField = TlsFileWatcher.getInstance().getClass().getDeclaredField("service");
         serviceField.setAccessible(true);
-        Field modifiersField2 = Field.class.getDeclaredField("modifiers");
-        modifiersField2.setAccessible(true);
-        modifiersField2.setInt(watchFilesMapField, watchFilesMapField.getModifiers() & ~Modifier.FINAL);
         
         startedField = TlsFileWatcher.getInstance().getClass().getDeclaredField("started");
         startedField.setAccessible(true);
-        Field modifiersField3 = Field.class.getDeclaredField("modifiers");
-        modifiersField3.setAccessible(true);
-        modifiersField3.setInt(watchFilesMapField, watchFilesMapField.getModifiers() & ~Modifier.FINAL);
     }
     
     @BeforeEach

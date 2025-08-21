@@ -20,13 +20,14 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.BatchInstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.InstanceRedoData;
-import com.alibaba.nacos.client.naming.remote.gprc.redo.data.RedoData;
+import com.alibaba.nacos.client.naming.remote.gprc.redo.data.NamingRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.SubscriberRedoData;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
 
 /**
  * Redo task.
+ * TODO refactor to extends from {@link com.alibaba.nacos.client.redo.service.AbstractRedoTask}
  *
  * @author xiweng.yy
  */
@@ -67,7 +68,7 @@ public class RedoScheduledTask extends AbstractExecuteTask {
     }
     
     private void redoForInstance(InstanceRedoData redoData) throws NacosException {
-        RedoData.RedoType redoType = redoData.getRedoType();
+        NamingRedoData.RedoType redoType = redoData.getRedoType();
         String serviceName = redoData.getServiceName();
         String groupName = redoData.getGroupName();
         LogUtils.NAMING_LOGGER.info("Redo instance operation {} for {}@@{}", redoType, groupName, serviceName);
@@ -114,7 +115,7 @@ public class RedoScheduledTask extends AbstractExecuteTask {
     }
     
     private void redoForSubscribe(SubscriberRedoData redoData) throws NacosException {
-        RedoData.RedoType redoType = redoData.getRedoType();
+        NamingRedoData.RedoType redoType = redoData.getRedoType();
         String serviceName = redoData.getServiceName();
         String groupName = redoData.getGroupName();
         String cluster = redoData.get();

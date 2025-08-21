@@ -32,6 +32,8 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.concurrent.TimeUnit;
 
@@ -55,19 +57,29 @@ class ControlManagerCenterTest {
         try {
             //reset instance for reload spi
             Field instanceRuleStorageProxy = RuleStorageProxy.class.getDeclaredField("INSTANCE");
-            Field modifiersField = Field.class.getDeclaredField("modifiers");
-            modifiersField.setAccessible(true);
-            modifiersField.setInt(instanceRuleStorageProxy, instanceRuleStorageProxy.getModifiers() & ~Modifier.FINAL);
-            instanceRuleStorageProxy.setAccessible(true);
             Constructor<RuleStorageProxy> constructor = RuleStorageProxy.class.getDeclaredConstructor();
             constructor.setAccessible(true);
-            Field modifiersFieldConstructor = Constructor.class.getDeclaredField("modifiers");
-            modifiersFieldConstructor.setAccessible(true);
-            modifiersFieldConstructor.setInt(constructor, constructor.getModifiers() & ~Modifier.PRIVATE);
-            instanceRuleStorageProxy.set(null, constructor.newInstance());
+            setStaticFinalField(instanceRuleStorageProxy, constructor.newInstance());
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+    
+    private void setStaticFinalField(Field finalField, Object value)
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
+        getDeclaredFields0.setAccessible(true);
+        Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
+        Field modifiers = null;
+        for (Field each : fields) {
+            if ("modifiers".equals(each.getName())) {
+                modifiers = each;
+            }
+        }
+        modifiers.setAccessible(true);
+        modifiers.setInt(finalField, finalField.getModifiers() & ~Modifier.FINAL);
+        finalField.setAccessible(true);
+        finalField.set(null, value);
     }
     
     @Test
@@ -92,7 +104,8 @@ class ControlManagerCenterTest {
     
     @Test
     void testReloadTpsControlRule() throws Exception {
-        String localRuleStorageBaseDir = EnvUtils.getNacosHome() + File.separator + "tmpTps" + File.separator + "tps" + File.separator;
+        String localRuleStorageBaseDir =
+                EnvUtils.getNacosHome() + File.separator + "tmpTps" + File.separator + "tps" + File.separator;
         ControlConfigs.getInstance().setLocalRuleStorageBaseDir(localRuleStorageBaseDir);
         resetRuleStorageProxy();
         final ControlManagerCenter controlManagerCenter = ControlManagerCenter.getInstance();
@@ -178,7 +191,8 @@ class ControlManagerCenterTest {
     @Test
     void testReloadConnectionControlRule() throws Exception {
         String localRuleStorageBaseDir =
-                EnvUtils.getNacosHome() + File.separator + "tmpConnection" + File.separator + "connection" + File.separator;
+                EnvUtils.getNacosHome() + File.separator + "tmpConnection" + File.separator + "connection"
+                        + File.separator;
         ControlConfigs.getInstance().setLocalRuleStorageBaseDir(localRuleStorageBaseDir);
         resetRuleStorageProxy();
         ConnectionControlRule connectionLimitRule = new ConnectionControlRule();
@@ -209,7 +223,8 @@ class ControlManagerCenterTest {
     @Test
     void testReloadConnectionControlRuleExternal() throws Exception {
         String localRuleStorageBaseDir =
-                EnvUtils.getNacosHome() + File.separator + "tmpConnection" + File.separator + "connectionExternal" + File.separator;
+                EnvUtils.getNacosHome() + File.separator + "tmpConnection" + File.separator + "connectionExternal"
+                        + File.separator;
         ControlConfigs.getInstance().setLocalRuleStorageBaseDir(localRuleStorageBaseDir);
         ControlConfigs.getInstance().setRuleExternalStorage("test");
         resetRuleStorageProxy();

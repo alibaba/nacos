@@ -40,7 +40,7 @@ class DumpProcessorUserRwaDiskTest extends DumpProcessorTest {
     }
     
     @AfterEach
-    public void after() {
+    public void after() throws Exception {
         super.after();
     }
     

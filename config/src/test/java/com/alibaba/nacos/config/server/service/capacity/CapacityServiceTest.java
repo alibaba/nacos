@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.service.capacity;
 import com.alibaba.nacos.config.server.constant.CounterMode;
 import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.model.capacity.GroupCapacity;
-import com.alibaba.nacos.config.server.model.capacity.TenantCapacity;
+import com.alibaba.nacos.config.server.model.capacity.NamespaceCapacity;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -77,16 +77,16 @@ class CapacityServiceTest {
         List<GroupCapacity> groupCapacityList = new ArrayList<>();
         GroupCapacity groupCapacity = new GroupCapacity();
         groupCapacity.setId(1L);
-        groupCapacity.setGroup("testGroup");
+        groupCapacity.setGroupName("testGroup");
         groupCapacityList.add(groupCapacity);
         when(groupCapacityPersistService.getCapacityList4CorrectUsage(0L, 100)).thenReturn(groupCapacityList);
         when(groupCapacityPersistService.getCapacityList4CorrectUsage(1L, 100)).thenReturn(new ArrayList<>());
         when(groupCapacityPersistService.correctUsage(eq("testGroup"), any())).thenReturn(true);
         
-        List<TenantCapacity> tenantCapacityList = new ArrayList<>();
-        TenantCapacity tenantCapacity = new TenantCapacity();
+        List<NamespaceCapacity> tenantCapacityList = new ArrayList<>();
+        NamespaceCapacity tenantCapacity = new NamespaceCapacity();
         tenantCapacity.setId(1L);
-        tenantCapacity.setTenant("testTenant");
+        tenantCapacity.setNamespaceId("testTenant");
         tenantCapacityList.add(tenantCapacity);
         when(tenantCapacityPersistService.getCapacityList4CorrectUsage(0L, 100)).thenReturn(tenantCapacityList);
         when(tenantCapacityPersistService.getCapacityList4CorrectUsage(1L, 100)).thenReturn(new ArrayList<>());
@@ -127,14 +127,14 @@ class CapacityServiceTest {
         when(configInfoPersistService.getTenantIdList(eq(1), eq(500))).thenReturn(tenantList);
         
         GroupCapacity groupCapacity = new GroupCapacity();
-        groupCapacity.setGroup("testGroup");
+        groupCapacity.setGroupName("testGroup");
         groupCapacity.setUsage(300);
         when(groupCapacityPersistService.insertGroupCapacity(any())).thenReturn(true);
         when(groupCapacityPersistService.getGroupCapacity(eq("testGroup"))).thenReturn(groupCapacity);
         when(groupCapacityPersistService.updateQuota(eq("testGroup"), eq(500))).thenReturn(true);
         
-        TenantCapacity tenantCapacity = new TenantCapacity();
-        tenantCapacity.setTenant("testTenant");
+        NamespaceCapacity tenantCapacity = new NamespaceCapacity();
+        tenantCapacity.setNamespaceId("testTenant");
         tenantCapacity.setUsage(300);
         when(tenantCapacityPersistService.insertTenantCapacity(any())).thenReturn(true);
         when(tenantCapacityPersistService.getTenantCapacity(eq("testTenant"))).thenReturn(tenantCapacity);
@@ -183,7 +183,7 @@ class CapacityServiceTest {
     @Test
     void testInsertAndUpdateGroupUsage() {
         GroupCapacity groupCapacity = new GroupCapacity();
-        groupCapacity.setGroup("testGroup");
+        groupCapacity.setGroupName("testGroup");
         groupCapacity.setUsage(300);
         when(groupCapacityPersistService.getGroupCapacity("testGroup")).thenReturn(groupCapacity);
         when(groupCapacityPersistService.incrementUsage(any())).thenReturn(true);
@@ -216,18 +216,18 @@ class CapacityServiceTest {
     void testGetGroupCapacity() {
         GroupCapacity groupCapacity = new GroupCapacity();
         groupCapacity.setId(1L);
-        groupCapacity.setGroup("testGroup");
+        groupCapacity.setGroupName("testGroup");
         when(groupCapacityPersistService.getGroupCapacity(eq("testGroup"))).thenReturn(groupCapacity);
         
         GroupCapacity resGroupCapacity = service.getGroupCapacity("testGroup");
         assertEquals(groupCapacity.getId(), resGroupCapacity.getId());
-        assertEquals(groupCapacity.getGroup(), resGroupCapacity.getGroup());
+        assertEquals(groupCapacity.getGroupName(), resGroupCapacity.getGroupName());
     }
     
     @Test
     void testInitGroupCapacity() {
         GroupCapacity groupCapacity = new GroupCapacity();
-        groupCapacity.setGroup("testGroup");
+        groupCapacity.setGroupName("testGroup");
         groupCapacity.setUsage(300);
         when(groupCapacityPersistService.insertGroupCapacity(any())).thenReturn(true);
         when(groupCapacityPersistService.getGroupCapacity(eq("testGroup"))).thenReturn(groupCapacity);
@@ -245,7 +245,7 @@ class CapacityServiceTest {
         groupCapacity.setId(1L);
         when(groupCapacityPersistService.getGroupCapacity(eq("testGroup"))).thenReturn(groupCapacity);
         
-        TenantCapacity tenantCapacity = new TenantCapacity();
+        NamespaceCapacity tenantCapacity = new NamespaceCapacity();
         tenantCapacity.setId(2L);
         when(tenantCapacityPersistService.getTenantCapacity(eq("testTenant"))).thenReturn(tenantCapacity);
         
@@ -258,7 +258,7 @@ class CapacityServiceTest {
     
     @Test
     void testGetCapacityWithDefault() {
-        TenantCapacity tenantCapacity = new TenantCapacity();
+        NamespaceCapacity tenantCapacity = new NamespaceCapacity();
         tenantCapacity.setQuota(0);
         tenantCapacity.setMaxSize(0);
         tenantCapacity.setMaxAggrCount(0);
@@ -309,7 +309,7 @@ class CapacityServiceTest {
         when(groupCapacityPersistService.insertGroupCapacity(any())).thenReturn(true);
         when(groupCapacityPersistService.updateQuota(eq("testGroup"), eq(500))).thenReturn(true);
         
-        TenantCapacity tenantCapacity = new TenantCapacity();
+        NamespaceCapacity tenantCapacity = new NamespaceCapacity();
         tenantCapacity.setUsage(300);
         when(tenantCapacityPersistService.getTenantCapacity(eq("testTenant"))).thenReturn(tenantCapacity);
         when(tenantCapacityPersistService.insertTenantCapacity(any())).thenReturn(true);
@@ -336,8 +336,8 @@ class CapacityServiceTest {
     
     @Test
     void testInsertAndUpdateTenantUsage() {
-        TenantCapacity tenantCapacity = new TenantCapacity();
-        tenantCapacity.setTenant("testTenant");
+        NamespaceCapacity tenantCapacity = new NamespaceCapacity();
+        tenantCapacity.setNamespaceId("testTenant");
         tenantCapacity.setUsage(300);
         when(tenantCapacityPersistService.getTenantCapacity(eq("testTenant"))).thenReturn(tenantCapacity);
         when(tenantCapacityPersistService.incrementUsage(any())).thenReturn(true);
@@ -368,8 +368,8 @@ class CapacityServiceTest {
     
     @Test
     void testInitTenantCapacityV1() {
-        TenantCapacity tenantCapacity = new TenantCapacity();
-        tenantCapacity.setTenant("testTenant");
+        NamespaceCapacity tenantCapacity = new NamespaceCapacity();
+        tenantCapacity.setNamespaceId("testTenant");
         tenantCapacity.setUsage(300);
         when(tenantCapacityPersistService.insertTenantCapacity(any())).thenReturn(true);
         when(tenantCapacityPersistService.getTenantCapacity(eq("testTenant"))).thenReturn(tenantCapacity);
@@ -383,8 +383,8 @@ class CapacityServiceTest {
     
     @Test
     void testInitTenantCapacityV2() {
-        TenantCapacity tenantCapacity = new TenantCapacity();
-        tenantCapacity.setTenant("testTenant");
+        NamespaceCapacity tenantCapacity = new NamespaceCapacity();
+        tenantCapacity.setNamespaceId("testTenant");
         tenantCapacity.setUsage(300);
         when(tenantCapacityPersistService.insertTenantCapacity(any())).thenReturn(true);
         
@@ -394,14 +394,14 @@ class CapacityServiceTest {
     
     @Test
     void testGetTenantCapacity() {
-        TenantCapacity tenantCapacity = new TenantCapacity();
+        NamespaceCapacity tenantCapacity = new NamespaceCapacity();
         tenantCapacity.setId(1L);
-        tenantCapacity.setTenant("testTenant");
+        tenantCapacity.setNamespaceId("testTenant");
         when(tenantCapacityPersistService.getTenantCapacity(eq("testTenant"))).thenReturn(tenantCapacity);
         
-        TenantCapacity resTenantCapacity = service.getTenantCapacity("testTenant");
+        NamespaceCapacity resTenantCapacity = service.getTenantCapacity("testTenant");
         assertEquals(tenantCapacity.getId(), resTenantCapacity.getId());
-        assertEquals(tenantCapacity.getTenant(), resTenantCapacity.getTenant());
+        assertEquals(tenantCapacity.getNamespaceId(), resTenantCapacity.getNamespaceId());
     }
     
     @Test
@@ -416,8 +416,8 @@ class CapacityServiceTest {
         Mockito.verify(groupCapacityPersistService, times(1)).updateGroupCapacity(eq("testGroup"), eq(0), eq(0), eq(0), eq(0));
         
         //tenant is not null
-        TenantCapacity tenantCapacity = new TenantCapacity();
-        tenantCapacity.setTenant("testTenant");
+        NamespaceCapacity tenantCapacity = new NamespaceCapacity();
+        tenantCapacity.setNamespaceId("testTenant");
         when(tenantCapacityPersistService.getTenantCapacity(eq("testTenant"))).thenReturn(tenantCapacity);
         when(tenantCapacityPersistService.updateTenantCapacity(eq("testTenant"), eq(0), eq(0), eq(0), eq(0))).thenReturn(true);
         service.insertOrUpdateCapacity(null, "testTenant", 0, 0, 0, 0);

@@ -109,7 +109,7 @@ public abstract class ConnectionControlManager {
     }
     
     private void startConnectionMetricsReport() {
-        executorService.scheduleWithFixedDelay(new ConnectionMetricsReporter(), 0, 3000, TimeUnit.MILLISECONDS);
+        executorService.scheduleWithFixedDelay(new ConnectionMetricsReporter(), 3000, 3000, TimeUnit.MILLISECONDS);
     }
     
     public ConnectionControlRule getConnectionLimitRule() {

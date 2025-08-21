@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.model.vo;
 
+import com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.io.Serializable;
@@ -24,8 +25,10 @@ import java.io.Serializable;
  * Metrics Information.
  * @author dongyafei
  * @date 2022/9/15
+ * @deprecated use {@link com.alibaba.nacos.api.naming.pojo.maintainer.MetricsInfo} replaced.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Deprecated
 public class MetricsInfoVo implements Serializable {
     
     private static final long serialVersionUID = -5064297490423743871L;
@@ -49,9 +52,9 @@ public class MetricsInfoVo implements Serializable {
     private Integer responsibleClientCount;
     
     private Float cpu;
-
+    
     private Float load;
-
+    
     private Float mem;
     
     public MetricsInfoVo() {
@@ -151,5 +154,25 @@ public class MetricsInfoVo implements Serializable {
     
     public void setMem(Float mem) {
         this.mem = mem;
+    }
+    
+    /**
+     * Transfer to {@link MetricsInfo}, the new metrics info will remove cpu/load/memory information, due to cost many performance and low accuracy.
+     *
+     * @param metricsInfoVo the old metrics info.
+     * @return new metrics info.
+     */
+    public static MetricsInfo toNewMetricsInfo(MetricsInfoVo metricsInfoVo) {
+        MetricsInfo metricsInfo = new MetricsInfo();
+        metricsInfo.setStatus(metricsInfoVo.getStatus());
+        metricsInfo.setServiceCount(metricsInfoVo.getServiceCount());
+        metricsInfo.setInstanceCount(metricsInfoVo.getInstanceCount());
+        metricsInfo.setSubscribeCount(metricsInfoVo.getSubscribeCount());
+        metricsInfo.setClientCount(metricsInfoVo.getClientCount());
+        metricsInfo.setConnectionBasedClientCount(metricsInfoVo.getConnectionBasedClientCount());
+        metricsInfo.setEphemeralIpPortClientCount(metricsInfoVo.getEphemeralIpPortClientCount());
+        metricsInfo.setPersistentIpPortClientCount(metricsInfoVo.getPersistentIpPortClientCount());
+        metricsInfo.setResponsibleClientCount(metricsInfoVo.getResponsibleClientCount());
+        return metricsInfo;
     }
 }

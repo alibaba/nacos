@@ -23,7 +23,6 @@ import java.util.concurrent.Executor;
  *
  * @author water.lyl
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class AbstractListener implements Listener {
     
     /**

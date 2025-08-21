@@ -104,6 +104,7 @@ public class SwitchManager extends RequestProcessor4CP {
      * @param debug whether debug
      * @throws Exception exception
      */
+    @SuppressWarnings("PMD")
     public void update(String entry, String value, boolean debug) throws Exception {
         
         this.requestLock.lock();
@@ -348,11 +349,11 @@ public class SwitchManager extends RequestProcessor4CP {
         switchDomain.setSendBeatOnly(newSwitchDomain.isSendBeatOnly());
         switchDomain.setLimitedUrlMap(newSwitchDomain.getLimitedUrlMap());
         switchDomain.setDistroServerExpiredMillis(newSwitchDomain.getDistroServerExpiredMillis());
-        switchDomain.setPushGoVersion(newSwitchDomain.getPushGoVersion());
-        switchDomain.setPushJavaVersion(newSwitchDomain.getPushJavaVersion());
-        switchDomain.setPushPythonVersion(newSwitchDomain.getPushPythonVersion());
-        switchDomain.setPushCVersion(newSwitchDomain.getPushCVersion());
-        switchDomain.setPushCSharpVersion(newSwitchDomain.getPushCSharpVersion());
+        switchDomain.setPushGoVersion(newSwitchDomain.getPushVersionOfGo());
+        switchDomain.setPushJavaVersion(newSwitchDomain.getPushVersionOfJava());
+        switchDomain.setPushPythonVersion(newSwitchDomain.getPushVersionOfPython());
+        switchDomain.setPushCVersion(newSwitchDomain.getPushVersionOfC());
+        switchDomain.setPushCSharpVersion(newSwitchDomain.getPushVersionOfCsharp());
         switchDomain.setEnableAuthentication(newSwitchDomain.isEnableAuthentication());
         switchDomain.setOverriddenServerStatus(newSwitchDomain.getOverriddenServerStatus());
         switchDomain.setDefaultInstanceEphemeral(newSwitchDomain.isDefaultInstanceEphemeral());

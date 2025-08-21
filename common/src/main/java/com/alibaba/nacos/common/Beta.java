@@ -23,12 +23,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Means a class is in beta version.
+ * Means a class or method is in beta version.
  *
  * @author wuzhiguo
  */
 @Documented
-@Target({ElementType.TYPE})
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.SOURCE)
 public @interface Beta {
 

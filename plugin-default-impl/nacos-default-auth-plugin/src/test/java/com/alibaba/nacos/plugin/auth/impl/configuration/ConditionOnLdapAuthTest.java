@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.configuration;
 
+import com.alibaba.nacos.plugin.auth.impl.condition.ConditionOnLdapAuth;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

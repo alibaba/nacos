@@ -18,6 +18,7 @@ package com.alibaba.nacos.console.controller;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
+import com.alibaba.nacos.core.service.NacosServerStateService;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
@@ -34,20 +36,22 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
 
 /**
  * ServerStateController unit test.
- *
- * @ClassName: ServerStateControllerTest
- * @Author: ChenHao26
- * @Date: 2022/8/13 10:54
- * @Description: TODO
  */
 @ExtendWith(MockitoExtension.class)
 class ServerStateControllerTest {
     
     private static final String CONSOLE_URL = "/v1/console/server/state";
+    
+    @Mock
+    private NacosServerStateService stateService;
     
     @InjectMocks
     private ServerStateController serverStateController;
@@ -60,6 +64,11 @@ class ServerStateControllerTest {
     void setUp() {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
+        Map<String, String> mock = new HashMap<>();
+        mock.put(Constants.STARTUP_MODE_STATE, EnvUtil.STANDALONE_MODE_CLUSTER);
+        mock.put(Constants.FUNCTION_MODE_STATE, null);
+        mock.put(Constants.NACOS_VERSION, VersionUtils.version);
+        when(stateService.getServerState()).thenReturn(mock);
         mockmvc = MockMvcBuilders.standaloneSetup(serverStateController).build();
     }
     

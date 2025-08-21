@@ -46,9 +46,9 @@ public interface MemberLookup {
     /**
      * Inject the ServerMemberManager property.
      *
-     * @param memberManager {@link ServerMemberManager}
+     * @param memberManager {@link NacosMemberManager}
      */
-    void injectMemberManager(ServerMemberManager memberManager);
+    void injectMemberManager(NacosMemberManager memberManager);
     
     /**
      * The addressing pattern finds cluster nodes.

@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.naming.cache.NamingFuzzyWatchServiceListHolder;
 import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.BatchInstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.InstanceRedoData;
@@ -44,6 +45,7 @@ import java.util.concurrent.TimeUnit;
  * Naming client gprc redo service.
  *
  * <p>When connection reconnect to server, redo the register and subscribe.
+ * TODO refactor to extends from {@link com.alibaba.nacos.client.redo.service.AbstractRedoService}
  *
  * @author xiweng.yy
  */
@@ -59,12 +61,16 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     
     private final ConcurrentMap<String, SubscriberRedoData> subscribes = new ConcurrentHashMap<>();
     
+    private final NamingFuzzyWatchServiceListHolder namingFuzzyWatchServiceListHolder;
+    
     private final ScheduledExecutorService redoExecutor;
     
     private volatile boolean connected = false;
     
-    public NamingGrpcRedoService(NamingGrpcClientProxy clientProxy, NacosClientProperties properties) {
+    public NamingGrpcRedoService(NamingGrpcClientProxy clientProxy,
+            NamingFuzzyWatchServiceListHolder namingFuzzyWatchServiceListHolder, NacosClientProperties properties) {
         setProperties(properties);
+        this.namingFuzzyWatchServiceListHolder = namingFuzzyWatchServiceListHolder;
         this.redoExecutor = new ScheduledThreadPoolExecutor(redoThreadCount, new NameThreadFactory(REDO_THREAD_NAME));
         this.redoExecutor.scheduleWithFixedDelay(new RedoScheduledTask(clientProxy, this), redoDelayTime, redoDelayTime,
                 TimeUnit.MILLISECONDS);
@@ -99,6 +105,9 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
         }
         synchronized (subscribes) {
             subscribes.values().forEach(subscriberRedoData -> subscriberRedoData.setRegistered(false));
+        }
+        synchronized (namingFuzzyWatchServiceListHolder) {
+            namingFuzzyWatchServiceListHolder.resetConsistenceStatus();
         }
         LogUtils.NAMING_LOGGER.warn("mark to redo completed");
     }

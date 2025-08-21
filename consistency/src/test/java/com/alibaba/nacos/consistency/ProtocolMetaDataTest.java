@@ -54,8 +54,6 @@ class ProtocolMetaDataTest {
             latch.countDown();
         });
         
-        System.out.println(json);
-        
         map = new HashMap<>();
         data = new HashMap<>();
         data.put("test-1", new Date());
@@ -63,9 +61,6 @@ class ProtocolMetaDataTest {
         map.put("global", data);
         
         metaData.load(map);
-        
-        json = JacksonUtils.toJson(metaData);
-        System.out.println(json);
         
         latch.await(10_000L, TimeUnit.MILLISECONDS);
         

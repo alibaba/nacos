@@ -68,7 +68,7 @@ public class ServerParamCheckConfig extends AbstractDynamicConfig {
     @Override
     protected String printConfig() {
         return "ParamCheckConfig{" + "paramCheckEnabled=" + paramCheckEnabled
-                + "activeParamChecker=" + activeParamChecker + "}";
+                + ", activeParamChecker=" + activeParamChecker + "}";
     }
     
 }

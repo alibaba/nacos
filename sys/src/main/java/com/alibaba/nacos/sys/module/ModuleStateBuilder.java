@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.sys.module;
 
+import com.alibaba.nacos.sys.env.DeploymentType;
+
 /**
  * Module state builder.
  *
@@ -48,4 +50,13 @@ public interface ModuleStateBuilder {
         return true;
     }
     
+    /**
+     * Whether module is match deployment type, default return true.
+     *
+     * @param type deployment type
+     * @return boolean
+     */
+    default boolean isMatchDeployment(DeploymentType type) {
+        return true;
+    }
 }

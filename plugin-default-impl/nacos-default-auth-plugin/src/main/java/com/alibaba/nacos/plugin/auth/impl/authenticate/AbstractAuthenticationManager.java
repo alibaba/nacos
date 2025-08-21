@@ -22,14 +22,13 @@ import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
-import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetails;
-import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
-
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * AbstractAuthenticationManager.
@@ -39,14 +38,16 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class AbstractAuthenticationManager implements IAuthenticationManager {
     
-    protected NacosUserDetailsServiceImpl userDetailsService;
+    private static final String USER_NOT_FOUND_MESSAGE = "User not found! Please check user exist or password is right!";
+    
+    protected NacosUserService userDetailsService;
     
     protected TokenManagerDelegate jwtTokenManager;
     
-    protected NacosRoleServiceImpl roleService;
+    protected NacosRoleService roleService;
     
-    public AbstractAuthenticationManager(NacosUserDetailsServiceImpl userDetailsService,
-            TokenManagerDelegate jwtTokenManager, NacosRoleServiceImpl roleService) {
+    public AbstractAuthenticationManager(NacosUserService userDetailsService, TokenManagerDelegate jwtTokenManager,
+            NacosRoleService roleService) {
         this.userDetailsService = userDetailsService;
         this.jwtTokenManager = jwtTokenManager;
         this.roleService = roleService;
@@ -55,11 +56,11 @@ public class AbstractAuthenticationManager implements IAuthenticationManager {
     @Override
     public NacosUser authenticate(String username, String rawPassword) throws AccessException {
         if (StringUtils.isBlank(username) || StringUtils.isBlank(rawPassword)) {
-            throw new AccessException("user not found!");
+            throw new AccessException(USER_NOT_FOUND_MESSAGE);
         }
         NacosUserDetails nacosUserDetails = (NacosUserDetails) userDetailsService.loadUserByUsername(username);
         if (nacosUserDetails == null || !PasswordEncoderUtil.matches(rawPassword, nacosUserDetails.getPassword())) {
-            throw new AccessException("user not found!");
+            throw new AccessException(USER_NOT_FOUND_MESSAGE);
         }
         return new NacosUser(nacosUserDetails.getUsername(), jwtTokenManager.createToken(username));
     }
@@ -67,7 +68,7 @@ public class AbstractAuthenticationManager implements IAuthenticationManager {
     @Override
     public NacosUser authenticate(String token) throws AccessException {
         if (StringUtils.isBlank(token)) {
-            throw new AccessException("user not found!");
+            throw new AccessException(USER_NOT_FOUND_MESSAGE);
         }
         return jwtTokenManager.parseToken(token);
     }

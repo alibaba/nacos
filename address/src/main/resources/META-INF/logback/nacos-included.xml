@@ -37,8 +37,7 @@
         </encoder>
     </appender>
     
-    <logger name="com.alibaba.nacos.address.main" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.address.main" additivity="false" level="INFO">
         <appender-ref ref="nacos-address"/>
     </logger>
 </included>

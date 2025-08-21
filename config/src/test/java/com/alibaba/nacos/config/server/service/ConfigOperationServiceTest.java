@@ -63,13 +63,13 @@ class ConfigOperationServiceTest {
     private ConfigInfoGrayPersistService configInfoGrayPersistService;
     
     @Mock
-    ConfigGrayModelMigrateService configGrayModelMigrateService;
+    ConfigMigrateService configMigrateService;
     
     @BeforeEach
     void setUp() throws Exception {
         EnvUtil.setEnvironment(new StandardEnvironment());
         this.configOperationService = new ConfigOperationService(configInfoPersistService, configInfoGrayPersistService,
-                configGrayModelMigrateService);
+                configMigrateService);
     }
     
     @Test

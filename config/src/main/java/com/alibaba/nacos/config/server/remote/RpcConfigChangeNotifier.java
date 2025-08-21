@@ -96,7 +96,10 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
             if (connection == null) {
                 continue;
             }
-            
+            boolean ifNamespaceTransfer = configChangeListenContext.getConfigListenState(client, groupKey).isNamespaceTransfer();
+            if (ifNamespaceTransfer) {
+                tenant = null;
+            }
             ConnectionMeta metaInfo = connection.getMetaInfo();
             String clientIp = metaInfo.getClientIp();
             

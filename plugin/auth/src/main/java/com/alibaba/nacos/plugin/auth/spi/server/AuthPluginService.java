@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.spi.server;
 
+import com.alibaba.nacos.plugin.auth.api.AuthResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
@@ -53,20 +54,20 @@ public interface AuthPluginService {
      *
      * @param identityContext where we can find the user information
      * @param resource        resource about this user information
-     * @return {@code true} if legal, otherwise {@code false}
+     * @return {@link AuthResult} of validate result
      * @throws AccessException if authentication is failed
      */
-    boolean validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException;
+    AuthResult validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException;
     
     /**
      * Validate the identity whether has the resource authority.
      *
      * @param identityContext where we can find the user information.
      * @param permission      permission to auth.
-     * @return Boolean if the user has the resource authority.
+     * @return {@link AuthResult} of validate result
      * @throws AccessException if authentication is failed
      */
-    Boolean validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException;
+    AuthResult validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException;
     
     /**
      * AuthPluginService Name which for conveniently find AuthPluginService instance.

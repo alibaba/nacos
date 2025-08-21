@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.remote;
 
 import com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest;
+import com.alibaba.nacos.config.server.model.ConfigListenState;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
@@ -49,6 +50,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 
@@ -128,6 +130,7 @@ class RpcConfigChangeNotifierTest {
         Mockito.when(mockConn3.getMetaInfo())
                 .thenReturn(new ConnectionMeta("con3", "192.168.0.1", "192.168.0.2", 34567, 9848, "GRPC", "2.2.0", null, new HashMap<>()));
         Mockito.when(configChangeListenContext.getListeners(eq(groupKey))).thenReturn(mockConnectionIds);
+        Mockito.when(configChangeListenContext.getConfigListenState(anyString(), anyString())).thenReturn(new ConfigListenState("111"));
         //mock push tps passed
         Mockito.when(tpsControlManager.check(any(TpsCheckRequest.class))).thenReturn(new TpsCheckResponse(true, 200, "success"));
         

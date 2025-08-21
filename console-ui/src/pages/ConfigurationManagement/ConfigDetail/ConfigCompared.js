@@ -58,9 +58,9 @@ class ConfigCompared extends React.Component {
   getNamespaces() {
     request({
       type: 'get',
-      url: 'v1/console/namespaces',
+      url: 'v3/console/core/namespace/list',
       success: res => {
-        if (res.code === 200) {
+        if (res.code === 0) {
           const { namespacesDataSource } = this.state;
           this.setState({ namespacesDataSource: res.data });
         } else {

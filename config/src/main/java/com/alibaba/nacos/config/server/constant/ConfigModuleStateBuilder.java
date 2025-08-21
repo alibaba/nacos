@@ -20,21 +20,22 @@ import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.persistence.utils.DatasourcePlatformUtil;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.module.AbstractServerModuleStateBuilder;
 import com.alibaba.nacos.sys.module.ModuleState;
-import com.alibaba.nacos.sys.module.ModuleStateBuilder;
 
 /**
  * config module state builder.
  * @author 985492783@qq.com
  * @date 2023/4/6 10:25
  */
-public class ConfigModuleStateBuilder implements ModuleStateBuilder {
+public class ConfigModuleStateBuilder extends AbstractServerModuleStateBuilder {
     
     @Override
     public ModuleState build() {
         ModuleState moduleState = new ModuleState(com.alibaba.nacos.api.common.Constants.Config.CONFIG_MODULE);
         
-        moduleState.newState(Constants.DATASOURCE_PLATFORM_PROPERTY_STATE, DatasourcePlatformUtil.getDatasourcePlatform(""));
+        moduleState.newState(Constants.DATASOURCE_PLATFORM_PROPERTY_STATE,
+                DatasourcePlatformUtil.getDatasourcePlatform(""));
         moduleState.newState(Constants.NACOS_PLUGIN_DATASOURCE_LOG_STATE,
                 EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class, false));
         
@@ -51,7 +52,7 @@ public class ConfigModuleStateBuilder implements ModuleStateBuilder {
         moduleState.newState(PropertiesConstant.DEFAULT_MAX_AGGR_COUNT, PropertyUtil.getDefaultMaxAggrCount());
         moduleState.newState(PropertiesConstant.DEFAULT_MAX_AGGR_SIZE, PropertyUtil.getDefaultMaxAggrSize());
         moduleState.newState(Constants.CONFIG_RENTENTION_DAYS_PROPERTY_STATE, PropertyUtil.getConfigRententionDays());
-
+        
         return moduleState;
     }
 }

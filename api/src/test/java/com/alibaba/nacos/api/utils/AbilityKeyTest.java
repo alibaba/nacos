@@ -44,22 +44,26 @@ class AbilityKeyTest {
         Map<String, Boolean> stringBooleanMap = AbilityKey.mapStr(enumMap);
         assertEquals(0, stringBooleanMap.size());
         
-        enumMap.put(AbilityKey.SERVER_TEST_1, true);
-        enumMap.put(AbilityKey.SERVER_TEST_2, false);
-        enumMap.put(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC, false);
+        enumMap.put(AbilityKey.SERVER_FUZZY_WATCH, true);
+        enumMap.put(AbilityKey.SERVER_DISTRIBUTED_LOCK, false);
+        enumMap.put(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC, false);
+        enumMap.put(AbilityKey.SERVER_MCP_REGISTRY, false);
         stringBooleanMap = AbilityKey.mapStr(enumMap);
-        assertEquals(3, stringBooleanMap.size());
-        assertTrue(stringBooleanMap.get(AbilityKey.SERVER_TEST_1.getName()));
-        assertFalse(stringBooleanMap.get(AbilityKey.SERVER_TEST_2.getName()));
-        assertFalse(stringBooleanMap.get(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC.getName()));
+        assertEquals(4, stringBooleanMap.size());
+        assertTrue(stringBooleanMap.get(AbilityKey.SERVER_FUZZY_WATCH.getName()));
+        assertFalse(stringBooleanMap.get(AbilityKey.SERVER_DISTRIBUTED_LOCK.getName()));
+        assertFalse(stringBooleanMap.get(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC.getName()));
+        assertFalse(stringBooleanMap.get(AbilityKey.SERVER_MCP_REGISTRY.getName()));
         
-        enumMap.put(AbilityKey.SERVER_TEST_2, true);
-        enumMap.put(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC, true);
+        enumMap.put(AbilityKey.SERVER_DISTRIBUTED_LOCK, true);
+        enumMap.put(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC, true);
+        enumMap.put(AbilityKey.SERVER_MCP_REGISTRY, true);
         stringBooleanMap = AbilityKey.mapStr(enumMap);
-        assertEquals(3, stringBooleanMap.size());
-        assertTrue(stringBooleanMap.get(AbilityKey.SERVER_TEST_1.getName()));
-        assertTrue(stringBooleanMap.get(AbilityKey.SERVER_TEST_2.getName()));
-        assertTrue(stringBooleanMap.get(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC.getName()));
+        assertEquals(4, stringBooleanMap.size());
+        assertTrue(stringBooleanMap.get(AbilityKey.SERVER_FUZZY_WATCH.getName()));
+        assertTrue(stringBooleanMap.get(AbilityKey.SERVER_DISTRIBUTED_LOCK.getName()));
+        assertTrue(stringBooleanMap.get(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC.getName()));
+        assertTrue(stringBooleanMap.get(AbilityKey.SERVER_MCP_REGISTRY.getName()));
     }
     
     @Test
@@ -75,31 +79,35 @@ class AbilityKeyTest {
         Map<AbilityKey, Boolean> enumMap = AbilityKey.mapEnum(AbilityMode.SERVER, mapStr);
         assertEquals(0, enumMap.size());
         
-        mapStr.put(AbilityKey.SERVER_TEST_2.getName(), false);
-        mapStr.put(AbilityKey.SERVER_TEST_1.getName(), true);
-        mapStr.put(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC.getName(), true);
+        mapStr.put(AbilityKey.SERVER_DISTRIBUTED_LOCK.getName(), false);
+        mapStr.put(AbilityKey.SERVER_FUZZY_WATCH.getName(), true);
+        mapStr.put(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC.getName(), true);
+        mapStr.put(AbilityKey.SERVER_MCP_REGISTRY.getName(), true);
         enumMap = AbilityKey.mapEnum(AbilityMode.SERVER, mapStr);
-        assertFalse(enumMap.get(AbilityKey.SERVER_TEST_2));
-        assertTrue(enumMap.get(AbilityKey.SERVER_TEST_1));
-        assertTrue(enumMap.get(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC));
+        assertFalse(enumMap.get(AbilityKey.SERVER_DISTRIBUTED_LOCK));
+        assertTrue(enumMap.get(AbilityKey.SERVER_FUZZY_WATCH));
+        assertTrue(enumMap.get(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC));
+        assertTrue(enumMap.get(AbilityKey.SERVER_MCP_REGISTRY));
         
         mapStr.clear();
-        mapStr.put(AbilityKey.SERVER_TEST_2.getName(), true);
-        mapStr.put(AbilityKey.SERVER_TEST_1.getName(), true);
-        mapStr.put(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC.getName(), true);
+        mapStr.put(AbilityKey.SERVER_DISTRIBUTED_LOCK.getName(), true);
+        mapStr.put(AbilityKey.SERVER_FUZZY_WATCH.getName(), true);
+        mapStr.put(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC.getName(), true);
+        mapStr.put(AbilityKey.SERVER_MCP_REGISTRY.getName(), true);
         enumMap = AbilityKey.mapEnum(AbilityMode.SERVER, mapStr);
-        assertTrue(enumMap.get(AbilityKey.SERVER_TEST_2));
-        assertTrue(enumMap.get(AbilityKey.SERVER_TEST_1));
-        assertTrue(enumMap.get(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC));
+        assertTrue(enumMap.get(AbilityKey.SERVER_DISTRIBUTED_LOCK));
+        assertTrue(enumMap.get(AbilityKey.SERVER_FUZZY_WATCH));
+        assertTrue(enumMap.get(AbilityKey.SERVER_PERSISTENT_INSTANCE_BY_GRPC));
+        assertTrue(enumMap.get(AbilityKey.SERVER_MCP_REGISTRY));
         
     }
     
     @Test
     void testGetAllValues() {
         Collection<AbilityKey> actual = AbilityKey.getAllValues(AbilityMode.SERVER);
-        assertEquals(3, actual.size());
+        assertEquals(4, actual.size());
         actual = AbilityKey.getAllValues(AbilityMode.SDK_CLIENT);
-        assertEquals(1, actual.size());
+        assertEquals(3, actual.size());
         actual = AbilityKey.getAllValues(AbilityMode.CLUSTER_CLIENT);
         assertEquals(1, actual.size());
     }
@@ -107,15 +115,16 @@ class AbilityKeyTest {
     @Test
     void testGetAllNames() {
         Collection<String> actual = AbilityKey.getAllNames(AbilityMode.SERVER);
-        assertEquals(3, actual.size());
+        assertEquals(4, actual.size());
         actual = AbilityKey.getAllNames(AbilityMode.SDK_CLIENT);
-        assertEquals(1, actual.size());
+        assertEquals(3, actual.size());
         actual = AbilityKey.getAllNames(AbilityMode.CLUSTER_CLIENT);
         assertEquals(1, actual.size());
     }
     
     @Test
     void testGetDescription() {
-        assertEquals("just for junit test", AbilityKey.SERVER_TEST_1.getDescription());
+        assertEquals("Server whether support fuzzy watch service or config",
+                AbilityKey.SERVER_FUZZY_WATCH.getDescription());
     }
 }

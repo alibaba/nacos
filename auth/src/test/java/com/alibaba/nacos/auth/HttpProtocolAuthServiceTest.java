@@ -19,7 +19,7 @@ package com.alibaba.nacos.auth;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.config.NacosAuthConfig;
 import com.alibaba.nacos.auth.mock.MockAuthPluginService;
 import com.alibaba.nacos.auth.mock.MockResourceParser;
 import com.alibaba.nacos.auth.serveridentity.ServerIdentityResult;
@@ -36,7 +36,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -53,7 +53,7 @@ import static org.mockito.Mockito.when;
 class HttpProtocolAuthServiceTest {
     
     @Mock
-    private AuthConfigs authConfigs;
+    private NacosAuthConfig authConfig;
     
     @Mock
     private HttpServletRequest request;
@@ -62,7 +62,7 @@ class HttpProtocolAuthServiceTest {
     
     @BeforeEach
     void setUp() throws Exception {
-        protocolAuthService = new HttpProtocolAuthService(authConfigs);
+        protocolAuthService = new HttpProtocolAuthService(authConfig);
         protocolAuthService.initialize();
         when(request.getParameter(eq(CommonParams.NAMESPACE_ID))).thenReturn("testNNs");
         when(request.getParameter(eq(CommonParams.GROUP_NAME))).thenReturn("testNG");
@@ -116,8 +116,21 @@ class HttpProtocolAuthServiceTest {
     
     @Test
     @Secured(signType = SignType.CONFIG)
-    void testParseResourceWithConfigType() throws NoSuchMethodException {
-        Secured secured = getMethodSecure("testParseResourceWithConfigType");
+    void testParseResourceWithConfigTypeForNewGroup() throws NoSuchMethodException {
+        Secured secured = getMethodSecure("testParseResourceWithConfigTypeForNewGroup");
+        Resource actual = protocolAuthService.parseResource(request, secured);
+        assertEquals(SignType.CONFIG, actual.getType());
+        assertEquals("testD", actual.getName());
+        assertEquals("testNNs", actual.getNamespaceId());
+        assertEquals("testNG", actual.getGroup());
+        assertNotNull(actual.getProperties());
+    }
+    
+    @Test
+    @Secured(signType = SignType.CONFIG)
+    void testParseResourceWithConfigTypeForOldGroup() throws NoSuchMethodException {
+        when(request.getParameter(eq(CommonParams.GROUP_NAME))).thenReturn("");
+        Secured secured = getMethodSecure("testParseResourceWithConfigTypeForOldGroup");
         Resource actual = protocolAuthService.parseResource(request, secured);
         assertEquals(SignType.CONFIG, actual.getType());
         assertEquals("testD", actual.getName());
@@ -135,33 +148,33 @@ class HttpProtocolAuthServiceTest {
     @Test
     void testValidateIdentityWithoutPlugin() throws AccessException {
         IdentityContext identityContext = new IdentityContext();
-        assertTrue(protocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE));
+        assertTrue(protocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE).isSuccess());
     }
     
     @Test
     void testValidateIdentityWithPlugin() throws AccessException {
-        when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
+        when(authConfig.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
         IdentityContext identityContext = new IdentityContext();
-        assertFalse(protocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE));
+        assertFalse(protocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE).isSuccess());
     }
     
     @Test
     void testValidateAuthorityWithoutPlugin() throws AccessException {
         assertTrue(protocolAuthService.validateAuthority(new IdentityContext(),
-                new Permission(Resource.EMPTY_RESOURCE, "")));
+                new Permission(Resource.EMPTY_RESOURCE, "")).isSuccess());
     }
     
     @Test
     void testValidateAuthorityWithPlugin() throws AccessException {
-        when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
+        when(authConfig.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
         assertFalse(protocolAuthService.validateAuthority(new IdentityContext(),
-                new Permission(Resource.EMPTY_RESOURCE, "")));
+                new Permission(Resource.EMPTY_RESOURCE, "")).isSuccess());
     }
     
     @Test
     @Secured(signType = SignType.CONFIG)
     void testEnabledAuthWithPlugin() throws NoSuchMethodException {
-        when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
+        when(authConfig.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
         Secured secured = getMethodSecure("testEnabledAuthWithPlugin");
         assertTrue(protocolAuthService.enableAuth(secured));
     }
@@ -169,7 +182,7 @@ class HttpProtocolAuthServiceTest {
     @Test
     @Secured(signType = SignType.CONFIG)
     void testEnabledAuthWithoutPlugin() throws NoSuchMethodException {
-        when(authConfigs.getNacosAuthSystemType()).thenReturn("non-exist-plugin");
+        when(authConfig.getNacosAuthSystemType()).thenReturn("non-exist-plugin");
         Secured secured = getMethodSecure("testEnabledAuthWithoutPlugin");
         assertFalse(protocolAuthService.enableAuth(secured));
     }
@@ -182,7 +195,7 @@ class HttpProtocolAuthServiceTest {
         assertEquals("Invalid server identity key or value, Please make sure set `nacos.core.auth.server.identity.key`"
                         + " and `nacos.core.auth.server.identity.value`, or open `nacos.core.auth.enable.userAgentAuthWhite`",
                 result.getMessage());
-        when(authConfigs.getServerIdentityKey()).thenReturn("1");
+        when(authConfig.getServerIdentityKey()).thenReturn("1");
         result = protocolAuthService.checkServerIdentity(request, secured);
         assertEquals(ServerIdentityResult.ResultStatus.FAIL, result.getStatus());
         assertEquals("Invalid server identity key or value, Please make sure set `nacos.core.auth.server.identity.key`"
@@ -193,8 +206,8 @@ class HttpProtocolAuthServiceTest {
     @Test
     void testCheckServerIdentityNotMatched() throws NoSuchMethodException {
         Secured secured = getMethodSecure("testCheckServerIdentityNotMatched");
-        when(authConfigs.getServerIdentityKey()).thenReturn("1");
-        when(authConfigs.getServerIdentityValue()).thenReturn("2");
+        when(authConfig.getServerIdentityKey()).thenReturn("1");
+        when(authConfig.getServerIdentityValue()).thenReturn("2");
         ServerIdentityResult result = protocolAuthService.checkServerIdentity(request, secured);
         assertEquals(ServerIdentityResult.ResultStatus.NOT_MATCHED, result.getStatus());
         when(request.getHeader("1")).thenReturn("3");
@@ -204,8 +217,8 @@ class HttpProtocolAuthServiceTest {
     
     @Test
     void testCheckServerIdentityMatched() throws NoSuchMethodException {
-        when(authConfigs.getServerIdentityKey()).thenReturn("1");
-        when(authConfigs.getServerIdentityValue()).thenReturn("2");
+        when(authConfig.getServerIdentityKey()).thenReturn("1");
+        when(authConfig.getServerIdentityValue()).thenReturn("2");
         when(request.getHeader("1")).thenReturn("2");
         Secured secured = getMethodSecure("testCheckServerIdentityMatched");
         ServerIdentityResult result = protocolAuthService.checkServerIdentity(request, secured);

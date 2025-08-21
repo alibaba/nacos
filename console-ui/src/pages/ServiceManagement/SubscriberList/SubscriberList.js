@@ -63,7 +63,7 @@ class SubscriberList extends React.Component {
         serviceName: getParams('name') || '',
         groupName: getParams('groupName') || '',
       },
-      nowNamespaceId: getParams('namespace') || '',
+      nowNamespaceId: getParams('namespace') || 'public',
     };
     this.field = new Field(this);
   }
@@ -196,10 +196,11 @@ class SubscriberList extends React.Component {
           <Row style={{ padding: 0 }}>
             <Col span="24" style={{ padding: 0 }}>
               <Table dataSource={subscribersArray} locale={{ empty: pubNoData }}>
+                <Column title={locale.groupName} dataIndex="groupName" />
                 <Column title={locale.serviceName} dataIndex="serviceName" />
-                <Column title={locale.address} dataIndex="addrStr" />
+                <Column title={locale.address} dataIndex="address" />
                 <Column title={locale.clientVersion} dataIndex="agent" />
-                <Column title={locale.appName} dataIndex="app" />
+                <Column title={locale.appName} dataIndex="appName" />
               </Table>
             </Col>
           </Row>

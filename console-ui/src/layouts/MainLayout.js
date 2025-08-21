@@ -18,10 +18,10 @@ import React from 'react';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { ConfigProvider, Icon, Menu, Message, Dialog, Button } from '@alifd/next';
+import { ConfigProvider, Icon, Menu, Message, Dialog, Badge } from '@alifd/next';
 import Header from './Header';
 import { getState, getNotice, getGuide } from '../reducers/base';
-import getMenuData from './menu';
+import getMenuData, { McpServerManagementRoute, McpServerManagementRouteName } from './menu';
 import './index.scss';
 
 const { SubMenu, Item } = Menu;
@@ -36,6 +36,7 @@ class MainLayout extends React.Component {
       visible: true,
     };
   }
+
   static displayName = 'MainLayout';
 
   static propTypes = {
@@ -145,8 +146,25 @@ class MainLayout extends React.Component {
                         consoleUiEnable === 'true' &&
                         MenuData.map((subMenu, idx) => {
                           if (subMenu.children) {
+                            const sublabel = subMenu.badge ? (
+                              <span>
+                                <Badge
+                                  content={subMenu.badge}
+                                  style={{
+                                    backgroundColor: '#FC0E3D',
+                                    color: '#FFFFFF',
+                                    right: '-45px',
+                                    top: '-10px',
+                                  }}
+                                >
+                                  {locale[subMenu.key]}
+                                </Badge>
+                              </span>
+                            ) : (
+                              `${locale[subMenu.key]}`
+                            );
                             return (
-                              <SubMenu key={String(idx)} label={locale[subMenu.key]}>
+                              <SubMenu key={String(idx)} label={sublabel}>
                                 {subMenu.children.map((item, i) => (
                                   <Item
                                     key={[idx, i].join('-')}

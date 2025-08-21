@@ -100,7 +100,7 @@ class RpcClientTest {
     RpcClientConfig rpcClientConfig;
     
     @BeforeEach
-    void setUp() throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException {
+    void setUp() throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         rpcClientConfig = spy(new RpcClientConfig() {
             @Override
             public String name() {
@@ -159,9 +159,20 @@ class RpcClientTest {
         
         reconnectionSignalField = RpcClient.class.getDeclaredField("reconnectionSignal");
         reconnectionSignalField.setAccessible(true);
-        Field modifiersField1 = Field.class.getDeclaredField("modifiers");
-        modifiersField1.setAccessible(true);
-        modifiersField1.setInt(reconnectionSignalField, reconnectionSignalField.getModifiers() & ~Modifier.FINAL);
+        
+        Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
+        getDeclaredFields0.setAccessible(true);
+        Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
+        Field modifiersField1 = null;
+        for (Field each : fields) {
+            if ("modifiers".equals(each.getName())) {
+                modifiersField1 = each;
+            }
+        }
+        if (modifiersField1 != null) {
+            modifiersField1.setAccessible(true);
+            modifiersField1.setInt(reconnectionSignalField, reconnectionSignalField.getModifiers() & ~Modifier.FINAL);
+        }
         
         resolveServerInfoMethod = RpcClient.class.getDeclaredMethod("resolveServerInfo", String.class);
         resolveServerInfoMethod.setAccessible(true);
@@ -1143,15 +1154,15 @@ class RpcClientTest {
     
     @Test
     void testGetConnectionAbilityWithNullConnection() {
-        AbilityStatus abilityStatus = rpcClient.getConnectionAbility(AbilityKey.SERVER_TEST_1);
+        AbilityStatus abilityStatus = rpcClient.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH);
         assertNull(abilityStatus);
     }
     
     @Test
     void testGetConnectionAbilityWithReadyConnection() {
-        when(connection.getConnectionAbility(AbilityKey.SERVER_TEST_1)).thenReturn(AbilityStatus.SUPPORTED);
+        when(connection.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH)).thenReturn(AbilityStatus.SUPPORTED);
         rpcClient.currentConnection = connection;
-        AbilityStatus abilityStatus = rpcClient.getConnectionAbility(AbilityKey.SERVER_TEST_1);
+        AbilityStatus abilityStatus = rpcClient.getConnectionAbility(AbilityKey.SERVER_FUZZY_WATCH);
         assertNotNull(abilityStatus);
         assertEquals(AbilityStatus.SUPPORTED, abilityStatus);
     }

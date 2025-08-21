@@ -23,13 +23,13 @@ import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.remote.ability.ServerRemoteAbility;
 import com.alibaba.nacos.api.remote.request.HealthCheckRequest;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,7 +60,6 @@ import static org.mockito.Mockito.when;
  * @date 2021-07-08 13:22
  */
 @ExtendWith(MockitoExtension.class)
-// todo remove this
 @MockitoSettings(strictness = Strictness.LENIENT)
 class ClusterRpcClientProxyTest {
     
@@ -69,9 +68,6 @@ class ClusterRpcClientProxyTest {
     
     @Mock
     private ServerMemberManager serverMemberManager;
-    
-    @Mock
-    private AuthConfigs authConfigs;
     
     @Mock
     private RpcClient client;
@@ -86,7 +82,10 @@ class ClusterRpcClientProxyTest {
     
     @BeforeEach
     void setUp() throws NacosException {
-        EnvUtil.setEnvironment(new MockEnvironment());
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "nacos");
+        environment.setProperty(Constants.Auth.NACOS_CORE_AUTH_ADMIN_ENABLED, "false");
+        EnvUtil.setEnvironment(environment);
         member = new Member();
         member.setIp("1.1.1.1");
         ServerAbilities serverAbilities = new ServerAbilities();
@@ -100,8 +99,6 @@ class ClusterRpcClientProxyTest {
         clientMap.remove("Cluster-" + member.getAddress()).shutdown();
         clientMap.put("Cluster-" + member.getAddress(), client);
         when(client.getConnectionType()).thenReturn(ConnectionType.GRPC);
-        when(authConfigs.getServerIdentityKey()).thenReturn("MockIdentityKey");
-        when(authConfigs.getServerIdentityValue()).thenReturn("MockIdentityValue");
     }
     
     @Test

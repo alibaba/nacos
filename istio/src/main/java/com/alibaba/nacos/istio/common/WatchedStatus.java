@@ -16,12 +16,19 @@
 
 package com.alibaba.nacos.istio.common;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * @author special.fy
  */
 public class WatchedStatus {
 
     private String type;
+    
+    private boolean lastAckOrNack;
+    
+    private Set<String> lastSubscribe;
 
     private String latestVersion;
 
@@ -69,5 +76,21 @@ public class WatchedStatus {
 
     public void setAckedNonce(String ackedNonce) {
         this.ackedNonce = ackedNonce;
+    }
+    
+    public boolean isLastAckOrNack() {
+        return lastAckOrNack;
+    }
+    
+    public void setLastAckOrNack(boolean lastAckOrNack) {
+        this.lastAckOrNack = lastAckOrNack;
+    }
+    
+    public Set<String> getLastSubscribe() {
+        return lastSubscribe;
+    }
+    
+    public void setLastSubscribe(Set<String> lastSubscribe) {
+        this.lastSubscribe = new HashSet<>(lastSubscribe);
     }
 }

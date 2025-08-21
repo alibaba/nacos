@@ -44,12 +44,18 @@ public class ClusterOperatorV2Impl implements ClusterOperator {
             ClusterMetadata clusterMetadata) throws NacosException {
         String groupName = NamingUtils.getGroupName(serviceName);
         String serviceNameWithoutGroup = NamingUtils.getServiceName(serviceName);
+        updateClusterMetadata(namespaceId, groupName, serviceNameWithoutGroup, clusterName, clusterMetadata);
+    }
+    
+    @Override
+    public void updateClusterMetadata(String namespaceId, String groupName, String serviceName, String clusterName,
+            ClusterMetadata clusterMetadata) throws NacosException {
         Optional<Service> service = ServiceManager.getInstance()
-                .getSingletonIfExist(namespaceId, groupName, serviceNameWithoutGroup);
-        if (!service.isPresent()) {
-            throw new NacosException(NacosException.INVALID_PARAM, "service not found:" + serviceName);
+                .getSingletonIfExist(namespaceId, groupName, serviceName);
+        if (service.isEmpty()) {
+            throw new NacosException(NacosException.INVALID_PARAM,
+                    String.format("service not found groupName: %s,serviceName: %s", groupName, serviceName));
         }
         metadataOperateService.addClusterMetadata(service.get(), clusterName, clusterMetadata);
     }
-    
 }

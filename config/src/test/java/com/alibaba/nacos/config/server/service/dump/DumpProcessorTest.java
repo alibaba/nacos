@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
+import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigRocksDbDiskService;
@@ -65,6 +66,9 @@ class DumpProcessorTest {
     @Mock
     ConfigInfoGrayPersistService configInfoGrayPersistService;
     
+    @Mock
+    ConfigMigrateService configMigrateService;
+    
     ExternalDumpService dumpService;
     
     DumpProcessor dumpProcessor;
@@ -88,7 +92,8 @@ class DumpProcessorTest {
         
         when(dynamicDataSource.getDataSource()).thenReturn(dataSourceService);
         
-        dumpService = new ExternalDumpService(configInfoPersistService, null, null, configInfoGrayPersistService, null);
+        dumpService = new ExternalDumpService(configInfoPersistService, null, null,
+                configInfoGrayPersistService, null, configMigrateService);
         dumpProcessor = new DumpProcessor(configInfoPersistService, configInfoGrayPersistService);
         Field[] declaredFields = ConfigDiskServiceFactory.class.getDeclaredFields();
         for (Field filed : declaredFields) {
@@ -105,12 +110,19 @@ class DumpProcessorTest {
     }
     
     @AfterEach
-    void after() {
+    void after() throws Exception {
         dynamicDataSourceMockedStatic.close();
         envUtilMockedStatic.close();
         ConfigDiskServiceFactory.getInstance().clearAll();
         ConfigDiskServiceFactory.getInstance().clearAllGray();
-        
+    
+        Field[] declaredFields = ConfigDiskServiceFactory.class.getDeclaredFields();
+        for (Field filed : declaredFields) {
+            if (filed.getName().equals("configDiskService")) {
+                filed.setAccessible(true);
+                filed.set(null, null);
+            }
+        }
     }
     
     @Test

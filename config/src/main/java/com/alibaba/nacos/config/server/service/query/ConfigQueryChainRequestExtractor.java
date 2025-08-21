@@ -19,8 +19,7 @@ package com.alibaba.nacos.config.server.service.query;
 import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.config.server.service.query.model.ConfigQueryChainRequest;
-
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Interface for extracting configuration query chain requests from different sources.
@@ -28,14 +27,14 @@ import javax.servlet.http.HttpServletRequest;
  * @author Nacos
  */
 public interface ConfigQueryChainRequestExtractor {
-
+    
     /**
      * Gets the name of the current implementation.
      *
      * @return the name of the current implementation
      */
     String getName();
-
+    
     /**
      * Extracts a configuration query chain request from an HTTP request.
      *
@@ -43,7 +42,7 @@ public interface ConfigQueryChainRequestExtractor {
      * @return the extracted configuration query chain request
      */
     ConfigQueryChainRequest extract(HttpServletRequest request);
-
+    
     /**
      * Extracts a configuration query chain request from a configuration query request object.
      *

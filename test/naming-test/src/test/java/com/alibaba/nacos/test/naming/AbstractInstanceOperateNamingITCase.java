@@ -28,7 +28,7 @@ import com.alibaba.nacos.common.utils.ReflectUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.boot.test.web.server.LocalServerPort;
 
 import java.util.Arrays;
 import java.util.HashMap;

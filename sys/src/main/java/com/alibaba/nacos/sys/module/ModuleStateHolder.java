@@ -18,6 +18,7 @@ package com.alibaba.nacos.sys.module;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,6 +49,9 @@ public class ModuleStateHolder {
         this.moduleStates = new HashMap<>();
         for (ModuleStateBuilder each : NacosServiceLoader.load(ModuleStateBuilder.class)) {
             if (each.isIgnore()) {
+                continue;
+            }
+            if (!each.isMatchDeployment(EnvUtil.getDeploymentType())) {
                 continue;
             }
             try {

@@ -51,4 +51,9 @@ public class ApiConstants {
      */
     public static final String CLUSTER_TYPE = API_TYPE_PREFIX + "envoy.config.cluster.v3.Cluster";
     public static final String ENDPOINT_TYPE = API_TYPE_PREFIX + "envoy.config.endpoint.v3.ClusterLoadAssignment";
+    
+    public static final String LISTENER_TYPE = API_TYPE_PREFIX + "envoy.config.listener.v3.Listener";
+    
+    public static final String ROUTE_TYPE = API_TYPE_PREFIX + "envoy.config.route.v3.RouteConfiguration";
+    
 }

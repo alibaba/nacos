@@ -16,7 +16,8 @@
 
 package com.alibaba.nacos.istio.api;
 
-import com.alibaba.nacos.istio.common.ResourceSnapshot;
+import com.alibaba.nacos.istio.model.PushRequest;
+import io.envoyproxy.envoy.service.discovery.v3.Resource;
 
 import java.util.List;
 
@@ -30,8 +31,16 @@ public interface ApiGenerator<T> {
     /**
      * Generate data based on resource snapshot.
      *
-     * @param resourceSnapshot Resource snapshot
+     * @param pushRequest Push Request
      * @return data
      */
-    List<T> generate(ResourceSnapshot resourceSnapshot);
+    List<T> generate(PushRequest pushRequest);
+    
+    /**
+     * Delta generate data based on resource snapshot.
+     *
+     * @param pushRequest Push Request
+     * @return data
+     */
+    List<Resource> deltaGenerate(PushRequest pushRequest);
 }

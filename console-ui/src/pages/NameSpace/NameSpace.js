@@ -57,9 +57,9 @@ class NameSpace extends React.Component {
     request({
       type: 'get',
       beforeSend() {},
-      url: 'v1/console/namespaces',
+      url: 'v3/console/core/namespace/list',
       success: res => {
-        if (res.code === 200) {
+        if (res.code === 0) {
           const data = res.data || [];
           window.namespaceList = data;
 
@@ -113,11 +113,12 @@ class NameSpace extends React.Component {
     const { namespaceDetails, namespaceName, namespaceID, configuration, description } = locale;
     const { namespace } = record; // 获取ak,sk
     request({
-      url: `v1/console/namespaces?show=all&namespaceId=${namespace}`,
+      url: `v3/console/core/namespace?namespaceId=${namespace}`,
       beforeSend: () => {
         this.openLoading();
       },
       success: res => {
+        res = res.data;
         if (res !== null) {
           Dialog.alert({
             style: { width: '500px' },
@@ -182,11 +183,12 @@ class NameSpace extends React.Component {
         </div>
       ),
       onOk: () => {
-        const url = `v1/console/namespaces?namespaceId=${record.namespace}`;
+        const url = `v3/console/core/namespace?namespaceId=${record.namespace}`;
         request({
           url,
           type: 'delete',
           success: res => {
+            res = res.data;
             const _payload = {};
             _payload.title = configurationManagement;
             if (res === true) {
@@ -210,9 +212,9 @@ class NameSpace extends React.Component {
   refreshNameSpace() {
     request({
       type: 'get',
-      url: 'v1/console/namespaces',
+      url: 'v3/console/core/namespace/list',
       success: res => {
-        if (res.code === 200) {
+        if (res.code === 0) {
           window.namespaceList = res.data;
         }
       },
@@ -240,7 +242,7 @@ class NameSpace extends React.Component {
         {namespaceDelete}
       </a>
     );
-    if (record.type === 1 || record.type === 0) {
+    if (record.type === 0) {
       _delinfo = (
         <span style={{ marginRight: 10, cursor: 'not-allowed', color: '#999' }} disabled>
           {namespaceDelete}
@@ -254,7 +256,7 @@ class NameSpace extends React.Component {
     );
 
     let _editinfo = <a onClick={this.openToEdit.bind(this, record)}>{edit}</a>;
-    if (record.type === 0 || record.type === 1) {
+    if (record.type === 0) {
       _editinfo = (
         <span style={{ marginRight: 10, cursor: 'not-allowed', color: '#999' }} disabled>
           {edit}

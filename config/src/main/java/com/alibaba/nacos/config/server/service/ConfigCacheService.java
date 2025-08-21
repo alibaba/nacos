@@ -63,7 +63,7 @@ public class ConfigCacheService {
     /**
      * groupKey -> cacheItem.
      */
-    private static final ConcurrentHashMap<String, CacheItem> CACHE = new ConcurrentHashMap<>();
+    static final ConcurrentHashMap<String, CacheItem> CACHE = new ConcurrentHashMap<>();
     
     public static int groupCount() {
         return CACHE.size();

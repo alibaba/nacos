@@ -20,8 +20,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.cluster.MemberLookup;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.sys.env.EnvUtil;
 
 import java.io.File;
 import java.util.Arrays;
@@ -44,16 +44,26 @@ public final class LookupFactory {
     /**
      * Create the target addressing pattern.
      *
+     * @return {@link MemberLookup}
+     * @throws NacosException NacosException
+     */
+    public static MemberLookup createLookUp() throws NacosException {
+        String lookupType = EnvUtil.getProperty(LOOKUP_MODE_TYPE);
+        LookupType type = chooseLookup(lookupType);
+        currentLookupType = type;
+        return find(type);
+    }
+    
+    /**
+     * Create the target addressing pattern.
+     *
      * @param memberManager {@link ServerMemberManager}
      * @return {@link MemberLookup}
      * @throws NacosException NacosException
      */
     public static MemberLookup createLookUp(ServerMemberManager memberManager) throws NacosException {
         if (!EnvUtil.getStandaloneMode()) {
-            String lookupType = EnvUtil.getProperty(LOOKUP_MODE_TYPE);
-            LookupType type = chooseLookup(lookupType);
-            LOOK_UP = find(type);
-            currentLookupType = type;
+            LOOK_UP = createLookUp();
         } else {
             LOOK_UP = new StandaloneMemberLookup();
         }

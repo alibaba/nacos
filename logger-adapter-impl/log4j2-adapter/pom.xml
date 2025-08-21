@@ -29,6 +29,11 @@
     <name>nacos-log4j2-adapter ${revision}</name>
     <description>Nacos client log4j2 adapter pom.xml file</description>
     
+    <properties>
+        <maven.compiler.source>${client.java.version}</maven.compiler.source>
+        <maven.compiler.target>${client.java.version}</maven.compiler.target>
+    </properties>
+    
     <dependencies>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>

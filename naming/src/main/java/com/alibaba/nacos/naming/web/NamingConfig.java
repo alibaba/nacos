@@ -16,9 +16,13 @@
 
 package com.alibaba.nacos.naming.web;
 
+import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import com.alibaba.nacos.core.web.NacosWebBean;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import javax.annotation.PostConstruct;
 
 /**
  * Naming spring configuration.
@@ -26,6 +30,7 @@ import org.springframework.context.annotation.Configuration;
  * @author nkorange
  */
 @Configuration
+@NacosWebBean
 public class NamingConfig {
     
     private static final String URL_PATTERNS = "/v1/ns/*";
@@ -40,7 +45,16 @@ public class NamingConfig {
     
     private static final String CLIENT_ATTRIBUTES_FILTER = "clientAttributes_filter";
     
-    private static final String NAMING_PARAM_CHECK_FILTER = "namingparamCheckFilter";
+    private final ControllerMethodsCache methodsCache;
+    
+    public NamingConfig(ControllerMethodsCache methodsCache) {
+        this.methodsCache = methodsCache;
+    }
+    
+    @PostConstruct
+    public void init() {
+        methodsCache.initClassMethod("com.alibaba.nacos.naming.controllers");
+    }
     
     @Bean
     public FilterRegistrationBean<DistroFilter> distroFilterRegistration() {

@@ -16,12 +16,12 @@
 
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.NamingSubscriberServiceAggregationImpl;
 import com.alibaba.nacos.naming.push.NamingSubscriberServiceLocalImpl;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
  * @author xiweng.yy
  * @since 1.0.1
  */
-@Service
+@org.springframework.stereotype.Service
 public class SubscribeManager {
     
     @Autowired
@@ -61,9 +61,26 @@ public class SubscribeManager {
         if (aggregation) {
             Collection<Subscriber> result = aggregationService.getFuzzySubscribers(namespaceId, serviceName);
             return CollectionUtils.isNotEmpty(result) ? result.stream().filter(distinctByKey(Subscriber::toString))
-                    .collect(Collectors.toList()) : Collections.EMPTY_LIST;
+                    .collect(Collectors.toList()) : Collections.emptyList();
         } else {
             return new LinkedList<>(localService.getFuzzySubscribers(namespaceId, serviceName));
+        }
+    }
+    
+    /**
+     * Get subscribers.
+     *
+     * @param service service info
+     * @param aggregation aggregation
+     * @return list of subscriber
+     */
+    public List<Subscriber> getSubscribers(Service service, boolean aggregation) {
+        if (aggregation) {
+            Collection<Subscriber> result = aggregationService.getSubscribers(service);
+            return CollectionUtils.isNotEmpty(result) ? result.stream().filter(distinctByKey(Subscriber::toString))
+                    .collect(Collectors.toList()) : Collections.emptyList();
+        } else {
+            return new LinkedList<>(localService.getSubscribers(service));
         }
     }
     

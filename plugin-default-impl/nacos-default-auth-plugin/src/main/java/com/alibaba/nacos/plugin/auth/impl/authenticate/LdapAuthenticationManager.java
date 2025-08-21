@@ -21,11 +21,11 @@ import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
-import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetails;
-import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.filter.EqualsFilter;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -45,8 +45,8 @@ public class LdapAuthenticationManager extends AbstractAuthenticationManager {
     
     private final LdapTemplate ldapTemplate;
     
-    public LdapAuthenticationManager(LdapTemplate ldapTemplate, NacosUserDetailsServiceImpl userDetailsService,
-            TokenManagerDelegate jwtTokenManager, NacosRoleServiceImpl roleService, String filterPrefix,
+    public LdapAuthenticationManager(LdapTemplate ldapTemplate, NacosUserService userDetailsService,
+            TokenManagerDelegate jwtTokenManager, NacosRoleService roleService, String filterPrefix,
             boolean caseSensitive) {
         super(userDetailsService, jwtTokenManager, roleService);
         this.ldapTemplate = ldapTemplate;
@@ -80,7 +80,7 @@ public class LdapAuthenticationManager extends AbstractAuthenticationManager {
             userDetails = userDetailsService.loadUserByUsername(AuthConstants.LDAP_PREFIX + username);
         } catch (UsernameNotFoundException exception) {
             String ldapUsername = AuthConstants.LDAP_PREFIX + username;
-            userDetailsService.createUser(ldapUsername, AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD);
+            userDetailsService.createUser(ldapUsername, AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD, false);
             User user = new User();
             user.setUsername(ldapUsername);
             user.setPassword(AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD);

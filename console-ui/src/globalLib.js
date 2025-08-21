@@ -489,7 +489,7 @@ const request = (function(_global) {
     return config;
   }
 
-  function Request(...allArgs) {
+  async function Request(...allArgs) {
     // 除了config外的传参
     let [config, ...args] = allArgs;
     // 处理前置中间件
@@ -545,17 +545,21 @@ const request = (function(_global) {
         },
       })
     ).then(
-      success => {},
+      success => {
+        return success;
+      },
       error => {
         // 处理403 forbidden
         const { status, responseJSON = {} } = error || {};
         if (responseJSON.message) {
-          Message.error(responseJSON.message);
+          const _errorcontent = responseJSON?.data ? ` : ${responseJSON.data}` : '';
+          Message.error(responseJSON.message + _errorcontent);
         }
-        if (
+        const shouldRedirectToLogin =
           [401, 403].includes(status) &&
-          ['unknown user!', 'token invalid!', 'token expired!'].includes(responseJSON.message)
-        ) {
+          typeof responseJSON.message === 'string' &&
+          /(token\s*(invalid|expired)|unknown\s*user)/i.test(responseJSON.message);
+        if (shouldRedirectToLogin) {
           goLogin();
         }
         return error;

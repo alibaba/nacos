@@ -22,10 +22,13 @@ const initialState = {
 };
 
 const getSubscribers = params => dispatch =>
-  request.get('v1/ns/service/subscribers', { params }).then(data => {
+  request.get('v3/console/ns/service/subscribers', { params }).then(data => {
     dispatch({
       type: GET_SUBSCRIBERS,
-      data,
+      data: {
+        subscribers: data.data.pageItems,
+        count: data.data.totalCount,
+      },
     });
   });
 const removeSubscribers = () => dispatch => dispatch({ type: REMOVE_SUBSCRIBERS });

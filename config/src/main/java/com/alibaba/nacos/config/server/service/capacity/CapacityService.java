@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.service.capacity;
 import com.alibaba.nacos.config.server.constant.CounterMode;
 import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.model.capacity.GroupCapacity;
-import com.alibaba.nacos.config.server.model.capacity.TenantCapacity;
+import com.alibaba.nacos.config.server.model.capacity.NamespaceCapacity;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
@@ -99,7 +99,7 @@ public class CapacityService {
             }
             lastId = groupCapacityList.get(groupCapacityList.size() - 1).getId();
             for (GroupCapacity groupCapacity : groupCapacityList) {
-                String group = groupCapacity.getGroup();
+                String group = groupCapacity.getGroupName();
                 groupCapacityPersistService.correctUsage(group, TimeUtils.getCurrentTime());
             }
             try {
@@ -127,7 +127,7 @@ public class CapacityService {
         long lastId = 0;
         int pageSize = 100;
         while (true) {
-            List<TenantCapacity> tenantCapacityList = tenantCapacityPersistService
+            List<NamespaceCapacity> tenantCapacityList = tenantCapacityPersistService
                     .getCapacityList4CorrectUsage(lastId, pageSize);
             if (tenantCapacityList.isEmpty()) {
                 break;
@@ -137,8 +137,8 @@ public class CapacityService {
                 Thread.sleep(100);
             } catch (InterruptedException ignored) {
             }
-            for (TenantCapacity tenantCapacity : tenantCapacityList) {
-                String tenant = tenantCapacity.getTenant();
+            for (NamespaceCapacity tenantCapacity : tenantCapacityList) {
+                String tenant = tenantCapacity.getNamespaceId();
                 tenantCapacityPersistService.correctUsage(tenant, TimeUtils.getCurrentTime());
             }
         }
@@ -225,7 +225,7 @@ public class CapacityService {
             boolean ignoreQuotaLimit) {
         final Timestamp now = TimeUtils.getCurrentTime();
         GroupCapacity groupCapacity = new GroupCapacity();
-        groupCapacity.setGroup(group);
+        groupCapacity.setGroupName(group);
         groupCapacity.setQuota(defaultQuota);
         groupCapacity.setGmtModified(now);
         if (CounterMode.INCREMENT == counterMode) {
@@ -384,7 +384,7 @@ public class CapacityService {
         try {
             final Timestamp now = TimeUtils.getCurrentTime();
             GroupCapacity groupCapacity = new GroupCapacity();
-            groupCapacity.setGroup(group);
+            groupCapacity.setGroupName(group);
             // When adding a new quota, quota = 0 means that the quota is the default value.
             // In order to update the default quota, only the Nacos configuration needs to be modified,
             // and most of the data in the table need not be updated.
@@ -415,7 +415,7 @@ public class CapacityService {
      * @return operate successfully or not.
      */
     public boolean insertAndUpdateTenantUsage(CounterMode counterMode, String tenant, boolean ignoreQuotaLimit) {
-        TenantCapacity tenantCapacity = getTenantCapacity(tenant);
+        NamespaceCapacity tenantCapacity = getTenantCapacity(tenant);
         if (tenantCapacity == null) {
             // Init capacity information.
             initTenantCapacity(tenant);
@@ -425,8 +425,8 @@ public class CapacityService {
     
     private boolean updateTenantUsage(CounterMode counterMode, String tenant, boolean ignoreQuotaLimit) {
         final Timestamp now = TimeUtils.getCurrentTime();
-        TenantCapacity tenantCapacity = new TenantCapacity();
-        tenantCapacity.setTenant(tenant);
+        NamespaceCapacity tenantCapacity = new NamespaceCapacity();
+        tenantCapacity.setNamespaceId(tenant);
         tenantCapacity.setQuota(PropertyUtil.getDefaultTenantQuota());
         tenantCapacity.setGmtModified(now);
         if (CounterMode.INCREMENT == counterMode) {
@@ -485,8 +485,8 @@ public class CapacityService {
             Integer maxAggrSize) {
         try {
             final Timestamp now = TimeUtils.getCurrentTime();
-            TenantCapacity tenantCapacity = new TenantCapacity();
-            tenantCapacity.setTenant(tenant);
+            NamespaceCapacity tenantCapacity = new NamespaceCapacity();
+            tenantCapacity.setNamespaceId(tenant);
             // When adding a new quota, quota = 0 means that the quota is the default value.
             // In order to update the default quota, only the Nacos configuration needs to be modified,
             // and most of the data in the table need not be updated.
@@ -507,7 +507,7 @@ public class CapacityService {
         return false;
     }
     
-    public TenantCapacity getTenantCapacity(String tenant) {
+    public NamespaceCapacity getTenantCapacity(String tenant) {
         return tenantCapacityPersistService.getTenantCapacity(tenant);
     }
     

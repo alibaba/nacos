@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.context.addition;
 
+import com.alibaba.nacos.plugin.auth.api.AuthResult;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,7 +56,7 @@ class AuthContextTest {
     @Test
     void testSetAuthResult() {
         assertNull(authContext.getAuthResult());
-        authContext.setAuthResult(true);
-        assertTrue((boolean) authContext.getAuthResult());
+        authContext.setAuthResult(AuthResult.successResult());
+        assertTrue(((AuthResult) authContext.getAuthResult()).isSuccess());
     }
 }

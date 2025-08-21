@@ -94,6 +94,28 @@ public class RequestResource {
         return result;
     }
     
+    /**
+     * Create new lock request resource builder.
+     *
+     * @return lock request resource builder
+     */
+    public static Builder lockBuilder() {
+        Builder result = new Builder();
+        result.setType(SignType.LOCK);
+        return result;
+    }
+    
+    /**
+     * Create new AI request resource builder.
+     *
+     * @return ai request resource builder
+     */
+    public static Builder aiBuilder() {
+        Builder result = new Builder();
+        result.setType(SignType.AI);
+        return result;
+    }
+    
     public static class Builder {
         
         private String type;

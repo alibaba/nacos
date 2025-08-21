@@ -35,7 +35,7 @@ import static org.mockito.Mockito.mock;
 
 class DiskCacheTest {
     
-    private static final String CACHE_DIR = DiskCacheTest.class.getResource("/").getPath() + "cache/";
+    private static final String CACHE_DIR = DiskCacheTest.class.getClassLoader().getResource("disk_cache_test").getPath() + "cache/";
     
     private ServiceInfo serviceInfo;
     
@@ -61,7 +61,7 @@ class DiskCacheTest {
             for (File each : file.listFiles()) {
                 each.delete();
             }
-            file.delete();
+            file.deleteOnExit();
         }
     }
     
@@ -88,7 +88,7 @@ class DiskCacheTest {
     
     @Test
     void testReadCacheForAllSituation() {
-        String dir = DiskCacheTest.class.getResource("/").getPath() + "/disk_cache_test";
+        String dir = DiskCacheTest.class.getClassLoader().getResource("disk_cache_test").getPath();
         Map<String, ServiceInfo> actual = DiskCache.read(dir);
         assertEquals(2, actual.size());
         assertTrue(actual.containsKey("legal@@no_name@@file"));

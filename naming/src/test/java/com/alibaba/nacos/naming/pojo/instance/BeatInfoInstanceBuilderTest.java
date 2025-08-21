@@ -19,6 +19,8 @@ package com.alibaba.nacos.naming.pojo.instance;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,7 +28,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.mock.env.MockEnvironment;
+
 import java.util.HashMap;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -44,6 +49,8 @@ class BeatInfoInstanceBuilderTest {
     
     private BeatInfoInstanceBuilder builder;
     
+    private ConfigurableEnvironment cachedEnvironment;
+    
     @BeforeAll
     static void setUpBeforeClass() {
         NacosServiceLoader.load(InstanceExtensionHandler.class);
@@ -51,6 +58,8 @@ class BeatInfoInstanceBuilderTest {
     
     @BeforeEach
     void setUp() throws Exception {
+        cachedEnvironment = EnvUtil.getEnvironment();
+        EnvUtil.setEnvironment(new MockEnvironment());
         builder = BeatInfoInstanceBuilder.newBuilder();
         builder.setRequest(request);
         beatInfo = new RsInfo();
@@ -60,6 +69,11 @@ class BeatInfoInstanceBuilderTest {
         beatInfo.setPort(8848);
         beatInfo.setWeight(10);
         beatInfo.setMetadata(new HashMap<>());
+    }
+    
+    @AfterEach
+    void tearDown() {
+        EnvUtil.setEnvironment(cachedEnvironment);
     }
     
     @Test

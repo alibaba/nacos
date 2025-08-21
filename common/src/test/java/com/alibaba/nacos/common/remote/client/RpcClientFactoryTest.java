@@ -18,7 +18,9 @@ package com.alibaba.nacos.common.remote.client;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.common.remote.client.grpc.DefaultGrpcClientConfig;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcClusterClient;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -29,6 +31,8 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.HashMap;
@@ -59,12 +63,23 @@ class RpcClientFactoryTest {
     RpcClientTlsConfig rpcClientTlsConfig;
     
     @BeforeAll
-    static void setUpBeforeClass() throws NoSuchFieldException, IllegalAccessException {
+    static void setUpBeforeClass()
+            throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         clientMapField = RpcClientFactory.class.getDeclaredField("CLIENT_MAP");
         clientMapField.setAccessible(true);
-        Field modifiersField1 = Field.class.getDeclaredField("modifiers");
-        modifiersField1.setAccessible(true);
-        modifiersField1.setInt(clientMapField, clientMapField.getModifiers() & ~Modifier.FINAL);
+        Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
+        getDeclaredFields0.setAccessible(true);
+        Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
+        Field modifiersField1 = null;
+        for (Field each : fields) {
+            if ("modifiers".equals(each.getName())) {
+                modifiersField1 = each;
+            }
+        }
+        if (modifiersField1 != null) {
+            modifiersField1.setAccessible(true);
+            modifiersField1.setInt(clientMapField, clientMapField.getModifiers() & ~Modifier.FINAL);
+        }
     }
     
     @AfterEach
@@ -212,5 +227,24 @@ class RpcClientFactoryTest {
         assertEquals(testClient.getLabels(), labels);
         assertEquals(testClient.getConnectionType(), ConnectionType.GRPC);
         assertEquals(testClient.getName(), "testClient");
+    }
+    
+    @Test
+    void testCreateClusterClientWithProperties() {
+        Mockito.when(rpcClientTlsConfig.getEnableTls()).thenReturn(true);
+        Properties properties = new Properties();
+        properties.setProperty("nacos.remote.client.grpc.maxinbound.message.size", "100000");
+        Map<String, String> labels = new HashMap<>();
+        labels.put("tls.enable", "false");
+        labels.put("labelKey", "labelValue");
+        GrpcClientConfig clientConfig = DefaultGrpcClientConfig.newBuilder().buildClusterFromProperties(properties)
+                .setLabels(labels).build();
+        GrpcClusterClient testClient = (GrpcClusterClient) RpcClientFactory.createClusterClient("testClient",
+                ConnectionType.GRPC, clientConfig);
+        assertEquals(testClient.getLabels(), labels);
+        assertEquals(testClient.getConnectionType(), ConnectionType.GRPC);
+        assertEquals(testClient.getName(), "testClient");
+        GrpcClientConfig testConfig = (GrpcClientConfig) testClient.rpcClientConfig;
+        assertEquals(testConfig.maxInboundMessageSize(), 100000);
     }
 }

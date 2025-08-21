@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.dump;
 
+import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
@@ -35,7 +36,7 @@ import javax.annotation.PostConstruct;
  */
 @Conditional(ConditionOnExternalStorage.class)
 @Component
-@DependsOn({"rpcConfigChangeNotifier", "configGrayModelMigrateService"})
+@DependsOn({"rpcConfigChangeNotifier", "configMigrateService"})
 public class ExternalDumpService extends DumpService {
     
     /**
@@ -48,8 +49,10 @@ public class ExternalDumpService extends DumpService {
             NamespacePersistService namespacePersistService,
             HistoryConfigInfoPersistService historyConfigInfoPersistService,
             ConfigInfoGrayPersistService configInfoGrayPersistService,
-            ServerMemberManager memberManager) {
-        super(configInfoPersistService, namespacePersistService, historyConfigInfoPersistService, configInfoGrayPersistService, memberManager);
+            ServerMemberManager memberManager,
+            ConfigMigrateService configMigrateService) {
+        super(configInfoPersistService, namespacePersistService, historyConfigInfoPersistService,
+                configInfoGrayPersistService, memberManager, configMigrateService);
     }
     
     @PostConstruct

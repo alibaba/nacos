@@ -40,6 +40,8 @@ public class ConfigMetadata {
         
         private String appName;
         
+        private String configTags;
+        
         public String getGroup() {
             return group;
         }
@@ -80,6 +82,14 @@ public class ConfigMetadata {
             this.appName = appName;
         }
         
+        public String getConfigTags() {
+            return configTags;
+        }
+        
+        public void setConfigTags(String configTags) {
+            this.configTags = configTags;
+        }
+        
         @Override
         public boolean equals(Object o) {
             if (this == o) {
@@ -91,12 +101,12 @@ public class ConfigMetadata {
             ConfigExportItem that = (ConfigExportItem) o;
             return Objects.equals(group, that.group) && Objects.equals(dataId, that.dataId) && Objects
                     .equals(desc, that.desc) && Objects.equals(type, that.type) && Objects
-                    .equals(appName, that.appName);
+                    .equals(appName, that.appName) && Objects.equals(configTags, that.configTags);
         }
         
         @Override
         public int hashCode() {
-            return Objects.hash(group, dataId, desc, type, appName);
+            return Objects.hash(group, dataId, desc, type, appName, configTags);
         }
     }
     

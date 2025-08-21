@@ -18,11 +18,11 @@ package com.alibaba.nacos.plugin.auth.impl.authenticate;
 
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
-import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleService;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetails;
-import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUserService;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,13 +39,13 @@ import static org.mockito.Mockito.when;
 public class LdapAuthenticationManagerTest {
     
     @Mock
-    private NacosUserDetailsServiceImpl userDetailsService;
+    private NacosUserService userDetailsService;
     
     @Mock
     private TokenManagerDelegate jwtTokenManager;
     
     @Mock
-    private NacosRoleServiceImpl roleService;
+    private NacosRoleService roleService;
     
     @Mock
     private LdapTemplate ldapTemplate;

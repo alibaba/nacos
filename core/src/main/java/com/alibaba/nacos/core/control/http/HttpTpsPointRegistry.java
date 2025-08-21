@@ -20,6 +20,7 @@ package com.alibaba.nacos.core.control.http;
 
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.control.TpsControlConfig;
+import com.alibaba.nacos.core.web.NacosWebBean;
 import com.alibaba.nacos.plugin.control.ControlManagerCenter;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -39,6 +40,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @version $Id: RequestHandlerRegistry.java, v 0.1 2020年07月13日 8:24 PM liuzunfei Exp $
  */
 @Service
+@NacosWebBean
 public class HttpTpsPointRegistry implements ApplicationListener<ContextRefreshedEvent> {
     
     private volatile AtomicBoolean isInit = new AtomicBoolean(false);

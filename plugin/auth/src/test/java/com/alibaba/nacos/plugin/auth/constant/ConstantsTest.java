@@ -29,7 +29,6 @@ class ConstantsTest {
         assertEquals("nacos.core.auth.caching.enabled", Constants.Auth.NACOS_CORE_AUTH_CACHING_ENABLED);
         assertEquals("nacos.core.auth.server.identity.key", Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY);
         assertEquals("nacos.core.auth.server.identity.value", Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE);
-        assertEquals("nacos.core.auth.enable.userAgentAuthWhite", Constants.Auth.NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE);
     }
     
     @Test

@@ -19,11 +19,14 @@ package com.alibaba.nacos.config.server.exception;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.config.server.controller.v2.HistoryControllerV2;
+import com.alibaba.nacos.core.listener.startup.NacosStartUp;
+import com.alibaba.nacos.core.listener.startup.NacosStartUpManager;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
@@ -41,8 +44,13 @@ class GlobalExceptionHandlerTest {
     @Autowired
     private WebApplicationContext context;
     
-    @MockBean
+    @MockitoBean
     private HistoryControllerV2 historyControllerV2;
+    
+    @BeforeAll
+    static void beforeAll() {
+        NacosStartUpManager.start(NacosStartUp.CORE_START_UP_PHASE);
+    }
     
     @BeforeEach
     void before() {
@@ -52,8 +60,10 @@ class GlobalExceptionHandlerTest {
     @Test
     void testNacosRunTimeExceptionHandler() throws Exception {
         // 设置HistoryControllerV2的行为，使其抛出NacosRuntimeException并被GlobalExceptionHandler捕获处理
-        when(historyControllerV2.getConfigsByTenant("test")).thenThrow(new NacosRuntimeException(NacosException.INVALID_PARAM))
-                .thenThrow(new NacosRuntimeException(NacosException.SERVER_ERROR)).thenThrow(new NacosRuntimeException(503));
+        when(historyControllerV2.getConfigsByTenant("test")).thenThrow(
+                        new NacosRuntimeException(NacosException.INVALID_PARAM))
+                .thenThrow(new NacosRuntimeException(NacosException.SERVER_ERROR))
+                .thenThrow(new NacosRuntimeException(503));
         
         // 执行请求并验证响应码
         ResultActions resultActions = mockMvc.perform(get("/v2/cs/history/configs").param("namespaceId", "test"));

@@ -27,7 +27,7 @@ import io.prometheus.client.Histogram;
  */
 public class MetricsMonitor {
     
-    private static final Gauge NACOS_MONITOR = Gauge.build().name("nacos_monitor").labelNames("module", "name")
+    private static final Gauge NACOS_MONITOR_GAUGE = Gauge.build().name("nacos_monitor").labelNames("module", "name")
             .help("nacos_monitor").register();
     
     private static final Histogram NACOS_CLIENT_REQUEST_HISTOGRAM = Histogram.build()
@@ -39,11 +39,11 @@ public class MetricsMonitor {
             .labelNames("module", "req_class", "res_status", "res_code", "err_class").register();
     
     public static Gauge.Child getServiceInfoMapSizeMonitor() {
-        return NACOS_MONITOR.labels("naming", "serviceInfoMapSize");
+        return NACOS_MONITOR_GAUGE.labels("naming", "serviceInfoMapSize");
     }
     
     public static Gauge.Child getListenConfigCountMonitor() {
-        return NACOS_MONITOR.labels("config", "listenConfigCount");
+        return NACOS_MONITOR_GAUGE.labels("config", "listenConfigCount");
     }
     
     public static Histogram.Child getConfigRequestMonitor(String method, String url, String code) {
