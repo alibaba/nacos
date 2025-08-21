@@ -42,7 +42,7 @@ class NamespaceValidationConfigTest {
         declaredConstructor.setAccessible(true);
         NamespaceValidationConfig config = declaredConstructor.newInstance();
 
-        assertTrue(config.isNamespaceValidationEnabled());
+        assertFalse(config.isNamespaceValidationEnabled());
     }
 
     @Test
