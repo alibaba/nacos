@@ -20,7 +20,7 @@ import com.alibaba.nacos.core.config.AbstractDynamicConfig;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
 /**
- * The type Namespace validation config.
+ * The type Namespace validation config, default is disable.
  *
  * @author FangYuan
  * @since 2025-08-13 13:33:16
@@ -44,7 +44,7 @@ public class NamespaceValidationConfig extends AbstractDynamicConfig {
 
     @Override
     protected void getConfigFromEnv() {
-        namespaceValidationEnabled = EnvUtil.getProperty("nacos.core.namespace.validation.enabled", Boolean.class, true);
+        namespaceValidationEnabled = EnvUtil.getProperty("nacos.core.namespace.validation.enabled", Boolean.class, false);
     }
 
     public boolean isNamespaceValidationEnabled() {

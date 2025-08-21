@@ -18,6 +18,8 @@
 
 package com.alibaba.nacos.core.namespace.filter;
 
+import com.alibaba.nacos.api.ai.remote.request.AbstractMcpRequest;
+import com.alibaba.nacos.api.config.remote.request.AbstractConfigRequest;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest;
@@ -35,6 +37,8 @@ import java.lang.reflect.Method;
 
 /**
  * Namespace validation request filter for NamingRequest.
+ * not include: ConfigFuzzyWatchRequestHandler, DistroDataRequestHandler, HealthCheckRequest, LockRequestHandler, MemberReportHandler
+ * NamingFuzzyWatchRequestHandler: fuzzy watch, ServerLoaderInfoRequestHandler
  *
  * @author FangYuan
  * @since 2025-08-11 21:51:29
@@ -51,6 +55,7 @@ public class NamespaceValidationRequestFilter extends AbstractRequestFilter {
     @Override
     protected Response filter(Request request, RequestMeta meta, Class handlerClazz) throws NacosException {
         try {
+            // check global namespace validation config
             boolean namespaceValidationEnabled = NamespaceValidationConfig.getInstance().isNamespaceValidationEnabled();
             if (!namespaceValidationEnabled) {
                 return null;
@@ -62,17 +67,13 @@ public class NamespaceValidationRequestFilter extends AbstractRequestFilter {
                 if (!namespaceValidation.enable()) {
                     return null;
                 }
-                if (!(request instanceof AbstractNamingRequest)) {
-                    return null;
-                }
 
-                AbstractNamingRequest namingRequest = (AbstractNamingRequest) request;
-                boolean exist = isNamespaceExist(namingRequest);
+                String namespace = getNamespace(request);
+                boolean exist = isNamespaceExist(namespace);
                 if (!exist) {
                     Response response = super.getDefaultResponseInstance(handlerClazz);
                     response.setErrorInfo(ErrorCode.NAMESPACE_NOT_EXIST.getCode(),
-                            String.format("Namespace '%s' does not exist. Please create the namespace first.",
-                                    namingRequest.getNamespace()));
+                            String.format("Namespace '%s' does not exist. Please create the namespace first.", namespace));
 
                     return response;
                 }
@@ -84,14 +85,32 @@ public class NamespaceValidationRequestFilter extends AbstractRequestFilter {
         return null;
     }
 
-    private boolean isNamespaceExist(AbstractNamingRequest request) {
+    private String getNamespace(Request request) {
+        String namespace = null;
+        // process naming module
+        if (request instanceof AbstractNamingRequest) {
+            namespace = ((AbstractNamingRequest) request).getNamespace();
+        }
+        // process config module
+        else if (request instanceof AbstractConfigRequest) {
+            namespace = ((AbstractConfigRequest) request).getTenant();
+        }
+        // process ai module
+        else if (request instanceof AbstractMcpRequest) {
+            namespace = ((AbstractMcpRequest) request).getNamespaceId();
+        }
+
+        return namespace;
+    }
+
+    private boolean isNamespaceExist(String namespace) {
         boolean namespaceExist;
         try {
-            namespaceExist = namespaceOperationService.isNamespaceExist(request.getNamespace());
+            namespaceExist = namespaceOperationService.isNamespaceExist(namespace);
         } catch (NacosApiException e) {
             namespaceExist = true;
         } catch (Exception e) {
-            Loggers.CORE.warn("Namespace validation query db error for request: {}, exception: {}", request, e);
+            Loggers.CORE.warn("Namespace validation query db error for namespace: {}, exception: {}", namespace, e);
             // throw exception will make the request fail
             namespaceExist = false;
         }
