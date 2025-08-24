@@ -36,6 +36,7 @@ import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alipay.sofa.jraft.Node;
 
 import java.util.Collection;
@@ -115,7 +116,8 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, Reque
     
     @Override
     public void init(RaftConfig config) {
-        if (initialized.compareAndSet(false, true)) {
+        // fix: when the server is started in standalone mode, do not initialize the JRaft protocol
+        if (initialized.compareAndSet(false, true) && !EnvUtil.getStandaloneMode()) {
             this.raftConfig = config;
             NotifyCenter.registerToSharePublisher(RaftEvent.class);
             this.raftServer.init(this.raftConfig);
