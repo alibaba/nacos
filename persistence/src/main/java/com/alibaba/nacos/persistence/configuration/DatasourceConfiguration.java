@@ -71,7 +71,8 @@ public class DatasourceConfiguration implements ApplicationContextInitializer<Co
         if (isUseExternalDb()) {
             setEmbeddedStorage(false);
         } else {
-            boolean embeddedStorage = isEmbeddedStorage() || Boolean.getBoolean(PersistenceConstant.EMBEDDED_STORAGE);
+            boolean embeddedStorage = isEmbeddedStorage() || Boolean.getBoolean(PersistenceConstant.EMBEDDED_STORAGE)
+                    || PersistenceConstant.DERBY.equalsIgnoreCase(platform);
             setEmbeddedStorage(embeddedStorage);
             
             // If the embedded data source storage is not turned on, it is automatically
