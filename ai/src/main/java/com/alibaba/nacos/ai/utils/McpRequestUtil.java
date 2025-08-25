@@ -20,6 +20,7 @@ import com.alibaba.nacos.ai.form.mcp.admin.McpDetailForm;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServiceRef;
 import com.alibaba.nacos.api.ai.model.mcp.McpTool;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -30,6 +31,8 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 /**
  * MCP request util.
@@ -126,5 +129,21 @@ public class McpRequestUtil {
             throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "serverSpecification or toolSpecification is invalid. Can't be parsed.");
         }
+    }
+    
+    /**
+     * Transfer input to McpServiceRef.
+     *
+     * @param input input object, should be McpServiceRef type or Map type.
+     * @return McpServiceRef
+     */
+    public static McpServiceRef transferToMcpServiceRef(Object input) {
+        if (input instanceof McpServiceRef) {
+            return (McpServiceRef) input;
+        }
+        if (input instanceof Map) {
+            return JacksonUtils.toObj(JacksonUtils.toJson(input), McpServiceRef.class);
+        }
+        throw new IllegalArgumentException("input must be instance of McpServiceRef or Map");
     }
 }

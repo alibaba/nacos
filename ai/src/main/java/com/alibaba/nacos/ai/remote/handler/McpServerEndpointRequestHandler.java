@@ -19,7 +19,10 @@ package com.alibaba.nacos.ai.remote.handler;
 import com.alibaba.nacos.ai.index.McpServerIndex;
 import com.alibaba.nacos.ai.model.mcp.McpServerIndexData;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.ai.utils.McpRequestUtil;
 import com.alibaba.nacos.ai.utils.McpRequestUtils;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
+import com.alibaba.nacos.api.ai.model.mcp.FrontEndpointConfig;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServiceRef;
 import com.alibaba.nacos.api.ai.remote.AiRemoteConstants;
@@ -30,12 +33,15 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.McpServerRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -68,11 +74,18 @@ public class McpServerEndpointRequestHandler
     
     @Override
     @ExtractorManager.Extractor(rpcExtractor = McpServerRequestParamExtractor.class)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.AI)
     public McpServerEndpointResponse handle(McpServerEndpointRequest request, RequestMeta meta) throws NacosException {
         McpRequestUtils.fillNamespaceId(request);
-        checkParameters(request);
-        Instance instance = buildInstance(request);
-        return doHandler(request, instance, meta);
+        try {
+            checkParameters(request);
+            Instance instance = buildInstance(request);
+            return doHandler(request, instance, meta);
+        } catch (NacosException e) {
+            McpServerEndpointResponse response = new McpServerEndpointResponse();
+            response.setErrorInfo(e.getErrCode(), e.getErrMsg());
+            return response;
+        }
     }
     
     private void checkParameters(McpServerEndpointRequest request) throws NacosApiException {
@@ -84,7 +97,8 @@ public class McpServerEndpointRequestHandler
     
     private McpServerEndpointResponse doHandler(McpServerEndpointRequest request, Instance instance, RequestMeta meta)
             throws NacosException {
-        McpServerIndexData indexData = mcpServerIndex.getMcpServerByName(request.getNamespaceId(), request.getMcpName());
+        McpServerIndexData indexData = mcpServerIndex.getMcpServerByName(request.getNamespaceId(),
+                request.getMcpName());
         if (null == indexData) {
             throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.MCP_SERVER_NOT_FOUND,
                     String.format("MCP server `%s` not found in namespaceId: `%s`", request.getMcpName(),
@@ -92,7 +106,11 @@ public class McpServerEndpointRequestHandler
         }
         McpServerDetailInfo mcpServer = mcpServerOperationService.getMcpServerDetail(request.getNamespaceId(),
                 indexData.getId(), null, request.getVersion());
-        McpServiceRef serviceRef = mcpServer.getRemoteServerConfig().getServiceRef();
+        McpServiceRef serviceRef = buildServiceRef(mcpServer);
+        if (null == serviceRef) {
+            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.MCP_SERVER_REF_ENDPOINT_SERVICE_NOT_FOUND,
+                    "The Mcp Server Ref endpoint service not found.");
+        }
         Service service = Service.newService(request.getNamespaceId(), serviceRef.getGroupName(),
                 serviceRef.getServiceName(), true);
         switch (request.getType()) {
@@ -126,6 +144,22 @@ public class McpServerEndpointRequestHandler
             instance.getMetadata().put(VERSION_TAG, request.getVersion());
         }
         return instance;
+    }
+    
+    private McpServiceRef buildServiceRef(McpServerDetailInfo mcpServer) {
+        boolean isRegisterToFrontend = AiConstants.Mcp.MCP_PROTOCOL_HTTP.equals(mcpServer.getProtocol());
+        McpServiceRef result = null;
+        if (isRegisterToFrontend) {
+            for (FrontEndpointConfig each : mcpServer.getRemoteServerConfig().getFrontEndpointConfigList()) {
+                if (AiConstants.Mcp.MCP_ENDPOINT_TYPE_REF.equals(each.getEndpointType())) {
+                    result = McpRequestUtil.transferToMcpServiceRef(each.getEndpointData());
+                    break;
+                }
+            }
+        } else {
+            result = mcpServer.getRemoteServerConfig().getServiceRef();
+        }
+        return result;
     }
     
     private void doRegister(Service service, Instance instance, String connectionId) throws NacosException {
