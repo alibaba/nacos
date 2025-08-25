@@ -31,7 +31,7 @@
     "@babel/core": "^7.7.7",
     "@babel/plugin-proposal-decorators": "^7.7.4",
     "@babel/preset-env": "^7.7.7",
-    "@babel/runtime": "^7.7.7",
+    "@babel/runtime": "^7.28.2",
     "babel-eslint": "^10.0.1",
     "babel-loader": "^8.0.4",
     "babel-plugin-import": "^1.13.0",
@@ -68,7 +68,6 @@
     "@alifd/next": "^1.26.24",
     "@alifd/theme-design-pro": "0.x",
     "@iarna/toml": "^3.0.0",
-    "@readme/openapi-parser": "^4.1.2",
     "axios": "^0.21.1",
     "core-js": "^3.6.4",
     "js-yaml": "^4.1.0",
@@ -84,6 +83,6 @@
     "react-router-redux": "^4.0.8",
     "redux": "^4.0.5",
     "redux-thunk": "^2.3.0",
-    "swagger-parser": "^10.0.3"
+    "swagger2openapi": "^7.0.8"
   }
 }

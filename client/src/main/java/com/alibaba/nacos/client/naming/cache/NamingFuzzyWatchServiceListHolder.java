@@ -27,6 +27,7 @@ import com.alibaba.nacos.client.naming.event.NamingFuzzyWatchNotifyEvent;
 import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
@@ -58,7 +59,7 @@ import static com.alibaba.nacos.api.model.v2.ErrorCode.FUZZY_WATCH_PATTERN_OVER_
  *
  * @author tanyongquan
  */
-public class NamingFuzzyWatchServiceListHolder extends SmartSubscriber {
+public class NamingFuzzyWatchServiceListHolder extends SmartSubscriber implements Closeable {
     
     private static final Logger LOGGER = LogUtils.logger(NamingFuzzyWatchServiceListHolder.class);
     
@@ -92,7 +93,10 @@ public class NamingFuzzyWatchServiceListHolder extends SmartSubscriber {
     /**
      * shut down.
      */
+    @Override
     public void shutdown() {
+        // deregister subscriber which registered in constructor
+        NotifyCenter.deregisterSubscriber(this);
         if (executorService != null && !executorService.isShutdown()) {
             executorService.shutdown();
         }
