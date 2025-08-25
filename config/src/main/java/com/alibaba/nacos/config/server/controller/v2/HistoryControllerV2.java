@@ -130,6 +130,7 @@ public class HistoryControllerV2 {
             @RequestParam("group") String group,
             @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
             @RequestParam(value = "nid") Long nid) throws AccessException {
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         return Result.success(historyService.getConfigHistoryInfoDetail(dataId, group, namespaceId, nid));
     }
     
