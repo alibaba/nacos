@@ -58,7 +58,7 @@ public class ServiceInfoHolder implements Closeable {
     private String notifierEventScope;
     
     private boolean enableClientMetrics = true;
-    
+
     public ServiceInfoHolder(String namespace, String notifierEventScope, NacosClientProperties properties) {
         cacheDir = CacheDirUtil.initCacheDir(namespace, properties);
         instancesDiffer = new InstancesDiffer();
@@ -109,10 +109,10 @@ public class ServiceInfoHolder implements Closeable {
      * @param json service json
      * @return service info
      */
-    public ServiceInfo processServiceInfo(String json) {
+    public ServiceInfo processServiceInfo(String json, boolean forceNotify) {
         ServiceInfo serviceInfo = JacksonUtils.toObj(json, ServiceInfo.class);
         serviceInfo.setJsonFromServer(json);
-        return processServiceInfo(serviceInfo);
+        return processServiceInfo(serviceInfo, forceNotify);
     }
     
     /**
@@ -121,7 +121,7 @@ public class ServiceInfoHolder implements Closeable {
      * @param serviceInfo new service info
      * @return service info
      */
-    public ServiceInfo processServiceInfo(ServiceInfo serviceInfo) {
+    public ServiceInfo processServiceInfo(ServiceInfo serviceInfo, boolean forceNotify) {
         String serviceKey = serviceInfo.getKeyWithoutClusters();
         if (serviceKey == null) {
             NAMING_LOGGER.warn("process service info but serviceKey is null, service host: {}",
@@ -133,6 +133,12 @@ public class ServiceInfoHolder implements Closeable {
             //empty or error push, just ignore
             NAMING_LOGGER.warn("process service info but found empty or error push, serviceKey: {}, "
                     + "pushEmptyProtection: {}, hosts: {}", serviceKey, pushEmptyProtection, serviceInfo.getHosts());
+            if (forceNotify) {
+                InstancesDiff diff = getServiceInfoDiff(null, oldService);
+                NotifyCenter.publishEvent(
+                        new InstancesChangeEvent(notifierEventScope, oldService.getName(), oldService.getGroupName(),
+                                oldService.getClusters(), oldService.getHosts(), diff));
+            }
             return oldService;
         }
         serviceInfoMap.put(serviceKey, serviceInfo);
@@ -140,7 +146,7 @@ public class ServiceInfoHolder implements Closeable {
         if (StringUtils.isBlank(serviceInfo.getJsonFromServer())) {
             serviceInfo.setJsonFromServer(JacksonUtils.toJson(serviceInfo));
         }
-        
+
         if (enableClientMetrics) {
             try {
                 MetricsMonitor.getServiceInfoMapSizeMonitor().set(serviceInfoMap.size());
@@ -148,8 +154,8 @@ public class ServiceInfoHolder implements Closeable {
                 NAMING_LOGGER.error("Failed to update metrics for service info map size", t);
             }
         }
-        
-        if (diff.hasDifferent()) {
+
+        if (diff.hasDifferent() || forceNotify) {
             NAMING_LOGGER.info("current ips:({}) service: {} -> {}", serviceInfo.ipCount(), serviceKey,
                     JacksonUtils.toJson(serviceInfo.getHosts()));
             
