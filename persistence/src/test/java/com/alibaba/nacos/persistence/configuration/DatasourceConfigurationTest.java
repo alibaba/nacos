@@ -93,6 +93,15 @@ class DatasourceConfigurationTest {
         assertTrue(DatasourceConfiguration.isEmbeddedStorage());
         assertFalse(DatasourceConfiguration.isUseExternalDb());
     }
+
+    @Test
+    void testInitializeForDerbyForClusterMode2() {
+        EnvUtil.setIsStandalone(false);
+        environment.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY, PersistenceConstant.DERBY);
+        datasourceConfiguration.initialize(context);
+        assertTrue(DatasourceConfiguration.isEmbeddedStorage());
+        assertFalse(DatasourceConfiguration.isUseExternalDb());
+    }
     
     @Test
     void testInitializeForMySqlForStandaloneMode() {
