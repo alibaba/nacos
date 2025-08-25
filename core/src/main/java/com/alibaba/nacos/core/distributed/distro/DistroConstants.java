@@ -66,5 +66,9 @@ public class DistroConstants {
     public static final String DATA_LOAD_TIMEOUT_MILLISECONDS_STATE = "data_load_timeoutMs";
     
     public static final long DEFAULT_DATA_LOAD_TIMEOUT_MILLISECONDS = 30000L;
+
+    public static final String DATA_VERIFY_BATCH_SIZE = "data_verify_batch_size";
+
+    public static final int DEFAULT_DATA_VERIFY_BATCH_SIZE = 100;
     
 }

@@ -53,6 +53,10 @@ public class GlobalExecutor {
             EnvUtil.getAvailableProcessors(RemoteUtils.getRemoteExecutorTimesOfProcessors()), 60L, TimeUnit.SECONDS,
             new LinkedBlockingQueue<>(RemoteUtils.getRemoteExecutorQueueSize()),
             new ThreadFactoryBuilder().daemon(true).nameFormat("nacos-cluster-grpc-executor-%d").build());
+
+    public static final ScheduledExecutorService DISTRO_VERIFY_EXECUTOR = ExecutorFactory.Managed
+            .newScheduledExecutorService(ClassUtils.getCanonicalName(GlobalExecutor.class), 4,
+                    new NameThreadFactory("com.alibaba.nacos.core.distro.verify"));
     
     public static void runWithoutThread(Runnable runnable) {
         runnable.run();
