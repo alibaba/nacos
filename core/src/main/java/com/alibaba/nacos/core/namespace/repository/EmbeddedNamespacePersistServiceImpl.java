@@ -78,9 +78,9 @@ public class EmbeddedNamespacePersistServiceImpl implements NamespacePersistServ
         TenantInfoMapper tenantInfoMapper = mapperManager
                 .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
         final String sql = tenantInfoMapper.insert(Arrays
-                .asList("kp", "tenant_id", "tenant_name", "tenant_desc", "create_source", "gmt_create",
-                        "gmt_modified"));
-        final Object[] args = new Object[] {kp, tenantId, tenantName, tenantDesc, createResource, time, time};
+                .asList("kp", "tenant_id", "tenant_name", "tenant_desc", "create_source", "gmt_create@NOW()",
+                        "gmt_modified@NOW()"));
+        final Object[] args = new Object[] {kp, tenantId, tenantName, tenantDesc, createResource};
         
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
         

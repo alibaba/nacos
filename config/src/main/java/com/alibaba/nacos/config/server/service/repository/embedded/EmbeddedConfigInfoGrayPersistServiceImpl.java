@@ -178,11 +178,11 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
         
         final String sql = configInfoGrayMapper.insert(
                 Arrays.asList("id", "data_id", "group_id", "tenant_id", "gray_name", "gray_rule", "app_name", "content",
-                        "md5", "src_ip", "src_user", "gmt_create", "gmt_modified"));
+                        "md5", "src_ip", "src_user", "gmt_create@NOW()", "gmt_modified@NOW()"));
         
         Timestamp time = new Timestamp(System.currentTimeMillis());
         final Object[] args = new Object[] {configGrayId, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
-                grayNameTmp, grayRuleTmp, appNameTmp, configInfo.getContent(), md5, srcIp, srcUser, time, time};
+                grayNameTmp, grayRuleTmp, appNameTmp, configInfo.getContent(), md5, srcIp, srcUser};
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
     }
     
