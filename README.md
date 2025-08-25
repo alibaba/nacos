@@ -1,7 +1,7 @@
 
-<img src="doc/Nacos_Logo.png" width="50%" syt height="50%" />
+<img src="doc/Nacos_Logo.png" width="50%" style="height:50%" />
 
-# Nacos: Dynamic  *Na*ming and *Co*nfiguration *S*ervice
+# Nacos: Dynamic *Naming* and *Co*nfiguration *S*ervice
 
 [![Gitter](https://badges.gitter.im/alibaba/nacos.svg)](https://gitter.im/alibaba/nacos?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)   [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 [![Gitter](https://travis-ci.org/alibaba/nacos.svg?branch=master)](https://travis-ci.org/alibaba/nacos)
