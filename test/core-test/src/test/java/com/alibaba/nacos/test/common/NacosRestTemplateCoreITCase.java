@@ -24,7 +24,6 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -55,24 +54,24 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @TestMethodOrder(MethodName.class)
 class NacosRestTemplateCoreITCase {
-    
+
     private static final String INSTANCE_PATH = "/nacos/v1/ns";
-    
+
     private static final String CONFIG_PATH = "/nacos/v1/cs";
-    
+
     private final NacosRestTemplate nacosRestTemplate = HttpClientBeanHolder.getNacosRestTemplate(
             LoggerFactory.getLogger(NacosRestTemplateCoreITCase.class));
-    
+
     @LocalServerPort
     private int port;
-    
+
     private String ip = null;
-    
+
     @BeforeEach
     void init() throws NacosException {
         ip = String.format("http://localhost:%d", port);
     }
-    
+
     @Test
     void testUrlPostConfig() throws Exception {
         String url = ip + CONFIG_PATH + "/configs";
@@ -85,7 +84,7 @@ class NacosRestTemplateCoreITCase {
         System.out.println(restResult.getData());
         System.out.println(restResult.getHeader());
     }
-    
+
     @Test
     void testUrlGetReturnRestResult() throws Exception {
         String url = ip + CONFIG_PATH + "/configs";
@@ -98,7 +97,7 @@ class NacosRestTemplateCoreITCase {
         System.out.println(restResult.getData());
         System.out.println(restResult.getHeader());
     }
-    
+
     @Test
     void testUrlPostForm() throws Exception {
         String url = ip + INSTANCE_PATH + "/instance";
@@ -110,7 +109,7 @@ class NacosRestTemplateCoreITCase {
         assertTrue(restResult.ok());
         System.out.println(restResult.getData());
     }
-    
+
     @Test
     @Disabled("new version can't update instance when service and instance is not exist")
     void testUrlPutFrom() throws Exception {
@@ -123,7 +122,7 @@ class NacosRestTemplateCoreITCase {
         assertTrue(restResult.ok());
         System.out.println(restResult.getData());
     }
-    
+
     @Test
     void testUrlGet() throws Exception {
         String url = ip + INSTANCE_PATH + "/instance/list";
@@ -134,7 +133,7 @@ class NacosRestTemplateCoreITCase {
         assertEquals("DEFAULT_GROUP@@app-test", restResult.getData().get("name"));
         System.out.println(restResult.getData());
     }
-    
+
     @Test
     void testUrlGetByMap() throws Exception {
         String url = ip + INSTANCE_PATH + "/instance/list";
@@ -146,7 +145,7 @@ class NacosRestTemplateCoreITCase {
         assertEquals("DEFAULT_GROUP@@app-test", restResult.getData().get("name"));
         System.out.println(restResult.getData());
     }
-    
+
     @Test
     void testUrlDelete() throws Exception {
         String url = ip + INSTANCE_PATH + "/instance";
@@ -156,5 +155,5 @@ class NacosRestTemplateCoreITCase {
         assertTrue(restResult.ok());
         System.out.println(restResult);
     }
-    
+
 }

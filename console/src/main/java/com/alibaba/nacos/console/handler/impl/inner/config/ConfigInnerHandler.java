@@ -45,7 +45,6 @@ import com.alibaba.nacos.config.server.service.ConfigDetailService;
 import com.alibaba.nacos.config.server.service.ConfigMigrateService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.listener.ConfigListenerStateDelegate;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
@@ -93,36 +92,36 @@ import java.util.stream.Collectors;
 @EnabledInnerHandler
 @Conditional(ConditionFunctionEnabled.ConditionConfigEnabled.class)
 public class ConfigInnerHandler implements ConfigHandler {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigInnerHandler.class);
-    
+
     private static final String EXPORT_CONFIG_FILE_NAME = "nacos_config_export_";
-    
+
     private static final String EXPORT_CONFIG_FILE_NAME_EXT = ".zip";
-    
+
     private static final String EXPORT_CONFIG_FILE_NAME_DATE_FORMAT = "yyyyMMddHHmmss";
-    
+
     private final ConfigInfoPersistService configInfoPersistService;
-    
+
     private final ConfigOperationService configOperationService;
-    
+
     private final ConfigDetailService configDetailService;
-    
+
     private final ConfigListenerStateDelegate configListenerStateDelegate;
-    
+
     private final ConfigMigrateService configMigrateService;
-    
+
     private NamespacePersistService namespacePersistService;
-    
+
     private ConfigInfoBetaPersistService configInfoBetaPersistService;
-    
+
     private ConfigInfoGrayPersistService configInfoGrayPersistService;
 
     /**
      * Flag to indicate if the table `config_info_beta` exists, which means the old version of table schema is used.
      */
     private boolean oldTableVersion;
-    
+
     public ConfigInnerHandler(ConfigOperationService configOperationService,
             ConfigInfoPersistService configInfoPersistService, ConfigDetailService configDetailService,
             NamespacePersistService namespacePersistService, ConfigInfoBetaPersistService configInfoBetaPersistService,
@@ -138,7 +137,7 @@ public class ConfigInnerHandler implements ConfigHandler {
         this.configMigrateService = configMigrateService;
         this.oldTableVersion = namespacePersistService.isExistTable("config_info_beta");
     }
-    
+
     @Override
     public Page<ConfigBasicInfo> getConfigList(int pageNo, int pageSize, String dataId, String group,
             String namespaceId, Map<String, Object> configAdvanceInfo)
@@ -147,7 +146,7 @@ public class ConfigInnerHandler implements ConfigHandler {
                 namespaceId, configAdvanceInfo);
         return transferToConfigBasicInfo(result);
     }
-    
+
     @Override
     public ConfigDetailInfo getConfigDetail(String dataId, String group, String namespaceId) throws NacosException {
         ConfigAllInfo configAllInfo = configInfoPersistService.findConfigAllInfo(dataId, group, namespaceId);
@@ -156,7 +155,7 @@ public class ConfigInnerHandler implements ConfigHandler {
         }
         return ResponseUtil.transferToConfigDetailInfo(configAllInfo);
     }
-    
+
     @Override
     public Boolean publishConfig(ConfigForm configForm, ConfigRequestInfo configRequestInfo) throws NacosException {
         String encryptedDataKeyFinal = configForm.getEncryptedDataKey();
@@ -169,13 +168,13 @@ public class ConfigInnerHandler implements ConfigHandler {
         }
         return configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal);
     }
-    
+
     @Override
     public Boolean deleteConfig(String dataId, String group, String namespaceId, String tag, String clientIp,
             String srcUser) throws NacosException {
         return configOperationService.deleteConfig(dataId, group, namespaceId, tag, clientIp, srcUser, Constants.HTTP);
     }
-    
+
     @Override
     public Boolean batchDeleteConfigs(List<Long> ids, String clientIp, String srcUser) {
         for (Long id : ids) {
@@ -189,7 +188,7 @@ public class ConfigInnerHandler implements ConfigHandler {
         }
         return true;
     }
-    
+
     @Override
     public Page<ConfigBasicInfo> getConfigListByContent(String search, int pageNo, int pageSize, String dataId,
             String group, String namespaceId, Map<String, Object> configAdvanceInfo) throws NacosException {
@@ -203,13 +202,13 @@ public class ConfigInnerHandler implements ConfigHandler {
             throw e;
         }
     }
-    
+
     @Override
     public ConfigListenerInfo getListeners(String dataId, String group, String namespaceId, boolean aggregation)
             throws Exception {
         return configListenerStateDelegate.getListenerState(dataId, group, namespaceId, aggregation);
     }
-    
+
     @Override
     public ConfigListenerInfo getAllSubClientConfigByIp(String ip, boolean all, String namespaceId,
             boolean aggregation) {
@@ -237,7 +236,7 @@ public class ConfigInnerHandler implements ConfigHandler {
         result.setListenersStatus(configMd5Status);
         return result;
     }
-    
+
     @Override
     public ResponseEntity<byte[]> exportConfig(String dataId, String group, String namespaceId, String appName,
             List<Long> ids) throws Exception {
@@ -269,7 +268,7 @@ public class ConfigInnerHandler implements ConfigHandler {
         headers.add("Content-Disposition", "attachment;filename=" + fileName);
         return new ResponseEntity<>(ZipUtils.zip(zipItemList), headers, HttpStatus.OK);
     }
-    
+
     @Override
     public Result<Map<String, Object>> importAndPublishConfig(String srcUser, String namespaceId,
             SameConfigPolicy policy, MultipartFile file, String srcIp, String requestIpApp) throws NacosException {
@@ -282,7 +281,7 @@ public class ConfigInnerHandler implements ConfigHandler {
             failedData.put("succCount", 0);
             return Result.failure(ErrorCode.NAMESPACE_NOT_EXIST, failedData);
         }
-        
+
         List<ConfigAllInfo> configInfoList = new ArrayList<>();
         List<Map<String, String>> unrecognizedList = new ArrayList<>();
         try {
@@ -297,7 +296,7 @@ public class ConfigInnerHandler implements ConfigHandler {
             LOGGER.error("parsing data failed", e);
             return Result.failure(ErrorCode.PARSING_DATA_FAILED, failedData);
         }
-        
+
         if (CollectionUtils.isEmpty(configInfoList)) {
             failedData.put("succCount", 0);
             return Result.failure(ErrorCode.DATA_EMPTY, failedData);
@@ -321,7 +320,7 @@ public class ConfigInnerHandler implements ConfigHandler {
         }
         return Result.success(saveResult);
     }
-    
+
     /**
      * new version import config add .metadata.yml file.
      *
@@ -336,7 +335,7 @@ public class ConfigInnerHandler implements ConfigHandler {
         ZipUtils.ZipItem metaDataItem = unziped.getMetaDataItem();
         String metaData = metaDataItem.getItemData();
         Map<String, Object> failedData = new HashMap<>(4);
-        
+
         ConfigMetadata configMetadata = YamlParserUtil.loadObject(metaData, ConfigMetadata.class);
         if (configMetadata == null || CollectionUtils.isEmpty(configMetadata.getMetadata())) {
             failedData.put("succCount", 0);
@@ -351,12 +350,12 @@ public class ConfigInnerHandler implements ConfigHandler {
                 return Result.failure(ErrorCode.METADATA_ILLEGAL, failedData);
             }
         }
-        
+
         List<ZipUtils.ZipItem> zipItemList = unziped.getZipItemList();
         Set<String> metaDataKeys = configExportItems.stream()
                 .map(metaItem -> GroupKey.getKey(metaItem.getDataId(), metaItem.getGroup()))
                 .collect(Collectors.toSet());
-        
+
         Map<String, String> configContentMap = new HashMap<>(zipItemList.size());
         int itemNameLength = 2;
         zipItemList.forEach(item -> {
@@ -368,7 +367,7 @@ public class ConfigInnerHandler implements ConfigHandler {
                 unrecognizedList.add(unrecognizedItem);
                 return;
             }
-            
+
             String group = groupAdnDataId[0];
             String dataId = groupAdnDataId[1];
             String key = GroupKey.getKey(dataId, group);
@@ -382,7 +381,7 @@ public class ConfigInnerHandler implements ConfigHandler {
             String itemData = item.getItemData();
             configContentMap.put(key, itemData);
         });
-        
+
         for (ConfigMetadata.ConfigExportItem configExportItem : configExportItems) {
             String dataId = configExportItem.getDataId();
             String group = configExportItem.getGroup();
@@ -397,7 +396,7 @@ public class ConfigInnerHandler implements ConfigHandler {
             // encrypted
             Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
             content = pair.getSecond();
-            
+
             ConfigAllInfo ci = new ConfigAllInfo();
             ci.setGroup(group);
             ci.setDataId(dataId);
@@ -412,7 +411,7 @@ public class ConfigInnerHandler implements ConfigHandler {
         }
         return null;
     }
-    
+
     @Override
     public Result<Map<String, Object>> cloneConfig(String srcUser, String namespaceId,
             List<SameNamespaceCloneConfigBean> configBeansList, SameConfigPolicy policy, String srcIp,
@@ -427,24 +426,24 @@ public class ConfigInnerHandler implements ConfigHandler {
             failedData.put("succCount", 0);
             return Result.failure(ErrorCode.NAMESPACE_NOT_EXIST, failedData);
         }
-        
+
         List<Long> idList = new ArrayList<>(configBeansList.size());
         Map<Long, SameNamespaceCloneConfigBean> configBeansMap = configBeansList.stream()
                 .collect(Collectors.toMap(SameNamespaceCloneConfigBean::getCfgId, cfg -> {
                     idList.add(cfg.getCfgId());
                     return cfg;
                 }, (k1, k2) -> k1));
-        
+
         List<ConfigAllInfo> queryedDataList = configInfoPersistService.findAllConfigInfo4Export(null, null, null, null,
                 idList);
-        
+
         if (queryedDataList == null || queryedDataList.isEmpty()) {
             failedData.put("succCount", 0);
             return Result.failure(ErrorCode.DATA_EMPTY, failedData);
         }
-        
+
         List<ConfigAllInfo> configInfoList4Clone = new ArrayList<>(queryedDataList.size());
-        
+
         for (ConfigAllInfo ci : queryedDataList) {
             SameNamespaceCloneConfigBean paramBean = configBeansMap.get(ci.getId());
             ConfigAllInfo ci4save = new ConfigAllInfo();
@@ -464,7 +463,7 @@ public class ConfigInnerHandler implements ConfigHandler {
                     ci.getEncryptedDataKey() == null ? StringUtils.EMPTY : ci.getEncryptedDataKey());
             configInfoList4Clone.add(ci4save);
         }
-        
+
         final Timestamp time = TimeUtils.getCurrentTime();
         Map<String, Object> saveResult = configInfoPersistService.batchInsertOrUpdate(configInfoList4Clone, srcUser,
                 srcIp, null, policy);
@@ -479,7 +478,7 @@ public class ConfigInnerHandler implements ConfigHandler {
         }
         return Result.success(saveResult);
     }
-    
+
     @Override
     public boolean removeBetaConfig(String dataId, String group, String namespaceId, String remoteIp,
             String requestIpApp, String srcUser) {
@@ -501,9 +500,9 @@ public class ConfigInnerHandler implements ConfigHandler {
                 new ConfigDataChangeEvent(dataId, group, namespaceId, BetaGrayRule.TYPE_BETA,
                         System.currentTimeMillis()));
         return true;
-        
+
     }
-    
+
     @Override
     public ConfigGrayInfo queryBetaConfig(String dataId, String group, String namespaceId) throws NacosException {
         ConfigInfoGrayWrapper beta4Gray = configInfoGrayPersistService.findConfigInfo4Gray(dataId, group, namespaceId,
@@ -523,7 +522,7 @@ public class ConfigInnerHandler implements ConfigHandler {
         }
         return null;
     }
-    
+
     private Page<ConfigBasicInfo> transferToConfigBasicInfo(Page<ConfigInfo> configInfoPage) {
         Page<ConfigBasicInfo> result = new Page<>();
         result.setTotalCount(configInfoPage.getTotalCount());
@@ -533,5 +532,5 @@ public class ConfigInnerHandler implements ConfigHandler {
                 .collect(Collectors.toList()));
         return result;
     }
-    
+
 }
