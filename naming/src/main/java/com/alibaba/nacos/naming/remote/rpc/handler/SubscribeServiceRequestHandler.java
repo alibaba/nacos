@@ -29,7 +29,6 @@ import com.alibaba.nacos.common.trace.event.naming.SubscribeServiceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.UnsubscribeServiceTraceEvent;
 import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.core.control.TpsControl;
-import com.alibaba.nacos.core.namespace.filter.NamespaceValidation;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.SubscribeServiceRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
@@ -66,7 +65,6 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
     }
     
     @Override
-    @NamespaceValidation
     @TpsControl(pointName = "RemoteNamingServiceSubscribeUnSubscribe", name = "RemoteNamingServiceSubscribeUnsubscribe")
     @Secured(action = ActionTypes.READ)
     @ExtractorManager.Extractor(rpcExtractor = SubscribeServiceRequestParamExtractor.class)

@@ -33,7 +33,6 @@ import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.core.control.TpsControl;
-import com.alibaba.nacos.core.namespace.filter.NamespaceValidation;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.ConfigRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
@@ -65,7 +64,6 @@ public class ConfigChangeClusterSyncRequestHandler
     }
 
     @Override
-    @NamespaceValidation
     @TpsControl(pointName = "ClusterConfigChangeNotify")
     @ExtractorManager.Extractor(rpcExtractor = ConfigRequestParamExtractor.class)
     @Secured(signType = SignType.CONFIG, apiType = ApiType.INNER_API)

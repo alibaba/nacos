@@ -28,7 +28,6 @@ import com.alibaba.nacos.common.trace.DeregisterInstanceReason;
 import com.alibaba.nacos.common.trace.event.naming.DeregisterInstanceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.RegisterInstanceTraceEvent;
 import com.alibaba.nacos.core.control.TpsControl;
-import com.alibaba.nacos.core.namespace.filter.NamespaceValidation;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.PersistentInstanceRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
@@ -55,7 +54,6 @@ public class PersistentInstanceRequestHandler extends RequestHandler<PersistentI
     }
     
     @Override
-    @NamespaceValidation
     @TpsControl(pointName = "RemoteNamingInstanceRegisterDeregister", name = "RemoteNamingInstanceRegisterDeregister")
     @Secured(action = ActionTypes.WRITE)
     @ExtractorManager.Extractor(rpcExtractor = PersistentInstanceRequestParamExtractor.class)

@@ -28,7 +28,6 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.core.namespace.filter.NamespaceValidation;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.McpServerRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
@@ -53,7 +52,6 @@ public class QueryMcpServerRequestHandler extends RequestHandler<QueryMcpServerR
     }
     
     @Override
-    @NamespaceValidation
     @ExtractorManager.Extractor(rpcExtractor = McpServerRequestParamExtractor.class)
     public QueryMcpServerResponse handle(QueryMcpServerRequest request, RequestMeta meta) throws NacosException {
         McpRequestUtils.fillNamespaceId(request);

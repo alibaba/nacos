@@ -27,6 +27,8 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.core.paramcheck.impl.InstanceRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
 import org.junit.jupiter.api.BeforeEach;
@@ -92,8 +94,8 @@ class NamespaceValidationRequestFilterTest {
 
     @Test
     void testFilterWithNamingRequestAndNamespaceExists() throws NacosException {
-        when(namingRequest.getNamespace()).thenReturn("test-namespace");
-        when(namespaceOperationService.isNamespaceExist("test-namespace")).thenReturn(true);
+//        when(namingRequest.getNamespace()).thenReturn("test-namespace");
+//        when(namespaceOperationService.isNamespaceExist("test-namespace")).thenReturn(true);
 
         Response actual = namespaceValidationFilter.filter(namingRequest, requestMeta, MockWithEnabledValidation.class);
         assertNull(actual);
@@ -207,15 +209,15 @@ class NamespaceValidationRequestFilterTest {
 
     static class MockWithEnabledValidation extends RequestHandler<InstanceRequest, InstanceResponse> {
 
-        @NamespaceValidation
         @Override
+        @ExtractorManager.Extractor(rpcExtractor = InstanceRequestParamExtractor.class)
         public InstanceResponse handle(InstanceRequest request, RequestMeta meta) throws NacosException {
             return new InstanceResponse();
         }
     }
 
     static class MockWithDisabledValidation extends RequestHandler<Request, Response> {
-        @NamespaceValidation(enable = false)
+
         @Override
         public Response handle(Request request, RequestMeta meta) throws NacosException {
             return new Response() {

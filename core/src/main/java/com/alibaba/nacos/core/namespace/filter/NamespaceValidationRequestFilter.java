@@ -18,27 +18,27 @@
 
 package com.alibaba.nacos.core.namespace.filter;
 
-import com.alibaba.nacos.api.ai.remote.request.AbstractMcpRequest;
-import com.alibaba.nacos.api.config.remote.request.AbstractConfigRequest;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
-import com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.common.paramcheck.ParamInfo;
+import com.alibaba.nacos.core.paramcheck.AbstractRpcParamExtractor;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.remote.AbstractRequestFilter;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
 
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.Method;
+import java.util.List;
 
 /**
  * Namespace validation request filter for NamingRequest.
- * not include: ConfigFuzzyWatchRequestHandler, DistroDataRequestHandler, HealthCheckRequest, LockRequestHandler, MemberReportHandler
- * NamingFuzzyWatchRequestHandler: fuzzy watch, ServerLoaderInfoRequestHandler
+ * not include: DistroDataRequestHandler, HealthCheckRequestHandler, LockRequestHandler,
+ * MemberReportHandler, NamingFuzzyWatchRequestHandler: fuzzy watch, ServerLoaderInfoRequestHandler
  *
  * @author FangYuan
  * @since 2025-08-11 21:51:29
@@ -60,24 +60,29 @@ public class NamespaceValidationRequestFilter extends AbstractRequestFilter {
             if (!namespaceValidationEnabled) {
                 return null;
             }
-
-            Method method = getHandleMethod(handlerClazz);
-            if (method.isAnnotationPresent(NamespaceValidation.class)) {
-                NamespaceValidation namespaceValidation = method.getAnnotation(NamespaceValidation.class);
-                if (!namespaceValidation.enable()) {
+            // extract namespace param
+            ExtractorManager.Extractor extractor = getHandleMethod(handlerClazz).getAnnotation(ExtractorManager.Extractor.class);
+            if (extractor == null) {
+                extractor = (ExtractorManager.Extractor) handlerClazz.getAnnotation(ExtractorManager.Extractor.class);
+                if (extractor == null) {
                     return null;
                 }
+            }
+            AbstractRpcParamExtractor paramExtractor = ExtractorManager.getRpcExtractor(extractor);
+            List<ParamInfo> paramInfoList = paramExtractor.extractParam(request);
 
+            for (ParamInfo paramInfo : paramInfoList) {
                 // if namespace param is null, don't need to check namespace
-                String namespace = getNamespace(request);
-                if (namespace == null) {
-                    return null;
+                String namespaceId = paramInfo.getNamespaceId();
+                if (paramInfo.getNamespaceId() == null) {
+                    continue;
                 }
-                boolean exist = isNamespaceExist(namespace);
+
+                boolean exist = isNamespaceExist(namespaceId);
                 if (!exist) {
                     Response response = super.getDefaultResponseInstance(handlerClazz);
                     response.setErrorInfo(ErrorCode.NAMESPACE_NOT_EXIST.getCode(),
-                            String.format("Namespace '%s' does not exist. Please create the namespace first.", namespace));
+                            String.format("Namespace '%s' does not exist. Please create the namespace first.", namespaceId));
 
                     return response;
                 }
@@ -87,24 +92,6 @@ public class NamespaceValidationRequestFilter extends AbstractRequestFilter {
         }
 
         return null;
-    }
-
-    private String getNamespace(Request request) {
-        String namespace = null;
-        // process naming module
-        if (request instanceof AbstractNamingRequest) {
-            namespace = ((AbstractNamingRequest) request).getNamespace();
-        }
-        // process config module
-        else if (request instanceof AbstractConfigRequest) {
-            namespace = ((AbstractConfigRequest) request).getTenant();
-        }
-        // process ai module
-        else if (request instanceof AbstractMcpRequest) {
-            namespace = ((AbstractMcpRequest) request).getNamespaceId();
-        }
-
-        return namespace;
     }
 
     private boolean isNamespaceExist(String namespace) {

@@ -23,7 +23,6 @@ import com.alibaba.nacos.api.naming.remote.response.BatchInstanceResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.control.TpsControl;
-import com.alibaba.nacos.core.namespace.filter.NamespaceValidation;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.BatchInstanceRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
@@ -48,7 +47,6 @@ public class BatchInstanceRequestHandler extends RequestHandler<BatchInstanceReq
     }
     
     @Override
-    @NamespaceValidation
     @TpsControl(pointName = "RemoteNamingInstanceBatchRegister", name = "RemoteNamingInstanceBatchRegister")
     @Secured(action = ActionTypes.WRITE)
     @ExtractorManager.Extractor(rpcExtractor = BatchInstanceRequestParamExtractor.class)
