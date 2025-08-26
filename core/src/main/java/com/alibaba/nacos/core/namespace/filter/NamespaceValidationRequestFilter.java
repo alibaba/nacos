@@ -25,6 +25,7 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.paramcheck.AbstractRpcParamExtractor;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.remote.AbstractRequestFilter;
@@ -37,8 +38,6 @@ import java.util.List;
 
 /**
  * Namespace validation request filter for NamingRequest.
- * not include: DistroDataRequestHandler, HealthCheckRequestHandler, LockRequestHandler,
- * MemberReportHandler, NamingFuzzyWatchRequestHandler: fuzzy watch, ServerLoaderInfoRequestHandler
  *
  * @author FangYuan
  * @since 2025-08-11 21:51:29
@@ -72,9 +71,9 @@ public class NamespaceValidationRequestFilter extends AbstractRequestFilter {
             List<ParamInfo> paramInfoList = paramExtractor.extractParam(request);
 
             for (ParamInfo paramInfo : paramInfoList) {
-                // if namespace param is null, don't need to check namespace
+                // if namespace param is null or '', don't need to check namespace
                 String namespaceId = paramInfo.getNamespaceId();
-                if (paramInfo.getNamespaceId() == null) {
+                if (StringUtils.isBlank(namespaceId)) {
                     continue;
                 }
 
