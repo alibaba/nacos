@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.naming.remote.response.ServiceListResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.namespace.filter.NamespaceValidation;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.ServiceListRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
@@ -46,6 +47,7 @@ import java.util.Objects;
 public class ServiceListRequestHandler extends RequestHandler<ServiceListRequest, ServiceListResponse> {
     
     @Override
+    @NamespaceValidation
     @TpsControl(pointName = "RemoteNamingServiceListQuery", name = "RemoteNamingServiceListQuery")
     @Secured(action = ActionTypes.READ)
     @ExtractorManager.Extractor(rpcExtractor = ServiceListRequestParamExtractor.class)

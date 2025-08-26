@@ -25,6 +25,7 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.config.server.model.event.ConfigFuzzyWatchEvent;
 import com.alibaba.nacos.config.server.service.ConfigFuzzyWatchContextService;
 import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.namespace.filter.NamespaceValidation;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.ConfigFuzzyWatchRequestParamsExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
@@ -72,6 +73,7 @@ public class ConfigFuzzyWatchRequestHandler extends RequestHandler<ConfigFuzzyWa
      * @throws NacosException If an error occurs while processing the request
      */
     @Override
+    @NamespaceValidation
     @TpsControl(pointName = "ConfigFuzzyWatch")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     @ExtractorManager.Extractor(rpcExtractor = ConfigFuzzyWatchRequestParamsExtractor.class)

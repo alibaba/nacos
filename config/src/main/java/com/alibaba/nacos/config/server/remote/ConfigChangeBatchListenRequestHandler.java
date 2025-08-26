@@ -27,6 +27,7 @@ import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.namespace.filter.NamespaceValidation;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.ConfigBatchListenRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
@@ -50,6 +51,7 @@ public class ConfigChangeBatchListenRequestHandler
     private ConfigChangeListenContext configChangeListenContext;
     
     @Override
+    @NamespaceValidation
     @TpsControl(pointName = "ConfigListen")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     @ExtractorManager.Extractor(rpcExtractor = ConfigBatchListenRequestParamExtractor.class)
