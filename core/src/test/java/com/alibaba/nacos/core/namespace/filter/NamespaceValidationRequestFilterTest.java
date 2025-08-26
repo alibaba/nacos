@@ -115,9 +115,11 @@ class NamespaceValidationRequestFilterTest {
         NamespaceValidationConfig mockConfig = Mockito.mock(NamespaceValidationConfig.class);
         when(mockConfig.isNamespaceValidationEnabled()).thenReturn(true);
 
-        try (MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
-             MockedStatic<ExtractorManager> extractorManagerMock = mockStatic(ExtractorManager.class)) {
-            
+        try (
+                MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
+                MockedStatic<ExtractorManager> extractorManagerMock = mockStatic(ExtractorManager.class)
+        ) {
+
             mockedStatic.when(NamespaceValidationConfig::getInstance).thenReturn(mockConfig);
             extractorManagerMock.when(() -> ExtractorManager.getRpcExtractor(any())).thenReturn(paramExtractor);
             when(paramExtractor.extractParam(request)).thenReturn(Collections.emptyList());
@@ -138,9 +140,11 @@ class NamespaceValidationRequestFilterTest {
         paramInfo.setNamespaceId(null); // null namespace
         List<ParamInfo> paramInfoList = Arrays.asList(paramInfo);
 
-        try (MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
-             MockedStatic<ExtractorManager> extractorManagerMock = mockStatic(ExtractorManager.class)) {
-            
+        try (
+                MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
+                MockedStatic<ExtractorManager> extractorManagerMock = mockStatic(ExtractorManager.class)
+        ) {
+
             mockedStatic.when(NamespaceValidationConfig::getInstance).thenReturn(mockConfig);
             extractorManagerMock.when(() -> ExtractorManager.getRpcExtractor(any())).thenReturn(paramExtractor);
             when(paramExtractor.extractParam(request)).thenReturn(paramInfoList);
@@ -163,9 +167,11 @@ class NamespaceValidationRequestFilterTest {
 
         when(namespaceOperationService.isNamespaceExist("existing-namespace")).thenReturn(true);
 
-        try (MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
-             MockedStatic<ExtractorManager> extractorManagerMock = mockStatic(ExtractorManager.class)) {
-            
+        try (
+                MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
+                MockedStatic<ExtractorManager> extractorManagerMock = mockStatic(ExtractorManager.class)
+        ) {
+
             mockedStatic.when(NamespaceValidationConfig::getInstance).thenReturn(mockConfig);
             extractorManagerMock.when(() -> ExtractorManager.getRpcExtractor(any())).thenReturn(paramExtractor);
             when(paramExtractor.extractParam(request)).thenReturn(paramInfoList);
@@ -188,9 +194,11 @@ class NamespaceValidationRequestFilterTest {
 
         when(namespaceOperationService.isNamespaceExist("non-existing-namespace")).thenReturn(false);
 
-        try (MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
-             MockedStatic<ExtractorManager> extractorManagerMock = mockStatic(ExtractorManager.class)) {
-            
+        try (
+                MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
+                MockedStatic<ExtractorManager> extractorManagerMock = mockStatic(ExtractorManager.class)
+        ) {
+
             mockedStatic.when(NamespaceValidationConfig::getInstance).thenReturn(mockConfig);
             extractorManagerMock.when(() -> ExtractorManager.getRpcExtractor(any())).thenReturn(paramExtractor);
             when(paramExtractor.extractParam(request)).thenReturn(paramInfoList);
@@ -219,9 +227,11 @@ class NamespaceValidationRequestFilterTest {
         when(namespaceOperationService.isNamespaceExist("existing-namespace")).thenReturn(true);
         when(namespaceOperationService.isNamespaceExist("non-existing-namespace")).thenReturn(false);
 
-        try (MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
-             MockedStatic<ExtractorManager> extractorManagerMock = mockStatic(ExtractorManager.class)) {
-            
+        try (
+                MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
+                MockedStatic<ExtractorManager> extractorManagerMock = mockStatic(ExtractorManager.class)
+        ) {
+
             mockedStatic.when(NamespaceValidationConfig::getInstance).thenReturn(mockConfig);
             extractorManagerMock.when(() -> ExtractorManager.getRpcExtractor(any())).thenReturn(paramExtractor);
             when(paramExtractor.extractParam(request)).thenReturn(paramInfoList);
@@ -249,9 +259,11 @@ class NamespaceValidationRequestFilterTest {
                 .thenThrow(new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.NAMESPACE_ALREADY_EXIST,
                         "namespaceId [public] is default namespace id and already exist."));
 
-        try (MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
-             MockedStatic<ExtractorManager> extractorManagerMock = mockStatic(ExtractorManager.class)) {
-            
+        try (
+                MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
+                MockedStatic<ExtractorManager> extractorManagerMock = mockStatic(ExtractorManager.class)
+        ) {
+
             mockedStatic.when(NamespaceValidationConfig::getInstance).thenReturn(mockConfig);
             extractorManagerMock.when(() -> ExtractorManager.getRpcExtractor(any())).thenReturn(paramExtractor);
             when(paramExtractor.extractParam(request)).thenReturn(paramInfoList);
@@ -275,9 +287,11 @@ class NamespaceValidationRequestFilterTest {
         when(namespaceOperationService.isNamespaceExist("test-namespace"))
                 .thenThrow(new RuntimeException("Database error"));
 
-        try (MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
-             MockedStatic<ExtractorManager> extractorManagerMock = mockStatic(ExtractorManager.class)) {
-            
+        try (
+                MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
+                MockedStatic<ExtractorManager> extractorManagerMock = mockStatic(ExtractorManager.class)
+        ) {
+
             mockedStatic.when(NamespaceValidationConfig::getInstance).thenReturn(mockConfig);
             extractorManagerMock.when(() -> ExtractorManager.getRpcExtractor(any())).thenReturn(paramExtractor);
             when(paramExtractor.extractParam(request)).thenReturn(paramInfoList);
@@ -297,9 +311,11 @@ class NamespaceValidationRequestFilterTest {
         NamespaceValidationConfig mockConfig = Mockito.mock(NamespaceValidationConfig.class);
         when(mockConfig.isNamespaceValidationEnabled()).thenReturn(true);
 
-        try (MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
-             MockedStatic<ExtractorManager> extractorManagerMock = mockStatic(ExtractorManager.class)) {
-            
+        try (
+                MockedStatic<NamespaceValidationConfig> mockedStatic = mockStatic(NamespaceValidationConfig.class);
+                MockedStatic<ExtractorManager> extractorManagerMock = mockStatic(ExtractorManager.class)
+        ) {
+
             mockedStatic.when(NamespaceValidationConfig::getInstance).thenReturn(mockConfig);
             extractorManagerMock.when(() -> ExtractorManager.getRpcExtractor(any())).thenThrow(new RuntimeException("Extractor error"));
 
