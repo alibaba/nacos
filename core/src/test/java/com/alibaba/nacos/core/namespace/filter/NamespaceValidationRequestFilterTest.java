@@ -167,7 +167,7 @@ class NamespaceValidationRequestFilterTest {
         when(mockConfig.isNamespaceValidationEnabled()).thenReturn(true);
 
         ParamInfo paramInfo = new ParamInfo();
-        paramInfo.setNamespaceId(null); // null namespace
+        paramInfo.setNamespaceId(null);
         List<ParamInfo> paramInfoList = Arrays.asList(paramInfo);
 
         try (
