@@ -117,6 +117,7 @@ public class NamespaceValidationRequestFilter extends AbstractRequestFilter {
         try {
             namespaceExist = namespaceOperationService.isNamespaceExist(namespace);
         } catch (NacosApiException e) {
+            // public namespace or namespace already exist
             namespaceExist = true;
         } catch (Exception e) {
             Loggers.CORE.warn("Namespace validation query db error for namespace: {}, exception: {}", namespace, e);
