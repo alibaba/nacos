@@ -204,23 +204,18 @@ public class A2aServerOperationService {
             
             List<AgentVersionDetail> versionDetails = agentCardVersionInfo.getVersionDetails();
             
-            // 检查删除的是否是最新版本
             boolean isLatestVersion = form.getVersion().equals(agentCardVersionInfo.getLatestPublishedVersion());
             
-            // 如果这是最后一个版本，则删除整个agent
             if (versionDetails.size() == 1 && versionDetails.get(0).getVersion().equals(form.getVersion())) {
                 configOperationService.deleteConfig(dataId, AGENT_GROUP, namespaceId, null, null, "nacos", null);
             } else {
-                // 从版本列表中移除指定版本
                 agentCardVersionInfo.getVersionDetails().removeIf(versionDetail -> versionDetail.getVersion().equals(form.getVersion()));
                 
-                // 如果删除的是最新版本，需要更新最新版本信息
                 if (isLatestVersion) {
                     agentCardVersionInfo.setLatestPublishedVersion(null);
                     agentCardVersionInfo.setVersion(null);
                 }
                 
-                // 更新agent信息
                 ConfigForm updateForm = new ConfigForm();
                 updateForm.setDataId(dataId);
                 updateForm.setGroup(AGENT_GROUP);

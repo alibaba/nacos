@@ -51,22 +51,22 @@ public class A2aRemoteHandler implements A2aHandler {
     
     @Override
     public void registerAgent(AgentDetailForm form) throws NacosException {
-        clientHolder.getA2aMaintainerService().registerAgent(transferAgentCard(form));
+        clientHolder.getAiMaintainerService().registerAgent(transferAgentCard(form));
     }
     
     @Override
     public AgentCardVersionInfo getAgentCardWithVersions(AgentForm form) throws NacosException {
-        return clientHolder.getA2aMaintainerService().getAgentCardWithVersions(form.getName(), form.getNamespaceId());
+        return clientHolder.getAiMaintainerService().getAgentCardWithVersions(form.getName(), form.getNamespaceId());
     }
     
     @Override
     public void deleteAgent(AgentForm form) throws NacosException {
-        clientHolder.getA2aMaintainerService().deleteAgent(form.getName(), form.getNamespaceId());
+        clientHolder.getAiMaintainerService().deleteAgent(form.getName(), form.getNamespaceId());
     }
     
     @Override
     public void updateAgentCard(AgentUpdateForm form) throws NacosException {
-        clientHolder.getA2aMaintainerService().updateAgentCard(transferAgentCard(form), form.getNamespaceId());
+        clientHolder.getAiMaintainerService().updateAgentCard(transferAgentCard(form), form.getNamespaceId());
     }
     
     @Override
