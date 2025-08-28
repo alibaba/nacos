@@ -34,6 +34,7 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.namespace.filter.NamespaceValidation;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.McpServerRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
@@ -68,6 +69,7 @@ public class ReleaseMcpServerRequestHandler extends RequestHandler<ReleaseMcpSer
     }
     
     @Override
+    @NamespaceValidation
     @ExtractorManager.Extractor(rpcExtractor = McpServerRequestParamExtractor.class)
     @Secured(action = ActionTypes.WRITE, signType = SignType.AI)
     public ReleaseMcpServerResponse handle(ReleaseMcpServerRequest request, RequestMeta meta) throws NacosException {
