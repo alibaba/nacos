@@ -66,7 +66,7 @@ class PasswordEncoderUtilTest {
         String raw73Password = raw72Password.concat("A");
         assertThrows(IllegalArgumentException.class, () -> PasswordEncoderUtil.encode(raw73Password));
         
-        assertThrows(IllegalArgumentException.class, () -> new BCryptPasswordEncoder().matches(raw73Password, encodedPassword));
+        assertTrue(new BCryptPasswordEncoder().matches(raw73Password, encodedPassword));
         assertFalse(new SafeBcryptPasswordEncoder().matches(raw73Password, encodedPassword));
         assertFalse(PasswordEncoderUtil.matches(raw73Password, encodedPassword));
     
