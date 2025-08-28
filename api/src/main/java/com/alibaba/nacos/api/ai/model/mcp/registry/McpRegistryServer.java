@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.ai.model.mcp.registry;
 
+import java.util.List;
+
 /**
  * McpRegistryServer.
  * @author xinluo
@@ -32,6 +34,8 @@ public class McpRegistryServer {
     private Repository repository;
     
     private ServerVersionDetail version_detail;
+    
+    private List<Package> packages;
 
     public String getId() {
         return id;
@@ -71,5 +75,13 @@ public class McpRegistryServer {
 
     public void setVersion_detail(ServerVersionDetail version_detail) {
         this.version_detail = version_detail;
+    }
+    
+    public List<Package> getPackages() {
+        return packages;
+    }
+    
+    public void setPackages(List<Package> packages) {
+        this.packages = packages;
     }
 }

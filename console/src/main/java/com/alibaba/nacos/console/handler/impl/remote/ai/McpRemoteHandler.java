@@ -20,9 +20,14 @@ import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerImportRequest;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerImportResponse;
+import com.alibaba.nacos.api.ai.model.mcp.McpServerImportValidationResult;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.Page;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.console.handler.ai.McpHandler;
 import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
@@ -78,5 +83,17 @@ public class McpRemoteHandler implements McpHandler {
     @Override
     public void deleteMcpServer(String namespaceId, String mcpName, String mcpId, String version) throws NacosException {
         clientHolder.getAiMaintainerService().deleteMcpServer(namespaceId, mcpName, mcpId, version);
+    }
+    
+    @Override
+    public McpServerImportValidationResult validateImport(String namespaceId, McpServerImportRequest request) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
+                "MCP import functionality is not supported in remote mode");
+    }
+    
+    @Override
+    public McpServerImportResponse executeImport(String namespaceId, McpServerImportRequest request) throws NacosException {
+        throw new NacosApiException(NacosException.SERVER_NOT_IMPLEMENTED, ErrorCode.API_FUNCTION_DISABLED,
+                "MCP import functionality is not supported in remote mode");
     }
 }
