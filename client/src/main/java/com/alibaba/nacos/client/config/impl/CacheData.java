@@ -33,6 +33,7 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.NumberUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -75,8 +76,11 @@ public class CacheData {
         }
         return notifyWarnTimeout;
     }
-    
-    static ScheduledThreadPoolExecutor scheduledExecutor;
+
+    /**
+     * double check lock initialization of scheduledExecutor.
+     */
+    static volatile ScheduledThreadPoolExecutor scheduledExecutor;
     
     static ScheduledThreadPoolExecutor getNotifyBlockMonitor() {
         if (scheduledExecutor == null) {
@@ -86,12 +90,29 @@ public class CacheData {
                             new NameThreadFactory("com.alibaba.nacos.client.notify.block.monitor"),
                             new ThreadPoolExecutor.DiscardPolicy());
                     scheduledExecutor.setRemoveOnCancelPolicy(true);
+                    // it will shut down when jvm exit.
+                    ThreadUtils.addShutdownHook(CacheData::shutdownScheduledExecutor);
                 }
             }
         }
         return scheduledExecutor;
     }
-    
+
+    /**
+     * shutdownScheduledExecutor.
+     */
+    public static void shutdownScheduledExecutor() {
+        if (scheduledExecutor != null && !scheduledExecutor.isShutdown()) {
+            try {
+                scheduledExecutor.shutdown();
+                // help gc
+                scheduledExecutor = null;
+            } catch (Exception e) {
+                // ignore
+            }
+        }
+    }
+
     static boolean initSnapshot;
     
     static {

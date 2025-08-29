@@ -108,7 +108,7 @@ class Log4J2NacosLoggingAdapterTest {
         loggerContext = (LoggerContext) LogManager.getContext(false);
         contextConfiguration = loggerContext.getConfiguration();
         Map<String, LoggerConfig> nacosClientLoggers = contextConfiguration.getLoggers();
-        assertEquals(6, nacosClientLoggers.size());
+        assertEquals(7, nacosClientLoggers.size());
         for (Map.Entry<String, LoggerConfig> loggerEntry : nacosClientLoggers.entrySet()) {
             String loggerName = loggerEntry.getKey();
             assertTrue(loggerName.startsWith(NACOS_LOGGER_PREFIX));

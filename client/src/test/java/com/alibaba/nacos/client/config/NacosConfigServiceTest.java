@@ -49,7 +49,7 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 
-import static com.alibaba.nacos.api.common.Constants.ANY_PATTERN;
+import static com.alibaba.nacos.api.common.Constants.ALL_PATTERN;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -426,7 +426,7 @@ class NacosConfigServiceTest {
         Mockito.when(mockWoker.addTenantFuzzyWatcher(anyString(), anyString(), any())).thenReturn(context);
         nacosConfigService.fuzzyWatch(groupNamePattern, fuzzyWatchEventWatcher);
         Mockito.verify(mockWoker, Mockito.times(1))
-                .addTenantFuzzyWatcher(ANY_PATTERN, groupNamePattern, fuzzyWatchEventWatcher);
+                .addTenantFuzzyWatcher(ALL_PATTERN, groupNamePattern, fuzzyWatchEventWatcher);
         Mockito.verify(context, Mockito.times(1)).createNewFuture();
     }
     
@@ -475,7 +475,7 @@ class NacosConfigServiceTest {
         Future<Set<String>> setFuture = nacosConfigService.fuzzyWatchWithGroupKeys(groupNamePattern,
                 fuzzyWatchEventWatcher);
         Mockito.verify(mockWoker, Mockito.times(1))
-                .addTenantFuzzyWatcher(ANY_PATTERN, groupNamePattern, fuzzyWatchEventWatcher);
+                .addTenantFuzzyWatcher(ALL_PATTERN, groupNamePattern, fuzzyWatchEventWatcher);
         Assertions.assertNotNull(setFuture);
     }
     

@@ -16,13 +16,13 @@
 
 package com.alibaba.nacos.ai.utils;
 
-import com.alibaba.nacos.ai.form.mcp.McpDetailForm;
+import com.alibaba.nacos.ai.form.mcp.admin.McpDetailForm;
 import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
+import com.alibaba.nacos.api.ai.model.mcp.McpServiceRef;
 import com.alibaba.nacos.api.ai.model.mcp.McpTool;
 import com.alibaba.nacos.api.ai.model.mcp.McpToolSpecification;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -31,6 +31,8 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 /**
  * MCP request util.
@@ -54,11 +56,6 @@ public class McpRequestUtil {
                 });
         if (StringUtils.isEmpty(result.getName())) {
             result.setName(mcpForm.getMcpName());
-        }
-        if (!StringUtils.equals(mcpForm.getMcpName(), result.getName())) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR, String.format(
-                    "Mcp Name is conflicted, `%s` is in spec, but requested is `%s`, please not set name in spec or set `%s` in spec",
-                    result.getName(), mcpForm.getMcpName(), mcpForm.getMcpName()));
         }
         return result;
     }
@@ -93,7 +90,7 @@ public class McpRequestUtil {
         }
         if (StringUtils.isBlank(mcpForm.getEndpointSpecification())) {
             throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
-                    "request parameter `endpointSpecification` is required if mcp server type not `stdio`.");
+                    "request parameter `endpointSpecification` is required if mcp server type not `local`.");
         }
         return McpRequestUtil.deserializeSpec(mcpForm.getEndpointSpecification(), new TypeReference<>() {
         });
@@ -132,5 +129,21 @@ public class McpRequestUtil {
             throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "serverSpecification or toolSpecification is invalid. Can't be parsed.");
         }
+    }
+    
+    /**
+     * Transfer input to McpServiceRef.
+     *
+     * @param input input object, should be McpServiceRef type or Map type.
+     * @return McpServiceRef
+     */
+    public static McpServiceRef transferToMcpServiceRef(Object input) {
+        if (input instanceof McpServiceRef) {
+            return (McpServiceRef) input;
+        }
+        if (input instanceof Map) {
+            return JacksonUtils.toObj(JacksonUtils.toJson(input), McpServiceRef.class);
+        }
+        throw new IllegalArgumentException("input must be instance of McpServiceRef or Map");
     }
 }

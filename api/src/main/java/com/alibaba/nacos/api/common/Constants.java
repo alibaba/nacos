@@ -50,8 +50,12 @@ public class Constants {
     public static final String TENANT = "tenant";
 
     public static final String GROUP = "group";
-
+    
+    public static final String GROUP_NAME = "groupName";
+    
     public static final String NAMESPACE_ID = "namespaceId";
+
+    public static final String TARGET_NAMESPACE_ID = "targetNamespaceId";
 
     public static final String LAST_MODIFIED = "Last-Modified";
     
@@ -365,5 +369,14 @@ public class Constants {
         public static final int FIND_DATASOURCE_ERROR_CODE = 102;
         
         public static final int FIND_TABLE_ERROR_CODE = 103;
+    }
+    
+    /**
+     * The constants in AI directory.
+     */
+    @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
+    public static class AI {
+        
+        public static final String AI_MODULE = "ai";
     }
 }

@@ -86,20 +86,27 @@ class Header extends React.Component {
       language = 'en-us',
       location: { pathname },
     } = this.props;
-    const { home, docs, blog, community, enterprise, languageSwitchButton } = locale;
+    const { home, enterprise, mcp, docs, blog, community, languageSwitchButton } = locale;
     const { passwordResetUser = '', passwordResetUserVisible = false } = this.state;
     const BASE_URL =
       language.toLocaleLowerCase() === 'en-us' ? 'https://nacos.io/en/' : 'https://nacos.io/';
     const NAV_MENU = [
       { id: 1, title: home, link: BASE_URL },
-      { id: 2, title: docs, link: `${BASE_URL}docs/latest/what-is-nacos/` },
-      { id: 3, title: blog, link: `${BASE_URL}blog/` },
-      { id: 4, title: community, link: `${BASE_URL}news/` },
       {
-        id: 5,
+        id: 2,
         title: enterprise,
         link: 'https://cn.aliyun.com/product/aliware/mse?spm=nacos-website.topbar.0.0.0',
+        tag: 'hot',
       },
+      {
+        id: 3,
+        title: mcp,
+        link: `https://mcp.nacos.io?spm=nacos-website.topbar.0.0.0`,
+        tag: 'hot',
+      },
+      { id: 4, title: docs, link: `${BASE_URL}docs/latest/what-is-nacos/` },
+      { id: 5, title: blog, link: `${BASE_URL}blog/` },
+      { id: 6, title: community, link: `${BASE_URL}news/` },
     ];
     return (
       <>
@@ -131,6 +138,26 @@ class Header extends React.Component {
                   <li key={item.id} className="menu-item menu-item-primary">
                     <a href={item.link} target="_blank" rel="noopener noreferrer">
                       {item.title}
+                      {item.tag && item.tag === 'hot' ? (
+                        <svg
+                          className="icon ml-1"
+                          viewBox="0 0 1024 1024"
+                          version="1.1"
+                          xmlns="http://www.w3.org/2000/svg"
+                          p-id="1452"
+                          width="14"
+                          height="14"
+                          data-spm-anchor-id="5238cd80.2ef5001f.0.i1.3f613b7cMyKPOJ"
+                        >
+                          <path
+                            d="M758.915413 332.8L684.390969 409.6s0-307.2-248.433778-409.6c0 0-24.860444 281.6-149.048889 384C162.549191 486.4-85.884587 793.6 411.039858 1024c0 0-248.490667-281.6 74.524444-486.4 0 0-24.803556 102.4 99.441778 204.8 124.188444 102.4 0 281.6 0 281.6s596.309333-153.6 173.909333-691.2"
+                            fill="#FF0000"
+                            p-id="1453"
+                          ></path>
+                        </svg>
+                      ) : (
+                        ''
+                      )}
                     </a>
                   </li>
                 ))}

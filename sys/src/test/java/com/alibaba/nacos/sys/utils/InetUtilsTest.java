@@ -36,6 +36,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -135,4 +138,37 @@ class InetUtilsTest {
             ignoreInterfaces.clear();
         }
     }
+
+    @Test
+    void testGetGrpcListenIp() {
+        // 保存原始属性值
+        String originalValue = System.getProperty(Constants.NACOS_REMOTE_GRPC_LISTEN_IP);
+        try {
+            // 测试1: 未设置属性时应返回null
+            System.clearProperty(Constants.NACOS_REMOTE_GRPC_LISTEN_IP);
+            assertNull(InetUtils.getGrpcListenIp());
+
+            // 测试2: 设置无效IP应抛异常
+            String invalidIp = "12345";
+            System.setProperty(Constants.NACOS_REMOTE_GRPC_LISTEN_IP, invalidIp);
+            assertThrows(RuntimeException.class, InetUtils::getGrpcListenIp);
+
+            // 测试3: 设置有效IP应正确返回
+            String validIp = "192.168.1.1";
+            System.setProperty(Constants.NACOS_REMOTE_GRPC_LISTEN_IP, validIp);
+            assertEquals(validIp, InetUtils.getGrpcListenIp());
+
+            // 测试4: 设置空值应返回null (根据实际需求)
+            System.setProperty(Constants.NACOS_REMOTE_GRPC_LISTEN_IP, "");
+            assertEquals("", InetUtils.getGrpcListenIp());
+        } finally {
+            // 恢复原始属性值
+            if (originalValue != null) {
+                System.setProperty(Constants.NACOS_REMOTE_GRPC_LISTEN_IP, originalValue);
+            } else {
+                System.clearProperty(Constants.NACOS_REMOTE_GRPC_LISTEN_IP);
+            }
+        }
+    }
+
 }

@@ -19,6 +19,7 @@ package com.alibaba.nacos.k8s.sync;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
@@ -42,11 +43,13 @@ import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.KubeConfig;
 import okhttp3.OkHttpClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -75,7 +78,7 @@ public class K8sSyncServer {
      *
      * @throws IOException io exception
      */
-    @PostConstruct
+    @EventListener(ApplicationReadyEvent.class)
     public void start() throws IOException {
         if (!k8sSyncConfig.isEnabled()) {
             Loggers.MAIN.info("The Nacos k8s-sync is disabled.");
@@ -105,11 +108,12 @@ public class K8sSyncServer {
         
         if (k8sSyncConfig.isOutsideCluster()) {
             apiClient = getOutsideApiClient();
-            coreV1Api = new CoreV1Api();
         } else {
-            coreV1Api = new CoreV1Api();
-            apiClient = coreV1Api.getApiClient();
+            apiClient = ClientBuilder.cluster().build();
         }
+        // set the global default api-client
+        Configuration.setDefaultApiClient(apiClient);
+        coreV1Api = new CoreV1Api();
 
         OkHttpClient httpClient = apiClient.getHttpClient().newBuilder().build();
         apiClient.setHttpClient(httpClient);
@@ -254,6 +258,19 @@ public class K8sSyncServer {
             }
         });
         factory.startAllRegisteredInformers();
+
+        // Wait until the cache of each informer has been fully synced before proceeding.
+        // This ensures that the local cache contains the latest and complete resource data.
+        long timeout = 30000L;
+        long startTime = System.currentTimeMillis();
+        for (SharedIndexInformer<?> informer : Arrays.asList(serviceInformer, endpointInformer)) {
+            while (!informer.hasSynced()) {
+                if (System.currentTimeMillis() - startTime > timeout) {
+                    throw new RuntimeException("Informer sync timed out");
+                }
+                ThreadUtils.sleep(100L);
+            }
+        }
     }
     
     /**
@@ -405,10 +422,10 @@ public class K8sSyncServer {
      */
     public ApiClient getOutsideApiClient() throws IOException {
         String kubeConfigPath = k8sSyncConfig.getKubeConfig();
-    
+
         // loading the out-of-cluster config, a kubeconfig from file-system
         ApiClient apiClient = ClientBuilder.kubeconfig(KubeConfig.loadKubeConfig(new FileReader(kubeConfigPath))).build();
-        
+
         // set the global default api-client to the in-cluster one from above
         Configuration.setDefaultApiClient(apiClient);
         return apiClient;

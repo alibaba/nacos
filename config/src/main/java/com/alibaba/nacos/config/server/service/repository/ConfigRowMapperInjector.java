@@ -163,6 +163,12 @@ public class ConfigRowMapperInjector {
         RowMapperManager.registerRowMapper(
                 ConfigRowMapperInjector.HISTORY_DETAIL_ROW_MAPPER.getClass().getCanonicalName(),
                 ConfigRowMapperInjector.HISTORY_DETAIL_ROW_MAPPER);
+
+        // CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER
+
+        RowMapperManager.registerRowMapper(
+                ConfigRowMapperInjector.CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER.getClass().getCanonicalName(),
+                ConfigRowMapperInjector.CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER);
     }
     
     public static final class ConfigInfoWrapperRowMapper implements RowMapper<ConfigInfoWrapper> {

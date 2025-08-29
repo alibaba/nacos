@@ -66,5 +66,9 @@ public class Constants {
     public static class Tag {
         
         public static final String ONLY_IDENTITY = "only_identity";
+        
+        public static final String SECURED_SPECIAL_TAGS =
+                com.alibaba.nacos.api.common.Constants.NAMESPACE_ID + Resource.SPLITTER
+                        + com.alibaba.nacos.api.common.Constants.TARGET_NAMESPACE_ID;
     }
 }

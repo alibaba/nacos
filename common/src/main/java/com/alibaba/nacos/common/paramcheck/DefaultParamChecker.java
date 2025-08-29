@@ -90,8 +90,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         this.groupPattern = Pattern.compile(this.paramCheckRule.groupPatternString);
         this.clusterPattern = Pattern.compile(this.paramCheckRule.clusterPatternString);
         this.ipPattern = Pattern.compile(this.paramCheckRule.ipPatternString);
-        // mcp name pattern is same as dataId pattern
-        this.mcpNamePattern = Pattern.compile(this.paramCheckRule.dataIdPatternString);
+        this.mcpNamePattern = Pattern.compile(this.paramCheckRule.clusterPatternString);
     }
     
     /**
@@ -450,10 +449,10 @@ public class DefaultParamChecker extends AbstractParamChecker {
             paramCheckResponse.setSuccess(true);
             return paramCheckResponse;
         }
-        if (mcpName.length() > paramCheckRule.maxDataIdLength) {
+        if (mcpName.length() > paramCheckRule.maxClusterLength) {
             paramCheckResponse.setSuccess(false);
             paramCheckResponse.setMessage(
-                    String.format("Param 'mcpName' is illegal, the param length should not exceed %d.", paramCheckRule.maxDataIdLength));
+                    String.format("Param 'mcpName' is illegal, the param length should not exceed %d.", paramCheckRule.maxClusterLength));
             return paramCheckResponse;
         }
         if (!mcpNamePattern.matcher(mcpName).matches()) {

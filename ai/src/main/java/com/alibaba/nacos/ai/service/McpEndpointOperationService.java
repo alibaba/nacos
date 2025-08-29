@@ -71,7 +71,7 @@ public class McpEndpointOperationService {
      * @return {@link Service}
      * @throws NacosException any exception during handling
      */
-    public Service createMcpServerEndpointServiceIfNecessary(String namespaceId, String mcpName,
+    public Service createMcpServerEndpointServiceIfNecessary(String namespaceId, String mcpName, String version,
             McpEndpointSpec endpointSpecification) throws NacosException {
         if (AiConstants.Mcp.MCP_ENDPOINT_TYPE_REF.equalsIgnoreCase(endpointSpecification.getType())) {
             Map<String, String> endpointServiceData = endpointSpecification.getData();
@@ -80,12 +80,12 @@ public class McpEndpointOperationService {
                 throw new NacosApiException(NacosApiException.INVALID_PARAM, ErrorCode.PARAMETER_MISSING,
                         "`namespaceId`, `groupName`, `serviceName` should be in remoteServerConfig data if type is `REF`");
             }
-            String refNamespaceId = endpointSpecification.getData().get(CommonParams.NAMESPACE_ID);
             String refGroupName = endpointSpecification.getData().get(CommonParams.GROUP_NAME);
             String refServiceName = endpointSpecification.getData().get(CommonParams.SERVICE_NAME);
-            return Service.newService(refNamespaceId, refGroupName, refServiceName);
+            return Service.newService(namespaceId, refGroupName, refServiceName);
         }
-        Service service = Service.newService(namespaceId, Constants.MCP_SERVER_ENDPOINT_GROUP, mcpName);
+        String versionMcpName = mcpName + "::" + version;
+        Service service = generateService(namespaceId, versionMcpName);
         if (isNotExist(service)) {
             doCreateNewService(service);
             doUpdateInstanceInfo(service, endpointSpecification);
@@ -93,6 +93,10 @@ public class McpEndpointOperationService {
         }
         doUpdateInstanceInfo(service, endpointSpecification);
         return service;
+    }
+    
+    public Service generateService(String namespaceId, String mcpName) {
+        return Service.newService(namespaceId, Constants.MCP_SERVER_ENDPOINT_GROUP, mcpName);
     }
     
     public List<Instance> getMcpServerEndpointInstances(McpServiceRef serviceRef) throws NacosException {
@@ -108,18 +112,18 @@ public class McpEndpointOperationService {
      * <p>If service exist and service is direct, do deregister instance and remove service</p>
      *
      * @param namespaceId namespace id of mcp server
-     * @param mcpName     name of mcp server
+     * @param mcpServerName     name of mcp server
      * @throws NacosException any exception during handling
      */
-    public void deleteMcpServerEndpointService(String namespaceId, String mcpName) throws NacosException {
-        Service service = Service.newService(namespaceId, Constants.MCP_SERVER_ENDPOINT_GROUP, mcpName);
+    public void deleteMcpServerEndpointService(String namespaceId, String mcpServerName) throws NacosException {
+        Service service = Service.newService(namespaceId, Constants.MCP_SERVER_ENDPOINT_GROUP, mcpServerName);
         if (isNotExist(service) || !isMcpDirectService(service)) {
             return;
         }
         List<Instance> deletingInstance = instanceOperator.listInstance(namespaceId,
-                Constants.MCP_SERVER_ENDPOINT_GROUP, mcpName, null, "", false).getHosts();
+                Constants.MCP_SERVER_ENDPOINT_GROUP, mcpServerName, null, "", false).getHosts();
         for (Instance each : deletingInstance) {
-            instanceOperator.removeInstance(namespaceId, Constants.MCP_SERVER_ENDPOINT_GROUP, mcpName, each);
+            instanceOperator.removeInstance(namespaceId, Constants.MCP_SERVER_ENDPOINT_GROUP, mcpServerName, each);
         }
         serviceOperator.delete(service.getNamespace(), service.getGroupedServiceName());
     }

@@ -22,12 +22,14 @@ import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ClusterInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.SubscriberInfo;
+import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
 import com.alibaba.nacos.console.handler.naming.ServiceHandler;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.model.form.ServiceForm;
+import org.springframework.context.annotation.Conditional;
 
 import java.util.List;
 
@@ -38,6 +40,7 @@ import java.util.List;
  */
 @org.springframework.stereotype.Service
 @EnabledRemoteHandler
+@Conditional(ConditionFunctionEnabled.ConditionNamingEnabled.class)
 public class ServiceRemoteHandler implements ServiceHandler {
     
     private final NacosMaintainerClientHolder clientHolder;

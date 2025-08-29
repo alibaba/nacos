@@ -56,7 +56,7 @@ public class HealthControllerV3 {
      */
     @CanDistro
     @PutMapping(value = "/instance")
-    @Secured(resource = UtilsAndCommons.HEALTH_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<String> update(UpdateHealthForm updateHealthForm) throws NacosException {
         updateHealthForm.validate();
         healthOperatorV2.updateHealthStatusForPersistentInstance(updateHealthForm.getNamespaceId(),
@@ -70,7 +70,7 @@ public class HealthControllerV3 {
      * Get all health checkers.
      */
     @GetMapping("/checkers")
-    @Secured(resource = UtilsAndCommons.HEALTH_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<Map<String, AbstractHealthChecker>> checkers() {
         return Result.success(healthOperatorV2.checkers());
     }

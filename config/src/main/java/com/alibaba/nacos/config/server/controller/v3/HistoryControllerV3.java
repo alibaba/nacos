@@ -71,7 +71,7 @@ public class HistoryControllerV3 {
      * Query the list history config.
      */
     @GetMapping("/list")
-    @Secured(resource = Constants.HISTORY_ADMIN_V3_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Page<ConfigHistoryBasicInfo>> listConfigHistory(ConfigFormV3 configForm, PageForm pageForm)
             throws NacosApiException {
         configForm.validate();
@@ -97,7 +97,7 @@ public class HistoryControllerV3 {
      * Query the detailed configuration history information.
      */
     @GetMapping
-    @Secured(resource = Constants.HISTORY_ADMIN_V3_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<ConfigHistoryDetailInfo> getConfigHistoryInfo(ConfigFormV3 configForm, @RequestParam("nid") Long nid)
             throws AccessException, NacosApiException {
         ConfigHistoryInfo configHistoryInfo;
@@ -120,7 +120,7 @@ public class HistoryControllerV3 {
      * Query previous config history information.
      */
     @GetMapping(value = "/previous")
-    @Secured(resource = Constants.HISTORY_ADMIN_V3_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<ConfigHistoryDetailInfo> getPreviousConfigHistoryInfo(ConfigFormV3 configForm,
             @RequestParam("id") Long id) throws AccessException, NacosApiException {
         ConfigHistoryInfo configHistoryInfo;
@@ -144,7 +144,7 @@ public class HistoryControllerV3 {
      * Query configs list by namespace.
      */
     @GetMapping(value = "/configs")
-    @Secured(resource = Constants.HISTORY_ADMIN_V3_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<List<ConfigBasicInfo>> getConfigsByNamespace(@RequestParam("namespaceId") String namespaceId)
             throws NacosApiException {
         // check namespaceId

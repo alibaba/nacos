@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceDetailInfo;
+import com.alibaba.nacos.api.naming.pojo.maintainer.ServiceView;
 import com.alibaba.nacos.naming.constants.FieldsConstants;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
@@ -42,6 +43,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -176,6 +178,25 @@ class CatalogServiceV2ImplTest {
         ObjectNode obj = (ObjectNode) catalogServiceV2Impl.pageListService("CatalogService", "", "", 2, 1, null, false);
         assertEquals(3, obj.get(FieldsConstants.COUNT).asInt());
         assertEquals("2", obj.get(FieldsConstants.SERVICE_LIST).get(0).get("name").asText());
+    }
+    
+    @Test
+    void testListService() throws NacosException {
+        ServiceInfo serviceInfo = new ServiceInfo();
+        Mockito.when(serviceStorage.getData(Mockito.any())).thenReturn(serviceInfo);
+        ServiceManager.getInstance().getSingleton(Service.newService("CatalogService", "CatalogService", "1"));
+        ServiceManager.getInstance().getSingleton(Service.newService("CatalogService", "CatalogService", "2"));
+        ServiceManager.getInstance().getSingleton(Service.newService("CatalogService", "CatalogService", "3"));
+        Page<ServiceView> result = catalogServiceV2Impl.listService("CatalogService", "", "", 2, 1, false);
+        assertNotNull(result);
+        assertEquals(3, result.getTotalCount(), "Total service count should be 3");
+        assertEquals(2, result.getPageNumber(), "Current page number should be 2");
+        assertEquals(4, result.getPagesAvailable(), "PagesAvailable should = (totalCount / pageSize) + 1");
+        assertEquals(1, result.getPageItems().size(), "Page size is 1, so only one item should be returned");
+        
+        ServiceView serviceView = result.getPageItems().get(0);
+        assertEquals(serviceView.getName(), "2", "Service name should be '2' ");
+        assertEquals("CatalogService", serviceView.getGroupName(), "Group name should be CatalogService");
     }
     
     @Test

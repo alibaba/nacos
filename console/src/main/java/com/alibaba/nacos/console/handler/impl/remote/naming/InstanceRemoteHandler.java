@@ -19,11 +19,13 @@ package com.alibaba.nacos.console.handler.impl.remote.naming;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
 import com.alibaba.nacos.console.handler.naming.InstanceHandler;
 import com.alibaba.nacos.core.utils.PageUtil;
 import com.alibaba.nacos.naming.model.form.InstanceForm;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -35,6 +37,7 @@ import java.util.List;
  */
 @Service
 @EnabledRemoteHandler
+@Conditional(ConditionFunctionEnabled.ConditionNamingEnabled.class)
 public class InstanceRemoteHandler implements InstanceHandler {
     
     private final NacosMaintainerClientHolder clientHolder;

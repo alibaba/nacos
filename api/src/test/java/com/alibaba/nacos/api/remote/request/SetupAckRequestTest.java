@@ -33,7 +33,6 @@ class SetupAckRequestTest extends BasicRequestTest {
                 Collections.singletonMap(AbilityKey.SERVER_FUZZY_WATCH.getName(), Boolean.TRUE));
         request.setRequestId("1");
         String json = mapper.writeValueAsString(request);
-        System.out.println(json);
         assertNotNull(json);
         assertTrue(json.contains("\"abilityTable\":{\"fuzzyWatch\":true}"));
         assertTrue(json.contains("\"module\":\"internal\""));

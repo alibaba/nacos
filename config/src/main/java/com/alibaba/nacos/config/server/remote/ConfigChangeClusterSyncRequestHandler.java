@@ -33,6 +33,7 @@ import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.namespace.filter.NamespaceValidation;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.ConfigRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
@@ -43,7 +44,7 @@ import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.stereotype.Component;
 
 /**
- * handller to handler config change from other servers.
+ * handler to handler config change from other servers.
  *
  * @author liuzunfei
  * @version $Id: ConfigChangeClusterSyncRequestHandler.java, v 0.1 2020年08月11日 4:35 PM liuzunfei Exp $
@@ -62,9 +63,10 @@ public class ConfigChangeClusterSyncRequestHandler
         this.dumpService = dumpService;
         this.configMigrateService = configMigrateService;
     }
-    
-    @TpsControl(pointName = "ClusterConfigChangeNotify")
+
     @Override
+    @NamespaceValidation
+    @TpsControl(pointName = "ClusterConfigChangeNotify")
     @ExtractorManager.Extractor(rpcExtractor = ConfigRequestParamExtractor.class)
     @Secured(signType = SignType.CONFIG, apiType = ApiType.INNER_API)
     public ConfigChangeClusterSyncResponse handle(ConfigChangeClusterSyncRequest configChangeSyncRequest,
@@ -86,7 +88,6 @@ public class ConfigChangeClusterSyncRequestHandler
      * if notified from old server,try to migrate and transfer gray model.
      *
      * @param configChangeSyncRequest request.
-     * @return
      */
     private void checkCompatity(ConfigChangeClusterSyncRequest configChangeSyncRequest, RequestMeta meta) {
         if (PropertyUtil.isGrayCompatibleModel() && StringUtils.isBlank(configChangeSyncRequest.getGrayName())) {
@@ -137,8 +138,15 @@ public class ConfigChangeClusterSyncRequestHandler
             return false;
         }
         final String ignoreCheckVersion = "3.0.0";
+        final String clusterVersionPrefixNew = "Nacos-Server:v";
+        final String clusterVersionPrefixOld = "Nacos-Java-Client:v";
         try {
-            String version = meta.getClientVersion().split("Nacos-Java-Client:v")[1];
+            String version = null;
+            if (meta.getClientVersion().split(clusterVersionPrefixNew).length > 1) {
+                version = meta.getClientVersion().split(clusterVersionPrefixNew)[1];
+            } else {
+                version = meta.getClientVersion().split(clusterVersionPrefixOld)[1];
+            }
             if (VersionUtils.compareVersion(version, ignoreCheckVersion) >= 0) {
                 return false;
             }

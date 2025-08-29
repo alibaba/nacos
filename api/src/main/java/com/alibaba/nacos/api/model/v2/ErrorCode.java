@@ -231,6 +231,25 @@ public enum ErrorCode {
     API_DEPRECATED(40000, "API deprecated."),
     
     /**
+     * The `functionMode` of API is disabled.
+     */
+    API_FUNCTION_DISABLED(40001, "API function disabled."),
+    
+    /**
+     * MCP Server not found any version.
+     */
+    MCP_SERVER_NOT_FOUND(50000, "MCP server not found"),
+    
+    /**
+     * MCP Server target version not found.
+     */
+    MCP_SEVER_VERSION_NOT_FOUND(50001, "MCP server version not found"),
+    
+    MCP_SERVER_VERSION_EXIST(50002, "MCP server version has existed"),
+    
+    MCP_SERVER_REF_ENDPOINT_SERVICE_NOT_FOUND(50003, "MCP server ref endpoint service not found"),
+    
+    /**
      * Config use 100001 ~ 100999.
      **/
     METADATA_ILLEGAL(100002, "Imported metadata is invalid"),

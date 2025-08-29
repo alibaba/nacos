@@ -184,7 +184,6 @@ class RestAPINamingITCase extends NamingBase {
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         JsonNode json = JacksonUtils.toObj(response.getBody());
-        System.out.println(json);
         assertEquals(0.3f, json.get("protectThreshold").floatValue(), 0.0f);
         
         namingServiceDelete(serviceName);

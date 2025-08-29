@@ -260,8 +260,8 @@ class ConfigurationManagement extends React.Component {
       if (params.dataId && params.dataId !== '') {
         params.dataId = '*' + params.dataId + '*';
       }
-      if (params.group && params.group !== '') {
-        params.group = '*' + params.group + '*';
+      if (params.groupName && params.groupName !== '') {
+        params.groupName = '*' + params.groupName + '*';
       }
     }
     if (this.state.defaultFuzzySearch) {

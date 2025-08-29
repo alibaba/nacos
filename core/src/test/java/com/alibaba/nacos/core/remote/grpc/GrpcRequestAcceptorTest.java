@@ -28,8 +28,10 @@ import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.HealthCheckResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ServerCheckResponse;
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.remote.PayloadRegistry;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
+import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.ConnectionMeta;
@@ -48,6 +50,7 @@ import io.grpc.ServerInterceptor;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -112,6 +115,11 @@ public class GrpcRequestAcceptorTest {
         streamStub = RequestGrpc.newStub(channel);
         mockHandler = new MockRequestHandler();
         PayloadRegistry.init();
+    }
+    
+    @AfterEach
+    void tearDown() {
+        RequestContextHolder.removeContext();
     }
     
     @Test
@@ -309,6 +317,7 @@ public class GrpcRequestAcceptorTest {
                 System.out.println("Receive data from server: " + payload);
                 Object res = GrpcUtils.parse(payload);
                 assertTrue(res instanceof HealthCheckResponse);
+                assertEquals("unknown", RequestContextHolder.getContext().getBasicContext().getApp());
             }
             
             @Override
@@ -347,6 +356,87 @@ public class GrpcRequestAcceptorTest {
                 
                 ErrorResponse errorResponse = (ErrorResponse) res;
                 assertEquals(NacosException.SERVER_ERROR, errorResponse.getErrorCode());
+            }
+            
+            @Override
+            public void onError(Throwable throwable) {
+                fail(throwable.getMessage());
+            }
+            
+            @Override
+            public void onCompleted() {
+                System.out.println("complete");
+            }
+        };
+        
+        streamStub.request(payload, streamObserver);
+        ApplicationUtils.setStarted(false);
+    }
+    
+    @Test
+    void testHandleRequestSuccessWithAppName() {
+        ApplicationUtils.setStarted(true);
+        Mockito.when(requestHandlerRegistry.getByRequestType(Mockito.anyString())).thenReturn(mockHandler);
+        Mockito.when(connectionManager.checkValid(Mockito.any())).thenReturn(true);
+        String ip = "1.1.1.1";
+        ConnectionMeta connectionMeta = new ConnectionMeta(connectId, ip, ip, 8888, 9848, "GRPC", "", "appNameInConnection", new HashMap<>());
+        Connection connection = new GrpcConnection(connectionMeta, null, null);
+        Mockito.when(connectionManager.getConnection(Mockito.any())).thenReturn(connection);
+        
+        RequestMeta metadata = new RequestMeta();
+        metadata.setClientIp("127.0.0.1");
+        metadata.setConnectionId(connectId);
+        HealthCheckRequest mockRequest = new HealthCheckRequest();
+        Payload payload = GrpcUtils.convert(mockRequest, metadata);
+        
+        StreamObserver<Payload> streamObserver = new StreamObserver<Payload>() {
+            @Override
+            public void onNext(Payload payload) {
+                System.out.println("Receive data from server: " + payload);
+                Object res = GrpcUtils.parse(payload);
+                assertTrue(res instanceof HealthCheckResponse);
+                assertEquals("appNameInConnection", RequestContextHolder.getContext().getBasicContext().getApp());
+            }
+            
+            @Override
+            public void onError(Throwable throwable) {
+                fail(throwable.getMessage());
+            }
+            
+            @Override
+            public void onCompleted() {
+                System.out.println("complete");
+            }
+        };
+        
+        streamStub.request(payload, streamObserver);
+        ApplicationUtils.setStarted(false);
+    }
+    
+    @Test
+    void testHandleRequestSuccessWithAppNameInHeader() {
+        ApplicationUtils.setStarted(true);
+        Mockito.when(requestHandlerRegistry.getByRequestType(Mockito.anyString())).thenReturn(mockHandler);
+        Mockito.when(connectionManager.checkValid(Mockito.any())).thenReturn(true);
+        String ip = "1.1.1.1";
+        ConnectionMeta connectionMeta = new ConnectionMeta(connectId, ip, ip, 8888, 9848, "GRPC", "", "-", new HashMap<>());
+        Connection connection = new GrpcConnection(connectionMeta, null, null);
+        Mockito.when(connectionManager.getConnection(Mockito.any())).thenReturn(connection);
+        
+        RequestMeta metadata = new RequestMeta();
+        metadata.setClientIp("127.0.0.1");
+        metadata.setConnectionId(connectId);
+        HealthCheckRequest mockRequest = new HealthCheckRequest();
+        mockRequest.putHeader(HttpHeaderConsts.APP_FILED, "appNameInHeader");
+        Payload payload = GrpcUtils.convert(mockRequest, metadata);
+        
+        StreamObserver<Payload> streamObserver = new StreamObserver<Payload>() {
+            @Override
+            public void onNext(Payload payload) {
+                System.out.println("Receive data from server: " + payload);
+                Object res = GrpcUtils.parse(payload);
+                assertTrue(res instanceof HealthCheckResponse);
+                assertEquals("appNameInHeader", RequestContextHolder.getContext().getBasicContext().getApp());
             }
             
             @Override

@@ -34,6 +34,7 @@ import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneC
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
+import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.ConfigMetadata;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
@@ -56,6 +57,7 @@ import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.console.handler.config.ConfigHandler;
+import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
 import com.alibaba.nacos.console.handler.impl.inner.EnabledInnerHandler;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
@@ -63,6 +65,7 @@ import com.alibaba.nacos.sys.utils.InetUtils;
 import jakarta.servlet.ServletException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -88,6 +91,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @EnabledInnerHandler
+@Conditional(ConditionFunctionEnabled.ConditionConfigEnabled.class)
 public class ConfigInnerHandler implements ConfigHandler {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigInnerHandler.class);
@@ -113,6 +117,11 @@ public class ConfigInnerHandler implements ConfigHandler {
     private ConfigInfoBetaPersistService configInfoBetaPersistService;
     
     private ConfigInfoGrayPersistService configInfoGrayPersistService;
+
+    /**
+     * Flag to indicate if the table `config_info_beta` exists, which means the old version of table schema is used.
+     */
+    private boolean oldTableVersion;
     
     public ConfigInnerHandler(ConfigOperationService configOperationService,
             ConfigInfoPersistService configInfoPersistService, ConfigDetailService configDetailService,
@@ -127,6 +136,7 @@ public class ConfigInnerHandler implements ConfigHandler {
         this.configInfoGrayPersistService = configInfoGrayPersistService;
         this.configListenerStateDelegate = configListenerStateDelegate;
         this.configMigrateService = configMigrateService;
+        this.oldTableVersion = namespacePersistService.isExistTable("config_info_beta");
     }
     
     @Override
@@ -484,7 +494,7 @@ public class ConfigInnerHandler implements ConfigHandler {
         }
         ConfigTraceService.logPersistenceEvent(dataId, group, namespaceId, requestIpApp, System.currentTimeMillis(),
                 remoteIp, ConfigTraceService.PERSISTENCE_EVENT_BETA, ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
-        if (PropertyUtil.isGrayCompatibleModel()) {
+        if (PropertyUtil.isGrayCompatibleModel() && oldTableVersion) {
             configInfoBetaPersistService.removeConfigInfo4Beta(dataId, group, namespaceId);
         }
         ConfigChangePublisher.notifyConfigChange(
@@ -503,6 +513,12 @@ public class ConfigInnerHandler implements ConfigHandler {
             Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey,
                     beta4Gray.getContent());
             beta4Gray.setContent(pair.getSecond());
+
+            //find the corresponding production config to get the `type` field, because the `type` field is not stored in the beta table
+            ConfigInfoWrapper productionConfig = configInfoPersistService.findConfigInfo(dataId, group, namespaceId);
+            if (Objects.nonNull(productionConfig)) {
+                beta4Gray.setType(productionConfig.getType());
+            }
             return ResponseUtil.transferToConfigGrayInfo(beta4Gray);
         }
         return null;

@@ -32,9 +32,11 @@ import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneC
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.console.handler.config.ConfigHandler;
+import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
 import com.alibaba.nacos.maintainer.client.config.ConfigMaintainerService;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -52,6 +54,7 @@ import static com.alibaba.nacos.api.common.Constants.ALL_PATTERN;
  */
 @Service
 @EnabledRemoteHandler
+@Conditional(ConditionFunctionEnabled.ConditionConfigEnabled.class)
 public class ConfigRemoteHandler implements ConfigHandler {
     
     private final NacosMaintainerClientHolder clientHolder;

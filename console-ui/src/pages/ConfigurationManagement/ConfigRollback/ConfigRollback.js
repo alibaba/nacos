@@ -81,7 +81,7 @@ class ConfigRollback extends React.Component {
       url,
       success(result) {
         if (result != null) {
-          const data = result.data;
+          const { data } = result;
           const envName = self.serverId;
           self.id = data.id; // 详情的id
           self.field.setValue('dataId', data.dataId);

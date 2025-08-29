@@ -40,6 +40,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.Properties;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -104,20 +105,19 @@ class NacosAiMaintainerServiceImplTest {
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
         McpServerDetailInfo mcpServerDetailInfo = new McpServerDetailInfo();
         mcpServerDetailInfo.setName("test");
-        mcpServerDetailInfo.setVersion("1.0.0");
         mockRestResult.setData(JacksonUtils.toJson(Result.success(mcpServerDetailInfo)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
         McpServerDetailInfo actual = aiMaintainerService.getMcpServerDetail("test");
         assertEquals(mcpServerDetailInfo.getName(), actual.getName());
-        assertEquals(mcpServerDetailInfo.getVersion(), actual.getVersion());
     }
     
     @Test
     void createLocalMcpServer() throws NacosException {
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
-        mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
+        String mcpId = UUID.randomUUID().toString();
+        mockRestResult.setData(JacksonUtils.toJson(Result.success(mcpId)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
-        assertTrue(aiMaintainerService.createLocalMcpServer("test", "1.0.0"));
+        assertEquals(aiMaintainerService.createLocalMcpServer("test", "1.0.0"), mcpId);
     }
     
     @Test
@@ -141,6 +141,8 @@ class NacosAiMaintainerServiceImplTest {
         McpServerBasicInfo serverSpec = new McpServerBasicInfo();
         serverSpec.setName("test");
         serverSpec.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_STDIO);
+        String mcpId = UUID.randomUUID().toString();
+        serverSpec.setId(mcpId);
         McpToolSpecification toolSpec = new McpToolSpecification();
         McpTool mcpTool = new McpTool();
         mcpTool.setName("testTool");
@@ -148,35 +150,38 @@ class NacosAiMaintainerServiceImplTest {
         toolSpec.setTools(Collections.singletonList(mcpTool));
         toolSpec.setToolsMeta(Collections.singletonMap("testTool", new McpToolMeta()));
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
-        mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
+        mockRestResult.setData(JacksonUtils.toJson(Result.success(mcpId)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
-        assertTrue(aiMaintainerService.createLocalMcpServer("test", serverSpec, toolSpec));
+        assertEquals(aiMaintainerService.createLocalMcpServer("test", serverSpec, toolSpec), mcpId);
     }
     
     @Test
     void createRemoteMcpServer() throws NacosException {
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
-        mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
+        String mcpId = UUID.randomUUID().toString();
+        mockRestResult.setData(JacksonUtils.toJson(Result.success(mcpId)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
         McpEndpointSpec endpointSpec = new McpEndpointSpec();
         endpointSpec.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
         endpointSpec.setData(Collections.singletonMap("address", "127.0.0.1"));
-        assertTrue(aiMaintainerService.createRemoteMcpServer("test", "1.0.0", AiConstants.Mcp.MCP_PROTOCOL_SSE,
-                endpointSpec));
+        assertEquals(aiMaintainerService.createRemoteMcpServer("test", "1.0.0", AiConstants.Mcp.MCP_PROTOCOL_SSE,
+                endpointSpec), mcpId);
     }
     
     @Test
     void createRemoteMcpServerWithSpec() throws NacosException {
         final HttpRestResult<String> mockRestResult = new HttpRestResult<>();
-        mockRestResult.setData(JacksonUtils.toJson(Result.success("ok")));
+        String mcpId = UUID.randomUUID().toString();
+        mockRestResult.setData(JacksonUtils.toJson(Result.success(mcpId)));
         when(clientHttpProxy.executeSyncHttpRequest(any(HttpRequest.class))).thenReturn(mockRestResult);
         McpServerBasicInfo serverSpec = new McpServerBasicInfo();
+        serverSpec.setId(mcpId);
         serverSpec.setName("test");
         serverSpec.setProtocol(AiConstants.Mcp.MCP_PROTOCOL_SSE);
         McpEndpointSpec endpointSpec = new McpEndpointSpec();
         endpointSpec.setType(AiConstants.Mcp.MCP_ENDPOINT_TYPE_DIRECT);
         endpointSpec.setData(Collections.singletonMap("address", "127.0.0.1"));
-        assertTrue(aiMaintainerService.createRemoteMcpServer("test", serverSpec, endpointSpec));
+        assertEquals(aiMaintainerService.createRemoteMcpServer("test", serverSpec, endpointSpec), mcpId);
     }
     
     @Test

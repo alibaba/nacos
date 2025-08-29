@@ -116,8 +116,21 @@ class HttpProtocolAuthServiceTest {
     
     @Test
     @Secured(signType = SignType.CONFIG)
-    void testParseResourceWithConfigType() throws NoSuchMethodException {
-        Secured secured = getMethodSecure("testParseResourceWithConfigType");
+    void testParseResourceWithConfigTypeForNewGroup() throws NoSuchMethodException {
+        Secured secured = getMethodSecure("testParseResourceWithConfigTypeForNewGroup");
+        Resource actual = protocolAuthService.parseResource(request, secured);
+        assertEquals(SignType.CONFIG, actual.getType());
+        assertEquals("testD", actual.getName());
+        assertEquals("testNNs", actual.getNamespaceId());
+        assertEquals("testNG", actual.getGroup());
+        assertNotNull(actual.getProperties());
+    }
+    
+    @Test
+    @Secured(signType = SignType.CONFIG)
+    void testParseResourceWithConfigTypeForOldGroup() throws NoSuchMethodException {
+        when(request.getParameter(eq(CommonParams.GROUP_NAME))).thenReturn("");
+        Secured secured = getMethodSecure("testParseResourceWithConfigTypeForOldGroup");
         Resource actual = protocolAuthService.parseResource(request, secured);
         assertEquals(SignType.CONFIG, actual.getType());
         assertEquals("testD", actual.getName());

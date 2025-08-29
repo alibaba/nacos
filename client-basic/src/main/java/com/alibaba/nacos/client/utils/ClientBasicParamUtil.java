@@ -207,7 +207,7 @@ public class ClientBasicParamUtil {
             appendKeyParameters(result, properties, PropertyKeyConst.ENDPOINT_PORT, false);
             appendKeyParameters(result, properties, PropertyKeyConst.USERNAME, false);
             appendKeyParameters(result, properties, PropertyKeyConst.PASSWORD, true);
-            appendKeyParameters(result, properties, PropertyKeyConst.ACCESS_KEY, false);
+            appendKeyParameters(result, properties, PropertyKeyConst.ACCESS_KEY, true);
             appendKeyParameters(result, properties, PropertyKeyConst.SECRET_KEY, true);
             appendKeyParameters(result, properties, PropertyKeyConst.RAM_ROLE_NAME, false);
             appendKeyParameters(result, properties, PropertyKeyConst.SIGNATURE_REGION_ID, false);

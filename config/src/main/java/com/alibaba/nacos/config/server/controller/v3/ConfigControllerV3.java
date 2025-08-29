@@ -137,6 +137,11 @@ public class ConfigControllerV3 {
     private final ConfigListenerStateDelegate configListenerStateDelegate;
     
     private final ConfigMigrateService configMigrateService;
+
+    /**
+     * Flag to indicate if the table `config_info_beta` exists, which means the old version of table schema is used.
+     */
+    private boolean oldTableVersion;
     
     public ConfigControllerV3(ConfigOperationService configOperationService,
             ConfigInfoPersistService configInfoPersistService, ConfigDetailService configDetailService,
@@ -151,6 +156,7 @@ public class ConfigControllerV3 {
         this.namespacePersistService = namespacePersistService;
         this.configListenerStateDelegate = configListenerStateDelegate;
         this.configMigrateService = configMigrateService;
+        this.oldTableVersion = namespacePersistService.isExistTable("config_info_beta");
     }
     
     /**
@@ -158,7 +164,7 @@ public class ConfigControllerV3 {
      */
     @GetMapping
     @TpsControl(pointName = "ConfigQuery")
-    @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<ConfigDetailInfo> getConfig(ConfigFormV3 configForm) throws NacosException {
         configForm.validate();
         // check namespaceId
@@ -185,7 +191,7 @@ public class ConfigControllerV3 {
      */
     @PostMapping
     @TpsControl(pointName = "ConfigPublish")
-    @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Boolean> publishConfig(HttpServletRequest request, ConfigFormV3 configForm) throws NacosException {
         // check required field
         configForm.validateWithContent();
@@ -228,7 +234,7 @@ public class ConfigControllerV3 {
      * Delete configuration.
      */
     @DeleteMapping
-    @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Boolean> deleteConfig(HttpServletRequest request, ConfigFormV3 configForm) throws NacosException {
         configForm.validate();
         // check namespaceId
@@ -248,7 +254,7 @@ public class ConfigControllerV3 {
      * Batch delete configuration by ids.
      */
     @DeleteMapping("/batch")
-    @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Boolean> deleteConfigs(HttpServletRequest request, @RequestParam(value = "ids") List<Long> ids) {
         String clientIp = getRemoteIp(request);
         String srcUser = RequestUtil.getSrcUserName(request);
@@ -273,7 +279,7 @@ public class ConfigControllerV3 {
      * Subscribe to configured client information.
      */
     @GetMapping("/listener")
-    @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<ConfigListenerInfo> getListeners(ConfigFormV3 configForm, AggregationForm aggregationForm)
             throws Exception {
         configForm.validate();
@@ -295,7 +301,7 @@ public class ConfigControllerV3 {
      * </p>
      */
     @GetMapping("/list")
-    @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     @ExtractorManager.Extractor(httpExtractor = ConfigBlurSearchHttpParamExtractor.class)
     public Result<Page<ConfigBasicInfo>> list(ConfigFormV3 configForm, PageForm pageForm, String configDetail,
             @RequestParam(defaultValue = "blur") String search) throws NacosApiException {
@@ -335,7 +341,7 @@ public class ConfigControllerV3 {
      * Execute to remove beta operation.
      */
     @DeleteMapping("/beta")
-    @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Boolean> stopBeta(HttpServletRequest httpServletRequest, ConfigFormV3 configForm)
             throws NacosApiException {
         configForm.validate();
@@ -356,7 +362,7 @@ public class ConfigControllerV3 {
         
         ConfigTraceService.logPersistenceEvent(dataId, groupName, namespaceId, requestIpApp, System.currentTimeMillis(),
                 remoteIp, ConfigTraceService.PERSISTENCE_EVENT_BETA, ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
-        if (PropertyUtil.isGrayCompatibleModel()) {
+        if (PropertyUtil.isGrayCompatibleModel() && oldTableVersion) {
             configInfoBetaPersistService.removeConfigInfo4Beta(dataId, groupName, namespaceId);
         }
         ConfigChangePublisher.notifyConfigChange(
@@ -370,7 +376,7 @@ public class ConfigControllerV3 {
      * Execute to query beta operation.
      */
     @GetMapping("/beta")
-    @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<ConfigGrayInfo> queryBeta(ConfigFormV3 configForm) throws NacosApiException {
         configForm.validate();
         String namespaceId = NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId());
@@ -395,7 +401,7 @@ public class ConfigControllerV3 {
      * Execute import and publish config operation.
      */
     @PostMapping("/import")
-    @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public Result<Map<String, Object>> importAndPublishConfig(HttpServletRequest request,
             @RequestParam(value = "src_user", required = false) String srcUser,
             @RequestParam(value = "namespaceId", required = false) String namespaceId,
@@ -547,7 +553,7 @@ public class ConfigControllerV3 {
      * Export config add metadata.yml file record config metadata.
      */
     @GetMapping("/export")
-    @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
     public ResponseEntity<byte[]> exportConfig(ConfigFormV3 configForm,
             @RequestParam(value = "ids", required = false) List<Long> ids) throws NacosApiException {
         configForm.blurSearchValidate();
@@ -587,7 +593,7 @@ public class ConfigControllerV3 {
      * Execute clone config operation.
      */
     @PostMapping("/clone")
-    @Secured(resource = Constants.CONFIG_ADMIN_V3_PATH, action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, apiType = ApiType.CONSOLE_API)
     public Result<Map<String, Object>> cloneConfig(HttpServletRequest request,
             @RequestParam(value = "src_user", required = false) String srcUser,
             @RequestParam(value = "namespaceId") String namespaceId, @RequestBody List<ConfigCloneInfo> cloneInfos,

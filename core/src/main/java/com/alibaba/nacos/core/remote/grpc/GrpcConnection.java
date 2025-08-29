@@ -149,7 +149,12 @@ public class GrpcConnection extends Connection {
                 callBack, () -> RpcAckCallbackSynchronizer.clearFuture(getMetaInfo().getConnectionId(), requestId));
         
         RpcAckCallbackSynchronizer.syncCallback(getMetaInfo().getConnectionId(), requestId, defaultPushFuture);
-        sendRequestNoAck(request);
+        try {
+            sendRequestNoAck(request);
+        } catch (NacosRuntimeException nacosRuntimeException) {
+            defaultPushFuture.cancel(true);
+            throw nacosRuntimeException;
+        }
         return defaultPushFuture;
     }
     

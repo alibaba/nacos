@@ -68,15 +68,14 @@ public class ConfigResourceInjector extends AbstractResourceInjector {
     }
     
     private String getResource(String tenant, String group) {
-        if (StringUtils.isNotBlank(tenant) && StringUtils.isNotBlank(group)) {
+        if (StringUtils.isBlank(tenant)) {
+            if (StringUtils.isBlank(group)) {
+                return DEFAULT_RESOURCE;
+            } else {
+                return group;
+            }
+        } else {
             return tenant + "+" + group;
         }
-        if (StringUtils.isNotBlank(group)) {
-            return group;
-        }
-        if (StringUtils.isNotBlank(tenant)) {
-            return tenant;
-        }
-        return DEFAULT_RESOURCE;
     }
 }

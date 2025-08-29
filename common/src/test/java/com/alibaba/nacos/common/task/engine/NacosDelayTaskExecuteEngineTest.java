@@ -118,7 +118,7 @@ class NacosDelayTaskExecuteEngineTest {
         nacosDelayTaskExecuteEngine.addProcessor("test", testTaskProcessor);
         nacosDelayTaskExecuteEngine.removeProcessor("test");
         nacosDelayTaskExecuteEngine.addTask("test", abstractTask);
-        TimeUnit.MILLISECONDS.sleep(200);
+        TimeUnit.MILLISECONDS.sleep(150);
         assertEquals(1, nacosDelayTaskExecuteEngine.size());
     }
     

@@ -41,6 +41,7 @@ import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoGrayMapper;
+import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigMigrateMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
@@ -52,6 +53,7 @@ import org.springframework.stereotype.Service;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_ROW_MAPPER;
@@ -237,11 +239,48 @@ public class EmbeddedConfigMigratePersistServiceImpl implements ConfigMigratePer
                 long configId = idGeneratorManager.nextId(RESOURCE_CONFIG_INFO_ID);
                 configInfoPersistService.addConfigInfoAtomic(configId, null, srcUser,
                         sourceConfigInfoWrapper, null);
-            } else if (sourceConfigInfoWrapper.getLastModified() > targetConfigInfoWrapper.getLastModified()) {
+            } else if (sourceConfigInfoWrapper.getLastModified() >= targetConfigInfoWrapper.getLastModified()) {
                 sourceConfigInfoWrapper.setTenant(targetTenant);
-                configInfoPersistService.updateConfigInfoAtomic(sourceConfigInfoWrapper, null, srcUser, null);
+                updateConfigInfoAtomic(sourceConfigInfoWrapper, null, srcUser, null,
+                        targetConfigInfoWrapper.getLastModified(), targetConfigInfoWrapper.getMd5());
             }
         }
+    }
+    
+    /**
+     * Update config info atomic.
+     *
+     * @param configInfo        the config info
+     * @param srcIp             the src ip
+     * @param srcUser           the src user
+     * @param configAdvanceInfo the config advance info
+     * @param lastModified      the last modified
+     */
+    public void updateConfigInfoAtomic(final ConfigInfo configInfo, final String srcIp, final String srcUser,
+            Map<String, Object> configAdvanceInfo, long lastModified, final String targetMd5) {
+        final String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
+        final String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
+        final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
+        final String desc = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("desc");
+        final String use = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("use");
+        final String effect = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("effect");
+        final String type = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("type");
+        final String schema = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("schema");
+        final String encryptedDataKey =
+                configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY : configInfo.getEncryptedDataKey();
+        
+        ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                TableConstant.CONFIG_INFO);
+        final String sql = configInfoMapper.update(
+                Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified@NOW()", "app_name", "c_desc",
+                        "c_use", "effect", "type", "c_schema", "encrypted_data_key"),
+                Arrays.asList("data_id", "group_id", "tenant_id", "gmt_modified", "md5"));
+        
+        final Object[] args = new Object[] {configInfo.getContent(), md5Tmp, srcIp, srcUser, appNameTmp, desc, use,
+                effect, type, schema, encryptedDataKey, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
+                new Timestamp(lastModified), targetMd5};
+        
+        EmbeddedStorageContextHolder.addSqlContext(sql, args);
     }
     
     @Override
@@ -259,11 +298,11 @@ public class EmbeddedConfigMigratePersistServiceImpl implements ConfigMigratePer
                 long configGrayId = idGeneratorManager.nextId(RESOURCE_CONFIG_HISTORY_GRAY_ID);
                 configInfoGrayPersistService.addConfigInfoGrayAtomic(configGrayId, sourceConfigInfoGrayWrapper,
                         grayName, sourceConfigInfoGrayWrapper.getGrayRule(), null, srcUser);
-            } else if (sourceConfigInfoGrayWrapper.getLastModified() > targetConfigInfoGrayWrapper.getLastModified()) {
+            } else if (sourceConfigInfoGrayWrapper.getLastModified() >= targetConfigInfoGrayWrapper.getLastModified()) {
                 sourceConfigInfoGrayWrapper.setTenant(targetTenant);
                 updateConfigInfo4GrayWithoutHistory(sourceConfigInfoGrayWrapper,
                         sourceConfigInfoGrayWrapper.getGrayName(), sourceConfigInfoGrayWrapper.getGrayRule(),
-                        null, srcUser);
+                        null, srcUser, targetConfigInfoGrayWrapper.getLastModified(), targetConfigInfoGrayWrapper.getMd5());
             }
         }
     }
@@ -307,7 +346,7 @@ public class EmbeddedConfigMigratePersistServiceImpl implements ConfigMigratePer
      * @param srcUser    the src user
      */
     public void updateConfigInfo4GrayWithoutHistory(ConfigInfo configInfo, String grayName, String grayRule,
-            String srcIp, String srcUser) {
+            String srcIp, String srcUser, long lastModified, final String targetMd5) {
         String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
         String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         String grayNameTmp = StringUtils.isBlank(grayName) ? StringUtils.EMPTY : grayName.trim();
@@ -322,9 +361,9 @@ public class EmbeddedConfigMigratePersistServiceImpl implements ConfigMigratePer
             
             final String sql = configInfoGrayMapper.update(
                     Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified", "app_name", "gray_rule"),
-                    Arrays.asList("data_id", "group_id", "tenant_id", "gray_name"));
+                    Arrays.asList("data_id", "group_id", "tenant_id", "gray_name", "gmt_modified", "md5"));
             final Object[] args = new Object[] {configInfo.getContent(), md5, srcIp, srcUser, time, appNameTmp,
-                    grayRuleTmp, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, grayNameTmp};
+                    grayRuleTmp, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, grayNameTmp, new Timestamp(lastModified), targetMd5};
             EmbeddedStorageContextUtils.onModifyConfigGrayInfo(configInfo, grayNameTmp, grayRuleTmp, srcIp, time);
             EmbeddedStorageContextHolder.addSqlContext(sql, args);
             databaseOperate.blockUpdate();

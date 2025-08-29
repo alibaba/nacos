@@ -91,7 +91,6 @@ class ConfigHistoryInfoTest {
     @Test
     public void testDetailInfoSerialize() throws JsonProcessingException {
         String json = mapper.writeValueAsString(detailInfo);
-        System.out.println(json);
         assertJsonContainBasicInfos(json);
         asserJsonContainDetailInfos(json);
     }

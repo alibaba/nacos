@@ -105,6 +105,17 @@ public class RequestResource {
         return result;
     }
     
+    /**
+     * Create new AI request resource builder.
+     *
+     * @return ai request resource builder
+     */
+    public static Builder aiBuilder() {
+        Builder result = new Builder();
+        result.setType(SignType.AI);
+        return result;
+    }
+    
     public static class Builder {
         
         private String type;

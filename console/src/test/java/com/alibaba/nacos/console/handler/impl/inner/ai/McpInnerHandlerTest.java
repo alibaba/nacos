@@ -18,6 +18,7 @@ package com.alibaba.nacos.console.handler.impl.inner.ai;
 
 import com.alibaba.nacos.ai.constant.Constants;
 import com.alibaba.nacos.ai.service.McpServerOperationService;
+import com.alibaba.nacos.api.ai.constant.AiConstants;
 import com.alibaba.nacos.api.ai.model.mcp.McpEndpointSpec;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerBasicInfo;
 import com.alibaba.nacos.api.ai.model.mcp.McpServerDetailInfo;
@@ -52,40 +53,43 @@ class McpInnerHandlerTest {
     @Test
     void listMcpServers() throws NacosException {
         Page<McpServerBasicInfo> mockPage = new Page<>();
-        when(mcpServerOperationService.listMcpServer("", "test", Constants.MCP_LIST_SEARCH_ACCURATE, 1,
-                100)).thenReturn(mockPage);
-        Page<McpServerBasicInfo> actual = mcpInnerHandler.listMcpServers("", "test", Constants.MCP_LIST_SEARCH_ACCURATE,
-                1, 100);
+        when(mcpServerOperationService.listMcpServerWithPage(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test",
+                Constants.MCP_LIST_SEARCH_ACCURATE, 1, 100)).thenReturn(mockPage);
+        Page<McpServerBasicInfo> actual = mcpInnerHandler.listMcpServers(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test",
+                Constants.MCP_LIST_SEARCH_ACCURATE, 1, 100);
         assertEquals(mockPage, actual);
     }
     
     @Test
     void getMcpServer() throws NacosException {
         McpServerDetailInfo mock = new McpServerDetailInfo();
-        when(mcpServerOperationService.getMcpServer("", "test")).thenReturn(mock);
-        McpServerDetailInfo actual = mcpInnerHandler.getMcpServer("", "test");
+        when(mcpServerOperationService.getMcpServerDetail(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test", "name",
+                "version")).thenReturn(mock);
+        McpServerDetailInfo actual = mcpInnerHandler.getMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "name", "test",
+                "version");
         assertEquals(mock, actual);
     }
     
     @Test
     void createMcpServer() throws NacosException {
-        mcpInnerHandler.createMcpServer("", "test", new McpServerBasicInfo(), new McpToolSpecification(),
-                new McpEndpointSpec());
-        verify(mcpServerOperationService).createMcpServer(eq(""), eq("test"), any(McpServerBasicInfo.class),
-                any(McpToolSpecification.class), any(McpEndpointSpec.class));
+        mcpInnerHandler.createMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, new McpServerBasicInfo(),
+                new McpToolSpecification(), new McpEndpointSpec());
+        verify(mcpServerOperationService).createMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE),
+                any(McpServerBasicInfo.class), any(McpToolSpecification.class), any(McpEndpointSpec.class));
     }
     
     @Test
     void updateMcpServer() throws NacosException {
-        mcpInnerHandler.updateMcpServer("", "test", new McpServerBasicInfo(), new McpToolSpecification(),
-                new McpEndpointSpec());
-        verify(mcpServerOperationService).updateMcpServer(eq(""), eq("test"), any(McpServerBasicInfo.class),
-                any(McpToolSpecification.class), any(McpEndpointSpec.class));
+        mcpInnerHandler.updateMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, true, new McpServerBasicInfo(),
+                new McpToolSpecification(), new McpEndpointSpec());
+        verify(mcpServerOperationService).updateMcpServer(eq(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE), eq(true),
+                any(McpServerBasicInfo.class), any(McpToolSpecification.class), any(McpEndpointSpec.class));
     }
     
     @Test
     void deleteMcpServer() throws NacosException {
-        mcpInnerHandler.deleteMcpServer("", "test");
-        verify(mcpServerOperationService).deleteMcpServer("", "test");
+        mcpInnerHandler.deleteMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test", "id", "version");
+        verify(mcpServerOperationService).deleteMcpServer(AiConstants.Mcp.MCP_DEFAULT_NAMESPACE, "test", "id",
+                "version");
     }
 }

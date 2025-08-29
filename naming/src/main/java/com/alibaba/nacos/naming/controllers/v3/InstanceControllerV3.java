@@ -96,7 +96,7 @@ public class InstanceControllerV3 {
     @CanDistro
     @PostMapping
     @TpsControl(pointName = "NamingInstanceRegister", name = "HttpNamingInstanceRegister")
-    @Secured(resource = UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<String> register(InstanceForm instanceForm) throws NacosException {
         // check param
         instanceForm.validate();
@@ -120,7 +120,7 @@ public class InstanceControllerV3 {
     @CanDistro
     @DeleteMapping
     @TpsControl(pointName = "NamingInstanceDeregister", name = "HttpNamingInstanceDeregister")
-    @Secured(resource = UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<String> deregister(InstanceForm instanceForm) throws NacosException {
         // check param
         instanceForm.validate();
@@ -142,7 +142,7 @@ public class InstanceControllerV3 {
     @CanDistro
     @PutMapping
     @TpsControl(pointName = "NamingInstanceUpdate", name = "HttpNamingInstanceUpdate")
-    @Secured(resource = UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<String> update(InstanceForm instanceForm) throws NacosException {
         // check param
         instanceForm.validate();
@@ -166,7 +166,7 @@ public class InstanceControllerV3 {
     @PutMapping(value = "/metadata/batch")
     @TpsControl(pointName = "NamingInstanceMetadataUpdate", name = "HttpNamingInstanceMetadataBatchUpdate")
     @ExtractorManager.Extractor(httpExtractor = NamingInstanceMetadataBatchHttpParamExtractor.class)
-    @Secured(resource = UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<InstanceMetadataBatchResult> batchUpdateInstanceMetadata(InstanceMetadataBatchOperationForm form)
             throws NacosException {
         form.validate();
@@ -190,7 +190,7 @@ public class InstanceControllerV3 {
     @DeleteMapping("/metadata/batch")
     @TpsControl(pointName = "NamingInstanceMetadataUpdate", name = "HttpNamingInstanceMetadataBatchUpdate")
     @ExtractorManager.Extractor(httpExtractor = NamingInstanceMetadataBatchHttpParamExtractor.class)
-    @Secured(resource = UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<InstanceMetadataBatchResult> batchDeleteInstanceMetadata(InstanceMetadataBatchOperationForm form)
             throws NacosException {
         form.validate();
@@ -232,7 +232,7 @@ public class InstanceControllerV3 {
      */
     @CanDistro
     @PutMapping(value = "/partial")
-    @Secured(resource = UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<String> partialUpdateInstance(InstanceForm instanceForm) throws Exception {
         instanceForm.validate();
         InstancePatchObject patchObject = new InstancePatchObject(instanceForm.getClusterName(), instanceForm.getIp(),
@@ -261,7 +261,7 @@ public class InstanceControllerV3 {
     @GetMapping("/list")
     @TpsControl(pointName = "NamingServiceSubscribe", name = "HttpNamingServiceSubscribe")
     @ExtractorManager.Extractor(httpExtractor = NamingInstanceListHttpParamExtractor.class)
-    @Secured(resource = UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.READ, apiType = ApiType.ADMIN_API)
     public Result<List<? extends Instance>> list(InstanceListForm instanceListForm) throws NacosException {
         instanceListForm.validate();
         List<? extends Instance> instances = catalogService.listInstances(instanceListForm.getNamespaceId(),
@@ -277,7 +277,7 @@ public class InstanceControllerV3 {
      */
     @GetMapping
     @TpsControl(pointName = "NamingInstanceQuery", name = "HttpNamingInstanceQuery")
-    @Secured(resource = UtilsAndCommons.INSTANCE_CONTROLLER_V3_ADMIN_PATH, action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
+    @Secured(action = ActionTypes.WRITE, apiType = ApiType.ADMIN_API)
     public Result<Instance> detail(InstanceForm instanceForm) throws NacosException {
         instanceForm.validate();
         String namespaceId = instanceForm.getNamespaceId();

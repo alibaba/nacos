@@ -75,6 +75,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -126,6 +127,8 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     private static final String CONTENT = "content";
     
     private static final String TENANT = "tenant_id";
+    
+    private static final Set<String> SYSTEM_GROUP = Set.of("mcp-server", "mcp-server-versions", "mcp-tools");
     
     private final DatabaseOperate databaseOperate;
     
@@ -858,6 +861,9 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         
         if (StringUtils.isNotBlank(configTags)) {
             String[] tagArr = configTags.split(",");
+            for (int i = 0; i < tagArr.length; i++) {
+                tagArr[i] = generateLikeArgument(tagArr[i]);
+            }
             context.putWhereParameter(FieldConstant.TAG_ARR, tagArr);
             ConfigTagsRelationMapper configTagsRelationMapper = mapperManager.findMapper(
                     dataSourceService.getDataSourceType(), TableConstant.CONFIG_TAGS_RELATION);

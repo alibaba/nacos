@@ -125,6 +125,7 @@ public class NacosUserServiceRemoteImpl extends AbstractCachedUserService implem
     
     @Override
     public void createUser(String username, String password, boolean encode) {
+        validateUserCredentials(username, password);
         if (AuthConstants.DEFAULT_USER.equals(username)) {
             doCreateAdminUser(password);
             return;

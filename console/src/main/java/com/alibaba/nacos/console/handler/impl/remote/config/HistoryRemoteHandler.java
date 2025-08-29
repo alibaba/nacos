@@ -22,8 +22,10 @@ import com.alibaba.nacos.api.config.model.ConfigHistoryDetailInfo;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.Page;
 import com.alibaba.nacos.console.handler.config.HistoryHandler;
+import com.alibaba.nacos.console.handler.impl.ConditionFunctionEnabled;
 import com.alibaba.nacos.console.handler.impl.remote.EnabledRemoteHandler;
 import com.alibaba.nacos.console.handler.impl.remote.NacosMaintainerClientHolder;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -35,6 +37,7 @@ import java.util.List;
  */
 @Service
 @EnabledRemoteHandler
+@Conditional(ConditionFunctionEnabled.ConditionConfigEnabled.class)
 public class HistoryRemoteHandler implements HistoryHandler {
     
     private final NacosMaintainerClientHolder clientHolder;

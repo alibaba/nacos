@@ -131,7 +131,14 @@ public interface ConfigTagsRelationMapper extends Mapper {
             where.and().like("a.content", content);
         }
         if (!ArrayUtils.isEmpty(tagArr)) {
-            where.and().in("b.tag_name", tagArr);
+            where.and().startParentheses();
+            for (int i = 0; i < tagArr.length; i++) {
+                if (i != 0) {
+                    where.or();
+                }
+                where.like("b.tag_name", tagArr[i]);
+            }
+            where.endParentheses();
         }
         if (!ArrayUtils.isEmpty(types)) {
             where.and().in("a.type", types);

@@ -46,6 +46,8 @@ public class ParamInfo {
     
     private String mcpName;
     
+    private String mcpId;
+    
     public String getNamespaceShowName() {
         return namespaceShowName;
     }
@@ -129,7 +131,15 @@ public class ParamInfo {
     public String getMcpName() {
         return mcpName;
     }
-    
+
+    public String getMcpId() {
+        return mcpId;
+    }
+
+    public void setMcpId(String mcpId) {
+        this.mcpId = mcpId;
+    }
+
     public void setMcpName(String mcpName) {
         this.mcpName = mcpName;
     }

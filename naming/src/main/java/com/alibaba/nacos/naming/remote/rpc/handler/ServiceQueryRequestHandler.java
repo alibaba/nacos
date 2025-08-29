@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.namespace.filter.NamespaceValidation;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.ServiceQueryRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
@@ -53,6 +54,7 @@ public class ServiceQueryRequestHandler extends RequestHandler<ServiceQueryReque
     }
     
     @Override
+    @NamespaceValidation
     @TpsControl(pointName = "RemoteNamingServiceQuery", name = "RemoteNamingServiceQuery")
     @Secured(action = ActionTypes.READ)
     @ExtractorManager.Extractor(rpcExtractor = ServiceQueryRequestParamExtractor.class)

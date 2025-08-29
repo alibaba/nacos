@@ -78,6 +78,7 @@ public class NacosUserServiceDirectImpl extends AbstractCachedUserService implem
     
     @Override
     public void createUser(String username, String password, boolean encode) {
+        validateUserCredentials(username, password);
         if (encode) {
             password = PasswordEncoderUtil.encode(password);
         }

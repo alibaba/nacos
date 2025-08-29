@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.config;
 
+import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.config.constants.ConfigChangePointCutTypes;
@@ -145,5 +146,11 @@ public class ConfigChangePluginManager {
             sortedList.sort(Comparator.comparingInt(ConfigChangePluginService::getOrder));
             CONFIG_CHANGE_PLUGIN_SERVICES_MAP.put(type, sortedList);
         });
+    }
+    
+    @JustForTest
+    public static synchronized void reset() {
+        CONFIG_CHANGE_PLUGIN_SERVICE_MAP.clear();
+        CONFIG_CHANGE_PLUGIN_SERVICES_MAP.clear();
     }
 }
